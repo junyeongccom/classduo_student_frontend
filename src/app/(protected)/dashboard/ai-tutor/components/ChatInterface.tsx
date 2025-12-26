@@ -12,6 +12,7 @@ interface ChatInterfaceProps {
   sessionId?: string
   onSessionCreated?: (sessionId: string) => void
   onReferencesUpdate?: (references: Reference[]) => void
+  onLectureIdsLoaded?: (lectureIds: string[]) => void // 세션 로드 시 lecture_ids 전달
 }
 
 // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
@@ -22,17 +23,17 @@ const DEFAULT_HOOKING_QUESTIONS = [
   '이 개념을 더 쉽게 이해하려면 어떻게 해야 하나요?',
 ]
 
-export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate }: ChatInterfaceProps) {
+export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded }: ChatInterfaceProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [references, setReferences] = useState<Reference[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [skipNextLoad, setSkipNextLoad] = useState(false)  // 다음 로드 건너뛰기 플래그
   const [hookingQuestions, setHookingQuestions] = useState<string[]>(DEFAULT_HOOKING_QUESTIONS)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
+  const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
 
   // lecture_ids 변경 시 후킹 질문 로드 (단일 선택 시에만)
   useEffect(() => {
@@ -63,14 +64,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // 세션 변경 시 메시지 로드
   useEffect(() => {
-    // 건너뛰기 플래그가 설정되어 있으면 무시 (새 세션 생성 직후)
-    if (skipNextLoad) {
-      setSkipNextLoad(false)
-      return
-    }
-
     const loadSession = async () => {
       if (sessionId) {
+        // 자신이 방금 생성한 세션이면 로드 건너뛰기
+        if (selfCreatedSessionId.current === sessionId) {
+          selfCreatedSessionId.current = undefined  // 플래그 초기화
+          return
+        }
+        
         setIsLoading(true)
         try {
           const { data, error } = await chatApi.getSession(sessionId)
@@ -81,6 +82,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             }))
             setMessages(loadedMessages)
             setCurrentSessionId(sessionId)
+            
+            // 세션의 lecture_ids를 부모에게 전달 (session 객체에서 가져옴)
+            if (data.session?.lecture_ids && onLectureIdsLoaded) {
+              onLectureIdsLoaded(data.session.lecture_ids)
+            }
           }
         } catch (err) {
           console.error('Failed to load session:', err)
@@ -91,6 +97,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         // sessionId가 없으면 초기화 (새 채팅)
         setMessages([])
         setCurrentSessionId(undefined)
+        selfCreatedSessionId.current = undefined
       }
     }
 
@@ -103,7 +110,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     } else {
       loadSession()
     }
-  }, [sessionId, skipNextLoad])
+  }, [sessionId, onLectureIdsLoaded])
 
   // 메시지 추가 시 스크롤
   useEffect(() => {
@@ -137,7 +144,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         }
         
         const newSessionId = sessionResult.data.id
-        setSkipNextLoad(true)  // 다음 useEffect 로드 건너뛰기
+        selfCreatedSessionId.current = newSessionId  // 자신이 생성한 세션임을 표시
         setCurrentSessionId(newSessionId)
         onSessionCreated?.(newSessionId)
 

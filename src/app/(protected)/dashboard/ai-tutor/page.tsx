@@ -15,21 +15,34 @@ export default function AITutorPage() {
   const [chatKey, setChatKey] = useState(0) // 채팅 리셋용
   const [activeTab, setActiveTab] = useState<TabType>('answer')
   const [references, setReferences] = useState<Reference[]>([])
+  const [isSessionLocked, setIsSessionLocked] = useState(false) // 세션 잠금 상태
 
   // 새 채팅 시작
   const handleNewChat = useCallback(() => {
     setCurrentSessionId(undefined)
+    setSelectedLectureIds([]) // 선택 초기화
+    setIsSessionLocked(false) // 잠금 해제
     setChatKey(prev => prev + 1) // ChatInterface 리셋
     setReferences([]) // 참고자료 초기화
     setActiveTab('answer')
   }, [])
 
-  // 세션 선택
-  const handleSelectSession = useCallback((sessionId: string) => {
+  // 세션 선택 (기존 세션 불러오기)
+  const handleSelectSession = useCallback((sessionId: string, lectureIds?: string[]) => {
     setCurrentSessionId(sessionId)
+    if (lectureIds && lectureIds.length > 0) {
+      setSelectedLectureIds(lectureIds)
+      setIsSessionLocked(true) // 기존 세션은 잠금
+    }
     setChatKey(prev => prev + 1)
     setReferences([]) // 새 세션 선택 시 참고자료 초기화
     setActiveTab('answer')
+  }, [])
+
+  // 세션 생성 완료 시 (ChatInterface에서 호출)
+  const handleSessionCreated = useCallback((sessionId: string) => {
+    setCurrentSessionId(sessionId)
+    setIsSessionLocked(true) // 세션 생성되면 잠금
   }, [])
 
   // 탭 변경
@@ -84,8 +97,9 @@ export default function AITutorPage() {
             key={chatKey}
             selectedLectureIds={selectedLectureIds}
             sessionId={currentSessionId}
-            onSessionCreated={setCurrentSessionId}
+            onSessionCreated={handleSessionCreated}
             onReferencesUpdate={handleReferencesUpdate}
+            onLectureIdsLoaded={setSelectedLectureIds}
           />
         </div>
 
@@ -93,6 +107,7 @@ export default function AITutorPage() {
         <LectureSidebar
           selectedLectureIds={selectedLectureIds}
           onSelectLectureIds={setSelectedLectureIds}
+          isLocked={isSessionLocked}
         />
       </div>
     </div>

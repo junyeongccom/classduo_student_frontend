@@ -29,6 +29,7 @@ interface Course {
 interface LectureSidebarProps {
   selectedLectureIds: string[]
   onSelectLectureIds: (lectureIds: string[]) => void
+  isLocked?: boolean // 세션이 생성되면 잠금 (선택 불가)
 }
 
 // 임시 데이터 (API 없을 때 사용)
@@ -54,7 +55,7 @@ const TEMP_COURSES: Course[] = [
   }
 ]
 
-export function LectureSidebar({ selectedLectureIds, onSelectLectureIds }: LectureSidebarProps) {
+export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false }: LectureSidebarProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -124,15 +125,19 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds }: Lectu
     fetchCourses()
   }, [])
 
-  // 강의 선택 시 기존 회차 선택 초기화
+  // 강의 선택 시 기존 회차 선택 초기화 - 잠금 상태면 무시
   const handleSelectCourse = (courseId: string) => {
+    if (isLocked) return // 잠금 상태면 변경 불가
+    
     setSelectedCourseId(courseId)
     setIsDropdownOpen(false)
     onSelectLectureIds([]) // 회차 선택 초기화
   }
 
-  // 회차 토글 (복수 선택)
+  // 회차 토글 (복수 선택) - 잠금 상태면 무시
   const toggleLecture = (lectureId: string) => {
+    if (isLocked) return // 잠금 상태면 선택 불가
+    
     if (selectedLectureIds.includes(lectureId)) {
       onSelectLectureIds(selectedLectureIds.filter(id => id !== lectureId))
     } else {
@@ -163,13 +168,20 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds }: Lectu
       {/* 강의 선택 드롭다운 */}
       <div className="relative mb-4">
         <button
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm hover:border-primary-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          onClick={() => !isLocked && setIsDropdownOpen(!isDropdownOpen)}
+          disabled={isLocked}
+          className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm ${
+            isLocked 
+              ? 'border-gray-200 bg-gray-50 cursor-not-allowed' 
+              : 'border-gray-300 bg-white hover:border-primary-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
+          }`}
         >
           <span className={selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}>
             {selectedCourse?.title || '강의를 선택하세요'}
           </span>
-          <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          {!isLocked && (
+            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          )}
         </button>
         
         {/* 드롭다운 메뉴 */}
@@ -213,21 +225,30 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds }: Lectu
             ) : (
               selectedCourse.lectures.map(lecture => {
                 const isSelected = selectedLectureIds.includes(lecture.lecture_id)
+                const isDisabled = isLocked && !isSelected // 잠금 상태에서 선택 안 된 항목은 비활성화
+                
                 return (
                   <button
                     key={lecture.lecture_id}
                     onClick={() => toggleLecture(lecture.lecture_id)}
+                    disabled={isDisabled}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all ${
                       isSelected 
                         ? 'bg-primary-500 text-white shadow-sm' 
+                        : isDisabled
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-800'}`}>
+                      <p className={`text-sm font-medium ${
+                        isSelected ? 'text-white' : isDisabled ? 'text-gray-400' : 'text-gray-800'
+                      }`}>
                         {lecture.lecture_no}회차
                       </p>
-                      <p className={`text-xs ${isSelected ? 'text-primary-100' : 'text-gray-400'}`}>
+                      <p className={`text-xs ${
+                        isSelected ? 'text-primary-100' : 'text-gray-400'
+                      }`}>
                         {lecture.lecture_date}
                       </p>
                     </div>
@@ -248,11 +269,19 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds }: Lectu
 
       {/* 선택된 회차 요약 */}
       {selectedLectureIds.length > 0 && (
-        <div className="mt-4 rounded-lg bg-primary-50 px-3 py-2.5 border border-primary-100">
-          <p className="text-xs font-medium text-primary-800">
-            선택된 회차: {selectedLectureIds.length}개
+        <div className={`mt-4 rounded-lg px-3 py-2.5 border ${
+          isLocked 
+            ? 'bg-gray-50 border-gray-200' 
+            : 'bg-primary-50 border-primary-100'
+        }`}>
+          <p className={`text-xs font-medium ${isLocked ? 'text-gray-600' : 'text-primary-800'}`}>
+            {isLocked ? '현재 세션 회차' : '선택된 회차'}: {selectedLectureIds.length}개
           </p>
-          {selectedLectureIds.length > 1 && (
+          {isLocked ? (
+            <p className="mt-1 text-[10px] text-gray-500">
+              새 채팅을 시작하면 다른 회차를 선택할 수 있습니다
+            </p>
+          ) : selectedLectureIds.length > 1 && (
             <p className="mt-1 text-[10px] text-primary-600">
               복수 선택 시 후킹 질문은 제공되지 않습니다
             </p>

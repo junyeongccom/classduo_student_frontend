@@ -6,7 +6,7 @@ import { chatApi, ChatSession, SearchResult } from '@/features/ai-tutor/api/chat
 interface ChatSidebarProps {
   isOpen: boolean
   onClose: () => void
-  onSelectSession: (sessionId: string) => void
+  onSelectSession: (sessionId: string, lectureIds?: string[]) => void
   onNewChat: () => void
   currentSessionId?: string
 }
@@ -216,7 +216,7 @@ export default function ChatSidebar({
                   <div
                     key={session.id}
                     onClick={() => {
-                      onSelectSession(session.id)
+                      onSelectSession(session.id, session.lecture_ids)
                       onClose()
                     }}
                     className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors group ${

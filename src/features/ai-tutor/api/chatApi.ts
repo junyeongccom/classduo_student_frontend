@@ -70,6 +70,7 @@ export interface StoredMessage {
 export interface SessionWithMessages {
   session: ChatSession
   messages: StoredMessage[]
+  lecture_ids?: string[] // 편의용 (session.lecture_ids와 동일)
 }
 
 export interface SearchResult {
