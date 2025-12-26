@@ -8,20 +8,21 @@ import { Send, Loader2, Search } from 'lucide-react'
 import { chatApi, ChatMessage, StoredMessage, Reference } from '@/features/ai-tutor/api/chatApi'
 
 interface ChatInterfaceProps {
-  selectedJobIds: string[]
+  selectedLectureIds: string[]
   sessionId?: string
   onSessionCreated?: (sessionId: string) => void
+  onReferencesUpdate?: (references: Reference[]) => void
 }
 
-// 임시 후킹 질문 (나중에 API에서 가져옴)
-const MOCK_HOOKING_QUESTIONS = [
+// 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
+const DEFAULT_HOOKING_QUESTIONS = [
   '이 수업에서 가장 중요한 개념은 무엇인가요?',
   '이 내용을 실생활에 어떻게 적용할 수 있나요?',
   '이 주제와 관련된 최신 연구는 무엇인가요?',
   '이 개념을 더 쉽게 이해하려면 어떻게 해야 하나요?',
 ]
 
-export function ChatInterface({ selectedJobIds, sessionId, onSessionCreated }: ChatInterfaceProps) {
+export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate }: ChatInterfaceProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [references, setReferences] = useState<Reference[]>([])
@@ -29,8 +30,36 @@ export function ChatInterface({ selectedJobIds, sessionId, onSessionCreated }: C
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
   const [skipNextLoad, setSkipNextLoad] = useState(false)  // 다음 로드 건너뛰기 플래그
+  const [hookingQuestions, setHookingQuestions] = useState<string[]>(DEFAULT_HOOKING_QUESTIONS)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
+
+  // lecture_ids 변경 시 후킹 질문 로드 (단일 선택 시에만)
+  useEffect(() => {
+    const loadHookingQuestions = async () => {
+      // 복수 선택이거나 선택 없으면 기본 질문 사용
+      if (selectedLectureIds.length !== 1) {
+        setHookingQuestions(DEFAULT_HOOKING_QUESTIONS)
+        return
+      }
+      
+      try {
+        const { data, error } = await chatApi.getHookingByLecture(selectedLectureIds[0])
+        if (data && !error) {
+          // 후킹 질문이 있으면 해당 질문만 표시
+          setHookingQuestions([data.question])
+        } else {
+          // 후킹 질문이 없으면 기본 질문 사용
+          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS)
+        }
+      } catch (err) {
+        console.error('Failed to load hooking questions:', err)
+        setHookingQuestions(DEFAULT_HOOKING_QUESTIONS)
+      }
+    }
+    
+    loadHookingQuestions()
+  }, [selectedLectureIds])
 
   // 세션 변경 시 메시지 로드
   useEffect(() => {
@@ -83,7 +112,7 @@ export function ChatInterface({ selectedJobIds, sessionId, onSessionCreated }: C
 
   // 메시지 전송
   const sendMessage = useCallback(async (question: string) => {
-    if (!question.trim() || isLoading || selectedJobIds.length === 0) return
+    if (!question.trim() || isLoading || selectedLectureIds.length === 0) return
 
     setIsLoading(true)
     setError(null)
@@ -102,7 +131,7 @@ export function ChatInterface({ selectedJobIds, sessionId, onSessionCreated }: C
         if (result.error) throw new Error(result.error.message)
       } else {
         // 새 세션 생성 후 채팅
-        const sessionResult = await chatApi.createSession(selectedJobIds)
+        const sessionResult = await chatApi.createSession(selectedLectureIds)
         if (sessionResult.error || !sessionResult.data) {
           throw new Error(sessionResult.error?.message || '세션 생성 실패')
         }
@@ -124,7 +153,9 @@ export function ChatInterface({ selectedJobIds, sessionId, onSessionCreated }: C
           content: response.answer,
         }
         setMessages(prev => [...prev, assistantMessage])
-        setReferences(response.references || [])
+        const newRefs = response.references || []
+        setReferences(newRefs)
+        onReferencesUpdate?.(newRefs)  // 부모 컴포넌트에 참고자료 전달
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '채팅 중 오류가 발생했습니다'
@@ -135,7 +166,7 @@ export function ChatInterface({ selectedJobIds, sessionId, onSessionCreated }: C
     } finally {
       setIsLoading(false)
     }
-  }, [currentSessionId, selectedJobIds, isLoading, onSessionCreated])
+  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,13 +181,13 @@ export function ChatInterface({ selectedJobIds, sessionId, onSessionCreated }: C
     setInput(suggestion)
   }
 
-  // 수업일 미선택 상태
-  if (selectedJobIds.length === 0) {
+  // 수업 미선택 상태
+  if (selectedLectureIds.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-gray-400">
         <div className="text-center">
-          <p className="text-lg font-medium">수업일을 선택해주세요</p>
-          <p className="mt-2 text-sm">우측에서 수업일을 선택하면 AI 튜터와 대화할 수 있습니다</p>
+          <p className="text-lg font-medium">수업을 선택해주세요</p>
+          <p className="mt-2 text-sm">우측에서 수업을 선택하면 AI 튜터와 대화할 수 있습니다</p>
         </div>
       </div>
     )
@@ -170,7 +201,7 @@ export function ChatInterface({ selectedJobIds, sessionId, onSessionCreated }: C
         <div className="flex flex-1 flex-col items-center justify-center px-4">
           {/* 후킹 질문 목록 */}
           <div className="mb-8 w-full max-w-2xl space-y-2">
-            {MOCK_HOOKING_QUESTIONS.map((question, index) => (
+            {hookingQuestions.map((question, index) => (
               <button
                 key={index}
                 onClick={() => handleSuggestionClick(question)}

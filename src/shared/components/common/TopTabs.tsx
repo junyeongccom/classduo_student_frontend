@@ -1,18 +1,35 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { cn } from '@/shared/lib/utils'
-import { TOP_TABS } from '@/shared/constants/nav'
 import { Edit, Search } from 'lucide-react'
+
+export type TabType = 'answer' | 'notes' | 'materials'
 
 interface TopTabsProps {
   onNewChat?: () => void
   onOpenChatHistory?: () => void
+  activeTab?: TabType
+  onTabChange?: (tab: TabType) => void
+  hasReferences?: boolean
 }
 
-export function TopTabs({ onNewChat, onOpenChatHistory }: TopTabsProps) {
-  const pathname = usePathname()
+const TABS: { id: TabType; label: string }[] = [
+  { id: 'answer', label: '답변' },
+  { id: 'notes', label: '수업노트' },
+  { id: 'materials', label: '강의자료' },
+]
+
+export function TopTabs({ 
+  onNewChat, 
+  onOpenChatHistory,
+  activeTab = 'answer',
+  onTabChange,
+  hasReferences = false
+}: TopTabsProps) {
+
+  const handleTabClick = (tabId: TabType) => {
+    onTabChange?.(tabId)
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
@@ -37,22 +54,27 @@ export function TopTabs({ onNewChat, onOpenChatHistory }: TopTabsProps) {
 
         {/* 탭 메뉴 */}
         <nav className="flex items-center gap-6">
-          {TOP_TABS.map((tab) => {
-            const isActive = pathname === tab.href
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id
+            // 수업노트/강의자료 탭은 참고자료가 있을 때만 활성화
+            const isDisabled = (tab.id === 'notes' || tab.id === 'materials') && !hasReferences
 
             return (
-              <Link
+              <button
                 key={tab.id}
-                href={tab.href}
+                onClick={() => handleTabClick(tab.id)}
+                disabled={isDisabled}
                 className={cn(
                   'text-sm transition-colors',
                   isActive
                     ? 'text-gray-900 font-medium'
+                    : isDisabled
+                    ? 'text-gray-300 cursor-not-allowed'
                     : 'text-gray-500 hover:text-gray-700'
                 )}
               >
                 {tab.label}
-              </Link>
+              </button>
             )
           })}
         </nav>

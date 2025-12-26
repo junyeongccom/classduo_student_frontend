@@ -31,7 +31,7 @@ export interface Reference {
 
 export interface ChatRequest {
   question: string
-  job_ids: string[]
+  lecture_ids: string[]
   chat_history: ChatMessage[]
 }
 
@@ -53,7 +53,7 @@ export interface ChatSession {
   id: string
   user_id: string
   title: string | null
-  job_ids: string[]
+  lecture_ids: string[]
   created_at: string
   updated_at: string
 }
@@ -94,7 +94,14 @@ export const chatApi = {
   },
 
   /**
-   * 후킹 질문/답변 조회
+   * 후킹 질문/답변 조회 (lecture_id 기반)
+   */
+  async getHookingByLecture(lectureId: string): Promise<{ data: HookingResponse | null; error: any }> {
+    return apiRequest<HookingResponse>(`/ai-tutor/hooking/lecture/${lectureId}`)
+  },
+
+  /**
+   * 후킹 질문/답변 조회 (job_id 기반 - 레거시)
    */
   async getHooking(jobId: string): Promise<{ data: HookingResponse | null; error: any }> {
     return apiRequest<HookingResponse>(`/ai-tutor/hooking/${jobId}`)
@@ -107,10 +114,10 @@ export const chatApi = {
   /**
    * 새 채팅 세션 생성
    */
-  async createSession(jobIds: string[], title?: string): Promise<{ data: ChatSession | null; error: any }> {
+  async createSession(lectureIds: string[], title?: string): Promise<{ data: ChatSession | null; error: any }> {
     return apiRequest<ChatSession>('/ai-tutor/sessions', {
       method: 'POST',
-      body: { job_ids: jobIds, title },
+      body: { lecture_ids: lectureIds, title },
       auth: true,
     })
   },

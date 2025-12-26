@@ -1,35 +1,61 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { TopTabs } from '@/shared/components/common'
+import { TopTabs, TabType } from '@/shared/components/common'
 import { ChatInterface } from './components/ChatInterface'
 import { LectureSidebar } from './components/LectureSidebar'
 import ChatSidebar from './components/ChatSidebar'
+import { ReferencePanel } from './components/ReferencePanel'
+import { Reference } from '@/features/ai-tutor/api/chatApi'
 
 export default function AITutorPage() {
-  const [selectedJobIds, setSelectedJobIds] = useState<string[]>([])
+  const [selectedLectureIds, setSelectedLectureIds] = useState<string[]>([])
   const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>()
   const [chatKey, setChatKey] = useState(0) // 채팅 리셋용
+  const [activeTab, setActiveTab] = useState<TabType>('answer')
+  const [references, setReferences] = useState<Reference[]>([])
 
   // 새 채팅 시작
   const handleNewChat = useCallback(() => {
     setCurrentSessionId(undefined)
     setChatKey(prev => prev + 1) // ChatInterface 리셋
+    setReferences([]) // 참고자료 초기화
+    setActiveTab('answer')
   }, [])
 
   // 세션 선택
   const handleSelectSession = useCallback((sessionId: string) => {
     setCurrentSessionId(sessionId)
     setChatKey(prev => prev + 1)
+    setReferences([]) // 새 세션 선택 시 참고자료 초기화
+    setActiveTab('answer')
+  }, [])
+
+  // 탭 변경
+  const handleTabChange = useCallback((tab: TabType) => {
+    setActiveTab(tab)
+  }, [])
+
+  // 참고자료 업데이트 (ChatInterface에서 호출)
+  const handleReferencesUpdate = useCallback((newRefs: Reference[]) => {
+    setReferences(newRefs)
+  }, [])
+
+  // 참고자료 패널 닫기
+  const handleClosePanel = useCallback(() => {
+    setActiveTab('answer')
   }, [])
 
   return (
     <div className="flex h-screen flex-col">
-      {/* 상단 탭 - 새 채팅 / 채팅 기록 */}
+      {/* 상단 탭 - 새 채팅 / 채팅 기록 / 답변|수업노트|강의자료 */}
       <TopTabs 
         onNewChat={handleNewChat}
-        onOpenChatHistory={() => setIsChatSidebarOpen(true)} 
+        onOpenChatHistory={() => setIsChatSidebarOpen(true)}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        hasReferences={references.length > 0}
       />
 
       {/* 채팅 사이드바 (목록/검색) */}
@@ -41,22 +67,32 @@ export default function AITutorPage() {
         currentSessionId={currentSessionId}
       />
 
+      {/* 참고자료 패널 (수업노트/강의자료 탭 선택 시) */}
+      {activeTab !== 'answer' && references.length > 0 && (
+        <ReferencePanel
+          references={references}
+          activeTab={activeTab}
+          onClose={handleClosePanel}
+        />
+      )}
+
       {/* 메인 콘텐츠 영역 */}
       <div className="flex flex-1 overflow-hidden">
         {/* 채팅 인터페이스 */}
         <div className="flex-1">
           <ChatInterface 
             key={chatKey}
-            selectedJobIds={selectedJobIds}
+            selectedLectureIds={selectedLectureIds}
             sessionId={currentSessionId}
             onSessionCreated={setCurrentSessionId}
+            onReferencesUpdate={handleReferencesUpdate}
           />
         </div>
 
-        {/* 우측 사이드바 - 수업일 선택 */}
+        {/* 우측 사이드바 - 수업 선택 */}
         <LectureSidebar
-          selectedJobIds={selectedJobIds}
-          onSelectJobIds={setSelectedJobIds}
+          selectedLectureIds={selectedLectureIds}
+          onSelectLectureIds={setSelectedLectureIds}
         />
       </div>
     </div>
