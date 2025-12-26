@@ -11,6 +11,8 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: '/auth/me/password',
     DELETE_ACCOUNT: '/auth/me',
     UPDATE_PROFILE: '/auth/me',
+    RESET_PASSWORD: '/auth/reset-password',
+    UPDATE_PASSWORD: '/auth/update-password',
   },
   
   // Recording (추후 사용)

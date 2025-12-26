@@ -6,7 +6,12 @@ import { cn } from '@/shared/lib/utils'
 import { TOP_TABS } from '@/shared/constants/nav'
 import { Edit, Search } from 'lucide-react'
 
-export function TopTabs() {
+interface TopTabsProps {
+  onNewChat?: () => void
+  onOpenChatHistory?: () => void
+}
+
+export function TopTabs({ onNewChat, onOpenChatHistory }: TopTabsProps) {
   const pathname = usePathname()
 
   return (
@@ -14,10 +19,18 @@ export function TopTabs() {
       {/* 좌측: 아이콘 버튼들 + 탭 메뉴 */}
       <div className="flex items-center gap-24">
         <div className="flex items-center gap-2">
-          <button className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+          <button 
+            onClick={onNewChat}
+            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+            title="새 채팅"
+          >
             <Edit className="h-4 w-4" />
           </button>
-          <button className="rounded-lg p-2 text-gray-500 hover:bg-gray-100">
+          <button 
+            onClick={onOpenChatHistory}
+            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+            title="채팅 기록 및 검색"
+          >
             <Search className="h-4 w-4" />
           </button>
         </div>
