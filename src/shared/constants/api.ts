@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
     UPDATE_PROFILE: '/auth/me',
     RESET_PASSWORD: '/auth/reset-password',
     UPDATE_PASSWORD: '/auth/update-password',
+    REFRESH: '/auth/refresh',
   },
   
   // Recording (추후 사용)

@@ -17,6 +17,7 @@ interface Lecture {
   lecture_no: number
   lecture_date: string
   status: string
+  is_available?: boolean // AI 튜터 사용 가능 여부
 }
 
 interface Course {
@@ -102,6 +103,7 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
             lecture_no: lec.lecture_no,
             lecture_date: lec.lecture_date,
             status: lec.status,
+            is_available: lec.is_available ?? false, // 기본값 false
           }))
         }))
         
@@ -225,7 +227,7 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
             ) : (
               selectedCourse.lectures.map(lecture => {
                 const isSelected = selectedLectureIds.includes(lecture.lecture_id)
-                const isDisabled = isLocked && !isSelected // 잠금 상태에서 선택 안 된 항목은 비활성화
+                const isDisabled = (isLocked && !isSelected) || !lecture.is_available // 잠금 상태 또는 사용 불가능한 회차는 비활성화
                 
                 return (
                   <button
@@ -239,6 +241,7 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}
+                    title={!lecture.is_available ? '강의자료가 준비되지 않은 회차입니다' : undefined}
                   >
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${

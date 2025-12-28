@@ -84,6 +84,15 @@ export const authApi = {
       body: data,
       auth: true,
     }),
+
+  /**
+   * 토큰 갱신
+   */
+  refreshToken: (refreshToken: string) =>
+    apiRequest<AuthTokenResponse>(API_ENDPOINTS.AUTH.REFRESH, {
+      method: 'POST',
+      body: { refresh_token: refreshToken },
+    }),
 }
 
 

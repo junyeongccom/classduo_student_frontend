@@ -1,4 +1,5 @@
-import { API_BASE_URL, TOKEN_KEY } from './utils'
+import { API_BASE_URL, TOKEN_KEY, REFRESH_TOKEN_KEY } from './utils'
+import { authApi } from '@/features/auth/api/authApi'
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -46,11 +47,55 @@ export async function apiRequest<T>(
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    let response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method,
       headers: requestHeaders,
       body: body ? JSON.stringify(body) : undefined,
     })
+
+    // 401 에러 발생 시 토큰 갱신 시도
+    if (response.status === 401 && auth) {
+      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem(REFRESH_TOKEN_KEY) : null
+      
+      if (refreshToken) {
+        try {
+          // 토큰 갱신 시도
+          const refreshResult = await authApi.refreshToken(refreshToken)
+          
+          if (refreshResult.data && !refreshResult.error) {
+            // 새 토큰 저장
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(TOKEN_KEY, refreshResult.data.access_token)
+              if (refreshResult.data.refresh_token) {
+                localStorage.setItem(REFRESH_TOKEN_KEY, refreshResult.data.refresh_token)
+              }
+            }
+            
+            // 원래 요청 재시도
+            const newToken = refreshResult.data.access_token
+            requestHeaders['Authorization'] = `Bearer ${newToken}`
+            
+            response = await fetch(`${API_BASE_URL}${endpoint}`, {
+              method,
+              headers: requestHeaders,
+              body: body ? JSON.stringify(body) : undefined,
+            })
+          } else {
+            // 토큰 갱신 실패 - 로그아웃 처리
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem(TOKEN_KEY)
+              localStorage.removeItem(REFRESH_TOKEN_KEY)
+            }
+          }
+        } catch (refreshError) {
+          // 토큰 갱신 실패 - 로그아웃 처리
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(TOKEN_KEY)
+            localStorage.removeItem(REFRESH_TOKEN_KEY)
+          }
+        }
+      }
+    }
 
     const data = await response.json()
 

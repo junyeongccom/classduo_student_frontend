@@ -2,6 +2,7 @@
  * AI 튜터 채팅 API
  */
 import { apiRequest } from '@/shared/lib/api'
+import { API_BASE_URL, TOKEN_KEY } from '@/shared/lib/utils'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -16,6 +17,8 @@ export interface Reference {
     chunk_index?: number
     start_time?: number
     end_time?: number
+    material_id?: string
+    original_filename?: string
     page_number?: number
     image_path?: string
     image_width?: number
@@ -27,6 +30,7 @@ export interface Reference {
     start_index: number
     end_index: number
   }>
+  keywords?: string[]
 }
 
 export interface ChatRequest {
@@ -46,6 +50,7 @@ export interface HookingResponse {
   topic: string
   question: string
   answer: string
+  reference_data?: Reference[] | null  // 참고자료 (선택적)
 }
 
 // 채팅 세션 관련 타입
@@ -64,6 +69,7 @@ export interface StoredMessage {
   role: 'user' | 'assistant'
   content: string
   reference_data: Reference[] | null
+  summary_keywords: string | null
   created_at: string
 }
 
@@ -81,6 +87,23 @@ export interface SearchResult {
   message_role: string
   message_created_at: string
   rank: number
+}
+
+export interface StreamProgressData {
+  type: 'status' | 'source' | 'result' | 'error'
+  step: 'searching' | 'selecting' | 'generating' | 'extracting' | 'complete'
+  message?: string
+  source_type?: 'recording' | 'material'
+  data?: {
+    title?: string
+    preview?: string
+    score?: number
+    sources_count?: number
+    answer?: string
+    references?: Reference[]
+    chat_history?: ChatMessage[]
+    summary_keywords?: string
+  }
 }
 
 export const chatApi = {
@@ -160,6 +183,70 @@ export const chatApi = {
       body: { question },
       auth: true,
     })
+  },
+
+  /**
+   * 세션 내 채팅 (SSE 스트리밍, DB 저장)
+   */
+  async sessionChatStream(
+    sessionId: string,
+    question: string,
+    onProgress: (data: StreamProgressData) => void,
+    onComplete: (result: ChatResponse) => void,
+    onError: (error: Error) => void
+  ): Promise<void> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai-tutor/sessions/${sessionId}/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ question }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('No response body')
+      }
+
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              
+              if (data.type === 'result') {
+                onComplete(data.data)
+              } else {
+                onProgress(data)
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error('Unknown error'))
+    }
   },
 
   /**

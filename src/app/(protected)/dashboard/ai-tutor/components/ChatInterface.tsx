@@ -11,8 +11,9 @@ interface ChatInterfaceProps {
   selectedLectureIds: string[]
   sessionId?: string
   onSessionCreated?: (sessionId: string) => void
-  onReferencesUpdate?: (references: Reference[]) => void
+  onReferencesUpdate?: (messageIndex: number, references: Reference[]) => void
   onLectureIdsLoaded?: (lectureIds: string[]) => void // 세션 로드 시 lecture_ids 전달
+  onMessagesUpdate?: (messages: ChatMessage[]) => void // 메시지 배열 업데이트
 }
 
 // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
@@ -23,14 +24,25 @@ const DEFAULT_HOOKING_QUESTIONS = [
   '이 개념을 더 쉽게 이해하려면 어떻게 해야 하나요?',
 ]
 
-export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded }: ChatInterfaceProps) {
+export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate }: ChatInterfaceProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [references, setReferences] = useState<Reference[]>([])
+  const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingStatusItems, setLoadingStatusItems] = useState<Array<{
+    step: string
+    message: string
+    sources: Array<{ 
+      type: 'recording' | 'material'
+      title: string
+      preview?: string
+    }>
+  }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<string[]>(DEFAULT_HOOKING_QUESTIONS)
+  const [hookingQuestions, setHookingQuestions] = useState<Array<{ question: string; answer?: string; reference_data?: Reference[] | null }>>(
+    DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q }))
+  )
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
@@ -38,24 +50,28 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   // lecture_ids 변경 시 후킹 질문 로드 (단일 선택 시에만)
   useEffect(() => {
     const loadHookingQuestions = async () => {
-      // 복수 선택이거나 선택 없으면 기본 질문 사용
+      // 복수 선택이거나 선택 없으면 후킹 질문 숨김
       if (selectedLectureIds.length !== 1) {
-        setHookingQuestions(DEFAULT_HOOKING_QUESTIONS)
+        setHookingQuestions([])
         return
       }
       
       try {
         const { data, error } = await chatApi.getHookingByLecture(selectedLectureIds[0])
         if (data && !error) {
-          // 후킹 질문이 있으면 해당 질문만 표시
-          setHookingQuestions([data.question])
+          // 후킹 질문이 있으면 해당 질문과 답변, 참고자료 함께 저장
+          setHookingQuestions([{
+            question: data.question,
+            answer: data.answer,
+            reference_data: data.reference_data || null
+          }])
         } else {
           // 후킹 질문이 없으면 기본 질문 사용
-          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS)
+          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
         }
       } catch (err) {
         console.error('Failed to load hooking questions:', err)
-        setHookingQuestions(DEFAULT_HOOKING_QUESTIONS)
+        setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
       }
     }
     
@@ -76,12 +92,31 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         try {
           const { data, error } = await chatApi.getSession(sessionId)
           if (data && !error) {
-            const loadedMessages: ChatMessage[] = data.messages.map((m: StoredMessage) => ({
+            // 메시지 로드 (summary_keywords 포함)
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null }> = data.messages.map((m: StoredMessage) => ({
               role: m.role,
               content: m.content,
+              summary_keywords: m.summary_keywords || null,
             }))
             setMessages(loadedMessages)
             setCurrentSessionId(sessionId)
+            
+            // 메시지 배열을 부모에게 전달 (키워드 표시를 위해 필요)
+            if (onMessagesUpdate) {
+              onMessagesUpdate(loadedMessages)
+            }
+            
+            // 각 assistant 메시지의 참고자료를 부모에게 전달
+            // 메시지 배열에서 실제 assistant 메시지의 인덱스를 찾아서 전달
+            loadedMessages.forEach((msg, index) => {
+              if (msg.role === 'assistant') {
+                // 원본 메시지 배열에서 해당 인덱스의 메시지 찾기
+                const originalMessage = data.messages[index]
+                if (originalMessage && originalMessage.reference_data && originalMessage.reference_data.length > 0 && onReferencesUpdate) {
+                  onReferencesUpdate(index, originalMessage.reference_data)
+                }
+              }
+            })
             
             // 세션의 lecture_ids를 부모에게 전달 (session 객체에서 가져옴)
             if (data.session?.lecture_ids && onLectureIdsLoaded) {
@@ -117,60 +152,156 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // 메시지 전송
+  // 메시지 배열 업데이트 시 부모에게 전달
+  useEffect(() => {
+    if (onMessagesUpdate) {
+      onMessagesUpdate(messages)
+    }
+  }, [messages, onMessagesUpdate])
+
+  // 참고자료 업데이트를 useEffect에서 처리 (렌더링 중 setState 방지)
+  useEffect(() => {
+    if (pendingReferences && onReferencesUpdate) {
+      // 메시지 배열이 업데이트된 후에 참고자료 업데이트
+      const currentMessageCount = messages.length
+      if (pendingReferences.messageIndex < currentMessageCount) {
+        onReferencesUpdate(pendingReferences.messageIndex, pendingReferences.refs)
+        setPendingReferences(null)
+      }
+    }
+  }, [pendingReferences, onReferencesUpdate, messages.length])
+
+  // 메시지 전송 (SSE 스트리밍)
   const sendMessage = useCallback(async (question: string) => {
     if (!question.trim() || isLoading || selectedLectureIds.length === 0) return
 
     setIsLoading(true)
     setError(null)
+    setLoadingStatusItems([])
 
     // 사용자 메시지 즉시 표시
     const userMessage: ChatMessage = { role: 'user', content: question }
     setMessages(prev => [...prev, userMessage])
 
     try {
-      let response
+      let sessionIdToUse = currentSessionId
 
-      if (currentSessionId) {
-        // 기존 세션에서 채팅
-        const result = await chatApi.sessionChat(currentSessionId, question)
-        response = result.data
-        if (result.error) throw new Error(result.error.message)
-      } else {
-        // 새 세션 생성 후 채팅
+      // 세션이 없으면 생성
+      if (!sessionIdToUse) {
         const sessionResult = await chatApi.createSession(selectedLectureIds)
         if (sessionResult.error || !sessionResult.data) {
+          if (sessionResult.error && sessionResult.status === 401) {
+            throw new Error('인증이 만료되었습니다. 페이지를 새로고침해주세요.')
+          }
           throw new Error(sessionResult.error?.message || '세션 생성 실패')
         }
         
-        const newSessionId = sessionResult.data.id
-        selfCreatedSessionId.current = newSessionId  // 자신이 생성한 세션임을 표시
-        setCurrentSessionId(newSessionId)
-        onSessionCreated?.(newSessionId)
-
-        // 세션 내 채팅
-        const chatResult = await chatApi.sessionChat(newSessionId, question)
-        response = chatResult.data
-        if (chatResult.error) throw new Error(chatResult.error.message)
+        sessionIdToUse = sessionResult.data.id
+        selfCreatedSessionId.current = sessionIdToUse
+        setCurrentSessionId(sessionIdToUse)
+        onSessionCreated?.(sessionIdToUse)
       }
 
-      if (response) {
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: response.answer,
+      // SSE 스트리밍으로 채팅
+      await chatApi.sessionChatStream(
+        sessionIdToUse,
+        question,
+        // onProgress: 진행 상황 업데이트 (누적)
+        (progressData) => {
+          if (progressData.type === 'status') {
+            // 새로운 상태 메시지 추가
+            setLoadingStatusItems(prev => [...prev, {
+              step: progressData.step,
+              message: progressData.message || '',
+              sources: []
+            }])
+          } else if (progressData.type === 'source' && progressData.data) {
+            // 마지막 상태 항목에 소스 추가
+            setLoadingStatusItems(prev => {
+              if (prev.length === 0) {
+                // 상태 메시지가 없으면 기본 상태 추가
+                return [{
+                  step: progressData.step || 'searching',
+                  message: '관련 자료를 검색하는 중...',
+                  sources: [{
+                    type: progressData.source_type!,
+                    title: progressData.data.title || '',
+                    preview: progressData.data.preview
+                  }]
+                }]
+              }
+              const updated = [...prev]
+              const lastItem = updated[updated.length - 1]
+              updated[updated.length - 1] = {
+                ...lastItem,
+                sources: [...lastItem.sources, {
+                  type: progressData.source_type!,
+                  title: progressData.data.title || '',
+                  preview: progressData.data.preview
+                }]
+              }
+              return updated
+            })
+          }
+        },
+        // onComplete: 최종 결과 처리
+        (result) => {
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: result.answer,
+          }
+          setMessages(prev => {
+            const updated = [...prev, assistantMessage]
+            const messageIndex = updated.length - 1
+            const newRefs = result.references || []
+            
+            if (newRefs.length > 0) {
+              setPendingReferences({ messageIndex, refs: newRefs })
+            }
+            
+            return updated
+          })
+          setLoadingStatusItems([])
+          setIsLoading(false)
+        },
+        // onError: 에러 처리
+        (error) => {
+          const errorMessage = error.message || '채팅 중 오류가 발생했습니다'
+          setError(errorMessage)
+          console.error('Chat error:', error)
+          
+          if (errorMessage.includes('인증이 만료되었습니다')) {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('classduo_access_token')
+              localStorage.removeItem('classduo_refresh_token')
+              setTimeout(() => {
+                window.location.reload()
+              }, 2000)
+            }
+          }
+          
+          setMessages(prev => prev.slice(0, -1))
+          setLoadingStatusItems([])
+          setIsLoading(false)
         }
-        setMessages(prev => [...prev, assistantMessage])
-        const newRefs = response.references || []
-        setReferences(newRefs)
-        onReferencesUpdate?.(newRefs)  // 부모 컴포넌트에 참고자료 전달
-      }
+      )
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '채팅 중 오류가 발생했습니다'
       setError(errorMessage)
       console.error('Chat error:', err)
-      // 실패 시 사용자 메시지 제거
+      
+      if (errorMessage.includes('인증이 만료되었습니다')) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('classduo_access_token')
+          localStorage.removeItem('classduo_refresh_token')
+          setTimeout(() => {
+            window.location.reload()
+          }, 2000)
+        }
+      }
+      
       setMessages(prev => prev.slice(0, -1))
-    } finally {
+      setLoadingStatusItems([])
       setIsLoading(false)
     }
   }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate])
@@ -184,8 +315,61 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     await sendMessage(question)
   }
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setInput(suggestion)
+  const handleSuggestionClick = async (hooking: { question: string; answer?: string; reference_data?: Reference[] | null }) => {
+    // 미리 저장된 답변이 있으면 바로 표시
+    if (hooking.answer) {
+      // 사용자 메시지 추가
+      const userMessage: ChatMessage = {
+        role: 'user',
+        content: hooking.question,
+      }
+      setMessages(prev => [...prev, userMessage])
+      
+      // AI 답변 추가
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: hooking.answer,
+      }
+      setMessages(prev => {
+        const updated = [...prev, assistantMessage]
+        const messageIndex = updated.length - 1
+        
+        // 참고자료가 있으면 부모에게 전달
+        if (hooking.reference_data && hooking.reference_data.length > 0 && onReferencesUpdate) {
+          setPendingReferences({ messageIndex, refs: hooking.reference_data })
+        }
+        
+        return updated
+      })
+      
+      // 세션이 없으면 생성하고 메시지 저장
+      if (!currentSessionId) {
+        try {
+          const sessionResult = await chatApi.createSession(selectedLectureIds)
+          if (sessionResult.data) {
+            const newSessionId = sessionResult.data.id
+            selfCreatedSessionId.current = newSessionId
+            setCurrentSessionId(newSessionId)
+            onSessionCreated?.(newSessionId)
+            
+            // 메시지 저장 (백그라운드)
+            chatApi.sessionChat(newSessionId, hooking.question).catch(err => {
+              console.error('Failed to save hooking message:', err)
+            })
+          }
+        } catch (err) {
+          console.error('Failed to create session for hooking:', err)
+        }
+      } else {
+        // 기존 세션에 메시지 저장 (백그라운드)
+        chatApi.sessionChat(currentSessionId, hooking.question).catch(err => {
+          console.error('Failed to save hooking message:', err)
+        })
+      }
+    } else {
+      // 미리 저장된 답변이 없으면 기존처럼 sendMessage 호출
+      setInput(hooking.question)
+    }
   }
 
   // 수업 미선택 상태
@@ -208,14 +392,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         <div className="flex flex-1 flex-col items-center justify-center px-4">
           {/* 후킹 질문 목록 */}
           <div className="mb-8 w-full max-w-2xl space-y-2">
-            {hookingQuestions.map((question, index) => (
+            {hookingQuestions.map((hooking, index) => (
               <button
                 key={index}
-                onClick={() => handleSuggestionClick(question)}
+                onClick={() => handleSuggestionClick(hooking)}
                 className="flex w-full items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
               >
                 <Search className="h-4 w-4 text-gray-400" />
-                <span>{question}</span>
+                <span>{hooking.question}</span>
               </button>
             ))}
           </div>
@@ -273,10 +457,60 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               </div>
             </div>
           ))}
-          {isLoading && (
+          {isLoading && loadingStatusItems.length > 0 && (
             <div className="flex justify-start">
-              <div className="rounded-2xl bg-gray-100 px-4 py-3">
-                <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+              <div className="rounded-2xl bg-gray-50 border border-gray-200 px-5 py-4 max-w-[85%] w-full">
+                <div className="flex items-start gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary-500 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 space-y-4">
+                    {/* 누적된 상태 메시지와 소스 목록 */}
+                    {loadingStatusItems.map((statusItem, statusIdx) => (
+                      <div key={statusIdx} className="space-y-3">
+                        {/* 상태 메시지 */}
+                        <p className="text-sm font-medium text-gray-900">{statusItem.message}</p>
+                        
+                        {/* 해당 상태의 소스 목록 */}
+                        {statusItem.sources.length > 0 && (
+                          <div className="space-y-2 pl-0">
+                            <div className="space-y-2">
+                              {statusItem.sources.map((source, sourceIdx) => (
+                                <div
+                                  key={`${statusIdx}-${sourceIdx}`}
+                                  className="flex items-start gap-3 px-4 py-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                                >
+                                  <div className="flex-shrink-0 mt-0.5">
+                                    {source.type === 'recording' ? (
+                                      <div className="w-9 h-9 rounded-full bg-primary-50 border border-primary-200 flex items-center justify-center">
+                                        <span className="text-primary-600 text-base">🎙️</span>
+                                      </div>
+                                    ) : (
+                                      <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center">
+                                        <span className="text-blue-600 text-base">📄</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900 mb-1">
+                                      {source.title}
+                                    </p>
+                                    {source.preview && (
+                                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">
+                                        {source.preview}
+                                      </p>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-1.5">
+                                      {source.type === 'recording' ? '수업 녹음본' : '강의자료'}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}
