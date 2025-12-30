@@ -23,6 +23,12 @@ export const API_ENDPOINTS = {
     GET_TRANSCRIPT: (jobId: string) => `/recordings/audio/jobs/${jobId}/transcript`,
   },
 
+  // Review
+  REVIEW: {
+    GET_LECTURE_LIST: (courseId: string) => `/reviews/courses/${courseId}/lectures`,
+    GET_CAROUSEL: (lectureId: string) => `/reviews/lectures/${lectureId}/carousel`,
+  },
+
   // Health
   HEALTH: '/health',
 } as const

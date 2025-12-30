@@ -7,6 +7,175 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, Loader2, Search } from 'lucide-react'
 import { chatApi, ChatMessage, StoredMessage, Reference } from '@/features/ai-tutor/api/chatApi'
 
+// 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
+function renderMarkdown(text: string) {
+  const lines = text.split('\n')
+  const elements: JSX.Element[] = []
+  let currentParagraph: string[] = []
+  let inCodeBlock = false
+  let codeBlockContent: string[] = []
+  let inList = false
+  let listItems: string[] = []
+
+  const flushParagraph = () => {
+    if (currentParagraph.length > 0) {
+      const paragraphText = currentParagraph.join('\n')
+      if (paragraphText.trim()) {
+        elements.push(
+          <p key={elements.length} className="mb-4 last:mb-0 leading-relaxed">
+            {parseInlineMarkdown(paragraphText)}
+          </p>
+        )
+      }
+      currentParagraph = []
+    }
+  }
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      elements.push(
+        <ul key={elements.length} className="list-disc ml-6 mb-4 space-y-1.5">
+          {listItems.map((item, idx) => (
+            <li key={idx} className="leading-relaxed">
+              {parseInlineMarkdown(item)}
+            </li>
+          ))}
+        </ul>
+      )
+      listItems = []
+      inList = false
+    }
+  }
+
+  const parseInlineMarkdown = (text: string): (string | JSX.Element)[] => {
+    const parts: (string | JSX.Element)[] = []
+    const boldRegex = /\*\*(.+?)\*\*/g
+    let lastIndex = 0
+    let match
+    let keyCounter = 0
+
+    // **bold** 처리
+    while ((match = boldRegex.exec(text)) !== null) {
+      // 볼드 이전 텍스트
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index))
+      }
+      // 볼드 텍스트
+      parts.push(
+        <strong key={`bold-${keyCounter++}`} className="font-semibold text-gray-900">
+          {match[1]}
+        </strong>
+      )
+      lastIndex = match.index + match[0].length
+    }
+
+    // 남은 텍스트
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex))
+    }
+
+    return parts.length > 0 ? parts : [text]
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const trimmedLine = line.trim()
+
+    // 코드 블록 처리
+    if (trimmedLine.startsWith('```')) {
+      if (inCodeBlock) {
+        // 코드 블록 종료
+        flushParagraph()
+        flushList()
+        elements.push(
+          <pre key={elements.length} className="bg-gray-100 rounded-lg p-4 my-4 overflow-x-auto border border-gray-200">
+            <code className="text-sm text-gray-800 font-mono">{codeBlockContent.join('\n')}</code>
+          </pre>
+        )
+        codeBlockContent = []
+        inCodeBlock = false
+      } else {
+        // 코드 블록 시작
+        flushParagraph()
+        flushList()
+        inCodeBlock = true
+      }
+      continue
+    }
+
+    if (inCodeBlock) {
+      codeBlockContent.push(line)
+      continue
+    }
+
+    // 헤딩 처리
+    if (trimmedLine.startsWith('### ')) {
+      flushParagraph()
+      flushList()
+      const headingText = trimmedLine.replace(/^###\s+/, '')
+      elements.push(
+        <h3 key={elements.length} className="text-base font-semibold mb-3 mt-6 first:mt-0 text-gray-900">
+          {parseInlineMarkdown(headingText)}
+        </h3>
+      )
+      continue
+    }
+
+    if (trimmedLine.startsWith('## ')) {
+      flushParagraph()
+      flushList()
+      const headingText = trimmedLine.replace(/^##\s+/, '')
+      elements.push(
+        <h2 key={elements.length} className="text-lg font-semibold mb-3 mt-6 first:mt-0 text-gray-900">
+          {parseInlineMarkdown(headingText)}
+        </h2>
+      )
+      continue
+    }
+
+    if (trimmedLine.startsWith('# ')) {
+      flushParagraph()
+      flushList()
+      const headingText = trimmedLine.replace(/^#\s+/, '')
+      elements.push(
+        <h1 key={elements.length} className="text-xl font-semibold mb-4 mt-6 first:mt-0 text-gray-900">
+          {parseInlineMarkdown(headingText)}
+        </h1>
+      )
+      continue
+    }
+
+    // 리스트 항목 처리
+    if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+      flushParagraph()
+      if (!inList) {
+        inList = true
+      }
+      const listText = trimmedLine.replace(/^[-*]\s+/, '')
+      listItems.push(listText)
+      continue
+    }
+
+    // 빈 줄 처리
+    if (trimmedLine === '') {
+      flushParagraph()
+      flushList()
+      continue
+    }
+
+    // 일반 텍스트
+    if (inList) {
+      flushList()
+    }
+    currentParagraph.push(line)
+  }
+
+  flushParagraph()
+  flushList()
+
+  return <div className="markdown-content">{elements}</div>
+}
+
 interface ChatInterfaceProps {
   selectedLectureIds: string[]
   sessionId?: string
@@ -59,11 +228,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       try {
         const { data, error } = await chatApi.getHookingByLecture(selectedLectureIds[0])
         if (data && !error) {
-          // 후킹 질문이 있으면 해당 질문과 답변, 참고자료 함께 저장
+          // 후킹 질문이 있으면 해당 질문과 답변, 참고자료, 키워드 함께 저장
           setHookingQuestions([{
             question: data.question,
             answer: data.answer,
-            reference_data: data.reference_data || null
+            reference_data: data.reference_data || null,
+            summary_keywords: data.summary_keywords || null
           }])
         } else {
           // 후킹 질문이 없으면 기본 질문 사용
@@ -246,9 +416,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         },
         // onComplete: 최종 결과 처리
         (result) => {
-          const assistantMessage: ChatMessage = {
+          const assistantMessage: ChatMessage & { summary_keywords?: string | null } = {
             role: 'assistant',
             content: result.answer,
+            summary_keywords: result.summary_keywords || null,
           }
           setMessages(prev => {
             const updated = [...prev, assistantMessage]
@@ -315,7 +486,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     await sendMessage(question)
   }
 
-  const handleSuggestionClick = async (hooking: { question: string; answer?: string; reference_data?: Reference[] | null }) => {
+  const handleSuggestionClick = async (hooking: { question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
     if (hooking.answer) {
       // 사용자 메시지 추가
@@ -326,9 +497,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       setMessages(prev => [...prev, userMessage])
       
       // AI 답변 추가
-      const assistantMessage: ChatMessage = {
+      const assistantMessage: ChatMessage & { summary_keywords?: string | null } = {
         role: 'assistant',
         content: hooking.answer,
+        summary_keywords: hooking.summary_keywords || null,
       }
       setMessages(prev => {
         const updated = [...prev, assistantMessage]
@@ -352,8 +524,13 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             setCurrentSessionId(newSessionId)
             onSessionCreated?.(newSessionId)
             
-            // 메시지 저장 (백그라운드)
-            chatApi.sessionChat(newSessionId, hooking.question).catch(err => {
+            // 후킹 질문/답변 저장 (미리 준비된 답변 사용)
+            chatApi.saveHookingMessage(newSessionId, {
+              question: hooking.question,
+              answer: hooking.answer,
+              reference_data: hooking.reference_data,
+              summary_keywords: hooking.summary_keywords,
+            }).catch(err => {
               console.error('Failed to save hooking message:', err)
             })
           }
@@ -361,8 +538,13 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           console.error('Failed to create session for hooking:', err)
         }
       } else {
-        // 기존 세션에 메시지 저장 (백그라운드)
-        chatApi.sessionChat(currentSessionId, hooking.question).catch(err => {
+        // 기존 세션에 후킹 질문/답변 저장 (미리 준비된 답변 사용)
+        chatApi.saveHookingMessage(currentSessionId, {
+          question: hooking.question,
+          answer: hooking.answer,
+          reference_data: hooking.reference_data,
+          summary_keywords: hooking.summary_keywords,
+        }).catch(err => {
           console.error('Failed to save hooking message:', err)
         })
       }
@@ -440,23 +622,30 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     <div className="flex h-full flex-col">
       {/* 메시지 영역 */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="mx-auto max-w-2xl space-y-6">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                  message.role === 'user'
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 text-gray-900'
-                }`}
-              >
-                <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-              </div>
-            </div>
-          ))}
+        <div className="mx-auto max-w-3xl space-y-8">
+          {messages.map((message, index) => {
+            if (message.role === 'user') {
+              // 사용자 메시지: 말풍선으로 표시 (오른쪽 정렬)
+              return (
+                <div key={index} className="flex justify-end">
+                  <div className="max-w-[85%] rounded-2xl bg-primary-500 px-4 py-3">
+                    <p className="whitespace-pre-wrap text-sm text-white">{message.content}</p>
+                  </div>
+                </div>
+              )
+            } else {
+              // AI 답변: 말풍선 없이 자유롭게 펼쳐서 표시 (왼쪽 정렬, 마크다운 스타일)
+              return (
+                <div key={index} className="flex justify-start">
+                  <div className="w-full max-w-none">
+                    <div className="text-gray-900 text-sm leading-relaxed">
+                      {renderMarkdown(message.content)}
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+          })}
           {isLoading && loadingStatusItems.length > 0 && (
             <div className="flex justify-start">
               <div className="rounded-2xl bg-gray-50 border border-gray-200 px-5 py-4 max-w-[85%] w-full">

@@ -70,7 +70,7 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
     return '답변'
   }
 
-  // 메시지 인덱스별로 그룹화
+  // 메시지 인덱스별로 그룹화 (인용이 있는 레퍼런스만 표시)
   const referencesByMessage = new Map<number, { recordings: RecordingReference[]; materials: MaterialReference[] }>()
   
   allReferences.forEach((references, messageIndex) => {
@@ -78,6 +78,12 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
     const materials: MaterialReference[] = []
     
     references.forEach(ref => {
+      // 인용이 있는 레퍼런스만 포함 (citations가 있고 비어있지 않은 경우)
+      const hasCitations = ref.citations && Array.isArray(ref.citations) && ref.citations.length > 0
+      if (!hasCitations) {
+        return // 인용이 없으면 표시하지 않음
+      }
+      
       if (ref.type === 'recording') {
         recordings.push(ref as RecordingReference)
       } else if (ref.type === 'material') {

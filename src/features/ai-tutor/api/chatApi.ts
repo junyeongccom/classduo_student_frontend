@@ -43,6 +43,7 @@ export interface ChatResponse {
   answer: string
   references: Reference[]
   chat_history: ChatMessage[]
+  summary_keywords?: string | null
 }
 
 export interface HookingResponse {
@@ -51,6 +52,7 @@ export interface HookingResponse {
   question: string
   answer: string
   reference_data?: Reference[] | null  // 참고자료 (선택적)
+  summary_keywords?: string | null  // 핵심 키워드 (선택적)
 }
 
 // 채팅 세션 관련 타입
@@ -247,6 +249,28 @@ export const chatApi = {
     } catch (error) {
       onError(error instanceof Error ? error : new Error('Unknown error'))
     }
+  },
+
+  /**
+   * 후킹 질문/답변을 세션에 저장 (미리 준비된 답변 사용)
+   */
+  async saveHookingMessage(
+    sessionId: string,
+    hooking: {
+      question: string
+      answer: string
+      reference_data?: Reference[] | null
+      summary_keywords?: string | null
+    }
+  ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {
+    return apiRequest<{ success: boolean; message: string }>(
+      `/ai-tutor/sessions/${sessionId}/hooking`,
+      {
+        method: 'POST',
+        body: hooking,
+        auth: true,
+      }
+    )
   },
 
   /**
