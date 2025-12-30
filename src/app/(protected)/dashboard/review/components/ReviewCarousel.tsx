@@ -102,45 +102,67 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
  */
 function ReviewPage1({ data }: { data: ReviewCarouselResponse['page_1'] }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6">
-      {/* 수업명 */}
-      <h1 className="mb-2 text-2xl font-bold text-gray-900">
-        {data.course_title}
-        {data.section && <span className="ml-2 text-lg font-normal text-gray-500">({data.section})</span>}
-      </h1>
+    <div className="rounded-lg border border-gray-200 bg-white p-8" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+      {/* 수업명 - 작은 크기로 변경 */}
+      <div className="mb-6">
+        <h1 className="text-lg font-semibold text-gray-800">
+          {data.course_title}
+          {data.section && <span className="ml-2 text-sm font-normal text-gray-500">({data.section})</span>}
+        </h1>
+      </div>
 
-      {/* 본질한줄 */}
+      {/* 본질한줄 - 가시성 개선 */}
       {data.essence_one_line && (
-        <p className="mb-4 text-lg text-gray-700">
-          {data.essence_one_line}
-        </p>
-      )}
-
-      {/* 5개 핵심 질문 */}
-      {data.questions.length > 0 && (
-        <div className="mb-6">
-          <h2 className="mb-3 text-lg font-semibold text-gray-800">강의내용 5개 핵심 질문</h2>
-          <ul className="space-y-2">
-            {data.questions.map((question, index) => (
-              <li key={index} className="flex items-start gap-2 text-gray-700">
-                <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary-500 text-xs font-semibold text-white">
-                  {question.question_order}
-                </span>
-                <span className="flex-1">{question.question_name}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="mb-8 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-l-4 border-blue-400">
+          <h2 className="text-sm font-medium text-blue-800 mb-2">강의 핵심 내용</h2>
+          <p className="text-base leading-relaxed text-gray-800 font-medium">
+            {data.essence_one_line}
+          </p>
         </div>
       )}
 
-      {/* 썸네일 이미지 */}
-      {data.thumbnail_image_url && (
-        <div className="mt-6">
-          <img
-            src={data.thumbnail_image_url}
-            alt="복습 썸네일"
-            className="w-full rounded-lg object-cover"
-          />
+      {/* 5개 핵심 질문 - 가시성 개선 */}
+      {data.questions.length > 0 && (
+        <div className="mb-8">
+          <h2 className="mb-4 text-base font-semibold text-gray-800">강의내용 5개 핵심 질문</h2>
+          <div className="space-y-3">
+            {data.questions.map((question, index) => (
+              <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-sm font-bold text-white flex-shrink-0 mt-0.5">
+                  {question.question_order}
+                </span>
+                <span className="flex-1 text-sm leading-relaxed text-gray-700 font-medium">
+                  {question.question_name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 썸네일 이미지 - 개선된 레이아웃 */}
+      {data.thumbnail_image_url ? (
+        <div className="mt-8">
+          <h3 className="mb-3 text-sm font-medium text-gray-600">복습 썸네일</h3>
+          <div className="rounded-lg overflow-hidden shadow-sm border border-gray-200">
+            <img
+              src={data.thumbnail_image_url}
+              alt="복습 썸네일"
+              className="w-full h-auto object-cover"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="mt-8">
+          <h3 className="mb-3 text-sm font-medium text-gray-600">복습 썸네일</h3>
+          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+            <div className="mx-auto h-12 w-12 text-gray-400 mb-3">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-sm text-gray-500">썸네일 이미지 생성 중...</p>
+          </div>
         </div>
       )}
     </div>

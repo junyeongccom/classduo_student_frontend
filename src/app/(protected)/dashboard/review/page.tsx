@@ -26,10 +26,7 @@ export default function ReviewPage() {
     <div className="flex h-screen flex-col">
       {/* 상단 헤더 - 아이콘 버튼들 */}
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-6">
-        {/* 좌측: 빈 공간 */}
-        <div></div>
-
-        {/* 우측: 공유 및 다운로드 아이콘 */}
+        {/* 좌측: 공유 및 다운로드 아이콘 */}
         <div className="flex items-center gap-2">
           <button
             onClick={handleShare}
@@ -46,6 +43,9 @@ export default function ReviewPage() {
             <Download className="h-4 w-4" />
           </button>
         </div>
+
+        {/* 우측: 빈 공간 */}
+        <div></div>
       </header>
 
       {/* 메인 콘텐츠 영역 */}

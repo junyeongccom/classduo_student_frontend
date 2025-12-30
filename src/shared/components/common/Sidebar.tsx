@@ -14,7 +14,7 @@ export function Sidebar() {
   return (
     <aside className={cn(
       "group fixed left-0 top-0 z-40 h-screen border-r border-gray-200 bg-white transition-all duration-300",
-      isCollapsed ? "w-[70px]" : "w-[120px]"
+      isCollapsed ? "w-[80px]" : "w-[140px]"
     )}>
       <div className="flex h-full flex-col">
         {/* 로고 + 토글 버튼 */}

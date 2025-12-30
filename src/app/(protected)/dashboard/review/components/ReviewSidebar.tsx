@@ -90,14 +90,14 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
 
   if (isLoading) {
     return (
-      <div className="h-full w-64 border-l border-gray-200 bg-white p-4 flex items-center justify-center">
+      <div className="h-full w-80 border-l border-gray-200 bg-white p-4 flex items-center justify-center">
         <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     )
   }
 
   return (
-    <div className="h-full w-64 border-l border-gray-200 bg-white p-4 flex flex-col">
+    <div className="h-full w-80 border-l border-gray-200 bg-white p-4 flex flex-col">
       {/* 헤더 */}
       <h2 className="mb-4 text-sm font-semibold text-gray-700 flex items-center gap-2">
         <BookOpen className="h-4 w-4" />
