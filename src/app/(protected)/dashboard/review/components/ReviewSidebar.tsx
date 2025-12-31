@@ -82,7 +82,11 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
   }
 
   // 회차 선택
-  const handleSelectLecture = (lectureId: string) => {
+  const handleSelectLecture = (lectureId: string, essence7words: string | null) => {
+    // "분석 중" 상태인 경우 클릭 불가
+    if (essence7words === "분석 중" || !essence7words) {
+      return
+    }
     onSelectLectureId(lectureId === selectedLectureId ? null : lectureId)
   }
 
@@ -165,15 +169,19 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
             ) : (
               lectureList.lectures.map(lecture => {
                 const isSelected = selectedLectureId === lecture.lecture_id
+                const isAnalyzing = lecture.essence_7words === "분석 중" || !lecture.essence_7words
                 
                 return (
                   <button
                     key={lecture.lecture_id}
-                    onClick={() => handleSelectLecture(lecture.lecture_id)}
+                    onClick={() => handleSelectLecture(lecture.lecture_id, lecture.essence_7words)}
+                    disabled={isAnalyzing}
                     className={`flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left transition-all ${
-                      isSelected 
-                        ? 'bg-primary-500 text-white shadow-sm' 
-                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                      isAnalyzing
+                        ? 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
+                        : isSelected 
+                          ? 'bg-primary-500 text-white shadow-sm' 
+                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
@@ -181,12 +189,12 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
                         {lecture.lecture_date}
                       </p>
                       <p className={`text-sm font-medium mt-0.5 ${
-                        isSelected ? 'text-white' : 'text-gray-800'
+                        isSelected ? 'text-white' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
                       }`}>
                         {lecture.essence_7words || '본질한줄 없음'}
                       </p>
                     </div>
-                    {isSelected && (
+                    {isSelected && !isAnalyzing && (
                       <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 flex-shrink-0">
                         <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />

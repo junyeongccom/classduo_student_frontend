@@ -53,38 +53,7 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* 캐러셀 네비게이션 */}
-      <div className="mb-4 flex items-center justify-between">
-        <button
-          onClick={handlePrev}
-          disabled={currentPage === 1}
-          className={`rounded-lg p-2 ${
-            currentPage === 1
-              ? 'text-gray-300 cursor-not-allowed'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        
-        <span className="text-sm text-gray-500">
-          {currentPage} / {totalPages}
-        </span>
-        
-        <button
-          onClick={handleNext}
-          disabled={currentPage === totalPages}
-          className={`rounded-lg p-2 ${
-            currentPage === totalPages
-              ? 'text-gray-300 cursor-not-allowed'
-              : 'text-gray-600 hover:bg-gray-100'
-          }`}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-
+    <div className="flex h-full flex-col relative">
       {/* 캐러셀 콘텐츠 */}
       <div className="flex-1 overflow-y-auto">
         {currentPage === 1 ? (
@@ -93,87 +62,329 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
           <ReviewPage2_6 data={data.pages_2_6[currentPage - 2]} />
         )}
       </div>
+
+      {/* 페이지 인디케이터 - 상단 중앙 */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <div
+              key={page}
+              className={`h-2 rounded-full transition-all ${
+                page === currentPage
+                  ? 'w-8 bg-gradient-to-r from-blue-500 to-indigo-600'
+                  : 'w-2 bg-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* 네비게이션 버튼 - 양옆 중앙 (인스타그램 스타일) */}
+      <button
+        onClick={handlePrev}
+        disabled={currentPage === 1}
+        className={`absolute left-4 top-1/2 transform -translate-y-1/2 z-10 rounded-full p-3 bg-white/90 backdrop-blur-sm shadow-lg transition-all ${
+          currentPage === 1
+            ? 'text-gray-300 cursor-not-allowed opacity-50'
+            : 'text-gray-700 hover:bg-white hover:scale-110'
+        }`}
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+      
+      <button
+        onClick={handleNext}
+        disabled={currentPage === totalPages}
+        className={`absolute right-4 top-1/2 transform -translate-y-1/2 z-10 rounded-full p-3 bg-white/90 backdrop-blur-sm shadow-lg transition-all ${
+          currentPage === totalPages
+            ? 'text-gray-300 cursor-not-allowed opacity-50'
+            : 'text-gray-700 hover:bg-white hover:scale-110'
+        }`}
+      >
+        <ChevronRight className="h-6 w-6" />
+      </button>
     </div>
   )
 }
 
 /**
- * 복습 캐러셀 1페이지
+ * 복습 캐러셀 1페이지 - 인스타그램 카드뉴스 스타일
  */
 function ReviewPage1({ data }: { data: ReviewCarouselResponse['page_1'] }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-8" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-      {/* 수업명 - 작은 크기로 변경 */}
-      <div className="mb-6">
-        <h1 className="text-lg font-semibold text-gray-800">
-          {data.course_title}
-          {data.section && <span className="ml-2 text-sm font-normal text-gray-500">({data.section})</span>}
-        </h1>
-      </div>
-
-      {/* 본질한줄 - 가시성 개선 */}
-      {data.essence_one_line && (
-        <div className="mb-8 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-l-4 border-blue-400">
-          <h2 className="text-sm font-medium text-blue-800 mb-2">강의 핵심 내용</h2>
-          <p className="text-base leading-relaxed text-gray-800 font-medium">
-            {data.essence_one_line}
-          </p>
-        </div>
-      )}
-
-      {/* 5개 핵심 질문 - 가시성 개선 */}
-      {data.questions.length > 0 && (
-        <div className="mb-8">
-          <h2 className="mb-4 text-base font-semibold text-gray-800">강의내용 5개 핵심 질문</h2>
-          <div className="space-y-3">
-            {data.questions.map((question, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-green-500 text-sm font-bold text-white flex-shrink-0 mt-0.5">
-                  {question.question_order}
-                </span>
-                <span className="flex-1 text-sm leading-relaxed text-gray-700 font-medium">
-                  {question.question_name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 썸네일 이미지 - 개선된 레이아웃 */}
-      {data.thumbnail_image_url ? (
-        <div className="mt-8">
-          <h3 className="mb-3 text-sm font-medium text-gray-600">복습 썸네일</h3>
-          <div className="rounded-lg overflow-hidden shadow-sm border border-gray-200">
-            <img
-              src={data.thumbnail_image_url}
-              alt="복습 썸네일"
-              className="w-full h-auto object-cover"
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="mt-8">
-          <h3 className="mb-3 text-sm font-medium text-gray-600">복습 썸네일</h3>
-          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
-            <div className="mx-auto h-12 w-12 text-gray-400 mb-3">
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+    <div className="h-full flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+        {/* 그리드 레이아웃: 좌측 텍스트, 우측 썸네일 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
+          {/* 좌측: 텍스트 콘텐츠 */}
+          <div className="p-8 lg:p-10 flex flex-col justify-between overflow-y-auto">
+            {/* 수업명 */}
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                {data.course_title}
+              </h1>
+              {data.section && (
+                <span className="text-sm text-gray-500 font-medium">{data.section}</span>
+              )}
             </div>
-            <p className="text-sm text-gray-500">썸네일 이미지 생성 중...</p>
+
+            {/* 본질한줄 */}
+            {data.essence_one_line && (
+              <div className="mb-6">
+                <div className="inline-block px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-3">
+                  <span className="text-xs font-semibold text-white">강의 핵심</span>
+                </div>
+                <p className="text-base leading-relaxed text-gray-800 font-medium">
+                  {data.essence_one_line}
+                </p>
+              </div>
+            )}
+
+            {/* 5개 핵심 질문 */}
+            {data.questions.length > 0 && (
+              <div className="flex-1">
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">5개 핵심 질문</h2>
+                <div className="space-y-2.5">
+                  {data.questions.map((question, index) => (
+                    <div key={index} className="flex items-start gap-3 group">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-500 text-xs font-bold text-white flex-shrink-0 mt-0.5 shadow-sm">
+                        {question.question_order}
+                      </span>
+                      <span className="flex-1 text-sm leading-relaxed text-gray-700 font-medium group-hover:text-gray-900 transition-colors">
+                        {question.question_name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 우측: 썸네일 이미지 */}
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-8 lg:p-0">
+            {data.thumbnail_image_url ? (
+              <div className="w-full h-full max-h-[600px] rounded-xl overflow-hidden shadow-lg">
+                <img
+                  src={data.thumbnail_image_url}
+                  alt="복습 썸네일"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-full h-full max-h-[600px] rounded-xl border-2 border-dashed border-gray-300 bg-white flex items-center justify-center">
+                <div className="text-center">
+                  <div className="mx-auto h-16 w-16 text-gray-300 mb-4">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-gray-400 font-medium">썸네일 생성 중...</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
 
 /**
- * 복습 캐러셀 2-6페이지
+ * 텍스트 정리 함수
+ */
+function cleanText(text: string, type: 'recording' | 'material'): string {
+  let cleaned = text
+  
+  if (type === 'recording') {
+    // 녹음본: **로 감싸진 텍스트의 ** 제거, * 제거, -로 시작하는 줄 제거
+    cleaned = cleaned
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // **텍스트** -> 텍스트
+      .replace(/\*/g, '') // 남은 * 제거
+      .replace(/^-\s*/gm, '') // -로 시작하는 줄의 - 제거
+      .replace(/^\s*-\s*/gm, '') // 앞에 공백이 있는 - 제거
+      .trim()
+  } else if (type === 'material') {
+    // 강의자료: ---텍스트---와 ---시각자료 설명--- 제거
+    cleaned = cleaned
+      .replace(/---텍스트---/g, '')
+      .replace(/---시각자료 설명---/g, '')
+      .replace(/---/g, '') // 남은 --- 제거
+      .trim()
+  }
+  
+  // 연속된 빈 줄을 하나로 정리
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n')
+  
+  return cleaned.trim()
+}
+
+/**
+ * HTML 이스케이프 함수
+ */
+function escapeHtml(text: string): string {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+/**
+ * 출처를 새 탭으로 열기
+ */
+function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sources']) {
+  const newWindow = window.open('', '_blank', 'width=1200,height=800')
+  if (!newWindow) return
+
+  // HTML 생성
+  const recordingChunksHtml = sources.recording_chunks.map((chunk, index) => {
+    const cleanedText = cleanText(chunk.text_content, 'recording')
+    const escapedText = escapeHtml(cleanedText).replace(/\n/g, '<br>')
+    return `
+    <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #f0fdf4, #d1fae5); padding: 1.25rem; border-left: 4px solid #10b981; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+        <span style="padding: 0.375rem 0.75rem; background-color: #10b981; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+          ${chunk.start_time.toFixed(1)}초 ~ ${chunk.end_time.toFixed(1)}초
+        </span>
+      </div>
+      <div>
+        <p style="font-size: 1rem; color: #1f2937; line-height: 1.75; white-space: pre-wrap; font-weight: 500; margin: 0;">
+          ${escapedText}
+        </p>
+      </div>
+    </div>
+  `
+  }).join('')
+
+  const materialPagesHtml = sources.material_pages.map((page, index) => {
+    const textContentHtml = page.text_content 
+      ? `<div style="margin-bottom: 1rem;">
+          <p style="font-size: 1rem; color: #1f2937; line-height: 1.75; white-space: pre-wrap; font-weight: 500; margin: 0;">
+            ${escapeHtml(cleanText(page.text_content, 'material')).replace(/\n/g, '<br>')}
+          </p>
+        </div>`
+      : ''
+    
+    const imageHtml = page.image_url
+      ? `<div style="margin-top: 1rem; border-radius: 0.75rem; overflow: hidden; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white;">
+          <img src="${escapeHtml(page.image_url)}" alt="페이지 ${page.page_number}" style="width: 100%; height: auto; display: block;" />
+        </div>`
+      : ''
+    
+    return `
+    <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #eff6ff, #dbeafe); padding: 1.25rem; border-left: 4px solid #3b82f6; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+        <span style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+          페이지 ${page.page_number}
+        </span>
+      </div>
+      ${textContentHtml}
+      ${imageHtml}
+    </div>
+  `
+  }).join('')
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>출처</title>
+      <style>
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+        body {
+          font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+          background-color: #f9fafb;
+          padding: 2rem;
+          line-height: 1.5;
+        }
+        .container {
+          max-width: 56rem;
+          margin: 0 auto;
+          background-color: white;
+          border-radius: 1rem;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+        }
+        .header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1.5rem;
+          border-bottom: 1px solid #e5e7eb;
+          background: linear-gradient(to right, #eff6ff, #e0e7ff);
+        }
+        .header h1 {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #111827;
+        }
+        .content {
+          padding: 1.5rem;
+          overflow-y: auto;
+        }
+        .section {
+          margin-bottom: 2rem;
+        }
+        .section-header {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+        }
+        .section-line {
+          height: 4px;
+          width: 3rem;
+          border-radius: 9999px;
+        }
+        .section-title {
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: #111827;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>출처</h1>
+        </div>
+        <div class="content">
+          ${sources.recording_chunks.length > 0 ? `
+            <div class="section">
+              <div class="section-header">
+                <div class="section-line" style="background: linear-gradient(to right, #10b981, #059669);"></div>
+                <h2 class="section-title">녹음본 청크</h2>
+              </div>
+              ${recordingChunksHtml}
+            </div>
+          ` : ''}
+          ${sources.material_pages.length > 0 ? `
+            <div class="section">
+              <div class="section-header">
+                <div class="section-line" style="background: linear-gradient(to right, #3b82f6, #4f46e5);"></div>
+                <h2 class="section-title">강의자료 페이지</h2>
+              </div>
+              ${materialPagesHtml}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  newWindow.document.write(html)
+  newWindow.document.close()
+}
+
+/**
+ * 복습 캐러셀 2-6페이지 - 인스타그램 카드뉴스 스타일
  */
 function ReviewPage2_6({ data }: { data: ReviewCarouselResponse['pages_2_6'][0] }) {
-  const [showSources, setShowSources] = useState(false)
 
   if (!data) {
     return (
@@ -183,105 +394,159 @@ function ReviewPage2_6({ data }: { data: ReviewCarouselResponse['pages_2_6'][0] 
     )
   }
 
+  // 핵심정답과 부연설명에 해당하는 빈칸 분리
+  // 빈칸을 position 기준으로 정렬하고, 각 텍스트에 포함되는지 확인
+  const sortedBlanks = [...data.answer.blanks].sort((a, b) => (a.position || 0) - (b.position || 0))
+  
+  // 핵심정답: 처음 2개 (position 0, 1)
+  const keyAnswerBlanks = sortedBlanks
+    .filter(b => data.answer.key_answer.includes(b.answer_text))
+    .slice(0, 2)
+  
+  // 부연설명: 나머지 2개 (position 2, 3)
+  const supplementaryBlanks = sortedBlanks
+    .filter(b => data.answer.supplementary_explanation.includes(b.answer_text))
+    .slice(2, 4)
+  
+  // 만약 필터링 결과가 부족하면 모든 빈칸을 사용
+  const allKeyAnswerBlanks = keyAnswerBlanks.length > 0 
+    ? keyAnswerBlanks 
+    : sortedBlanks.filter(b => data.answer.key_answer.includes(b.answer_text))
+  
+  const allSupplementaryBlanks = supplementaryBlanks.length > 0
+    ? supplementaryBlanks
+    : sortedBlanks.filter(b => data.answer.supplementary_explanation.includes(b.answer_text))
+
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6">
-      {/* 페이지 번호 */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500 text-sm font-semibold text-white">
-          {data.page_number - 1}
-        </span>
-        <h2 className="text-xl font-bold text-gray-900">{data.course_title}</h2>
-      </div>
-
-      {/* 질문 */}
-      <div className="mb-6">
-        <h3 className="mb-2 text-lg font-semibold text-gray-800">질문</h3>
-        <p className="text-gray-700">{data.question.question_name}</p>
-      </div>
-
-      {/* 정답 및 부연설명 */}
-      <div className="mb-6">
-        <h3 className="mb-2 text-lg font-semibold text-gray-800">핵심정답</h3>
-        <AnswerWithBlanks
-          text={data.answer.key_answer}
-          blanks={data.answer.blanks.filter(b => 
-            data.answer.key_answer.includes(b.answer_text)
-          )}
-        />
-        
-        <h3 className="mb-2 mt-4 text-lg font-semibold text-gray-800">부연설명</h3>
-        <AnswerWithBlanks
-          text={data.answer.supplementary_explanation}
-          blanks={data.answer.blanks.filter(b => 
-            data.answer.supplementary_explanation.includes(b.answer_text)
-          )}
-        />
-      </div>
-
-      {/* 출처 버튼 */}
-      <button
-        onClick={() => setShowSources(!showSources)}
-        className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-      >
-        <FileText className="h-4 w-4" />
-        출처
-      </button>
-
-      {/* 출처 패널 */}
-      {showSources && (
-        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-          <h4 className="mb-3 text-sm font-semibold text-gray-700">녹음본 청크</h4>
-          <div className="mb-4 space-y-2">
-            {data.sources.recording_chunks.map((chunk, index) => (
-              <div key={index} className="rounded bg-white p-3 text-sm text-gray-700">
-                <p className="text-xs text-gray-500">
-                  {chunk.start_time.toFixed(1)}초 ~ {chunk.end_time.toFixed(1)}초
-                </p>
-                <p className="mt-1">{chunk.text_content}</p>
+    <div className="h-full flex items-center justify-center p-4 overflow-y-auto">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden my-auto" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+        <div className="p-6 lg:p-8">
+          {/* 헤더 */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white shadow-md">
+                {data.page_number - 1}
+              </span>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">{data.course_title}</h2>
+                <p className="text-xs text-gray-500 font-medium">질문 {data.page_number - 1}</p>
               </div>
-            ))}
+            </div>
           </div>
 
-          <h4 className="mb-3 text-sm font-semibold text-gray-700">강의자료 페이지</h4>
-          <div className="space-y-2">
-            {data.sources.material_pages.map((page, index) => (
-              <div key={index} className="rounded bg-white p-3">
-                <p className="text-xs text-gray-500">페이지 {page.page_number}</p>
-                <p className="mt-1 text-sm text-gray-700">{page.text_content}</p>
-                {page.image_url && (
-                  <div className="mt-2">
-                    <img
-                      src={page.image_url}
-                      alt={`페이지 ${page.page_number}`}
-                      className="max-w-full rounded"
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+          {/* 질문 */}
+          <div className="mb-8">
+            <div className="inline-block px-3 py-1 bg-gray-100 rounded-full mb-3">
+              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">질문</span>
+            </div>
+            <p className="text-xl font-bold text-gray-900 leading-relaxed">{data.question.question_name}</p>
           </div>
+
+          {/* 핵심정답 */}
+          <div className="mb-8">
+            <div className="inline-block px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mb-3">
+              <span className="text-xs font-semibold text-white">핵심정답</span>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500">
+              <AnswerWithBlanks
+                key={`page-${data.page_number}-key-answer`}
+                text={data.answer.key_answer}
+                blanks={allKeyAnswerBlanks}
+                pageId={data.page_number}
+                sectionType="key-answer"
+              />
+            </div>
+          </div>
+
+          {/* 부연설명 */}
+          <div className="mb-6">
+            <div className="inline-block px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-3">
+              <span className="text-xs font-semibold text-white">부연설명</span>
+            </div>
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500">
+              <AnswerWithBlanks
+                key={`page-${data.page_number}-supplementary`}
+                text={data.answer.supplementary_explanation}
+                blanks={allSupplementaryBlanks}
+                pageId={data.page_number}
+                sectionType="supplementary"
+              />
+            </div>
+          </div>
+
+          {/* 출처 버튼 */}
+          <button
+            onClick={() => openSourceInNewTab(data.sources)}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
+          >
+            <FileText className="h-4 w-4" />
+            출처 보기
+          </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
 
 /**
- * 빈칸이 포함된 정답 텍스트 렌더링
+ * 빈칸이 포함된 정답 텍스트 렌더링 - 인스타그램 스타일
  */
-function AnswerWithBlanks({ text, blanks }: { text: string; blanks: ReviewCarouselResponse['pages_2_6'][0]['answer']['blanks'] }) {
-  const [revealedBlanks, setRevealedBlanks] = useState<Set<number>>(new Set())
+function AnswerWithBlanks({ 
+  text, 
+  blanks, 
+  pageId, 
+  sectionType 
+}: { 
+  text: string
+  blanks: ReviewCarouselResponse['pages_2_6'][0]['answer']['blanks']
+  pageId?: number
+  sectionType?: string
+}) {
+  // 페이지와 섹션별로 고유한 키 생성
+  const uniquePrefix = pageId && sectionType ? `${pageId}-${sectionType}-` : ''
+  const [revealedBlanks, setRevealedBlanks] = useState<Set<string>>(new Set())
 
   if (blanks.length === 0) {
-    return <p className="text-gray-700">{text}</p>
+    return <p className="text-base leading-relaxed text-gray-800 font-medium">{text}</p>
   }
 
   // 빈칸 위치 찾기 및 텍스트 분할
-  const parts: Array<{ type: 'text' | 'blank'; content: string; blankIndex?: number }> = []
+  const parts: Array<{ type: 'text' | 'blank'; content: string; blankIndex?: number; blankKey?: string }> = []
   let lastIndex = 0
+  const usedIndices = new Set<number>()
 
+  // 빈칸을 텍스트에서 찾기 (공백 정규화)
   blanks.forEach((blank, index) => {
-    const blankIndex = text.indexOf(blank.answer_text, lastIndex)
+    if (usedIndices.has(index)) return
+    
+    // 정답 텍스트 정규화 (공백 제거)
+    const normalizedAnswer = blank.answer_text.replace(/\s+/g, ' ').trim()
+    const normalizedText = text.replace(/\s+/g, ' ').trim()
+    
+    // 텍스트에서 정답 찾기 (대소문자 무시, 공백 무시)
+    let blankIndex = -1
+    let searchStart = lastIndex
+    
+    // 여러 번 시도 (텍스트의 다른 위치에서도 찾기)
+    while (blankIndex === -1 && searchStart < normalizedText.length) {
+      const foundIndex = normalizedText.toLowerCase().indexOf(
+        normalizedAnswer.toLowerCase(),
+        searchStart
+      )
+      if (foundIndex !== -1) {
+        // 실제 원본 텍스트에서의 위치 찾기
+        const originalIndex = text.toLowerCase().indexOf(
+          blank.answer_text.toLowerCase(),
+          searchStart
+        )
+        if (originalIndex !== -1) {
+          blankIndex = originalIndex
+          break
+        }
+      }
+      searchStart += 1
+    }
+    
     if (blankIndex !== -1) {
       // 빈칸 이전 텍스트
       if (blankIndex > lastIndex) {
@@ -290,13 +555,16 @@ function AnswerWithBlanks({ text, blanks }: { text: string; blanks: ReviewCarous
           content: text.substring(lastIndex, blankIndex),
         })
       }
-      // 빈칸
+      // 빈칸 - 고유 키 생성
+      const blankKey = `${uniquePrefix}${index}-${blank.answer_text.substring(0, 10)}`
       parts.push({
         type: 'blank',
         content: blank.answer_text,
         blankIndex: index,
+        blankKey: blankKey,
       })
       lastIndex = blankIndex + blank.answer_text.length
+      usedIndices.add(index)
     }
   })
 
@@ -307,37 +575,43 @@ function AnswerWithBlanks({ text, blanks }: { text: string; blanks: ReviewCarous
       content: text.substring(lastIndex),
     })
   }
+  
+  // 빈칸이 하나도 매칭되지 않았으면 원본 텍스트 반환
+  if (parts.length === 0 || parts.every(p => p.type === 'text')) {
+    return <p className="text-base leading-relaxed text-gray-800 font-medium">{text}</p>
+  }
 
-  const toggleBlank = (index: number) => {
+  const toggleBlank = (blankKey: string) => {
     setRevealedBlanks(prev => {
       const next = new Set(prev)
-      if (next.has(index)) {
-        next.delete(index)
+      if (next.has(blankKey)) {
+        next.delete(blankKey)
       } else {
-        next.add(index)
+        next.add(blankKey)
       }
       return next
     })
   }
 
   return (
-    <p className="text-gray-700">
+    <p className="text-base leading-relaxed text-gray-800 font-medium">
       {parts.map((part, i) => {
-        if (part.type === 'blank' && part.blankIndex !== undefined) {
+        if (part.type === 'blank' && part.blankIndex !== undefined && 'blankKey' in part) {
           const blank = blanks[part.blankIndex]
-          const isRevealed = revealedBlanks.has(part.blankIndex)
+          const blankKey = part.blankKey as string
+          const isRevealed = revealedBlanks.has(blankKey)
           return (
             <span
               key={i}
-              onClick={() => toggleBlank(part.blankIndex!)}
-              className={`cursor-pointer rounded px-1.5 py-0.5 transition-all ${
+              onClick={() => toggleBlank(blankKey)}
+              className={`inline-block cursor-pointer rounded-md px-2 py-1 mx-1 transition-all duration-200 font-semibold ${
                 isRevealed
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'bg-gray-200 text-transparent hover:bg-gray-300'
+                  ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-md scale-105'
+                  : 'bg-gray-300 text-gray-300 hover:bg-gray-400 hover:scale-105'
               }`}
-              title={isRevealed ? '클릭하여 숨기기' : '클릭하여 보기'}
+              title={isRevealed ? '클릭하여 숨기기' : '클릭하여 정답 보기'}
             >
-              {isRevealed ? blank.answer_text : blank.blank_text}
+              {isRevealed ? blank.answer_text : '_____'}
             </span>
           )
         }
