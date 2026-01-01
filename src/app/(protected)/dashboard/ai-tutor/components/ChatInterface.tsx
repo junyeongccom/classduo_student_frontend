@@ -360,7 +360,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       if (!sessionIdToUse) {
         const sessionResult = await chatApi.createSession(selectedLectureIds)
         if (sessionResult.error || !sessionResult.data) {
-          if (sessionResult.error && sessionResult.status === 401) {
+          // 401 에러 확인 (error_code 또는 status로 확인)
+          if (sessionResult.error && (sessionResult.error.error_code === 'UNAUTHORIZED' || (sessionResult as any).status === 401)) {
             throw new Error('인증이 만료되었습니다. 페이지를 새로고침해주세요.')
           }
           throw new Error(sessionResult.error?.message || '세션 생성 실패')
