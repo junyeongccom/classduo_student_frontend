@@ -388,6 +388,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             }])
           } else if (progressData.type === 'source' && progressData.data) {
             // 마지막 상태 항목에 소스 추가
+            const sourceData = progressData.data // 타입 가드를 위해 지역 변수로 추출
             setLoadingStatusItems(prev => {
               if (prev.length === 0) {
                 // 상태 메시지가 없으면 기본 상태 추가
@@ -396,8 +397,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   message: '관련 자료를 검색하는 중...',
                   sources: [{
                     type: progressData.source_type!,
-                    title: progressData.data.title || '',
-                    preview: progressData.data.preview
+                    title: sourceData.title || '',
+                    preview: sourceData.preview
                   }]
                 }]
               }
@@ -407,8 +408,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 ...lastItem,
                 sources: [...lastItem.sources, {
                   type: progressData.source_type!,
-                  title: progressData.data.title || '',
-                  preview: progressData.data.preview
+                  title: sourceData.title || '',
+                  preview: sourceData.preview
                 }]
               }
               return updated
