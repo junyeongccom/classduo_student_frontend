@@ -21,6 +21,7 @@ export interface Reference {
     original_filename?: string
     page_number?: number
     image_path?: string
+    image_url?: string
     image_width?: number
     image_height?: number
     score: number
