@@ -209,7 +209,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<Array<{ question: string; answer?: string; reference_data?: Reference[] | null }>>(
+  const [hookingQuestions, setHookingQuestions] = useState<Array<{ question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }>>(
     DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q }))
   )
   const messagesEndRef = useRef<HTMLDivElement>(null)
