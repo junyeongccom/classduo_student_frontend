@@ -12,7 +12,7 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const sendMessage = async (question: string, jobIds: string[]) => {
+  const sendMessage = async (question: string, lectureIds: string[]) => {
     if (!question.trim()) return
 
     setIsLoading(true)
@@ -25,7 +25,7 @@ export function useChat() {
     try {
       const { data, error: apiError } = await chatApi.chat({
         question,
-        job_ids: jobIds,
+        lecture_ids: lectureIds,
         chat_history: messages,
       })
 
