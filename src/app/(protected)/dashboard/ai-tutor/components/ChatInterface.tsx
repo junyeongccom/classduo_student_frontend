@@ -4,7 +4,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Loader2, Search } from 'lucide-react'
+import { Send, Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatApi, ChatMessage, StoredMessage, Reference } from '@/features/ai-tutor/api/chatApi'
 
 // 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
@@ -198,6 +198,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  // 타이핑 애니메이션 상태: 메시지 인덱스 -> 현재 표시된 텍스트 길이
+  const [typingProgress, setTypingProgress] = useState<Map<number, number>>(new Map())
+  // 타이핑 완료 상태: 메시지 인덱스 -> 타이핑 완료 여부
+  const [typingComplete, setTypingComplete] = useState<Map<number, boolean>>(new Map())
   const [loadingStatusItems, setLoadingStatusItems] = useState<Array<{
     step: string
     message: string
@@ -271,6 +275,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             setMessages(loadedMessages)
             setCurrentSessionId(sessionId)
             
+            // 기존 메시지들은 타이핑 완료 상태로 설정
+            const completeMap = new Map<number, boolean>()
+            const progressMap = new Map<number, number>()
+            loadedMessages.forEach((msg, index) => {
+              if (msg.role === 'assistant') {
+                completeMap.set(index, true)
+                progressMap.set(index, msg.content.length)
+              }
+            })
+            setTypingComplete(completeMap)
+            setTypingProgress(progressMap)
+            
             // 메시지 배열을 부모에게 전달 (키워드 표시를 위해 필요)
             if (onMessagesUpdate) {
               onMessagesUpdate(loadedMessages)
@@ -290,7 +306,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             
             // 세션의 lecture_ids를 부모에게 전달 (session 객체에서 가져옴)
             if (data.session?.lecture_ids && onLectureIdsLoaded) {
-              onLectureIdsLoaded(data.session.lecture_ids)
+              // lecture_ids가 배열이 아닌 경우 파싱 (Supabase JSONB 배열 처리)
+              let lectureIds = data.session.lecture_ids
+              if (typeof lectureIds === 'string') {
+                try {
+                  lectureIds = JSON.parse(lectureIds)
+                } catch {
+                  lectureIds = [lectureIds]
+                }
+              }
+              if (Array.isArray(lectureIds) && lectureIds.length > 0) {
+                onLectureIdsLoaded(lectureIds)
+              }
             }
           }
         } catch (err) {
@@ -340,6 +367,62 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       }
     }
   }, [pendingReferences, onReferencesUpdate, messages.length])
+
+  // 타이핑 애니메이션 처리
+  useEffect(() => {
+    const intervals: NodeJS.Timeout[] = []
+    
+    typingProgress.forEach((currentLength, messageIndex) => {
+      const message = messages[messageIndex]
+      if (!message || message.role !== 'assistant') return
+      
+      const isComplete = typingComplete.get(messageIndex)
+      if (isComplete) return
+      
+      const fullText = message.content
+      const targetLength = fullText.length
+      
+      if (currentLength < targetLength) {
+        // 타이핑 속도 조절 (문자당 약 7.5ms, 텍스트 길이에 따라 조정)
+        // 짧은 텍스트는 빠르게, 긴 텍스트는 조금 느리게
+        const baseSpeed = 7.5
+        const lengthFactor = Math.min(targetLength / 1000, 1) // 최대 1배
+        const speed = baseSpeed + (lengthFactor * 5) // 7.5ms ~ 12.5ms
+        const interval = setInterval(() => {
+          setTypingProgress(prev => {
+            const newMap = new Map(prev)
+            const current = newMap.get(messageIndex) || 0
+            const next = Math.min(current + 1, targetLength)
+            newMap.set(messageIndex, next)
+            
+            // 타이핑 완료
+            if (next >= targetLength) {
+              setTypingComplete(prev => {
+                const newMap = new Map(prev)
+                newMap.set(messageIndex, true)
+                return newMap
+              })
+            }
+            
+            return newMap
+          })
+        }, speed)
+        
+        intervals.push(interval)
+      } else {
+        // 이미 완료된 경우
+        setTypingComplete(prev => {
+          const newMap = new Map(prev)
+          newMap.set(messageIndex, true)
+          return newMap
+        })
+      }
+    })
+    
+    return () => {
+      intervals.forEach(interval => clearInterval(interval))
+    }
+  }, [typingProgress, messages, typingComplete])
 
   // 메시지 전송 (SSE 스트리밍)
   const sendMessage = useCallback(async (question: string) => {
@@ -431,6 +514,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             if (newRefs.length > 0) {
               setPendingReferences({ messageIndex, refs: newRefs })
             }
+            
+            // 타이핑 애니메이션 시작
+            setTypingProgress(prev => {
+              const newMap = new Map(prev)
+              newMap.set(messageIndex, 0)
+              return newMap
+            })
+            setTypingComplete(prev => {
+              const newMap = new Map(prev)
+              newMap.set(messageIndex, false)
+              return newMap
+            })
             
             return updated
           })
@@ -636,13 +731,42 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 </div>
               )
             } else {
-              // AI 답변: 말풍선 없이 자유롭게 펼쳐서 표시 (왼쪽 정렬, 마크다운 스타일)
+              // AI 답변: 타이핑 애니메이션 적용
+              const typingLength = typingProgress.get(index) ?? message.content.length
+              const isTypingComplete = typingComplete.get(index) ?? true
+              const displayedText = message.content.slice(0, typingLength)
+              
               return (
                 <div key={index} className="flex justify-start">
                   <div className="w-full max-w-none">
                     <div className="text-gray-900 text-sm leading-relaxed">
-                      {renderMarkdown(message.content)}
+                      {typingLength < message.content.length ? (
+                        <>
+                          {renderMarkdown(displayedText)}
+                          <span className="inline-block w-2 h-4 bg-primary-500 ml-1 animate-pulse" />
+                        </>
+                      ) : (
+                        renderMarkdown(message.content)
+                      )}
                     </div>
+                    {/* 출처 확인 안내 멘트 - 타이핑 완료 후에만 표시 */}
+                    {isTypingComplete && typingLength >= message.content.length && (
+                      <div className="mt-6 flex justify-center animate-fade-in-up">
+                        <div className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-primary-300 bg-gradient-to-r from-primary-50 via-blue-50 to-purple-50 px-3 py-2 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-pulse-scale">
+                          <ArrowUp 
+                            className="h-4 w-4 text-primary-600 animate-pulse flex-shrink-0" 
+                            strokeWidth={3}
+                          />
+                          <span className="font-serif text-[10px] font-semibold text-primary-800 italic leading-relaxed tracking-wide whitespace-nowrap">
+                            수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요
+                          </span>
+                          <ArrowUp 
+                            className="h-4 w-4 text-primary-600 animate-pulse flex-shrink-0" 
+                            strokeWidth={3}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )

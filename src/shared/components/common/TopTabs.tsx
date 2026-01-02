@@ -15,7 +15,7 @@ interface TopTabsProps {
 
 const TABS: { id: TabType; label: string }[] = [
   { id: 'answer', label: '답변' },
-  { id: 'notes', label: '수업노트' },
+  { id: 'notes', label: '수업녹음본' },
   { id: 'materials', label: '강의자료' },
 ]
 
@@ -56,7 +56,7 @@ export function TopTabs({
         <nav className="flex items-center gap-6">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id
-            // 수업노트/강의자료 탭은 참고자료가 있을 때만 활성화
+            // 수업녹음본/강의자료 탭은 참고자료가 있을 때만 활성화
             const isDisabled = (tab.id === 'notes' || tab.id === 'materials') && !hasReferences
 
             return (

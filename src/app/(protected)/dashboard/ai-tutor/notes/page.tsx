@@ -11,7 +11,7 @@ export default function NotesPage() {
       {/* 메인 콘텐츠 영역 */}
       <div className="flex-1 p-6">
         <div className="flex h-full items-center justify-center text-gray-400">
-          수업노트 페이지
+          수업녹음본 페이지
         </div>
       </div>
     </div>

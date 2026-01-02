@@ -1,5 +1,5 @@
 /**
- * 참고자료 패널 - 수업노트(녹음본)와 강의자료 표시
+ * 참고자료 패널 - 수업녹음본과 강의자료 표시
  */
 'use client'
 
@@ -232,7 +232,7 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
             {activeTab === 'notes' ? (
               <>
                 <Mic className="h-5 w-5 text-primary-500" />
-                <h2 className="text-lg font-semibold text-gray-900">수업노트</h2>
+                <h2 className="text-lg font-semibold text-gray-900">수업녹음본</h2>
                 <span className="ml-2 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
                   {recordingRefs.length}개
                 </span>
