@@ -264,8 +264,8 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
   const recordingChunksHtml = sources.recording_chunks.map((chunk, index) => {
     // summary가 있으면 인터뷰 기사 형식으로, 없으면 원문 사용
     const hasSummary = chunk.summary && chunk.summary.title && chunk.summary.content
-    const title = hasSummary ? chunk.summary.title : '녹음본 내용'
-    const content = hasSummary ? chunk.summary.content : cleanText(chunk.text_content, 'recording')
+    const title = hasSummary ? chunk.summary!.title : '녹음본 내용'
+    const content = hasSummary ? chunk.summary!.content : cleanText(chunk.text_content, 'recording')
     
     // 백엔드에서 이미 완전한 문장으로 처리되어 전달되므로 그대로 사용
     const escapedTitle = escapeHtml(title)
