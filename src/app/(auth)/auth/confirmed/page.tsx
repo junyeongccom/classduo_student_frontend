@@ -54,6 +54,8 @@ export default function EmailConfirmedPage() {
           login({
             access_token: accessToken,
             refresh_token: refreshToken || '',
+            expires_in: 3600, // 기본값: 1시간 (Supabase 기본값)
+            token_type: 'bearer', // 기본값
           })
 
           // 사용자 정보 조회 (선택적 - 실패해도 페이지는 표시)
