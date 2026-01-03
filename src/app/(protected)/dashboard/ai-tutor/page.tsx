@@ -41,6 +41,7 @@ export default function AITutorPage() {
   const [allReferences, setAllReferences] = useState<Map<number, Reference[]>>(new Map()) // 메시지별 참고자료 저장
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; summary_keywords?: string | null }>>([]) // 메시지 배열 저장 (summary_keywords 포함)
   const [isSessionLocked, setIsSessionLocked] = useState(false) // 세션 잠금 상태
+  const [autoSelectLatest, setAutoSelectLatest] = useState(false) // 가장 최신 회차 자동 선택 플래그
   
   // 세션 ID 설정 (localStorage 동기화)
   const setCurrentSessionId = useCallback((sessionId: string | undefined) => {
@@ -69,18 +70,25 @@ export default function AITutorPage() {
   // 새 채팅 시작
   const handleNewChat = useCallback(() => {
     setCurrentSessionId(undefined)
-    setSelectedLectureIds([]) // 선택 초기화
+    // 현재 선택된 강의 회차는 유지 (초기화하지 않음)
+    // setSelectedLectureIds([]) // 선택 초기화 - 제거
     setIsSessionLocked(false) // 잠금 해제
     setChatKey(prev => prev + 1) // ChatInterface 리셋
     setAllReferences(new Map()) // 참고자료 초기화
     setMessages([]) // 메시지 초기화
     setActiveTab('answer')
-    // localStorage도 초기화
+    // 강의 회차가 이미 선택되어 있으면 유지, 없으면 최신 회차 자동 선택
+    if (selectedLectureIds.length === 0) {
+      setAutoSelectLatest(true) // 선택된 강의가 없을 때만 최신 회차 자동 선택
+    } else {
+      setAutoSelectLatest(false) // 이미 선택된 강의가 있으면 유지
+    }
+    // localStorage에서 세션 ID만 제거 (lecture IDs는 유지)
     if (typeof window !== 'undefined') {
       localStorage.removeItem(AI_TUTOR_SESSION_KEY)
-      localStorage.removeItem(AI_TUTOR_LECTURE_IDS_KEY)
+      // localStorage.removeItem(AI_TUTOR_LECTURE_IDS_KEY) - 제거
     }
-  }, [setCurrentSessionId, setSelectedLectureIds])
+  }, [setCurrentSessionId, selectedLectureIds])
 
   // 세션 선택 (기존 세션 불러오기)
   const handleSelectSession = useCallback((sessionId: string, lectureIds?: string[]) => {
@@ -91,6 +99,7 @@ export default function AITutorPage() {
     }
     setIsSessionLocked(true) // 기존 세션은 잠금
     setChatKey(prev => prev + 1)
+    setAutoSelectLatest(false) // 자동 선택 플래그 초기화
     // 참고자료와 메시지는 ChatInterface에서 세션 로드 시 자동으로 복원됨
     // 초기화하지 않으면 이전 세션의 데이터가 남아있을 수 있으므로 초기화
     setAllReferences(new Map())
@@ -152,29 +161,29 @@ export default function AITutorPage() {
 
       {/* 메인 콘텐츠 영역 */}
       <div className="flex flex-1 overflow-hidden">
-        {/* 채팅 인터페이스 또는 참고자료 탭 */}
-        {activeTab === 'answer' ? (
-          <div className="flex-1">
-            <ChatInterface 
-              key={chatKey}
-              selectedLectureIds={selectedLectureIds}
-              sessionId={currentSessionId}
-              onSessionCreated={handleSessionCreated}
-              onReferencesUpdate={handleReferencesUpdate}
-              onLectureIdsLoaded={setSelectedLectureIds}
-              onMessagesUpdate={setMessages}
-            />
-          </div>
-        ) : (
-          <div className="flex-1 overflow-hidden">
-            <ReferencePanel
-              allReferences={allReferences}
-              activeTab={activeTab}
-              onClose={handleClosePanel}
-              messages={messages}
-            />
-          </div>
-        )}
+        {/* 채팅 인터페이스 - 항상 DOM에 유지하되 CSS로 숨김 */}
+        <div className={`flex-1 ${activeTab === 'answer' ? 'block' : 'hidden'}`}>
+          <ChatInterface 
+            key={chatKey}
+            selectedLectureIds={selectedLectureIds}
+            sessionId={currentSessionId}
+            onSessionCreated={handleSessionCreated}
+            onReferencesUpdate={handleReferencesUpdate}
+            onLectureIdsLoaded={setSelectedLectureIds}
+            onMessagesUpdate={setMessages}
+            onTabChange={handleTabChange}
+          />
+        </div>
+        
+        {/* 참고자료 패널 - 항상 DOM에 유지하되 CSS로 숨김 */}
+        <div className={`flex-1 overflow-hidden ${activeTab !== 'answer' ? 'block' : 'hidden'}`}>
+          <ReferencePanel
+            allReferences={allReferences}
+            activeTab={activeTab}
+            onClose={handleClosePanel}
+            messages={messages}
+          />
+        </div>
 
         {/* 우측 사이드바 - 수업 선택 */}
         <LectureSidebar
@@ -182,6 +191,7 @@ export default function AITutorPage() {
           onSelectLectureIds={setSelectedLectureIds}
           isLocked={isSessionLocked}
           initialLectureIds={selectedLectureIds.length > 0 ? selectedLectureIds : undefined}
+          autoSelectLatest={autoSelectLatest}
         />
       </div>
     </div>

@@ -32,6 +32,7 @@ interface LectureSidebarProps {
   onSelectLectureIds: (lectureIds: string[]) => void
   isLocked?: boolean // 세션이 생성되면 잠금 (선택 불가)
   initialLectureIds?: string[] // 초기 회차 IDs (세션 로드 시 사용)
+  autoSelectLatest?: boolean // 가장 최신 회차 자동 선택 (새 채팅 시 사용)
 }
 
 // 임시 데이터 (API 없을 때 사용)
@@ -57,12 +58,13 @@ const TEMP_COURSES: Course[] = [
   }
 ]
 
-export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false, initialLectureIds }: LectureSidebarProps) {
+export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false, initialLectureIds, autoSelectLatest = false }: LectureSidebarProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [hasAutoSelected, setHasAutoSelected] = useState(false) // 자동 선택 완료 플래그
 
   // 선택된 강의 객체
   const selectedCourse = courses.find(c => c.course_id === selectedCourseId)
@@ -116,8 +118,36 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
         
         setCourses(coursesWithLectures)
         
+        // 가장 최신 회차 자동 선택 (새 채팅 시)
+        if (autoSelectLatest && coursesWithLectures.length > 0 && !isLocked) {
+          // 모든 강의의 모든 회차 중에서 is_available이 true인 것만 필터링
+          const allAvailableLectures: (Lecture & { course_id: string })[] = []
+          coursesWithLectures.forEach(course => {
+            course.lectures
+              .filter(lec => lec.is_available)
+              .forEach(lec => {
+                allAvailableLectures.push({ ...lec, course_id: course.course_id })
+              })
+          })
+          
+          if (allAvailableLectures.length > 0) {
+            // lecture_date 기준으로 정렬하여 가장 최신 회차 찾기
+            const sortedLectures = [...allAvailableLectures].sort((a, b) => {
+              const dateA = new Date(a.lecture_date).getTime()
+              const dateB = new Date(b.lecture_date).getTime()
+              return dateB - dateA // 내림차순 (최신이 먼저)
+            })
+            
+            const latestLecture = sortedLectures[0]
+            setSelectedCourseId(latestLecture.course_id)
+            onSelectLectureIds([latestLecture.lecture_id])
+          } else if (!selectedCourseId) {
+            // 사용 가능한 회차가 없으면 첫 번째 강의 선택
+            setSelectedCourseId(coursesWithLectures[0].course_id)
+          }
+        }
         // 초기 lecture_ids가 있으면 해당 회차가 속한 강의를 찾아서 선택
-        if (initialLectureIds && initialLectureIds.length > 0 && coursesWithLectures.length > 0) {
+        else if (initialLectureIds && initialLectureIds.length > 0 && coursesWithLectures.length > 0) {
           // initialLectureIds 중 하나라도 포함하는 강의 찾기
           const matchingCourse = coursesWithLectures.find(course => 
             course.lectures.some(lec => initialLectureIds.includes(lec.lecture_id))
@@ -159,6 +189,40 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
       }
     }
   }, [initialLectureIds, courses, selectedCourseId, isLoading])
+
+  // autoSelectLatest가 true일 때 가장 최신 회차 선택 (강의 목록이 로드된 후)
+  useEffect(() => {
+    if (autoSelectLatest && courses.length > 0 && !isLoading && !isLocked && !hasAutoSelected) {
+      // 모든 강의의 모든 회차 중에서 is_available이 true인 것만 필터링
+      const allAvailableLectures: (Lecture & { course_id: string })[] = []
+      courses.forEach(course => {
+        course.lectures
+          .filter(lec => lec.is_available)
+          .forEach(lec => {
+            allAvailableLectures.push({ ...lec, course_id: course.course_id })
+          })
+      })
+      
+      if (allAvailableLectures.length > 0) {
+        // lecture_date 기준으로 정렬하여 가장 최신 회차 찾기
+        const sortedLectures = [...allAvailableLectures].sort((a, b) => {
+          const dateA = new Date(a.lecture_date).getTime()
+          const dateB = new Date(b.lecture_date).getTime()
+          return dateB - dateA // 내림차순 (최신이 먼저)
+        })
+        
+        const latestLecture = sortedLectures[0]
+        setSelectedCourseId(latestLecture.course_id)
+        onSelectLectureIds([latestLecture.lecture_id])
+        setHasAutoSelected(true) // 자동 선택 완료 표시
+      }
+    }
+    
+    // autoSelectLatest가 false가 되면 플래그 초기화
+    if (!autoSelectLatest) {
+      setHasAutoSelected(false)
+    }
+  }, [autoSelectLatest, courses, isLoading, isLocked, hasAutoSelected, onSelectLectureIds])
 
   // 강의 선택 시 기존 회차 선택 초기화 - 잠금 상태면 무시
   const handleSelectCourse = (courseId: string) => {

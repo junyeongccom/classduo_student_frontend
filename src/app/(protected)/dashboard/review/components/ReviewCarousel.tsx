@@ -57,9 +57,9 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
       {/* 캐러셀 콘텐츠 */}
       <div className="flex-1 overflow-y-auto">
         {currentPage === 1 ? (
-          <ReviewPage1 data={data.page_1} />
+          <ReviewPage1 data={data.page_1} currentPage={currentPage} totalPages={totalPages} />
         ) : (
-          <ReviewPage2_6 data={data.pages_2_6[currentPage - 2]} />
+          <ReviewPage2_6 data={data.pages_2_6[currentPage - 2]} currentPage={currentPage} totalPages={totalPages} />
         )}
       </div>
 
@@ -110,10 +110,16 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
 /**
  * 복습 캐러셀 1페이지 - 인스타그램 카드뉴스 스타일
  */
-function ReviewPage1({ data }: { data: ReviewCarouselResponse['page_1'] }) {
+function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselResponse['page_1']; currentPage: number; totalPages: number }) {
   return (
     <div className="h-full flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden relative" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+        {/* 페이지 번호 표시 - 우측 위 */}
+        <div className="absolute top-4 right-4 z-10">
+          <div className="bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+            {currentPage}/{totalPages}
+          </div>
+        </div>
         {/* 그리드 레이아웃: 좌측 텍스트, 우측 썸네일 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
           {/* 좌측: 텍스트 콘텐츠 */}
@@ -168,6 +174,26 @@ function ReviewPage1({ data }: { data: ReviewCarouselResponse['page_1'] }) {
                   src={data.thumbnail_image_url}
                   alt="복습 썸네일"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // 이미지 로드 실패 시 플레이스홀더로 대체
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                    const parent = target.parentElement
+                    if (parent) {
+                      parent.innerHTML = `
+                        <div class="w-full h-full flex items-center justify-center">
+                          <div class="text-center">
+                            <div class="mx-auto h-16 w-16 text-gray-300 mb-4">
+                              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <p class="text-sm text-gray-400 font-medium">썸네일 로드 실패</p>
+                          </div>
+                        </div>
+                      `
+                    }
+                  }}
                 />
               </div>
             ) : (
@@ -234,20 +260,30 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
   const newWindow = window.open('', '_blank', 'width=1200,height=800')
   if (!newWindow) return
 
-  // HTML 생성
+  // HTML 생성 - 인터뷰 기사 형식으로 표시
   const recordingChunksHtml = sources.recording_chunks.map((chunk, index) => {
-    const cleanedText = cleanText(chunk.text_content, 'recording')
-    const escapedText = escapeHtml(cleanedText).replace(/\n/g, '<br>')
+    // summary가 있으면 인터뷰 기사 형식으로, 없으면 원문 사용
+    const hasSummary = chunk.summary && chunk.summary.title && chunk.summary.content
+    const title = hasSummary ? chunk.summary.title : '녹음본 내용'
+    const content = hasSummary ? chunk.summary.content : cleanText(chunk.text_content, 'recording')
+    
+    // 백엔드에서 이미 완전한 문장으로 처리되어 전달되므로 그대로 사용
+    const escapedTitle = escapeHtml(title)
+    const escapedContent = escapeHtml(content).replace(/\n/g, '<br>')
+    
     return `
-    <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #f0fdf4, #d1fae5); padding: 1.25rem; border-left: 4px solid #10b981; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1rem;">
+    <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #f0fdf4, #d1fae5); padding: 1.5rem; border-left: 4px solid #10b981; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1.5rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
         <span style="padding: 0.375rem 0.75rem; background-color: #10b981; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
           ${chunk.start_time.toFixed(1)}초 ~ ${chunk.end_time.toFixed(1)}초
         </span>
       </div>
       <div>
-        <p style="font-size: 1rem; color: #1f2937; line-height: 1.75; white-space: pre-wrap; font-weight: 500; margin: 0;">
-          ${escapedText}
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin: 0 0 1rem 0; line-height: 1.4;">
+          ${escapedTitle}
+        </h3>
+        <p style="font-size: 1rem; color: #1f2937; line-height: 1.75; white-space: pre-wrap; font-weight: 400; margin: 0;">
+          ${escapedContent}
         </p>
       </div>
     </div>
@@ -384,7 +420,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
 /**
  * 복습 캐러셀 2-6페이지 - 인스타그램 카드뉴스 스타일
  */
-function ReviewPage2_6({ data }: { data: ReviewCarouselResponse['pages_2_6'][0] }) {
+function ReviewPage2_6({ data, currentPage, totalPages }: { data: ReviewCarouselResponse['pages_2_6'][0]; currentPage: number; totalPages: number }) {
 
   if (!data) {
     return (
@@ -417,9 +453,25 @@ function ReviewPage2_6({ data }: { data: ReviewCarouselResponse['pages_2_6'][0] 
     ? supplementaryBlanks
     : sortedBlanks.filter(b => data.answer.supplementary_explanation.includes(b.answer_text))
 
+  // 페이지 전체의 빈칸 상태를 공유 (핵심정답 + 부연설명)
+  const [isRevealed, setIsRevealed] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  const toggleAllBlanks = () => {
+    setIsAnimating(true)
+    setIsRevealed(prev => !prev)
+    setTimeout(() => setIsAnimating(false), 400)
+  }
+
   return (
     <div className="h-full flex items-center justify-center p-4 overflow-y-auto">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden my-auto" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden my-auto relative" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+        {/* 페이지 번호 표시 - 우측 위 */}
+        <div className="absolute top-4 right-4 z-10">
+          <div className="bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+            {currentPage}/{totalPages}
+          </div>
+        </div>
         <div className="p-6 lg:p-8">
           {/* 헤더 */}
           <div className="mb-6 flex items-center justify-between">
@@ -454,6 +506,9 @@ function ReviewPage2_6({ data }: { data: ReviewCarouselResponse['pages_2_6'][0] 
                 blanks={allKeyAnswerBlanks}
                 pageId={data.page_number}
                 sectionType="key-answer"
+                isRevealed={isRevealed}
+                isAnimating={isAnimating}
+                onToggle={toggleAllBlanks}
               />
             </div>
           </div>
@@ -470,6 +525,9 @@ function ReviewPage2_6({ data }: { data: ReviewCarouselResponse['pages_2_6'][0] 
                 blanks={allSupplementaryBlanks}
                 pageId={data.page_number}
                 sectionType="supplementary"
+                isRevealed={isRevealed}
+                isAnimating={isAnimating}
+                onToggle={toggleAllBlanks}
               />
             </div>
           </div>
@@ -495,16 +553,34 @@ function AnswerWithBlanks({
   text, 
   blanks, 
   pageId, 
-  sectionType 
+  sectionType,
+  isRevealed: externalIsRevealed,
+  isAnimating: externalIsAnimating,
+  onToggle: externalOnToggle
 }: { 
   text: string
   blanks: ReviewCarouselResponse['pages_2_6'][0]['answer']['blanks']
   pageId?: number
   sectionType?: string
+  isRevealed?: boolean
+  isAnimating?: boolean
+  onToggle?: () => void
 }) {
   // 페이지와 섹션별로 고유한 키 생성
   const uniquePrefix = pageId && sectionType ? `${pageId}-${sectionType}-` : ''
-  const [revealedBlanks, setRevealedBlanks] = useState<Set<string>>(new Set())
+  
+  // 외부에서 상태를 전달받으면 사용, 없으면 내부 상태 사용 (하위 호환성)
+  const [internalIsRevealed, setInternalIsRevealed] = useState(false)
+  const [internalIsAnimating, setInternalIsAnimating] = useState(false)
+  
+  const isRevealed = externalIsRevealed !== undefined ? externalIsRevealed : internalIsRevealed
+  const isAnimating = externalIsAnimating !== undefined ? externalIsAnimating : internalIsAnimating
+  
+  const toggleAllBlanks = externalOnToggle || (() => {
+    setInternalIsAnimating(true)
+    setInternalIsRevealed(prev => !prev)
+    setTimeout(() => setInternalIsAnimating(false), 400)
+  })
 
   if (blanks.length === 0) {
     return <p className="text-base leading-relaxed text-gray-800 font-medium">{text}</p>
@@ -581,34 +657,23 @@ function AnswerWithBlanks({
     return <p className="text-base leading-relaxed text-gray-800 font-medium">{text}</p>
   }
 
-  const toggleBlank = (blankKey: string) => {
-    setRevealedBlanks(prev => {
-      const next = new Set(prev)
-      if (next.has(blankKey)) {
-        next.delete(blankKey)
-      } else {
-        next.add(blankKey)
-      }
-      return next
-    })
-  }
-
   return (
     <p className="text-base leading-relaxed text-gray-800 font-medium">
       {parts.map((part, i) => {
         if (part.type === 'blank' && part.blankIndex !== undefined && 'blankKey' in part) {
           const blank = blanks[part.blankIndex]
-          const blankKey = part.blankKey as string
-          const isRevealed = revealedBlanks.has(blankKey)
           return (
             <span
               key={i}
-              onClick={() => toggleBlank(blankKey)}
-              className={`inline-block cursor-pointer rounded-md px-2 py-1 mx-1 transition-all duration-200 font-semibold ${
+              onClick={toggleAllBlanks}
+              className={`inline-block cursor-pointer rounded-lg px-3 py-1.5 mx-1 font-bold transition-all ${
                 isRevealed
-                  ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white shadow-md scale-105'
-                  : 'bg-gray-300 text-gray-300 hover:bg-gray-400 hover:scale-105'
-              }`}
+                  ? `bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white shadow-lg ${isAnimating ? 'animate-blank-reveal' : ''}`
+                  : `bg-gray-300 text-gray-300 hover:bg-gray-400 hover:shadow-md ${isAnimating ? 'animate-blank-hide' : ''}`
+              } ${!isAnimating && 'duration-300'} hover:scale-110 active:scale-95`}
+              style={{
+                textShadow: isRevealed ? '0 1px 2px rgba(0,0,0,0.2)' : 'none',
+              }}
               title={isRevealed ? '클릭하여 숨기기' : '클릭하여 정답 보기'}
             >
               {isRevealed ? blank.answer_text : '_____'}
