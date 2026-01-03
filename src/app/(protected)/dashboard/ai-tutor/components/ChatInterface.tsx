@@ -491,7 +491,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             // 세션의 lecture_ids를 부모에게 전달 (session 객체에서 가져옴)
             if (data.session?.lecture_ids && onLectureIdsLoaded) {
               // lecture_ids가 배열이 아닌 경우 파싱 (Supabase JSONB 배열 처리)
-              let lectureIds = data.session.lecture_ids
+              let lectureIds: string | string[] = data.session.lecture_ids
               if (typeof lectureIds === 'string') {
                 try {
                   lectureIds = JSON.parse(lectureIds)
