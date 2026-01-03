@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/shared/components/ui'
 import { useAuthStore } from '@/features/auth'
 import { authApi } from '@/features/auth/api/authApi'
 
-export default function EmailConfirmedPage() {
+function EmailConfirmedContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login, setUser, setLoading } = useAuthStore()
@@ -212,4 +212,22 @@ export default function EmailConfirmedPage() {
   )
 }
 
+export default function EmailConfirmedPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+          <div className="w-full max-w-md text-center">
+            <div className="mb-6 flex justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary-500" />
+            </div>
+            <p className="text-gray-500">로딩 중...</p>
+          </div>
+        </main>
+      }
+    >
+      <EmailConfirmedContent />
+    </Suspense>
+  )
+}
 
