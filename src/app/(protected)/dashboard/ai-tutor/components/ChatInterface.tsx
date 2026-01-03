@@ -493,10 +493,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               // lecture_ids가 배열이 아닌 경우 파싱 (Supabase JSONB 배열 처리)
               let lectureIds: string | string[] = data.session.lecture_ids
               if (typeof lectureIds === 'string') {
+                const stringValue = lectureIds
                 try {
-                  lectureIds = JSON.parse(lectureIds)
+                  const parsed = JSON.parse(stringValue)
+                  lectureIds = Array.isArray(parsed) ? parsed : [stringValue]
                 } catch {
-                  lectureIds = [lectureIds]
+                  lectureIds = [stringValue]
                 }
               }
               if (Array.isArray(lectureIds) && lectureIds.length > 0) {
