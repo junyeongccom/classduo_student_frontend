@@ -91,12 +91,75 @@ const config: Config = {
             transform: 'scale(0.95)',
           },
         },
+        'blank-shimmer': {
+          '0%': {
+            transform: 'translateX(-100%)',
+          },
+          '100%': {
+            transform: 'translateX(200%)',
+          },
+        },
+        'shard-fall': {
+          '0%': {
+            transform: 'translate(0, 0) rotate(0deg) scale(1)',
+            opacity: '1',
+          },
+          '100%': {
+            transform: 'translate(var(--shard-x), var(--shard-y)) rotate(var(--shard-rotate)) scale(0.3)',
+            opacity: '0',
+          },
+        },
+        'shimmer': {
+          '0%': {
+            backgroundPosition: '-200% 0',
+          },
+          '100%': {
+            backgroundPosition: '200% 0',
+          },
+        },
+        'blank-break': {
+          '0%': {
+            transform: 'rotate(0deg) scale(1) translateY(0)',
+            opacity: '1',
+          },
+          '10%': {
+            transform: 'rotate(-3deg) scale(1.05) translateY(-2px)',
+            opacity: '1',
+          },
+          '20%': {
+            transform: 'rotate(3deg) scale(1.08) translateY(-4px)',
+            opacity: '0.95',
+          },
+          '35%': {
+            transform: 'rotate(-15deg) scale(0.9) translateY(10px)',
+            opacity: '0.7',
+          },
+          '50%': {
+            transform: 'rotate(20deg) scale(0.7) translateY(30px) translateX(15px)',
+            opacity: '0.5',
+          },
+          '65%': {
+            transform: 'rotate(-25deg) scale(0.5) translateY(60px) translateX(-10px)',
+            opacity: '0.3',
+          },
+          '80%': {
+            transform: 'rotate(30deg) scale(0.3) translateY(100px) translateX(20px)',
+            opacity: '0.1',
+          },
+          '100%': {
+            transform: 'rotate(45deg) scale(0.1) translateY(150px) translateX(30px)',
+            opacity: '0',
+          },
+        },
       },
       animation: {
         'fade-in-up': 'fade-in-up 0.5s ease-out',
         'pulse-scale': 'pulse-scale 2s ease-in-out',
         'blank-reveal': 'blank-reveal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
         'blank-hide': 'blank-hide 0.3s ease-out',
+        'blank-shimmer': 'blank-shimmer 2s linear infinite',
+        'shimmer': 'shimmer 2s linear infinite',
+        'blank-break': 'blank-break 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards',
       },
     },
   },

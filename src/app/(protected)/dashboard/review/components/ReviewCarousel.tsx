@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { ReviewCarouselResponse } from '@/features/review/api/reviewApi'
 
@@ -595,15 +595,11 @@ function AnswerWithBlanks({
   
   // 외부에서 상태를 전달받으면 사용, 없으면 내부 상태 사용 (하위 호환성)
   const [internalIsRevealed, setInternalIsRevealed] = useState(false)
-  const [internalIsAnimating, setInternalIsAnimating] = useState(false)
   
   const isRevealed = externalIsRevealed !== undefined ? externalIsRevealed : internalIsRevealed
-  const isAnimating = externalIsAnimating !== undefined ? externalIsAnimating : internalIsAnimating
   
-  const toggleAllBlanks = externalOnToggle || (() => {
-    setInternalIsAnimating(true)
+  const handleReveal = externalOnToggle || (() => {
     setInternalIsRevealed(prev => !prev)
-    setTimeout(() => setInternalIsAnimating(false), 400)
   })
 
   if (blanks.length === 0) {
@@ -687,26 +683,76 @@ function AnswerWithBlanks({
         if (part.type === 'blank' && part.blankIndex !== undefined && 'blankKey' in part) {
           const blank = blanks[part.blankIndex]
           return (
-            <span
+            <SimpleBlank
               key={i}
-              onClick={toggleAllBlanks}
-              className={`inline-block cursor-pointer rounded-lg px-3 py-1.5 mx-1 font-bold transition-all ${
-                isRevealed
-                  ? `bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white shadow-lg ${isAnimating ? 'animate-blank-reveal' : ''}`
-                  : `bg-gray-300 text-gray-300 hover:bg-gray-400 hover:shadow-md ${isAnimating ? 'animate-blank-hide' : ''}`
-              } ${!isAnimating && 'duration-300'} hover:scale-110 active:scale-95`}
-              style={{
-                textShadow: isRevealed ? '0 1px 2px rgba(0,0,0,0.2)' : 'none',
-              }}
-              title={isRevealed ? '클릭하여 숨기기' : '클릭하여 정답 보기'}
-            >
-              {isRevealed ? blank.answer_text : '_____'}
-            </span>
+              answer={blank.answer_text}
+              isRevealed={isRevealed}
+              onReveal={handleReveal}
+            />
           )
         }
         return <span key={i}>{part.content}</span>
       })}
     </p>
+  )
+}
+
+/**
+ * 간단한 빈칸 컴포넌트 (shimmer 효과만)
+ */
+function SimpleBlank({ 
+  answer, 
+  isRevealed, 
+  onReveal 
+}: { 
+  answer: string
+  isRevealed: boolean
+  onReveal: () => void
+}) {
+  const handleClick = () => {
+    onReveal() // 토글 기능
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleClick()
+    }
+  }
+
+  return (
+    <span 
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      className={`inline relative cursor-pointer rounded px-1 py-0 mx-0.5 font-bold transition-all overflow-hidden ${
+        isRevealed
+          ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white shadow-lg'
+          : 'bg-gray-300 text-gray-300 hover:bg-gray-400 hover:shadow-md'
+      }`}
+      style={{
+        textShadow: isRevealed ? '0 1px 2px rgba(0,0,0,0.2)' : 'none',
+        lineHeight: 'inherit',
+        display: 'inline',
+        verticalAlign: 'baseline',
+      }}
+      aria-label={isRevealed ? '정답: ' + answer + ' (클릭하여 숨기기)' : '클릭하여 정답 보기'}
+    >
+      {/* 빈칸 상태일 때 shimmer 효과 - 항상 반복 */}
+      {!isRevealed && (
+        <span 
+          className="absolute inset-0 pointer-events-none animate-shimmer"
+          style={{
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%)',
+            backgroundSize: '200% 100%',
+          }}
+        />
+      )}
+      <span className="relative z-10">
+        {isRevealed ? answer : '_____'}
+      </span>
+    </span>
   )
 }
 
