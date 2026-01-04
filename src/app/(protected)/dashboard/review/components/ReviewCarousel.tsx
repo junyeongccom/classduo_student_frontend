@@ -59,7 +59,12 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
         {currentPage === 1 ? (
           <ReviewPage1 data={data.page_1} currentPage={currentPage} totalPages={totalPages} />
         ) : (
-          <ReviewPage2_6 data={data.pages_2_6[currentPage - 2]} currentPage={currentPage} totalPages={totalPages} />
+          <ReviewPage2_6 
+            key={`page-${currentPage}`}
+            data={data.pages_2_6[currentPage - 2]} 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+          />
         )}
       </div>
 
