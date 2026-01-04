@@ -184,7 +184,7 @@ function renderMarkdown(text: string) {
 interface ChatInterfaceProps {
   selectedLectureIds: string[]
   sessionId?: string
-  onSessionCreated?: (sessionId: string) => void
+  onSessionCreated?: (sessionId: string | undefined) => void
   onReferencesUpdate?: (messageIndex: number, references: Reference[]) => void
   onLectureIdsLoaded?: (lectureIds: string[]) => void // 세션 로드 시 lecture_ids 전달
   onMessagesUpdate?: (messages: ChatMessage[]) => void // 메시지 배열 업데이트
@@ -228,42 +228,25 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
 
-  // lecture_ids 변경 시 PQM 질문 로드 (단일 선택 시에만)
+  // lecture_ids 변경 시 후킹 질문과 PQM 질문 동시 로드 (단일 선택 시에만)
   useEffect(() => {
-    const loadPQMQuestions = async () => {
-      // 복수 선택이거나 선택 없으면 PQM 질문 숨김
-      if (selectedLectureIds.length !== 1) {
-        setPQMQuestions([])
-        return
-      }
-      
-      try {
-        const { data, error } = await chatApi.getPQMQuestionsByLecture(selectedLectureIds[0])
-        if (data && !error && data.length > 0) {
-          setPQMQuestions(data)
-        } else {
-          setPQMQuestions([])
-        }
-      } catch (err) {
-        console.error('Failed to load PQM questions:', err)
-        setPQMQuestions([])
-      }
+    // 복수 선택이거나 선택 없으면 둘 다 숨김
+    if (selectedLectureIds.length !== 1) {
+      setHookingQuestions([])
+      setPQMQuestions([])
+      return
     }
     
-    loadPQMQuestions()
-  }, [selectedLectureIds])
-
-  // lecture_ids 변경 시 후킹 질문 로드 (단일 선택 시에만)
-  useEffect(() => {
-    const loadHookingQuestions = async () => {
-      // 복수 선택이거나 선택 없으면 후킹 질문 숨김
-      if (selectedLectureIds.length !== 1) {
-        setHookingQuestions([])
-        return
-      }
+    const loadQuestions = async () => {
+      // 후킹 질문과 PQM 질문을 병렬로 동시에 로드
+      const [hookingResult, pqmResult] = await Promise.allSettled([
+        chatApi.getHookingByLecture(selectedLectureIds[0]),
+        chatApi.getPQMQuestionsByLecture(selectedLectureIds[0])
+      ])
       
-      try {
-        const { data, error } = await chatApi.getHookingByLecture(selectedLectureIds[0])
+      // 후킹 질문 처리
+      if (hookingResult.status === 'fulfilled') {
+        const { data, error } = hookingResult.value
         console.log('[후킹 질문 로드] API 응답:', { data, error })
         if (data && !error) {
           console.log('[후킹 질문 로드] reference_data:', data.reference_data)
@@ -278,13 +261,26 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           // 후킹 질문이 없으면 기본 질문 사용
           setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
         }
-      } catch (err) {
-        console.error('Failed to load hooking questions:', err)
+      } else {
+        console.error('Failed to load hooking questions:', hookingResult.reason)
         setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+      }
+      
+      // PQM 질문 처리
+      if (pqmResult.status === 'fulfilled') {
+        const { data, error } = pqmResult.value
+        if (data && !error && data.length > 0) {
+          setPQMQuestions(data)
+        } else {
+          setPQMQuestions([])
+        }
+      } else {
+        console.error('Failed to load PQM questions:', pqmResult.reason)
+        setPQMQuestions([])
       }
     }
     
-    loadHookingQuestions()
+    loadQuestions()
   }, [selectedLectureIds])
 
   // 컴포넌트 마운트 시 세션 확인 (페이지 복귀 시 작업 완료 확인)
@@ -510,9 +506,22 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 onLectureIdsLoaded(lectureIds)
               }
             }
+          } else {
+            // 세션을 찾을 수 없음 (404 등) - 세션 ID 초기화
+            console.warn('Session not found, clearing session ID:', sessionId)
+            setCurrentSessionId(undefined)
+            setMessages([])
+            onSessionCreated?.(undefined) // 부모에게 세션 초기화 알림
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('Failed to load session:', err)
+          // 404 에러인 경우 세션 ID 초기화
+          if (err?.status === 404 || err?.response?.status === 404) {
+            console.warn('Session not found (404), clearing session ID:', sessionId)
+            setCurrentSessionId(undefined)
+            setMessages([])
+            onSessionCreated?.(undefined as any) // 부모에게 세션 초기화 알림
+          }
         } finally {
           setIsLoading(false)
         }
@@ -818,9 +827,17 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       // 세션이 없으면 생성하고 메시지 저장
       if (!currentSessionId) {
         try {
+          console.log('[후킹 질문] 세션 생성 시도:', { selectedLectureIds })
           const sessionResult = await chatApi.createSession(selectedLectureIds)
+          console.log('[후킹 질문] 세션 생성 결과:', sessionResult)
+          if (sessionResult.error) {
+            console.error('[후킹 질문] 세션 생성 실패:', sessionResult.error)
+            setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
+            return
+          }
           if (sessionResult.data && sessionResult.data.id) {
             const newSessionId = sessionResult.data.id
+            console.log('[후킹 질문] 세션 생성 성공:', newSessionId)
             selfCreatedSessionId.current = newSessionId
             setCurrentSessionId(newSessionId)
             onSessionCreated?.(newSessionId)
@@ -833,14 +850,17 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 reference_data: hooking.reference_data,
                 summary_keywords: hooking.summary_keywords,
               })
+              console.log('[후킹 질문] 메시지 저장 완료')
             } catch (err) {
-              console.error('Failed to save hooking message:', err)
+              console.error('[후킹 질문] 메시지 저장 실패:', err)
             }
           } else {
-            console.error('Failed to create session: no session ID returned', sessionResult)
+            console.error('[후킹 질문] 세션 생성 실패: 세션 ID 없음', sessionResult)
+            setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
           }
         } catch (err) {
-          console.error('Failed to create session for hooking:', err)
+          console.error('[후킹 질문] 세션 생성 예외:', err)
+          setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
         }
       } else {
         // 기존 세션에 후킹 질문/답변 저장 (미리 준비된 답변 사용)
@@ -948,9 +968,17 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     // 세션이 없으면 생성하고 메시지 저장
     if (!currentSessionId) {
       try {
+        console.log('[PQM 질문] 세션 생성 시도:', { selectedLectureIds })
         const sessionResult = await chatApi.createSession(selectedLectureIds)
+        console.log('[PQM 질문] 세션 생성 결과:', sessionResult)
+        if (sessionResult.error) {
+          console.error('[PQM 질문] 세션 생성 실패:', sessionResult.error)
+          setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
+          return
+        }
         if (sessionResult.data && sessionResult.data.id) {
           const newSessionId = sessionResult.data.id
+          console.log('[PQM 질문] 세션 생성 성공:', newSessionId)
           selfCreatedSessionId.current = newSessionId
           setCurrentSessionId(newSessionId)
           onSessionCreated?.(newSessionId)
@@ -962,14 +990,17 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               answer: pqmQuestion.answer,
               reference_data: references,
             })
+            console.log('[PQM 질문] 메시지 저장 완료')
           } catch (err) {
-            console.error('Failed to save PQM message:', err)
+            console.error('[PQM 질문] 메시지 저장 실패:', err)
           }
         } else {
-          console.error('Failed to create session: no session ID returned', sessionResult)
+          console.error('[PQM 질문] 세션 생성 실패: 세션 ID 없음', sessionResult)
+          setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
         }
       } catch (err) {
-        console.error('Failed to create session for PQM:', err)
+        console.error('[PQM 질문] 세션 생성 예외:', err)
+        setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
       }
     } else {
       // 기존 세션에 PQM 메시지 저장

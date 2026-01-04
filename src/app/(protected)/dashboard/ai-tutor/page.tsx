@@ -108,9 +108,23 @@ export default function AITutorPage() {
   }, [setCurrentSessionId, setSelectedLectureIds])
 
   // 세션 생성 완료 시 (ChatInterface에서 호출)
-  const handleSessionCreated = useCallback((sessionId: string) => {
-    setCurrentSessionId(sessionId)
-    setIsSessionLocked(true) // 세션 생성되면 잠금
+  const handleSessionCreated = useCallback((sessionId: string | undefined) => {
+    if (sessionId) {
+      setCurrentSessionId(sessionId)
+      setIsSessionLocked(true) // 세션 생성되면 잠금
+      // localStorage에 세션 ID 저장
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(AI_TUTOR_SESSION_KEY, sessionId)
+      }
+    } else {
+      // 세션이 초기화된 경우 (404 등)
+      setCurrentSessionId(undefined)
+      setIsSessionLocked(false) // 잠금 해제
+      // localStorage에서 세션 ID 제거
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(AI_TUTOR_SESSION_KEY)
+      }
+    }
   }, [setCurrentSessionId])
   
   // lecture IDs가 변경될 때 localStorage 업데이트

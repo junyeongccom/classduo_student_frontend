@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { ReviewCarouselResponse } from '@/features/review/api/reviewApi'
 
@@ -17,6 +17,11 @@ interface ReviewCarouselProps {
 
 export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) {
   const [currentPage, setCurrentPage] = useState(1) // 1-6 (1페이지 + 2-6페이지)
+  
+  // 다른 강의회차 선택 시 페이지를 1로 리셋
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [data])
 
   if (isLoading) {
     return (
@@ -174,18 +179,32 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
           {/* 우측: 썸네일 이미지 */}
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-8 lg:p-0">
             {data.thumbnail_image_url ? (
-              <div className="w-full h-full max-h-[600px] rounded-xl overflow-hidden shadow-lg">
+              <div className="w-full h-full max-h-[600px] rounded-xl overflow-hidden shadow-lg relative">
+                {/* 로딩 플레이스홀더 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse flex items-center justify-center">
+                  <ImageIcon className="h-12 w-12 text-gray-400" />
+                </div>
                 <img
                   src={data.thumbnail_image_url}
                   alt="복습 썸네일"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover relative z-10"
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={(e) => {
+                    // 이미지 로드 완료 시 플레이스홀더 숨기기
+                    const target = e.target as HTMLImageElement
+                    const placeholder = target.previousElementSibling as HTMLElement
+                    if (placeholder) {
+                      placeholder.style.display = 'none'
+                    }
+                  }}
                   onError={(e) => {
                     // 이미지 로드 실패 시 플레이스홀더로 대체
                     const target = e.target as HTMLImageElement
                     target.style.display = 'none'
-                    const parent = target.parentElement
-                    if (parent) {
-                      parent.innerHTML = `
+                    const placeholder = target.previousElementSibling as HTMLElement
+                    if (placeholder) {
+                      placeholder.innerHTML = `
                         <div class="w-full h-full flex items-center justify-center">
                           <div class="text-center">
                             <div class="mx-auto h-16 w-16 text-gray-300 mb-4">

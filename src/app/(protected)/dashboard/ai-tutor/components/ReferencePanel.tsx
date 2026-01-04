@@ -81,6 +81,8 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
     
     references.forEach(ref => {
       // 인용이 있는 레퍼런스만 포함 (citations가 있고 비어있지 않은 경우)
+      // 답변에 출처 표기가 있으면 백엔드에서 반드시 citation을 찾도록 수정했으므로,
+      // citations가 없으면 표시하지 않음
       const hasCitations = ref.citations && Array.isArray(ref.citations) && ref.citations.length > 0
       if (!hasCitations) {
         return // 인용이 없으면 표시하지 않음
