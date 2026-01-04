@@ -42,7 +42,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
     return () => clearInterval(interval)
   }, [isOpen, animationState])
 
-  // 배경 스크롤 애니메이션 (앞으로 나아가는 느낌)
+  // 배경 스크롤 애니메이션 (위에서 아래로 내려오는 느낌)
   useEffect(() => {
     if (!isOpen || animationState !== 'entered') return
 
@@ -60,7 +60,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
       setBackgroundOffset((prev) => {
         const newOffset = prev + speed
-        // 배경이 반복되도록 오프셋 리셋 (배경 패턴 너비에 따라 조정)
+        // 배경이 반복되도록 오프셋 리셋 (배경 패턴 높이에 따라 조정)
         return newOffset >= 200 ? 0 : newOffset
       })
 
@@ -144,19 +144,54 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         </button>
 
         {/* 게임 화면 */}
-        <div className="relative z-10 h-full overflow-hidden bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200">
-          {/* 스크롤되는 배경 (앞으로 나아가는 느낌) */}
-          <div 
-            className="absolute inset-0 game-background-scroll"
-            style={{
-              backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(255,255,255,0.1) 100px, rgba(255,255,255,0.1) 102px)',
-              backgroundPosition: `${backgroundOffset}px 0`,
-              backgroundSize: '200px 100%',
-            }}
-          />
+        <div className="relative z-10 h-full overflow-hidden bg-gradient-to-b from-green-500 via-green-600 to-green-700">
+          {/* 좌우 풀 배경 */}
+          <div className="absolute inset-0 bg-gradient-to-b from-green-400 via-green-500 to-green-600">
+            {/* 풀 텍스처 (위에서 아래로 스크롤) */}
+            <div 
+              className="absolute inset-0 opacity-40"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(34,197,94,0.4) 30px, rgba(34,197,94,0.4) 32px)',
+                backgroundPosition: `0 ${backgroundOffset}px`,
+                backgroundSize: '100% 200px',
+              }}
+            />
+          </div>
 
-          {/* 캐릭터 (하단 중앙에 위치) */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10">
+          {/* 가운데 길 (위에서 아래로 스크롤) */}
+          <div 
+            className="absolute inset-0 z-5"
+            style={{
+              background: 'linear-gradient(to right, transparent 0%, transparent 30%, #8B7355 30%, #8B7355 70%, transparent 70%, transparent 100%)',
+            }}
+          >
+            {/* 길 텍스처 (위에서 아래로 스크롤) */}
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(139,115,85,0.3) 50px, rgba(139,115,85,0.3) 52px)',
+                backgroundPosition: `0 ${backgroundOffset}px`,
+                backgroundSize: '100% 200px',
+                clipPath: 'polygon(30% 0%, 70% 0%, 70% 100%, 30% 100%)',
+              }}
+            />
+            {/* 길 중앙선 */}
+            <div 
+              className="absolute inset-0"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(255,255,255,0.3) 20px, rgba(255,255,255,0.3) 22px)',
+                backgroundPosition: `0 ${backgroundOffset}px`,
+                backgroundSize: '100% 200px',
+                clipPath: 'polygon(49% 0%, 51% 0%, 51% 100%, 49% 100%)',
+              }}
+            />
+            {/* 길 좌우 경계선 */}
+            <div className="absolute top-0 bottom-0 left-[30%] w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" />
+            <div className="absolute top-0 bottom-0 right-[30%] w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" />
+          </div>
+
+          {/* 캐릭터 (길 위에 위치) */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10" style={{ marginBottom: '20px' }}>
             <img
               src={`/run_${currentFrame}.png`}
               alt={`Run frame ${currentFrame}`}
