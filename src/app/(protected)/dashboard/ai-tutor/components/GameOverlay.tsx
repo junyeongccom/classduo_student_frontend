@@ -28,12 +28,21 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   const [currentQuestion, setCurrentQuestion] = useState<string | null>(null) // 현재 질문
   const [activeDoorId, setActiveDoorId] = useState<number | null>(null) // 현재 퀴즈 문 ID
   
+  // 게임 페이즈 상태 (문 통과 연출용)
+  type GamePhase = 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'returning_to_center'
+  const [gamePhase, setGamePhase] = useState<GamePhase>('playing')
+  const [selectedAnswer, setSelectedAnswer] = useState<'O' | 'X' | null>(null) // 선택한 답
+  const [horizontalOffset, setHorizontalOffset] = useState(0) // 수평 이동 오프셋 (배경/길/문이 이동)
+  
   // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
   const REFERENCE_WIDTH = 1200
   const REFERENCE_HEIGHT = 675
   
   // 스케일 팩터 계산 (화면 크기에 따라 모든 요소를 동일한 비율로 확대/축소)
   const scaleFactor = dimensions.width / REFERENCE_WIDTH
+  
+  // 문 위치까지의 수평 이동 거리 (화면 너비의 10%)
+  const DOOR_OFFSET_TARGET = dimensions.width * 0.10
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -46,19 +55,22 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   }, [])
 
   // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
+  // 퀴즈 중에만 정지, 나머지 페이즈에서는 계속 애니메이션
   useEffect(() => {
-    if (!isOpen || animationState !== 'entered' || isPaused) return
+    if (!isOpen || animationState !== 'entered' || gamePhase === 'quiz') return
 
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % frameSequence.length)
     }, 150) // 150ms마다 프레임 변경 (빠른 애니메이션)
 
     return () => clearInterval(interval)
-  }, [isOpen, animationState, isPaused])
+  }, [isOpen, animationState, gamePhase])
 
   // 배경 스크롤 애니메이션 (위에서 아래로 내려오는 느낌)
+  // playing, passing_through 페이즈에서만 수직 스크롤
   useEffect(() => {
-    if (!isOpen || animationState !== 'entered' || isPaused) return
+    if (!isOpen || animationState !== 'entered') return
+    if (gamePhase !== 'playing' && gamePhase !== 'passing_through') return
 
     let animationFrameId: number
     let lastTime = 0
@@ -91,8 +103,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
             const newTop = door.top + speed
             const doorMiddle = newTop + doorHeight / 2
 
-            // 문의 중앙이 화면 중앙에 도달하고 아직 트리거되지 않았으면 퀴즈 발동
-            if (!door.triggered && doorMiddle >= screenMiddle && doorMiddle < screenMiddle + speed * 2) {
+            // playing 페이즈에서만 퀴즈 트리거
+            if (gamePhase === 'playing' && !door.triggered && doorMiddle >= screenMiddle && doorMiddle < screenMiddle + speed * 2) {
               shouldPause = true
               pauseDoorId = door.id
               return { ...door, top: newTop, triggered: true }
@@ -105,9 +117,22 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         if (shouldPause && pauseDoorId !== null) {
           setTimeout(() => {
             setIsPaused(true)
+            setGamePhase('quiz')
             setCurrentQuestion('호이는 고려대학교 마스코트이다.')
             setActiveDoorId(pauseDoorId)
           }, 0)
+        }
+
+        // passing_through 페이즈에서 문이 캐릭터 아래로 완전히 지나가면 returning_to_center로 전환
+        // 캐릭터는 화면 하단에 위치하므로, 문이 화면 밖으로 나가기 직전에 전환
+        if (gamePhase === 'passing_through' && activeDoorId !== null) {
+          const activeDoor = updatedDoors.find(d => d.id === activeDoorId)
+          // 문의 상단이 화면 높이를 넘으면 (문이 완전히 캐릭터 아래로 내려감)
+          if (activeDoor && activeDoor.top > dimensions.height - 50 * scaleFactor) {
+            setTimeout(() => {
+              setGamePhase('returning_to_center')
+            }, 0)
+          }
         }
 
         return updatedDoors
@@ -123,11 +148,73 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, dimensions.height, scaleFactor, isPaused])
+  }, [isOpen, animationState, dimensions.height, scaleFactor, gamePhase, activeDoorId])
+
+  // 수평 이동 애니메이션 (walking_to_door, returning_to_center 페이즈)
+  useEffect(() => {
+    if (!isOpen || animationState !== 'entered') return
+    if (gamePhase !== 'walking_to_door' && gamePhase !== 'returning_to_center') return
+
+    let animationFrameId: number
+    const HORIZONTAL_SPEED = 3 * scaleFactor // 수평 이동 속도
+
+    function animate() {
+      if (gamePhase === 'walking_to_door') {
+        // 문쪽으로 이동 (O: 오른쪽으로 이동해서 왼쪽 문에 도달, X: 왼쪽으로 이동해서 오른쪽 문에 도달)
+        const targetOffset = selectedAnswer === 'O' ? DOOR_OFFSET_TARGET : -DOOR_OFFSET_TARGET
+        
+        setHorizontalOffset((prev) => {
+          const diff = targetOffset - prev
+          if (Math.abs(diff) < HORIZONTAL_SPEED) {
+            // 목표 도달 → passing_through 페이즈로 전환
+            setTimeout(() => setGamePhase('passing_through'), 0)
+            return targetOffset
+          }
+          return prev + (diff > 0 ? HORIZONTAL_SPEED : -HORIZONTAL_SPEED)
+        })
+
+        // 배경도 같이 스크롤 (대각선 이동 효과)
+        setBackgroundOffset((prev) => {
+          const newOffset = prev + 2 * scaleFactor
+          return newOffset >= 200 * scaleFactor ? 0 : newOffset
+        })
+      } else if (gamePhase === 'returning_to_center') {
+        // 중앙으로 복귀
+        setHorizontalOffset((prev) => {
+          if (Math.abs(prev) < HORIZONTAL_SPEED) {
+            // 중앙 도달 → playing 페이즈로 전환
+            setTimeout(() => {
+              setGamePhase('playing')
+              setSelectedAnswer(null)
+              setActiveDoorId(null)
+            }, 0)
+            return 0
+          }
+          return prev > 0 ? prev - HORIZONTAL_SPEED : prev + HORIZONTAL_SPEED
+        })
+
+        // 배경도 같이 스크롤 (대각선 복귀 효과)
+        setBackgroundOffset((prev) => {
+          const newOffset = prev + 2 * scaleFactor
+          return newOffset >= 200 * scaleFactor ? 0 : newOffset
+        })
+      }
+
+      animationFrameId = requestAnimationFrame(animate)
+    }
+
+    animationFrameId = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+    }
+  }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET])
 
   // 10초마다 문 생성
   useEffect(() => {
-    if (!isOpen || animationState !== 'entered' || isPaused) return
+    if (!isOpen || animationState !== 'entered' || gamePhase !== 'playing') return
 
     const interval = setInterval(() => {
       const newDoorId = doorIdRef.current++
@@ -138,15 +225,17 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
     }, 10000) // 10초마다
 
     return () => clearInterval(interval)
-  }, [isOpen, animationState, scaleFactor, isPaused])
+  }, [isOpen, animationState, scaleFactor, gamePhase])
 
   // 퀴즈 응답 핸들러
   const handleQuizAnswer = (answer: 'O' | 'X') => {
     // 정답 처리 로직은 나중에 추가 가능
-    // 일단은 선택하면 게임 재개
+    // 선택하면 해당 문쪽으로 걸어가기 시작
     setIsPaused(false)
     setCurrentQuestion(null)
-    setActiveDoorId(null)
+    setSelectedAnswer(answer)
+    setGamePhase('walking_to_door')
+    // activeDoorId는 유지 (문 통과 후 제거)
   }
 
   useEffect(() => {
@@ -218,85 +307,74 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
         {/* 게임 화면 */}
         <div className="relative z-10 h-full overflow-hidden bg-gradient-to-b from-green-500 via-green-600 to-green-700">
-          {/* 좌우 풀 배경 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-green-400 via-green-500 to-green-600">
-            {/* 풀 텍스처 (위에서 아래로 스크롤) */}
-            <div 
-              className="absolute inset-0 opacity-40"
-              style={{
-                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${30 * scaleFactor}px, rgba(34,197,94,0.4) ${30 * scaleFactor}px, rgba(34,197,94,0.4) ${32 * scaleFactor}px)`,
-                backgroundPosition: `0 ${backgroundOffset}px`,
-                backgroundSize: `100% ${200 * scaleFactor}px`,
-              }}
-            />
-          </div>
-
-          {/* 가운데 길 (위에서 아래로 스크롤) */}
+          
+          {/* 레이어 1: 배경 (항상 가장 아래) */}
           <div 
-            className="absolute inset-0 z-5"
+            className="absolute"
             style={{
-              background: 'linear-gradient(to right, transparent 0%, transparent 30%, #8B7355 30%, #8B7355 70%, transparent 70%, transparent 100%)',
+              top: 0,
+              left: '-50%',
+              width: '200%',
+              height: '100%',
+              transform: `translateX(${horizontalOffset}px)`,
+              transition: gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out',
+              zIndex: 1,
             }}
           >
-            {/* 길 텍스처 (위에서 아래로 스크롤) */}
+            {/* 좌우 풀 배경 */}
+            <div className="absolute inset-0 bg-gradient-to-b from-green-400 via-green-500 to-green-600">
+              {/* 풀 텍스처 (위에서 아래로 스크롤) */}
+              <div 
+                className="absolute inset-0 opacity-40"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${30 * scaleFactor}px, rgba(34,197,94,0.4) ${30 * scaleFactor}px, rgba(34,197,94,0.4) ${32 * scaleFactor}px)`,
+                  backgroundPosition: `0 ${backgroundOffset}px`,
+                  backgroundSize: `100% ${200 * scaleFactor}px`,
+                }}
+              />
+            </div>
+
+            {/* 가운데 길 (위에서 아래로 스크롤) */}
             <div 
               className="absolute inset-0"
               style={{
-                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${50 * scaleFactor}px, rgba(139,115,85,0.3) ${50 * scaleFactor}px, rgba(139,115,85,0.3) ${52 * scaleFactor}px)`,
-                backgroundPosition: `0 ${backgroundOffset}px`,
-                backgroundSize: `100% ${200 * scaleFactor}px`,
-                clipPath: 'polygon(30% 0%, 70% 0%, 70% 100%, 30% 100%)',
+                background: 'linear-gradient(to right, transparent 0%, transparent 40%, #8B7355 40%, #8B7355 60%, transparent 60%, transparent 100%)',
               }}
-            />
-            {/* 길 중앙선 */}
-            <div 
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${20 * scaleFactor}px, rgba(255,255,255,0.3) ${20 * scaleFactor}px, rgba(255,255,255,0.3) ${22 * scaleFactor}px)`,
-                backgroundPosition: `0 ${backgroundOffset}px`,
-                backgroundSize: `100% ${200 * scaleFactor}px`,
-                clipPath: 'polygon(49% 0%, 51% 0%, 51% 100%, 49% 100%)',
-              }}
-            />
-            {/* 길 좌우 경계선 */}
-            <div className="absolute top-0 bottom-0 left-[30%] w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" />
-            <div className="absolute top-0 bottom-0 right-[30%] w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" />
+            >
+              {/* 길 텍스처 (위에서 아래로 스크롤) */}
+              <div 
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${50 * scaleFactor}px, rgba(139,115,85,0.3) ${50 * scaleFactor}px, rgba(139,115,85,0.3) ${52 * scaleFactor}px)`,
+                  backgroundPosition: `0 ${backgroundOffset}px`,
+                  backgroundSize: `100% ${200 * scaleFactor}px`,
+                  clipPath: 'polygon(40% 0%, 60% 0%, 60% 100%, 40% 100%)',
+                }}
+              />
+              {/* 길 중앙선 */}
+              <div 
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${20 * scaleFactor}px, rgba(255,255,255,0.3) ${20 * scaleFactor}px, rgba(255,255,255,0.3) ${22 * scaleFactor}px)`,
+                  backgroundPosition: `0 ${backgroundOffset}px`,
+                  backgroundSize: `100% ${200 * scaleFactor}px`,
+                  clipPath: 'polygon(49.5% 0%, 50.5% 0%, 50.5% 100%, 49.5% 100%)',
+                }}
+              />
+              {/* 길 좌우 경계선 */}
+              <div className="absolute top-0 bottom-0 w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" style={{ left: '40%' }} />
+              <div className="absolute top-0 bottom-0 w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" style={{ left: '60%' }} />
+            </div>
           </div>
 
-          {/* 문들 (길 위에 위치) */}
-          {doors.map((door) => (
-            <div key={door.id} className="absolute z-15" style={{ top: `${door.top}px`, left: '0', width: '100%', height: `${250 * scaleFactor}px` }}>
-              {/* 좌측 O 문 - 길의 왼쪽 절반을 막음 (30% ~ 50%) */}
-              <div className="absolute" style={{ left: '30%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                <img
-                  src="/o_door.png"
-                  alt="O Door"
-                  className="w-auto object-contain"
-                  style={{
-                    height: `${250 * scaleFactor}px`,
-                    imageRendering: 'pixelated',
-                    maxWidth: '100%',
-                  }}
-                />
-              </div>
-              {/* 우측 X 문 - 길의 오른쪽 절반을 막음 (50% ~ 70%) */}
-              <div className="absolute" style={{ right: '30%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                <img
-                  src="/x_door.png"
-                  alt="X Door"
-                  className="w-auto object-contain"
-                  style={{
-                    height: `${250 * scaleFactor}px`,
-                    imageRendering: 'pixelated',
-                    maxWidth: '100%',
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-
-          {/* 캐릭터 (길 위에 위치) */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10" style={{ marginBottom: `${20 * scaleFactor}px` }}>
+          {/* 레이어 2: 캐릭터 (항상 배경 위에, 중앙 고정) */}
+          <div 
+            className="absolute bottom-0 left-1/2 -translate-x-1/2" 
+            style={{ 
+              marginBottom: `${20 * scaleFactor}px`,
+              zIndex: 5,
+            }}
+          >
             <img
               src={`/run_${currentFrame}.png`}
               alt={`Run frame ${currentFrame}`}
@@ -307,6 +385,64 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
               }}
             />
           </div>
+
+          {/* 레이어 3: 문들 (각 문의 Y 위치에 따라 캐릭터 위/아래 결정) */}
+          {/* 캐릭터 중앙 Y = dimensions.height - marginBottom - characterHeight/2 */}
+          {(() => {
+            const characterCenterY = dimensions.height - 20 * scaleFactor - 75 * scaleFactor
+            const doorHeight = 250 * scaleFactor
+            
+            return doors.map((door) => {
+              // 문의 중앙 Y 위치
+              const doorCenterY = door.top + doorHeight / 2
+              // 문의 중앙이 캐릭터 중앙보다 아래에 있으면 문이 캐릭터 앞에 (더 가까움)
+              const isDoorInFront = doorCenterY >= characterCenterY
+              
+              return (
+                <div 
+                  key={door.id} 
+                  className="absolute"
+                  style={{ 
+                    top: `${door.top}px`, 
+                    left: '0',
+                    width: '100%', 
+                    height: `${doorHeight}px`,
+                    transform: `translateX(${horizontalOffset}px)`,
+                    transition: gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out',
+                    zIndex: isDoorInFront ? 10 : 3,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {/* 좌측 O 문 - 길의 왼쪽 절반 (30% ~ 50%) */}
+                  <div className="absolute" style={{ left: '30%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img
+                      src="/o_door.png"
+                      alt="O Door"
+                      className="w-auto object-contain"
+                      style={{
+                        height: `${doorHeight}px`,
+                        imageRendering: 'pixelated',
+                        maxWidth: '100%',
+                      }}
+                    />
+                  </div>
+                  {/* 우측 X 문 - 길의 오른쪽 절반 (50% ~ 70%) */}
+                  <div className="absolute" style={{ left: '50%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img
+                      src="/x_door.png"
+                      alt="X Door"
+                      className="w-auto object-contain"
+                      style={{
+                        height: `${doorHeight}px`,
+                        imageRendering: 'pixelated',
+                        maxWidth: '100%',
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            })
+          })()}
 
           {/* 퀴즈 오버레이 */}
           {isPaused && currentQuestion && (
