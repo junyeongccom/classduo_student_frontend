@@ -10,6 +10,25 @@ import { ChevronDown, Loader2, BookOpen, Calendar } from 'lucide-react'
 import { apiRequest } from '@/shared/lib/api'
 import { useLectureList } from '@/features/review/hooks/useReview'
 
+// 게임 진행도 타입 (회차별 진행도 저장)
+interface GameProgress {
+  [lectureId: string]: number // 0~10 진행도
+}
+
+// localStorage 키
+const GAME_PROGRESS_KEY = 'classduo_game_progress'
+
+// 게임 진행도 로드
+const loadGameProgress = (): GameProgress => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const saved = localStorage.getItem(GAME_PROGRESS_KEY)
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+}
+
 interface Course {
   course_id: string
   title: string
@@ -29,8 +48,32 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [gameProgress, setGameProgress] = useState<GameProgress>({}) // 게임 진행도
 
   const { data: lectureList, isLoading: isLoadingLectures } = useLectureList(selectedCourseId)
+
+  // 게임 진행도 로드
+  useEffect(() => {
+    setGameProgress(loadGameProgress())
+    
+    // storage 이벤트 리스너 (다른 탭에서 변경 시 동기화)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === GAME_PROGRESS_KEY) {
+        setGameProgress(loadGameProgress())
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    
+    // 주기적으로 진행도 확인 (같은 탭에서 GameOverlay가 업데이트할 때)
+    const interval = setInterval(() => {
+      setGameProgress(loadGameProgress())
+    }, 1000)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      clearInterval(interval)
+    }
+  }, [])
 
   // 강의 목록 가져오기
   useEffect(() => {
@@ -170,13 +213,14 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
               lectureList.lectures.map(lecture => {
                 const isSelected = selectedLectureId === lecture.lecture_id
                 const isAnalyzing = lecture.essence_7words === "분석 중" || !lecture.essence_7words
+                const progress = gameProgress[lecture.lecture_id] || 0
                 
                 return (
                   <button
                     key={lecture.lecture_id}
                     onClick={() => handleSelectLecture(lecture.lecture_id, lecture.essence_7words)}
                     disabled={isAnalyzing}
-                    className={`flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left transition-all ${
+                    className={`flex w-full flex-col rounded-lg px-3 py-2.5 text-left transition-all ${
                       isAnalyzing
                         ? 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
                         : isSelected 
@@ -184,21 +228,46 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
                           : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs ${isSelected ? 'text-primary-100' : 'text-gray-500'}`}>
-                        {lecture.lecture_date}
-                      </p>
-                      <p className={`text-sm font-medium mt-0.5 ${
-                        isSelected ? 'text-white' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
-                      }`}>
-                        {lecture.essence_7words || '본질한줄 없음'}
-                      </p>
+                    <div className="flex w-full items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs ${isSelected ? 'text-primary-100' : 'text-gray-500'}`}>
+                          {lecture.lecture_date}
+                        </p>
+                        <p className={`text-sm font-medium mt-0.5 ${
+                          isSelected ? 'text-white' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
+                        }`}>
+                          {lecture.essence_7words || '본질한줄 없음'}
+                        </p>
+                      </div>
+                      {isSelected && !isAnalyzing && (
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 flex-shrink-0">
+                          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
+                    {/* 진행도 바 - 선택된 상태에서만 표시 */}
                     {isSelected && !isAnalyzing && (
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 flex-shrink-0">
-                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
+                      <div className="flex items-center justify-end mt-2 w-full">
+                        <div className="relative h-2.5 w-[88px] rounded-l-full overflow-hidden bg-white/20" 
+                          style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)' }}
+                        >
+                          <div 
+                            className="h-full rounded-l-full transition-all bg-amber-400"
+                            style={{ width: `${(progress / 10) * 100}%` }}
+                          />
+                          <span className={`absolute inset-0 flex items-center justify-center text-[8px] font-medium ${
+                            isSelected ? 'text-white/80' : 'text-gray-500'
+                          }`}>
+                            {progress}/10
+                          </span>
+                        </div>
+                        <img 
+                          src="/icon_reward.png" 
+                          alt="보상" 
+                          className={`h-5 w-5 transition-all ${progress < 10 ? 'grayscale opacity-50' : ''}`}
+                        />
                       </div>
                     )}
                   </button>
