@@ -490,6 +490,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
               const isActiveDoor = door.id === activeDoorId
               const verticalBounce = (gamePhase === 'stumbling' && isActiveDoor) ? stumbleVerticalOffset : 0
               
+              // 퀴즈 중일 때만 클릭 가능
+              const isClickable = isPaused && isActiveDoor && currentQuestion
+              
               return (
                 <div 
                   key={door.id} 
@@ -501,12 +504,28 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
                     height: `${doorHeight}px`,
                     transform: `translateX(${horizontalOffset}px)`,
                     transition: gamePhase === 'stumbling' ? 'none' : (gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out'),
-                    zIndex: isDoorInFront ? 10 : 3,
-                    pointerEvents: 'none',
+                    zIndex: isClickable ? 35 : (isDoorInFront ? 10 : 3),
+                    pointerEvents: isClickable ? 'auto' : 'none',
                   }}
                 >
                   {/* 좌측 O 문 - 길의 왼쪽 절반 (30% ~ 50%) */}
-                  <div className="absolute" style={{ left: '30%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div 
+                    className="absolute"
+                    style={{ 
+                      left: '30%', 
+                      width: '20%', 
+                      height: '100%', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      cursor: isClickable ? 'pointer' : 'default',
+                    }}
+                    onClick={() => {
+                      if (isClickable) {
+                        handleQuizAnswer('O')
+                      }
+                    }}
+                  >
                     <img
                       src="/o_door.png"
                       alt="O Door"
@@ -519,7 +538,23 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
                     />
                   </div>
                   {/* 우측 X 문 - 길의 오른쪽 절반 (50% ~ 70%) */}
-                  <div className="absolute" style={{ left: '50%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div 
+                    className="absolute"
+                    style={{ 
+                      left: '50%', 
+                      width: '20%', 
+                      height: '100%', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      cursor: isClickable ? 'pointer' : 'default',
+                    }}
+                    onClick={() => {
+                      if (isClickable) {
+                        handleQuizAnswer('X')
+                      }
+                    }}
+                  >
                     <img
                       src="/x_door.png"
                       alt="X Door"
@@ -538,59 +573,35 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
           {/* 퀴즈 오버레이 */}
           {isPaused && currentQuestion && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center">
-              {/* 어두운 배경 */}
-              <div className="absolute inset-0 bg-black/60 transition-opacity duration-300" />
-              
-              {/* 퀴즈 컨테이너 */}
+            <>
+              {/* 어두운 배경 - 전체 */}
               <div 
-                className="relative z-10 flex flex-col items-center gap-6 p-8 rounded-2xl bg-white/95 backdrop-blur-sm shadow-2xl"
+                className="absolute inset-0 bg-black/60 transition-opacity duration-300"
+                style={{ zIndex: 30 }}
+              />
+              
+              {/* 질문 텍스트 (흰색, 팝업 상자 없이) */}
+              <div 
+                className="absolute z-40 flex items-center justify-center"
                 style={{
-                  maxWidth: `${600 * scaleFactor}px`,
-                  padding: `${32 * scaleFactor}px`,
+                  top: `${dimensions.height * 0.15}px`,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  pointerEvents: 'none',
                 }}
               >
-                {/* 질문 */}
                 <div 
-                  className="text-center font-bold text-gray-800"
+                  className="text-center font-bold text-white drop-shadow-lg"
                   style={{
-                    fontSize: `${24 * scaleFactor}px`,
+                    fontSize: `${28 * scaleFactor}px`,
                     lineHeight: 1.4,
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
                   }}
                 >
                   {currentQuestion}
                 </div>
-
-                {/* O/X 버튼 */}
-                <div className="flex gap-6" style={{ gap: `${24 * scaleFactor}px` }}>
-                  {/* O 버튼 */}
-                  <button
-                    onClick={() => handleQuizAnswer('O')}
-                    className="flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-600 text-white font-bold transition-all duration-200 hover:scale-110 active:scale-95 shadow-lg"
-                    style={{
-                      width: `${100 * scaleFactor}px`,
-                      height: `${100 * scaleFactor}px`,
-                      fontSize: `${48 * scaleFactor}px`,
-                    }}
-                  >
-                    O
-                  </button>
-                  
-                  {/* X 버튼 */}
-                  <button
-                    onClick={() => handleQuizAnswer('X')}
-                    className="flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white font-bold transition-all duration-200 hover:scale-110 active:scale-95 shadow-lg"
-                    style={{
-                      width: `${100 * scaleFactor}px`,
-                      height: `${100 * scaleFactor}px`,
-                      fontSize: `${48 * scaleFactor}px`,
-                    }}
-                  >
-                    X
-                  </button>
-                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
