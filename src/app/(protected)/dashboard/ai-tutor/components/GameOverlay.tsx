@@ -146,7 +146,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
             } else {
               // 오답인 경우: 문이 캐릭터 위치에 도달하기 전 (z-index 변경 전) stumbling 페이즈로 전환
               // hasStumbled 체크로 중복 트리거 방지
-              if (!hasStumbled && doorCenterY >= characterCenterY - speed * 20 && doorCenterY < characterCenterY - speed * 10) {
+              if (!hasStumbled && doorCenterY >= characterCenterY - speed * 30 && doorCenterY < characterCenterY - speed * 20) {
                 setTimeout(() => {
                   setGamePhase('stumbling')
                   setStumbleStepCount(0)
