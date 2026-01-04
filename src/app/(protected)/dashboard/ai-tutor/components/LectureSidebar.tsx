@@ -395,24 +395,27 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (onGameIconClick) {
-                              const rect = e.currentTarget.getBoundingClientRect()
-                              onGameIconClick(lecture.lecture_id, {
-                                top: rect.top,
-                                left: rect.left,
-                                width: rect.width,
-                                height: rect.height,
-                              })
-                            }
-                          }}
-                          className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                          title="게임 시작"
-                        >
-                          <Gamepad2 className="h-3 w-3 text-white" />
-                        </button>
+                        {/* 게임 버튼: 선택된 회차가 1개일 때만 표시 */}
+                        {selectedLectureIds.length === 1 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (onGameIconClick) {
+                                const rect = e.currentTarget.getBoundingClientRect()
+                                onGameIconClick(lecture.lecture_id, {
+                                  top: rect.top,
+                                  left: rect.left,
+                                  width: rect.width,
+                                  height: rect.height,
+                                })
+                              }
+                            }}
+                            className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                            title="게임 시작"
+                          >
+                            <Gamepad2 className="h-3 w-3 text-white" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </button>
