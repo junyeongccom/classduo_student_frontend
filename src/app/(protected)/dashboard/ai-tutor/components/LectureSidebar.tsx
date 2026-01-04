@@ -563,16 +563,21 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                         </div>
                         {/* 하단: 진행도 바 */}
                         {showGameButton && (
-                          <div className="flex items-center gap-1">
-                            <div className="h-1.5 w-14 rounded-full overflow-hidden bg-white/20">
+                          <div className="flex items-center">
+                            <div className="relative h-2.5 w-[88px] rounded-l-full overflow-hidden bg-white/20">
                               <div 
-                                className="h-full rounded-full transition-all bg-white/80"
+                                className="h-full rounded-l-full transition-all bg-amber-400"
                                 style={{ width: `${((gameProgress[lecture.lecture_id] || 0) / 10) * 100}%` }}
                               />
+                              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-medium text-gray-500">
+                                {gameProgress[lecture.lecture_id] || 0}/10
+                              </span>
                             </div>
-                            <span className="text-[10px] font-medium text-white/70">
-                              {gameProgress[lecture.lecture_id] || 0}/10
-                            </span>
+                            <img 
+                              src="/icon_reward.png" 
+                              alt="보상" 
+                              className={`h-5 w-5 transition-all ${(gameProgress[lecture.lecture_id] || 0) < 10 ? 'grayscale opacity-50' : ''}`}
+                            />
                           </div>
                         )}
                       </div>
