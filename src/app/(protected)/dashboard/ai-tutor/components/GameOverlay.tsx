@@ -16,6 +16,10 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   const overlayRef = useRef<HTMLDivElement>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
+  const [frameIndex, setFrameIndex] = useState(0) // 프레임 시퀀스 인덱스
+  const [backgroundOffset, setBackgroundOffset] = useState(0) // 배경 스크롤 오프셋
+  const frameSequence = [1, 2, 3, 2, 1, 2, 3, 2] // 1->2->3->2->1->2->3->2 반복
+  const currentFrame = frameSequence[frameIndex]
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -26,6 +30,51 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
       setDimensions({ width, height })
     }
   }, [])
+
+  // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
+  useEffect(() => {
+    if (!isOpen || animationState !== 'entered') return
+
+    const interval = setInterval(() => {
+      setFrameIndex((prev) => (prev + 1) % frameSequence.length)
+    }, 150) // 150ms마다 프레임 변경 (빠른 애니메이션)
+
+    return () => clearInterval(interval)
+  }, [isOpen, animationState])
+
+  // 배경 스크롤 애니메이션 (앞으로 나아가는 느낌)
+  useEffect(() => {
+    if (!isOpen || animationState !== 'entered') return
+
+    let animationFrameId: number
+    let lastTime = 0
+    const speed = 2 // 배경 스크롤 속도
+
+    function animate(currentTime: number) {
+      if (lastTime === 0) {
+        lastTime = currentTime
+      }
+      
+      const deltaTime = currentTime - lastTime
+      lastTime = currentTime
+
+      setBackgroundOffset((prev) => {
+        const newOffset = prev + speed
+        // 배경이 반복되도록 오프셋 리셋 (배경 패턴 너비에 따라 조정)
+        return newOffset >= 200 ? 0 : newOffset
+      })
+
+      animationFrameId = requestAnimationFrame(animate)
+    }
+
+    animationFrameId = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+    }
+  }, [isOpen, animationState])
 
   useEffect(() => {
     if (isOpen) {
@@ -94,10 +143,28 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
           <X className="h-5 w-5 text-gray-600" />
         </button>
 
-        {/* 컨텐츠 영역 */}
-        <div className="relative z-10 h-full overflow-y-auto p-6">
-          <div className="flex items-center justify-center h-full text-gray-500">
-            <p>게임 컨텐츠가 여기에 표시됩니다</p>
+        {/* 게임 화면 */}
+        <div className="relative z-10 h-full overflow-hidden bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200">
+          {/* 스크롤되는 배경 (앞으로 나아가는 느낌) */}
+          <div 
+            className="absolute inset-0 game-background-scroll"
+            style={{
+              backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(255,255,255,0.1) 100px, rgba(255,255,255,0.1) 102px)',
+              backgroundPosition: `${backgroundOffset}px 0`,
+              backgroundSize: '200px 100%',
+            }}
+          />
+
+          {/* 캐릭터 (하단 중앙에 위치) */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10">
+            <img
+              src={`/run_${currentFrame}.png`}
+              alt={`Run frame ${currentFrame}`}
+              className="h-auto max-h-[60%] object-contain"
+              style={{
+                imageRendering: 'pixelated', // 픽셀 아트 스타일 유지
+              }}
+            />
           </div>
         </div>
       </div>
