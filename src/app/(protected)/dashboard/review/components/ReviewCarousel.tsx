@@ -8,6 +8,65 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { ReviewCarouselResponse } from '@/features/review/api/reviewApi'
+import { incrementGameProgress } from '@/app/(protected)/dashboard/ai-tutor/components/LectureSidebar'
+
+// 복습 빈칸 진행도 localStorage 키
+const REVIEW_BLANK_PROGRESS_KEY = 'classduo_review_blank_progress'
+
+// 복습 빈칸 진행도 타입 (회차별 열어본 페이지 수)
+interface ReviewBlankProgress {
+  [lectureId: string]: {
+    count: number // 열어본 페이지 수 (최대 5)
+    revealedPages: number[] // 열어본 페이지 번호 목록 (2-6)
+  }
+}
+
+// 복습 빈칸 진행도 로드
+const loadReviewBlankProgress = (): ReviewBlankProgress => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const saved = localStorage.getItem(REVIEW_BLANK_PROGRESS_KEY)
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+}
+
+// 페이지 빈칸 열기 시 진행도 증가 (처음 열 때만, 최대 5번까지)
+const tryIncrementPageProgress = (lectureId: string, pageNumber: number, courseId?: string): boolean => {
+  if (typeof window === 'undefined') return false
+  try {
+    const progress = loadReviewBlankProgress()
+    
+    // 해당 lecture의 진행도 가져오기
+    if (!progress[lectureId]) {
+      progress[lectureId] = { count: 0, revealedPages: [] }
+    }
+    
+    // 이미 열어본 페이지인지 확인
+    if (progress[lectureId].revealedPages.includes(pageNumber)) {
+      return false // 이미 열어봤으면 진행도 증가 안함
+    }
+    
+    // 최대 5개까지만 진행도 증가
+    if (progress[lectureId].count >= 5) {
+      return false // 이미 5개 열었으면 진행도 증가 안함
+    }
+    
+    // 페이지 열기 기록
+    progress[lectureId].revealedPages.push(pageNumber)
+    progress[lectureId].count += 1
+    localStorage.setItem(REVIEW_BLANK_PROGRESS_KEY, JSON.stringify(progress))
+    
+    // 게임 진행도 증가
+    incrementGameProgress(lectureId, courseId)
+    
+    return true
+  } catch {
+    console.error('Failed to increment page progress')
+    return false
+  }
+}
 
 interface ReviewCarouselProps {
   data: ReviewCarouselResponse | null
@@ -68,7 +127,8 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
             key={`page-${currentPage}`}
             data={data.pages_2_6[currentPage - 2]} 
             currentPage={currentPage} 
-            totalPages={totalPages} 
+            totalPages={totalPages}
+            lectureId={data.page_1.lecture_id}
           />
         )}
       </div>
@@ -444,7 +504,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
 /**
  * 복습 캐러셀 2-6페이지 - 인스타그램 카드뉴스 스타일
  */
-function ReviewPage2_6({ data, currentPage, totalPages }: { data: ReviewCarouselResponse['pages_2_6'][0]; currentPage: number; totalPages: number }) {
+function ReviewPage2_6({ data, currentPage, totalPages, lectureId }: { data: ReviewCarouselResponse['pages_2_6'][0]; currentPage: number; totalPages: number; lectureId: string }) {
 
   if (!data) {
     return (
@@ -480,8 +540,15 @@ function ReviewPage2_6({ data, currentPage, totalPages }: { data: ReviewCarousel
   // 페이지 전체의 빈칸 상태를 공유 (핵심정답 + 부연설명)
   const [isRevealed, setIsRevealed] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [hasTriedProgress, setHasTriedProgress] = useState(false) // 진행도 시도 플래그
 
   const toggleAllBlanks = () => {
+    // 빈칸을 열려고 할 때 (아직 안 열린 상태에서) 진행도 증가 시도
+    if (!isRevealed && !hasTriedProgress) {
+      tryIncrementPageProgress(lectureId, data.page_number)
+      setHasTriedProgress(true)
+    }
+    
     setIsAnimating(true)
     setIsRevealed(prev => !prev)
     setTimeout(() => setIsAnimating(false), 400)
