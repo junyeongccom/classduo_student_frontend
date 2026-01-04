@@ -15,14 +15,31 @@ interface GameProgress {
   [lectureId: string]: number // 0~10 진행도
 }
 
+// 불꽃 개수 타입 (강의별 불꽃 개수 저장)
+interface FlameCount {
+  [courseId: string]: number
+}
+
 // localStorage 키
 const GAME_PROGRESS_KEY = 'classduo_game_progress'
+const FLAME_COUNT_KEY = 'classduo_flame_count'
 
 // 게임 진행도 로드
 const loadGameProgress = (): GameProgress => {
   if (typeof window === 'undefined') return {}
   try {
     const saved = localStorage.getItem(GAME_PROGRESS_KEY)
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+}
+
+// 불꽃 개수 로드
+const loadFlameCount = (): FlameCount => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const saved = localStorage.getItem(FLAME_COUNT_KEY)
     return saved ? JSON.parse(saved) : {}
   } catch {
     return {}
@@ -49,17 +66,22 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [gameProgress, setGameProgress] = useState<GameProgress>({}) // 게임 진행도
+  const [flameCount, setFlameCount] = useState<FlameCount>({}) // 불꽃 개수
 
   const { data: lectureList, isLoading: isLoadingLectures } = useLectureList(selectedCourseId)
 
-  // 게임 진행도 로드
+  // 게임 진행도 및 불꽃 개수 로드
   useEffect(() => {
     setGameProgress(loadGameProgress())
+    setFlameCount(loadFlameCount())
     
     // storage 이벤트 리스너 (다른 탭에서 변경 시 동기화)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === GAME_PROGRESS_KEY) {
         setGameProgress(loadGameProgress())
+      }
+      if (e.key === FLAME_COUNT_KEY) {
+        setFlameCount(loadFlameCount())
       }
     }
     window.addEventListener('storage', handleStorage)
@@ -67,6 +89,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
     // 주기적으로 진행도 확인 (같은 탭에서 GameOverlay가 업데이트할 때)
     const interval = setInterval(() => {
       setGameProgress(loadGameProgress())
+      setFlameCount(loadFlameCount())
     }, 1000)
     
     return () => {
@@ -161,10 +184,26 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-left text-sm hover:border-primary-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         >
-          <span className={selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-            {selectedCourse?.title || '강의를 선택하세요'}
-          </span>
-          <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className={`truncate ${selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+              {selectedCourse?.title || '강의를 선택하세요'}
+            </span>
+            {/* 불꽃 개수 표시 */}
+            {selectedCourse && (
+              <div className="flex items-center gap-1 shrink-0">
+                <img 
+                  src="/icon_flame.png" 
+                  alt="flame" 
+                  className="h-3.5 w-3.5 object-contain"
+                  style={{ imageRendering: 'auto' }}
+                />
+                <span className="text-xs font-medium text-amber-600">
+                  {flameCount[selectedCourse.course_id] || 0}
+                </span>
+              </div>
+            )}
+          </div>
+          <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform shrink-0 ml-2 ${isDropdownOpen ? 'rotate-180' : ''}`} />
         </button>
         
         {/* 드롭다운 메뉴 */}
