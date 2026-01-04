@@ -297,22 +297,22 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
 
   const materialPagesHtml = sources.material_pages.map((page, index) => {
     const textContentHtml = page.text_content 
-      ? `<div style="margin-bottom: 1rem;">
-          <p style="font-size: 1rem; color: #1f2937; line-height: 1.75; white-space: pre-wrap; font-weight: 500; margin: 0;">
+      ? `<div style="margin-bottom: 0.5rem;">
+          <p style="font-size: 1rem; color: #1f2937; line-height: 1.4; white-space: pre-wrap; font-weight: 500; margin: 0; padding: 0;">
             ${escapeHtml(cleanText(page.text_content, 'material')).replace(/\n/g, '<br>')}
           </p>
         </div>`
       : ''
     
     const imageHtml = page.image_url
-      ? `<div style="margin-top: 1rem; border-radius: 0.75rem; overflow: hidden; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white;">
+      ? `<div style="margin-top: 0.75rem; border-radius: 0.75rem; overflow: hidden; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white;">
           <img src="${escapeHtml(page.image_url)}" alt="페이지 ${page.page_number}" style="width: 100%; height: auto; display: block;" />
         </div>`
       : ''
     
     return `
-    <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #eff6ff, #dbeafe); padding: 1.25rem; border-left: 4px solid #3b82f6; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1rem;">
-      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+    <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #eff6ff, #dbeafe); padding: 1rem; border-left: 4px solid #3b82f6; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
         <span style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
           페이지 ${page.page_number}
         </span>

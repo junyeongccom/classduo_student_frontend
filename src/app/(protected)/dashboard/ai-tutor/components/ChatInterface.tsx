@@ -819,35 +819,41 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       if (!currentSessionId) {
         try {
           const sessionResult = await chatApi.createSession(selectedLectureIds)
-          if (sessionResult.data) {
+          if (sessionResult.data && sessionResult.data.id) {
             const newSessionId = sessionResult.data.id
             selfCreatedSessionId.current = newSessionId
             setCurrentSessionId(newSessionId)
             onSessionCreated?.(newSessionId)
             
-            // 후킹 질문/답변 저장 (미리 준비된 답변 사용)
-            chatApi.saveHookingMessage(newSessionId, {
-              question: hooking.question,
-              answer: hooking.answer,
-              reference_data: hooking.reference_data,
-              summary_keywords: hooking.summary_keywords,
-            }).catch(err => {
+            // 세션 생성 완료 후 메시지 저장 (await 사용)
+            try {
+              await chatApi.saveHookingMessage(newSessionId, {
+                question: hooking.question,
+                answer: hooking.answer,
+                reference_data: hooking.reference_data,
+                summary_keywords: hooking.summary_keywords,
+              })
+            } catch (err) {
               console.error('Failed to save hooking message:', err)
-            })
+            }
+          } else {
+            console.error('Failed to create session: no session ID returned', sessionResult)
           }
         } catch (err) {
           console.error('Failed to create session for hooking:', err)
         }
       } else {
         // 기존 세션에 후킹 질문/답변 저장 (미리 준비된 답변 사용)
-        chatApi.saveHookingMessage(currentSessionId, {
-          question: hooking.question,
-          answer: hooking.answer,
-          reference_data: hooking.reference_data,
-          summary_keywords: hooking.summary_keywords,
-        }).catch(err => {
+        try {
+          await chatApi.saveHookingMessage(currentSessionId, {
+            question: hooking.question,
+            answer: hooking.answer,
+            reference_data: hooking.reference_data,
+            summary_keywords: hooking.summary_keywords,
+          })
+        } catch (err) {
           console.error('Failed to save hooking message:', err)
-        })
+        }
       }
     } else {
       // 미리 저장된 답변이 없으면 기존처럼 sendMessage 호출
@@ -943,33 +949,39 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     if (!currentSessionId) {
       try {
         const sessionResult = await chatApi.createSession(selectedLectureIds)
-        if (sessionResult.data) {
+        if (sessionResult.data && sessionResult.data.id) {
           const newSessionId = sessionResult.data.id
           selfCreatedSessionId.current = newSessionId
           setCurrentSessionId(newSessionId)
           onSessionCreated?.(newSessionId)
           
-          // PQM 메시지 저장
-          chatApi.savePQMMessage(newSessionId, {
-            question: pqmQuestion.question,
-            answer: pqmQuestion.answer,
-            reference_data: references,
-          }).catch(err => {
+          // 세션 생성 완료 후 메시지 저장 (await 사용)
+          try {
+            await chatApi.savePQMMessage(newSessionId, {
+              question: pqmQuestion.question,
+              answer: pqmQuestion.answer,
+              reference_data: references,
+            })
+          } catch (err) {
             console.error('Failed to save PQM message:', err)
-          })
+          }
+        } else {
+          console.error('Failed to create session: no session ID returned', sessionResult)
         }
       } catch (err) {
         console.error('Failed to create session for PQM:', err)
       }
     } else {
       // 기존 세션에 PQM 메시지 저장
-      chatApi.savePQMMessage(currentSessionId, {
-        question: pqmQuestion.question,
-        answer: pqmQuestion.answer,
-        reference_data: references,
-      }).catch(err => {
+      try {
+        await chatApi.savePQMMessage(currentSessionId, {
+          question: pqmQuestion.question,
+          answer: pqmQuestion.answer,
+          reference_data: references,
+        })
+      } catch (err) {
         console.error('Failed to save PQM message:', err)
-      })
+      }
     }
   }
 
