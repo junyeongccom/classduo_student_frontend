@@ -6,6 +6,7 @@ import { ChatInterface } from './components/ChatInterface'
 import { LectureSidebar } from './components/LectureSidebar'
 import ChatSidebar from './components/ChatSidebar'
 import { ReferencePanel } from './components/ReferencePanel'
+import { GameOverlay } from './components/GameOverlay'
 import { Reference } from '@/features/ai-tutor/api/chatApi'
 
 const AI_TUTOR_SESSION_KEY = 'ai-tutor-current-session-id'
@@ -42,6 +43,8 @@ export default function AITutorPage() {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; summary_keywords?: string | null }>>([]) // 메시지 배열 저장 (summary_keywords 포함)
   const [isSessionLocked, setIsSessionLocked] = useState(false) // 세션 잠금 상태
   const [autoSelectLatest, setAutoSelectLatest] = useState(false) // 가장 최신 회차 자동 선택 플래그
+  const [isGameOverlayOpen, setIsGameOverlayOpen] = useState(false) // 게임 오버레이 표시 상태
+  const [gameTriggerPosition, setGameTriggerPosition] = useState<{ top: number; left: number; width: number; height: number } | null>(null) // 게임 아이콘 위치
   
   // 세션 ID 설정 (localStorage 동기화)
   const setCurrentSessionId = useCallback((sessionId: string | undefined) => {
@@ -139,6 +142,20 @@ export default function AITutorPage() {
     setActiveTab('answer')
   }, [])
 
+  // 게임 아이콘 클릭 핸들러
+  const handleGameIconClick = useCallback((lectureId: string, position: { top: number; left: number; width: number; height: number }) => {
+    setGameTriggerPosition(position)
+    setIsGameOverlayOpen(true)
+  }, [])
+
+  // 게임 오버레이 닫기
+  const handleCloseGameOverlay = useCallback(() => {
+    setIsGameOverlayOpen(false)
+    setTimeout(() => {
+      setGameTriggerPosition(null)
+    }, 600) // 애니메이션 완료 후 위치 초기화
+  }, [])
+
   return (
     <div className="flex h-screen flex-col">
       {/* 상단 탭 - 새 채팅 / 채팅 기록 / 답변|수업녹음본|강의자료 */}
@@ -192,8 +209,16 @@ export default function AITutorPage() {
           isLocked={isSessionLocked}
           initialLectureIds={selectedLectureIds.length > 0 ? selectedLectureIds : undefined}
           autoSelectLatest={autoSelectLatest}
+          onGameIconClick={handleGameIconClick}
         />
       </div>
+
+      {/* 게임 오버레이 */}
+      <GameOverlay
+        isOpen={isGameOverlayOpen}
+        onClose={handleCloseGameOverlay}
+        triggerPosition={gameTriggerPosition}
+      />
     </div>
   )
 }

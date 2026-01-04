@@ -7,7 +7,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, Loader2, BookOpen, Calendar } from 'lucide-react'
+import { ChevronDown, Loader2, BookOpen, Calendar, Gamepad2 } from 'lucide-react'
 import { apiRequest } from '@/shared/lib/api'
 
 // API 응답 타입
@@ -33,6 +33,7 @@ interface LectureSidebarProps {
   isLocked?: boolean // 세션이 생성되면 잠금 (선택 불가)
   initialLectureIds?: string[] // 초기 회차 IDs (세션 로드 시 사용)
   autoSelectLatest?: boolean // 가장 최신 회차 자동 선택 (새 채팅 시 사용)
+  onGameIconClick?: (lectureId: string, position: { top: number; left: number; width: number; height: number }) => void // 게임 아이콘 클릭 핸들러
 }
 
 // 임시 데이터 (API 없을 때 사용)
@@ -58,7 +59,7 @@ const TEMP_COURSES: Course[] = [
   }
 ]
 
-export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false, initialLectureIds, autoSelectLatest = false }: LectureSidebarProps) {
+export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false, initialLectureIds, autoSelectLatest = false, onGameIconClick }: LectureSidebarProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -388,10 +389,30 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                       </p>
                     </div>
                     {isSelected && (
-                      <div className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
-                        <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
+                      <div className="ml-2 flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
+                          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (onGameIconClick) {
+                              const rect = e.currentTarget.getBoundingClientRect()
+                              onGameIconClick(lecture.lecture_id, {
+                                top: rect.top,
+                                left: rect.left,
+                                width: rect.width,
+                                height: rect.height,
+                              })
+                            }
+                          }}
+                          className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                          title="게임 시작"
+                        >
+                          <Gamepad2 className="h-3 w-3 text-white" />
+                        </button>
                       </div>
                     )}
                   </button>
