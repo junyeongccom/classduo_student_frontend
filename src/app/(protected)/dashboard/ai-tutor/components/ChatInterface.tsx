@@ -431,6 +431,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           return
         }
         
+        // 메시지 전송 중이면 로드 건너뛰기 (사용자 메시지가 사라지는 것을 방지)
+        if (isLoading) {
+          return
+        }
+        
         setIsLoading(true)
         try {
           const { data, error } = await chatApi.getSession(sessionId)
