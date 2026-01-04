@@ -22,6 +22,13 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   const doorIdRef = useRef(0) // 문 ID 생성용
   const frameSequence = [1, 2, 3, 2, 1, 2, 3, 2] // 1->2->3->2->1->2->3->2 반복
   const currentFrame = frameSequence[frameIndex]
+  
+  // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
+  const REFERENCE_WIDTH = 1200
+  const REFERENCE_HEIGHT = 675
+  
+  // 스케일 팩터 계산 (화면 크기에 따라 모든 요소를 동일한 비율로 확대/축소)
+  const scaleFactor = dimensions.width / REFERENCE_WIDTH
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -50,7 +57,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
     let animationFrameId: number
     let lastTime = 0
-    const speed = 2 // 배경 스크롤 속도
+    const BASE_SPEED = 2 // 기준 스크롤 속도
+    const speed = BASE_SPEED * scaleFactor // 스케일에 비례한 스크롤 속도
 
     function animate(currentTime: number) {
       if (lastTime === 0) {
@@ -63,7 +71,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
       setBackgroundOffset((prev) => {
         const newOffset = prev + speed
         // 배경이 반복되도록 오프셋 리셋 (배경 패턴 높이에 따라 조정)
-        return newOffset >= 200 ? 0 : newOffset
+        return newOffset >= 200 * scaleFactor ? 0 : newOffset
       })
 
       // 문들도 함께 아래로 이동
@@ -73,7 +81,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
             ...door,
             top: door.top + speed,
           }))
-          .filter((door) => door.top < dimensions.height + 200) // 화면 밖으로 나간 문 제거
+          .filter((door) => door.top < dimensions.height + 250 * scaleFactor) // 화면 밖으로 나간 문 제거 (스케일 적용)
       })
 
       animationFrameId = requestAnimationFrame(animate)
@@ -86,7 +94,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, dimensions.height])
+  }, [isOpen, animationState, dimensions.height, scaleFactor])
 
   // 10초마다 문 생성
   useEffect(() => {
@@ -96,12 +104,12 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
       const newDoorId = doorIdRef.current++
       setDoors((prevDoors) => [
         ...prevDoors,
-        { id: newDoorId, top: -200 }, // 화면 위에서 시작
+        { id: newDoorId, top: -250 * scaleFactor }, // 화면 위에서 시작 (스케일 적용)
       ])
     }, 10000) // 10초마다
 
     return () => clearInterval(interval)
-  }, [isOpen, animationState])
+  }, [isOpen, animationState, scaleFactor])
 
   useEffect(() => {
     if (isOpen) {
@@ -178,9 +186,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
             <div 
               className="absolute inset-0 opacity-40"
               style={{
-                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(34,197,94,0.4) 30px, rgba(34,197,94,0.4) 32px)',
+                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${30 * scaleFactor}px, rgba(34,197,94,0.4) ${30 * scaleFactor}px, rgba(34,197,94,0.4) ${32 * scaleFactor}px)`,
                 backgroundPosition: `0 ${backgroundOffset}px`,
-                backgroundSize: '100% 200px',
+                backgroundSize: `100% ${200 * scaleFactor}px`,
               }}
             />
           </div>
@@ -196,9 +204,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
             <div 
               className="absolute inset-0"
               style={{
-                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(139,115,85,0.3) 50px, rgba(139,115,85,0.3) 52px)',
+                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${50 * scaleFactor}px, rgba(139,115,85,0.3) ${50 * scaleFactor}px, rgba(139,115,85,0.3) ${52 * scaleFactor}px)`,
                 backgroundPosition: `0 ${backgroundOffset}px`,
-                backgroundSize: '100% 200px',
+                backgroundSize: `100% ${200 * scaleFactor}px`,
                 clipPath: 'polygon(30% 0%, 70% 0%, 70% 100%, 30% 100%)',
               }}
             />
@@ -206,9 +214,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
             <div 
               className="absolute inset-0"
               style={{
-                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(255,255,255,0.3) 20px, rgba(255,255,255,0.3) 22px)',
+                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${20 * scaleFactor}px, rgba(255,255,255,0.3) ${20 * scaleFactor}px, rgba(255,255,255,0.3) ${22 * scaleFactor}px)`,
                 backgroundPosition: `0 ${backgroundOffset}px`,
-                backgroundSize: '100% 200px',
+                backgroundSize: `100% ${200 * scaleFactor}px`,
                 clipPath: 'polygon(49% 0%, 51% 0%, 51% 100%, 49% 100%)',
               }}
             />
@@ -219,14 +227,15 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
           {/* 문들 (길 위에 위치) */}
           {doors.map((door) => (
-            <div key={door.id} className="absolute z-15" style={{ top: `${door.top}px`, left: '0', width: '100%', height: '250px' }}>
+            <div key={door.id} className="absolute z-15" style={{ top: `${door.top}px`, left: '0', width: '100%', height: `${250 * scaleFactor}px` }}>
               {/* 좌측 O 문 - 길의 왼쪽 절반을 막음 (30% ~ 50%) */}
               <div className="absolute" style={{ left: '30%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                 <img
                   src="/o_door.png"
                   alt="O Door"
-                  className="h-full w-auto object-contain"
+                  className="w-auto object-contain"
                   style={{
+                    height: `${250 * scaleFactor}px`,
                     imageRendering: 'pixelated',
                     maxWidth: '100%',
                   }}
@@ -237,8 +246,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
                 <img
                   src="/x_door.png"
                   alt="X Door"
-                  className="h-full w-auto object-contain"
+                  className="w-auto object-contain"
                   style={{
+                    height: `${250 * scaleFactor}px`,
                     imageRendering: 'pixelated',
                     maxWidth: '100%',
                   }}
@@ -248,12 +258,13 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
           ))}
 
           {/* 캐릭터 (길 위에 위치) */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10" style={{ marginBottom: '20px' }}>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10" style={{ marginBottom: `${20 * scaleFactor}px` }}>
             <img
               src={`/run_${currentFrame}.png`}
               alt={`Run frame ${currentFrame}`}
-              className="h-auto max-h-[60%] object-contain"
+              className="w-auto object-contain"
               style={{
+                height: `${150 * scaleFactor}px`, // 기준 캐릭터 높이 150px
                 imageRendering: 'pixelated', // 픽셀 아트 스타일 유지
               }}
             />
