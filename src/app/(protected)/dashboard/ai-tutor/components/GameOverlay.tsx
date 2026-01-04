@@ -196,7 +196,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
     let animationFrameId: number
     let lastTime = 0
-    const BASE_SPEED = 2 // 기준 스크롤 속도
+    const BASE_SPEED = 4 // 기준 스크롤 속도 (2배속)
     const speed = BASE_SPEED * scaleFactor // 스케일에 비례한 스크롤 속도
     const doorHeight = 250 * scaleFactor
     const screenMiddle = dimensions.height / 2
@@ -352,7 +352,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     if (gamePhase !== 'walking_to_door' && gamePhase !== 'returning_to_center') return
 
     let animationFrameId: number
-    const HORIZONTAL_SPEED = 3 * scaleFactor // 수평 이동 속도
+    const HORIZONTAL_SPEED = 6 * scaleFactor // 수평 이동 속도 (2배속)
 
     function animate() {
       if (gamePhase === 'walking_to_door') {
