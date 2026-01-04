@@ -64,14 +64,31 @@ interface GameProgress {
   [lectureId: string]: number // 0~10 진행도
 }
 
+// 회차별 푼 문제 목록 (중복 방지용)
+interface SolvedQuestions {
+  [lectureId: string]: number[] // 푼 문제 인덱스 배열 (0~4: 게임, 5~9: 복습 빈칸)
+}
+
 // localStorage 키
 const GAME_PROGRESS_KEY = 'classduo_game_progress'
+const SOLVED_QUESTIONS_KEY = 'classduo_solved_questions'
 
 // 게임 진행도 로드
 const loadGameProgress = (): GameProgress => {
   if (typeof window === 'undefined') return {}
   try {
     const saved = localStorage.getItem(GAME_PROGRESS_KEY)
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+}
+
+// 푼 문제 목록 로드
+const loadSolvedQuestions = (): SolvedQuestions => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const saved = localStorage.getItem(SOLVED_QUESTIONS_KEY)
     return saved ? JSON.parse(saved) : {}
   } catch {
     return {}
@@ -87,6 +104,17 @@ export const saveGameProgress = (lectureId: string, progress: number) => {
     localStorage.setItem(GAME_PROGRESS_KEY, JSON.stringify(current))
   } catch {
     console.error('Failed to save game progress')
+  }
+}
+
+// 문제가 이미 풀렸는지 확인 (외부에서 호출 가능하도록 export)
+export const isQuestionSolved = (lectureId: string, questionIndex: number): boolean => {
+  if (typeof window === 'undefined') return false
+  try {
+    const solved = loadSolvedQuestions()
+    return solved[lectureId]?.includes(questionIndex) || false
+  } catch {
+    return false
   }
 }
 
@@ -125,19 +153,37 @@ const incrementFlameCount = (courseId: string): number => {
 }
 
 // 게임 진행도 증가 (외부에서 호출 가능하도록 export)
-// 진행도가 10이 되면 불꽃 +1, 진행도 리셋
-export const incrementGameProgress = (lectureId: string, courseId?: string): number => {
+// 진행도가 10이 되면 불꽃 +1
+// questionIndex: 푼 문제 인덱스 (0~4), 같은 문제는 중복 증가 안됨
+export const incrementGameProgress = (lectureId: string, courseId?: string, questionIndex?: number): number => {
   if (typeof window === 'undefined') return 0
   try {
-    const current = loadGameProgress()
-    const currentProgress = current[lectureId] || 0
+    const currentProgress = loadGameProgress()
+    const currentSolved = loadSolvedQuestions()
+    const lectureProgress = currentProgress[lectureId] || 0
+    const lectureSolved = currentSolved[lectureId] || []
     
     // 이미 10이면 더 이상 증가하지 않음
-    if (currentProgress >= 10) return 10
+    if (lectureProgress >= 10) return 10
     
-    const newProgress = currentProgress + 1
-    current[lectureId] = newProgress
-    localStorage.setItem(GAME_PROGRESS_KEY, JSON.stringify(current))
+    // 회차당 최대 10개까지만 증가 가능 (게임 5개 + 복습 빈칸 5개)
+    if (lectureSolved.length >= 10) return lectureProgress
+    
+    // questionIndex가 제공된 경우, 이미 푼 문제인지 확인
+    if (questionIndex !== undefined) {
+      if (lectureSolved.includes(questionIndex)) {
+        // 이미 푼 문제 - 진행도 증가 없음
+        return lectureProgress
+      }
+      
+      // 푼 문제 목록에 추가
+      currentSolved[lectureId] = [...lectureSolved, questionIndex]
+      localStorage.setItem(SOLVED_QUESTIONS_KEY, JSON.stringify(currentSolved))
+    }
+    
+    const newProgress = lectureProgress + 1
+    currentProgress[lectureId] = newProgress
+    localStorage.setItem(GAME_PROGRESS_KEY, JSON.stringify(currentProgress))
     
     // 진행도가 10이 되면 불꽃 +1
     if (newProgress === 10 && courseId) {

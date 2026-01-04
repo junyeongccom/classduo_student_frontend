@@ -58,8 +58,11 @@ const tryIncrementPageProgress = (lectureId: string, pageNumber: number, courseI
     progress[lectureId].count += 1
     localStorage.setItem(REVIEW_BLANK_PROGRESS_KEY, JSON.stringify(progress))
     
-    // 게임 진행도 증가
-    incrementGameProgress(lectureId, courseId)
+    // 게임 진행도 증가 (페이지 2-6 → 인덱스 5-9로 변환)
+    // 복습 빈칸은 인덱스 5-9 사용 (게임 퀴즈는 0-4 사용)
+    // 이렇게 하면 게임과 복습이 별개로 각각 5개씩 진행도가 쌓임 (총 10)
+    const questionIndex = pageNumber - 2 + 5 // 페이지 2 → 인덱스 5, 페이지 6 → 인덱스 9
+    incrementGameProgress(lectureId, courseId, questionIndex)
     
     return true
   } catch {

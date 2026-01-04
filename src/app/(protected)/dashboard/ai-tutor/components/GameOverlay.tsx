@@ -5,21 +5,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { X, RotateCcw, LogOut } from 'lucide-react'
-import { incrementGameProgress } from './LectureSidebar'
-
-// 게임 상태를 localStorage에 저장하기 위한 키
-const GAME_STATE_KEY_PREFIX = 'game-state-'
-
-// 저장할 게임 상태 타입
-interface SavedGameState {
-  quizAnswerCount: number
-  currentQuestionIndex: number
-  gamePhase: GamePhase
-  isPaused: boolean
-  backgroundOffset: number
-  doors: Array<{ id: number; top: number; triggered: boolean }>
-  doorIdCounter: number
-}
+import { incrementGameProgress, isQuestionSolved } from './LectureSidebar'
 
 // 게임 페이즈 상태
 type GamePhase = 'idle' | 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'stumbling' | 'returning_to_center' | 'cleared'
@@ -68,35 +54,6 @@ interface GameOverlayProps {
   courseId?: string // 불꽃 개수를 저장할 강의 ID
 }
 
-// 게임 상태 저장
-function saveGameState(lectureId: string, state: SavedGameState) {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(GAME_STATE_KEY_PREFIX + lectureId, JSON.stringify(state))
-  }
-}
-
-// 게임 상태 로드
-function loadGameState(lectureId: string): SavedGameState | null {
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem(GAME_STATE_KEY_PREFIX + lectureId)
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch {
-        return null
-      }
-    }
-  }
-  return null
-}
-
-// 게임 상태 삭제
-function clearGameState(lectureId: string) {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(GAME_STATE_KEY_PREFIX + lectureId)
-  }
-}
-
 export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId }: GameOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
@@ -131,11 +88,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const [hasStumbled, setHasStumbled] = useState(false) // stumbling 완료 여부
   const [stumbleVerticalOffset, setStumbleVerticalOffset] = useState(0) // stumbling 중 수직 오프셋 (뒤로 튕김 효과)
   const [hasReversedDirection, setHasReversedDirection] = useState(false) // 반대쪽 문으로 전환 여부
-  const [quizAnswerCount, setQuizAnswerCount] = useState(0) // 이번 게임에서 선택한 횟수 (최대 5번까지 진행도 증가)
-  
-  // 이전 isOpen 상태 추적용 ref
-  const prevIsOpenRef = useRef(false)
-  const hasLoadedRef = useRef(false) // 현재 세션에서 로드 완료 여부
+  const [quizAnswerCount, setQuizAnswerCount] = useState(0) // 이번 게임에서 선택한 횟수
   
   // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
   const REFERENCE_WIDTH = 1200
@@ -157,96 +110,14 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     }
   }, [])
 
-  // 게임 상태 저장 함수 (ref로 최신 상태 접근)
-  const saveCurrentStateRef = useRef<() => void>(() => {})
-  saveCurrentStateRef.current = () => {
-    if (lectureId) {
-      const stateToSave: SavedGameState = {
-        quizAnswerCount,
-        currentQuestionIndex,
-        gamePhase: gamePhase === 'playing' ? 'idle' : gamePhase, // playing 상태면 idle로 저장 (재시작시 START 화면 표시)
-        isPaused,
-        backgroundOffset,
-        doors,
-        doorIdCounter: doorIdRef.current
-      }
-      saveGameState(lectureId, stateToSave)
-    }
-  }
-
-  // isOpen 상태 변화 감지 및 저장/로드 처리
-  useEffect(() => {
-    const wasOpen = prevIsOpenRef.current
-    prevIsOpenRef.current = isOpen
-    
-    // 닫힐 때: 상태 저장
-    if (wasOpen && !isOpen) {
-      saveCurrentStateRef.current()
-      hasLoadedRef.current = false // 다음에 열릴 때 다시 로드할 수 있도록
-    }
-    
-    // 열릴 때: 상태 로드
-    if (!wasOpen && isOpen && lectureId && !hasLoadedRef.current) {
-      hasLoadedRef.current = true
-      const savedState = loadGameState(lectureId)
-      if (savedState) {
-        // 저장된 상태 복원
-        const savedQuestionIndex = savedState.currentQuestionIndex || 0
-        setQuizAnswerCount(savedState.quizAnswerCount)
-        setCurrentQuestionIndex(savedQuestionIndex)
-        setBackgroundOffset(savedState.backgroundOffset)
-        // 이전에 triggered된 문들은 제외하고 복원 (문제가 이미 지나간 문은 제외)
-        setDoors(savedState.doors.filter(door => !door.triggered))
-        doorIdRef.current = savedState.doorIdCounter
-        
-        // 5번째 문제까지 풀었으면 (인덱스가 5 이상) cleared 상태 유지
-        if (savedQuestionIndex >= 5 || savedState.gamePhase === 'cleared') {
-          setGamePhase('cleared')
-        } else {
-          // 그 외의 경우 idle로 시작 (일시정지 상태에서 복귀)
-          setGamePhase('idle')
-        }
-      } else {
-        // 저장된 상태가 없으면 초기 상태
-        setGamePhase('idle')
-        setQuizAnswerCount(0)
-        setCurrentQuestionIndex(0)
-        setBackgroundOffset(0)
-        setDoors([])
-        doorIdRef.current = 0
-      }
-    }
-  }, [isOpen, lectureId])
-
-  // 게임 상태 저장 (명시적 닫기 핸들러용)
-  const saveCurrentState = useCallback(() => {
-    saveCurrentStateRef.current()
-  }, [])
-
-  // 닫기 핸들러 (상태 저장 후 닫기)
-  const handleClose = useCallback(() => {
-    saveCurrentState()
-    onClose()
-  }, [saveCurrentState, onClose])
-
-  // 게임 시작 (START 화면에서 클릭)
-  const handleStartGame = useCallback(() => {
-    if (gamePhase === 'idle') {
-      setGamePhase('playing')
-    }
-  }, [gamePhase])
-
-  // 게임 다시하기
-  const handleRestart = useCallback(() => {
-    if (lectureId) {
-      clearGameState(lectureId)
-    }
+  // 게임 초기화 함수
+  const resetGameState = useCallback(() => {
     setQuizAnswerCount(0)
     setCurrentQuestionIndex(0)
     setBackgroundOffset(0)
     setDoors([])
     doorIdRef.current = 0
-    setGamePhase('playing')
+    setGamePhase('idle')
     setIsPaused(false)
     setCurrentQuestion(null)
     setActiveDoorId(null)
@@ -260,7 +131,49 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     if (explanationTimerRef.current) {
       clearTimeout(explanationTimerRef.current)
     }
-  }, [lectureId])
+  }, [])
+
+  // 게임 열릴 때 항상 초기화
+  useEffect(() => {
+    if (isOpen) {
+      resetGameState()
+    }
+  }, [isOpen, resetGameState])
+
+  // 닫기 핸들러
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
+
+  // 게임 시작 (START 화면에서 클릭)
+  const handleStartGame = useCallback(() => {
+    if (gamePhase === 'idle') {
+      setGamePhase('playing')
+    }
+  }, [gamePhase])
+
+  // 게임 다시하기
+  const handleRestart = useCallback(() => {
+    setQuizAnswerCount(0)
+    setCurrentQuestionIndex(0)
+    setBackgroundOffset(0)
+    setDoors([])
+    doorIdRef.current = 0
+    setGamePhase('playing') // 다시하기는 바로 playing 상태로
+    setIsPaused(false)
+    setCurrentQuestion(null)
+    setActiveDoorId(null)
+    setSelectedAnswer(null)
+    setHorizontalOffset(0)
+    setHasStumbled(false)
+    setHasReversedDirection(false)
+    setStumbleVerticalOffset(0)
+    setShowExplanation(false)
+    setExplanationText(null)
+    if (explanationTimerRef.current) {
+      clearTimeout(explanationTimerRef.current)
+    }
+  }, [])
 
   // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
   // idle, quiz, cleared 상태에서는 정지, 나머지 페이즈에서는 계속 애니메이션
@@ -537,9 +450,14 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
   // 퀴즈 응답 핸들러
   const handleQuizAnswer = (answer: 'O' | 'X') => {
-    // 진행도 증가 (최대 5번까지, 정답과 무관하게 선택할 때마다)
-    if (lectureId && quizAnswerCount < 5) {
-      incrementGameProgress(lectureId, courseId)
+    // 현재 문제 인덱스
+    const currentIdx = currentQuestionIndexRef.current
+    
+    // 진행도 증가 (같은 문제는 중복 증가 안됨, 회차당 최대 5번)
+    if (lectureId) {
+      // isQuestionSolved는 incrementGameProgress 내부에서 체크하므로
+      // 여기서는 그냥 호출 (중복 방지는 LectureSidebar에서 처리)
+      incrementGameProgress(lectureId, courseId, currentIdx)
       setQuizAnswerCount(prev => prev + 1)
     }
     
