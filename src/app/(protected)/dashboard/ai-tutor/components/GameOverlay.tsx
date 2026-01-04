@@ -94,11 +94,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
       const deltaTime = currentTime - lastTime
       lastTime = currentTime
 
-      setBackgroundOffset((prev) => {
-        const newOffset = prev + speed
-        // 배경이 반복되도록 오프셋 리셋 (배경 패턴 높이에 따라 조정)
-        return newOffset >= 200 * scaleFactor ? 0 : newOffset
-      })
+      setBackgroundOffset((prev) => prev + speed)
 
       // 문들도 함께 아래로 이동
       setDoors((prevDoors) => {
@@ -203,13 +199,15 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         // 튕긴 위치에서 잠시 멈춤
         setStumbleVerticalOffset(-BOUNCE_BACK_DISTANCE)
       } else {
-        // stumbling 완료 → 문의 실제 위치를 튕겨난 위치로 업데이트
+        // stumbling 완료 → 문의 실제 위치와 배경 오프셋을 튕겨난 위치로 업데이트
         setDoors((prevDoors) => prevDoors.map((door) => {
           if (door.id === activeDoorId) {
             return { ...door, top: door.top + (-BOUNCE_BACK_DISTANCE) }
           }
           return door
         }))
+        // 배경도 튕겨난 위치로 업데이트 (순간이동 방지)
+        setBackgroundOffset((prev) => prev + (-BOUNCE_BACK_DISTANCE))
         setStumbleVerticalOffset(0)
         setGamePhase('returning_to_center')
         return
@@ -249,12 +247,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
           }
           return prev + (diff > 0 ? HORIZONTAL_SPEED : -HORIZONTAL_SPEED)
         })
-
-        // 배경도 같이 스크롤 (대각선 이동 효과)
-        setBackgroundOffset((prev) => {
-          const newOffset = prev + 2 * scaleFactor
-          return newOffset >= 200 * scaleFactor ? 0 : newOffset
-        })
+        // 배경은 멈춤 (문과 함께 정지)
       } else if (gamePhase === 'returning_to_center') {
         // 중앙으로 복귀
         setHorizontalOffset((prev) => {
@@ -280,12 +273,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
           }
           return prev > 0 ? prev - HORIZONTAL_SPEED : prev + HORIZONTAL_SPEED
         })
-
-        // 배경도 같이 스크롤 (대각선 복귀 효과)
-        setBackgroundOffset((prev) => {
-          const newOffset = prev + 2 * scaleFactor
-          return newOffset >= 200 * scaleFactor ? 0 : newOffset
-        })
+        // 배경은 멈춤 (문과 함께 정지)
       }
 
       animationFrameId = requestAnimationFrame(animate)
@@ -396,7 +384,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         {/* 게임 화면 */}
         <div className="relative z-10 h-full overflow-hidden bg-gradient-to-b from-green-500 via-green-600 to-green-700">
           
-          {/* 레이어 1: 배경 (항상 가장 아래) */}
+          {/* 레이어 1: 배경 (road.png 이미지 - 길 + 풀밭, 위에서 아래로 스크롤) */}
           <div 
             className="absolute"
             style={{
@@ -405,55 +393,15 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
               width: '200%',
               height: '100%',
               transform: `translateX(${horizontalOffset}px)`,
-              transition: gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out',
+              transition: gamePhase === 'stumbling' ? 'none' : (gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out'),
               zIndex: 1,
+              backgroundImage: 'url(/road.png)',
+              backgroundRepeat: 'repeat',
+              backgroundSize: `${dimensions.width * 1.5}px auto`,
+              backgroundPosition: `center ${backgroundOffset + stumbleVerticalOffset}px`,
+              imageRendering: 'pixelated',
             }}
-          >
-            {/* 좌우 풀 배경 */}
-            <div className="absolute inset-0 bg-gradient-to-b from-green-400 via-green-500 to-green-600">
-              {/* 풀 텍스처 (위에서 아래로 스크롤) */}
-              <div 
-                className="absolute inset-0 opacity-40"
-                style={{
-                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${30 * scaleFactor}px, rgba(34,197,94,0.4) ${30 * scaleFactor}px, rgba(34,197,94,0.4) ${32 * scaleFactor}px)`,
-                  backgroundPosition: `0 ${backgroundOffset}px`,
-                  backgroundSize: `100% ${200 * scaleFactor}px`,
-                }}
-              />
-            </div>
-
-            {/* 가운데 길 (위에서 아래로 스크롤) */}
-            <div 
-              className="absolute inset-0"
-              style={{
-                background: 'linear-gradient(to right, transparent 0%, transparent 40%, #8B7355 40%, #8B7355 60%, transparent 60%, transparent 100%)',
-              }}
-            >
-              {/* 길 텍스처 (위에서 아래로 스크롤) */}
-              <div 
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${50 * scaleFactor}px, rgba(139,115,85,0.3) ${50 * scaleFactor}px, rgba(139,115,85,0.3) ${52 * scaleFactor}px)`,
-                  backgroundPosition: `0 ${backgroundOffset}px`,
-                  backgroundSize: `100% ${200 * scaleFactor}px`,
-                  clipPath: 'polygon(40% 0%, 60% 0%, 60% 100%, 40% 100%)',
-                }}
-              />
-              {/* 길 중앙선 */}
-              <div 
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${20 * scaleFactor}px, rgba(255,255,255,0.3) ${20 * scaleFactor}px, rgba(255,255,255,0.3) ${22 * scaleFactor}px)`,
-                  backgroundPosition: `0 ${backgroundOffset}px`,
-                  backgroundSize: `100% ${200 * scaleFactor}px`,
-                  clipPath: 'polygon(49.5% 0%, 50.5% 0%, 50.5% 100%, 49.5% 100%)',
-                }}
-              />
-              {/* 길 좌우 경계선 */}
-              <div className="absolute top-0 bottom-0 w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" style={{ left: '40%' }} />
-              <div className="absolute top-0 bottom-0 w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" style={{ left: '60%' }} />
-            </div>
-          </div>
+          />
 
           {/* 레이어 2: 캐릭터 (항상 배경 위에, 중앙 고정) */}
           <div 
