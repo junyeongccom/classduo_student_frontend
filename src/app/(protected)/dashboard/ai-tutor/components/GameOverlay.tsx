@@ -38,6 +38,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   const [horizontalOffset, setHorizontalOffset] = useState(0) // 수평 이동 오프셋 (배경/길/문이 이동)
   const [stumbleStepCount, setStumbleStepCount] = useState(0) // stumbling 단계에서 걸음 수 카운트
   const [hasStumbled, setHasStumbled] = useState(false) // stumbling 완료 여부
+  const [stumbleVerticalOffset, setStumbleVerticalOffset] = useState(0) // stumbling 중 수직 오프셋 (뒤로 튕김 효과)
+  const [hasReversedDirection, setHasReversedDirection] = useState(false) // 반대쪽 문으로 전환 여부
   
   // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
   const REFERENCE_WIDTH = 1200
@@ -136,8 +138,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
           if (activeDoor) {
             const doorCenterY = activeDoor.top + doorHeight / 2
             
-            // 정답을 맞췄을 경우: 문이 화면 밖으로 나가면 returning_to_center
-            if (selectedAnswer === CORRECT_ANSWER) {
+            // 정답을 맞췄거나 반대쪽 문으로 전환한 경우: 문이 화면 밖으로 나가면 returning_to_center
+            if (selectedAnswer === CORRECT_ANSWER || hasReversedDirection) {
               if (activeDoor.top > dimensions.height - 50 * scaleFactor) {
                 setTimeout(() => {
                   setGamePhase('returning_to_center')
@@ -151,12 +153,6 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
                   setGamePhase('stumbling')
                   setStumbleStepCount(0)
                   setHasStumbled(true)
-                }, 0)
-              }
-              // stumbling 완료 후 문이 화면 밖으로 나가면 returning_to_center
-              if (hasStumbled && activeDoor.top > dimensions.height - 50 * scaleFactor) {
-                setTimeout(() => {
-                  setGamePhase('returning_to_center')
                 }, 0)
               }
             }
@@ -176,30 +172,60 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, dimensions.height, scaleFactor, gamePhase, activeDoorId, selectedAnswer, hasStumbled, CORRECT_ANSWER])
+  }, [isOpen, animationState, dimensions.height, scaleFactor, gamePhase, activeDoorId, selectedAnswer, hasStumbled, hasReversedDirection, CORRECT_ANSWER])
 
-  // stumbling 페이즈 처리 (오답시 두 번 걷고 계속 진행)
+  // stumbling 페이즈 처리 (오답시 뒤로 튕겨나가는 애니메이션)
   useEffect(() => {
     if (!isOpen || animationState !== 'entered' || gamePhase !== 'stumbling') return
 
-    const STUMBLE_STEPS = 16 // 2 walk cycles (8 frames per cycle * 2)
+    let animationFrameId: number
+    let startTime: number | null = null
     
-    const interval = setInterval(() => {
-      setStumbleStepCount((prev) => {
-        const newCount = prev + 1
-        if (newCount >= STUMBLE_STEPS) {
-          // stumbling 완료, passing_through로 돌아가서 문 통과 계속
-          setTimeout(() => {
-            setGamePhase('passing_through')
-          }, 0)
-          return STUMBLE_STEPS
-        }
-        return newCount
-      })
-    }, 150) // 프레임 변경과 동일한 속도
+    const BOUNCE_BACK_DISTANCE = 80 * scaleFactor // 뒤로 밀려나는 거리
+    const BOUNCE_DURATION = 400 // 튕겨나가는 시간 (ms)
+    const PAUSE_DURATION = 200 // 튕긴 후 잠시 멈춤 (ms)
+    const TOTAL_DURATION = BOUNCE_DURATION + PAUSE_DURATION
 
-    return () => clearInterval(interval)
-  }, [isOpen, animationState, gamePhase])
+    function animate(currentTime: number) {
+      if (startTime === null) {
+        startTime = currentTime
+      }
+      
+      const elapsed = currentTime - startTime
+      
+      if (elapsed < BOUNCE_DURATION) {
+        // 뒤로 튕겨나가는 애니메이션 (easeOut)
+        const progress = elapsed / BOUNCE_DURATION
+        const eased = 1 - Math.pow(1 - progress, 3) // easeOutCubic
+        const offset = -BOUNCE_BACK_DISTANCE * eased // 음수 = 문이 위로 (캐릭터가 뒤로 밀려남)
+        setStumbleVerticalOffset(offset)
+      } else if (elapsed < TOTAL_DURATION) {
+        // 튕긴 위치에서 잠시 멈춤
+        setStumbleVerticalOffset(-BOUNCE_BACK_DISTANCE)
+      } else {
+        // stumbling 완료 → 문의 실제 위치를 튕겨난 위치로 업데이트
+        setDoors((prevDoors) => prevDoors.map((door) => {
+          if (door.id === activeDoorId) {
+            return { ...door, top: door.top + (-BOUNCE_BACK_DISTANCE) }
+          }
+          return door
+        }))
+        setStumbleVerticalOffset(0)
+        setGamePhase('returning_to_center')
+        return
+      }
+      
+      animationFrameId = requestAnimationFrame(animate)
+    }
+
+    animationFrameId = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+    }
+  }, [isOpen, animationState, gamePhase, scaleFactor, activeDoorId])
 
   // 수평 이동 애니메이션 (walking_to_door, returning_to_center 페이즈)
   useEffect(() => {
@@ -233,12 +259,22 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         // 중앙으로 복귀
         setHorizontalOffset((prev) => {
           if (Math.abs(prev) < HORIZONTAL_SPEED) {
-            // 중앙 도달 → playing 페이즈로 전환
+            // 중앙 도달
             setTimeout(() => {
-              setGamePhase('playing')
-              setSelectedAnswer(null)
-              setActiveDoorId(null)
-              setHasStumbled(false) // 다음 문을 위해 리셋
+              // 오답으로 stumbling 했고 아직 반대 방향으로 안 갔으면 → 반대쪽 문으로
+              if (hasStumbled && !hasReversedDirection) {
+                const oppositeAnswer = selectedAnswer === 'O' ? 'X' : 'O'
+                setSelectedAnswer(oppositeAnswer)
+                setHasReversedDirection(true)
+                setGamePhase('walking_to_door')
+              } else {
+                // 정상 완료 → playing으로 복귀
+                setGamePhase('playing')
+                setSelectedAnswer(null)
+                setActiveDoorId(null)
+                setHasStumbled(false)
+                setHasReversedDirection(false)
+              }
             }, 0)
             return 0
           }
@@ -262,7 +298,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET])
+  }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET, hasStumbled, hasReversedDirection])
 
   // 10초마다 문 생성
   useEffect(() => {
@@ -450,17 +486,21 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
               // 문의 중앙이 캐릭터 중앙보다 아래에 있으면 문이 캐릭터 앞에 (더 가까움)
               const isDoorInFront = doorCenterY >= characterCenterY
               
+              // stumbling 중일 때 활성 문에만 수직 오프셋 적용 (뒤로 튕김 효과)
+              const isActiveDoor = door.id === activeDoorId
+              const verticalBounce = (gamePhase === 'stumbling' && isActiveDoor) ? stumbleVerticalOffset : 0
+              
               return (
                 <div 
                   key={door.id} 
                   className="absolute"
                   style={{ 
-                    top: `${door.top}px`, 
+                    top: `${door.top + verticalBounce}px`, 
                     left: '0',
                     width: '100%', 
                     height: `${doorHeight}px`,
                     transform: `translateX(${horizontalOffset}px)`,
-                    transition: gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out',
+                    transition: gamePhase === 'stumbling' ? 'none' : (gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out'),
                     zIndex: isDoorInFront ? 10 : 3,
                     pointerEvents: 'none',
                   }}
