@@ -20,15 +20,37 @@ interface FlameCount {
   [courseId: string]: number
 }
 
-// localStorage 키
-const GAME_PROGRESS_KEY = 'classduo_game_progress'
-const FLAME_COUNT_KEY = 'classduo_flame_count'
+// 현재 사용자 ID 가져오기
+const getCurrentUserId = (): string | undefined => {
+  if (typeof window === 'undefined') return undefined
+  try {
+    const authStorage = localStorage.getItem('auth-storage')
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage)
+      return parsed?.state?.user?.user_id
+    }
+  } catch {
+    // 무시
+  }
+  return undefined
+}
+
+// localStorage 키 생성 함수 (사용자 ID 포함)
+const getGameProgressKey = (userId?: string) => {
+  return userId ? `classduo_game_progress_${userId}` : 'classduo_game_progress'
+}
+
+const getFlameCountKey = (userId?: string) => {
+  return userId ? `classduo_flame_count_${userId}` : 'classduo_flame_count'
+}
 
 // 게임 진행도 로드
 const loadGameProgress = (): GameProgress => {
   if (typeof window === 'undefined') return {}
   try {
-    const saved = localStorage.getItem(GAME_PROGRESS_KEY)
+    const userId = getCurrentUserId()
+    const key = getGameProgressKey(userId)
+    const saved = localStorage.getItem(key)
     return saved ? JSON.parse(saved) : {}
   } catch {
     return {}
@@ -39,7 +61,9 @@ const loadGameProgress = (): GameProgress => {
 const loadFlameCount = (): FlameCount => {
   if (typeof window === 'undefined') return {}
   try {
-    const saved = localStorage.getItem(FLAME_COUNT_KEY)
+    const userId = getCurrentUserId()
+    const key = getFlameCountKey(userId)
+    const saved = localStorage.getItem(key)
     return saved ? JSON.parse(saved) : {}
   } catch {
     return {}
@@ -77,10 +101,13 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
     
     // storage 이벤트 리스너 (다른 탭에서 변경 시 동기화)
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === GAME_PROGRESS_KEY) {
+      const userId = getCurrentUserId()
+      const progressKey = getGameProgressKey(userId)
+      const flameKey = getFlameCountKey(userId)
+      if (e.key === progressKey || e.key?.startsWith('classduo_game_progress')) {
         setGameProgress(loadGameProgress())
       }
-      if (e.key === FLAME_COUNT_KEY) {
+      if (e.key === flameKey || e.key?.startsWith('classduo_flame_count')) {
         setFlameCount(loadFlameCount())
       }
     }

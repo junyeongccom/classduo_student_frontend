@@ -10,8 +10,25 @@ import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from
 import { ReviewCarouselResponse } from '@/features/review/api/reviewApi'
 import { incrementGameProgress } from '@/app/(protected)/dashboard/ai-tutor/components/LectureSidebar'
 
-// 복습 빈칸 진행도 localStorage 키
-const REVIEW_BLANK_PROGRESS_KEY = 'classduo_review_blank_progress'
+// 현재 사용자 ID 가져오기
+const getCurrentUserId = (): string | undefined => {
+  if (typeof window === 'undefined') return undefined
+  try {
+    const authStorage = localStorage.getItem('auth-storage')
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage)
+      return parsed?.state?.user?.user_id
+    }
+  } catch {
+    // 무시
+  }
+  return undefined
+}
+
+// 복습 빈칸 진행도 localStorage 키 생성 함수 (사용자 ID 포함)
+const getReviewBlankProgressKey = (userId?: string) => {
+  return userId ? `classduo_review_blank_progress_${userId}` : 'classduo_review_blank_progress'
+}
 
 // 복습 빈칸 진행도 타입 (회차별 열어본 페이지 수)
 interface ReviewBlankProgress {
@@ -25,7 +42,9 @@ interface ReviewBlankProgress {
 const loadReviewBlankProgress = (): ReviewBlankProgress => {
   if (typeof window === 'undefined') return {}
   try {
-    const saved = localStorage.getItem(REVIEW_BLANK_PROGRESS_KEY)
+    const userId = getCurrentUserId()
+    const key = getReviewBlankProgressKey(userId)
+    const saved = localStorage.getItem(key)
     return saved ? JSON.parse(saved) : {}
   } catch {
     return {}
@@ -54,9 +73,11 @@ const tryIncrementPageProgress = (lectureId: string, pageNumber: number, courseI
     }
     
     // 페이지 열기 기록
+    const userId = getCurrentUserId()
+    const key = getReviewBlankProgressKey(userId)
     progress[lectureId].revealedPages.push(pageNumber)
     progress[lectureId].count += 1
-    localStorage.setItem(REVIEW_BLANK_PROGRESS_KEY, JSON.stringify(progress))
+    localStorage.setItem(key, JSON.stringify(progress))
     
     // 게임 진행도 증가 (페이지 2-6 → 인덱스 5-9로 변환)
     // 복습 빈칸은 인덱스 5-9 사용 (게임 퀴즈는 0-4 사용)
