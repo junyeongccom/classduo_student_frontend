@@ -113,7 +113,7 @@ export default function AITutorPage() {
   }, [setCurrentSessionId, setSelectedLectureIds])
 
   // 세션 생성 완료 시 (ChatInterface에서 호출)
-  const handleSessionCreated = useCallback((sessionId: string) => {
+  const handleSessionCreated = useCallback((sessionId: string | undefined) => {
     setCurrentSessionId(sessionId)
     setIsSessionLocked(true) // 세션 생성되면 잠금
   }, [setCurrentSessionId])
