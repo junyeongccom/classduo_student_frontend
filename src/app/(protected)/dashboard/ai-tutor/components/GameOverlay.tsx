@@ -13,6 +13,7 @@ const GAME_STATE_KEY_PREFIX = 'game-state-'
 // 저장할 게임 상태 타입
 interface SavedGameState {
   quizAnswerCount: number
+  currentQuestionIndex: number
   gamePhase: GamePhase
   isPaused: boolean
   backgroundOffset: number
@@ -22,6 +23,42 @@ interface SavedGameState {
 
 // 게임 페이즈 상태
 type GamePhase = 'idle' | 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'stumbling' | 'returning_to_center' | 'cleared'
+
+// 퀴즈 질문 데이터 타입
+interface QuizQuestion {
+  question: string
+  correctAnswer: 'O' | 'X'
+  explanation: string
+}
+
+// 5개의 하드코딩된 퀴즈 질문
+const QUIZ_QUESTIONS: QuizQuestion[] = [
+  {
+    question: '동물 세포는 식물 세포와 마찬가지로 세포벽이 있어 형태가 단단하게 유지된다.',
+    correctAnswer: 'X',
+    explanation: '동물 세포는 세포벽이 없고 세포막만 있습니다.'
+  },
+  {
+    question: '우리 몸의 적혈구는 산소를 운반하는 역할을 담당한다.',
+    correctAnswer: 'O',
+    explanation: '헤모글로빈을 통해 온몸에 산소를 공급합니다.'
+  },
+  {
+    question: '식물이 광합성을 할 때 기공을 통해 흡수하는 기체는 산소이다.',
+    correctAnswer: 'X',
+    explanation: '광합성 시에는 이산화탄소를 흡수하고 산소를 내뱉습니다.'
+  },
+  {
+    question: '유전 정보를 담고 있는 DNA는 이중 나선 구조로 되어 있다.',
+    correctAnswer: 'O',
+    explanation: '두 가닥의 사슬이 꼬여 있는 형태입니다.'
+  },
+  {
+    question: '사람의 심장은 2심방 2심실 구조로 이루어져 있다.',
+    correctAnswer: 'O',
+    explanation: '포유류와 조류는 효율적인 순환을 위해 2심방 2심실 구조를 가집니다.'
+  }
+]
 
 interface GameOverlayProps {
   isOpen: boolean
@@ -75,9 +112,16 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const [isPaused, setIsPaused] = useState(false) // 게임 일시정지 상태
   const [currentQuestion, setCurrentQuestion] = useState<string | null>(null) // 현재 질문
   const [activeDoorId, setActiveDoorId] = useState<number | null>(null) // 현재 퀴즈 문 ID
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0) // 현재 질문 인덱스 (0~4)
   
-  // 정답 하드코딩 (O가 정답)
-  const CORRECT_ANSWER: 'O' | 'X' = 'O'
+  // 해설 표시 상태
+  const [showExplanation, setShowExplanation] = useState(false)
+  const [explanationText, setExplanationText] = useState<string | null>(null)
+  const explanationTimerRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // currentQuestionIndex를 ref로도 관리 (클로저 문제 해결)
+  const currentQuestionIndexRef = useRef(currentQuestionIndex)
+  currentQuestionIndexRef.current = currentQuestionIndex
   
   // 게임 페이즈 상태 (문 통과 연출용)
   const [gamePhase, setGamePhase] = useState<GamePhase>('idle') // 초기 상태는 idle
@@ -119,6 +163,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     if (lectureId) {
       const stateToSave: SavedGameState = {
         quizAnswerCount,
+        currentQuestionIndex,
         gamePhase: gamePhase === 'playing' ? 'idle' : gamePhase, // playing 상태면 idle로 저장 (재시작시 START 화면 표시)
         isPaused,
         backgroundOffset,
@@ -146,16 +191,16 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
       const savedState = loadGameState(lectureId)
       if (savedState) {
         // 저장된 상태 복원
+        const savedQuestionIndex = savedState.currentQuestionIndex || 0
         setQuizAnswerCount(savedState.quizAnswerCount)
+        setCurrentQuestionIndex(savedQuestionIndex)
         setBackgroundOffset(savedState.backgroundOffset)
-        setDoors(savedState.doors)
+        // 이전에 triggered된 문들은 제외하고 복원 (문제가 이미 지나간 문은 제외)
+        setDoors(savedState.doors.filter(door => !door.triggered))
         doorIdRef.current = savedState.doorIdCounter
         
-        // 5번 이상 맞췄으면 cleared 상태 유지
-        if (savedState.quizAnswerCount >= 5) {
-          setGamePhase('cleared')
-        } else if (savedState.gamePhase === 'cleared') {
-          // 이미 cleared였으면 유지
+        // 5번째 문제까지 풀었으면 (인덱스가 5 이상) cleared 상태 유지
+        if (savedQuestionIndex >= 5 || savedState.gamePhase === 'cleared') {
           setGamePhase('cleared')
         } else {
           // 그 외의 경우 idle로 시작 (일시정지 상태에서 복귀)
@@ -165,6 +210,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         // 저장된 상태가 없으면 초기 상태
         setGamePhase('idle')
         setQuizAnswerCount(0)
+        setCurrentQuestionIndex(0)
         setBackgroundOffset(0)
         setDoors([])
         doorIdRef.current = 0
@@ -196,6 +242,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
       clearGameState(lectureId)
     }
     setQuizAnswerCount(0)
+    setCurrentQuestionIndex(0)
     setBackgroundOffset(0)
     setDoors([])
     doorIdRef.current = 0
@@ -208,6 +255,11 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     setHasStumbled(false)
     setHasReversedDirection(false)
     setStumbleVerticalOffset(0)
+    setShowExplanation(false)
+    setExplanationText(null)
+    if (explanationTimerRef.current) {
+      clearTimeout(explanationTimerRef.current)
+    }
   }, [lectureId])
 
   // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
@@ -269,10 +321,14 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         // 퀴즈 트리거
         if (shouldPause && pauseDoorId !== null) {
           setTimeout(() => {
-            setIsPaused(true)
-            setGamePhase('quiz')
-            setCurrentQuestion('호이는 고려대학교 마스코트이다.')
-            setActiveDoorId(pauseDoorId)
+            // 현재 질문 인덱스에 해당하는 질문 표시 (ref 사용으로 최신 값 보장)
+            const questionData = QUIZ_QUESTIONS[currentQuestionIndexRef.current]
+            if (questionData) {
+              setIsPaused(true)
+              setGamePhase('quiz')
+              setCurrentQuestion(questionData.question)
+              setActiveDoorId(pauseDoorId)
+            }
           }, 0)
         }
 
@@ -285,7 +341,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
             const doorCenterY = activeDoor.top + doorHeight / 2
             
             // 정답을 맞췄거나 반대쪽 문으로 전환한 경우: 문이 화면 밖으로 나가면 returning_to_center
-            if (selectedAnswer === CORRECT_ANSWER || hasReversedDirection) {
+            // 현재 질문의 정답과 비교 (ref 사용으로 최신 값 보장)
+            const correctAnswer = QUIZ_QUESTIONS[currentQuestionIndexRef.current]?.correctAnswer || 'O'
+            if (selectedAnswer === correctAnswer || hasReversedDirection) {
               if (activeDoor.top > dimensions.height - 50 * scaleFactor) {
                 setTimeout(() => {
                   setGamePhase('returning_to_center')
@@ -318,7 +376,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, dimensions.height, scaleFactor, gamePhase, activeDoorId, selectedAnswer, hasStumbled, hasReversedDirection, CORRECT_ANSWER])
+  }, [isOpen, animationState, dimensions.height, scaleFactor, gamePhase, activeDoorId, selectedAnswer, hasStumbled, hasReversedDirection, currentQuestionIndex])
 
   // stumbling 페이즈 처리 (오답시 뒤로 튕겨나가는 애니메이션)
   useEffect(() => {
@@ -411,8 +469,28 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 setHasReversedDirection(true)
                 setGamePhase('walking_to_door')
               } else {
-                // 정상 완료 → 5번 완료 체크
-                if (quizAnswerCount >= 5) {
+                // 정상 완료 → 해설 표시 및 5번 문제 완료 체크 (ref 사용으로 최신 값 보장)
+                const currentIdx = currentQuestionIndexRef.current
+                const questionData = QUIZ_QUESTIONS[currentIdx]
+                if (questionData) {
+                  setExplanationText(questionData.explanation)
+                  setShowExplanation(true)
+                  // 8초 후 해설 숨김
+                  if (explanationTimerRef.current) {
+                    clearTimeout(explanationTimerRef.current)
+                  }
+                  explanationTimerRef.current = setTimeout(() => {
+                    setShowExplanation(false)
+                    setExplanationText(null)
+                  }, 8000)
+                }
+                
+                // 질문 인덱스 증가
+                const nextQuestionIndex = currentIdx + 1
+                setCurrentQuestionIndex(nextQuestionIndex)
+                
+                // 5번째 문제(인덱스 4)를 풀었으면 cleared (다음 인덱스가 5가 됨)
+                if (nextQuestionIndex >= 5) {
                   setGamePhase('cleared')
                 } else {
                   setGamePhase('playing')
@@ -440,7 +518,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET, hasStumbled, hasReversedDirection, quizAnswerCount])
+  }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET, hasStumbled, hasReversedDirection])
 
   // 10초마다 문 생성
   useEffect(() => {
@@ -485,6 +563,15 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     }
   }, [isOpen])
 
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (explanationTimerRef.current) {
+        clearTimeout(explanationTimerRef.current)
+      }
+    }
+  }, [])
+
   if (!isOpen && animationState === 'exiting') {
     return null
   }
@@ -506,6 +593,16 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
   return (
     <>
+      {/* 해설 페이드 애니메이션 스타일 */}
+      <style jsx>{`
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+          5% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        }
+      `}</style>
+
       {/* 배경 오버레이 */}
       <div
         className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-500 ${
@@ -718,6 +815,39 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 </div>
               </div>
             </>
+          )}
+
+          {/* 해설 표시 오버레이 (달리면서 표시) */}
+          {showExplanation && explanationText && (
+            <div 
+              className="absolute flex items-center justify-center pointer-events-none"
+              style={{
+                top: `${dimensions.height * 0.2}px`,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 40,
+                animation: 'fadeInOut 8s ease-in-out forwards',
+              }}
+            >
+              <div 
+                className="text-center font-bold text-white px-6 py-3"
+                style={{
+                  fontSize: `${24 * scaleFactor}px`,
+                  lineHeight: 1.5,
+                  textShadow: `
+                    -2px -2px 0 rgba(0,0,0,0.8),
+                    2px -2px 0 rgba(0,0,0,0.8),
+                    -2px 2px 0 rgba(0,0,0,0.8),
+                    2px 2px 0 rgba(0,0,0,0.8),
+                    0 0 10px rgba(0,0,0,0.9),
+                    0 0 20px rgba(0,0,0,0.7)
+                  `,
+                  maxWidth: `${dimensions.width * 0.8}px`,
+                }}
+              >
+                {explanationText}
+              </div>
+            </div>
           )}
 
           {/* START 오버레이 (idle 상태) */}
