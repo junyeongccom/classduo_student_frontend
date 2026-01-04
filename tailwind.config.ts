@@ -38,6 +38,65 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        serif: ['Georgia', 'Times New Roman', 'serif'],
+      },
+      keyframes: {
+        'fade-in-up': {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(10px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
+        'pulse-scale': {
+          '0%': {
+            transform: 'scale(1)',
+          },
+          '25%': {
+            transform: 'scale(1.05)',
+          },
+          '50%': {
+            transform: 'scale(1)',
+          },
+          '75%': {
+            transform: 'scale(1.05)',
+          },
+          '100%': {
+            transform: 'scale(1)',
+          },
+        },
+        'blank-reveal': {
+          '0%': {
+            opacity: '0',
+            transform: 'scale(0.8) translateY(-10px)',
+          },
+          '50%': {
+            transform: 'scale(1.1) translateY(0)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'scale(1) translateY(0)',
+          },
+        },
+        'blank-hide': {
+          '0%': {
+            opacity: '1',
+            transform: 'scale(1)',
+          },
+          '100%': {
+            opacity: '0.3',
+            transform: 'scale(0.95)',
+          },
+        },
+      },
+      animation: {
+        'fade-in-up': 'fade-in-up 0.5s ease-out',
+        'pulse-scale': 'pulse-scale 2s ease-in-out',
+        'blank-reveal': 'blank-reveal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'blank-hide': 'blank-hide 0.3s ease-out',
       },
     },
   },

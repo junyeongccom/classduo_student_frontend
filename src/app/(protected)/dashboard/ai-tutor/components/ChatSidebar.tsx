@@ -31,6 +31,7 @@ export default function ChatSidebar({
     try {
       const { data, error } = await chatApi.getSessions()
       if (data && !error) {
+        // 백엔드에서 이미 updated_at.desc로 정렬되어 있음
         setSessions(data)
       }
     } catch (err) {
@@ -54,6 +55,7 @@ export default function ChatSidebar({
     try {
       const { data, error } = await chatApi.searchMessages(searchQuery)
       if (data && !error) {
+        // 백엔드에서 이미 rank DESC, created_at DESC로 정렬되어 있음
         setSearchResults(data)
         setActiveTab('search')
       }

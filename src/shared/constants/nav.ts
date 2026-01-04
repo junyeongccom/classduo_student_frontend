@@ -58,7 +58,7 @@ export const PROFILE_MENU = {
  */
 export const TOP_TABS = [
   { id: 'answer', label: '답변', href: '/dashboard/ai-tutor' },
-  { id: 'notes', label: '수업노트', href: '/dashboard/ai-tutor/notes' },
+  { id: 'notes', label: '수업녹음본', href: '/dashboard/ai-tutor/notes' },
   { id: 'materials', label: '강의자료', href: '/dashboard/ai-tutor/materials' },
 ] as const
 

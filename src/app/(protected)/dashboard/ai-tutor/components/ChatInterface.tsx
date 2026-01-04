@@ -4,8 +4,8 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Loader2, Search } from 'lucide-react'
-import { chatApi, ChatMessage, StoredMessage, Reference } from '@/features/ai-tutor/api/chatApi'
+import { Send, Loader2, Search, ArrowUp } from 'lucide-react'
+import { chatApi, ChatMessage, StoredMessage, Reference, PQMQuestion } from '@/features/ai-tutor/api/chatApi'
 
 // 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
 function renderMarkdown(text: string) {
@@ -22,7 +22,7 @@ function renderMarkdown(text: string) {
       const paragraphText = currentParagraph.join('\n')
       if (paragraphText.trim()) {
         elements.push(
-          <p key={elements.length} className="mb-4 last:mb-0 leading-relaxed">
+          <p key={elements.length} className="mb-2 last:mb-0 leading-snug text-sm">
             {parseInlineMarkdown(paragraphText)}
           </p>
         )
@@ -34,9 +34,9 @@ function renderMarkdown(text: string) {
   const flushList = () => {
     if (listItems.length > 0) {
       elements.push(
-        <ul key={elements.length} className="list-disc ml-6 mb-4 space-y-1.5">
+        <ul key={elements.length} className="list-disc ml-5 mb-2 space-y-0.5">
           {listItems.map((item, idx) => (
-            <li key={idx} className="leading-relaxed">
+            <li key={idx} className="leading-snug text-sm">
               {parseInlineMarkdown(item)}
             </li>
           ))}
@@ -81,6 +81,11 @@ function renderMarkdown(text: string) {
     const line = lines[i]
     const trimmedLine = line.trim()
 
+    // 마크다운 구분선(---) 무시 (3개 이상의 하이픈만)
+    if (/^---+$/.test(trimmedLine)) {
+      continue
+    }
+
     // 코드 블록 처리
     if (trimmedLine.startsWith('```')) {
       if (inCodeBlock) {
@@ -88,8 +93,8 @@ function renderMarkdown(text: string) {
         flushParagraph()
         flushList()
         elements.push(
-          <pre key={elements.length} className="bg-gray-100 rounded-lg p-4 my-4 overflow-x-auto border border-gray-200">
-            <code className="text-sm text-gray-800 font-mono">{codeBlockContent.join('\n')}</code>
+          <pre key={elements.length} className="bg-gray-100 rounded-lg p-3 my-2 overflow-x-auto border border-gray-200">
+            <code className="text-xs text-gray-800 font-mono leading-snug">{codeBlockContent.join('\n')}</code>
           </pre>
         )
         codeBlockContent = []
@@ -108,13 +113,13 @@ function renderMarkdown(text: string) {
       continue
     }
 
-    // 헤딩 처리
+    // 헤딩 처리 (3가지 크기: 대제목, 소제목, 내용)
     if (trimmedLine.startsWith('### ')) {
       flushParagraph()
       flushList()
       const headingText = trimmedLine.replace(/^###\s+/, '')
       elements.push(
-        <h3 key={elements.length} className="text-base font-semibold mb-3 mt-6 first:mt-0 text-gray-900">
+        <h3 key={elements.length} className="text-sm font-semibold mb-1.5 mt-3 first:mt-0 text-gray-900">
           {parseInlineMarkdown(headingText)}
         </h3>
       )
@@ -126,7 +131,7 @@ function renderMarkdown(text: string) {
       flushList()
       const headingText = trimmedLine.replace(/^##\s+/, '')
       elements.push(
-        <h2 key={elements.length} className="text-lg font-semibold mb-3 mt-6 first:mt-0 text-gray-900">
+        <h2 key={elements.length} className="text-base font-bold mb-2 mt-4 first:mt-0 text-gray-900">
           {parseInlineMarkdown(headingText)}
         </h2>
       )
@@ -138,7 +143,7 @@ function renderMarkdown(text: string) {
       flushList()
       const headingText = trimmedLine.replace(/^#\s+/, '')
       elements.push(
-        <h1 key={elements.length} className="text-xl font-semibold mb-4 mt-6 first:mt-0 text-gray-900">
+        <h1 key={elements.length} className="text-lg font-bold mb-2.5 mt-4 first:mt-0 text-gray-900">
           {parseInlineMarkdown(headingText)}
         </h1>
       )
@@ -183,6 +188,7 @@ interface ChatInterfaceProps {
   onReferencesUpdate?: (messageIndex: number, references: Reference[]) => void
   onLectureIdsLoaded?: (lectureIds: string[]) => void // 세션 로드 시 lecture_ids 전달
   onMessagesUpdate?: (messages: ChatMessage[]) => void // 메시지 배열 업데이트
+  onTabChange?: (tab: 'answer' | 'notes' | 'materials') => void // 탭 변경 콜백
 }
 
 // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
@@ -193,11 +199,15 @@ const DEFAULT_HOOKING_QUESTIONS = [
   '이 개념을 더 쉽게 이해하려면 어떻게 해야 하나요?',
 ]
 
-export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate }: ChatInterfaceProps) {
+export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onTabChange }: ChatInterfaceProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  // 타이핑 애니메이션 상태: 메시지 인덱스 -> 현재 표시된 텍스트 길이
+  const [typingProgress, setTypingProgress] = useState<Map<number, number>>(new Map())
+  // 타이핑 완료 상태: 메시지 인덱스 -> 타이핑 완료 여부
+  const [typingComplete, setTypingComplete] = useState<Map<number, boolean>>(new Map())
   const [loadingStatusItems, setLoadingStatusItems] = useState<Array<{
     step: string
     message: string
@@ -209,12 +219,39 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<Array<{ question: string; answer?: string; reference_data?: Reference[] | null }>>(
+  const [hookingQuestions, setHookingQuestions] = useState<Array<{ question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }>>(
     DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q }))
   )
+  const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
+  const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
+
+  // lecture_ids 변경 시 PQM 질문 로드 (단일 선택 시에만)
+  useEffect(() => {
+    const loadPQMQuestions = async () => {
+      // 복수 선택이거나 선택 없으면 PQM 질문 숨김
+      if (selectedLectureIds.length !== 1) {
+        setPQMQuestions([])
+        return
+      }
+      
+      try {
+        const { data, error } = await chatApi.getPQMQuestionsByLecture(selectedLectureIds[0])
+        if (data && !error && data.length > 0) {
+          setPQMQuestions(data)
+        } else {
+          setPQMQuestions([])
+        }
+      } catch (err) {
+        console.error('Failed to load PQM questions:', err)
+        setPQMQuestions([])
+      }
+    }
+    
+    loadPQMQuestions()
+  }, [selectedLectureIds])
 
   // lecture_ids 변경 시 후킹 질문 로드 (단일 선택 시에만)
   useEffect(() => {
@@ -227,7 +264,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       
       try {
         const { data, error } = await chatApi.getHookingByLecture(selectedLectureIds[0])
+        console.log('[후킹 질문 로드] API 응답:', { data, error })
         if (data && !error) {
+          console.log('[후킹 질문 로드] reference_data:', data.reference_data)
           // 후킹 질문이 있으면 해당 질문과 답변, 참고자료, 키워드 함께 저장
           setHookingQuestions([{
             question: data.question,
@@ -248,6 +287,140 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     loadHookingQuestions()
   }, [selectedLectureIds])
 
+  // 컴포넌트 마운트 시 세션 확인 (페이지 복귀 시 작업 완료 확인)
+  useEffect(() => {
+    const checkSessionOnMount = async () => {
+      // currentSessionId가 있고, 메시지가 없거나 적을 때 세션 확인
+      if (currentSessionId && messages.length === 0) {
+        try {
+          const { data, error } = await chatApi.getSession(currentSessionId)
+          if (data && !error && data.messages.length > 0) {
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+              let followUpQuestion: string | null = null
+              if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
+                const firstRef = m.reference_data[0]
+                if (firstRef && typeof firstRef === 'object' && '_meta' in firstRef) {
+                  const meta = (firstRef as any)._meta
+                  if (meta && meta.follow_up_question) {
+                    followUpQuestion = meta.follow_up_question
+                  }
+                }
+              }
+              
+              return {
+                role: m.role,
+                content: m.content,
+                summary_keywords: m.summary_keywords || null,
+                follow_up_question: followUpQuestion,
+              }
+            })
+            
+            setMessages(loadedMessages)
+            
+            // 타이핑 완료 상태 설정
+            const completeMap = new Map<number, boolean>()
+            const progressMap = new Map<number, number>()
+            loadedMessages.forEach((msg, idx) => {
+              if (msg.role === 'assistant') {
+                completeMap.set(idx, true)
+                progressMap.set(idx, msg.content.length)
+              }
+            })
+            setTypingComplete(completeMap)
+            setTypingProgress(progressMap)
+            
+            // 참고자료 복원
+            loadedMessages.forEach((msg, idx) => {
+              if (msg.role === 'assistant' && data.messages[idx]?.reference_data) {
+                const refs = data.messages[idx].reference_data as Reference[]
+                if (refs && refs.length > 0 && onReferencesUpdate) {
+                  onReferencesUpdate(idx, refs)
+                }
+              }
+            })
+          }
+        } catch (err) {
+          console.error('Failed to check session on mount:', err)
+        }
+      }
+    }
+    
+    // 약간의 지연 후 확인 (다른 useEffect가 먼저 실행되도록)
+    const timer = setTimeout(checkSessionOnMount, 100)
+    
+    return () => clearTimeout(timer)
+  }, []) // 마운트 시에만 실행
+
+  // 페이지 복귀 시 세션 자동 로드 (작업 완료 확인)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      // 페이지가 다시 보이고, 세션이 있고, 로딩 중이 아닐 때만
+      if (document.visibilityState === 'visible' && currentSessionId && !isLoading) {
+        try {
+          const { data, error } = await chatApi.getSession(currentSessionId)
+          if (data && !error) {
+            // 현재 메시지 수와 로드된 메시지 수 비교
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+              let followUpQuestion: string | null = null
+              if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
+                const firstRef = m.reference_data[0]
+                if (firstRef && typeof firstRef === 'object' && '_meta' in firstRef) {
+                  const meta = (firstRef as any)._meta
+                  if (meta && meta.follow_up_question) {
+                    followUpQuestion = meta.follow_up_question
+                  }
+                }
+              }
+              
+              return {
+                role: m.role,
+                content: m.content,
+                summary_keywords: m.summary_keywords || null,
+                follow_up_question: followUpQuestion,
+              }
+            })
+            
+            // 메시지가 추가되었거나 변경되었으면 업데이트
+            if (loadedMessages.length !== messages.length || 
+                JSON.stringify(loadedMessages) !== JSON.stringify(messages)) {
+              setMessages(loadedMessages)
+              
+              // 타이핑 완료 상태 설정
+              const completeMap = new Map<number, boolean>()
+              const progressMap = new Map<number, number>()
+              loadedMessages.forEach((msg, idx) => {
+                if (msg.role === 'assistant') {
+                  completeMap.set(idx, true)
+                  progressMap.set(idx, msg.content.length)
+                }
+              })
+              setTypingComplete(completeMap)
+              setTypingProgress(progressMap)
+              
+              // 참고자료 복원
+              loadedMessages.forEach((msg, idx) => {
+                if (msg.role === 'assistant' && data.messages[idx]?.reference_data) {
+                  const refs = data.messages[idx].reference_data as Reference[]
+                  if (refs && refs.length > 0 && onReferencesUpdate) {
+                    onReferencesUpdate(idx, refs)
+                  }
+                }
+              })
+            }
+          }
+        } catch (err) {
+          console.error('Failed to reload session on visibility change:', err)
+        }
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [currentSessionId, isLoading, messages, onReferencesUpdate])
+
   // 세션 변경 시 메시지 로드
   useEffect(() => {
     const loadSession = async () => {
@@ -262,14 +435,41 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         try {
           const { data, error } = await chatApi.getSession(sessionId)
           if (data && !error) {
-            // 메시지 로드 (summary_keywords 포함)
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null }> = data.messages.map((m: StoredMessage) => ({
-              role: m.role,
-              content: m.content,
-              summary_keywords: m.summary_keywords || null,
-            }))
+            // 메시지 로드 (summary_keywords, follow_up_question 포함)
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+              // reference_data에서 follow_up_question 추출 (첫 번째 reference의 _meta에서)
+              let followUpQuestion: string | null = null
+              if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
+                const firstRef = m.reference_data[0]
+                if (firstRef && typeof firstRef === 'object' && '_meta' in firstRef) {
+                  const meta = (firstRef as any)._meta
+                  if (meta && meta.follow_up_question) {
+                    followUpQuestion = meta.follow_up_question
+                  }
+                }
+              }
+              
+              return {
+                role: m.role,
+                content: m.content,
+                summary_keywords: m.summary_keywords || null,
+                follow_up_question: followUpQuestion,
+              }
+            })
             setMessages(loadedMessages)
             setCurrentSessionId(sessionId)
+            
+            // 기존 메시지들은 타이핑 완료 상태로 설정
+            const completeMap = new Map<number, boolean>()
+            const progressMap = new Map<number, number>()
+            loadedMessages.forEach((msg, index) => {
+              if (msg.role === 'assistant') {
+                completeMap.set(index, true)
+                progressMap.set(index, msg.content.length)
+              }
+            })
+            setTypingComplete(completeMap)
+            setTypingProgress(progressMap)
             
             // 메시지 배열을 부모에게 전달 (키워드 표시를 위해 필요)
             if (onMessagesUpdate) {
@@ -290,7 +490,20 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             
             // 세션의 lecture_ids를 부모에게 전달 (session 객체에서 가져옴)
             if (data.session?.lecture_ids && onLectureIdsLoaded) {
-              onLectureIdsLoaded(data.session.lecture_ids)
+              // lecture_ids가 배열이 아닌 경우 파싱 (Supabase JSONB 배열 처리)
+              let lectureIds: string | string[] = data.session.lecture_ids
+              if (typeof lectureIds === 'string') {
+                const stringValue = lectureIds
+                try {
+                  const parsed = JSON.parse(stringValue)
+                  lectureIds = Array.isArray(parsed) ? parsed : [stringValue]
+                } catch {
+                  lectureIds = [stringValue]
+                }
+              }
+              if (Array.isArray(lectureIds) && lectureIds.length > 0) {
+                onLectureIdsLoaded(lectureIds)
+              }
             }
           }
         } catch (err) {
@@ -329,17 +542,75 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }, [messages, onMessagesUpdate])
 
-  // 참고자료 업데이트를 useEffect에서 처리 (렌더링 중 setState 방지)
+  // 참고자료 업데이트를 타이핑 완료 시점에 처리
   useEffect(() => {
     if (pendingReferences && onReferencesUpdate) {
-      // 메시지 배열이 업데이트된 후에 참고자료 업데이트
+      // 메시지 배열이 업데이트되고, 타이핑이 완료된 후에 참고자료 업데이트
       const currentMessageCount = messages.length
-      if (pendingReferences.messageIndex < currentMessageCount) {
+      const isTypingDone = typingComplete.get(pendingReferences.messageIndex)
+      
+      if (pendingReferences.messageIndex < currentMessageCount && isTypingDone) {
         onReferencesUpdate(pendingReferences.messageIndex, pendingReferences.refs)
         setPendingReferences(null)
       }
     }
-  }, [pendingReferences, onReferencesUpdate, messages.length])
+  }, [pendingReferences, onReferencesUpdate, messages.length, typingComplete])
+
+  // 타이핑 애니메이션 처리
+  useEffect(() => {
+    const intervals: NodeJS.Timeout[] = []
+    
+    typingProgress.forEach((currentLength, messageIndex) => {
+      const message = messages[messageIndex]
+      if (!message || message.role !== 'assistant') return
+      
+      const isComplete = typingComplete.get(messageIndex)
+      if (isComplete) return
+      
+      const fullText = message.content
+      const targetLength = fullText.length
+      
+      if (currentLength < targetLength) {
+        // 타이핑 속도 조절 (문자당 약 7.5ms, 텍스트 길이에 따라 조정)
+        // 짧은 텍스트는 빠르게, 긴 텍스트는 조금 느리게
+        const baseSpeed = 7.5
+        const lengthFactor = Math.min(targetLength / 1000, 1) // 최대 1배
+        const speed = baseSpeed + (lengthFactor * 5) // 7.5ms ~ 12.5ms
+        const interval = setInterval(() => {
+          setTypingProgress(prev => {
+            const newMap = new Map(prev)
+            const current = newMap.get(messageIndex) || 0
+            const next = Math.min(current + 1, targetLength)
+            newMap.set(messageIndex, next)
+            
+            // 타이핑 완료
+            if (next >= targetLength) {
+              setTypingComplete(prev => {
+                const newMap = new Map(prev)
+                newMap.set(messageIndex, true)
+                return newMap
+              })
+            }
+            
+            return newMap
+          })
+        }, speed)
+        
+        intervals.push(interval)
+      } else {
+        // 이미 완료된 경우
+        setTypingComplete(prev => {
+          const newMap = new Map(prev)
+          newMap.set(messageIndex, true)
+          return newMap
+        })
+      }
+    })
+    
+    return () => {
+      intervals.forEach(interval => clearInterval(interval))
+    }
+  }, [typingProgress, messages, typingComplete])
 
   // 메시지 전송 (SSE 스트리밍)
   const sendMessage = useCallback(async (question: string) => {
@@ -360,7 +631,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       if (!sessionIdToUse) {
         const sessionResult = await chatApi.createSession(selectedLectureIds)
         if (sessionResult.error || !sessionResult.data) {
-          if (sessionResult.error && sessionResult.status === 401) {
+          // 401 에러 확인 (error_code 또는 status로 확인)
+          if (sessionResult.error && (sessionResult.error.error_code === 'UNAUTHORIZED' || (sessionResult as any).status === 401)) {
             throw new Error('인증이 만료되었습니다. 페이지를 새로고침해주세요.')
           }
           throw new Error(sessionResult.error?.message || '세션 생성 실패')
@@ -387,6 +659,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             }])
           } else if (progressData.type === 'source' && progressData.data) {
             // 마지막 상태 항목에 소스 추가
+            const sourceData = progressData.data // 타입 가드를 위해 지역 변수로 추출
             setLoadingStatusItems(prev => {
               if (prev.length === 0) {
                 // 상태 메시지가 없으면 기본 상태 추가
@@ -395,8 +668,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   message: '관련 자료를 검색하는 중...',
                   sources: [{
                     type: progressData.source_type!,
-                    title: progressData.data.title || '',
-                    preview: progressData.data.preview
+                    title: sourceData.title || '',
+                    preview: sourceData.preview
                   }]
                 }]
               }
@@ -406,8 +679,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 ...lastItem,
                 sources: [...lastItem.sources, {
                   type: progressData.source_type!,
-                  title: progressData.data.title || '',
-                  preview: progressData.data.preview
+                  title: sourceData.title || '',
+                  preview: sourceData.preview
                 }]
               }
               return updated
@@ -416,10 +689,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         },
         // onComplete: 최종 결과 처리
         (result) => {
-          const assistantMessage: ChatMessage & { summary_keywords?: string | null } = {
+          const assistantMessage: ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null } = {
             role: 'assistant',
             content: result.answer,
             summary_keywords: result.summary_keywords || null,
+            follow_up_question: result.follow_up_question || null,
           }
           setMessages(prev => {
             const updated = [...prev, assistantMessage]
@@ -429,6 +703,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             if (newRefs.length > 0) {
               setPendingReferences({ messageIndex, refs: newRefs })
             }
+            
+            // 타이핑 애니메이션 시작
+            setTypingProgress(prev => {
+              const newMap = new Map(prev)
+              newMap.set(messageIndex, 0)
+              return newMap
+            })
+            setTypingComplete(prev => {
+              const newMap = new Map(prev)
+              newMap.set(messageIndex, false)
+              return newMap
+            })
             
             return updated
           })
@@ -506,9 +792,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         const updated = [...prev, assistantMessage]
         const messageIndex = updated.length - 1
         
-        // 참고자료가 있으면 부모에게 전달
+        // 참고자료가 있으면 부모에게 전달 (후킹 질문은 타이핑 애니메이션이 없으므로 즉시 전달)
         if (hooking.reference_data && hooking.reference_data.length > 0 && onReferencesUpdate) {
-          setPendingReferences({ messageIndex, refs: hooking.reference_data })
+          console.log('[후킹 질문] reference_data 전달:', hooking.reference_data)
+          // 후킹 질문은 타이핑 애니메이션이 없으므로 즉시 전달
+          setTimeout(() => {
+            onReferencesUpdate(messageIndex, hooking.reference_data!)
+          }, 0)
+        } else {
+          console.log('[후킹 질문] reference_data 없음:', {
+            hasReferenceData: !!hooking.reference_data,
+            referenceDataLength: hooking.reference_data?.length || 0,
+            hasOnReferencesUpdate: !!onReferencesUpdate
+          })
         }
         
         return updated
@@ -554,6 +850,124 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }
 
+  // PQM 질문 클릭 핸들러
+  const handlePQMQuestionClick = async (pqmQuestion: PQMQuestion) => {
+    // PQM 질문은 항상 미리 준비된 답변이 있음
+    // 사용자 메시지 추가
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: pqmQuestion.question,
+    }
+    setMessages(prev => [...prev, userMessage])
+    
+    // PQM reference_data를 Reference[] 형태로 변환
+    const references: Reference[] = []
+    if (pqmQuestion.reference_data) {
+      // recording_chunks 처리
+      if (pqmQuestion.reference_data.recording_chunks) {
+        pqmQuestion.reference_data.recording_chunks.forEach((chunk: any) => {
+          references.push({
+            type: 'recording',
+            source_id: chunk.recording_id || '',
+            content: chunk.text || '',
+            metadata: {
+              chunk_index: chunk.chunk_index,
+              start_time: chunk.start_time,
+              end_time: chunk.end_time,
+              score: chunk.score || 0,
+            },
+            citations: chunk.citations || [],  // 백엔드에서 생성된 citations 사용
+            summary: chunk.summary || null,    // 백엔드에서 생성된 summary (인터뷰 기사 형식) 사용
+          })
+        })
+      }
+      
+      // material_pages 처리
+      if (pqmQuestion.reference_data.material_pages) {
+        pqmQuestion.reference_data.material_pages.forEach((page: any) => {
+          references.push({
+            type: 'material',
+            source_id: page.material_id || '',
+            content: page.text_content || '',
+            metadata: {
+              material_id: page.material_id,
+              page_number: page.page_number,
+              image_path: page.image_path,
+              image_url: page.image_url,
+              score: page.score || 0,
+            },
+            citations: page.citations || [],  // 백엔드에서 생성된 citations 사용
+          })
+        })
+      }
+    }
+    
+    // AI 답변 추가 (타이핑 애니메이션 없이 바로 표시)
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: pqmQuestion.answer,
+    }
+    setMessages(prev => {
+      const updated = [...prev, assistantMessage]
+      const messageIndex = updated.length - 1
+      
+      // 참고자료가 있으면 부모에게 즉시 전달 (타이핑 애니메이션 없으므로)
+      if (references.length > 0 && onReferencesUpdate) {
+        console.log('[PQM 질문] reference_data 전달:', references)
+        setTimeout(() => {
+          onReferencesUpdate(messageIndex, references)
+        }, 0)
+      } else {
+        console.log('[PQM 질문] reference_data 없음:', {
+          referencesLength: references.length,
+          hasOnReferencesUpdate: !!onReferencesUpdate
+        })
+      }
+      
+      // 타이핑 애니메이션 없음 (즉시 완료 상태로 설정)
+      setTypingComplete(prev => {
+        const newMap = new Map(prev)
+        newMap.set(messageIndex, true)
+        return newMap
+      })
+      
+      return updated
+    })
+    
+    // 세션이 없으면 생성하고 메시지 저장
+    if (!currentSessionId) {
+      try {
+        const sessionResult = await chatApi.createSession(selectedLectureIds)
+        if (sessionResult.data) {
+          const newSessionId = sessionResult.data.id
+          selfCreatedSessionId.current = newSessionId
+          setCurrentSessionId(newSessionId)
+          onSessionCreated?.(newSessionId)
+          
+          // PQM 메시지 저장
+          chatApi.savePQMMessage(newSessionId, {
+            question: pqmQuestion.question,
+            answer: pqmQuestion.answer,
+            reference_data: references,
+          }).catch(err => {
+            console.error('Failed to save PQM message:', err)
+          })
+        }
+      } catch (err) {
+        console.error('Failed to create session for PQM:', err)
+      }
+    } else {
+      // 기존 세션에 PQM 메시지 저장
+      chatApi.savePQMMessage(currentSessionId, {
+        question: pqmQuestion.question,
+        answer: pqmQuestion.answer,
+        reference_data: references,
+      }).catch(err => {
+        console.error('Failed to save PQM message:', err)
+      })
+    }
+  }
+
   // 수업 미선택 상태
   if (selectedLectureIds.length === 0) {
     return (
@@ -572,20 +986,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       <div className="flex h-full flex-col">
         {/* 중앙 컨텐츠 */}
         <div className="flex flex-1 flex-col items-center justify-center px-4">
-          {/* 후킹 질문 목록 */}
-          <div className="mb-8 w-full max-w-2xl space-y-2">
-            {hookingQuestions.map((hooking, index) => (
-              <button
-                key={index}
-                onClick={() => handleSuggestionClick(hooking)}
-                className="flex w-full items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
-              >
-                <Search className="h-4 w-4 text-gray-400" />
-                <span>{hooking.question}</span>
-              </button>
-            ))}
-          </div>
-
           {/* 중앙 입력창 */}
           <div className="w-full max-w-2xl">
             <form onSubmit={handleSubmit}>
@@ -594,6 +994,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onFocus={() => setIsInputFocused(true)}
+                  onBlur={() => {
+                    // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
+                    setTimeout(() => setIsInputFocused(false), 200)
+                  }}
                   placeholder="무엇이든 물어보세요."
                   disabled={isLoading}
                   className="w-full rounded-full border border-gray-300 bg-gray-50 px-5 py-3.5 pr-14 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
@@ -612,6 +1017,43 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               </div>
             </form>
           </div>
+
+          {/* 입력창 포커스 시 나타나는 제안 질문 목록 */}
+          {isInputFocused && (hookingQuestions.length > 0 || pqmQuestions.length > 0) && (
+            <div className="mt-6 w-full max-w-2xl space-y-2 animate-fade-in-up">
+              {/* 후킹 질문 (1개) */}
+              {hookingQuestions.length > 0 && (
+                <>
+                  {hookingQuestions.slice(0, 1).map((hooking, index) => (
+                    <button
+                      key={`hooking-${index}`}
+                      onClick={() => handleSuggestionClick(hooking)}
+                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-all hover:border-primary-300 hover:bg-primary-50 hover:shadow-md"
+                    >
+                      <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span>{hooking.question}</span>
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {/* PQM 질문 (4개) */}
+              {pqmQuestions.length > 0 && (
+                <>
+                  {pqmQuestions.map((pqmQuestion) => (
+                    <button
+                      key={pqmQuestion.id}
+                      onClick={() => handlePQMQuestionClick(pqmQuestion)}
+                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-all hover:border-primary-300 hover:bg-primary-50 hover:shadow-md"
+                    >
+                      <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span>{pqmQuestion.question}</span>
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     )
@@ -634,13 +1076,68 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 </div>
               )
             } else {
-              // AI 답변: 말풍선 없이 자유롭게 펼쳐서 표시 (왼쪽 정렬, 마크다운 스타일)
+              // AI 답변: 타이핑 애니메이션 적용
+              const typingLength = typingProgress.get(index) ?? message.content.length
+              const isTypingComplete = typingComplete.get(index) ?? true
+              const displayedText = message.content.slice(0, typingLength)
+              const assistantMessage = message as ChatMessage & { follow_up_question?: string | null }
+              const followUpQuestion = assistantMessage.follow_up_question
+              
+              // 가장 마지막 assistant 메시지인지 확인
+              const lastAssistantIndex = messages.map((m, i) => m.role === 'assistant' ? i : -1).filter(i => i >= 0).pop()
+              const isLastAssistantMessage = index === lastAssistantIndex
+              
               return (
                 <div key={index} className="flex justify-start">
                   <div className="w-full max-w-none">
-                    <div className="text-gray-900 text-sm leading-relaxed">
-                      {renderMarkdown(message.content)}
+                    <div className="text-gray-900">
+                      {typingLength < message.content.length ? (
+                        <>
+                          {renderMarkdown(displayedText)}
+                          <span className="inline-block w-2 h-4 bg-primary-500 ml-1 animate-pulse" />
+                        </>
+                      ) : (
+                        renderMarkdown(message.content)
+                      )}
                     </div>
+                    {/* 후속 질문 버튼 - 가장 마지막 답변에만 표시 */}
+                    {isTypingComplete && typingLength >= message.content.length && followUpQuestion && isLastAssistantMessage && (
+                      <div className="mt-4 flex justify-start animate-fade-in-up">
+                        <button
+                          onClick={() => {
+                            if (!isLoading) {
+                              sendMessage(followUpQuestion)
+                            }
+                          }}
+                          disabled={isLoading}
+                          className="inline-flex items-center gap-2 rounded-lg border border-primary-300 bg-white px-4 py-2 text-sm font-medium text-primary-700 shadow-sm transition-all duration-200 hover:bg-primary-50 hover:border-primary-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span>💡</span>
+                          <span>{followUpQuestion}</span>
+                        </button>
+                      </div>
+                    )}
+                    {/* 출처 확인 안내 멘트 - 타이핑 완료 후에만 표시 */}
+                    {isTypingComplete && typingLength >= message.content.length && (
+                      <div className="mt-6 flex justify-center animate-fade-in-up">
+                        <div 
+                          onClick={() => onTabChange?.('notes')}
+                          className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-primary-300 bg-gradient-to-r from-primary-50 via-blue-50 to-purple-50 px-3 py-2 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-pulse-scale cursor-pointer"
+                        >
+                          <ArrowUp 
+                            className="h-4 w-4 text-primary-600 animate-pulse flex-shrink-0" 
+                            strokeWidth={3}
+                          />
+                          <span className="font-serif text-[10px] font-semibold text-primary-800 italic leading-relaxed tracking-wide whitespace-nowrap">
+                            수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요
+                          </span>
+                          <ArrowUp 
+                            className="h-4 w-4 text-primary-600 animate-pulse flex-shrink-0" 
+                            strokeWidth={3}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )

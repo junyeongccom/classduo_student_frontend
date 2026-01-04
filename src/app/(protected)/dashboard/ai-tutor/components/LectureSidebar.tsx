@@ -31,6 +31,8 @@ interface LectureSidebarProps {
   selectedLectureIds: string[]
   onSelectLectureIds: (lectureIds: string[]) => void
   isLocked?: boolean // 세션이 생성되면 잠금 (선택 불가)
+  initialLectureIds?: string[] // 초기 회차 IDs (세션 로드 시 사용)
+  autoSelectLatest?: boolean // 가장 최신 회차 자동 선택 (새 채팅 시 사용)
 }
 
 // 임시 데이터 (API 없을 때 사용)
@@ -56,12 +58,13 @@ const TEMP_COURSES: Course[] = [
   }
 ]
 
-export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false }: LectureSidebarProps) {
+export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false, initialLectureIds, autoSelectLatest = false }: LectureSidebarProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [hasAutoSelected, setHasAutoSelected] = useState(false) // 자동 선택 완료 플래그
 
   // 선택된 강의 객체
   const selectedCourse = courses.find(c => c.course_id === selectedCourseId)
@@ -69,7 +72,10 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
   // 강의 목록 가져오기
   useEffect(() => {
     const fetchCourses = async () => {
-      setIsLoading(true)
+      // 초기 로드 시에만 로딩 상태 표시 (깜박임 방지)
+      if (courses.length === 0) {
+        setIsLoading(true)
+      }
       setError(null)
       
       try {
@@ -88,7 +94,10 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
         if (coursesResult.error || !coursesList || !Array.isArray(coursesList) || coursesList.length === 0) {
           console.log('[LectureSidebar] Using temp data. Error:', coursesResult.error)
           setCourses(TEMP_COURSES)
-          setSelectedCourseId(TEMP_COURSES[0].course_id)
+          // initialLectureIds가 없을 때만 첫 번째 강의 선택
+          if (!selectedCourseId) {
+            setSelectedCourseId(TEMP_COURSES[0].course_id)
+          }
           return
         }
         
@@ -109,8 +118,48 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
         
         setCourses(coursesWithLectures)
         
-        // 첫 번째 강의 자동 선택
-        if (coursesWithLectures.length > 0) {
+        // 가장 최신 회차 자동 선택 (새 채팅 시)
+        if (autoSelectLatest && coursesWithLectures.length > 0 && !isLocked) {
+          // 모든 강의의 모든 회차 중에서 is_available이 true인 것만 필터링
+          const allAvailableLectures: (Lecture & { course_id: string })[] = []
+          coursesWithLectures.forEach(course => {
+            course.lectures
+              .filter(lec => lec.is_available)
+              .forEach(lec => {
+                allAvailableLectures.push({ ...lec, course_id: course.course_id })
+              })
+          })
+          
+          if (allAvailableLectures.length > 0) {
+            // lecture_date 기준으로 정렬하여 가장 최신 회차 찾기
+            const sortedLectures = [...allAvailableLectures].sort((a, b) => {
+              const dateA = new Date(a.lecture_date).getTime()
+              const dateB = new Date(b.lecture_date).getTime()
+              return dateB - dateA // 내림차순 (최신이 먼저)
+            })
+            
+            const latestLecture = sortedLectures[0]
+            setSelectedCourseId(latestLecture.course_id)
+            onSelectLectureIds([latestLecture.lecture_id])
+          } else if (!selectedCourseId) {
+            // 사용 가능한 회차가 없으면 첫 번째 강의 선택
+            setSelectedCourseId(coursesWithLectures[0].course_id)
+          }
+        }
+        // 초기 lecture_ids가 있으면 해당 회차가 속한 강의를 찾아서 선택
+        else if (initialLectureIds && initialLectureIds.length > 0 && coursesWithLectures.length > 0) {
+          // initialLectureIds 중 하나라도 포함하는 강의 찾기
+          const matchingCourse = coursesWithLectures.find(course => 
+            course.lectures.some(lec => initialLectureIds.includes(lec.lecture_id))
+          )
+          if (matchingCourse) {
+            setSelectedCourseId(matchingCourse.course_id)
+          } else if (!selectedCourseId) {
+            // 매칭되는 강의가 없고 선택된 강의가 없으면 첫 번째 강의 선택
+            setSelectedCourseId(coursesWithLectures[0].course_id)
+          }
+        } else if (!selectedCourseId && coursesWithLectures.length > 0) {
+          // 선택된 강의가 없으면 첫 번째 강의 자동 선택
           setSelectedCourseId(coursesWithLectures[0].course_id)
         }
         
@@ -118,14 +167,62 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
         console.error('Failed to fetch courses:', err)
         setError('강의 목록을 불러오는데 실패했습니다')
         setCourses(TEMP_COURSES)
-        setSelectedCourseId(TEMP_COURSES[0].course_id)
+        if (!selectedCourseId) {
+          setSelectedCourseId(TEMP_COURSES[0].course_id)
+        }
       } finally {
         setIsLoading(false)
       }
     }
     
     fetchCourses()
-  }, [])
+  }, []) // initialLectureIds 의존성 제거 (깜박임 방지)
+  
+  // initialLectureIds가 변경되면 해당 회차가 속한 강의를 다시 찾아서 선택
+  useEffect(() => {
+    if (initialLectureIds && initialLectureIds.length > 0 && courses.length > 0 && !isLoading) {
+      const matchingCourse = courses.find(course => 
+        course.lectures.some(lec => initialLectureIds.includes(lec.lecture_id))
+      )
+      if (matchingCourse && matchingCourse.course_id !== selectedCourseId) {
+        setSelectedCourseId(matchingCourse.course_id)
+      }
+    }
+  }, [initialLectureIds, courses, selectedCourseId, isLoading])
+
+  // autoSelectLatest가 true일 때 가장 최신 회차 선택 (강의 목록이 로드된 후)
+  useEffect(() => {
+    if (autoSelectLatest && courses.length > 0 && !isLoading && !isLocked && !hasAutoSelected) {
+      // 모든 강의의 모든 회차 중에서 is_available이 true인 것만 필터링
+      const allAvailableLectures: (Lecture & { course_id: string })[] = []
+      courses.forEach(course => {
+        course.lectures
+          .filter(lec => lec.is_available)
+          .forEach(lec => {
+            allAvailableLectures.push({ ...lec, course_id: course.course_id })
+          })
+      })
+      
+      if (allAvailableLectures.length > 0) {
+        // lecture_date 기준으로 정렬하여 가장 최신 회차 찾기
+        const sortedLectures = [...allAvailableLectures].sort((a, b) => {
+          const dateA = new Date(a.lecture_date).getTime()
+          const dateB = new Date(b.lecture_date).getTime()
+          return dateB - dateA // 내림차순 (최신이 먼저)
+        })
+        
+        const latestLecture = sortedLectures[0]
+        setSelectedCourseId(latestLecture.course_id)
+        onSelectLectureIds([latestLecture.lecture_id])
+        setHasAutoSelected(true) // 자동 선택 완료 표시
+      }
+    }
+    
+    // autoSelectLatest가 false가 되면 플래그 초기화
+    if (!autoSelectLatest) {
+      setHasAutoSelected(false)
+    }
+  }, [autoSelectLatest, courses, isLoading, isLocked, hasAutoSelected, onSelectLectureIds])
 
   // 강의 선택 시 기존 회차 선택 초기화 - 잠금 상태면 무시
   const handleSelectCourse = (courseId: string) => {
@@ -147,21 +244,46 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="h-full w-64 border-l border-gray-200 bg-white p-4 flex items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-      </div>
-    )
+  // 활성화된 회차 전체 선택/해제
+  const toggleSelectAll = () => {
+    if (isLocked || !selectedCourse) return
+    
+    // 활성화된 회차만 필터링
+    const availableLectures = selectedCourse.lectures.filter(lec => lec.is_available)
+    const availableLectureIds = availableLectures.map(lec => lec.lecture_id)
+    
+    // 모두 선택되어 있는지 확인
+    const allSelected = availableLectureIds.every(id => selectedLectureIds.includes(id))
+    
+    if (allSelected) {
+      // 전체 해제: 활성화된 회차만 제거
+      onSelectLectureIds(selectedLectureIds.filter(id => !availableLectureIds.includes(id)))
+    } else {
+      // 전체 선택: 활성화된 회차 추가 (중복 제거)
+      const newSelected = [...new Set([...selectedLectureIds, ...availableLectureIds])]
+      onSelectLectureIds(newSelected)
+    }
   }
+
+  // 활성화된 회차 중 선택된 개수 계산
+  const selectedCourseAvailableLectures = selectedCourse?.lectures.filter(lec => lec.is_available) || []
+  const availableLectureIdsForDisplay = selectedCourseAvailableLectures.map(lec => lec.lecture_id)
+  const selectedAvailableCount = availableLectureIdsForDisplay.filter(id => selectedLectureIds.includes(id)).length
+  const isAllSelected = selectedCourseAvailableLectures.length > 0 && 
+    selectedAvailableCount === selectedCourseAvailableLectures.length
 
   return (
     <div className="h-full w-64 border-l border-gray-200 bg-white p-4 flex flex-col">
       {/* 헤더 */}
-      <h2 className="mb-4 text-sm font-semibold text-gray-700 flex items-center gap-2">
-        <BookOpen className="h-4 w-4" />
-        수업 선택
-      </h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+          <BookOpen className="h-4 w-4" />
+          수업 선택
+        </h2>
+        {isLoading && (
+          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+        )}
+      </div>
       
       {error && (
         <p className="mb-3 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">{error}</p>
@@ -214,9 +336,19 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
       {/* 회차 목록 */}
       {selectedCourse && (
         <>
-          <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
-            <Calendar className="h-3.5 w-3.5" />
-            <span>회차 선택 (복수 선택 가능)</span>
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>회차 선택 (복수 선택 가능)</span>
+            </div>
+            {selectedCourseAvailableLectures.length > 0 && !isLocked && (
+              <button
+                onClick={toggleSelectAll}
+                className="text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
+              >
+                {isAllSelected ? '전체 해제' : '전체 선택'}
+              </button>
+            )}
           </div>
           
           <div className="flex-1 overflow-y-auto space-y-1.5">

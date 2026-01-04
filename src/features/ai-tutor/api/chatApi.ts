@@ -21,6 +21,7 @@ export interface Reference {
     original_filename?: string
     page_number?: number
     image_path?: string
+    image_url?: string
     image_width?: number
     image_height?: number
     score: number
@@ -31,6 +32,13 @@ export interface Reference {
     end_index: number
   }>
   keywords?: string[]
+  summary?: {
+    title: string
+    content: string
+  }
+  _meta?: {
+    follow_up_question?: string
+  }
 }
 
 export interface ChatRequest {
@@ -41,6 +49,7 @@ export interface ChatRequest {
 
 export interface ChatResponse {
   answer: string
+  follow_up_question?: string | null
   references: Reference[]
   chat_history: ChatMessage[]
   summary_keywords?: string | null
@@ -53,6 +62,31 @@ export interface HookingResponse {
   answer: string
   reference_data?: Reference[] | null  // 참고자료 (선택적)
   summary_keywords?: string | null  // 핵심 키워드 (선택적)
+}
+
+export interface PQMQuestion {
+  id: string
+  question: string
+  answer: string
+  reference_data: {
+    recording_chunks: Array<{
+      recording_id: string
+      chunk_index: number
+      text: string
+      start_time: number
+      end_time: number
+      score: number
+    }>
+    material_pages: Array<{
+      material_id: string
+      page_number: number
+      text_content: string
+      image_url?: string
+      image_path?: string
+      score: number
+    }>
+  }
+  question_order: number
 }
 
 // 채팅 세션 관련 타입
@@ -102,6 +136,7 @@ export interface StreamProgressData {
     score?: number
     sources_count?: number
     answer?: string
+    follow_up_question?: string | null
     references?: Reference[]
     chat_history?: ChatMessage[]
     summary_keywords?: string
@@ -124,6 +159,15 @@ export const chatApi = {
    */
   async getHookingByLecture(lectureId: string): Promise<{ data: HookingResponse | null; error: any }> {
     return apiRequest<HookingResponse>(`/ai-tutor/hooking/lecture/${lectureId}`)
+  },
+
+  /**
+   * PQM 질문 4개 조회 (lecture_id 기반)
+   */
+  async getPQMQuestionsByLecture(lectureId: string): Promise<{ data: PQMQuestion[] | null; error: any }> {
+    return apiRequest<PQMQuestion[]>(`/ai-tutor/pqm/lectures/${lectureId}`, {
+      auth: true,
+    })
   },
 
   /**
@@ -268,6 +312,27 @@ export const chatApi = {
       {
         method: 'POST',
         body: hooking,
+        auth: true,
+      }
+    )
+  },
+
+  /**
+   * PQM 메시지 저장 (미리 준비된 답변 저장)
+   */
+  async savePQMMessage(
+    sessionId: string,
+    pqm: {
+      question: string
+      answer: string
+      reference_data?: Reference[] | null
+    }
+  ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {
+    return apiRequest<{ success: boolean; message: string }>(
+      `/ai-tutor/sessions/${sessionId}/pqm`,
+      {
+        method: 'POST',
+        body: pqm,
         auth: true,
       }
     )

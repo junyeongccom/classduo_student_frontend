@@ -45,6 +45,10 @@ export interface ReviewSource {
     text_content: string
     start_time: number
     end_time: number
+    summary?: {
+      title: string
+      content: string
+    } | null
   }>
   material_pages: Array<{
     id: string

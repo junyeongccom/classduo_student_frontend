@@ -1,5 +1,5 @@
 /**
- * 참고자료 패널 - 수업노트(녹음본)와 강의자료 표시
+ * 참고자료 패널 - 수업녹음본과 강의자료 표시
  */
 'use client'
 
@@ -38,8 +38,10 @@ interface MaterialReference {
   content: string
   metadata: {
     material_id?: string
+    original_filename?: string
     page_number?: number
     image_path?: string
+    image_url?: string
     image_width?: number
     image_height?: number
     score?: number
@@ -230,7 +232,7 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
             {activeTab === 'notes' ? (
               <>
                 <Mic className="h-5 w-5 text-primary-500" />
-                <h2 className="text-lg font-semibold text-gray-900">수업노트</h2>
+                <h2 className="text-lg font-semibold text-gray-900">수업녹음본</h2>
                 <span className="ml-2 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
                   {recordingRefs.length}개
                 </span>
@@ -350,12 +352,29 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
                             <div className="flex gap-2.5">
                               <div className="flex-shrink-0 w-1 rounded-full bg-gradient-to-b from-primary-400 to-primary-600"></div>
                               <div className="flex-1 min-w-0">
-                                <p
-                                  className="text-sm leading-relaxed text-gray-700"
-                                  dangerouslySetInnerHTML={{
-                                    __html: highlightCitations(ref.content, ref.citations || [], ref.content)
-                                  }}
-                                />
+                                {/* 인터뷰 형식 요약이 있으면 사용, 없으면 원문 사용 */}
+                                {(ref as any).summary ? (
+                                  <div className="space-y-3">
+                                    {/* 제목 */}
+                                    <h3 className="text-base font-bold text-gray-900">
+                                      {(ref as any).summary.title}
+                                    </h3>
+                                    {/* 본문 - summary 기준으로 하이라이트 적용 (citations가 summary 기준으로 추출됨) */}
+                                    <p
+                                      className="text-sm leading-relaxed text-gray-700"
+                                      dangerouslySetInnerHTML={{
+                                        __html: highlightCitations((ref as any).summary.content, ref.citations || [], (ref as any).summary.content)
+                                      }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <p
+                                    className="text-sm leading-relaxed text-gray-700"
+                                    dangerouslySetInnerHTML={{
+                                      __html: highlightCitations(ref.content, ref.citations || [], ref.content)
+                                    }}
+                                  />
+                                )}
                               </div>
                             </div>
                           </div>
