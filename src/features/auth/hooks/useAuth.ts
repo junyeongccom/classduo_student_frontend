@@ -15,7 +15,8 @@ export function useAuth() {
 
   const handleLogout = () => {
     logout()
-    router.push('/login')
+    // 로그아웃 후 메인 페이지로 이동 (protected layout에서 로그인 모달 자동 표시)
+    router.push('/')
   }
 
   return {
@@ -36,7 +37,7 @@ export function useRequireAuth() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login')
+      router.push('/')
     }
   }, [isAuthenticated, isLoading, router])
 
