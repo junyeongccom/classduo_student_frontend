@@ -45,6 +45,8 @@ export default function AITutorPage() {
   const [autoSelectLatest, setAutoSelectLatest] = useState(false) // 가장 최신 회차 자동 선택 플래그
   const [isGameOverlayOpen, setIsGameOverlayOpen] = useState(false) // 게임 오버레이 표시 상태
   const [gameTriggerPosition, setGameTriggerPosition] = useState<{ top: number; left: number; width: number; height: number } | null>(null) // 게임 아이콘 위치
+  const [gameLectureId, setGameLectureId] = useState<string | undefined>(undefined) // 게임에서 사용할 회차 ID
+  const [gameCourseId, setGameCourseId] = useState<string | undefined>(undefined) // 게임에서 사용할 강의 ID (불꽃 개수용)
   
   // 세션 ID 설정 (localStorage 동기화)
   const setCurrentSessionId = useCallback((sessionId: string | undefined) => {
@@ -143,8 +145,10 @@ export default function AITutorPage() {
   }, [])
 
   // 게임 아이콘 클릭 핸들러
-  const handleGameIconClick = useCallback((lectureId: string, position: { top: number; left: number; width: number; height: number }) => {
+  const handleGameIconClick = useCallback((lectureId: string, courseId: string, position: { top: number; left: number; width: number; height: number }) => {
     setGameTriggerPosition(position)
+    setGameLectureId(lectureId)
+    setGameCourseId(courseId)
     setIsGameOverlayOpen(true)
   }, [])
 
@@ -218,6 +222,8 @@ export default function AITutorPage() {
         isOpen={isGameOverlayOpen}
         onClose={handleCloseGameOverlay}
         triggerPosition={gameTriggerPosition}
+        lectureId={gameLectureId}
+        courseId={gameCourseId}
       />
     </div>
   )

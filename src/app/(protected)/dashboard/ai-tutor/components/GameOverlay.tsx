@@ -5,14 +5,17 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { incrementGameProgress } from './LectureSidebar'
 
 interface GameOverlayProps {
   isOpen: boolean
   onClose: () => void
   triggerPosition: { top: number; left: number; width: number; height: number } | null
+  lectureId?: string // 게임 진행도를 저장할 회차 ID
+  courseId?: string // 불꽃 개수를 저장할 강의 ID
 }
 
-export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayProps) {
+export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId }: GameOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
@@ -40,6 +43,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   const [hasStumbled, setHasStumbled] = useState(false) // stumbling 완료 여부
   const [stumbleVerticalOffset, setStumbleVerticalOffset] = useState(0) // stumbling 중 수직 오프셋 (뒤로 튕김 효과)
   const [hasReversedDirection, setHasReversedDirection] = useState(false) // 반대쪽 문으로 전환 여부
+  const [quizAnswerCount, setQuizAnswerCount] = useState(0) // 이번 게임에서 선택한 횟수 (최대 5번까지 진행도 증가)
   
   // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
   const REFERENCE_WIDTH = 1200
@@ -305,7 +309,12 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
   // 퀴즈 응답 핸들러
   const handleQuizAnswer = (answer: 'O' | 'X') => {
-    // 정답 처리 로직은 나중에 추가 가능
+    // 진행도 증가 (최대 5번까지, 정답과 무관하게 선택할 때마다)
+    if (lectureId && quizAnswerCount < 5) {
+      incrementGameProgress(lectureId, courseId)
+      setQuizAnswerCount(prev => prev + 1)
+    }
+    
     // 선택하면 해당 문쪽으로 걸어가기 시작
     setIsPaused(false)
     setCurrentQuestion(null)
@@ -317,6 +326,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   useEffect(() => {
     if (isOpen) {
       setAnimationState('entering')
+      setQuizAnswerCount(0) // 게임 시작 시 선택 횟수 리셋
       // gooey 효과를 위한 애니메이션 시작
       setTimeout(() => {
         setAnimationState('entered')

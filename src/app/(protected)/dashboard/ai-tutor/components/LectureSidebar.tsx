@@ -33,7 +33,7 @@ interface LectureSidebarProps {
   isLocked?: boolean // 세션이 생성되면 잠금 (선택 불가)
   initialLectureIds?: string[] // 초기 회차 IDs (세션 로드 시 사용)
   autoSelectLatest?: boolean // 가장 최신 회차 자동 선택 (새 채팅 시 사용)
-  onGameIconClick?: (lectureId: string, position: { top: number; left: number; width: number; height: number }) => void // 게임 아이콘 클릭 핸들러
+  onGameIconClick?: (lectureId: string, courseId: string, position: { top: number; left: number; width: number; height: number }) => void // 게임 아이콘 클릭 핸들러
 }
 
 // 임시 데이터 (API 없을 때 사용)
@@ -59,6 +59,98 @@ const TEMP_COURSES: Course[] = [
   }
 ]
 
+// 게임 진행도 타입 (회차별 진행도 저장)
+interface GameProgress {
+  [lectureId: string]: number // 0~10 진행도
+}
+
+// localStorage 키
+const GAME_PROGRESS_KEY = 'classduo_game_progress'
+
+// 게임 진행도 로드
+const loadGameProgress = (): GameProgress => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const saved = localStorage.getItem(GAME_PROGRESS_KEY)
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+}
+
+// 게임 진행도 저장 (외부에서 호출 가능하도록 export)
+export const saveGameProgress = (lectureId: string, progress: number) => {
+  if (typeof window === 'undefined') return
+  try {
+    const current = loadGameProgress()
+    current[lectureId] = Math.min(10, Math.max(0, progress)) // 0~10 범위 제한
+    localStorage.setItem(GAME_PROGRESS_KEY, JSON.stringify(current))
+  } catch {
+    console.error('Failed to save game progress')
+  }
+}
+
+// 불꽃 개수 타입 (강의별 불꽃 개수 저장)
+interface FlameCount {
+  [courseId: string]: number
+}
+
+// 불꽃 개수 localStorage 키
+const FLAME_COUNT_KEY = 'classduo_flame_count'
+
+// 불꽃 개수 로드
+const loadFlameCount = (): FlameCount => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const saved = localStorage.getItem(FLAME_COUNT_KEY)
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+}
+
+// 불꽃 개수 증가
+const incrementFlameCount = (courseId: string): number => {
+  if (typeof window === 'undefined') return 0
+  try {
+    const current = loadFlameCount()
+    const newCount = (current[courseId] || 0) + 1
+    current[courseId] = newCount
+    localStorage.setItem(FLAME_COUNT_KEY, JSON.stringify(current))
+    return newCount
+  } catch {
+    console.error('Failed to increment flame count')
+    return 0
+  }
+}
+
+// 게임 진행도 증가 (외부에서 호출 가능하도록 export)
+// 진행도가 10이 되면 불꽃 +1, 진행도 리셋
+export const incrementGameProgress = (lectureId: string, courseId?: string): number => {
+  if (typeof window === 'undefined') return 0
+  try {
+    const current = loadGameProgress()
+    const currentProgress = current[lectureId] || 0
+    
+    // 이미 10이면 더 이상 증가하지 않음
+    if (currentProgress >= 10) return 10
+    
+    const newProgress = currentProgress + 1
+    current[lectureId] = newProgress
+    localStorage.setItem(GAME_PROGRESS_KEY, JSON.stringify(current))
+    
+    // 진행도가 10이 되면 불꽃 +1
+    if (newProgress === 10 && courseId) {
+      incrementFlameCount(courseId)
+    }
+    
+    return newProgress
+  } catch {
+    console.error('Failed to increment game progress')
+    return 0
+  }
+}
+
 export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false, initialLectureIds, autoSelectLatest = false, onGameIconClick }: LectureSidebarProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
@@ -66,6 +158,36 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasAutoSelected, setHasAutoSelected] = useState(false) // 자동 선택 완료 플래그
+  const [gameProgress, setGameProgress] = useState<GameProgress>({}) // 게임 진행도
+  const [flameCount, setFlameCount] = useState<FlameCount>({}) // 불꽃 개수
+  
+  // 게임 진행도 및 불꽃 개수 로드
+  useEffect(() => {
+    setGameProgress(loadGameProgress())
+    setFlameCount(loadFlameCount())
+    
+    // storage 이벤트 리스너 (다른 탭에서 변경 시 동기화)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === GAME_PROGRESS_KEY) {
+        setGameProgress(loadGameProgress())
+      }
+      if (e.key === FLAME_COUNT_KEY) {
+        setFlameCount(loadFlameCount())
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    
+    // 주기적으로 진행도 확인 (같은 탭에서 GameOverlay가 업데이트할 때)
+    const interval = setInterval(() => {
+      setGameProgress(loadGameProgress())
+      setFlameCount(loadFlameCount())
+    }, 1000)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      clearInterval(interval)
+    }
+  }, [])
 
   // 선택된 강의 객체
   const selectedCourse = courses.find(c => c.course_id === selectedCourseId)
@@ -301,11 +423,27 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
               : 'border-gray-300 bg-white hover:border-primary-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
           }`}
         >
-          <span className={selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-            {selectedCourse?.title || '강의를 선택하세요'}
-          </span>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className={`truncate ${selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+              {selectedCourse?.title || '강의를 선택하세요'}
+            </span>
+            {/* 불꽃 개수 표시 */}
+            {selectedCourse && (
+              <div className="flex items-center gap-1 shrink-0">
+                <img 
+                  src="/icon_flame.png" 
+                  alt="flame" 
+                  className="h-3.5 w-3.5 object-contain"
+                  style={{ imageRendering: 'auto' }}
+                />
+                <span className="text-xs font-medium text-amber-600">
+                  {flameCount[selectedCourse.course_id] || 0}
+                </span>
+              </div>
+            )}
+          </div>
           {!isLocked && (
-            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform shrink-0 ml-2 ${isDropdownOpen ? 'rotate-180' : ''}`} />
           )}
         </button>
         
@@ -360,49 +498,85 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
             ) : (
               selectedCourse.lectures.map(lecture => {
                 const isSelected = selectedLectureIds.includes(lecture.lecture_id)
+                const isFirstLecture = lecture.lecture_no === 1
                 const isDisabled = (isLocked && !isSelected) || !lecture.is_available // 잠금 상태 또는 사용 불가능한 회차는 비활성화
+                const showGameButton = (isSelected && selectedLectureIds.length === 1) || (isFirstLecture && !lecture.is_available)
+                // 비활성화된 1회차는 게임 버튼을 위해 부모 버튼을 disabled하지 않음
+                const shouldDisableParent = isDisabled && !(isFirstLecture && !lecture.is_available)
                 
                 return (
                   <button
                     key={lecture.lecture_id}
-                    onClick={() => toggleLecture(lecture.lecture_id)}
-                    disabled={isDisabled}
+                    onClick={() => {
+                      // 비활성화된 1회차는 회차 선택 불가
+                      if (isFirstLecture && !lecture.is_available) return
+                      toggleLecture(lecture.lecture_id)
+                    }}
+                    disabled={shouldDisableParent}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all ${
                       isSelected 
                         ? 'bg-primary-500 text-white shadow-sm' 
-                        : isDisabled
+                        : shouldDisableParent
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+                        : (isFirstLecture && !lecture.is_available)
+                        ? 'bg-gray-100 text-gray-400 opacity-50'
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}
                     title={!lecture.is_available ? '강의자료가 준비되지 않은 회차입니다' : undefined}
                   >
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${
-                        isSelected ? 'text-white' : isDisabled ? 'text-gray-400' : 'text-gray-800'
+                        isSelected ? 'text-white' : (shouldDisableParent || (isFirstLecture && !lecture.is_available)) ? 'text-gray-400' : 'text-gray-800'
                       }`}>
                         {lecture.lecture_no}회차
                       </p>
-                      <p className={`text-xs ${
-                        isSelected ? 'text-primary-100' : 'text-gray-400'
-                      }`}>
-                        {lecture.lecture_date}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-xs ${
+                          isSelected ? 'text-primary-100' : 'text-gray-400'
+                        }`}>
+                          {lecture.lecture_date}
+                        </p>
+                        {/* 보상 바: 게임 버튼이 표시되는 조건과 동일 */}
+                        {showGameButton && (
+                          <div className="flex items-center gap-1">
+                            <div 
+                              className={`h-1.5 w-12 rounded-full overflow-hidden ${
+                                isSelected ? 'bg-white/20' : 'bg-gray-300/50'
+                              }`}
+                            >
+                              <div 
+                                className={`h-full rounded-full transition-all ${
+                                  isSelected ? 'bg-white/80' : 'bg-amber-400'
+                                }`}
+                                style={{ width: `${((gameProgress[lecture.lecture_id] || 0) / 10) * 100}%` }}
+                              />
+                            </div>
+                            <span className={`text-[10px] font-medium ${
+                              isSelected ? 'text-white/70' : 'text-gray-400'
+                            }`}>
+                              {gameProgress[lecture.lecture_id] || 0}/10
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {isSelected && (
-                      <div className="ml-2 flex items-center gap-2">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
-                          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        {/* 게임 버튼: 선택된 회차가 1개일 때만 표시 */}
-                        {selectedLectureIds.length === 1 && (
+                    {(isSelected || (isFirstLecture && !lecture.is_available)) && (
+                      <div className="ml-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {isSelected && (
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
+                            <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        )}
+                        {/* 게임 버튼: 선택된 회차가 1개일 때 또는 비활성화된 1회차일 때 표시 */}
+                        {showGameButton && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              if (onGameIconClick) {
+                              if (onGameIconClick && selectedCourseId) {
                                 const rect = e.currentTarget.getBoundingClientRect()
-                                onGameIconClick(lecture.lecture_id, {
+                                onGameIconClick(lecture.lecture_id, selectedCourseId, {
                                   top: rect.top,
                                   left: rect.left,
                                   width: rect.width,
@@ -410,10 +584,14 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                                 })
                               }
                             }}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors cursor-pointer ${
+                              isSelected 
+                                ? 'bg-white/20 hover:bg-white/30' 
+                                : 'bg-gray-400/20 hover:bg-gray-400/30'
+                            }`}
                             title="게임 시작"
                           >
-                            <Gamepad2 className="h-3 w-3 text-white" />
+                            <Gamepad2 className={`h-3 w-3 ${isSelected ? 'text-white' : 'text-gray-600'}`} />
                           </button>
                         )}
                       </div>
