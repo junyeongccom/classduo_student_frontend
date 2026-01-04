@@ -28,11 +28,16 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   const [currentQuestion, setCurrentQuestion] = useState<string | null>(null) // 현재 질문
   const [activeDoorId, setActiveDoorId] = useState<number | null>(null) // 현재 퀴즈 문 ID
   
+  // 정답 하드코딩 (O가 정답)
+  const CORRECT_ANSWER: 'O' | 'X' = 'O'
+  
   // 게임 페이즈 상태 (문 통과 연출용)
-  type GamePhase = 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'returning_to_center'
+  type GamePhase = 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'stumbling' | 'returning_to_center'
   const [gamePhase, setGamePhase] = useState<GamePhase>('playing')
   const [selectedAnswer, setSelectedAnswer] = useState<'O' | 'X' | null>(null) // 선택한 답
   const [horizontalOffset, setHorizontalOffset] = useState(0) // 수평 이동 오프셋 (배경/길/문이 이동)
+  const [stumbleStepCount, setStumbleStepCount] = useState(0) // stumbling 단계에서 걸음 수 카운트
+  const [hasStumbled, setHasStumbled] = useState(false) // stumbling 완료 여부
   
   // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
   const REFERENCE_WIDTH = 1200
@@ -123,15 +128,38 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
           }, 0)
         }
 
-        // passing_through 페이즈에서 문이 캐릭터 아래로 완전히 지나가면 returning_to_center로 전환
-        // 캐릭터는 화면 하단에 위치하므로, 문이 화면 밖으로 나가기 직전에 전환
+        // passing_through 페이즈에서 문이 캐릭터에 도달하면 처리
         if (gamePhase === 'passing_through' && activeDoorId !== null) {
           const activeDoor = updatedDoors.find(d => d.id === activeDoorId)
-          // 문의 상단이 화면 높이를 넘으면 (문이 완전히 캐릭터 아래로 내려감)
-          if (activeDoor && activeDoor.top > dimensions.height - 50 * scaleFactor) {
-            setTimeout(() => {
-              setGamePhase('returning_to_center')
-            }, 0)
+          const characterCenterY = dimensions.height - 20 * scaleFactor - 75 * scaleFactor
+          
+          if (activeDoor) {
+            const doorCenterY = activeDoor.top + doorHeight / 2
+            
+            // 정답을 맞췄을 경우: 문이 화면 밖으로 나가면 returning_to_center
+            if (selectedAnswer === CORRECT_ANSWER) {
+              if (activeDoor.top > dimensions.height - 50 * scaleFactor) {
+                setTimeout(() => {
+                  setGamePhase('returning_to_center')
+                }, 0)
+              }
+            } else {
+              // 오답인 경우: 문이 캐릭터 위치에 도달하기 전 (z-index 변경 전) stumbling 페이즈로 전환
+              // hasStumbled 체크로 중복 트리거 방지
+              if (!hasStumbled && doorCenterY >= characterCenterY - speed * 20 && doorCenterY < characterCenterY - speed * 10) {
+                setTimeout(() => {
+                  setGamePhase('stumbling')
+                  setStumbleStepCount(0)
+                  setHasStumbled(true)
+                }, 0)
+              }
+              // stumbling 완료 후 문이 화면 밖으로 나가면 returning_to_center
+              if (hasStumbled && activeDoor.top > dimensions.height - 50 * scaleFactor) {
+                setTimeout(() => {
+                  setGamePhase('returning_to_center')
+                }, 0)
+              }
+            }
           }
         }
 
@@ -148,7 +176,30 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, dimensions.height, scaleFactor, gamePhase, activeDoorId])
+  }, [isOpen, animationState, dimensions.height, scaleFactor, gamePhase, activeDoorId, selectedAnswer, hasStumbled, CORRECT_ANSWER])
+
+  // stumbling 페이즈 처리 (오답시 두 번 걷고 계속 진행)
+  useEffect(() => {
+    if (!isOpen || animationState !== 'entered' || gamePhase !== 'stumbling') return
+
+    const STUMBLE_STEPS = 16 // 2 walk cycles (8 frames per cycle * 2)
+    
+    const interval = setInterval(() => {
+      setStumbleStepCount((prev) => {
+        const newCount = prev + 1
+        if (newCount >= STUMBLE_STEPS) {
+          // stumbling 완료, passing_through로 돌아가서 문 통과 계속
+          setTimeout(() => {
+            setGamePhase('passing_through')
+          }, 0)
+          return STUMBLE_STEPS
+        }
+        return newCount
+      })
+    }, 150) // 프레임 변경과 동일한 속도
+
+    return () => clearInterval(interval)
+  }, [isOpen, animationState, gamePhase])
 
   // 수평 이동 애니메이션 (walking_to_door, returning_to_center 페이즈)
   useEffect(() => {
@@ -187,6 +238,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
               setGamePhase('playing')
               setSelectedAnswer(null)
               setActiveDoorId(null)
+              setHasStumbled(false) // 다음 문을 위해 리셋
             }, 0)
             return 0
           }
