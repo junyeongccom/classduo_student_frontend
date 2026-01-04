@@ -18,6 +18,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
   const [frameIndex, setFrameIndex] = useState(0) // 프레임 시퀀스 인덱스
   const [backgroundOffset, setBackgroundOffset] = useState(0) // 배경 스크롤 오프셋
+  const [doors, setDoors] = useState<Array<{ id: number; top: number }>>([]) // 문 목록
+  const doorIdRef = useRef(0) // 문 ID 생성용
   const frameSequence = [1, 2, 3, 2, 1, 2, 3, 2] // 1->2->3->2->1->2->3->2 반복
   const currentFrame = frameSequence[frameIndex]
 
@@ -64,6 +66,16 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         return newOffset >= 200 ? 0 : newOffset
       })
 
+      // 문들도 함께 아래로 이동
+      setDoors((prevDoors) => {
+        return prevDoors
+          .map((door) => ({
+            ...door,
+            top: door.top + speed,
+          }))
+          .filter((door) => door.top < dimensions.height + 200) // 화면 밖으로 나간 문 제거
+      })
+
       animationFrameId = requestAnimationFrame(animate)
     }
 
@@ -74,6 +86,21 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         cancelAnimationFrame(animationFrameId)
       }
     }
+  }, [isOpen, animationState, dimensions.height])
+
+  // 10초마다 문 생성
+  useEffect(() => {
+    if (!isOpen || animationState !== 'entered') return
+
+    const interval = setInterval(() => {
+      const newDoorId = doorIdRef.current++
+      setDoors((prevDoors) => [
+        ...prevDoors,
+        { id: newDoorId, top: -200 }, // 화면 위에서 시작
+      ])
+    }, 10000) // 10초마다
+
+    return () => clearInterval(interval)
   }, [isOpen, animationState])
 
   useEffect(() => {
@@ -189,6 +216,36 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
             <div className="absolute top-0 bottom-0 left-[30%] w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" />
             <div className="absolute top-0 bottom-0 right-[30%] w-[1px] bg-gradient-to-b from-green-600 via-green-700 to-green-600" />
           </div>
+
+          {/* 문들 (길 위에 위치) */}
+          {doors.map((door) => (
+            <div key={door.id} className="absolute z-15" style={{ top: `${door.top}px`, left: '0', width: '100%', height: '250px' }}>
+              {/* 좌측 O 문 - 길의 왼쪽 절반을 막음 (30% ~ 50%) */}
+              <div className="absolute" style={{ left: '30%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                <img
+                  src="/o_door.png"
+                  alt="O Door"
+                  className="h-full w-auto object-contain"
+                  style={{
+                    imageRendering: 'pixelated',
+                    maxWidth: '100%',
+                  }}
+                />
+              </div>
+              {/* 우측 X 문 - 길의 오른쪽 절반을 막음 (50% ~ 70%) */}
+              <div className="absolute" style={{ right: '30%', width: '20%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                <img
+                  src="/x_door.png"
+                  alt="X Door"
+                  className="h-full w-auto object-contain"
+                  style={{
+                    imageRendering: 'pixelated',
+                    maxWidth: '100%',
+                  }}
+                />
+              </div>
+            </div>
+          ))}
 
           {/* 캐릭터 (길 위에 위치) */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-10" style={{ marginBottom: '20px' }}>
