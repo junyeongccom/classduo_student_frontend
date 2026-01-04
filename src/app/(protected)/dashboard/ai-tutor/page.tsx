@@ -41,7 +41,15 @@ export default function AITutorPage() {
   const [allReferences, setAllReferences] = useState<Map<number, Reference[]>>(new Map()) // 메시지별 참고자료 저장
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; summary_keywords?: string | null }>>([]) // 메시지 배열 저장 (summary_keywords 포함)
   const [isSessionLocked, setIsSessionLocked] = useState(false) // 세션 잠금 상태
-  const [autoSelectLatest, setAutoSelectLatest] = useState(false) // 가장 최신 회차 자동 선택 플래그
+  // 처음 로드 시 localStorage에 유효한 회차가 없으면 최신 회차 자동 선택
+  const [autoSelectLatest, setAutoSelectLatest] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(AI_TUTOR_LECTURE_IDS_KEY)
+      // localStorage에 저장된 회차가 없으면 자동 선택 활성화
+      return !saved || saved === '[]'
+    }
+    return true // 서버 사이드에서는 true로 시작
+  })
   
   // 세션 ID 설정 (localStorage 동기화)
   const setCurrentSessionId = useCallback((sessionId: string | undefined) => {
@@ -204,7 +212,8 @@ export default function AITutorPage() {
           selectedLectureIds={selectedLectureIds}
           onSelectLectureIds={setSelectedLectureIds}
           isLocked={isSessionLocked}
-          initialLectureIds={selectedLectureIds.length > 0 ? selectedLectureIds : undefined}
+          // autoSelectLatest가 true이면 initialLectureIds를 전달하지 않음 (최신 회차 자동 선택)
+          initialLectureIds={!autoSelectLatest && selectedLectureIds.length > 0 ? selectedLectureIds : undefined}
           autoSelectLatest={autoSelectLatest}
         />
       </div>

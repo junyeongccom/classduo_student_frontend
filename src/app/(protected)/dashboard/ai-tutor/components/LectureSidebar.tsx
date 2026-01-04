@@ -118,6 +118,25 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
         
         setCourses(coursesWithLectures)
         
+        // 선택된 회차 중 유효하지 않은 것들 필터링 (is_available=false이거나 존재하지 않는 회차)
+        if (selectedLectureIds.length > 0 && coursesWithLectures.length > 0) {
+          const allAvailableLectureIds = coursesWithLectures
+            .flatMap(course => course.lectures)
+            .filter(lec => lec.is_available)
+            .map(lec => lec.lecture_id)
+          
+          const validSelectedIds = selectedLectureIds.filter(id => allAvailableLectureIds.includes(id))
+          
+          // 유효하지 않은 회차가 있으면 필터링된 목록으로 업데이트
+          if (validSelectedIds.length !== selectedLectureIds.length) {
+            console.log('[LectureSidebar] Filtering out invalid lecture IDs:', {
+              original: selectedLectureIds,
+              filtered: validSelectedIds
+            })
+            onSelectLectureIds(validSelectedIds)
+          }
+        }
+        
         // 가장 최신 회차 자동 선택 (새 채팅 시)
         if (autoSelectLatest && coursesWithLectures.length > 0 && !isLocked) {
           // 모든 강의의 모든 회차 중에서 is_available이 true인 것만 필터링
@@ -403,26 +422,38 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
       )}
 
       {/* 선택된 회차 요약 */}
-      {selectedLectureIds.length > 0 && (
-        <div className={`mt-4 rounded-lg px-3 py-2.5 border ${
-          isLocked 
-            ? 'bg-gray-50 border-gray-200' 
-            : 'bg-primary-50 border-primary-100'
-        }`}>
-          <p className={`text-xs font-medium ${isLocked ? 'text-gray-600' : 'text-primary-800'}`}>
-            {isLocked ? '현재 세션 회차' : '선택된 회차'}: {selectedLectureIds.length}개
-          </p>
+      {/* 실제로 선택 가능한 회차만 카운트 (모든 강의에서 is_available=true인 회차만) */}
+      {(() => {
+        // 모든 강의의 활성화된 회차 ID 목록
+        const allAvailableLectureIds = courses
+          .flatMap(course => course.lectures)
+          .filter(lec => lec.is_available)
+          .map(lec => lec.lecture_id)
+        
+        // 선택된 회차 중 실제로 선택 가능한 회차만 필터링
+        const validSelectedIds = selectedLectureIds.filter(id => allAvailableLectureIds.includes(id))
+        
+        return validSelectedIds.length > 0 && (
+          <div className={`mt-4 rounded-lg px-3 py-2.5 border ${
+            isLocked 
+              ? 'bg-gray-50 border-gray-200' 
+              : 'bg-primary-50 border-primary-100'
+          }`}>
+            <p className={`text-xs font-medium ${isLocked ? 'text-gray-600' : 'text-primary-800'}`}>
+              {isLocked ? '현재 세션 회차' : '선택된 회차'}: {validSelectedIds.length}개
+            </p>
           {isLocked ? (
             <p className="mt-1 text-[10px] text-gray-500">
               새 채팅을 시작하면 다른 회차를 선택할 수 있습니다
             </p>
-          ) : selectedLectureIds.length > 1 && (
+          ) : validSelectedIds.length > 1 && (
             <p className="mt-1 text-[10px] text-primary-600">
               복수 선택 시 후킹 질문은 제공되지 않습니다
             </p>
           )}
-        </div>
-      )}
+          </div>
+        )
+      })()}
     </div>
   )
 }
