@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { ReviewCarouselResponse } from '@/features/review/api/reviewApi'
 
@@ -17,6 +17,11 @@ interface ReviewCarouselProps {
 
 export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) {
   const [currentPage, setCurrentPage] = useState(1) // 1-6 (1페이지 + 2-6페이지)
+  
+  // 다른 강의회차 선택 시 페이지를 1로 리셋
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [data])
 
   if (isLoading) {
     return (
@@ -59,7 +64,12 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
         {currentPage === 1 ? (
           <ReviewPage1 data={data.page_1} currentPage={currentPage} totalPages={totalPages} />
         ) : (
-          <ReviewPage2_6 data={data.pages_2_6[currentPage - 2]} currentPage={currentPage} totalPages={totalPages} />
+          <ReviewPage2_6 
+            key={`page-${currentPage}`}
+            data={data.pages_2_6[currentPage - 2]} 
+            currentPage={currentPage} 
+            totalPages={totalPages} 
+          />
         )}
       </div>
 
@@ -169,18 +179,32 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
           {/* 우측: 썸네일 이미지 */}
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-8 lg:p-0">
             {data.thumbnail_image_url ? (
-              <div className="w-full h-full max-h-[600px] rounded-xl overflow-hidden shadow-lg">
+              <div className="w-full h-full max-h-[600px] rounded-xl overflow-hidden shadow-lg relative">
+                {/* 로딩 플레이스홀더 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse flex items-center justify-center">
+                  <ImageIcon className="h-12 w-12 text-gray-400" />
+                </div>
                 <img
                   src={data.thumbnail_image_url}
                   alt="복습 썸네일"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover relative z-10"
+                  loading="lazy"
+                  decoding="async"
+                  onLoad={(e) => {
+                    // 이미지 로드 완료 시 플레이스홀더 숨기기
+                    const target = e.target as HTMLImageElement
+                    const placeholder = target.previousElementSibling as HTMLElement
+                    if (placeholder) {
+                      placeholder.style.display = 'none'
+                    }
+                  }}
                   onError={(e) => {
                     // 이미지 로드 실패 시 플레이스홀더로 대체
                     const target = e.target as HTMLImageElement
                     target.style.display = 'none'
-                    const parent = target.parentElement
-                    if (parent) {
-                      parent.innerHTML = `
+                    const placeholder = target.previousElementSibling as HTMLElement
+                    if (placeholder) {
+                      placeholder.innerHTML = `
                         <div class="w-full h-full flex items-center justify-center">
                           <div class="text-center">
                             <div class="mx-auto h-16 w-16 text-gray-300 mb-4">
@@ -292,22 +316,22 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
 
   const materialPagesHtml = sources.material_pages.map((page, index) => {
     const textContentHtml = page.text_content 
-      ? `<div style="margin-bottom: 1rem;">
-          <p style="font-size: 1rem; color: #1f2937; line-height: 1.75; white-space: pre-wrap; font-weight: 500; margin: 0;">
+      ? `<div style="margin-bottom: 0.5rem;">
+          <p style="font-size: 1rem; color: #1f2937; line-height: 1.4; white-space: pre-wrap; font-weight: 500; margin: 0; padding: 0;">
             ${escapeHtml(cleanText(page.text_content, 'material')).replace(/\n/g, '<br>')}
           </p>
         </div>`
       : ''
     
     const imageHtml = page.image_url
-      ? `<div style="margin-top: 1rem; border-radius: 0.75rem; overflow: hidden; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white;">
+      ? `<div style="margin-top: 0.75rem; border-radius: 0.75rem; overflow: hidden; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white;">
           <img src="${escapeHtml(page.image_url)}" alt="페이지 ${page.page_number}" style="width: 100%; height: auto; display: block;" />
         </div>`
       : ''
     
     return `
-    <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #eff6ff, #dbeafe); padding: 1.25rem; border-left: 4px solid #3b82f6; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1rem;">
-      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+    <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #eff6ff, #dbeafe); padding: 1rem; border-left: 4px solid #3b82f6; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
         <span style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
           페이지 ${page.page_number}
         </span>

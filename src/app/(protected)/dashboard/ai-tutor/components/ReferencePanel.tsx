@@ -81,6 +81,8 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
     
     references.forEach(ref => {
       // 인용이 있는 레퍼런스만 포함 (citations가 있고 비어있지 않은 경우)
+      // 답변에 출처 표기가 있으면 백엔드에서 반드시 citation을 찾도록 수정했으므로,
+      // citations가 없으면 표시하지 않음
       const hasCitations = ref.citations && Array.isArray(ref.citations) && ref.citations.length > 0
       if (!hasCitations) {
         return // 인용이 없으면 표시하지 않음
@@ -126,18 +128,41 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
   const parseMaterialContent = (content: string): { text: string; visualDescription: string } => {
     if (!content) return { text: '', visualDescription: '' }
     
-    // '---텍스트---'와 '---시각자료 설명---' 마커 제거 및 파싱
-    const textMarker = '---텍스트---'
-    const visualMarker = '---시각자료 설명---'
+    // 여러 마커 형식 지원: [강의자료 텍스트], [시각자료 설명], ---텍스트---, ---시각자료 설명---
+    const textMarkers = ['[강의자료 텍스트]', '---텍스트---']
+    const visualMarkers = ['[시각자료 설명]', '---시각자료 설명---']
     
     let text = ''
     let visualDescription = ''
     
+    // 마커 찾기
+    let textMarker = ''
+    let visualMarker = ''
+    let textIndex = -1
+    let visualIndex = -1
+    
+    // 텍스트 마커 찾기
+    for (const marker of textMarkers) {
+      const index = content.indexOf(marker)
+      if (index !== -1) {
+        textMarker = marker
+        textIndex = index
+        break
+      }
+    }
+    
+    // 시각자료 마커 찾기
+    for (const marker of visualMarkers) {
+      const index = content.indexOf(marker)
+      if (index !== -1) {
+        visualMarker = marker
+        visualIndex = index
+        break
+      }
+    }
+    
     // 마커가 있는 경우 파싱
-    if (content.includes(textMarker) || content.includes(visualMarker)) {
-      const textIndex = content.indexOf(textMarker)
-      const visualIndex = content.indexOf(visualMarker)
-      
+    if (textIndex !== -1 || visualIndex !== -1) {
       if (textIndex !== -1) {
         const textEnd = visualIndex !== -1 ? visualIndex : content.length
         text = content.substring(textIndex + textMarker.length, textEnd).trim()
@@ -477,7 +502,7 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
                             }
                             
                             return (
-                              <div className="p-4 space-y-3">
+                              <div className="p-4 space-y-4">
                                 {/* 이미지가 있으면 상단에 표시 */}
                                 {hasImage && (
                                   <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
@@ -490,32 +515,48 @@ export function ReferencePanel({ allReferences, activeTab, onClose, messages }: 
                                   </div>
                                 )}
                                 
-                                {/* 시각자료 설명 - 이미지와 함께 표시 (컴팩트) */}
-                                {hasVisualDesc && (
-                                  <div className="flex gap-2.5">
-                                    <div className="flex-shrink-0 w-1 rounded-full bg-gradient-to-b from-blue-400 to-blue-600"></div>
-                                    <div className="flex-1 min-w-0">
-                                      <p 
-                                        className="text-sm leading-relaxed text-gray-700"
-                                        dangerouslySetInnerHTML={{
-                                          __html: highlightCitations(visualDescription, ref.citations || [], ref.content)
-                                        }}
-                                      />
+                                {/* 강의자료 텍스트 섹션 */}
+                                {hasText && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-0.5 w-6 bg-gray-300"></div>
+                                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        강의자료 텍스트
+                                      </h4>
+                                    </div>
+                                    <div className="flex gap-2.5 pl-2">
+                                      <div className="flex-shrink-0 w-1 rounded-full bg-gradient-to-b from-blue-400 to-blue-600"></div>
+                                      <div className="flex-1 min-w-0">
+                                        <p
+                                          className="text-sm leading-relaxed text-gray-700"
+                                          dangerouslySetInnerHTML={{
+                                            __html: highlightCitations(text, ref.citations || [], ref.content)
+                                          }}
+                                        />
+                                      </div>
                                     </div>
                                   </div>
                                 )}
                                 
-                                {/* 텍스트 내용 - 간결하게 (긴 텍스트는 요약) */}
-                                {hasText && (
-                                  <div className="flex gap-2.5">
-                                    <div className="flex-shrink-0 w-1 rounded-full bg-gradient-to-b from-gray-300 to-gray-400"></div>
-                                    <div className="flex-1 min-w-0">
-                                      <p
-                                        className="text-sm leading-relaxed text-gray-600"
-                                        dangerouslySetInnerHTML={{
-                                          __html: highlightCitations(text, ref.citations || [], ref.content)
-                                        }}
-                                      />
+                                {/* 시각자료 설명 섹션 */}
+                                {hasVisualDesc && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-0.5 w-6 bg-gray-300"></div>
+                                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                                        시각자료 설명
+                                      </h4>
+                                    </div>
+                                    <div className="flex gap-2.5 pl-2">
+                                      <div className="flex-shrink-0 w-1 rounded-full bg-gradient-to-b from-purple-400 to-purple-600"></div>
+                                      <div className="flex-1 min-w-0">
+                                        <p 
+                                          className="text-sm leading-relaxed text-gray-700"
+                                          dangerouslySetInnerHTML={{
+                                            __html: highlightCitations(visualDescription, ref.citations || [], ref.content)
+                                          }}
+                                        />
+                                      </div>
                                     </div>
                                   </div>
                                 )}
