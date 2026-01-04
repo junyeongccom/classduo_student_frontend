@@ -748,19 +748,19 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
               }}
             >
               <div 
-                className="text-center font-bold text-white px-8 py-4"
+                className="text-center font-bold text-white"
                 style={{
                   fontSize: `${32 * scaleFactor}px`,
-                  lineHeight: 1.5,
-                  textShadow: `
-                    -3px -3px 0 rgba(0,0,0,0.8),
-                    3px -3px 0 rgba(0,0,0,0.8),
-                    -3px 3px 0 rgba(0,0,0,0.8),
-                    3px 3px 0 rgba(0,0,0,0.8),
-                    0 0 15px rgba(0,0,0,0.9),
-                    0 0 30px rgba(0,0,0,0.7)
-                  `,
+                  lineHeight: 1.6,
+                  padding: `${16 * scaleFactor}px ${32 * scaleFactor}px`,
                   maxWidth: `${dimensions.width * 0.85}px`,
+                  WebkitTextStroke: `${1.5 * scaleFactor}px rgba(0, 0, 0, 0.9)`,
+                  paintOrder: 'stroke fill',
+                  textShadow: `
+                    0 0 ${8 * scaleFactor}px rgba(0, 0, 0, 0.7),
+                    0 0 ${16 * scaleFactor}px rgba(0, 0, 0, 0.5),
+                    0 0 ${24 * scaleFactor}px rgba(0, 0, 0, 0.3)
+                  `,
                 }}
               >
                 {explanationText}
