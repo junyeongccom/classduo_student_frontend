@@ -498,101 +498,82 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
             ) : (
               selectedCourse.lectures.map(lecture => {
                 const isSelected = selectedLectureIds.includes(lecture.lecture_id)
-                const isFirstLecture = lecture.lecture_no === 1
+                // const isFirstLecture = lecture.lecture_no === 1 // 1회차 특별 로직 비활성화
                 const isDisabled = (isLocked && !isSelected) || !lecture.is_available // 잠금 상태 또는 사용 불가능한 회차는 비활성화
-                const showGameButton = (isSelected && selectedLectureIds.length === 1) || (isFirstLecture && !lecture.is_available)
-                // 비활성화된 1회차는 게임 버튼을 위해 부모 버튼을 disabled하지 않음
-                const shouldDisableParent = isDisabled && !(isFirstLecture && !lecture.is_available)
+                const showGameButton = isSelected && selectedLectureIds.length === 1
+                // 비활성화된 1회차는 게임 버튼을 위해 부모 버튼을 disabled하지 않음 - 주석처리
+                // const shouldDisableParent = isDisabled && !(isFirstLecture && !lecture.is_available)
                 
                 return (
                   <button
                     key={lecture.lecture_id}
-                    onClick={() => {
-                      // 비활성화된 1회차는 회차 선택 불가
-                      if (isFirstLecture && !lecture.is_available) return
-                      toggleLecture(lecture.lecture_id)
-                    }}
-                    disabled={shouldDisableParent}
+                    onClick={() => toggleLecture(lecture.lecture_id)}
+                    disabled={isDisabled}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all ${
                       isSelected 
                         ? 'bg-primary-500 text-white shadow-sm' 
-                        : shouldDisableParent
+                        : isDisabled
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-                        : (isFirstLecture && !lecture.is_available)
-                        ? 'bg-gray-100 text-gray-400 opacity-50'
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}
                     title={!lecture.is_available ? '강의자료가 준비되지 않은 회차입니다' : undefined}
                   >
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${
-                        isSelected ? 'text-white' : (shouldDisableParent || (isFirstLecture && !lecture.is_available)) ? 'text-gray-400' : 'text-gray-800'
+                        isSelected ? 'text-white' : isDisabled ? 'text-gray-400' : 'text-gray-800'
                       }`}>
                         {lecture.lecture_no}회차
                       </p>
-                      <div className="flex items-center gap-2">
-                        <p className={`text-xs ${
-                          isSelected ? 'text-primary-100' : 'text-gray-400'
-                        }`}>
-                          {lecture.lecture_date}
-                        </p>
-                        {/* 보상 바: 게임 버튼이 표시되는 조건과 동일 */}
-                        {showGameButton && (
-                          <div className="flex items-center gap-1">
-                            <div 
-                              className={`h-1.5 w-12 rounded-full overflow-hidden ${
-                                isSelected ? 'bg-white/20' : 'bg-gray-300/50'
-                              }`}
-                            >
-                              <div 
-                                className={`h-full rounded-full transition-all ${
-                                  isSelected ? 'bg-white/80' : 'bg-amber-400'
-                                }`}
-                                style={{ width: `${((gameProgress[lecture.lecture_id] || 0) / 10) * 100}%` }}
-                              />
-                            </div>
-                            <span className={`text-[10px] font-medium ${
-                              isSelected ? 'text-white/70' : 'text-gray-400'
-                            }`}>
-                              {gameProgress[lecture.lecture_id] || 0}/10
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      <p className={`text-xs ${
+                        isSelected ? 'text-primary-100' : 'text-gray-400'
+                      }`}>
+                        {lecture.lecture_date}
+                      </p>
                     </div>
-                    {(isSelected || (isFirstLecture && !lecture.is_available)) && (
-                      <div className="ml-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        {isSelected && (
+                    {isSelected && (
+                      <div className="ml-2 flex flex-col items-end gap-1">
+                        {/* 상단: 체크 + 게임 버튼 */}
+                        <div className="flex items-center gap-2">
                           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
                             <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                        )}
-                        {/* 게임 버튼: 선택된 회차가 1개일 때 또는 비활성화된 1회차일 때 표시 */}
+                          {/* 게임 버튼: 선택된 회차가 1개일 때 표시 */}
+                          {showGameButton && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (onGameIconClick && selectedCourseId) {
+                                  const rect = e.currentTarget.getBoundingClientRect()
+                                  onGameIconClick(lecture.lecture_id, selectedCourseId, {
+                                    top: rect.top,
+                                    left: rect.left,
+                                    width: rect.width,
+                                    height: rect.height,
+                                  })
+                                }
+                              }}
+                              className="flex h-5 w-5 items-center justify-center rounded-full transition-colors cursor-pointer bg-white/20 hover:bg-white/30"
+                              title="게임 시작"
+                            >
+                              <Gamepad2 className="h-3 w-3 text-white" />
+                            </button>
+                          )}
+                        </div>
+                        {/* 하단: 진행도 바 */}
                         {showGameButton && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (onGameIconClick && selectedCourseId) {
-                                const rect = e.currentTarget.getBoundingClientRect()
-                                onGameIconClick(lecture.lecture_id, selectedCourseId, {
-                                  top: rect.top,
-                                  left: rect.left,
-                                  width: rect.width,
-                                  height: rect.height,
-                                })
-                              }
-                            }}
-                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors cursor-pointer ${
-                              isSelected 
-                                ? 'bg-white/20 hover:bg-white/30' 
-                                : 'bg-gray-400/20 hover:bg-gray-400/30'
-                            }`}
-                            title="게임 시작"
-                          >
-                            <Gamepad2 className={`h-3 w-3 ${isSelected ? 'text-white' : 'text-gray-600'}`} />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <div className="h-1.5 w-14 rounded-full overflow-hidden bg-white/20">
+                              <div 
+                                className="h-full rounded-full transition-all bg-white/80"
+                                style={{ width: `${((gameProgress[lecture.lecture_id] || 0) / 10) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-medium text-white/70">
+                              {gameProgress[lecture.lecture_id] || 0}/10
+                            </span>
+                          </div>
                         )}
                       </div>
                     )}
