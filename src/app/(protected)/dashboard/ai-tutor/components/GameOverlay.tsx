@@ -18,10 +18,15 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
   const [frameIndex, setFrameIndex] = useState(0) // 프레임 시퀀스 인덱스
   const [backgroundOffset, setBackgroundOffset] = useState(0) // 배경 스크롤 오프셋
-  const [doors, setDoors] = useState<Array<{ id: number; top: number }>>([]) // 문 목록
+  const [doors, setDoors] = useState<Array<{ id: number; top: number; triggered: boolean }>>([]) // 문 목록 (triggered: 퀴즈 트리거 여부)
   const doorIdRef = useRef(0) // 문 ID 생성용
   const frameSequence = [1, 2, 3, 2, 1, 2, 3, 2] // 1->2->3->2->1->2->3->2 반복
   const currentFrame = frameSequence[frameIndex]
+  
+  // 퀴즈 상태
+  const [isPaused, setIsPaused] = useState(false) // 게임 일시정지 상태
+  const [currentQuestion, setCurrentQuestion] = useState<string | null>(null) // 현재 질문
+  const [activeDoorId, setActiveDoorId] = useState<number | null>(null) // 현재 퀴즈 문 ID
   
   // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
   const REFERENCE_WIDTH = 1200
@@ -42,23 +47,25 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
   // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
   useEffect(() => {
-    if (!isOpen || animationState !== 'entered') return
+    if (!isOpen || animationState !== 'entered' || isPaused) return
 
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % frameSequence.length)
     }, 150) // 150ms마다 프레임 변경 (빠른 애니메이션)
 
     return () => clearInterval(interval)
-  }, [isOpen, animationState])
+  }, [isOpen, animationState, isPaused])
 
   // 배경 스크롤 애니메이션 (위에서 아래로 내려오는 느낌)
   useEffect(() => {
-    if (!isOpen || animationState !== 'entered') return
+    if (!isOpen || animationState !== 'entered' || isPaused) return
 
     let animationFrameId: number
     let lastTime = 0
     const BASE_SPEED = 2 // 기준 스크롤 속도
     const speed = BASE_SPEED * scaleFactor // 스케일에 비례한 스크롤 속도
+    const doorHeight = 250 * scaleFactor
+    const screenMiddle = dimensions.height / 2
 
     function animate(currentTime: number) {
       if (lastTime === 0) {
@@ -76,12 +83,34 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
       // 문들도 함께 아래로 이동
       setDoors((prevDoors) => {
-        return prevDoors
-          .map((door) => ({
-            ...door,
-            top: door.top + speed,
-          }))
-          .filter((door) => door.top < dimensions.height + 250 * scaleFactor) // 화면 밖으로 나간 문 제거 (스케일 적용)
+        let shouldPause = false
+        let pauseDoorId: number | null = null
+
+        const updatedDoors = prevDoors
+          .map((door) => {
+            const newTop = door.top + speed
+            const doorMiddle = newTop + doorHeight / 2
+
+            // 문의 중앙이 화면 중앙에 도달하고 아직 트리거되지 않았으면 퀴즈 발동
+            if (!door.triggered && doorMiddle >= screenMiddle && doorMiddle < screenMiddle + speed * 2) {
+              shouldPause = true
+              pauseDoorId = door.id
+              return { ...door, top: newTop, triggered: true }
+            }
+            return { ...door, top: newTop }
+          })
+          .filter((door) => door.top < dimensions.height + doorHeight) // 화면 밖으로 나간 문 제거 (스케일 적용)
+
+        // 퀴즈 트리거
+        if (shouldPause && pauseDoorId !== null) {
+          setTimeout(() => {
+            setIsPaused(true)
+            setCurrentQuestion('호이는 고려대학교 마스코트이다.')
+            setActiveDoorId(pauseDoorId)
+          }, 0)
+        }
+
+        return updatedDoors
       })
 
       animationFrameId = requestAnimationFrame(animate)
@@ -94,22 +123,31 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, dimensions.height, scaleFactor])
+  }, [isOpen, animationState, dimensions.height, scaleFactor, isPaused])
 
   // 10초마다 문 생성
   useEffect(() => {
-    if (!isOpen || animationState !== 'entered') return
+    if (!isOpen || animationState !== 'entered' || isPaused) return
 
     const interval = setInterval(() => {
       const newDoorId = doorIdRef.current++
       setDoors((prevDoors) => [
         ...prevDoors,
-        { id: newDoorId, top: -250 * scaleFactor }, // 화면 위에서 시작 (스케일 적용)
+        { id: newDoorId, top: -250 * scaleFactor, triggered: false }, // 화면 위에서 시작 (스케일 적용)
       ])
     }, 10000) // 10초마다
 
     return () => clearInterval(interval)
-  }, [isOpen, animationState, scaleFactor])
+  }, [isOpen, animationState, scaleFactor, isPaused])
+
+  // 퀴즈 응답 핸들러
+  const handleQuizAnswer = (answer: 'O' | 'X') => {
+    // 정답 처리 로직은 나중에 추가 가능
+    // 일단은 선택하면 게임 재개
+    setIsPaused(false)
+    setCurrentQuestion(null)
+    setActiveDoorId(null)
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -269,6 +307,63 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
               }}
             />
           </div>
+
+          {/* 퀴즈 오버레이 */}
+          {isPaused && currentQuestion && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center">
+              {/* 어두운 배경 */}
+              <div className="absolute inset-0 bg-black/60 transition-opacity duration-300" />
+              
+              {/* 퀴즈 컨테이너 */}
+              <div 
+                className="relative z-10 flex flex-col items-center gap-6 p-8 rounded-2xl bg-white/95 backdrop-blur-sm shadow-2xl"
+                style={{
+                  maxWidth: `${600 * scaleFactor}px`,
+                  padding: `${32 * scaleFactor}px`,
+                }}
+              >
+                {/* 질문 */}
+                <div 
+                  className="text-center font-bold text-gray-800"
+                  style={{
+                    fontSize: `${24 * scaleFactor}px`,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {currentQuestion}
+                </div>
+
+                {/* O/X 버튼 */}
+                <div className="flex gap-6" style={{ gap: `${24 * scaleFactor}px` }}>
+                  {/* O 버튼 */}
+                  <button
+                    onClick={() => handleQuizAnswer('O')}
+                    className="flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-600 text-white font-bold transition-all duration-200 hover:scale-110 active:scale-95 shadow-lg"
+                    style={{
+                      width: `${100 * scaleFactor}px`,
+                      height: `${100 * scaleFactor}px`,
+                      fontSize: `${48 * scaleFactor}px`,
+                    }}
+                  >
+                    O
+                  </button>
+                  
+                  {/* X 버튼 */}
+                  <button
+                    onClick={() => handleQuizAnswer('X')}
+                    className="flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white font-bold transition-all duration-200 hover:scale-110 active:scale-95 shadow-lg"
+                    style={{
+                      width: `${100 * scaleFactor}px`,
+                      height: `${100 * scaleFactor}px`,
+                      fontSize: `${48 * scaleFactor}px`,
+                    }}
+                  >
+                    X
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
