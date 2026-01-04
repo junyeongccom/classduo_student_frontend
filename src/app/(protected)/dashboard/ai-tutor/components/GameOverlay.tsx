@@ -3,9 +3,25 @@
  */
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { X, RotateCcw, LogOut } from 'lucide-react'
 import { incrementGameProgress } from './LectureSidebar'
+
+// 게임 상태를 localStorage에 저장하기 위한 키
+const GAME_STATE_KEY_PREFIX = 'game-state-'
+
+// 저장할 게임 상태 타입
+interface SavedGameState {
+  quizAnswerCount: number
+  gamePhase: GamePhase
+  isPaused: boolean
+  backgroundOffset: number
+  doors: Array<{ id: number; top: number; triggered: boolean }>
+  doorIdCounter: number
+}
+
+// 게임 페이즈 상태
+type GamePhase = 'idle' | 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'stumbling' | 'returning_to_center' | 'cleared'
 
 interface GameOverlayProps {
   isOpen: boolean
@@ -13,6 +29,35 @@ interface GameOverlayProps {
   triggerPosition: { top: number; left: number; width: number; height: number } | null
   lectureId?: string // 게임 진행도를 저장할 회차 ID
   courseId?: string // 불꽃 개수를 저장할 강의 ID
+}
+
+// 게임 상태 저장
+function saveGameState(lectureId: string, state: SavedGameState) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(GAME_STATE_KEY_PREFIX + lectureId, JSON.stringify(state))
+  }
+}
+
+// 게임 상태 로드
+function loadGameState(lectureId: string): SavedGameState | null {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem(GAME_STATE_KEY_PREFIX + lectureId)
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch {
+        return null
+      }
+    }
+  }
+  return null
+}
+
+// 게임 상태 삭제
+function clearGameState(lectureId: string) {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(GAME_STATE_KEY_PREFIX + lectureId)
+  }
 }
 
 export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId }: GameOverlayProps) {
@@ -35,8 +80,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const CORRECT_ANSWER: 'O' | 'X' = 'O'
   
   // 게임 페이즈 상태 (문 통과 연출용)
-  type GamePhase = 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'stumbling' | 'returning_to_center'
-  const [gamePhase, setGamePhase] = useState<GamePhase>('playing')
+  const [gamePhase, setGamePhase] = useState<GamePhase>('idle') // 초기 상태는 idle
   const [selectedAnswer, setSelectedAnswer] = useState<'O' | 'X' | null>(null) // 선택한 답
   const [horizontalOffset, setHorizontalOffset] = useState(0) // 수평 이동 오프셋 (배경/길/문이 이동)
   const [stumbleStepCount, setStumbleStepCount] = useState(0) // stumbling 단계에서 걸음 수 카운트
@@ -44,6 +88,10 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const [stumbleVerticalOffset, setStumbleVerticalOffset] = useState(0) // stumbling 중 수직 오프셋 (뒤로 튕김 효과)
   const [hasReversedDirection, setHasReversedDirection] = useState(false) // 반대쪽 문으로 전환 여부
   const [quizAnswerCount, setQuizAnswerCount] = useState(0) // 이번 게임에서 선택한 횟수 (최대 5번까지 진행도 증가)
+  
+  // 이전 isOpen 상태 추적용 ref
+  const prevIsOpenRef = useRef(false)
+  const hasLoadedRef = useRef(false) // 현재 세션에서 로드 완료 여부
   
   // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
   const REFERENCE_WIDTH = 1200
@@ -65,10 +113,108 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     }
   }, [])
 
-  // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
-  // 퀴즈 중에만 정지, 나머지 페이즈에서는 계속 애니메이션
+  // 게임 상태 저장 함수 (ref로 최신 상태 접근)
+  const saveCurrentStateRef = useRef<() => void>(() => {})
+  saveCurrentStateRef.current = () => {
+    if (lectureId) {
+      const stateToSave: SavedGameState = {
+        quizAnswerCount,
+        gamePhase: gamePhase === 'playing' ? 'idle' : gamePhase, // playing 상태면 idle로 저장 (재시작시 START 화면 표시)
+        isPaused,
+        backgroundOffset,
+        doors,
+        doorIdCounter: doorIdRef.current
+      }
+      saveGameState(lectureId, stateToSave)
+    }
+  }
+
+  // isOpen 상태 변화 감지 및 저장/로드 처리
   useEffect(() => {
-    if (!isOpen || animationState !== 'entered' || gamePhase === 'quiz') return
+    const wasOpen = prevIsOpenRef.current
+    prevIsOpenRef.current = isOpen
+    
+    // 닫힐 때: 상태 저장
+    if (wasOpen && !isOpen) {
+      saveCurrentStateRef.current()
+      hasLoadedRef.current = false // 다음에 열릴 때 다시 로드할 수 있도록
+    }
+    
+    // 열릴 때: 상태 로드
+    if (!wasOpen && isOpen && lectureId && !hasLoadedRef.current) {
+      hasLoadedRef.current = true
+      const savedState = loadGameState(lectureId)
+      if (savedState) {
+        // 저장된 상태 복원
+        setQuizAnswerCount(savedState.quizAnswerCount)
+        setBackgroundOffset(savedState.backgroundOffset)
+        setDoors(savedState.doors)
+        doorIdRef.current = savedState.doorIdCounter
+        
+        // 5번 이상 맞췄으면 cleared 상태 유지
+        if (savedState.quizAnswerCount >= 5) {
+          setGamePhase('cleared')
+        } else if (savedState.gamePhase === 'cleared') {
+          // 이미 cleared였으면 유지
+          setGamePhase('cleared')
+        } else {
+          // 그 외의 경우 idle로 시작 (일시정지 상태에서 복귀)
+          setGamePhase('idle')
+        }
+      } else {
+        // 저장된 상태가 없으면 초기 상태
+        setGamePhase('idle')
+        setQuizAnswerCount(0)
+        setBackgroundOffset(0)
+        setDoors([])
+        doorIdRef.current = 0
+      }
+    }
+  }, [isOpen, lectureId])
+
+  // 게임 상태 저장 (명시적 닫기 핸들러용)
+  const saveCurrentState = useCallback(() => {
+    saveCurrentStateRef.current()
+  }, [])
+
+  // 닫기 핸들러 (상태 저장 후 닫기)
+  const handleClose = useCallback(() => {
+    saveCurrentState()
+    onClose()
+  }, [saveCurrentState, onClose])
+
+  // 게임 시작 (START 화면에서 클릭)
+  const handleStartGame = useCallback(() => {
+    if (gamePhase === 'idle') {
+      setGamePhase('playing')
+    }
+  }, [gamePhase])
+
+  // 게임 다시하기
+  const handleRestart = useCallback(() => {
+    if (lectureId) {
+      clearGameState(lectureId)
+    }
+    setQuizAnswerCount(0)
+    setBackgroundOffset(0)
+    setDoors([])
+    doorIdRef.current = 0
+    setGamePhase('playing')
+    setIsPaused(false)
+    setCurrentQuestion(null)
+    setActiveDoorId(null)
+    setSelectedAnswer(null)
+    setHorizontalOffset(0)
+    setHasStumbled(false)
+    setHasReversedDirection(false)
+    setStumbleVerticalOffset(0)
+  }, [lectureId])
+
+  // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
+  // idle, quiz, cleared 상태에서는 정지, 나머지 페이즈에서는 계속 애니메이션
+  useEffect(() => {
+    if (!isOpen || animationState !== 'entered') return
+    if (gamePhase === 'quiz' || gamePhase === 'idle' || gamePhase === 'cleared') return
 
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % frameSequence.length)
@@ -265,8 +411,12 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 setHasReversedDirection(true)
                 setGamePhase('walking_to_door')
               } else {
-                // 정상 완료 → playing으로 복귀
-                setGamePhase('playing')
+                // 정상 완료 → 5번 완료 체크
+                if (quizAnswerCount >= 5) {
+                  setGamePhase('cleared')
+                } else {
+                  setGamePhase('playing')
+                }
                 setSelectedAnswer(null)
                 setActiveDoorId(null)
                 setHasStumbled(false)
@@ -290,7 +440,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         cancelAnimationFrame(animationFrameId)
       }
     }
-  }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET, hasStumbled, hasReversedDirection])
+  }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET, hasStumbled, hasReversedDirection, quizAnswerCount])
 
   // 10초마다 문 생성
   useEffect(() => {
@@ -326,7 +476,6 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   useEffect(() => {
     if (isOpen) {
       setAnimationState('entering')
-      setQuizAnswerCount(0) // 게임 시작 시 선택 횟수 리셋
       // gooey 효과를 위한 애니메이션 시작
       setTimeout(() => {
         setAnimationState('entered')
@@ -362,7 +511,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-500 ${
           animationState === 'entered' ? 'opacity-100' : 'opacity-0'
         }`}
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       {/* 게임 UI 컨테이너 */}
@@ -378,14 +527,23 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
           transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease-out',
           opacity: animationState === 'entered' ? 1 : 0,
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation()
+          // idle 상태에서 클릭하면 게임 시작
+          if (gamePhase === 'idle') {
+            handleStartGame()
+          }
+        }}
       >
         {/* Gooey 효과 배경 */}
         <div className="absolute inset-0 game-gooey-bg" />
 
         {/* 닫기 버튼 */}
         <button
-          onClick={onClose}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleClose()
+          }}
           className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-white/90 backdrop-blur-sm hover:bg-white transition-colors shadow-lg"
         >
           <X className="h-5 w-5 text-gray-600" />
@@ -561,9 +719,120 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
               </div>
             </>
           )}
+
+          {/* START 오버레이 (idle 상태) */}
+          {gamePhase === 'idle' && (
+            <div 
+              className="absolute inset-0 bg-black/70 flex items-center justify-center cursor-pointer transition-opacity duration-300"
+              style={{ zIndex: 50 }}
+            >
+              <div className="text-center">
+                <div 
+                  className="text-white font-bold tracking-widest animate-pulse"
+                  style={{
+                    fontSize: `${72 * scaleFactor}px`,
+                    textShadow: '0 0 20px rgba(255,255,255,0.5), 0 0 40px rgba(255,255,255,0.3)',
+                  }}
+                >
+                  START
+                </div>
+                <div 
+                  className="text-white/70 mt-4"
+                  style={{
+                    fontSize: `${18 * scaleFactor}px`,
+                  }}
+                >
+                  화면을 클릭하여 시작
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CLEAR 오버레이 (5번 완료) */}
+          {gamePhase === 'cleared' && (
+            <div 
+              className="absolute inset-0 bg-black/70 flex items-center justify-center transition-opacity duration-300"
+              style={{ zIndex: 50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div 
+                  className="text-white font-bold tracking-widest"
+                  style={{
+                    fontSize: `${72 * scaleFactor}px`,
+                    textShadow: '0 0 20px rgba(255,215,0,0.8), 0 0 40px rgba(255,215,0,0.5)',
+                    color: '#FFD700',
+                  }}
+                >
+                  CLEAR!
+                </div>
+                <div 
+                  className="text-white/80 mt-2"
+                  style={{
+                    fontSize: `${20 * scaleFactor}px`,
+                  }}
+                >
+                  모든 퀴즈를 완료했습니다!
+                </div>
+                
+                {/* 버튼 영역 */}
+                <div 
+                  className="flex items-center justify-center gap-8 mt-8"
+                >
+                  {/* 다시하기 버튼 */}
+                  <button
+                    onClick={handleRestart}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                    style={{
+                      minWidth: `${100 * scaleFactor}px`,
+                    }}
+                  >
+                    <RotateCcw 
+                      className="text-white" 
+                      style={{ 
+                        width: `${36 * scaleFactor}px`, 
+                        height: `${36 * scaleFactor}px` 
+                      }} 
+                    />
+                    <span 
+                      className="text-white font-medium"
+                      style={{ fontSize: `${14 * scaleFactor}px` }}
+                    >
+                      다시하기
+                    </span>
+                  </button>
+
+                  {/* 나가기 버튼 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleClose()
+                    }}
+                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+                    style={{
+                      minWidth: `${100 * scaleFactor}px`,
+                    }}
+                  >
+                    <LogOut 
+                      className="text-white" 
+                      style={{ 
+                        width: `${36 * scaleFactor}px`, 
+                        height: `${36 * scaleFactor}px` 
+                      }} 
+                    />
+                    <span 
+                      className="text-white font-medium"
+                      style={{ fontSize: `${14 * scaleFactor}px` }}
+                    >
+                      나가기
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
   )
 }
-
