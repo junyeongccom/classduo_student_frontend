@@ -503,7 +503,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
             <div class="section">
               <div class="section-header">
                 <div class="section-line" style="background: linear-gradient(to right, #10b981, #059669);"></div>
-                <h2 class="section-title">녹음본 청크</h2>
+                <h2 class="section-title">녹음본</h2>
               </div>
               ${recordingChunksHtml}
             </div>
