@@ -17,8 +17,10 @@ interface QuizQuestion {
   explanation: string
 }
 
-// 20개의 하드코딩된 퀴즈 질문 (회차별로 5개씩 사용)
-const ALL_QUIZ_QUESTIONS: QuizQuestion[] = [
+// 과목별 퀴즈 질문 데이터 (각 20개, 회차별 5개씩 사용)
+
+// 생명과학의 세계 퀴즈 (20개)
+const BIOLOGY_QUIZ_QUESTIONS: QuizQuestion[] = [
   // 1회차 질문 (0-4)
   {
     question: '동물 세포는 식물 세포와 마찬가지로 세포벽이 있어 형태가 단단하게 유지된다.',
@@ -97,7 +99,7 @@ const ALL_QUIZ_QUESTIONS: QuizQuestion[] = [
     correctAnswer: 'O',
     explanation: '호르몬은 혈류를 타고 이동하여 특정 수용체가 있는 표적 기관에서 작용합니다.'
   },
-  // 4회차 이상 질문 (15-19) - 4, 5, 6... 회차 모두 동일
+  // 4회차 이상 질문 (15-19)
   {
     question: 'RNA는 DNA와 달리 단일 가닥 구조이며 우라실(U)을 포함한다.',
     correctAnswer: 'O',
@@ -125,9 +127,238 @@ const ALL_QUIZ_QUESTIONS: QuizQuestion[] = [
   }
 ]
 
-// 회차별로 퀴즈 질문을 가져오는 함수
-const getQuizQuestionsForRound = (lectureNo?: number): QuizQuestion[] => {
+// SW프로그래밍의기초 퀴즈 (20개)
+const SW_PROGRAMMING_QUIZ_QUESTIONS: QuizQuestion[] = [
+  // 1회차 질문 (0-4)
+  {
+    question: 'Python에서 리스트는 대괄호 []를 사용하여 생성한다.',
+    correctAnswer: 'O',
+    explanation: 'Python에서 리스트는 []로 생성하며, 튜플은 ()를 사용합니다.'
+  },
+  {
+    question: '변수 이름은 숫자로 시작할 수 있다.',
+    correctAnswer: 'X',
+    explanation: '대부분의 프로그래밍 언어에서 변수 이름은 문자나 밑줄(_)로 시작해야 합니다.'
+  },
+  {
+    question: 'for 반복문은 정해진 횟수만큼 코드를 반복 실행할 때 사용한다.',
+    correctAnswer: 'O',
+    explanation: 'for 문은 반복 횟수가 정해져 있을 때, while 문은 조건에 따라 반복할 때 주로 사용합니다.'
+  },
+  {
+    question: 'Python에서 == 연산자는 값을 대입하는 연산자이다.',
+    correctAnswer: 'X',
+    explanation: '== 는 비교 연산자이고, = 가 대입 연산자입니다.'
+  },
+  {
+    question: '함수는 코드의 재사용성을 높이고 프로그램을 모듈화하는 데 도움이 된다.',
+    correctAnswer: 'O',
+    explanation: '함수를 사용하면 반복되는 코드를 줄이고 유지보수가 쉬워집니다.'
+  },
+  // 2회차 질문 (5-9)
+  {
+    question: 'Python에서 문자열을 연결할 때 + 연산자를 사용할 수 있다.',
+    correctAnswer: 'O',
+    explanation: '"Hello" + " World" 는 "Hello World"가 됩니다.'
+  },
+  {
+    question: 'if-else 문에서 else 블록은 반드시 작성해야 한다.',
+    correctAnswer: 'X',
+    explanation: 'else 블록은 선택 사항이며, 필요한 경우에만 작성합니다.'
+  },
+  {
+    question: 'Python에서 인덱스는 0부터 시작한다.',
+    correctAnswer: 'O',
+    explanation: 'Python을 포함한 대부분의 프로그래밍 언어에서 인덱스는 0부터 시작합니다.'
+  },
+  {
+    question: '주석(comment)은 프로그램 실행 시 컴퓨터가 처리하는 코드이다.',
+    correctAnswer: 'X',
+    explanation: '주석은 프로그램 실행 시 무시되며, 코드 설명을 위해 사용됩니다.'
+  },
+  {
+    question: 'print() 함수는 괄호 안의 내용을 화면에 출력한다.',
+    correctAnswer: 'O',
+    explanation: 'print()는 기본 출력 함수로, 콘솔에 내용을 표시합니다.'
+  },
+  // 3회차 질문 (10-14)
+  {
+    question: 'Python 딕셔너리는 key-value 쌍으로 데이터를 저장한다.',
+    correctAnswer: 'O',
+    explanation: '딕셔너리는 {}로 생성하며 key:value 형태로 데이터를 관리합니다.'
+  },
+  {
+    question: 'while True: 는 무한 루프를 생성한다.',
+    correctAnswer: 'O',
+    explanation: '조건이 항상 True이므로 break 문이 없으면 무한히 반복됩니다.'
+  },
+  {
+    question: 'Python에서 len() 함수는 리스트를 정렬하는 함수이다.',
+    correctAnswer: 'X',
+    explanation: 'len()은 길이를 반환하는 함수이고, 정렬은 sort() 또는 sorted()를 사용합니다.'
+  },
+  {
+    question: '논리 연산자 and는 두 조건이 모두 참일 때만 참을 반환한다.',
+    correctAnswer: 'O',
+    explanation: 'and는 모두 참이어야 참, or는 하나만 참이어도 참을 반환합니다.'
+  },
+  {
+    question: 'Python에서 문자열은 변경 가능(mutable)한 자료형이다.',
+    correctAnswer: 'X',
+    explanation: '문자열은 불변(immutable)이며, 변경하려면 새 문자열을 생성해야 합니다.'
+  },
+  // 4회차 이상 질문 (15-19)
+  {
+    question: 'try-except 문은 예외 처리를 위해 사용된다.',
+    correctAnswer: 'O',
+    explanation: '프로그램 실행 중 발생할 수 있는 오류를 처리하여 프로그램 중단을 방지합니다.'
+  },
+  {
+    question: 'import 문은 외부 모듈을 불러오는 데 사용된다.',
+    correctAnswer: 'O',
+    explanation: 'import를 통해 다른 파일이나 라이브러리의 기능을 사용할 수 있습니다.'
+  },
+  {
+    question: 'Python에서 // 연산자는 나머지를 구하는 연산자이다.',
+    correctAnswer: 'X',
+    explanation: '// 는 몫을 구하는 정수 나눗셈 연산자이고, % 가 나머지 연산자입니다.'
+  },
+  {
+    question: 'return 문이 없는 함수는 None을 반환한다.',
+    correctAnswer: 'O',
+    explanation: 'Python 함수에서 return이 없으면 기본적으로 None이 반환됩니다.'
+  },
+  {
+    question: 'Python의 range(5)는 0, 1, 2, 3, 4를 생성한다.',
+    correctAnswer: 'O',
+    explanation: 'range(n)은 0부터 n-1까지의 정수 시퀀스를 생성합니다.'
+  }
+]
+
+// 운영체제 퀴즈 (20개) - 기본값으로 사용
+const OS_QUIZ_QUESTIONS: QuizQuestion[] = [
+  // 1회차 질문 (0-4)
+  {
+    question: '운영체제는 하드웨어와 사용자 사이의 중간 역할을 하는 시스템 소프트웨어이다.',
+    correctAnswer: 'O',
+    explanation: '운영체제는 하드웨어를 관리하고 응용 프로그램에 인터페이스를 제공합니다.'
+  },
+  {
+    question: '프로세스는 실행 중인 프로그램을 의미한다.',
+    correctAnswer: 'O',
+    explanation: '프로그램이 메모리에 적재되어 CPU를 할당받아 실행되면 프로세스가 됩니다.'
+  },
+  {
+    question: 'CPU는 한 번에 여러 프로세스를 동시에 실행할 수 있다.',
+    correctAnswer: 'X',
+    explanation: '단일 코어 CPU는 한 번에 하나의 프로세스만 실행하며, 빠른 전환으로 동시 실행처럼 보입니다.'
+  },
+  {
+    question: '커널은 운영체제의 핵심 부분으로 메모리에 항상 상주한다.',
+    correctAnswer: 'O',
+    explanation: '커널은 프로세스 관리, 메모리 관리 등 핵심 기능을 수행합니다.'
+  },
+  {
+    question: '인터럽트는 CPU가 현재 작업을 중단하고 다른 작업을 처리하게 하는 신호이다.',
+    correctAnswer: 'O',
+    explanation: '인터럽트를 통해 CPU는 I/O 완료, 타이머 등의 이벤트에 빠르게 반응합니다.'
+  },
+  // 2회차 질문 (5-9)
+  {
+    question: '가상 메모리는 물리적 메모리보다 더 큰 프로그램을 실행할 수 있게 해준다.',
+    correctAnswer: 'O',
+    explanation: '디스크의 일부를 메모리처럼 사용하여 더 큰 주소 공간을 제공합니다.'
+  },
+  {
+    question: '스레드는 프로세스 내에서 실행되는 독립적인 실행 흐름이다.',
+    correctAnswer: 'O',
+    explanation: '스레드는 프로세스의 자원을 공유하면서 독립적으로 실행됩니다.'
+  },
+  {
+    question: 'Round Robin 스케줄링은 각 프로세스에 동일한 시간 할당량을 부여한다.',
+    correctAnswer: 'O',
+    explanation: '시간 할당량(Time Quantum)이 끝나면 다음 프로세스로 전환됩니다.'
+  },
+  {
+    question: '교착상태(Deadlock)는 두 개 이상의 프로세스가 서로의 자원을 기다리며 무한 대기하는 상태이다.',
+    correctAnswer: 'O',
+    explanation: '상호배제, 점유대기, 비선점, 순환대기 조건이 모두 만족되면 발생합니다.'
+  },
+  {
+    question: '페이징 기법에서 페이지와 프레임의 크기는 항상 다르다.',
+    correctAnswer: 'X',
+    explanation: '페이지(논리적)와 프레임(물리적)의 크기는 같습니다.'
+  },
+  // 3회차 질문 (10-14)
+  {
+    question: 'FIFO 페이지 교체 알고리즘은 가장 먼저 들어온 페이지를 먼저 교체한다.',
+    correctAnswer: 'O',
+    explanation: 'First-In-First-Out 방식으로 가장 오래된 페이지를 교체합니다.'
+  },
+  {
+    question: '컨텍스트 스위칭은 CPU가 다른 프로세스로 전환할 때 발생하는 오버헤드이다.',
+    correctAnswer: 'O',
+    explanation: '현재 프로세스 상태를 저장하고 다음 프로세스 상태를 복원하는 과정입니다.'
+  },
+  {
+    question: '세마포어는 공유 자원의 접근을 제어하는 동기화 도구이다.',
+    correctAnswer: 'O',
+    explanation: 'P(wait)와 V(signal) 연산으로 임계 영역 접근을 제어합니다.'
+  },
+  {
+    question: 'SJF(Shortest Job First) 스케줄링은 평균 대기 시간이 가장 짧다.',
+    correctAnswer: 'O',
+    explanation: '실행 시간이 짧은 작업을 먼저 처리하여 평균 대기 시간을 최소화합니다.'
+  },
+  {
+    question: '운영체제의 파일 시스템은 데이터를 효율적으로 저장하고 관리하는 역할을 한다.',
+    correctAnswer: 'O',
+    explanation: '파일 시스템은 디렉토리 구조, 파일 할당, 접근 권한 등을 관리합니다.'
+  },
+  // 4회차 이상 질문 (15-19)
+  {
+    question: 'LRU 페이지 교체 알고리즘은 가장 오래 사용되지 않은 페이지를 교체한다.',
+    correctAnswer: 'O',
+    explanation: 'Least Recently Used는 최근에 사용되지 않은 페이지를 교체 대상으로 선택합니다.'
+  },
+  {
+    question: '뮤텍스는 여러 스레드가 동시에 임계 영역에 진입할 수 있게 해준다.',
+    correctAnswer: 'X',
+    explanation: '뮤텍스는 한 번에 하나의 스레드만 임계 영역에 진입하도록 합니다.'
+  },
+  {
+    question: '시스템 콜은 사용자 프로그램이 커널 기능을 요청하는 인터페이스이다.',
+    correctAnswer: 'O',
+    explanation: '파일 읽기, 프로세스 생성 등의 커널 서비스를 요청할 때 사용됩니다.'
+  },
+  {
+    question: '스와핑은 메모리에 있는 프로세스를 디스크로 이동시키는 기법이다.',
+    correctAnswer: 'O',
+    explanation: '메모리가 부족할 때 일부 프로세스를 디스크로 내보내 공간을 확보합니다.'
+  },
+  {
+    question: '선점형 스케줄링에서 실행 중인 프로세스는 강제로 CPU를 빼앗길 수 없다.',
+    correctAnswer: 'X',
+    explanation: '선점형 스케줄링은 우선순위가 높은 프로세스가 CPU를 빼앗을 수 있습니다.'
+  }
+]
+
+// 과목명에 따른 퀴즈 질문 선택 함수
+const getQuizQuestionsForCourse = (courseName?: string): QuizQuestion[] => {
+  if (courseName === '생명과학의 세계') {
+    return BIOLOGY_QUIZ_QUESTIONS
+  } else if (courseName === 'SW프로그래밍의기초') {
+    return SW_PROGRAMMING_QUIZ_QUESTIONS
+  } else {
+    // 그 외의 경우 운영체제 퀴즈 사용
+    return OS_QUIZ_QUESTIONS
+  }
+}
+
+// 회차별로 퀴즈 질문을 가져오는 함수 (과목명에 따라 다른 퀴즈 세트 선택)
+const getQuizQuestionsForRound = (lectureNo?: number, courseName?: string): QuizQuestion[] => {
   const roundNumber = lectureNo ?? 1
+  const allQuestions = getQuizQuestionsForCourse(courseName)
   
   // 1회차: 0-4, 2회차: 5-9, 3회차: 10-14, 4회차 이상: 15-19
   let startIndex: number
@@ -142,7 +373,7 @@ const getQuizQuestionsForRound = (lectureNo?: number): QuizQuestion[] => {
     startIndex = 15
   }
   
-  return ALL_QUIZ_QUESTIONS.slice(startIndex, startIndex + 5)
+  return allQuestions.slice(startIndex, startIndex + 5)
 }
 
 interface GameOverlayProps {
@@ -152,9 +383,10 @@ interface GameOverlayProps {
   lectureId?: string // 게임 진행도를 저장할 회차 ID
   courseId?: string // 불꽃 개수를 저장할 강의 ID
   lectureNo?: number // 회차 번호 (퀴즈 질문 선택용)
+  courseName?: string // 과목명 (퀴즈 질문 세트 선택용)
 }
 
-export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId, lectureNo }: GameOverlayProps) {
+export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId, lectureNo, courseName }: GameOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
@@ -165,8 +397,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const frameSequence = [1, 2, 3, 2, 1, 2, 3, 2] // 1->2->3->2->1->2->3->2 반복
   const currentFrame = frameSequence[frameIndex]
   
-  // 회차별 퀴즈 질문 가져오기 (lectureNo 기반)
-  const quizQuestions = useMemo(() => getQuizQuestionsForRound(lectureNo), [lectureNo])
+  // 회차별 퀴즈 질문 가져오기 (lectureNo, courseName 기반)
+  const quizQuestions = useMemo(() => getQuizQuestionsForRound(lectureNo, courseName), [lectureNo, courseName])
   // ref로도 관리 (클로저 문제 해결)
   const quizQuestionsRef = useRef(quizQuestions)
   quizQuestionsRef.current = quizQuestions
@@ -289,7 +521,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % frameSequence.length)
-    }, 150) // 150ms마다 프레임 변경 (빠른 애니메이션)
+    }, 120) // 120ms마다 프레임 변경 (1.25배속)
 
     return () => clearInterval(interval)
   }, [isOpen, animationState, gamePhase])
@@ -302,7 +534,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
     let animationFrameId: number
     let lastTime = 0
-    const BASE_SPEED = 4 // 기준 스크롤 속도 (2배속)
+    const BASE_SPEED = 5 // 기준 스크롤 속도 (1.25배속)
     const speed = BASE_SPEED * scaleFactor // 스케일에 비례한 스크롤 속도
     const doorHeight = 250 * scaleFactor
     const screenMiddle = dimensions.height / 2
@@ -458,7 +690,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     if (gamePhase !== 'walking_to_door' && gamePhase !== 'returning_to_center') return
 
     let animationFrameId: number
-    const HORIZONTAL_SPEED = 6 * scaleFactor // 수평 이동 속도 (2배속)
+    const HORIZONTAL_SPEED = 7.5 * scaleFactor // 수평 이동 속도 (1.25배속)
 
     function animate() {
       if (gamePhase === 'walking_to_door') {
@@ -494,14 +726,14 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 if (questionData) {
                   setExplanationText(questionData.explanation)
                   setShowExplanation(true)
-                  // 5초 후 해설 숨김
+                  // 3.5초 후 해설 숨김
                   if (explanationTimerRef.current) {
                     clearTimeout(explanationTimerRef.current)
                   }
                   explanationTimerRef.current = setTimeout(() => {
                     setShowExplanation(false)
                     setExplanationText(null)
-                  }, 5000)
+                  }, 3500)
                 }
                 
                 // 질문 인덱스 증가
@@ -539,7 +771,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     }
   }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET, hasStumbled, hasReversedDirection])
 
-  // 4초마다 문 생성
+  // 3초마다 문 생성 (0.75배속)
   useEffect(() => {
     if (!isOpen || animationState !== 'entered' || gamePhase !== 'playing') return
 
@@ -549,7 +781,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         ...prevDoors,
         { id: newDoorId, top: -250 * scaleFactor, triggered: false }, // 화면 위에서 시작 (스케일 적용)
       ])
-    }, 4000) // 4초마다
+    }, 3000) // 3초마다 (0.75배속)
 
     return () => clearInterval(interval)
   }, [isOpen, animationState, scaleFactor, gamePhase])
@@ -850,7 +1082,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 40,
-                animation: 'fadeInOut 5s ease-in-out forwards',
+                animation: 'fadeInOut 3.5s ease-in-out forwards',
               }}
             >
               <div 
@@ -990,3 +1222,4 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     </>
   )
 }
+

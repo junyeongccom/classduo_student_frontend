@@ -33,7 +33,7 @@ interface LectureSidebarProps {
   isLocked?: boolean // 세션이 생성되면 잠금 (선택 불가)
   initialLectureIds?: string[] // 초기 회차 IDs (세션 로드 시 사용)
   autoSelectLatest?: boolean // 가장 최신 회차 자동 선택 (새 채팅 시 사용)
-  onGameIconClick?: (lectureId: string, courseId: string, lectureNo: number, position: { top: number; left: number; width: number; height: number }) => void // 게임 아이콘 클릭 핸들러
+  onGameIconClick?: (lectureId: string, courseId: string, lectureNo: number, courseName: string, position: { top: number; left: number; width: number; height: number }) => void // 게임 아이콘 클릭 핸들러
 }
 
 // 임시 데이터 (API 없을 때 사용)
@@ -754,9 +754,9 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                if (onGameIconClick && selectedCourseId) {
+                                if (onGameIconClick && selectedCourseId && selectedCourse) {
                                   const rect = e.currentTarget.getBoundingClientRect()
-                                  onGameIconClick(lecture.lecture_id, selectedCourseId, lecture.lecture_no, {
+                                  onGameIconClick(lecture.lecture_id, selectedCourseId, lecture.lecture_no, selectedCourse.title, {
                                     top: rect.top,
                                     left: rect.left,
                                     width: rect.width,
