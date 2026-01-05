@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, Loader2, BookOpen, Calendar } from 'lucide-react'
 import { apiRequest } from '@/shared/lib/api'
 import { useLectureList } from '@/features/review/hooks/useReview'
@@ -70,6 +70,73 @@ const loadFlameCount = (): FlameCount => {
   }
 }
 
+// 불꽃 개수 증가
+const incrementFlameCount = (courseId: string): number => {
+  if (typeof window === 'undefined') return 0
+  try {
+    const userId = getCurrentUserId()
+    const key = getFlameCountKey(userId)
+    const current = loadFlameCount()
+    const newCount = (current[courseId] || 0) + 1
+    current[courseId] = newCount
+    localStorage.setItem(key, JSON.stringify(current))
+    return newCount
+  } catch {
+    console.error('Failed to increment flame count')
+    return 0
+  }
+}
+
+// 보상 수령 상태 타입
+interface ClaimedRewards {
+  [lectureId: string]: boolean
+}
+
+// 보상 수령 상태 localStorage 키 생성 함수
+const getClaimedRewardsKey = (userId?: string) => {
+  return userId ? `classduo_claimed_rewards_${userId}` : 'classduo_claimed_rewards'
+}
+
+// 보상 수령 상태 로드
+const loadClaimedRewards = (): ClaimedRewards => {
+  if (typeof window === 'undefined') return {}
+  try {
+    const userId = getCurrentUserId()
+    const key = getClaimedRewardsKey(userId)
+    const saved = localStorage.getItem(key)
+    return saved ? JSON.parse(saved) : {}
+  } catch {
+    return {}
+  }
+}
+
+// 보상 수령 처리
+const claimReward = (lectureId: string): boolean => {
+  if (typeof window === 'undefined') return false
+  try {
+    const userId = getCurrentUserId()
+    const key = getClaimedRewardsKey(userId)
+    const current = loadClaimedRewards()
+    current[lectureId] = true
+    localStorage.setItem(key, JSON.stringify(current))
+    return true
+  } catch {
+    console.error('Failed to claim reward')
+    return false
+  }
+}
+
+// 불꽃 날아가는 애니메이션 상태
+interface FlyingFlame {
+  id: string
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+  lectureId: string
+  courseId: string
+}
+
 interface Course {
   course_id: string
   title: string
@@ -92,24 +159,36 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   const [error, setError] = useState<string | null>(null)
   const [gameProgress, setGameProgress] = useState<GameProgress>({}) // 게임 진행도
   const [flameCount, setFlameCount] = useState<FlameCount>({}) // 불꽃 개수
+  const [claimedRewards, setClaimedRewards] = useState<ClaimedRewards>({}) // 보상 수령 상태
+  const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([]) // 날아가는 불꽃들
+  const [flameHighlight, setFlameHighlight] = useState(false) // 불꽃 카운터 강조 효과
+  
+  // refs
+  const flameCounterRef = useRef<HTMLDivElement>(null) // 불꽃 카운터 위치 참조
+  const treasureRefs = useRef<{ [lectureId: string]: HTMLImageElement | null }>({}) // 보물상자 위치 참조
 
   const { data: lectureList, isLoading: isLoadingLectures } = useLectureList(selectedCourseId)
 
-  // 게임 진행도 및 불꽃 개수 로드
+  // 게임 진행도, 불꽃 개수, 보상 수령 상태 로드
   useEffect(() => {
     setGameProgress(loadGameProgress())
     setFlameCount(loadFlameCount())
+    setClaimedRewards(loadClaimedRewards())
     
     // storage 이벤트 리스너 (다른 탭에서 변경 시 동기화)
     const handleStorage = (e: StorageEvent) => {
       const userId = getCurrentUserId()
       const progressKey = getGameProgressKey(userId)
       const flameKey = getFlameCountKey(userId)
+      const claimedKey = getClaimedRewardsKey(userId)
       if (e.key === progressKey || e.key?.startsWith('classduo_game_progress')) {
         setGameProgress(loadGameProgress())
       }
       if (e.key === flameKey || e.key?.startsWith('classduo_flame_count')) {
         setFlameCount(loadFlameCount())
+      }
+      if (e.key === claimedKey || e.key?.startsWith('classduo_claimed_rewards')) {
+        setClaimedRewards(loadClaimedRewards())
       }
     }
     window.addEventListener('storage', handleStorage)
@@ -118,6 +197,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
     const interval = setInterval(() => {
       setGameProgress(loadGameProgress())
       setFlameCount(loadFlameCount())
+      setClaimedRewards(loadClaimedRewards())
     }, 1000)
     
     return () => {
@@ -125,6 +205,61 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
       clearInterval(interval)
     }
   }, [])
+  
+  // 보물상자 클릭 핸들러 (보상 수령)
+  const handleTreasureClick = (lectureId: string, courseId: string, e: React.MouseEvent<HTMLImageElement>) => {
+    e.stopPropagation() // 부모 버튼 클릭 방지
+    
+    const progress = gameProgress[lectureId] || 0
+    const alreadyClaimed = claimedRewards[lectureId]
+    
+    // 진행도 10 미만이거나 이미 수령했으면 무시
+    if (progress < 10 || alreadyClaimed) return
+    
+    // 보물상자 위치 가져오기
+    const treasureEl = treasureRefs.current[lectureId]
+    const counterEl = flameCounterRef.current
+    
+    if (!treasureEl || !counterEl) return
+    
+    const treasureRect = treasureEl.getBoundingClientRect()
+    const counterRect = counterEl.getBoundingClientRect()
+    
+    // ⚠️ 데이터 변경을 먼저 즉시 수행 (창을 닫아도 데이터 유실 방지)
+    // 보상 수령 상태 저장
+    claimReward(lectureId)
+    setClaimedRewards(prev => ({ ...prev, [lectureId]: true }))
+    
+    // 불꽃 개수 즉시 증가 (localStorage에 저장)
+    incrementFlameCount(courseId)
+    
+    // 불꽃 애니메이션 시작 (시각적 효과만)
+    const flameId = `flame-${lectureId}-${Date.now()}`
+    const newFlame: FlyingFlame = {
+      id: flameId,
+      startX: treasureRect.left + treasureRect.width / 2,
+      startY: treasureRect.top + treasureRect.height / 2,
+      endX: counterRect.left + counterRect.width / 2,
+      endY: counterRect.top + counterRect.height / 2,
+      lectureId,
+      courseId,
+    }
+    
+    setFlyingFlames(prev => [...prev, newFlame])
+    
+    // 애니메이션 완료 후 UI 업데이트 (800ms 후)
+    setTimeout(() => {
+      // UI에 불꽃 개수 반영
+      setFlameCount(loadFlameCount())
+      
+      // 불꽃 카운터 강조 효과
+      setFlameHighlight(true)
+      setTimeout(() => setFlameHighlight(false), 600)
+      
+      // 날아가는 불꽃 제거
+      setFlyingFlames(prev => prev.filter(f => f.id !== flameId))
+    }, 800)
+  }
 
   // 강의 목록 가져오기
   useEffect(() => {
@@ -220,14 +355,23 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
             </span>
             {/* 불꽃 개수 표시 */}
             {selectedCourse && (
-              <div className="flex items-center gap-1 shrink-0">
+              <div 
+                ref={flameCounterRef}
+                className={`flex items-center gap-1 shrink-0 transition-all duration-300 ${
+                  flameHighlight ? 'scale-125' : ''
+                }`}
+              >
                 <img 
                   src="/icon_flame.png" 
                   alt="flame" 
-                  className="h-3.5 w-3.5 object-contain"
+                  className={`h-3.5 w-3.5 object-contain transition-all duration-300 ${
+                    flameHighlight ? 'animate-pulse drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : ''
+                  }`}
                   style={{ imageRendering: 'auto' }}
                 />
-                <span className="text-xs font-medium text-amber-600">
+                <span className={`text-xs font-medium transition-all duration-300 ${
+                  flameHighlight ? 'text-amber-500 scale-110' : 'text-amber-600'
+                }`}>
                   {flameCount[selectedCourse.course_id] || 0}
                 </span>
               </div>
@@ -332,11 +476,33 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                             {progress}/10
                           </span>
                         </div>
-                        <img 
-                          src="/icon_reward.png" 
-                          alt="보상" 
-                          className={`h-5 w-5 transition-all ${progress < 10 ? 'grayscale opacity-50' : ''}`}
-                        />
+                        {/* 보물상자: 클릭 가능 여부에 따라 스타일 변경 */}
+                        {(() => {
+                          const alreadyClaimed = claimedRewards[lecture.lecture_id]
+                          
+                          return (
+                            <img 
+                              ref={(el) => { treasureRefs.current[lecture.lecture_id] = el }}
+                              src={alreadyClaimed ? "/icon_reward_empty.png" : "/icon_reward.png"}
+                              alt="보상" 
+                              onClick={(e) => selectedCourseId && handleTreasureClick(lecture.lecture_id, selectedCourseId, e)}
+                              className={`h-5 w-5 transition-all ${
+                                alreadyClaimed 
+                                  ? '' // 이미 수령한 상태 - 빈 상자
+                                  : progress < 10 
+                                    ? 'grayscale opacity-50' // 아직 진행 중
+                                    : 'cursor-pointer hover:scale-110 animate-bounce drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]' // 수령 가능!
+                              }`}
+                              title={
+                                alreadyClaimed 
+                                  ? '보상을 수령했습니다' 
+                                  : progress >= 10 
+                                    ? '클릭하여 보상을 수령하세요!' 
+                                    : `${10 - progress}개 더 풀면 보상 획득!`
+                              }
+                            />
+                          )
+                        })()}
                       </div>
                     )}
                   </button>
@@ -346,7 +512,56 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
           </div>
         </>
       )}
+      
+      {/* 날아가는 불꽃 애니메이션 */}
+      {flyingFlames.map(flame => (
+        <div
+          key={flame.id}
+          className="fixed pointer-events-none z-[9999]"
+          style={{
+            left: flame.startX,
+            top: flame.startY,
+            animation: 'flyToCounter 800ms ease-in-out forwards',
+            '--end-x': `${flame.endX - flame.startX}px`,
+            '--end-y': `${flame.endY - flame.startY}px`,
+          } as React.CSSProperties}
+        >
+          <img 
+            src="/icon_flame.png" 
+            alt="불꽃" 
+            className="h-6 w-6 object-contain drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]"
+            style={{ 
+              animation: 'flameGlow 200ms ease-in-out infinite alternate',
+            }}
+          />
+        </div>
+      ))}
+      
+      {/* 불꽃 애니메이션을 위한 스타일 */}
+      <style jsx>{`
+        @keyframes flyToCounter {
+          0% {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+          }
+          20% {
+            transform: translate(-50%, calc(-50% - 30px)) scale(1.8);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(calc(-50% + var(--end-x)), calc(-50% + var(--end-y))) scale(0.8);
+            opacity: 0.8;
+          }
+        }
+        @keyframes flameGlow {
+          0% {
+            filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+          }
+          100% {
+            filter: drop-shadow(0 0 16px rgba(251, 191, 36, 1));
+          }
+        }
+      `}</style>
     </div>
   )
 }
-
