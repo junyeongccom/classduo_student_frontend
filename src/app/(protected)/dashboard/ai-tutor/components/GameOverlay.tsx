@@ -388,14 +388,14 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 if (questionData) {
                   setExplanationText(questionData.explanation)
                   setShowExplanation(true)
-                  // 8초 후 해설 숨김
+                  // 5초 후 해설 숨김
                   if (explanationTimerRef.current) {
                     clearTimeout(explanationTimerRef.current)
                   }
                   explanationTimerRef.current = setTimeout(() => {
                     setShowExplanation(false)
                     setExplanationText(null)
-                  }, 8000)
+                  }, 5000)
                 }
                 
                 // 질문 인덱스 증가
@@ -433,7 +433,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     }
   }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET, hasStumbled, hasReversedDirection])
 
-  // 10초마다 문 생성
+  // 4초마다 문 생성
   useEffect(() => {
     if (!isOpen || animationState !== 'entered' || gamePhase !== 'playing') return
 
@@ -443,7 +443,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         ...prevDoors,
         { id: newDoorId, top: -250 * scaleFactor, triggered: false }, // 화면 위에서 시작 (스케일 적용)
       ])
-    }, 10000) // 10초마다
+    }, 4000) // 4초마다
 
     return () => clearInterval(interval)
   }, [isOpen, animationState, scaleFactor, gamePhase])
@@ -744,7 +744,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 40,
-                animation: 'fadeInOut 8s ease-in-out forwards',
+                animation: 'fadeInOut 5s ease-in-out forwards',
               }}
             >
               <div 
