@@ -3,7 +3,7 @@
  */
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { X, RotateCcw, LogOut } from 'lucide-react'
 import { incrementGameProgress, isQuestionSolved } from './LectureSidebar'
 
@@ -17,8 +17,9 @@ interface QuizQuestion {
   explanation: string
 }
 
-// 5개의 하드코딩된 퀴즈 질문
-const QUIZ_QUESTIONS: QuizQuestion[] = [
+// 20개의 하드코딩된 퀴즈 질문 (회차별로 5개씩 사용)
+const ALL_QUIZ_QUESTIONS: QuizQuestion[] = [
+  // 1회차 질문 (0-4)
   {
     question: '동물 세포는 식물 세포와 마찬가지로 세포벽이 있어 형태가 단단하게 유지된다.',
     correctAnswer: 'X',
@@ -43,8 +44,106 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
     question: '사람의 심장은 2심방 2심실 구조로 이루어져 있다.',
     correctAnswer: 'O',
     explanation: '포유류와 조류는 효율적인 순환을 위해 2심방 2심실 구조를 가집니다.'
+  },
+  // 2회차 질문 (5-9)
+  {
+    question: '미토콘드리아는 세포 호흡을 통해 ATP를 생성하는 세포 소기관이다.',
+    correctAnswer: 'O',
+    explanation: '미토콘드리아는 세포의 발전소로 불리며 에너지를 생산합니다.'
+  },
+  {
+    question: '단백질은 아미노산이 아닌 포도당이 연결되어 만들어진다.',
+    correctAnswer: 'X',
+    explanation: '단백질은 아미노산이 펩타이드 결합으로 연결된 고분자입니다.'
+  },
+  {
+    question: '뉴런(신경세포)은 축삭돌기를 통해 신호를 전달한다.',
+    correctAnswer: 'O',
+    explanation: '축삭돌기는 신경 자극을 다른 세포로 전달하는 역할을 합니다.'
+  },
+  {
+    question: '리보솜은 유전 정보를 저장하는 역할을 담당한다.',
+    correctAnswer: 'X',
+    explanation: '리보솜은 단백질 합성을 담당하며, 유전 정보는 핵(DNA)에 저장됩니다.'
+  },
+  {
+    question: '효소는 화학 반응의 속도를 높이는 생체 촉매이다.',
+    correctAnswer: 'O',
+    explanation: '효소는 활성화 에너지를 낮춰 반응 속도를 크게 증가시킵니다.'
+  },
+  // 3회차 질문 (10-14)
+  {
+    question: '멘델의 분리의 법칙에 따르면 대립유전자는 감수분열 시 분리된다.',
+    correctAnswer: 'O',
+    explanation: '감수분열 과정에서 대립유전자 쌍이 분리되어 각각 다른 생식세포로 들어갑니다.'
+  },
+  {
+    question: '세포 분열 시 염색체 수가 절반으로 줄어드는 것은 체세포 분열이다.',
+    correctAnswer: 'X',
+    explanation: '염색체 수가 절반으로 줄어드는 것은 감수분열이며, 체세포 분열은 염색체 수가 유지됩니다.'
+  },
+  {
+    question: '소장의 융털은 표면적을 넓혀 영양소 흡수 효율을 높인다.',
+    correctAnswer: 'O',
+    explanation: '융털 구조는 소장의 표면적을 약 600배까지 증가시켜 흡수 효율을 높입니다.'
+  },
+  {
+    question: '백혈구는 산소를 운반하고 적혈구는 면역 기능을 담당한다.',
+    correctAnswer: 'X',
+    explanation: '적혈구가 산소를 운반하고, 백혈구가 면역 기능을 담당합니다.'
+  },
+  {
+    question: '호르몬은 내분비선에서 분비되어 혈액을 통해 표적 기관으로 이동한다.',
+    correctAnswer: 'O',
+    explanation: '호르몬은 혈류를 타고 이동하여 특정 수용체가 있는 표적 기관에서 작용합니다.'
+  },
+  // 4회차 이상 질문 (15-19) - 4, 5, 6... 회차 모두 동일
+  {
+    question: 'RNA는 DNA와 달리 단일 가닥 구조이며 우라실(U)을 포함한다.',
+    correctAnswer: 'O',
+    explanation: 'RNA는 단일 가닥이며, DNA의 티민(T) 대신 우라실(U)을 가집니다.'
+  },
+  {
+    question: '광합성의 명반응은 엽록체의 스트로마에서 일어난다.',
+    correctAnswer: 'X',
+    explanation: '명반응은 틸라코이드 막에서 일어나며, 스트로마에서는 암반응(캘빈 회로)이 일어납니다.'
+  },
+  {
+    question: '해당과정은 미토콘드리아에서 일어나는 세포 호흡의 첫 단계이다.',
+    correctAnswer: 'X',
+    explanation: '해당과정은 세포질에서 일어나며, 미토콘드리아에서는 TCA 회로와 전자전달계가 진행됩니다.'
+  },
+  {
+    question: '생태계에서 분해자는 죽은 생물의 유기물을 무기물로 분해한다.',
+    correctAnswer: 'O',
+    explanation: '분해자(세균, 곰팡이 등)는 유기물을 무기물로 분해하여 물질 순환에 기여합니다.'
+  },
+  {
+    question: '항체는 B림프구가 아닌 T림프구에서 생성된다.',
+    correctAnswer: 'X',
+    explanation: '항체는 B림프구가 분화한 형질세포에서 생성됩니다. T림프구는 세포성 면역을 담당합니다.'
   }
 ]
+
+// 회차별로 퀴즈 질문을 가져오는 함수
+const getQuizQuestionsForRound = (lectureNo?: number): QuizQuestion[] => {
+  const roundNumber = lectureNo ?? 1
+  
+  // 1회차: 0-4, 2회차: 5-9, 3회차: 10-14, 4회차 이상: 15-19
+  let startIndex: number
+  if (roundNumber <= 1) {
+    startIndex = 0
+  } else if (roundNumber === 2) {
+    startIndex = 5
+  } else if (roundNumber === 3) {
+    startIndex = 10
+  } else {
+    // 4회차 이상은 모두 마지막 5개 (15-19)
+    startIndex = 15
+  }
+  
+  return ALL_QUIZ_QUESTIONS.slice(startIndex, startIndex + 5)
+}
 
 interface GameOverlayProps {
   isOpen: boolean
@@ -52,9 +151,10 @@ interface GameOverlayProps {
   triggerPosition: { top: number; left: number; width: number; height: number } | null
   lectureId?: string // 게임 진행도를 저장할 회차 ID
   courseId?: string // 불꽃 개수를 저장할 강의 ID
+  lectureNo?: number // 회차 번호 (퀴즈 질문 선택용)
 }
 
-export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId }: GameOverlayProps) {
+export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId, lectureNo }: GameOverlayProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
@@ -64,6 +164,12 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const doorIdRef = useRef(0) // 문 ID 생성용
   const frameSequence = [1, 2, 3, 2, 1, 2, 3, 2] // 1->2->3->2->1->2->3->2 반복
   const currentFrame = frameSequence[frameIndex]
+  
+  // 회차별 퀴즈 질문 가져오기 (lectureNo 기반)
+  const quizQuestions = useMemo(() => getQuizQuestionsForRound(lectureNo), [lectureNo])
+  // ref로도 관리 (클로저 문제 해결)
+  const quizQuestionsRef = useRef(quizQuestions)
+  quizQuestionsRef.current = quizQuestions
   
   // 퀴즈 상태
   const [isPaused, setIsPaused] = useState(false) // 게임 일시정지 상태
@@ -235,7 +341,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         if (shouldPause && pauseDoorId !== null) {
           setTimeout(() => {
             // 현재 질문 인덱스에 해당하는 질문 표시 (ref 사용으로 최신 값 보장)
-            const questionData = QUIZ_QUESTIONS[currentQuestionIndexRef.current]
+            const questionData = quizQuestionsRef.current[currentQuestionIndexRef.current]
             if (questionData) {
               setIsPaused(true)
               setGamePhase('quiz')
@@ -255,7 +361,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
             
             // 정답을 맞췄거나 반대쪽 문으로 전환한 경우: 문이 화면 밖으로 나가면 returning_to_center
             // 현재 질문의 정답과 비교 (ref 사용으로 최신 값 보장)
-            const correctAnswer = QUIZ_QUESTIONS[currentQuestionIndexRef.current]?.correctAnswer || 'O'
+            const correctAnswer = quizQuestionsRef.current[currentQuestionIndexRef.current]?.correctAnswer || 'O'
             if (selectedAnswer === correctAnswer || hasReversedDirection) {
               if (activeDoor.top > dimensions.height - 50 * scaleFactor) {
                 setTimeout(() => {
@@ -384,7 +490,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
               } else {
                 // 정상 완료 → 해설 표시 및 5번 문제 완료 체크 (ref 사용으로 최신 값 보장)
                 const currentIdx = currentQuestionIndexRef.current
-                const questionData = QUIZ_QUESTIONS[currentIdx]
+                const questionData = quizQuestionsRef.current[currentIdx]
                 if (questionData) {
                   setExplanationText(questionData.explanation)
                   setShowExplanation(true)
