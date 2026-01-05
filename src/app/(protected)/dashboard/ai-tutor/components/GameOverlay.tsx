@@ -289,7 +289,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
     const interval = setInterval(() => {
       setFrameIndex((prev) => (prev + 1) % frameSequence.length)
-    }, 150) // 150ms마다 프레임 변경 (빠른 애니메이션)
+    }, 120) // 120ms마다 프레임 변경 (1.25배속)
 
     return () => clearInterval(interval)
   }, [isOpen, animationState, gamePhase])
@@ -302,7 +302,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
     let animationFrameId: number
     let lastTime = 0
-    const BASE_SPEED = 4 // 기준 스크롤 속도 (2배속)
+    const BASE_SPEED = 5 // 기준 스크롤 속도 (1.25배속)
     const speed = BASE_SPEED * scaleFactor // 스케일에 비례한 스크롤 속도
     const doorHeight = 250 * scaleFactor
     const screenMiddle = dimensions.height / 2
@@ -458,7 +458,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     if (gamePhase !== 'walking_to_door' && gamePhase !== 'returning_to_center') return
 
     let animationFrameId: number
-    const HORIZONTAL_SPEED = 6 * scaleFactor // 수평 이동 속도 (2배속)
+    const HORIZONTAL_SPEED = 7.5 * scaleFactor // 수평 이동 속도 (1.25배속)
 
     function animate() {
       if (gamePhase === 'walking_to_door') {
