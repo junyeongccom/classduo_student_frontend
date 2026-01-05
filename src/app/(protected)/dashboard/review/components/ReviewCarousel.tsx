@@ -96,9 +96,10 @@ interface ReviewCarouselProps {
   data: ReviewCarouselResponse | null
   isLoading: boolean
   error: string | null
+  courseId?: string | null // 강의 ID (진행도 달성 시 불꽃 증가에 필요)
 }
 
-export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) {
+export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarouselProps) {
   const [currentPage, setCurrentPage] = useState(1) // 1-6 (1페이지 + 2-6페이지)
   
   // 다른 강의회차 선택 시 페이지를 1로 리셋
@@ -153,6 +154,7 @@ export function ReviewCarousel({ data, isLoading, error }: ReviewCarouselProps) 
             currentPage={currentPage} 
             totalPages={totalPages}
             lectureId={data.page_1.lecture_id}
+            courseId={courseId || undefined}
           />
         )}
       </div>
@@ -528,7 +530,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
 /**
  * 복습 캐러셀 2-6페이지 - 인스타그램 카드뉴스 스타일
  */
-function ReviewPage2_6({ data, currentPage, totalPages, lectureId }: { data: ReviewCarouselResponse['pages_2_6'][0]; currentPage: number; totalPages: number; lectureId: string }) {
+function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: { data: ReviewCarouselResponse['pages_2_6'][0]; currentPage: number; totalPages: number; lectureId: string; courseId?: string }) {
 
   if (!data) {
     return (
@@ -569,7 +571,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId }: { data: Rev
   const toggleAllBlanks = () => {
     // 빈칸을 열려고 할 때 (아직 안 열린 상태에서) 진행도 증가 시도
     if (!isRevealed && !hasTriedProgress) {
-      tryIncrementPageProgress(lectureId, data.page_number)
+      tryIncrementPageProgress(lectureId, data.page_number, courseId)
       setHasTriedProgress(true)
     }
     

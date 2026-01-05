@@ -8,6 +8,7 @@ import { useReviewCarousel } from '@/features/review/hooks/useReview'
 
 export default function ReviewPage() {
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const { data, isLoading, error } = useReviewCarousel(selectedLectureId)
 
   // 공유 기능 (아직 구현 안 함)
@@ -49,13 +50,14 @@ export default function ReviewPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* 중앙: 복습 캐러셀 */}
         <div className="flex-1 overflow-y-auto p-6">
-          <ReviewCarousel data={data} isLoading={isLoading} error={error} />
+          <ReviewCarousel data={data} isLoading={isLoading} error={error} courseId={selectedCourseId} />
         </div>
 
         {/* 우측: 강의회차 선택 사이드바 */}
         <ReviewSidebar
           selectedLectureId={selectedLectureId}
           onSelectLectureId={setSelectedLectureId}
+          onCourseIdChange={setSelectedCourseId}
         />
       </div>
     </div>

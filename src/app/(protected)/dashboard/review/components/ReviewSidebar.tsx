@@ -81,9 +81,10 @@ interface Course {
 interface ReviewSidebarProps {
   selectedLectureId: string | null
   onSelectLectureId: (lectureId: string | null) => void
+  onCourseIdChange?: (courseId: string | null) => void // 강의 ID 변경 콜백
 }
 
-export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSidebarProps) {
+export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseIdChange }: ReviewSidebarProps) {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -154,6 +155,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
         // 첫 번째 강의 자동 선택
         if (coursesData.length > 0) {
           setSelectedCourseId(coursesData[0].course_id)
+          onCourseIdChange?.(coursesData[0].course_id) // 강의 ID 변경 알림
         }
         
       } catch (err) {
@@ -172,6 +174,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId }: ReviewSi
     setSelectedCourseId(courseId)
     setIsDropdownOpen(false)
     onSelectLectureId(null) // 회차 선택 초기화
+    onCourseIdChange?.(courseId) // 강의 ID 변경 알림
   }
 
   // 회차 선택
