@@ -1,5 +1,5 @@
 # ClassDuo Frontend
-#
+
 ClassDuo 학습 플랫폼의 프론트엔드 애플리케이션입니다.
 
 ## 🛠 기술 스택
