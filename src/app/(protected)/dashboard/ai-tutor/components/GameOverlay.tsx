@@ -427,6 +427,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const [stumbleVerticalOffset, setStumbleVerticalOffset] = useState(0) // stumbling 중 수직 오프셋 (뒤로 튕김 효과)
   const [hasReversedDirection, setHasReversedDirection] = useState(false) // 반대쪽 문으로 전환 여부
   const [quizAnswerCount, setQuizAnswerCount] = useState(0) // 이번 게임에서 선택한 횟수
+  const [isJumping, setIsJumping] = useState(false) // 점프 중 여부
+  const [jumpOffset, setJumpOffset] = useState(0) // 점프 높이 오프셋
   
   // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
   const REFERENCE_WIDTH = 1200
@@ -512,6 +514,62 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
       clearTimeout(explanationTimerRef.current)
     }
   }, [])
+
+  // 스페이스바 점프 이벤트 리스너
+  useEffect(() => {
+    if (!isOpen || animationState !== 'entered') return
+    // 퀴즈 중이거나 idle, cleared 상태에서는 점프 비활성화
+    if (gamePhase === 'quiz' || gamePhase === 'idle' || gamePhase === 'cleared') return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isJumping) {
+        e.preventDefault()
+        setIsJumping(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, animationState, gamePhase, isJumping])
+
+  // 점프 애니메이션
+  useEffect(() => {
+    if (!isJumping) return
+
+    let animationFrameId: number
+    let startTime: number | null = null
+    const JUMP_HEIGHT = 80 * scaleFactor // 점프 최대 높이
+    const JUMP_DURATION = 400 // 점프 총 시간 (ms)
+
+    function animate(currentTime: number) {
+      if (startTime === null) {
+        startTime = currentTime
+      }
+
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / JUMP_DURATION, 1)
+
+      // 포물선 운동: sin 함수로 부드러운 점프 곡선
+      const jumpProgress = Math.sin(progress * Math.PI)
+      setJumpOffset(JUMP_HEIGHT * jumpProgress)
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(animate)
+      } else {
+        // 점프 완료
+        setJumpOffset(0)
+        setIsJumping(false)
+      }
+    }
+
+    animationFrameId = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+    }
+  }, [isJumping, scaleFactor])
 
   // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
   // idle, quiz, cleared 상태에서는 정지, 나머지 페이즈에서는 계속 애니메이션
@@ -928,8 +986,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
           <div 
             className="absolute bottom-0 left-1/2 -translate-x-1/2" 
             style={{ 
-              marginBottom: `${20 * scaleFactor}px`,
+              marginBottom: `${20 * scaleFactor + jumpOffset}px`,
               zIndex: 5,
+              transition: isJumping ? 'none' : 'margin-bottom 0.1s ease-out',
             }}
           >
             <img
