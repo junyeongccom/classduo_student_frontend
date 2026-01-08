@@ -1,23 +1,9 @@
-// Components
-export { LoginForm, SignupForm, AuthProvider } from './components'
-
-// Hooks
-export { useLogin, useSignup, useAuth, useRequireAuth, useRedirectIfAuthenticated, useProfile } from './hooks'
-
-// Store
-export { useAuthStore } from './store/authStore'
-
-// API
-export { authApi } from './api/authApi'
-
-// Types
-export type {
-  SignUpRequest,
-  SignUpResponse,
-  LoginRequest,
-  AuthTokenResponse,
-  UserProfileResponse,
-  AuthError,
-} from './types'
-
-
+export * from './components/index'
+export * from './components/LoginForm'
+export * from './components/SignupForm'
+export * from './components/AuthProvider'
+export * from './components/AuthGuard'
+export * from './hooks'
+export * from './services/authService'
+export * from './store/authStore'
+export * from './types'

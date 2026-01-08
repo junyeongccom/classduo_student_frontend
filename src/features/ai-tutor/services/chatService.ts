@@ -1,0 +1,237 @@
+/**
+ * AI 튜터 채팅 API
+ */
+import { apiRequest } from '@/shared/lib/api'
+import { API_BASE_URL, TOKEN_KEY } from '@/shared/lib/utils'
+import {
+  ChatMessage,
+  ChatRequest,
+  ChatResponse,
+  HookingResponse,
+  PQMQuestion,
+  ChatSession,
+  SessionWithMessages,
+  SearchResult,
+  StreamProgressData,
+  Reference
+} from '../types'
+
+// Re-export types for backward compatibility (optional but good for refactoring safety)
+export type {
+  ChatMessage,
+  Reference,
+  ChatRequest,
+  ChatResponse,
+  HookingResponse,
+  PQMQuestion,
+  ChatSession,
+  StoredMessage,
+  SessionWithMessages,
+  SearchResult,
+  StreamProgressData
+} from '../types'
+
+export const chatService = {
+  /**
+   * AI 튜터 채팅 (세션 없이)
+   */
+  async chat(request: ChatRequest): Promise<{ data: ChatResponse | null; error: any }> {
+    return apiRequest<ChatResponse>('/ai-tutor/chat', {
+      method: 'POST',
+      body: request,
+    })
+  },
+
+  /**
+   * 후킹 질문/답변 조회 (lecture_id 기반)
+   */
+  async getHookingByLecture(lectureId: string): Promise<{ data: HookingResponse | null; error: any }> {
+    return apiRequest<HookingResponse>(`/ai-tutor/hooking/lecture/${lectureId}`)
+  },
+
+  /**
+   * PQM 질문 4개 조회 (lecture_id 기반)
+   */
+  async getPQMQuestionsByLecture(lectureId: string): Promise<{ data: PQMQuestion[] | null; error: any }> {
+    return apiRequest<PQMQuestion[]>(`/ai-tutor/pqm/lectures/${lectureId}`, {
+      auth: true,
+    })
+  },
+
+  /**
+   * 후킹 질문/답변 조회 (job_id 기반 - 레거시)
+   */
+  async getHooking(jobId: string): Promise<{ data: HookingResponse | null; error: any }> {
+    return apiRequest<HookingResponse>(`/ai-tutor/hooking/${jobId}`)
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 채팅 세션 관련 API
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * 새 채팅 세션 생성
+   */
+  async createSession(lectureIds: string[], title?: string): Promise<{ data: ChatSession | null; error: any }> {
+    return apiRequest<ChatSession>('/ai-tutor/sessions', {
+      method: 'POST',
+      body: { lecture_ids: lectureIds, title },
+      auth: true,
+    })
+  },
+
+  /**
+   * 채팅 세션 목록 조회
+   */
+  async getSessions(): Promise<{ data: ChatSession[] | null; error: any }> {
+    return apiRequest<ChatSession[]>('/ai-tutor/sessions', {
+      auth: true,
+    })
+  },
+
+  /**
+   * 특정 세션과 메시지 조회
+   */
+  async getSession(sessionId: string): Promise<{ data: SessionWithMessages | null; error: any }> {
+    return apiRequest<SessionWithMessages>(`/ai-tutor/sessions/${sessionId}`, {
+      auth: true,
+    })
+  },
+
+  /**
+   * 채팅 세션 삭제
+   */
+  async deleteSession(sessionId: string): Promise<{ data: any; error: any }> {
+    return apiRequest(`/ai-tutor/sessions/${sessionId}`, {
+      method: 'DELETE',
+      auth: true,
+    })
+  },
+
+  /**
+   * 세션 내 채팅 (DB 저장)
+   */
+  async sessionChat(sessionId: string, question: string): Promise<{ data: ChatResponse | null; error: any }> {
+    return apiRequest<ChatResponse>(`/ai-tutor/sessions/${sessionId}/chat`, {
+      method: 'POST',
+      body: { question },
+      auth: true,
+    })
+  },
+
+  /**
+   * 세션 내 채팅 (SSE 스트리밍, DB 저장)
+   */
+  async sessionChatStream(
+    sessionId: string,
+    question: string,
+    onProgress: (data: StreamProgressData) => void,
+    onComplete: (result: ChatResponse) => void,
+    onError: (error: Error) => void
+  ): Promise<void> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/ai-tutor/sessions/${sessionId}/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ question }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+
+      if (!reader) {
+        throw new Error('No response body')
+      }
+
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+              
+              if (data.type === 'result') {
+                onComplete(data.data)
+              } else {
+                onProgress(data)
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error('Unknown error'))
+    }
+  },
+
+  /**
+   * 후킹 질문/답변을 세션에 저장 (미리 준비된 답변 사용)
+   */
+  async saveHookingMessage(
+    sessionId: string,
+    hooking: {
+      question: string
+      answer: string
+      reference_data?: Reference[] | null
+      summary_keywords?: string | null
+    }
+  ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {
+    return apiRequest<{ success: boolean; message: string }>(
+      `/ai-tutor/sessions/${sessionId}/hooking`,
+      {
+        method: 'POST',
+        body: hooking,
+        auth: true,
+      }
+    )
+  },
+
+  /**
+   * PQM 메시지 저장 (미리 준비된 답변 저장)
+   */
+  async savePQMMessage(
+    sessionId: string,
+    pqm: {
+      question: string
+      answer: string
+      reference_data?: Reference[] | null
+    }
+  ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {
+    return apiRequest<{ success: boolean; message: string }>(
+      `/ai-tutor/sessions/${sessionId}/pqm`,
+      {
+        method: 'POST',
+        body: pqm,
+        auth: true,
+      }
+    )
+  },
+
+  /**
+   * 채팅 검색
+   */
+  async searchMessages(query: string): Promise<{ data: SearchResult[] | null; error: any }> {
+    return apiRequest<SearchResult[]>(`/ai-tutor/search?q=${encodeURIComponent(query)}`, {
+      auth: true,
+    })
+  },
+}

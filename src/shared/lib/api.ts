@@ -1,5 +1,5 @@
 import { API_BASE_URL, TOKEN_KEY, REFRESH_TOKEN_KEY } from './utils'
-import { authApi } from '@/features/auth/api/authApi'
+import { authService } from '@/features/auth/services/authService'
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -60,7 +60,7 @@ export async function apiRequest<T>(
       if (refreshToken) {
         try {
           // 토큰 갱신 시도
-          const refreshResult = await authApi.refreshToken(refreshToken)
+          const refreshResult = await authService.refreshToken(refreshToken)
           
           if (refreshResult.data && !refreshResult.error) {
             // 새 토큰 저장

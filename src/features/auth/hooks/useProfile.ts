@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { authApi } from '../api/authApi'
+import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { 
   ChangePasswordRequest, 
@@ -23,7 +23,7 @@ export function useProfile() {
     setError(null)
 
     try {
-      const result = await authApi.updateProfile(data)
+      const result = await authService.updateProfile(data)
 
       if (result.error) {
         setError(result.error as AuthError)
@@ -56,7 +56,7 @@ export function useProfile() {
     setError(null)
 
     try {
-      const result = await authApi.changePassword(data)
+      const result = await authService.changePassword(data)
 
       if (result.error) {
         setError(result.error as AuthError)
@@ -84,7 +84,7 @@ export function useProfile() {
     setError(null)
 
     try {
-      const result = await authApi.deleteAccount(data)
+      const result = await authService.deleteAccount(data)
 
       if (result.error) {
         setError(result.error as AuthError)

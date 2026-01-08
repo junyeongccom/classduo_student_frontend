@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/shared/components/ui'
 import { useAuthStore } from '@/features/auth'
-import { authApi } from '@/features/auth/api/authApi'
+import { authService } from '@/features/auth/services/authService'
 
 function EmailConfirmedContent() {
   const router = useRouter()
@@ -61,7 +61,7 @@ function EmailConfirmedContent() {
           // 사용자 정보 조회 (선택적 - 실패해도 페이지는 표시)
           try {
             setLoading(true)
-            const meResult = await authApi.getMe()
+            const meResult = await authService.getMe()
             
             if (!meResult.error && meResult.data) {
               // 성공 - 사용자 정보 저장

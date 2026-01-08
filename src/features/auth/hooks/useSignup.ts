@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { authApi } from '../api/authApi'
+import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { SignUpRequest, AuthError } from '../types'
 
@@ -19,7 +19,7 @@ export function useSignup() {
     setSignupSuccess(false)
 
     try {
-      const result = await authApi.signup(data)
+      const result = await authService.signup(data)
 
       if (result.error) {
         setError(result.error as AuthError)
@@ -47,7 +47,7 @@ export function useSignup() {
     setIsLoading(true)
 
     try {
-      const result = await authApi.resendVerification({ email })
+      const result = await authService.resendVerification({ email })
 
       if (result.error) {
         return { success: false, error: result.error }

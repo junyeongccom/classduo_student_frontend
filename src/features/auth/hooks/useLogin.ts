@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { authApi } from '../api/authApi'
+import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { LoginRequest, AuthError } from '../types'
 
@@ -20,7 +20,7 @@ export function useLogin() {
       console.log('[로그인] 요청 시작:', data.email)
       
       // 1. 로그인 요청
-      const loginResult = await authApi.login(data)
+      const loginResult = await authService.login(data)
       console.log('[로그인] API 응답:', loginResult)
 
       if (loginResult.error) {
@@ -34,7 +34,7 @@ export function useLogin() {
       login(loginResult.data!)
 
       // 3. 사용자 정보 조회
-      const meResult = await authApi.getMe()
+      const meResult = await authService.getMe()
 
       if (meResult.error) {
         // 토큰은 저장되었지만 사용자 정보 조회 실패

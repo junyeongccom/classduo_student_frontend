@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/shared/lib/utils'
@@ -11,6 +11,14 @@ export function Sidebar() {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
+  useEffect(() => {
+    const width = isCollapsed ? '80px' : '140px'
+    document.documentElement.style.setProperty('--sidebar-width', width)
+    return () => {
+      document.documentElement.style.setProperty('--sidebar-width', width)
+    }
+  }, [isCollapsed])
+
   return (
     <aside className={cn(
       "group fixed left-0 top-0 z-40 h-screen border-r border-gray-200 bg-white transition-all duration-300",
@@ -19,7 +27,7 @@ export function Sidebar() {
       <div className="flex h-full flex-col">
         {/* 로고 + 토글 버튼 */}
         <div className="relative flex h-16 items-center justify-center">
-          <Link href="/dashboard" className="flex items-center justify-center">
+          <Link href="/studyspace/ai-tutor" className="flex items-center justify-center">
             {!isCollapsed && (
               <img src="/로고.png" alt="CLASSDUO" className="h-5 w-auto" />
             )}

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { authApi } from '../api/authApi'
+import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { TOKEN_KEY } from '@/shared/lib/utils'
 

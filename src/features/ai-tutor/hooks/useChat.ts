@@ -4,7 +4,8 @@
 'use client'
 
 import { useState } from 'react'
-import { chatApi, ChatMessage, Reference } from '../api/chatApi'
+import { chatService } from '../services/chatService'
+import { ChatMessage, Reference } from '../types'
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -23,7 +24,7 @@ export function useChat() {
     setMessages(prev => [...prev, userMessage])
 
     try {
-      const { data, error: apiError } = await chatApi.chat({
+      const { data, error: apiError } = await chatService.chat({
         question,
         lecture_ids: lectureIds,
         chat_history: messages,

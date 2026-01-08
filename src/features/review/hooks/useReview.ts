@@ -2,7 +2,7 @@
  * 복습 콘텐츠 관련 훅
  */
 import { useState, useEffect } from 'react'
-import { reviewApi, LectureListResponse, ReviewCarouselResponse } from '../api/reviewApi'
+import { reviewService, LectureListResponse, ReviewCarouselResponse } from '../services/reviewService'
 
 export function useLectureList(courseId: string | null) {
   const [data, setData] = useState<LectureListResponse | null>(null)
@@ -20,7 +20,7 @@ export function useLectureList(courseId: string | null) {
       setError(null)
 
       try {
-        const result = await reviewApi.getLectureListByCourse(courseId)
+        const result = await reviewService.getLectureListByCourse(courseId)
         if (result.error) {
           setError(result.error.message || '강의회차 리스트를 불러오는데 실패했습니다')
           setData(null)
@@ -57,7 +57,7 @@ export function useReviewCarousel(lectureId: string | null) {
       setError(null)
 
       try {
-        const result = await reviewApi.getReviewCarousel(lectureId)
+        const result = await reviewService.getReviewCarousel(lectureId)
         if (result.error) {
           setError(result.error.message || '복습 캐러셀을 불러오는데 실패했습니다')
           setData(null)
@@ -81,7 +81,7 @@ export function useReviewCarousel(lectureId: string | null) {
         setIsLoading(true)
         setError(null)
         try {
-          const result = await reviewApi.getReviewCarousel(lectureId)
+          const result = await reviewService.getReviewCarousel(lectureId)
           if (result.error) {
             setError(result.error.message || '복습 캐러셀을 불러오는데 실패했습니다')
             setData(null)

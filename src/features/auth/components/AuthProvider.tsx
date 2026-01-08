@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { authApi } from '../api/authApi'
+import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { TOKEN_KEY } from '@/shared/lib/utils'
 
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 토큰이 있으면 사용자 정보 조회
       setLoading(true)
-      const result = await authApi.getMe()
+      const result = await authService.getMe()
       
       if (result.error) {
         // 토큰이 유효하지 않음
