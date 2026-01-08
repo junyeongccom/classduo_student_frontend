@@ -50,6 +50,7 @@ export interface ChatResponse {
 }
 
 export interface HookingResponse {
+  id: string  // 후킹질문 고유 ID (source_question_id로 사용)
   job_id: string
   topic: string
   question: string
