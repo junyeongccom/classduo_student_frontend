@@ -127,7 +127,11 @@ export const chatService = {
     question: string,
     onProgress: (data: StreamProgressData) => void,
     onComplete: (result: ChatResponse) => void,
-    onError: (error: Error) => void
+    onError: (error: Error) => void,
+    options?: {
+      question_type?: 'hooking' | 'pqm' | 'direct' | 'followup'
+      source_question_id?: string
+    }
   ): Promise<void> {
     const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
 
@@ -138,7 +142,11 @@ export const chatService = {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ 
+          question,
+          question_type: options?.question_type,
+          source_question_id: options?.source_question_id
+        }),
       })
 
       if (!response.ok) {
@@ -193,6 +201,7 @@ export const chatService = {
       answer: string
       reference_data?: Reference[] | null
       summary_keywords?: string | null
+      hooking_question_id?: string  // 원본 후킹질문 ID (source_question_id로 저장됨)
     }
   ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {
     return apiRequest<{ success: boolean; message: string }>(
@@ -214,6 +223,7 @@ export const chatService = {
       question: string
       answer: string
       reference_data?: Reference[] | null
+      pqm_question_id?: string  // 원본 PQM 질문 ID (source_question_id로 저장됨)
     }
   ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {
     return apiRequest<{ success: boolean; message: string }>(

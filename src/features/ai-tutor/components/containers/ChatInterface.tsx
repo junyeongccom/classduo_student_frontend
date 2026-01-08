@@ -220,7 +220,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<Array<{ question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }>>(
+  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }>>(
     DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q }))
   )
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
@@ -251,8 +251,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         console.log('[후킹 질문 로드] API 응답:', { data, error })
         if (data && !error) {
           console.log('[후킹 질문 로드] reference_data:', data.reference_data)
-          // 후킹 질문이 있으면 해당 질문과 답변, 참고자료, 키워드 함께 저장
+          // 후킹 질문이 있으면 해당 질문과 답변, 참고자료, 키워드, ID 함께 저장
           setHookingQuestions([{
+            id: data.id,  // 후킹질문 고유 ID (source_question_id로 사용)
             question: data.question,
             answer: data.answer,
             reference_data: data.reference_data || null,
@@ -628,7 +629,13 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }, [typingProgress, messages, typingComplete])
 
   // 메시지 전송 (SSE 스트리밍)
-  const sendMessage = useCallback(async (question: string) => {
+  const sendMessage = useCallback(async (
+    question: string,
+    options?: {
+      question_type?: 'hooking' | 'pqm' | 'direct' | 'followup'
+      source_question_id?: string
+    }
+  ) => {
     if (!question.trim() || isLoading || selectedLectureIds.length === 0) return
 
     setIsLoading(true)
@@ -659,7 +666,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         onSessionCreated?.(sessionIdToUse)
       }
 
-      // SSE 스트리밍으로 채팅
+      // SSE 스트리밍으로 채팅 (question_type 전달: 직접 질문은 'direct', 후속질문은 'followup')
       await chatService.sessionChatStream(
         sessionIdToUse,
         question,
@@ -755,6 +762,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           setMessages(prev => prev.slice(0, -1))
           setLoadingStatusItems([])
           setIsLoading(false)
+        },
+        // options: question_type, source_question_id 전달
+        {
+          question_type: options?.question_type || 'direct',  // 기본값: 직접 질문
+          source_question_id: options?.source_question_id
         }
       )
     } catch (err) {
@@ -787,7 +799,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     await sendMessage(question)
   }
 
-  const handleSuggestionClick = async (hooking: { question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }) => {
+  const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
     if (hooking.answer) {
       // 사용자 메시지 추가
@@ -850,6 +862,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 answer: hooking.answer,
                 reference_data: hooking.reference_data,
                 summary_keywords: hooking.summary_keywords,
+                hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
               })
               console.log('[후킹 질문] 메시지 저장 완료')
             } catch (err) {
@@ -871,6 +884,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             answer: hooking.answer,
             reference_data: hooking.reference_data,
             summary_keywords: hooking.summary_keywords,
+            hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
           })
         } catch (err) {
           console.error('Failed to save hooking message:', err)
@@ -990,6 +1004,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               question: pqmQuestion.question,
               answer: pqmQuestion.answer,
               reference_data: references,
+              pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)
             })
             console.log('[PQM 질문] 메시지 저장 완료')
           } catch (err) {
@@ -1010,6 +1025,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           question: pqmQuestion.question,
           answer: pqmQuestion.answer,
           reference_data: references,
+          pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)
         })
       } catch (err) {
         console.error('Failed to save PQM message:', err)
@@ -1155,7 +1171,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                         <button
                           onClick={() => {
                             if (!isLoading) {
-                              sendMessage(followUpQuestion)
+                              // 후속질문 클릭 시 question_type: 'followup' 전달
+                              sendMessage(followUpQuestion, { question_type: 'followup' })
                             }
                           }}
                           disabled={isLoading}
