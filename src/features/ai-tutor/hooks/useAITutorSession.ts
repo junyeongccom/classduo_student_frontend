@@ -25,9 +25,14 @@ export function useAITutorSession() {
       const savedSessionId = localStorage.getItem(AI_TUTOR_SESSION_KEY) || undefined
       if (savedSessionId) {
         setCurrentSessionId(savedSessionId)
+      } else {
+        // 세션이 없고 선택된 회차도 없으면 최신 회차 자동 선택 활성화
+        if (selectedLectureIds.length === 0) {
+          setAutoSelectLatest(true)
+        }
       }
     }
-  }, [setCurrentSessionId])
+  }, [setCurrentSessionId, setAutoSelectLatest, selectedLectureIds.length])
 
   // Sync session ID to localStorage
   useEffect(() => {
