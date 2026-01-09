@@ -216,25 +216,27 @@ export function LectureSidebar({
       return
     }
 
-    const hasCurrentSelection =
-      !!selectedCourseId && courses.some(course => course.course_id === selectedCourseId)
+    const currentCourse = selectedCourseId
+      ? courses.find(course => course.course_id === selectedCourseId)
+      : null
 
-    if (hasCurrentSelection) {
+    const matchingCourse =
+      initialLectureIds && initialLectureIds.length > 0
+        ? courses.find(course =>
+            course.lectures.some(lec => initialLectureIds.includes(lec.lecture_id))
+          )
+        : null
+
+    if (matchingCourse && matchingCourse.course_id !== selectedCourseId) {
+      onSelectCourse(matchingCourse.course_id)
       return
     }
 
-    if (initialLectureIds && initialLectureIds.length > 0) {
-      const matchingCourse = courses.find(course =>
-        course.lectures.some(lec => initialLectureIds.includes(lec.lecture_id))
-      )
-      if (matchingCourse) {
-        onSelectCourse(matchingCourse.course_id)
-        return
+    if (!currentCourse) {
+      const fallback = matchingCourse ?? courses[0]
+      if (fallback) {
+        onSelectCourse(fallback.course_id)
       }
-    }
-
-    if (courses.length > 0) {
-      onSelectCourse(courses[0].course_id)
     }
   }, [courses, isLoading, selectedCourseId, initialLectureIds, onSelectCourse])
 
