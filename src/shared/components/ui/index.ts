@@ -4,4 +4,5 @@ export type { ButtonProps } from './Button'
 export { Input } from './Input'
 export type { InputProps } from './Input'
 
+export { LoadingScreen } from './LoadingScreen'
 

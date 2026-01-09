@@ -32,8 +32,8 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             </div>
           </main>
 
-          <aside className="hidden xl:flex flex-none border-l border-gray-200 bg-white transition-[width] duration-300">
-            <div className="h-full overflow-y-auto">
+          <aside className="hidden xl:flex flex-none w-[320px] border-l border-gray-200 bg-white transition-[width] duration-300">
+            <div className="h-full w-full overflow-y-auto">
               {rightbar ?? null}
             </div>
           </aside>
