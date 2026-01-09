@@ -21,14 +21,14 @@ let supabaseClient: SupabaseClient | null = null
 
 /**
  * Supabase 클라이언트 가져오기
- * 현재 사용자의 Bearer Token을 세션으로 설정합니다.
+ * 백엔드 JWT 토큰은 쿼리 시 직접 헤더로 전달됩니다.
  */
 export function getSupabaseClient(): SupabaseClient {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error('Supabase 환경 변수가 설정되지 않았습니다.')
   }
 
-  // 클라이언트가 이미 생성되어 있고 토큰이 변경되지 않았다면 재사용
+  // 클라이언트가 이미 생성되어 있으면 재사용
   if (supabaseClient) {
     return supabaseClient
   }
@@ -40,35 +40,37 @@ export function getSupabaseClient(): SupabaseClient {
       autoRefreshToken: false,
       detectSessionInUrl: false,
     },
+    global: {
+      headers: getSupabaseHeaders(),
+    },
   })
-
-  // 현재 Bearer Token을 Supabase 세션으로 설정
-  updateSupabaseSession()
 
   return supabaseClient
 }
 
 /**
- * 현재 Bearer Token을 Supabase 세션으로 업데이트
- * RLS를 위해 인증 토큰을 설정합니다.
+ * 현재 Bearer Token을 가져옵니다.
+ * Supabase RLS를 위해 쿼리 시 이 토큰을 Authorization 헤더로 전달합니다.
  */
-export function updateSupabaseSession(): void {
-  if (typeof window === 'undefined' || !supabaseClient) {
-    return
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') {
+    return null
   }
+  return localStorage.getItem(TOKEN_KEY)
+}
 
-  const token = localStorage.getItem(TOKEN_KEY)
-  
+/**
+ * Supabase 쿼리에 Authorization 헤더를 추가합니다.
+ * 백엔드에서 발급한 JWT 토큰을 사용하여 RLS를 활성화합니다.
+ */
+export function getSupabaseHeaders(): Record<string, string> {
+  const token = getAuthToken()
   if (token) {
-    // Bearer Token을 Supabase 세션으로 설정
-    // Supabase는 JWT 토큰을 기대하므로, 백엔드에서 발급한 토큰을 그대로 사용
-    supabaseClient.auth.setSession({
-      access_token: token,
-      refresh_token: '', // 필요시 추가
-    } as any).catch((error) => {
-      console.warn('[Supabase] 세션 설정 실패:', error)
-    })
+    return {
+      'Authorization': `Bearer ${token}`,
+    }
   }
+  return {}
 }
 
 /**
