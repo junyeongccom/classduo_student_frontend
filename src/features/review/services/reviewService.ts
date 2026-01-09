@@ -79,11 +79,21 @@ export interface ReviewCarouselPage2_6 {
   question: ReviewQuestion
   answer: ReviewAnswer
   sources: ReviewSource
+  review_answer_id?: string // 복습 완료 API에 필요한 ID (백엔드에서 제공)
 }
 
 export interface ReviewCarouselResponse {
   page_1: ReviewCarouselPage1
   pages_2_6: ReviewCarouselPage2_6[]
+}
+
+export interface CompleteReviewRequest {
+  review_answer_id: string
+}
+
+export interface CompleteReviewResponse {
+  success: boolean
+  is_already_completed: boolean
 }
 
 export const reviewService = {
@@ -102,6 +112,16 @@ export const reviewService = {
   getReviewCarousel: (lectureId: string) =>
     apiRequest<ReviewCarouselResponse>(`/reviews/lectures/${lectureId}/carousel`, {
       method: 'GET',
+      auth: true,
+    }),
+
+  /**
+   * 복습 빈칸 클릭 완료 API 호출
+   */
+  completeReview: (lectureId: string, request: CompleteReviewRequest) =>
+    apiRequest<CompleteReviewResponse>(API_ENDPOINTS.REVIEW.COMPLETE(lectureId), {
+      method: 'POST',
+      body: request,
       auth: true,
     }),
 }

@@ -59,25 +59,8 @@ const TEMP_COURSES: Course[] = [
   }
 ]
 
-import { 
-  GameProgress, 
-  SolvedQuestions, 
-  FlameCount, 
-  ClaimedRewards,
-  loadGameProgress,
-  loadSolvedQuestions,
-  loadFlameCount,
-  loadClaimedRewards,
-  saveGameProgress,
-  isQuestionSolved,
-  incrementFlameCount,
-  claimReward,
-  incrementGameProgress,
-  getCurrentUserId,
-  getGameProgressKey,
-  getFlameCountKey,
-  getClaimedRewardsKey
-} from '@/shared/lib/gameLogic'
+import { useGameProgress } from '../../hooks/useGameProgress'
+import { claimReward as claimRewardAPI } from '../../services/progressService'
 
 
 // 불꽃 날아가는 애니메이션 상태
@@ -98,9 +81,7 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasAutoSelected, setHasAutoSelected] = useState(false) // 자동 선택 완료 플래그
-  const [gameProgress, setGameProgress] = useState<GameProgress>({}) // 게임 진행도
-  const [flameCount, setFlameCount] = useState<FlameCount>({}) // 불꽃 개수
-  const [claimedRewards, setClaimedRewards] = useState<ClaimedRewards>({}) // 보상 수령 상태
+  const { gameProgress, claimedRewards, refreshStatus } = useGameProgress() // Supabase 데이터 사용
   const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([]) // 날아가는 불꽃들
   const [flameHighlight, setFlameHighlight] = useState(false) // 불꽃 카운터 강조 효과
   
@@ -108,45 +89,8 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
   const flameCounterRef = useRef<HTMLDivElement>(null) // 불꽃 카운터 위치 참조
   const treasureRefs = useRef<{ [lectureId: string]: HTMLImageElement | null }>({}) // 보물상자 위치 참조
   
-  // 게임 진행도, 불꽃 개수, 보상 수령 상태 로드
-  useEffect(() => {
-    setGameProgress(loadGameProgress())
-    setFlameCount(loadFlameCount())
-    setClaimedRewards(loadClaimedRewards())
-    
-    // storage 이벤트 리스너 (다른 탭에서 변경 시 동기화)
-    const handleStorage = (e: StorageEvent) => {
-      const userId = getCurrentUserId()
-      const progressKey = getGameProgressKey(userId)
-      const flameKey = getFlameCountKey(userId)
-      const claimedKey = getClaimedRewardsKey(userId)
-      if (e.key === progressKey || e.key?.startsWith('classduo_game_progress')) {
-        setGameProgress(loadGameProgress())
-      }
-      if (e.key === flameKey || e.key?.startsWith('classduo_flame_count')) {
-        setFlameCount(loadFlameCount())
-      }
-      if (e.key === claimedKey || e.key?.startsWith('classduo_claimed_rewards')) {
-        setClaimedRewards(loadClaimedRewards())
-      }
-    }
-    window.addEventListener('storage', handleStorage)
-    
-    // 주기적으로 진행도 확인 (같은 탭에서 GameOverlay가 업데이트할 때)
-    const interval = setInterval(() => {
-      setGameProgress(loadGameProgress())
-      setFlameCount(loadFlameCount())
-      setClaimedRewards(loadClaimedRewards())
-    }, 1000)
-    
-    return () => {
-      window.removeEventListener('storage', handleStorage)
-      clearInterval(interval)
-    }
-  }, [])
-  
   // 보물상자 클릭 핸들러 (보상 수령)
-  const handleTreasureClick = (lectureId: string, courseId: string, e: React.MouseEvent<HTMLImageElement>) => {
+  const handleTreasureClick = async (lectureId: string, courseId: string, e: React.MouseEvent<HTMLImageElement>) => {
     e.stopPropagation() // 부모 버튼 클릭 방지
     
     const progress = gameProgress[lectureId] || 0
@@ -164,40 +108,46 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
     const treasureRect = treasureEl.getBoundingClientRect()
     const counterRect = counterEl.getBoundingClientRect()
     
-    // ⚠️ 데이터 변경을 먼저 즉시 수행 (창을 닫아도 데이터 유실 방지)
-    // 보상 수령 상태 저장
-    claimReward(lectureId)
-    setClaimedRewards(prev => ({ ...prev, [lectureId]: true }))
-    
-    // 불꽃 개수 즉시 증가 (localStorage에 저장)
-    incrementFlameCount(courseId)
-    
-    // 불꽃 애니메이션 시작 (시각적 효과만)
-    const flameId = `flame-${lectureId}-${Date.now()}`
-    const newFlame: FlyingFlame = {
-      id: flameId,
-      startX: treasureRect.left + treasureRect.width / 2,
-      startY: treasureRect.top + treasureRect.height / 2,
-      endX: counterRect.left + counterRect.width / 2,
-      endY: counterRect.top + counterRect.height / 2,
-      lectureId,
-      courseId,
+    // API 호출
+    try {
+      const result = await claimRewardAPI(lectureId)
+      
+      if (result.error) {
+        console.error('[LectureSidebar] 보상 클레임 실패:', result.error)
+        // 에러 발생 시 사용자에게 알림 (선택사항)
+        return
+      }
+      
+      // 성공 시 Realtime 이벤트로 자동 업데이트됨
+      // 하지만 즉각적인 UI 반응을 위해 optimistic update
+      refreshStatus()
+      
+      // 불꽃 애니메이션 시작 (시각적 효과만)
+      const flameId = `flame-${lectureId}-${Date.now()}`
+      const newFlame: FlyingFlame = {
+        id: flameId,
+        startX: treasureRect.left + treasureRect.width / 2,
+        startY: treasureRect.top + treasureRect.height / 2,
+        endX: counterRect.left + counterRect.width / 2,
+        endY: counterRect.top + counterRect.height / 2,
+        lectureId,
+        courseId,
+      }
+      
+      setFlyingFlames(prev => [...prev, newFlame])
+      
+      // 애니메이션 완료 후 UI 업데이트 (800ms 후)
+      setTimeout(() => {
+        // 불꽃 카운터 강조 효과
+        setFlameHighlight(true)
+        setTimeout(() => setFlameHighlight(false), 600)
+        
+        // 날아가는 불꽃 제거
+        setFlyingFlames(prev => prev.filter(f => f.id !== flameId))
+      }, 800)
+    } catch (error) {
+      console.error('[LectureSidebar] 보상 클레임 예외:', error)
     }
-    
-    setFlyingFlames(prev => [...prev, newFlame])
-    
-    // 애니메이션 완료 후 UI 업데이트 (800ms 후)
-    setTimeout(() => {
-      // UI에 불꽃 개수 반영
-      setFlameCount(loadFlameCount())
-      
-      // 불꽃 카운터 강조 효과
-      setFlameHighlight(true)
-      setTimeout(() => setFlameHighlight(false), 600)
-      
-      // 날아가는 불꽃 제거
-      setFlyingFlames(prev => prev.filter(f => f.id !== flameId))
-    }, 800)
   }
 
   // 선택된 강의 객체
@@ -438,7 +388,7 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
             <span className={`truncate ${selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
               {selectedCourse?.title || '강의를 선택하세요'}
             </span>
-            {/* 불꽃 개수 표시 */}
+            {/* 불꽃 개수 표시 (더 이상 사용하지 않음, 하위 호환성 유지) */}
             {selectedCourse && (
               <div 
                 ref={flameCounterRef}
@@ -457,7 +407,7 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                 <span className={`text-xs font-medium transition-all duration-300 ${
                   flameHighlight ? 'text-amber-500 scale-110' : 'text-amber-600'
                 }`}>
-                  {flameCount[selectedCourse.course_id] || 0}
+                  0
                 </span>
               </div>
             )}

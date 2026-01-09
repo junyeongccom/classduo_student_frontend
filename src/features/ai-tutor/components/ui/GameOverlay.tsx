@@ -5,12 +5,12 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { X, RotateCcw, LogOut } from 'lucide-react'
-import { incrementGameProgress, isQuestionSolved } from '@/shared/lib/gameLogic'
+import { getOXQuizQuestions, submitOXQuiz, type OXQuizQuestion } from '../../services/oxQuizService'
 
 // 게임 페이즈 상태
 type GamePhase = 'idle' | 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'stumbling' | 'returning_to_center' | 'cleared'
 
-// 퀴즈 질문 데이터 타입
+// 퀴즈 질문 데이터 타입 (하위 호환성 유지)
 interface QuizQuestion {
   question: string
   correctAnswer: 'O' | 'X'
@@ -397,8 +397,56 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const frameSequence = [1, 2, 3, 2, 1, 2, 3, 2] // 1->2->3->2->1->2->3->2 반복
   const currentFrame = frameSequence[frameIndex]
   
-  // 회차별 퀴즈 질문 가져오기 (lectureNo, courseName 기반)
-  const quizQuestions = useMemo(() => getQuizQuestionsForRound(lectureNo, courseName), [lectureNo, courseName])
+  // OX 퀴즈 질문 조회 상태
+  const [oxQuizQuestions, setOxQuizQuestions] = useState<OXQuizQuestion[]>([])
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false)
+  const [quizError, setQuizError] = useState<Error | null>(null)
+
+  // OX 퀴즈 질문 조회 (lectureId 기준)
+  useEffect(() => {
+    if (!isOpen || !lectureId) return
+
+    const loadQuizQuestions = async () => {
+      setIsLoadingQuiz(true)
+      setQuizError(null)
+      
+      const result = await getOXQuizQuestions(lectureId)
+      
+      if (result.error) {
+        setQuizError(result.error)
+        setIsLoadingQuiz(false)
+        return
+      }
+
+      if (result.data) {
+        // OXQuizQuestion을 QuizQuestion 형식으로 변환
+        const converted: QuizQuestion[] = result.data.map((q) => ({
+          question: q.question_text,
+          correctAnswer: q.correct_answer ? 'O' : 'X',
+          explanation: '', // 백엔드에서 제공하지 않으면 빈 문자열
+        }))
+        setOxQuizQuestions(result.data)
+        setIsLoadingQuiz(false)
+      }
+    }
+
+    loadQuizQuestions()
+  }, [isOpen, lectureId])
+
+  // 회차별 퀴즈 질문 가져오기 (하위 호환성: oxQuizQuestions가 없으면 기존 로직 사용)
+  const quizQuestions = useMemo(() => {
+    if (oxQuizQuestions.length > 0) {
+      // OX 퀴즈 질문을 QuizQuestion 형식으로 변환
+      return oxQuizQuestions.map((q) => ({
+        question: q.question_text,
+        correctAnswer: q.correct_answer ? 'O' : 'X',
+        explanation: '', // 백엔드에서 제공하지 않으면 빈 문자열
+      }))
+    }
+    // 폴백: 기존 하드코딩된 질문 사용 (OX 퀴즈가 없는 경우)
+    return getQuizQuestionsForRound(lectureNo, courseName)
+  }, [oxQuizQuestions, lectureNo, courseName])
+  
   // ref로도 관리 (클로저 문제 해결)
   const quizQuestionsRef = useRef(quizQuestions)
   quizQuestionsRef.current = quizQuestions
@@ -637,6 +685,12 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
               setGamePhase('quiz')
               setCurrentQuestion(questionData.question)
               setActiveDoorId(pauseDoorId)
+            } else if (isLoadingQuiz) {
+              // 퀴즈 로딩 중이면 잠시 대기
+              console.warn('[GameOverlay] 퀴즈 질문 로딩 중...')
+            } else if (quizError) {
+              // 퀴즈 로드 실패 시 기존 하드코딩된 질문 사용
+              console.warn('[GameOverlay] OX 퀴즈 로드 실패, 기존 질문 사용:', quizError)
             }
           }, 0)
         }
@@ -781,29 +835,35 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 // 정상 완료 → 해설 표시 및 5번 문제 완료 체크 (ref 사용으로 최신 값 보장)
                 const currentIdx = currentQuestionIndexRef.current
                 const questionData = quizQuestionsRef.current[currentIdx]
+                
+                // 질문 인덱스 증가
+                const nextQuestionIndex = currentIdx + 1
+                setCurrentQuestionIndex(nextQuestionIndex)
+                
                 if (questionData) {
                   setExplanationText(questionData.explanation)
                   setShowExplanation(true)
-                  // 3.5초 후 해설 숨김
+                  // 3.5초 후 해설 숨김 및 게임 페이즈 처리
                   if (explanationTimerRef.current) {
                     clearTimeout(explanationTimerRef.current)
                   }
                   explanationTimerRef.current = setTimeout(() => {
                     setShowExplanation(false)
                     setExplanationText(null)
+                    // 5번째 문제(인덱스 4)를 풀었으면 cleared (다음 인덱스가 5가 됨)
+                    // 해설이 끝난 후에 CLEAR 표시
+                    if (nextQuestionIndex >= 5) {
+                      setGamePhase('cleared')
+                    }
                   }, 3500)
                 }
                 
-                // 질문 인덱스 증가
-                const nextQuestionIndex = currentIdx + 1
-                setCurrentQuestionIndex(nextQuestionIndex)
-                
-                // 5번째 문제(인덱스 4)를 풀었으면 cleared (다음 인덱스가 5가 됨)
-                if (nextQuestionIndex >= 5) {
-                  setGamePhase('cleared')
-                } else {
+                // 5번째 문제가 아닌 경우는 즉시 playing 상태로 전환
+                if (nextQuestionIndex < 5) {
                   setGamePhase('playing')
                 }
+                // 5번째 문제인 경우는 해설 타이머에서 cleared로 전환하므로 여기서는 상태 변경하지 않음
+                
                 setSelectedAnswer(null)
                 setActiveDoorId(null)
                 setHasStumbled(false)
@@ -849,20 +909,36 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     // 현재 문제 인덱스
     const currentIdx = currentQuestionIndexRef.current
     
-    // 진행도 증가 (같은 문제는 중복 증가 안됨, 회차당 최대 5번)
-    if (lectureId) {
-      // isQuestionSolved는 incrementGameProgress 내부에서 체크하므로
-      // 여기서는 그냥 호출 (중복 방지는 LectureSidebar에서 처리)
-      incrementGameProgress(lectureId, courseId, currentIdx)
-      setQuizAnswerCount(prev => prev + 1)
-    }
-    
-    // 선택하면 해당 문쪽으로 걸어가기 시작
+    // 게임은 즉시 진행 (블로킹 없음)
     setIsPaused(false)
     setCurrentQuestion(null)
     setSelectedAnswer(answer)
     setGamePhase('walking_to_door')
     // activeDoorId는 유지 (문 통과 후 제거)
+    
+    // OX 퀴즈 제출 API 호출은 백그라운드에서 조용히 처리 (fire-and-forget)
+    if (lectureId && oxQuizQuestions.length > 0 && oxQuizQuestions[currentIdx]) {
+      const question = oxQuizQuestions[currentIdx]
+      const submittedAnswer = answer === 'O'
+      
+      // await 없이 백그라운드에서 실행
+      submitOXQuiz(lectureId, {
+        ox_quiz_question_id: question.id, // id를 ox_quiz_question_id로 매핑
+        submitted_answer: submittedAnswer,
+      })
+        .then((result) => {
+          if (result.error) {
+            console.error('[GameOverlay] OX 퀴즈 제출 실패:', result.error)
+          } else if (result.data && !result.data.is_already_completed) {
+            // 성공 시 카운트 증가 (이미 완료된 경우는 제외)
+            setQuizAnswerCount(prev => prev + 1)
+          }
+        })
+        .catch((error) => {
+          console.error('[GameOverlay] OX 퀴즈 제출 예외:', error)
+          // 에러는 조용히 로그만 남김
+        })
+    }
   }
 
   useEffect(() => {
