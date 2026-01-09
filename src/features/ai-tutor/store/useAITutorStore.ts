@@ -32,6 +32,7 @@ interface AITutorState {
   
   // Lecture Selection
   selectedLectureIds: string[]
+  selectedCourseId: string | null
   autoSelectLatest: boolean
   
   // Chat & UI
@@ -54,6 +55,7 @@ interface AITutorActions {
   
   // Lecture Selection Actions
   setSelectedLectureIds: (lectureIds: string[]) => void
+  setSelectedCourseId: (courseId: string | null) => void
   setAutoSelectLatest: (autoSelect: boolean) => void
   
   // Chat & UI Actions
@@ -86,6 +88,7 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   currentSessionId: undefined,
   isSessionLocked: false,
   selectedLectureIds: [],
+  selectedCourseId: null,
   autoSelectLatest: false,
   activeTab: 'answer',
   isNotesPanelOpen: false,
@@ -108,6 +111,7 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   setIsSessionLocked: (isLocked) => set({ isSessionLocked: isLocked }),
   
   setSelectedLectureIds: (lectureIds) => set({ selectedLectureIds: lectureIds }),
+  setSelectedCourseId: (courseId) => set({ selectedCourseId: courseId }),
   setAutoSelectLatest: (autoSelect) => set({ autoSelectLatest: autoSelect }),
   
   setActiveTab: (tab) => set({ activeTab: tab }),
