@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatSession, SearchResult } from '@/features/ai-tutor/types'
+import { AITutorLoading } from '@/features/ai-tutor'
 
 interface ChatSidebarProps {
   isOpen: boolean
@@ -201,7 +202,7 @@ export default function ChatSidebar({
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+              <AITutorLoading message="채팅 기록 불러오는 중..." size="compact" />
             </div>
           ) : activeTab === 'list' ? (
             // 세션 목록

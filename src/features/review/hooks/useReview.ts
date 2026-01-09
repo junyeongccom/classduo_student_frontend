@@ -1,6 +1,8 @@
 /**
  * 복습 콘텐츠 관련 훅
  */
+'use client'
+
 import { useState, useEffect } from 'react'
 import { reviewService, LectureListResponse, ReviewCarouselResponse } from '../services/reviewService'
 

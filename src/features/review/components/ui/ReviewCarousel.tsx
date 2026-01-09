@@ -6,9 +6,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react'
 import { ReviewCarouselResponse } from '@/features/review/services/reviewService'
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
+import { ReviewLoading } from '@/features/review'
 
 interface ReviewCarouselProps {
   data: ReviewCarouselResponse | null
@@ -26,11 +27,7 @@ export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarou
   }, [data])
 
   if (isLoading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
-    )
+    return <ReviewLoading message="복습 콘텐츠 준비 중..." size="inline" />
   }
 
   if (error) {
@@ -127,15 +124,15 @@ export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarou
 function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselResponse['page_1']; currentPage: number; totalPages: number }) {
   return (
     <div className="h-full flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden relative" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-        {/* 페이지 번호 표시 - 우측 위 */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl relative" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+        {/* 페이지 번호 표시 - 우측 위 (overflow-hidden 밖에 위치) */}
+        <div className="absolute -top-2 -right-2 z-20">
+          <div className="bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg">
             {currentPage}/{totalPages}
           </div>
         </div>
         {/* 그리드 레이아웃: 좌측 텍스트, 우측 썸네일 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full overflow-hidden rounded-2xl">
           {/* 좌측: 텍스트 콘텐츠 */}
           <div className="p-8 lg:p-10 flex flex-col justify-between overflow-y-auto">
             {/* 수업명 */}
@@ -509,14 +506,14 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
 
   return (
     <div className="h-full flex items-center justify-center p-4 overflow-y-auto">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden my-auto relative" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-        {/* 페이지 번호 표시 - 우측 위 */}
-        <div className="absolute top-4 right-4 z-10">
-          <div className="bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl my-auto relative" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
+        {/* 페이지 번호 표시 - 우측 위 (overflow-hidden 밖에 위치) */}
+        <div className="absolute -top-2 -right-2 z-20">
+          <div className="bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg">
             {currentPage}/{totalPages}
           </div>
         </div>
-        <div className="p-6 lg:p-8">
+        <div className="p-6 lg:p-8 overflow-hidden rounded-2xl">
           {/* 헤더 */}
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">

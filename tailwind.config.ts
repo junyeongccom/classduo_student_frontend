@@ -117,6 +117,32 @@ const config: Config = {
             backgroundPosition: '200% 0',
           },
         },
+        'bounce-slow': {
+          '0%, 100%': {
+            transform: 'translateY(-5%)',
+            animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)',
+          },
+          '50%': {
+            transform: 'translateY(0)',
+            animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)',
+          },
+        },
+        'float': {
+          '0%, 100%': {
+            transform: 'translateY(0px)',
+          },
+          '50%': {
+            transform: 'translateY(-10px)',
+          },
+        },
+        'rotate-slow': {
+          '0%': {
+            transform: 'rotate(0deg)',
+          },
+          '100%': {
+            transform: 'rotate(360deg)',
+          },
+        },
         'blank-break': {
           '0%': {
             transform: 'rotate(0deg) scale(1) translateY(0)',
@@ -160,6 +186,9 @@ const config: Config = {
         'blank-shimmer': 'blank-shimmer 2s linear infinite',
         'shimmer': 'shimmer 2s linear infinite',
         'blank-break': 'blank-break 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards',
+        'bounce-slow': 'bounce-slow 2s ease-in-out infinite',
+        'float': 'float 3s ease-in-out infinite',
+        'rotate-slow': 'rotate-slow 3s linear infinite',
       },
     },
   },
