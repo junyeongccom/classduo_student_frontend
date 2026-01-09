@@ -60,7 +60,7 @@ const TEMP_COURSES: Course[] = [
 ]
 
 import { useGameProgress } from '../../hooks/useGameProgress'
-import { claimReward as claimRewardAPI } from '../../services/progressService'
+import { claimReward as claimRewardAPI } from '@/shared/services/progressService'
 
 
 // 불꽃 날아가는 애니메이션 상태
