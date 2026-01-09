@@ -8,6 +8,7 @@ import {
   type ProgressEvent,
   type RewardEvent,
 } from '../services/realtimeService'
+import { useAuthStore } from '@/features/auth/store/authStore'
 
 // 기존 타입 유지 (하위 호환성)
 export interface GameProgress {
@@ -27,6 +28,9 @@ export function useGameProgress() {
   const [claimedRewards, setClaimedRewards] = useState<ClaimedRewards>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  
+  // 현재 사용자 정보 가져오기
+  const user = useAuthStore(state => state.user)
   
   // 안전장치: 30초마다 재조회
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -74,6 +78,14 @@ export function useGameProgress() {
 
     // Realtime 구독: user_progress_events INSERT 이벤트
     const unsubscribeProgress = subscribeProgressEvents((event: ProgressEvent) => {
+      // 현재 사용자 ID 가져오기
+      const currentUserId = user?.user_id
+      
+      // user_id 필터링: 자신과 관련된 이벤트만 처리
+      if (!currentUserId || event.user_id !== currentUserId) {
+        return // 다른 사용자의 이벤트는 무시
+      }
+      
       // 해당 lecture_id의 progress_count를 +1
       setGameProgress((prev) => {
         const current = prev[event.lecture_id] || 0
@@ -86,6 +98,14 @@ export function useGameProgress() {
 
     // Realtime 구독: user_lecture_rewards INSERT 이벤트
     const unsubscribeReward = subscribeRewardEvents((event: RewardEvent) => {
+      // 현재 사용자 ID 가져오기
+      const currentUserId = user?.user_id
+      
+      // user_id 필터링: 자신과 관련된 이벤트만 처리
+      if (!currentUserId || event.user_id !== currentUserId) {
+        return // 다른 사용자의 이벤트는 무시
+      }
+      
       // 해당 lecture_id의 is_claimed=true, is_claimable=false
       setClaimedRewards((prev) => ({
         ...prev,
@@ -121,7 +141,7 @@ export function useGameProgress() {
       window.removeEventListener('focus', handleFocus)
       window.removeEventListener('blur', handleBlur)
     }
-  }, [refreshData])
+  }, [refreshData, user])
 
   // 수동 재조회 함수 (외부에서 호출 가능)
   const refreshStatus = useCallback(() => {
