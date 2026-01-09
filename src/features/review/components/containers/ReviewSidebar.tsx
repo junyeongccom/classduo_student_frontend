@@ -36,6 +36,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([]) // 날아가는 불꽃들
   const [flameHighlight, setFlameHighlight] = useState(false) // 불꽃 카운터 강조 효과
+  const lectureButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   
   // refs
   const flameCounterRef = useRef<HTMLDivElement>(null) // 불꽃 카운터 위치 참조
@@ -117,6 +118,53 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   }
 
   const selectedCourse = courses.find(c => c.course_id === selectedCourseId)
+
+  useEffect(() => {
+    lectureButtonRefs.current = {}
+  }, [selectedCourseId])
+
+  useEffect(() => {
+    if (!selectedCourseId || isLoadingLectures || !lectureList?.lectures?.length) {
+      return
+    }
+
+    const availableLectures = lectureList.lectures.filter(
+      (lecture) => lecture.essence_7words && lecture.essence_7words !== '분석 중'
+    )
+
+    if (availableLectures.length === 0) {
+      if (selectedLectureId) {
+        onSelectLectureId(null)
+      }
+      return
+    }
+
+    const selectedLectureStillValid = selectedLectureId
+      ? availableLectures.some((lecture) => lecture.lecture_id === selectedLectureId)
+      : false
+
+    if (selectedLectureStillValid) {
+      return
+    }
+
+    const latestLecture = [...availableLectures].sort((a, b) => {
+      const dateA = new Date(a.lecture_date).getTime()
+      const dateB = new Date(b.lecture_date).getTime()
+      return dateB - dateA
+    })[0]
+
+    if (latestLecture) {
+      onSelectLectureId(latestLecture.lecture_id)
+    }
+  }, [selectedCourseId, lectureList, isLoadingLectures, selectedLectureId, onSelectLectureId])
+
+  useEffect(() => {
+    if (!selectedLectureId) return
+    const target = lectureButtonRefs.current[selectedLectureId]
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+    }
+  }, [selectedLectureId])
 
   if (isLoadingCourses) {
     return (
@@ -225,6 +273,9 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                 
                 return (
                   <button
+                    ref={(el) => {
+                      lectureButtonRefs.current[lecture.lecture_id] = el
+                    }}
                     key={lecture.lecture_id}
                     onClick={() => handleSelectLecture(lecture.lecture_id, lecture.essence_7words)}
                     disabled={isAnalyzing}

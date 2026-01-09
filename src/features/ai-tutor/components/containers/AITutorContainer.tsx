@@ -330,6 +330,7 @@ export function AITutorContainer() {
             <LectureSidebar
               selectedLectureIds={selectedLectureIds}
               onSelectLectureIds={handleSelectLectureIds}
+              initialLectureIds={selectedLectureIds}
               selectedCourseId={selectedCourseId}
               onSelectCourse={handleSelectCourse}
               isLocked={isSessionLocked}
