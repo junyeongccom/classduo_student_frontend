@@ -6,7 +6,7 @@ import { useAITutorStore } from '../../store/useAITutorStore'
 import { useAITutorSession } from '../../hooks/useAITutorSession'
 import { useGameController } from '../../hooks/useGameController'
 import { ChatInterface } from './ChatInterface'
-import { LectureSidebar } from '../ui/LectureSidebar'
+import { LectureSidebarContainer } from './LectureSidebarContainer'
 import ChatSidebar from '../ui/ChatSidebar'
 import { ReferencePanel } from '../ui/ReferencePanel'
 import { GameOverlay } from '../ui/GameOverlay'
@@ -327,7 +327,7 @@ export function AITutorContainer() {
               shouldHideSidebar ? 'opacity-0 pointer-events-none' : 'opacity-100'
             }`}
           >
-            <LectureSidebar
+            <LectureSidebarContainer
               selectedLectureIds={selectedLectureIds}
               onSelectLectureIds={handleSelectLectureIds}
               initialLectureIds={selectedLectureIds}

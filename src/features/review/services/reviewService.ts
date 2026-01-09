@@ -2,6 +2,7 @@
  * 복습 콘텐츠 API
  */
 import { apiRequest } from '@/shared/lib/api'
+import { API_ENDPOINTS } from '@/shared/constants/api'
 
 // API 응답 타입
 export interface LectureListItem {
