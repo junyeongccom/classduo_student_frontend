@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { getSupabaseClient, updateSupabaseSession } from '@/shared/lib/supabase'
+import { getSupabaseClient, resetSupabaseClient } from '@/shared/lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface ProgressEvent {
@@ -51,37 +51,10 @@ class RealtimeSubscriptionManager {
       }
     }
 
-    // 새 구독 시작
-    try {
-      updateSupabaseSession()
-      const supabase = getSupabaseClient()
-
-      this.progressChannel = supabase
-        .channel('user_progress_events')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'user_progress_events',
-            filter: 'user_id=eq.auth.uid()',
-          },
-          (payload) => {
-            const event = payload.new as ProgressEvent
-            // 모든 핸들러에 이벤트 전달
-            this.progressHandlers.forEach((h) => h(event))
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('[realtimeService] user_progress_events 구독 성공')
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('[realtimeService] user_progress_events 구독 실패')
-          }
-        })
-    } catch (error) {
+    // 새 구독 시작 (비동기로 처리하되 반환은 동기적으로)
+    this.initializeProgressSubscription().catch((error) => {
       console.error('[realtimeService] user_progress_events 구독 초기화 실패:', error)
-    }
+    })
 
     return () => {
       this.progressHandlers.delete(handler)
@@ -89,6 +62,39 @@ class RealtimeSubscriptionManager {
         this.unsubscribeProgressEvents()
       }
     }
+  }
+
+  /**
+   * user_progress_events 구독 초기화 (내부 비동기 메서드)
+   */
+  private async initializeProgressSubscription(): Promise<void> {
+    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성
+    resetSupabaseClient()
+    const supabase = getSupabaseClient()
+
+    this.progressChannel = supabase
+      .channel('user_progress_events')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_progress_events',
+          filter: 'user_id=eq.auth.uid()',
+        },
+        (payload) => {
+          const event = payload.new as ProgressEvent
+          // 모든 핸들러에 이벤트 전달
+          this.progressHandlers.forEach((h) => h(event))
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[realtimeService] user_progress_events 구독 성공')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[realtimeService] user_progress_events 구독 실패')
+        }
+      })
   }
 
   /**
@@ -107,37 +113,10 @@ class RealtimeSubscriptionManager {
       }
     }
 
-    // 새 구독 시작
-    try {
-      updateSupabaseSession()
-      const supabase = getSupabaseClient()
-
-      this.rewardChannel = supabase
-        .channel('user_lecture_rewards')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'user_lecture_rewards',
-            filter: 'user_id=eq.auth.uid()',
-          },
-          (payload) => {
-            const event = payload.new as RewardEvent
-            // 모든 핸들러에 이벤트 전달
-            this.rewardHandlers.forEach((h) => h(event))
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('[realtimeService] user_lecture_rewards 구독 성공')
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('[realtimeService] user_lecture_rewards 구독 실패')
-          }
-        })
-    } catch (error) {
+    // 새 구독 시작 (비동기로 처리하되 반환은 동기적으로)
+    this.initializeRewardSubscription().catch((error) => {
       console.error('[realtimeService] user_lecture_rewards 구독 초기화 실패:', error)
-    }
+    })
 
     return () => {
       this.rewardHandlers.delete(handler)
@@ -145,6 +124,39 @@ class RealtimeSubscriptionManager {
         this.unsubscribeRewardEvents()
       }
     }
+  }
+
+  /**
+   * user_lecture_rewards 구독 초기화 (내부 비동기 메서드)
+   */
+  private async initializeRewardSubscription(): Promise<void> {
+    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성
+    resetSupabaseClient()
+    const supabase = getSupabaseClient()
+
+    this.rewardChannel = supabase
+      .channel('user_lecture_rewards')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_lecture_rewards',
+          filter: 'user_id=eq.auth.uid()',
+        },
+        (payload) => {
+          const event = payload.new as RewardEvent
+          // 모든 핸들러에 이벤트 전달
+          this.rewardHandlers.forEach((h) => h(event))
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[realtimeService] user_lecture_rewards 구독 성공')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[realtimeService] user_lecture_rewards 구독 실패')
+        }
+      })
   }
 
   /**
