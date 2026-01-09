@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { History } from 'lucide-react'
 import { useAITutorStore } from '../../store/useAITutorStore'
 import { useAITutorSession } from '../../hooks/useAITutorSession'
@@ -12,15 +12,22 @@ import { ReferencePanel } from '../ui/ReferencePanel'
 import { GameOverlay } from '../ui/GameOverlay'
 import { TabType } from '@/shared/components/common'
 import {
+  AI_TUTOR_NEW_CHAT_EVENT,
+  AI_TUTOR_NEW_CHAT_FLAG,
+  AI_TUTOR_NEW_CHAT_PARAM,
+} from '@/shared/constants/aiTutor'
+import {
   StudyspaceRightbarSlot,
   StudyspaceTopbarSlot,
 } from '@/shared/components/layouts/studyspace'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 export function AITutorContainer() {
   // Store State
   const {
     currentSessionId,
     selectedLectureIds,
+    selectedCourseId,
     activeTab,
     isChatSidebarOpen,
     isNotesPanelOpen,
@@ -39,6 +46,8 @@ export function AITutorContainer() {
     setMessages,
     updateReferences,
     setSelectedLectureIds,
+    setSelectedCourseId,
+    setAutoSelectLatest,
     toggleNotesPanel,
     toggleMaterialsPanel
   } = useAITutorStore(state => ({
@@ -47,11 +56,17 @@ export function AITutorContainer() {
     setMessages: state.setMessages,
     updateReferences: state.updateReferences,
     setSelectedLectureIds: state.setSelectedLectureIds,
+    setSelectedCourseId: state.setSelectedCourseId,
+    setAutoSelectLatest: state.setAutoSelectLatest,
     toggleNotesPanel: state.toggleNotesPanel,
     toggleMaterialsPanel: state.toggleMaterialsPanel
   }))
 
   // Hooks
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const pendingNewChatParam = searchParams.get(AI_TUTOR_NEW_CHAT_PARAM)
   const {
     handleSessionCreated,
     handleSelectSession,
@@ -68,6 +83,10 @@ export function AITutorContainer() {
   const handleSelectLectureIds = useCallback((ids: string[]) => {
     setSelectedLectureIds(ids)
   }, [setSelectedLectureIds])
+
+  const handleSelectCourse = useCallback((courseId: string | null) => {
+    setSelectedCourseId(courseId)
+  }, [setSelectedCourseId])
 
   const handleLectureIdsLoaded = useCallback((ids: string[]) => {
     setSelectedLectureIds(ids)
@@ -112,6 +131,36 @@ export function AITutorContainer() {
       }
     }
   }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const triggerNewChat = () => {
+      sessionStorage.removeItem(AI_TUTOR_NEW_CHAT_FLAG)
+      handleNewChat()
+    }
+
+    if (sessionStorage.getItem(AI_TUTOR_NEW_CHAT_FLAG)) {
+      triggerNewChat()
+    }
+
+    window.addEventListener(AI_TUTOR_NEW_CHAT_EVENT, triggerNewChat)
+    return () => {
+      window.removeEventListener(AI_TUTOR_NEW_CHAT_EVENT, triggerNewChat)
+    }
+  }, [handleNewChat])
+
+  useEffect(() => {
+    if (!pendingNewChatParam) {
+      return
+    }
+
+    handleNewChat()
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(AI_TUTOR_NEW_CHAT_FLAG)
+    }
+    router.replace(pathname, { scroll: false })
+  }, [pendingNewChatParam, handleNewChat, router, pathname])
 
   const { recordingCount, materialCount } = useMemo(() => {
     let recording = 0
@@ -281,8 +330,11 @@ export function AITutorContainer() {
             <LectureSidebar
               selectedLectureIds={selectedLectureIds}
               onSelectLectureIds={handleSelectLectureIds}
+              selectedCourseId={selectedCourseId}
+              onSelectCourse={handleSelectCourse}
               isLocked={isSessionLocked}
               autoSelectLatest={autoSelectLatest}
+              onAutoSelectComplete={() => setAutoSelectLatest(false)}
               onGameIconClick={handleGameIconClick}
             />
           </div>

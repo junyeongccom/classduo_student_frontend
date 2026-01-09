@@ -30,9 +30,12 @@ interface Course {
 interface LectureSidebarProps {
   selectedLectureIds: string[]
   onSelectLectureIds: (lectureIds: string[]) => void
+  selectedCourseId: string | null
+  onSelectCourse: (courseId: string | null) => void
   isLocked?: boolean // 세션이 생성되면 잠금 (선택 불가)
   initialLectureIds?: string[] // 초기 회차 IDs (세션 로드 시 사용)
   autoSelectLatest?: boolean // 가장 최신 회차 자동 선택 (새 채팅 시 사용)
+  onAutoSelectComplete?: () => void
   onGameIconClick?: (lectureId: string, courseId: string, lectureNo: number, courseName: string, position: { top: number; left: number; width: number; height: number }) => void // 게임 아이콘 클릭 핸들러
 }
 
@@ -91,9 +94,18 @@ interface FlyingFlame {
   courseId: string
 }
 
-export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocked = false, initialLectureIds, autoSelectLatest = false, onGameIconClick }: LectureSidebarProps) {
+export function LectureSidebar({
+  selectedLectureIds,
+  onSelectLectureIds,
+  selectedCourseId,
+  onSelectCourse,
+  isLocked = false,
+  initialLectureIds,
+  autoSelectLatest = false,
+  onAutoSelectComplete,
+  onGameIconClick,
+}: LectureSidebarProps) {
   const [courses, setCourses] = useState<Course[]>([])
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -103,7 +115,8 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
   const [claimedRewards, setClaimedRewards] = useState<ClaimedRewards>({}) // 보상 수령 상태
   const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([]) // 날아가는 불꽃들
   const [flameHighlight, setFlameHighlight] = useState(false) // 불꽃 카운터 강조 효과
-  
+  const lectureButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+
   // refs
   const flameCounterRef = useRef<HTMLDivElement>(null) // 불꽃 카운터 위치 참조
   const treasureRefs = useRef<{ [lectureId: string]: HTMLImageElement | null }>({}) // 보물상자 위치 참조
@@ -206,36 +219,20 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
   // 강의 목록 가져오기
   useEffect(() => {
     const fetchCourses = async () => {
-      // 초기 로드 시에만 로딩 상태 표시 (깜박임 방지)
       if (courses.length === 0) {
         setIsLoading(true)
       }
       setError(null)
       
       try {
-        // 강의 목록 + 회차 조회 - 학생용 (모든 활성 강의 + 회차 포함)
-        // 응답: { courses: [{ course_id, title, lectures: [...] }, ...], total: number }
         const coursesResult = await apiRequest<{ courses: any[], total: number }>('/courses/all', { auth: true })
-        
-        console.log('[LectureSidebar] API Response:', coursesResult)
-        
-        // API 응답에서 courses 배열 추출
         const coursesList = coursesResult.data?.courses
         
-        console.log('[LectureSidebar] Courses List:', coursesList)
-        
-        // API 응답이 없거나 배열이 아닌 경우 임시 데이터 사용
         if (coursesResult.error || !coursesList || !Array.isArray(coursesList) || coursesList.length === 0) {
-          console.log('[LectureSidebar] Using temp data. Error:', coursesResult.error)
           setCourses(TEMP_COURSES)
-          // initialLectureIds가 없을 때만 첫 번째 강의 선택
-          if (!selectedCourseId) {
-            setSelectedCourseId(TEMP_COURSES[0].course_id)
-          }
           return
         }
         
-        // API 응답을 프론트엔드 형식으로 변환 (회차 정보 이미 포함됨)
         const coursesWithLectures: Course[] = coursesList.map((course: any) => ({
           course_id: course.course_id,
           title: course.title,
@@ -246,123 +243,133 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
             lecture_no: lec.lecture_no,
             lecture_date: lec.lecture_date,
             status: lec.status,
-            is_available: lec.is_available ?? false, // 기본값 false
+            is_available: lec.is_available ?? false,
           }))
         }))
         
         setCourses(coursesWithLectures)
-        
-        // 가장 최신 회차 자동 선택 (새 채팅 시)
-        if (autoSelectLatest && coursesWithLectures.length > 0 && !isLocked) {
-          // 모든 강의의 모든 회차 중에서 is_available이 true인 것만 필터링
-          const allAvailableLectures: (Lecture & { course_id: string })[] = []
-          coursesWithLectures.forEach(course => {
-            course.lectures
-              .filter(lec => lec.is_available)
-              .forEach(lec => {
-                allAvailableLectures.push({ ...lec, course_id: course.course_id })
-              })
-          })
-          
-          if (allAvailableLectures.length > 0) {
-            // lecture_date 기준으로 정렬하여 가장 최신 회차 찾기
-            const sortedLectures = [...allAvailableLectures].sort((a, b) => {
-              const dateA = new Date(a.lecture_date).getTime()
-              const dateB = new Date(b.lecture_date).getTime()
-              return dateB - dateA // 내림차순 (최신이 먼저)
-            })
-            
-            const latestLecture = sortedLectures[0]
-            setSelectedCourseId(latestLecture.course_id)
-            onSelectLectureIds([latestLecture.lecture_id])
-          } else if (!selectedCourseId) {
-            // 사용 가능한 회차가 없으면 첫 번째 강의 선택
-            setSelectedCourseId(coursesWithLectures[0].course_id)
-          }
-        }
-        // 초기 lecture_ids가 있으면 해당 회차가 속한 강의를 찾아서 선택
-        else if (initialLectureIds && initialLectureIds.length > 0 && coursesWithLectures.length > 0) {
-          // initialLectureIds 중 하나라도 포함하는 강의 찾기
-          const matchingCourse = coursesWithLectures.find(course => 
-            course.lectures.some(lec => initialLectureIds.includes(lec.lecture_id))
-          )
-          if (matchingCourse) {
-            setSelectedCourseId(matchingCourse.course_id)
-          } else if (!selectedCourseId) {
-            // 매칭되는 강의가 없고 선택된 강의가 없으면 첫 번째 강의 선택
-            setSelectedCourseId(coursesWithLectures[0].course_id)
-          }
-        } else if (!selectedCourseId && coursesWithLectures.length > 0) {
-          // 선택된 강의가 없으면 첫 번째 강의 자동 선택
-          setSelectedCourseId(coursesWithLectures[0].course_id)
-        }
-        
       } catch (err) {
         console.error('Failed to fetch courses:', err)
         setError('강의 목록을 불러오는데 실패했습니다')
         setCourses(TEMP_COURSES)
-        if (!selectedCourseId) {
-          setSelectedCourseId(TEMP_COURSES[0].course_id)
-        }
       } finally {
         setIsLoading(false)
       }
     }
     
     fetchCourses()
-  }, []) // initialLectureIds 의존성 제거 (깜박임 방지)
+  }, [])
   
-  // initialLectureIds가 변경되면 해당 회차가 속한 강의를 다시 찾아서 선택
+  // 선택된 강의가 없거나 사라진 경우 보정
   useEffect(() => {
-    if (initialLectureIds && initialLectureIds.length > 0 && courses.length > 0 && !isLoading) {
-      const matchingCourse = courses.find(course => 
+    if (courses.length === 0 || isLoading) {
+      return
+    }
+
+    const hasCurrentSelection =
+      !!selectedCourseId && courses.some(course => course.course_id === selectedCourseId)
+
+    if (hasCurrentSelection) {
+      return
+    }
+
+    if (initialLectureIds && initialLectureIds.length > 0) {
+      const matchingCourse = courses.find(course =>
         course.lectures.some(lec => initialLectureIds.includes(lec.lecture_id))
       )
-      if (matchingCourse && matchingCourse.course_id !== selectedCourseId) {
-        setSelectedCourseId(matchingCourse.course_id)
+      if (matchingCourse) {
+        onSelectCourse(matchingCourse.course_id)
+        return
       }
     }
-  }, [initialLectureIds, courses, selectedCourseId, isLoading])
+
+    if (courses.length > 0) {
+      onSelectCourse(courses[0].course_id)
+    }
+  }, [courses, isLoading, selectedCourseId, initialLectureIds, onSelectCourse])
+
+  const getLatestAvailableLecture = (course?: Course | null) => {
+    if (!course) return null
+    const available = course.lectures.filter(lec => lec.is_available)
+    if (available.length === 0) {
+      return null
+    }
+    return available.reduce((latest, lec) => {
+      const latestTime = new Date(latest.lecture_date).getTime()
+      const currentTime = new Date(lec.lecture_date).getTime()
+      return currentTime > latestTime ? lec : latest
+    })
+  }
 
   // autoSelectLatest가 true일 때 가장 최신 회차 선택 (강의 목록이 로드된 후)
   useEffect(() => {
-    if (autoSelectLatest && courses.length > 0 && !isLoading && !isLocked && !hasAutoSelected) {
-      // 모든 강의의 모든 회차 중에서 is_available이 true인 것만 필터링
-      const allAvailableLectures: (Lecture & { course_id: string })[] = []
-      courses.forEach(course => {
-        course.lectures
-          .filter(lec => lec.is_available)
-          .forEach(lec => {
-            allAvailableLectures.push({ ...lec, course_id: course.course_id })
-          })
-      })
-      
-      if (allAvailableLectures.length > 0) {
-        // lecture_date 기준으로 정렬하여 가장 최신 회차 찾기
-        const sortedLectures = [...allAvailableLectures].sort((a, b) => {
-          const dateA = new Date(a.lecture_date).getTime()
-          const dateB = new Date(b.lecture_date).getTime()
-          return dateB - dateA // 내림차순 (최신이 먼저)
-        })
-        
-        const latestLecture = sortedLectures[0]
-        setSelectedCourseId(latestLecture.course_id)
-        onSelectLectureIds([latestLecture.lecture_id])
-        setHasAutoSelected(true) // 자동 선택 완료 표시
+    if (!autoSelectLatest || courses.length === 0 || isLoading || isLocked || hasAutoSelected) {
+      if (!autoSelectLatest) {
+        setHasAutoSelected(false)
       }
+      return
     }
-    
-    // autoSelectLatest가 false가 되면 플래그 초기화
-    if (!autoSelectLatest) {
-      setHasAutoSelected(false)
+
+    let courseToUse =
+      courses.find(course => course.course_id === selectedCourseId) ||
+      courses.find(course => course.lectures.length > 0) ||
+      null
+
+    if (!courseToUse) {
+      return
     }
-  }, [autoSelectLatest, courses, isLoading, isLocked, hasAutoSelected, onSelectLectureIds])
+
+    let latestLecture = getLatestAvailableLecture(courseToUse)
+
+    if (!latestLecture) {
+      const fallbackCourse = courses.find(course => getLatestAvailableLecture(course))
+      if (!fallbackCourse) {
+        return
+      }
+      courseToUse = fallbackCourse
+      if (fallbackCourse.course_id !== selectedCourseId) {
+        onSelectCourse(fallbackCourse.course_id)
+      }
+      latestLecture = getLatestAvailableLecture(fallbackCourse)
+    } else if (!selectedCourseId) {
+      onSelectCourse(courseToUse.course_id)
+    }
+
+    if (!latestLecture) {
+      return
+    }
+
+    onSelectLectureIds([latestLecture.lecture_id])
+    setHasAutoSelected(true)
+    onAutoSelectComplete?.()
+  }, [
+    autoSelectLatest,
+    courses,
+    isLoading,
+    isLocked,
+    hasAutoSelected,
+    selectedCourseId,
+    onSelectCourse,
+    onSelectLectureIds,
+    onAutoSelectComplete,
+  ])
+
+  useEffect(() => {
+    if (selectedLectureIds.length === 0) {
+      return
+    }
+    const targetId = selectedLectureIds[selectedLectureIds.length - 1]
+    const targetRef = lectureButtonRefs.current[targetId]
+    if (targetRef) {
+      targetRef.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+    }
+  }, [selectedLectureIds])
 
   // 강의 선택 시 기존 회차 선택 초기화 - 잠금 상태면 무시
-  const handleSelectCourse = (courseId: string) => {
+  const handleSelectCourse = (courseId: string | null) => {
     if (isLocked) return // 잠금 상태면 변경 불가
     
-    setSelectedCourseId(courseId)
+    onSelectCourse(courseId)
     setIsDropdownOpen(false)
     onSelectLectureIds([]) // 회차 선택 초기화
   }
@@ -526,6 +533,9 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                 
                 return (
                   <button
+                    ref={(el) => {
+                      lectureButtonRefs.current[lecture.lecture_id] = el
+                    }}
                     key={lecture.lecture_id}
                     onClick={() => toggleLecture(lecture.lecture_id)}
                     disabled={isDisabled}
@@ -611,7 +621,10 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
                                   ref={(el) => { treasureRefs.current[lecture.lecture_id] = el }}
                                   src={alreadyClaimed ? "/icon_reward_empty.png" : "/icon_reward.png"}
                                   alt="보상" 
-                                  onClick={(e) => handleTreasureClick(lecture.lecture_id, selectedCourseId!, e)}
+                                  onClick={(e) => {
+                                    if (!selectedCourseId) return
+                                    handleTreasureClick(lecture.lecture_id, selectedCourseId, e)
+                                  }}
                                   className={`h-5 w-5 transition-all ${
                                     alreadyClaimed 
                                       ? '' // 이미 수령한 상태 - 빈 상자
@@ -715,4 +728,5 @@ export function LectureSidebar({ selectedLectureIds, onSelectLectureIds, isLocke
     </div>
   )
 }
+
 

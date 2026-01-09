@@ -2,14 +2,30 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/shared/lib/utils'
 import { SIDEBAR_MENU, PROFILE_MENU } from '@/shared/constants/nav'
+import {
+  AI_TUTOR_NEW_CHAT_EVENT,
+  AI_TUTOR_NEW_CHAT_FLAG,
+  AI_TUTOR_NEW_CHAT_PARAM,
+} from '@/shared/constants/aiTutor'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const triggerAiTutorNewChat = () => {
+    if (typeof window === 'undefined') return
+    sessionStorage.setItem(AI_TUTOR_NEW_CHAT_FLAG, Date.now().toString())
+    window.dispatchEvent(new Event(AI_TUTOR_NEW_CHAT_EVENT))
+  }
+  const navigateToAiTutorNewChat = () => {
+    const timestamp = Date.now()
+    const url = `/studyspace/ai-tutor?${AI_TUTOR_NEW_CHAT_PARAM}=${timestamp}`
+    router.push(url)
+  }
 
   useEffect(() => {
     const width = isCollapsed ? '80px' : '140px'
@@ -56,6 +72,14 @@ export function Sidebar() {
               <Link
                 key={item.id}
                 href={item.href}
+                onClick={(event) => {
+                  if (item.id === 'ai-tutor') {
+                    event.preventDefault()
+                    triggerAiTutorNewChat()
+                    navigateToAiTutorNewChat()
+                    return
+                  }
+                }}
                 className={cn(
                   'flex flex-col items-center gap-1 rounded-lg px-2 py-3 text-xs transition-colors',
                   isActive
