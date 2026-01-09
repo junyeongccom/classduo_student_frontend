@@ -6,10 +6,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { ChevronDown, Loader2, BookOpen, Calendar } from 'lucide-react'
+import { ChevronDown, BookOpen, Calendar } from 'lucide-react'
 import { useLectureList } from '@/features/review/hooks/useReview'
 import { useReviewCourses } from '@/features/review/hooks/useReviewCourses'
 import { useGameStatus } from '@/features/review/hooks/useGameStatus'
+import { ReviewLoading } from '@/features/review'
 
 // 날아가는 불꽃 애니메이션 상태
 interface FlyingFlame {
@@ -168,8 +169,16 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
 
   if (isLoadingCourses) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-white p-4">
-        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+      <div className="flex h-full w-[320px] items-center justify-center bg-white">
+        <ReviewLoading message="강의 목록 불러오는 중..." size="compact" />
+      </div>
+    )
+  }
+
+  if (isLoadingLectures) {
+    return (
+      <div className="flex h-full w-[320px] items-center justify-center bg-white">
+        <ReviewLoading message="수업 목록 불러오는 중..." size="compact" />
       </div>
     )
   }

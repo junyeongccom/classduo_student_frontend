@@ -260,6 +260,32 @@ export function LectureSidebarContainer({
     })
   }, [])
 
+  // 과목 변경 시 최신 회차 자동 선택 (이전 과목 ID 추적하여 실제 변경 시에만 실행)
+  const prevCourseIdRef = useRef<string | null>(null)
+  
+  useEffect(() => {
+    if (!selectedCourseId || courses.length === 0 || isLoading || isLocked) {
+      prevCourseIdRef.current = selectedCourseId
+      return
+    }
+
+    // 과목이 실제로 변경된 경우에만 자동 선택
+    const courseChanged = prevCourseIdRef.current !== selectedCourseId
+    prevCourseIdRef.current = selectedCourseId
+
+    if (!courseChanged) return
+
+    const currentCourse = courses.find(course => course.course_id === selectedCourseId)
+    if (!currentCourse) {
+      return
+    }
+
+    const latestLecture = getLatestAvailableLecture(currentCourse)
+    if (latestLecture) {
+      onSelectLectureIds([latestLecture.lecture_id])
+    }
+  }, [selectedCourseId, courses, isLoading, isLocked, onSelectLectureIds, getLatestAvailableLecture])
+
   // autoSelectLatest가 true일 때 가장 최신 회차 선택
   useEffect(() => {
     if (!autoSelectLatest || courses.length === 0 || isLoading || isLocked || hasAutoSelected) {
