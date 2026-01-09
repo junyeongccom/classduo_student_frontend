@@ -27,6 +27,17 @@ export const API_ENDPOINTS = {
   REVIEW: {
     GET_LECTURE_LIST: (courseId: string) => `/reviews/courses/${courseId}/lectures`,
     GET_CAROUSEL: (lectureId: string) => `/reviews/lectures/${lectureId}/carousel`,
+    COMPLETE: (lectureId: string) => `/api/lectures/${lectureId}/review/complete`,
+  },
+
+  // OX Quiz
+  OX_QUIZ: {
+    SUBMIT: (lectureId: string) => `/api/lectures/${lectureId}/ox/submit`,
+  },
+
+  // Reward
+  REWARD: {
+    CLAIM: (lectureId: string) => `/api/lectures/${lectureId}/reward/claim`,
   },
 
   // Health
