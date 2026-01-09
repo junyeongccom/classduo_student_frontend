@@ -835,29 +835,35 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                 // 정상 완료 → 해설 표시 및 5번 문제 완료 체크 (ref 사용으로 최신 값 보장)
                 const currentIdx = currentQuestionIndexRef.current
                 const questionData = quizQuestionsRef.current[currentIdx]
+                
+                // 질문 인덱스 증가
+                const nextQuestionIndex = currentIdx + 1
+                setCurrentQuestionIndex(nextQuestionIndex)
+                
                 if (questionData) {
                   setExplanationText(questionData.explanation)
                   setShowExplanation(true)
-                  // 3.5초 후 해설 숨김
+                  // 3.5초 후 해설 숨김 및 게임 페이즈 처리
                   if (explanationTimerRef.current) {
                     clearTimeout(explanationTimerRef.current)
                   }
                   explanationTimerRef.current = setTimeout(() => {
                     setShowExplanation(false)
                     setExplanationText(null)
+                    // 5번째 문제(인덱스 4)를 풀었으면 cleared (다음 인덱스가 5가 됨)
+                    // 해설이 끝난 후에 CLEAR 표시
+                    if (nextQuestionIndex >= 5) {
+                      setGamePhase('cleared')
+                    }
                   }, 3500)
                 }
                 
-                // 질문 인덱스 증가
-                const nextQuestionIndex = currentIdx + 1
-                setCurrentQuestionIndex(nextQuestionIndex)
-                
-                // 5번째 문제(인덱스 4)를 풀었으면 cleared (다음 인덱스가 5가 됨)
-                if (nextQuestionIndex >= 5) {
-                  setGamePhase('cleared')
-                } else {
+                // 5번째 문제가 아닌 경우는 즉시 playing 상태로 전환
+                if (nextQuestionIndex < 5) {
                   setGamePhase('playing')
                 }
+                // 5번째 문제인 경우는 해설 타이머에서 cleared로 전환하므로 여기서는 상태 변경하지 않음
+                
                 setSelectedAnswer(null)
                 setActiveDoorId(null)
                 setHasStumbled(false)
