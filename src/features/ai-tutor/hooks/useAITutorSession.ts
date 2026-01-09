@@ -73,16 +73,13 @@ export function useAITutorSession() {
     setMessages([])
     setActiveTab('answer')
     
-    if (selectedLectureIds.length === 0) {
-      setAutoSelectLatest(true)
-    } else {
-      setAutoSelectLatest(false)
-    }
+    setSelectedLectureIds([])
+    setAutoSelectLatest(true)
     
     if (typeof window !== 'undefined') {
       localStorage.removeItem(AI_TUTOR_SESSION_KEY)
     }
-  }, [setCurrentSessionId, setIsSessionLocked, incrementChatKey, setAllReferences, setMessages, setActiveTab, selectedLectureIds.length, setAutoSelectLatest])
+  }, [setCurrentSessionId, setIsSessionLocked, incrementChatKey, setAllReferences, setMessages, setActiveTab, setSelectedLectureIds, setAutoSelectLatest])
 
   return {
     currentSessionId,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { History } from 'lucide-react'
 import { useAITutorStore } from '../../store/useAITutorStore'
 import { useAITutorSession } from '../../hooks/useAITutorSession'
@@ -12,15 +12,22 @@ import { ReferencePanel } from '../ui/ReferencePanel'
 import { GameOverlay } from '../ui/GameOverlay'
 import { TabType } from '@/shared/components/common'
 import {
+  AI_TUTOR_NEW_CHAT_EVENT,
+  AI_TUTOR_NEW_CHAT_FLAG,
+  AI_TUTOR_NEW_CHAT_PARAM,
+} from '@/shared/constants/aiTutor'
+import {
   StudyspaceRightbarSlot,
   StudyspaceTopbarSlot,
 } from '@/shared/components/layouts/studyspace'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 export function AITutorContainer() {
   // Store State
   const {
     currentSessionId,
     selectedLectureIds,
+    selectedCourseId,
     activeTab,
     isChatSidebarOpen,
     isNotesPanelOpen,
@@ -39,6 +46,8 @@ export function AITutorContainer() {
     setMessages,
     updateReferences,
     setSelectedLectureIds,
+    setSelectedCourseId,
+    setAutoSelectLatest,
     toggleNotesPanel,
     toggleMaterialsPanel
   } = useAITutorStore(state => ({
@@ -47,11 +56,17 @@ export function AITutorContainer() {
     setMessages: state.setMessages,
     updateReferences: state.updateReferences,
     setSelectedLectureIds: state.setSelectedLectureIds,
+    setSelectedCourseId: state.setSelectedCourseId,
+    setAutoSelectLatest: state.setAutoSelectLatest,
     toggleNotesPanel: state.toggleNotesPanel,
     toggleMaterialsPanel: state.toggleMaterialsPanel
   }))
 
   // Hooks
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const pendingNewChatParam = searchParams.get(AI_TUTOR_NEW_CHAT_PARAM)
   const {
     handleSessionCreated,
     handleSelectSession,
@@ -68,6 +83,10 @@ export function AITutorContainer() {
   const handleSelectLectureIds = useCallback((ids: string[]) => {
     setSelectedLectureIds(ids)
   }, [setSelectedLectureIds])
+
+  const handleSelectCourse = useCallback((courseId: string | null) => {
+    setSelectedCourseId(courseId)
+  }, [setSelectedCourseId])
 
   const handleLectureIdsLoaded = useCallback((ids: string[]) => {
     setSelectedLectureIds(ids)
@@ -113,18 +132,64 @@ export function AITutorContainer() {
     }
   }
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const triggerNewChat = () => {
+      sessionStorage.removeItem(AI_TUTOR_NEW_CHAT_FLAG)
+      handleNewChat()
+    }
+
+    if (sessionStorage.getItem(AI_TUTOR_NEW_CHAT_FLAG)) {
+      triggerNewChat()
+    }
+
+    window.addEventListener(AI_TUTOR_NEW_CHAT_EVENT, triggerNewChat)
+    return () => {
+      window.removeEventListener(AI_TUTOR_NEW_CHAT_EVENT, triggerNewChat)
+    }
+  }, [handleNewChat])
+
+  useEffect(() => {
+    if (!pendingNewChatParam) {
+      return
+    }
+
+    handleNewChat()
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem(AI_TUTOR_NEW_CHAT_FLAG)
+    }
+    router.replace(pathname, { scroll: false })
+  }, [pendingNewChatParam, handleNewChat, router, pathname])
+
+  const { recordingCount, materialCount } = useMemo(() => {
+    let recording = 0
+    let material = 0
+
+    allReferences.forEach(refs => {
+      refs.forEach(ref => {
+        const hasCitations = Array.isArray(ref.citations) && ref.citations.length > 0
+        if (!hasCitations) {
+          return
+        }
+
+        if (ref.type === 'recording') {
+          recording += 1
+        } else if (ref.type === 'material') {
+          material += 1
+        }
+      })
+    })
+
+    return { recordingCount: recording, materialCount: material }
+  }, [allReferences])
+
   return (
     <>
       <StudyspaceTopbarSlot>
         <div className="flex w-full items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                <span className="text-2xl">🤖</span>
-                AI 튜터
-              </h1>
-            </div>
-            <div className="flex items-center gap-1 border-l border-gray-200 pl-3">
+            <div className="flex items-center gap-1">
               <button
                 onClick={handleNewChat}
                 className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-primary-300 hover:text-primary-700"
@@ -176,13 +241,9 @@ export function AITutorContainer() {
                 }`}
               >
                 <span>수업녹음본</span>
-                {allReferences.size > 0 && (
+                {recordingCount > 0 && (
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
-                    {Array.from(allReferences.values()).reduce(
-                      (acc, curr) =>
-                        acc + curr.filter(r => r.type === 'recording').length,
-                      0
-                    )}
+                    {recordingCount}
                   </span>
                 )}
               </button>
@@ -205,13 +266,9 @@ export function AITutorContainer() {
                 }`}
               >
                 <span>강의자료</span>
-                {allReferences.size > 0 && (
+                {materialCount > 0 && (
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
-                    {Array.from(allReferences.values()).reduce(
-                      (acc, curr) =>
-                        acc + curr.filter(r => r.type === 'material').length,
-                      0
-                    )}
+                    {materialCount}
                   </span>
                 )}
               </button>
@@ -273,8 +330,12 @@ export function AITutorContainer() {
             <LectureSidebar
               selectedLectureIds={selectedLectureIds}
               onSelectLectureIds={handleSelectLectureIds}
+              initialLectureIds={selectedLectureIds}
+              selectedCourseId={selectedCourseId}
+              onSelectCourse={handleSelectCourse}
               isLocked={isSessionLocked}
               autoSelectLatest={autoSelectLatest}
+              onAutoSelectComplete={() => setAutoSelectLatest(false)}
               onGameIconClick={handleGameIconClick}
             />
           </div>
