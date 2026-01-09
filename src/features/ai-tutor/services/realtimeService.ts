@@ -64,6 +64,7 @@ class RealtimeSubscriptionManager {
             event: 'INSERT',
             schema: 'public',
             table: 'user_progress_events',
+            filter: 'user_id=eq.auth.uid()',
           },
           (payload) => {
             const event = payload.new as ProgressEvent
@@ -119,6 +120,7 @@ class RealtimeSubscriptionManager {
             event: 'INSERT',
             schema: 'public',
             table: 'user_lecture_rewards',
+            filter: 'user_id=eq.auth.uid()',
           },
           (payload) => {
             const event = payload.new as RewardEvent
