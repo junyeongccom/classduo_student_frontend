@@ -2,6 +2,7 @@
  * 복습 콘텐츠 API
  */
 import { apiRequest } from '@/shared/lib/api'
+import { API_ENDPOINTS } from '@/shared/constants/api'
 
 // API 응답 타입
 export interface LectureListItem {
@@ -35,6 +36,7 @@ export interface ReviewAnswer {
   key_answer: string
   supplementary_explanation: string
   blanks: ReviewBlank[]
+  review_answer_id?: string | null // 복습 완료 API에 필요한 ID (백엔드에서 제공, 정답이 없으면 null)
 }
 
 export interface ReviewSource {
@@ -79,7 +81,6 @@ export interface ReviewCarouselPage2_6 {
   question: ReviewQuestion
   answer: ReviewAnswer
   sources: ReviewSource
-  review_answer_id?: string // 복습 완료 API에 필요한 ID (백엔드에서 제공)
 }
 
 export interface ReviewCarouselResponse {

@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
-import { ReviewCarouselResponse } from '@/features/review/services/reviewService'
+import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
 
 interface ReviewCarouselProps {
@@ -490,8 +490,8 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
   const toggleAllBlanks = async () => {
     // 빈칸을 열려고 할 때 (아직 안 열린 상태에서) 진행도 증가 시도
     if (!isRevealed && !hasTriedProgress) {
-      // review_answer_id는 data에서 가져옴 (백엔드 API 응답에 포함되어야 함)
-      const reviewAnswerId = data.review_answer_id
+      // review_answer_id는 answer 객체에서 가져옴 (백엔드 API 응답에 포함되어야 함)
+      const reviewAnswerId = data.answer.review_answer_id
       
       if (reviewAnswerId) {
         await tryIncrementPageProgress(lectureId, data.page_number, reviewAnswerId)
@@ -553,6 +553,8 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isRevealed={isRevealed}
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
+                lectureId={lectureId}
+                reviewAnswerId={data.answer.review_answer_id}
               />
             </div>
           </div>
@@ -572,6 +574,8 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isRevealed={isRevealed}
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
+                lectureId={lectureId}
+                reviewAnswerId={data.answer.review_answer_id}
               />
             </div>
           </div>
@@ -600,7 +604,9 @@ function AnswerWithBlanks({
   sectionType,
   isRevealed: externalIsRevealed,
   isAnimating: externalIsAnimating,
-  onToggle: externalOnToggle
+  onToggle: externalOnToggle,
+  lectureId,
+  reviewAnswerId
 }: { 
   text: string
   blanks: ReviewCarouselResponse['pages_2_6'][0]['answer']['blanks']
@@ -609,6 +615,8 @@ function AnswerWithBlanks({
   isRevealed?: boolean
   isAnimating?: boolean
   onToggle?: () => void
+  lectureId?: string
+  reviewAnswerId?: string
 }) {
   // 페이지와 섹션별로 고유한 키 생성
   const uniquePrefix = pageId && sectionType ? `${pageId}-${sectionType}-` : ''
@@ -708,6 +716,8 @@ function AnswerWithBlanks({
               answer={blank.answer_text}
               isRevealed={isRevealed}
               onReveal={handleReveal}
+              lectureId={lectureId}
+              reviewAnswerId={reviewAnswerId}
             />
           )
         }
@@ -723,13 +733,34 @@ function AnswerWithBlanks({
 function SimpleBlank({ 
   answer, 
   isRevealed, 
-  onReveal 
+  onReveal,
+  lectureId,
+  reviewAnswerId
 }: { 
   answer: string
   isRevealed: boolean
   onReveal: () => void
+  lectureId?: string
+  reviewAnswerId?: string
 }) {
   const handleClick = () => {
+    // 빈칸이 처음 열릴 때만 POST 요청 (OX 퀴즈 패턴)
+    // reviewAnswerId가 null이거나 undefined인 경우는 POST 요청하지 않음
+    if (!isRevealed && lectureId && reviewAnswerId) {
+      // Fire-and-forget 방식으로 백그라운드에서 처리
+      reviewService.completeReview(lectureId, {
+        review_answer_id: reviewAnswerId,
+      })
+        .then((result) => {
+          if (result.error) {
+            console.error('[ReviewCarousel] 빈칸 클릭 POST 실패:', result.error)
+          }
+        })
+        .catch((error) => {
+          console.error('[ReviewCarousel] 빈칸 클릭 POST 예외:', error)
+        })
+    }
+    
     onReveal() // 토글 기능
   }
 
