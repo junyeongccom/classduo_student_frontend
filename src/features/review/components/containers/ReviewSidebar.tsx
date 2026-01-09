@@ -267,9 +267,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
           
           <div className="flex-1 overflow-y-auto space-y-1.5">
             {isLoadingLectures ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              </div>
+              <ReviewLoading message="수업 목록 불러오는 중..." size="compact" />
             ) : !lectureList || lectureList.lectures.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-4">
                 등록된 회차가 없습니다
