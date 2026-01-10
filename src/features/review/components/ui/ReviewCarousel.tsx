@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react'
-import { ReviewCarouselResponse } from '@/features/review/services/reviewService'
+import { ReviewCarouselResponse, reviewService, type CompleteReviewResponse } from '@/features/review/services/reviewService'
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
 import { ReviewLoading } from '@/features/review'
 
@@ -551,7 +551,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
                 lectureId={lectureId}
-                reviewAnswerId={data.answer.review_answer_id}
+                reviewAnswerId={data.answer.review_answer_id ?? undefined}
               />
             </div>
           </div>
@@ -572,7 +572,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
                 lectureId={lectureId}
-                reviewAnswerId={data.answer.review_answer_id}
+                reviewAnswerId={data.answer.review_answer_id ?? undefined}
               />
             </div>
           </div>
@@ -748,12 +748,12 @@ function SimpleBlank({
       reviewService.completeReview(lectureId, {
         review_answer_id: reviewAnswerId,
       })
-        .then((result) => {
+        .then((result: { data: CompleteReviewResponse | null; error: { error_code: string; message: string } | null; status: number }) => {
           if (result.error) {
             console.error('[ReviewCarousel] 빈칸 클릭 POST 실패:', result.error)
           }
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error('[ReviewCarousel] 빈칸 클릭 POST 예외:', error)
         })
     }
