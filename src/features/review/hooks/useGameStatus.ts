@@ -1,79 +1,180 @@
-import { useState, useEffect } from 'react'
-import { 
-  GameProgress, 
-  FlameCount, 
-  ClaimedRewards,
-  loadGameProgress,
-  loadFlameCount,
-  loadClaimedRewards,
-  getGameProgressKey,
-  getFlameCountKey,
-  getClaimedRewardsKey,
-  getCurrentUserId,
-  claimReward as claimRewardLogic,
-  incrementFlameCount as incrementFlameCountLogic
-} from '@/shared/lib/gameLogic'
+'use client'
+
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { getLectureProgressStatusAll, type LectureProgressStatus, claimReward as claimRewardAPI } from '@/shared/services/progressService'
+import {
+  subscribeProgressEvents,
+  subscribeRewardEvents,
+  type ProgressEvent,
+  type RewardEvent,
+} from '@/shared/services/realtimeService'
+import { useAuthStore } from '@/features/auth/store/authStore'
+
+// 기존 타입 유지 (하위 호환성)
+export interface GameProgress {
+  [lectureId: string]: number // 0~10 진행도
+}
+
+export interface FlameCount {
+  [courseId: string]: number
+}
+
+export interface ClaimedRewards {
+  [lectureId: string]: boolean
+}
 
 export function useGameStatus() {
   const [gameProgress, setGameProgress] = useState<GameProgress>({})
-  const [flameCount, setFlameCount] = useState<FlameCount>({})
   const [claimedRewards, setClaimedRewards] = useState<ClaimedRewards>({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
   
-  const refreshStatus = () => {
-    setGameProgress(loadGameProgress())
-    setFlameCount(loadFlameCount())
-    setClaimedRewards(loadClaimedRewards())
-  }
+  // 현재 사용자 정보 가져오기
+  const user = useAuthStore(state => state.user)
+  
+  // 안전장치: 30초마다 재조회
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  // 탭 포커스 복귀 시 재조회
+  const isFocusedRef = useRef(true)
 
-  useEffect(() => {
-    refreshStatus()
-    
-    // storage 이벤트 리스너 (다른 탭에서 변경 시 동기화)
-    const handleStorage = (e: StorageEvent) => {
-      const userId = getCurrentUserId()
-      const progressKey = getGameProgressKey(userId)
-      const flameKey = getFlameCountKey(userId)
-      const claimedKey = getClaimedRewardsKey(userId)
+  /**
+   * Supabase에서 진척도 데이터 조회 및 상태 업데이트
+   */
+  const refreshData = useCallback(async () => {
+    try {
+      const result = await getLectureProgressStatusAll()
       
-      if (e.key === progressKey || e.key?.startsWith('classduo_game_progress')) {
-        setGameProgress(loadGameProgress())
+      if (result.error) {
+        setError(result.error)
+        return
       }
-      if (e.key === flameKey || e.key?.startsWith('classduo_flame_count')) {
-        setFlameCount(loadFlameCount())
+
+      if (result.data) {
+        // GameProgress 형식으로 변환
+        const progress: GameProgress = {}
+        const rewards: ClaimedRewards = {}
+        
+        result.data.forEach((status) => {
+          progress[status.lecture_id] = status.progress_count
+          rewards[status.lecture_id] = status.is_claimed
+        })
+        
+        setGameProgress(progress)
+        setClaimedRewards(rewards)
+        setError(null)
       }
-      if (e.key === claimedKey || e.key?.startsWith('classduo_claimed_rewards')) {
-        setClaimedRewards(loadClaimedRewards())
-      }
-    }
-    
-    window.addEventListener('storage', handleStorage)
-    
-    // 주기적으로 진행도 확인
-    const interval = setInterval(refreshStatus, 1000)
-    
-    return () => {
-      window.removeEventListener('storage', handleStorage)
-      clearInterval(interval)
+    } catch (err) {
+      console.error('[useGameStatus] 데이터 조회 실패:', err)
+      setError(err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다'))
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
-  const claimReward = (lectureId: string, courseId: string) => {
-    claimRewardLogic(lectureId)
-    setClaimedRewards(prev => ({ ...prev, [lectureId]: true }))
+  // 초기 로드 및 Realtime 구독 설정
+  useEffect(() => {
+    // 초기 데이터 로드
+    refreshData()
+
+    // Realtime 구독: user_progress_events INSERT 이벤트
+    const unsubscribeProgress = subscribeProgressEvents((event: ProgressEvent) => {
+      // 현재 사용자 ID 가져오기
+      const currentUserId = user?.user_id
+      
+      // user_id 필터링: 자신과 관련된 이벤트만 처리
+      if (!currentUserId || event.user_id !== currentUserId) {
+        return // 다른 사용자의 이벤트는 무시
+      }
+      
+      // 해당 lecture_id의 progress_count를 +1
+      setGameProgress((prev) => {
+        const current = prev[event.lecture_id] || 0
+        return {
+          ...prev,
+          [event.lecture_id]: Math.min(10, current + 1), // 최대 10
+        }
+      })
+    })
+
+    // Realtime 구독: user_lecture_rewards INSERT 이벤트
+    const unsubscribeReward = subscribeRewardEvents((event: RewardEvent) => {
+      // 현재 사용자 ID 가져오기
+      const currentUserId = user?.user_id
+      
+      // user_id 필터링: 자신과 관련된 이벤트만 처리
+      if (!currentUserId || event.user_id !== currentUserId) {
+        return // 다른 사용자의 이벤트는 무시
+      }
+      
+      // 해당 lecture_id의 is_claimed=true
+      setClaimedRewards((prev) => ({
+        ...prev,
+        [event.lecture_id]: true,
+      }))
+    })
+
+    // 안전장치: 30초마다 재조회
+    refreshIntervalRef.current = setInterval(() => {
+      if (isFocusedRef.current) {
+        refreshData()
+      }
+    }, 30000) // 30초
+
+    // 탭 포커스 복귀 시 재조회
+    const handleFocus = () => {
+      isFocusedRef.current = true
+      refreshData()
+    }
+    const handleBlur = () => {
+      isFocusedRef.current = false
+    }
+
+    window.addEventListener('focus', handleFocus)
+    window.addEventListener('blur', handleBlur)
+
+    return () => {
+      unsubscribeProgress()
+      unsubscribeReward()
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current)
+      }
+      window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('blur', handleBlur)
+    }
+  }, [refreshData, user])
+
+  // 수동 재조회 함수 (외부에서 호출 가능)
+  const refreshStatus = useCallback(() => {
+    setIsLoading(true)
+    refreshData()
+  }, [refreshData])
+
+  // 보상 클레임 함수 (하위 호환성을 위해 courseId 파라미터 유지하되 무시)
+  const claimReward = useCallback(async (lectureId: string, courseId: string) => {
+    // Optimistic update
+    setClaimedRewards((prev) => ({
+      ...prev,
+      [lectureId]: true,
+    }))
+
+    // API 호출
+    const result = await claimRewardAPI(lectureId)
     
-    incrementFlameCountLogic(courseId)
-    // UI 업데이트는 refreshStatus나 useEffect에서 처리되지만, 즉각적인 반응을 위해 여기서도 업데이트 가능
-    // 하지만 localStorage가 업데이트되었으므로 interval이나 storage 이벤트로 반영될 것임.
-    // 다만 interval이 1초라 딜레이가 있을 수 있으니 수동으로 상태 업데이트 하는게 좋음.
-    setFlameCount(loadFlameCount()) 
-  }
+    if (result.error) {
+      // 실패 시 롤백
+      setClaimedRewards((prev) => ({
+        ...prev,
+        [lectureId]: false,
+      }))
+      console.error('[useGameStatus] 보상 클레임 실패:', result.error)
+    }
+  }, [])
 
   return {
     gameProgress,
-    flameCount,
+    flameCount: {} as FlameCount, // 불꽃 개수는 더 이상 사용하지 않음
     claimedRewards,
     claimReward,
-    refreshStatus
+    refreshStatus,
   }
 }
-

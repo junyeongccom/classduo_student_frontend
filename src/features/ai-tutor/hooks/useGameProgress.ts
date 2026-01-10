@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getLectureProgressStatusAll, type LectureProgressStatus } from '../services/progressService'
+import { getLectureProgressStatusAll, type LectureProgressStatus } from '@/shared/services/progressService'
 import {
   subscribeProgressEvents,
   subscribeRewardEvents,
   type ProgressEvent,
   type RewardEvent,
-} from '../services/realtimeService'
+} from '@/shared/services/realtimeService'
 import { useAuthStore } from '@/features/auth/store/authStore'
 
 // 기존 타입 유지 (하위 호환성)

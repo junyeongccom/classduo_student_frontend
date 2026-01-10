@@ -11,6 +11,7 @@ export interface OXQuizQuestion {
   question_no: number
   question_text: string
   correct_answer: boolean
+  explanation?: string // 퀴즈 해설
 }
 
 /**

@@ -423,7 +423,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         const converted: QuizQuestion[] = result.data.map((q) => ({
           question: q.question_text,
           correctAnswer: q.correct_answer ? 'O' : 'X',
-          explanation: '', // 백엔드에서 제공하지 않으면 빈 문자열
+          explanation: q.explanation ?? '', // 수파베이스에서 가져온 해설 사용
         }))
         setOxQuizQuestions(result.data)
         setIsLoadingQuiz(false)
@@ -440,7 +440,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
       return oxQuizQuestions.map((q) => ({
         question: q.question_text,
         correctAnswer: q.correct_answer ? 'O' : 'X',
-        explanation: '', // 백엔드에서 제공하지 않으면 빈 문자열
+        explanation: q.explanation ?? '', // 수파베이스에서 가져온 해설 사용
       }))
     }
     // 폴백: 기존 하드코딩된 질문 사용 (OX 퀴즈가 없는 경우)

@@ -27,7 +27,7 @@ export const API_ENDPOINTS = {
   REVIEW: {
     GET_LECTURE_LIST: (courseId: string) => `/reviews/courses/${courseId}/lectures`,
     GET_CAROUSEL: (lectureId: string) => `/reviews/lectures/${lectureId}/carousel`,
-    COMPLETE: (lectureId: string) => `/api/lectures/${lectureId}/review/complete`,
+    COMPLETE: (lectureId: string) => `/reviews/lectures/${lectureId}/review/complete`,
   },
 
   // OX Quiz
