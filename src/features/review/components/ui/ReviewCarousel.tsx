@@ -6,13 +6,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-<<<<<<< HEAD
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
-=======
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react'
 import { ReviewCarouselResponse } from '@/features/review/services/reviewService'
->>>>>>> 1a2de6b (로딩화면 수정)
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
 import { ReviewLoading } from '@/features/review'
 
