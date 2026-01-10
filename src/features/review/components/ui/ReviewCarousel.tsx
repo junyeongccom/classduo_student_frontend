@@ -487,18 +487,16 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
   const toggleAllBlanks = async () => {
     // 빈칸을 열려고 할 때 (아직 안 열린 상태에서) 진행도 증가 시도
     if (!isRevealed && !hasTriedProgress) {
-      // review_answer_id는 answer 객체에서 가져옴 (백엔드 API 응답에 포함되어야 함)
-      const reviewAnswerId = data.answer.review_answer_id
-      
+      const reviewAnswerId = data.review_answer_id
+
       if (reviewAnswerId) {
         await tryIncrementPageProgress(lectureId, data.page_number, reviewAnswerId)
+        setHasTriedProgress(true)
       } else {
         console.warn('[ReviewCarousel] review_answer_id가 없어 진행도 증가를 건너뜁니다. 백엔드 API 응답에 review_answer_id가 포함되어야 합니다.')
       }
-      
-      setHasTriedProgress(true)
     }
-    
+
     setIsAnimating(true)
     setIsRevealed(prev => !prev)
     setTimeout(() => setIsAnimating(false), 400)
@@ -551,7 +549,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
                 lectureId={lectureId}
-                reviewAnswerId={data.answer.review_answer_id}
+                reviewAnswerId={data.review_answer_id}
               />
             </div>
           </div>
@@ -572,7 +570,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
                 lectureId={lectureId}
-                reviewAnswerId={data.answer.review_answer_id}
+                reviewAnswerId={data.review_answer_id}
               />
             </div>
           </div>
