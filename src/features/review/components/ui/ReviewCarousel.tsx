@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react'
-import { ReviewCarouselResponse } from '@/features/review/services/reviewService'
+import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
 import { ReviewLoading } from '@/features/review'
 
