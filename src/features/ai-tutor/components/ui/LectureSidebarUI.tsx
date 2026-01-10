@@ -33,6 +33,10 @@ export interface ClaimedRewards {
   [lectureId: string]: boolean
 }
 
+export interface FlameCount {
+  [courseId: string]: number
+}
+
 export interface FlyingFlame {
   id: string
   startX: number
@@ -51,6 +55,7 @@ export interface LectureSidebarUIProps {
   selectedLectureIds: string[]
   gameProgress: GameProgress
   claimedRewards: ClaimedRewards
+  flameCount: FlameCount
   isLoading: boolean
   error: string | null
   isLocked: boolean
@@ -84,6 +89,7 @@ export function LectureSidebarUI({
   selectedLectureIds,
   gameProgress,
   claimedRewards,
+  flameCount,
   isLoading,
   error,
   isLocked,
@@ -175,7 +181,7 @@ export function LectureSidebarUI({
                     flameHighlight ? 'text-amber-500 scale-110' : 'text-amber-600'
                   }`}
                 >
-                  0
+                  {selectedCourse ? (flameCount[selectedCourse.course_id] || 0) : 0}
                 </span>
               </div>
             )}

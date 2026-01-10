@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getLectureProgressStatusAll, type LectureProgressStatus, claimReward as claimRewardAPI } from '@/shared/services/progressService'
+import { getLectureProgressStatusAll, getFlameCountByCourse, type LectureProgressStatus, claimReward as claimRewardAPI } from '@/shared/services/progressService'
 import {
   subscribeProgressEvents,
   subscribeRewardEvents,
@@ -9,6 +9,7 @@ import {
   type RewardEvent,
 } from '@/shared/services/realtimeService'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { incrementFlameCount } from '@/shared/lib/gameLogic'
 
 // 기존 타입 유지 (하위 호환성)
 export interface GameProgress {
@@ -26,6 +27,7 @@ export interface ClaimedRewards {
 export function useGameStatus() {
   const [gameProgress, setGameProgress] = useState<GameProgress>({})
   const [claimedRewards, setClaimedRewards] = useState<ClaimedRewards>({})
+  const [flameCount, setFlameCount] = useState<FlameCount>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   
@@ -42,27 +44,39 @@ export function useGameStatus() {
    */
   const refreshData = useCallback(async () => {
     try {
-      const result = await getLectureProgressStatusAll()
+      // 진척도 데이터와 불꽃 개수를 병렬로 조회
+      const [progressResult, flameResult] = await Promise.all([
+        getLectureProgressStatusAll(),
+        getFlameCountByCourse(),
+      ])
       
-      if (result.error) {
-        setError(result.error)
+      if (progressResult.error) {
+        setError(progressResult.error)
         return
       }
 
-      if (result.data) {
+      if (progressResult.data) {
         // GameProgress 형식으로 변환
         const progress: GameProgress = {}
         const rewards: ClaimedRewards = {}
         
-        result.data.forEach((status) => {
+        progressResult.data.forEach((status) => {
           progress[status.lecture_id] = status.progress_count
           rewards[status.lecture_id] = status.is_claimed
         })
         
         setGameProgress(progress)
         setClaimedRewards(rewards)
-        setError(null)
       }
+
+      // 불꽃 개수 업데이트
+      if (flameResult.data) {
+        setFlameCount(flameResult.data)
+      } else if (flameResult.error) {
+        console.error('[useGameStatus] 불꽃 개수 조회 실패:', flameResult.error)
+      }
+
+      setError(null)
     } catch (err) {
       console.error('[useGameStatus] 데이터 조회 실패:', err)
       setError(err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다'))
@@ -111,6 +125,14 @@ export function useGameStatus() {
         ...prev,
         [event.lecture_id]: true,
       }))
+
+      // 해당 course_id의 불꽃 개수 +1
+      if (event.course_id) {
+        setFlameCount((prev) => ({
+          ...prev,
+          [event.course_id]: (prev[event.course_id] || 0) + 1,
+        }))
+      }
     })
 
     // 안전장치: 5초마다 재조회
@@ -149,7 +171,7 @@ export function useGameStatus() {
     refreshData()
   }, [refreshData])
 
-  // 보상 클레임 함수 (하위 호환성을 위해 courseId 파라미터 유지하되 무시)
+  // 보상 클레임 함수
   const claimReward = useCallback(async (lectureId: string, courseId: string) => {
     // Optimistic update
     setClaimedRewards((prev) => ({
@@ -167,12 +189,23 @@ export function useGameStatus() {
         [lectureId]: false,
       }))
       console.error('[useGameStatus] 보상 클레임 실패:', result.error)
+      return
+    }
+
+    // API 성공 시 불꽃 개수 +1
+    if (result.data && courseId) {
+      incrementFlameCount(courseId)
+      // 상태도 즉시 업데이트
+      setFlameCount((prev) => ({
+        ...prev,
+        [courseId]: (prev[courseId] || 0) + 1,
+      }))
     }
   }, [])
 
   return {
     gameProgress,
-    flameCount: {} as FlameCount, // 불꽃 개수는 더 이상 사용하지 않음
+    flameCount,
     claimedRewards,
     claimReward,
     refreshStatus,
