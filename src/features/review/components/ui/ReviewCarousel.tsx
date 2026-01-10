@@ -487,7 +487,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
   const toggleAllBlanks = async () => {
     // 빈칸을 열려고 할 때 (아직 안 열린 상태에서) 진행도 증가 시도
     if (!isRevealed && !hasTriedProgress) {
-      const reviewAnswerId = data.review_answer_id
+      const reviewAnswerId = data.answer.review_answer_id ?? undefined
 
       if (reviewAnswerId) {
         await tryIncrementPageProgress(lectureId, data.page_number, reviewAnswerId)
@@ -549,7 +549,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
                 lectureId={lectureId}
-                reviewAnswerId={data.review_answer_id}
+                reviewAnswerId={data.answer.review_answer_id ?? undefined}
               />
             </div>
           </div>
@@ -570,7 +570,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
                 lectureId={lectureId}
-                reviewAnswerId={data.review_answer_id}
+                reviewAnswerId={data.answer.review_answer_id ?? undefined}
               />
             </div>
           </div>
