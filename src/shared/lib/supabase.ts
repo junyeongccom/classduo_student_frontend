@@ -77,6 +77,14 @@ export function getSupabaseHeaders(): Record<string, string> {
  * Supabase 클라이언트 초기화 (토큰 변경 시 호출)
  */
 export function resetSupabaseClient(): void {
+  if (supabaseClient) {
+    // 기존 클라이언트의 모든 연결 정리
+    supabaseClient.removeAllChannels()
+    // GoTrueClient 인스턴스도 정리
+    if (supabaseClient.auth) {
+      supabaseClient.auth.signOut()
+    }
+  }
   supabaseClient = null
   getSupabaseClient()
 }
