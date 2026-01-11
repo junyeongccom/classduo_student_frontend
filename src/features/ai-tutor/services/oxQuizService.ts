@@ -23,8 +23,6 @@ export async function getOXQuizQuestions(lectureId: string): Promise<{
   error: Error | null
 }> {
   try {
-    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성
-    resetSupabaseClient()
     const supabase = getSupabaseClient()
 
     const { data, error } = await supabase

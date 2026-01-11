@@ -69,8 +69,7 @@ class RealtimeSubscriptionManager {
    * user_progress_events 구독 초기화 (내부 비동기 메서드)
    */
   private async initializeProgressSubscription(): Promise<void> {
-    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성
-    resetSupabaseClient()
+    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성 -> 제거 (getSupabaseClient가 최신 토큰 사용)
     const supabase = getSupabaseClient()
 
     this.progressChannel = supabase
@@ -131,8 +130,7 @@ class RealtimeSubscriptionManager {
    * user_lecture_rewards 구독 초기화 (내부 비동기 메서드)
    */
   private async initializeRewardSubscription(): Promise<void> {
-    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성
-    resetSupabaseClient()
+    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성 -> 제거
     const supabase = getSupabaseClient()
 
     this.rewardChannel = supabase

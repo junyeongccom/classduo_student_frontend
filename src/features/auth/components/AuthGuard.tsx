@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/features/auth'
 import { Sidebar, LoginModal, SignupModal } from '@/shared/components/common'
-import { Loader2 } from 'lucide-react'
 
 export function AuthGuard({
   children,
@@ -23,15 +22,6 @@ export function AuthGuard({
       setShowSignupModal(false)
     }
   }, [isAuthenticated, isLoading])
-
-  // 로딩 중
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
-      </div>
-    )
-  }
 
   return (
     <>
