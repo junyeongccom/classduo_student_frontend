@@ -57,24 +57,30 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
       
       if (isNotesPanelOpen && resizingRef.current) {
         // Mutual Resizing Logic (Trading Widths)
-        // Chat boundary remains fixed, so (Notes + Materials) width is constant ideally.
-        // Wait, if we use the stored combined width, we ensure Chat size doesn't change during this drag.
-        
         const { startCombinedWidth } = resizingRef.current
         
-        // Calculate theoretical widths based on drag
         let targetMaterialsWidth = newMaterialsWidth
+        
+        // 1. Calculate Target Notes Width first
         let targetNotesWidth = startCombinedWidth - targetMaterialsWidth
-        
-        // Apply Constraints
-        if (targetMaterialsWidth < MIN_MATERIALS_WIDTH) {
-          targetMaterialsWidth = MIN_MATERIALS_WIDTH
-          targetNotesWidth = startCombinedWidth - MIN_MATERIALS_WIDTH
-        }
-        
+
+        // 2. Chain Reaction: If Notes hits MIN, allow Materials to expand further by shrinking Chat
+        //    This means we ignore the 'startCombinedWidth' constraint if expanding left beyond MIN_NOTES.
         if (targetNotesWidth < MIN_NOTES_WIDTH) {
-          targetNotesWidth = MIN_NOTES_WIDTH
-          targetMaterialsWidth = startCombinedWidth - MIN_NOTES_WIDTH
+           // We are pushing Notes to MIN.
+           targetNotesWidth = MIN_NOTES_WIDTH
+           // Materials can continue to grow, taking space from Chat.
+           // Constraint: Materials Width must not squeeze Chat below MIN_CHAT.
+           // Total Available for Materials = Window - Sidebar - Min Chat - Min Notes
+           const absoluteMaxMaterials = window.innerWidth - SIDEBAR_WIDTH - MIN_CHAT_WIDTH - MIN_NOTES_WIDTH
+           targetMaterialsWidth = Math.min(newMaterialsWidth, absoluteMaxMaterials)
+        } else {
+           // Standard trading.
+           // Ensure Materials doesn't shrink below MIN.
+           if (targetMaterialsWidth < MIN_MATERIALS_WIDTH) {
+             targetMaterialsWidth = MIN_MATERIALS_WIDTH
+             targetNotesWidth = startCombinedWidth - MIN_MATERIALS_WIDTH
+           }
         }
         
         // Update both
