@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { History } from 'lucide-react'
 import { useAITutorStore } from '../../store/useAITutorStore'
 import { useAITutorSession } from '../../hooks/useAITutorSession'
@@ -19,6 +19,7 @@ import {
 import {
   StudyspaceRightbarSlot,
   StudyspaceTopbarSlot,
+  StudyspaceOverlaySlot,
 } from '@/shared/components/layouts/studyspace'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
@@ -32,6 +33,7 @@ export function AITutorContainer() {
     isChatSidebarOpen,
     isNotesPanelOpen,
     isMaterialsPanelOpen,
+    notesPanelWidth,
     messages,
     allReferences,
     chatKey,
@@ -49,7 +51,8 @@ export function AITutorContainer() {
     setSelectedCourseId,
     setAutoSelectLatest,
     toggleNotesPanel,
-    toggleMaterialsPanel
+    toggleMaterialsPanel,
+    setNotesPanelWidth
   } = useAITutorStore(state => ({
     setActiveTab: state.setActiveTab,
     setIsChatSidebarOpen: state.setIsChatSidebarOpen,
@@ -59,7 +62,8 @@ export function AITutorContainer() {
     setSelectedCourseId: state.setSelectedCourseId,
     setAutoSelectLatest: state.setAutoSelectLatest,
     toggleNotesPanel: state.toggleNotesPanel,
-    toggleMaterialsPanel: state.toggleMaterialsPanel
+    toggleMaterialsPanel: state.toggleMaterialsPanel,
+    setNotesPanelWidth: state.setNotesPanelWidth
   }))
 
   // Hooks
@@ -101,15 +105,8 @@ export function AITutorContainer() {
   }, [updateReferences])
 
   const overlayPanels: Array<'notes' | 'materials'> = []
-  const showInlineNotesPanel = isNotesPanelOpen && isMaterialsPanelOpen
-  if (isMaterialsPanelOpen) {
-    overlayPanels.push('materials')
-  }
-  if (isNotesPanelOpen && !isMaterialsPanelOpen) {
-    overlayPanels.push('notes')
-  }
-  const shouldHideSidebar = isNotesPanelOpen || isMaterialsPanelOpen
-
+  const showInlineNotesPanel = isNotesPanelOpen
+  
   const handleCloseNotesPanel = () => {
     if (isNotesPanelOpen) {
       toggleNotesPanel(false)
@@ -183,6 +180,40 @@ export function AITutorContainer() {
 
     return { recordingCount: recording, materialCount: material }
   }, [allReferences])
+
+  const [isResizingNotes, setIsResizingNotes] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isResizingNotes) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+      
+      const containerRect = containerRef.current.getBoundingClientRect()
+      // The notes panel is absolute positioned to the right of this container.
+      // New Width = Right Edge of Container - Mouse X
+      const newWidth = containerRect.right - e.clientX
+      
+      // Min 300px, Max 80% of container width
+      const maxWidth = containerRect.width * 0.8
+      const constrainedWidth = Math.max(300, Math.min(newWidth, maxWidth))
+      
+      setNotesPanelWidth(constrainedWidth)
+    }
+
+    const handleMouseUp = () => {
+      setIsResizingNotes(false)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizingNotes, setNotesPanelWidth])
 
   return (
     <>
@@ -278,10 +309,10 @@ export function AITutorContainer() {
       </StudyspaceTopbarSlot>
 
       <div className="flex h-full min-h-0 overflow-hidden bg-white">
-        <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div ref={containerRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <main
             className="flex-1 overflow-y-auto"
-            style={{ paddingRight: showInlineNotesPanel ? 380 : 0 }}
+            style={{ paddingRight: showInlineNotesPanel ? notesPanelWidth : 0 }}
           >
             <ChatInterface
               key={chatKey}
@@ -308,7 +339,20 @@ export function AITutorContainer() {
           </main>
 
           {showInlineNotesPanel && (
-            <div className="absolute inset-y-0 right-0 z-20 w-[380px] border-l border-gray-200 bg-white shadow-xl">
+            <div 
+              className="absolute inset-y-0 right-0 z-20 border-l border-gray-200 bg-white shadow-xl"
+              style={{ width: notesPanelWidth }}
+            >
+              {/* Resizer Handle */}
+              <div
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  setIsResizingNotes(true)
+                }}
+                className={`absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-primary-500/50 ${
+                  isResizingNotes ? 'bg-primary-500' : 'bg-transparent'
+                }`}
+              />
               <ReferencePanel
                 variant="notes"
                 allReferences={allReferences}
@@ -321,12 +365,13 @@ export function AITutorContainer() {
       </div>
 
       <StudyspaceRightbarSlot>
+        {/* Only render Rightbar content if it's going to be shown.
+            However, 'layout.tsx' controls visibility. 
+            We can always render it into the slot, layout will hide the slot container if needed.
+            Or we can conditionally render here to save resources, but layout logic is the source of truth for visibility.
+        */}
         <div className="relative h-full w-[320px]">
-          <div
-            className={`h-full transition-[opacity] duration-300 ${
-              shouldHideSidebar ? 'opacity-0 pointer-events-none' : 'opacity-100'
-            }`}
-          >
+          <div className="h-full opacity-100">
             <LectureSidebarContainer
               selectedLectureIds={selectedLectureIds}
               onSelectLectureIds={handleSelectLectureIds}
@@ -339,23 +384,20 @@ export function AITutorContainer() {
               onGameIconClick={handleGameIconClick}
             />
           </div>
-
-          {overlayPanels.length > 0 && (
-            <div className="absolute inset-0 z-10 flex flex-col border-l border-gray-200 bg-white shadow-xl">
-              {overlayPanels.map(panel => (
-                <ReferencePanel
-                  key={panel}
-                  variant={panel}
-                  allReferences={allReferences}
-                  onClose={panel === 'notes' ? handleCloseNotesPanel : handleCloseMaterialsPanel}
-                  messages={messages}
-                  className="flex-1"
-                />
-              ))}
-            </div>
-          )}
         </div>
       </StudyspaceRightbarSlot>
+
+      {isMaterialsPanelOpen && (
+        <StudyspaceOverlaySlot>
+          <ReferencePanel
+            variant="materials"
+            allReferences={allReferences}
+            onClose={handleCloseMaterialsPanel}
+            messages={messages}
+            className="flex-1"
+          />
+        </StudyspaceOverlaySlot>
+      )}
 
       <ChatSidebar
         isOpen={isChatSidebarOpen}

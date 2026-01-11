@@ -40,6 +40,8 @@ interface AITutorState {
   isNotesPanelOpen: boolean
   isMaterialsPanelOpen: boolean
   isChatSidebarOpen: boolean
+  notesPanelWidth: number
+  materialsPanelWidth: number
   chatKey: number
   messages: ChatMessage[]
   allReferences: Map<number, Reference[]>
@@ -62,6 +64,8 @@ interface AITutorActions {
   setActiveTab: (tab: TabType) => void
   setNotesPanelOpen: (isOpen: boolean) => void
   setMaterialsPanelOpen: (isOpen: boolean) => void
+  setNotesPanelWidth: (width: number) => void
+  setMaterialsPanelWidth: (width: number) => void
   toggleNotesPanel: (isOpen?: boolean) => void
   toggleMaterialsPanel: (isOpen?: boolean) => void
   setIsChatSidebarOpen: (isOpen: boolean) => void
@@ -93,6 +97,8 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   activeTab: 'answer',
   isNotesPanelOpen: false,
   isMaterialsPanelOpen: false,
+  notesPanelWidth: 380,
+  materialsPanelWidth: 320,
   isChatSidebarOpen: false,
   chatKey: 0,
   messages: [],
@@ -117,6 +123,8 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   setNotesPanelOpen: (isOpen) => set({ isNotesPanelOpen: isOpen }),
   setMaterialsPanelOpen: (isOpen) => set({ isMaterialsPanelOpen: isOpen }),
+  setNotesPanelWidth: (width) => set({ notesPanelWidth: width }),
+  setMaterialsPanelWidth: (width) => set({ materialsPanelWidth: width }),
   toggleNotesPanel: (isOpen) => set((state) => ({
     isNotesPanelOpen: typeof isOpen === 'boolean' ? isOpen : !state.isNotesPanelOpen,
     isMaterialsPanelOpen: typeof isOpen === 'boolean' && isOpen ? state.isMaterialsPanelOpen : state.isMaterialsPanelOpen,

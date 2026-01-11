@@ -14,8 +14,10 @@ import {
 interface StudyspaceLayoutContextValue {
   topbar: ReactNode | null
   rightbar: ReactNode | null
+  overlay: ReactNode | null
   setTopbar: Dispatch<SetStateAction<ReactNode | null>>
   setRightbar: Dispatch<SetStateAction<ReactNode | null>>
+  setOverlay: Dispatch<SetStateAction<ReactNode | null>>
 }
 
 const StudyspaceLayoutContext = createContext<StudyspaceLayoutContextValue | null>(null)
@@ -23,15 +25,18 @@ const StudyspaceLayoutContext = createContext<StudyspaceLayoutContextValue | nul
 export function StudyspaceLayoutProvider({ children }: { children: ReactNode }) {
   const [topbar, setTopbar] = useState<ReactNode | null>(null)
   const [rightbar, setRightbar] = useState<ReactNode | null>(null)
+  const [overlay, setOverlay] = useState<ReactNode | null>(null)
 
   const value = useMemo(
     () => ({
       topbar,
       rightbar,
+      overlay,
       setTopbar,
       setRightbar,
+      setOverlay,
     }),
-    [topbar, rightbar]
+    [topbar, rightbar, overlay]
   )
 
   return (
@@ -71,6 +76,14 @@ export function StudyspaceRightbarSlot({ children }: { children: ReactNode }) {
   const { setRightbar } = useStudyspaceLayoutSlots()
 
   useEffect(() => createSlotSetter(setRightbar, children), [children, setRightbar])
+
+  return null
+}
+
+export function StudyspaceOverlaySlot({ children }: { children: ReactNode }) {
+  const { setOverlay } = useStudyspaceLayoutSlots()
+
+  useEffect(() => createSlotSetter(setOverlay, children), [children, setOverlay])
 
   return null
 }
