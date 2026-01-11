@@ -45,7 +45,7 @@ export function Sidebar() {
         <div className="relative flex h-16 items-center justify-center">
           <Link href="/studyspace/ai-tutor" className="flex items-center justify-center">
             {!isCollapsed && (
-              <img src="/로고.png" alt="CLASSDUO" className="h-5 w-auto" />
+              <img src="/logo_korea.png" alt="CLASSDUO" className="h-5 w-auto" />
             )}
           </Link>
           
