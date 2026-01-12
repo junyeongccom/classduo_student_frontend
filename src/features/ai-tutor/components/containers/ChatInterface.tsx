@@ -1169,8 +1169,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             </form>
           </div>
 
-          {/* 입력창 포커스 시 나타나는 제안 질문 목록 */}
-          {isInputFocused && (hookingQuestions.length > 0 || pqmQuestions.length > 0) && (
+          {/* 입력창 포커스 시 나타나는 제안 질문 목록 (단일 선택 시에만 표시) */}
+          {isInputFocused && selectedLectureIds.length === 1 && (hookingQuestions.length > 0 || pqmQuestions.length > 0) && (
             <div className="mt-6 w-full max-w-2xl space-y-2 animate-fade-in-up">
               {/* 후킹 질문 (1개) */}
               {hookingQuestions.length > 0 && (
