@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { apiRequest } from '@/shared/lib/api'
 import { useGameProgress } from '../../hooks/useGameProgress'
 import { claimReward as claimRewardAPI } from '@/shared/services/progressService'
+import { incrementFlameCount } from '@/shared/lib/gameLogic'
 import {
   LectureSidebarUI,
   type Course,

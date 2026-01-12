@@ -107,6 +107,15 @@ export function useGameProgress() {
       if (!progressResult.error && !rewardCountResult.error) {
         setError(null)
       }
+
+      // 불꽃 개수 업데이트
+      if (flameResult.data) {
+        setFlameCount(flameResult.data)
+      } else if (flameResult.error) {
+        console.error('[useGameProgress] 불꽃 개수 조회 실패:', flameResult.error)
+      }
+
+      setError(null)
     } catch (err) {
       console.error('[useGameProgress] 데이터 조회 실패:', err)
       setError(err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다'))
