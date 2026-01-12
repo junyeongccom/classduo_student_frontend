@@ -225,9 +225,42 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   )
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
+  const [showVideo, setShowVideo] = useState(true) // 비디오 표시 여부
+  const [showLogo, setShowLogo] = useState(true) // 로고 표시 여부
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
+  const prevLectureIdsRef = useRef<string[]>([]) // 이전 강의회차 선택 상태
+
+  // 강의회차 선택 시 비디오 다시 표시
+  useEffect(() => {
+    // 강의회차가 선택되지 않은 상태에서 선택된 상태로 변경될 때 비디오 표시
+    if (prevLectureIdsRef.current.length === 0 && selectedLectureIds.length > 0) {
+      setShowVideo(true)
+      setShowLogo(true)
+    }
+    // 강의회차 선택이 변경될 때마다 비디오 표시 (다른 회차 선택 시)
+    else if (prevLectureIdsRef.current.length > 0 && selectedLectureIds.length > 0) {
+      // 선택된 회차가 실제로 변경되었는지 확인
+      const prevIds = prevLectureIdsRef.current.sort().join(',')
+      const currentIds = selectedLectureIds.sort().join(',')
+      if (prevIds !== currentIds) {
+        setShowVideo(true)
+        setShowLogo(true)
+      }
+    }
+    prevLectureIdsRef.current = [...selectedLectureIds]
+  }, [selectedLectureIds])
+
+  // 로고 2초 후 사라지기
+  useEffect(() => {
+    if (showLogo) {
+      const timer = setTimeout(() => {
+        setShowLogo(false)
+      }, 2400)
+      return () => clearTimeout(timer)
+    }
+  }, [showLogo])
 
   // lecture_ids 변경 시 후킹 질문과 PQM 질문 동시 로드 (단일 선택 시에만)
   useEffect(() => {
@@ -1055,6 +1088,23 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           <div className="w-full max-w-2xl">
             <form onSubmit={handleSubmit}>
               <div className="relative">
+                {showVideo && (
+                  <video
+                    src="/TEST.mp4"
+                    autoPlay
+                    playsInline
+                    preload="auto"
+                    onEnded={() => setShowVideo(false)}
+                    className="absolute left-3 bottom-full mb-0 h-20 w-30 object-cover z-10"
+                  />
+                )}
+                {showLogo && (
+                  <img
+                    src="/logo.png"
+                    alt="고려대학교 로고"
+                    className="absolute left-[calc(0.75rem+95px)] bottom-full mb-8 mb-0 h-15 w-20 object-contain z-20 animate-twinkle"
+                  />
+                )}
                 <input
                   type="text"
                   value={input}
