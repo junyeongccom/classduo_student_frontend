@@ -103,7 +103,7 @@ export async function getLectureProgressStatusAll(): Promise<{
 
 /**
  * course_id별 보상 개수 조회
- * user_lecture_rewards 테이블에서 user_id 기준으로 해당 course_id의 보상 개수를 파악합니다.
+ * v_my_course_reward_counts 뷰에서 데이터를 가져옵니다.
  */
 export interface CourseRewardCount {
   course_id: string
@@ -118,9 +118,8 @@ export async function getCourseRewardCounts(): Promise<{
     const supabase = getSupabaseClient()
 
     const { data, error } = await supabase
-      .from('user_lecture_rewards')
-      .select('course_id, amount')
-      .eq('reward_type', 'purple_gem')
+      .from('v_my_course_reward_counts')
+      .select('course_id, total_amount')
 
     if (error) {
       // 에러 객체 전체를 로깅하여 디버깅 용이하게
@@ -130,7 +129,14 @@ export async function getCourseRewardCounts(): Promise<{
         message: error.message,
         details: error.details,
         hint: error.hint,
+        viewName: 'v_my_course_reward_counts',
+        query: 'SELECT course_id, total_amount FROM v_my_course_reward_counts',
       })
+      
+      // 뷰가 존재하지 않는 경우를 명시적으로 체크
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        console.error('[progressService] 뷰가 존재하지 않습니다. SQL 스키마를 확인하세요.')
+      }
 
       // JWT 만료 에러 감지 및 처리
       if (isJWTExpiredError(error)) {
@@ -156,25 +162,9 @@ export async function getCourseRewardCounts(): Promise<{
       return { data: null, error: new Error(errorMessage) }
     }
 
-    // course_id별로 amount 합산
-    const rewardCountsMap = new Map<string, number>()
-    
-    if (data) {
-      data.forEach((reward) => {
-        if (reward.course_id) {
-          const current = rewardCountsMap.get(reward.course_id) || 0
-          rewardCountsMap.set(reward.course_id, current + (reward.amount || 1))
-        }
-      })
-    }
-
-    // Map을 배열로 변환
-    const result: CourseRewardCount[] = Array.from(rewardCountsMap.entries()).map(([course_id, total_amount]) => ({
-      course_id,
-      total_amount,
-    }))
-
-    return { data: result, error: null }
+    // 뷰에서 이미 집계되어 있으므로 클라이언트 측 집계 불필요
+    console.log('[progressService] 보상 개수 조회 성공:', data)
+    return { data: data as CourseRewardCount[], error: null }
   } catch (error) {
     // 에러 객체 전체를 로깅하여 디버깅 용이하게
     console.error('[progressService] 보상 개수 조회 예외:', {

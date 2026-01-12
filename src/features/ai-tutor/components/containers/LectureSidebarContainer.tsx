@@ -102,7 +102,7 @@ export function LectureSidebarContainer({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasAutoSelected, setHasAutoSelected] = useState(false)
-  const { gameProgress, claimedRewards, flameCount, refreshStatus } = useGameProgress()
+  const { gameProgress, claimedRewards, flameCount } = useGameProgress()
   const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([])
   const [flameHighlight, setFlameHighlight] = useState(false)
 
@@ -141,9 +141,6 @@ export function LectureSidebarContainer({
 
         console.log('[LectureSidebarContainer] 보상 클레임 성공:', result.data)
 
-        // 즉시 refreshStatus 호출 (Realtime 이벤트가 오지 않을 경우 대비)
-        refreshStatus()
-
         // 애니메이션 시작
         const flameId = `flame-${lectureId}-${Date.now()}`
         const newFlame: FlyingFlame = {
@@ -158,19 +155,18 @@ export function LectureSidebarContainer({
 
         setFlyingFlames(prev => [...prev, newFlame])
 
-        // 애니메이션 완료 후 한 번 더 갱신 (DB 트리거 완료 보장)
+        // 애니메이션 완료 후 highlight만 설정 (Realtime 이벤트와 5초마다 자동 갱신으로 데이터 업데이트됨)
         setTimeout(() => {
-          console.log('[LectureSidebarContainer] 애니메이션 완료 후 refreshStatus 호출')
-          refreshStatus()
+          console.log('[LectureSidebarContainer] 애니메이션 완료')
           setFlameHighlight(true)
           setTimeout(() => setFlameHighlight(false), 600)
           setFlyingFlames(prev => prev.filter(f => f.id !== flameId))
-        }, 1000) // 애니메이션 시간(800ms) + 여유 시간(200ms)
+        }, 800) // 애니메이션 시간과 동일
       } catch (err) {
         console.error('[LectureSidebarContainer] 보상 클레임 예외:', err)
       }
     },
-    [gameProgress, claimedRewards, refreshStatus]
+    [gameProgress, claimedRewards]
   )
 
   // 강의 목록 가져오기

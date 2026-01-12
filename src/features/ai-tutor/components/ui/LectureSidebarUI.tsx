@@ -161,30 +161,41 @@ export function LectureSidebarUI({
             <span className={`truncate ${selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
               {selectedCourse?.title || '강의를 선택하세요'}
             </span>
-            {selectedCourse && (
-              <div
-                ref={flameCounterRef}
-                className={`flex items-center gap-1 shrink-0 transition-all duration-300 ${
-                  flameHighlight ? 'scale-125' : ''
-                }`}
-              >
-                <img
-                  src="/icon_flame.png"
-                  alt="flame"
-                  className={`h-3.5 w-3.5 object-contain transition-all duration-300 ${
-                    flameHighlight ? 'animate-pulse drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : ''
-                  }`}
-                  style={{ imageRendering: 'auto' }}
-                />
-                <span
-                  className={`text-xs font-medium transition-all duration-300 ${
-                    flameHighlight ? 'text-amber-500 scale-110' : 'text-amber-600'
+            {selectedCourse && (() => {
+              const count = flameCount[selectedCourse.course_id]
+              // 디버깅: course_id와 flameCount 확인
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[LectureSidebarUI] flameCount 디버깅:', {
+                  course_id: selectedCourse.course_id,
+                  flameCount,
+                  count,
+                })
+              }
+              return (
+                <div
+                  ref={flameCounterRef}
+                  className={`flex items-center gap-1 shrink-0 transition-all duration-300 ${
+                    flameHighlight ? 'scale-125' : ''
                   }`}
                 >
-                  {flameCount[selectedCourse.course_id] || 0}
-                </span>
-              </div>
-            )}
+                  <img
+                    src="/icon_flame.png"
+                    alt="flame"
+                    className={`h-3.5 w-3.5 object-contain transition-all duration-300 ${
+                      flameHighlight ? 'animate-pulse drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : ''
+                    }`}
+                    style={{ imageRendering: 'auto' }}
+                  />
+                  <span
+                    className={`text-xs font-medium transition-all duration-300 ${
+                      flameHighlight ? 'text-amber-500 scale-110' : 'text-amber-600'
+                    }`}
+                  >
+                    {count ?? 0}
+                  </span>
+                </div>
+              )
+            })()}
           </div>
           {!isLocked && (
             <ChevronDown
