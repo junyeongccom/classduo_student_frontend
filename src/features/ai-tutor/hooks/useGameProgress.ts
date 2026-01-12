@@ -26,13 +26,14 @@ export interface ClaimedRewards {
 export function useGameProgress() {
   const [gameProgress, setGameProgress] = useState<GameProgress>({})
   const [claimedRewards, setClaimedRewards] = useState<ClaimedRewards>({})
+  const [flameCount, setFlameCount] = useState<FlameCount>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   
   // 현재 사용자 정보 가져오기
   const user = useAuthStore(state => state.user)
   
-  // 안전장치: 30초마다 재조회
+  // 안전장치: 5초마다 재조회
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
   // 탭 포커스 복귀 시 재조회
   const isFocusedRef = useRef(true)
@@ -42,27 +43,39 @@ export function useGameProgress() {
    */
   const refreshData = useCallback(async () => {
     try {
-      const result = await getLectureProgressStatusAll()
+      // 진척도 데이터와 불꽃 개수를 병렬로 조회
+      const [progressResult, flameResult] = await Promise.all([
+        getLectureProgressStatusAll(),
+        getFlameCountByCourse(),
+      ])
       
-      if (result.error) {
-        setError(result.error)
+      if (progressResult.error) {
+        setError(progressResult.error)
         return
       }
 
-      if (result.data) {
+      if (progressResult.data) {
         // GameProgress 형식으로 변환
         const progress: GameProgress = {}
         const rewards: ClaimedRewards = {}
         
-        result.data.forEach((status) => {
+        progressResult.data.forEach((status) => {
           progress[status.lecture_id] = status.progress_count
           rewards[status.lecture_id] = status.is_claimed
         })
         
         setGameProgress(progress)
         setClaimedRewards(rewards)
-        setError(null)
       }
+
+      // 불꽃 개수 업데이트
+      if (flameResult.data) {
+        setFlameCount(flameResult.data)
+      } else if (flameResult.error) {
+        console.error('[useGameProgress] 불꽃 개수 조회 실패:', flameResult.error)
+      }
+
+      setError(null)
     } catch (err) {
       console.error('[useGameProgress] 데이터 조회 실패:', err)
       setError(err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다'))
@@ -106,19 +119,27 @@ export function useGameProgress() {
         return // 다른 사용자의 이벤트는 무시
       }
       
-      // 해당 lecture_id의 is_claimed=true, is_claimable=false
+      // 해당 lecture_id의 is_claimed=true
       setClaimedRewards((prev) => ({
         ...prev,
         [event.lecture_id]: true,
       }))
+
+      // 해당 course_id의 불꽃 개수 +1
+      if (event.course_id) {
+        setFlameCount((prev) => ({
+          ...prev,
+          [event.course_id]: (prev[event.course_id] || 0) + 1,
+        }))
+      }
     })
 
-    // 안전장치: 30초마다 재조회
+    // 안전장치: 5초마다 재조회
     refreshIntervalRef.current = setInterval(() => {
       if (isFocusedRef.current) {
         refreshData()
       }
-    }, 30000) // 30초
+    }, 5000) // 5초
 
     // 탭 포커스 복귀 시 재조회
     const handleFocus = () => {
@@ -152,12 +173,10 @@ export function useGameProgress() {
   return {
     gameProgress,
     claimedRewards,
+    flameCount,
     isLoading,
     error,
     refreshStatus,
-    // 하위 호환성을 위한 함수들 (deprecated)
-    flameCount: {} as FlameCount, // 불꽃 개수는 더 이상 사용하지 않음
     setClaimedRewards, // optimistic update를 위한 setter
-    setFlameCount: () => {}, // 더 이상 사용하지 않음
   }
 }

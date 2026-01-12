@@ -118,7 +118,7 @@ export function useGameStatus() {
       if (isFocusedRef.current) {
         refreshData()
       }
-    }, 30000) // 30초
+    }, 5000) // 5초
 
     // 탭 포커스 복귀 시 재조회
     const handleFocus = () => {

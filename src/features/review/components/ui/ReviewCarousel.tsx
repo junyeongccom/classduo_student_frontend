@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react'
-import { ReviewCarouselResponse } from '@/features/review/services/reviewService'
+import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
 import { ReviewLoading } from '@/features/review'
 
@@ -486,24 +486,27 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
   const [isAnimating, setIsAnimating] = useState(false)
   const [hasTriedProgress, setHasTriedProgress] = useState(false) // 진행도 시도 플래그
 
-  const toggleAllBlanks = async () => {
-    // 빈칸을 열려고 할 때 (아직 안 열린 상태에서) 진행도 증가 시도
-    if (!isRevealed && !hasTriedProgress) {
-      // review_answer_id는 answer 객체에서 가져옴 (백엔드 API 응답에 포함되어야 함)
-      const reviewAnswerId = data.answer.review_answer_id
-      
-      if (reviewAnswerId) {
-        await tryIncrementPageProgress(lectureId, data.page_number, reviewAnswerId)
-      } else {
-        console.warn('[ReviewCarousel] review_answer_id가 없어 진행도 증가를 건너뜁니다. 백엔드 API 응답에 review_answer_id가 포함되어야 합니다.')
-      }
-      
-      setHasTriedProgress(true)
-    }
-    
+  const toggleAllBlanks = () => {
+    // 빈칸 상태를 먼저 토글 (즉시 반응)
     setIsAnimating(true)
     setIsRevealed(prev => !prev)
     setTimeout(() => setIsAnimating(false), 400)
+    
+    // 빈칸을 열려고 할 때 (아직 안 열린 상태에서) 진행도 증가 시도 (Fire-and-forget)
+    if (!isRevealed && !hasTriedProgress) {
+      const reviewAnswerId = data.answer.review_answer_id ?? undefined
+
+      if (reviewAnswerId) {
+        // await 제거하고 Fire-and-forget 방식으로 변경
+        tryIncrementPageProgress(lectureId, data.page_number, reviewAnswerId)
+          .catch((error) => {
+            console.error('[ReviewCarousel] 진행도 증가 실패:', error)
+          })
+        setHasTriedProgress(true)
+      } else {
+        console.warn('[ReviewCarousel] review_answer_id가 없어 진행도 증가를 건너뜁니다. 백엔드 API 응답에 review_answer_id가 포함되어야 합니다.')
+      }
+    }
   }
 
   return (
@@ -553,7 +556,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
                 lectureId={lectureId}
-                reviewAnswerId={data.answer.review_answer_id}
+                reviewAnswerId={data.answer.review_answer_id ?? undefined}
               />
             </div>
           </div>
@@ -574,7 +577,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
                 isAnimating={isAnimating}
                 onToggle={toggleAllBlanks}
                 lectureId={lectureId}
-                reviewAnswerId={data.answer.review_answer_id}
+                reviewAnswerId={data.answer.review_answer_id ?? undefined}
               />
             </div>
           </div>

@@ -84,19 +84,14 @@ export function LoadingScreen({
     >
       {/* 캐릭터 영역 */}
       <div className="relative mb-6">
-        {characterImageUrl ? (
-          // 실제 캐릭터 이미지
-          <div className={`${characterSize[size]} animate-float`}>
-            <img
-              src={characterImageUrl}
-              alt="Loading character"
-              className="w-full h-full object-contain"
-            />
-          </div>
-        ) : (
-          // 플레이스홀더 캐릭터
-          <CharacterPlaceholder size={size} />
-        )}
+        <div className={`${characterSize[size]} animate-float`}>
+          <img
+            src={characterImageUrl ?? '/KUI.png'}
+            alt="Loading character"
+            className="w-full h-full object-contain"
+            decoding="async"
+          />
+        </div>
       </div>
 
       {/* 메시지 */}
@@ -121,114 +116,6 @@ export function LoadingScreen({
         <LoadingDot delay="150ms" />
         <LoadingDot delay="300ms" />
       </div>
-    </div>
-  )
-}
-
-/**
- * 캐릭터 플레이스홀더 (SVG 기반)
- */
-function CharacterPlaceholder({ size }: { size: 'fullscreen' | 'inline' | 'compact' }) {
-  const sizeClass = {
-    fullscreen: 'w-48 h-48',
-    inline: 'w-32 h-32',
-    compact: 'w-20 h-20',
-  }[size]
-
-  return (
-    <div className={`${sizeClass} animate-float`}>
-      <svg
-        viewBox="0 0 200 200"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-full h-full"
-      >
-        {/* 그라데이션 정의 */}
-        <defs>
-          <linearGradient id="characterGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#46CD74" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#2FB35F" stopOpacity="0.9" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* 배경 원 */}
-        <circle cx="100" cy="100" r="90" fill="url(#characterGradient)" opacity="0.2" />
-
-        {/* 캐릭터 몸통 */}
-        <ellipse cx="100" cy="120" rx="50" ry="60" fill="url(#characterGradient)" filter="url(#glow)" />
-
-        {/* 캐릭터 머리 */}
-        <circle cx="100" cy="70" r="35" fill="url(#characterGradient)" filter="url(#glow)" />
-
-        {/* 눈 (왼쪽) */}
-        <circle cx="88" cy="65" r="5" fill="white" />
-        <circle cx="90" cy="65" r="3" fill="#1F2937" />
-
-        {/* 눈 (오른쪽) */}
-        <circle cx="112" cy="65" r="5" fill="white" />
-        <circle cx="114" cy="65" r="3" fill="#1F2937" />
-
-        {/* 입 (미소) */}
-        <path
-          d="M 85 80 Q 100 90 115 80"
-          stroke="white"
-          strokeWidth="3"
-          fill="none"
-          strokeLinecap="round"
-        />
-
-        {/* 팔 (왼쪽) */}
-        <ellipse
-          cx="60"
-          cy="110"
-          rx="12"
-          ry="30"
-          fill="url(#characterGradient)"
-          opacity="0.9"
-          transform="rotate(-20 60 110)"
-        />
-
-        {/* 팔 (오른쪽) */}
-        <ellipse
-          cx="140"
-          cy="110"
-          rx="12"
-          ry="30"
-          fill="url(#characterGradient)"
-          opacity="0.9"
-          transform="rotate(20 140 110)"
-        />
-
-        {/* 다리 (왼쪽) */}
-        <ellipse
-          cx="85"
-          cy="170"
-          rx="15"
-          ry="35"
-          fill="url(#characterGradient)"
-          opacity="0.9"
-        />
-
-        {/* 다리 (오른쪽) */}
-        <ellipse
-          cx="115"
-          cy="170"
-          rx="15"
-          ry="35"
-          fill="url(#characterGradient)"
-          opacity="0.9"
-        />
-
-        {/* 하이라이트 */}
-        <circle cx="90" cy="55" r="8" fill="white" opacity="0.4" />
-      </svg>
     </div>
   )
 }

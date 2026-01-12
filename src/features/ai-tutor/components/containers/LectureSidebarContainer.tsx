@@ -8,7 +8,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { apiRequest } from '@/shared/lib/api'
 import { useGameProgress } from '../../hooks/useGameProgress'
-import { claimReward as claimRewardAPI } from '../../services/progressService'
+import { claimReward as claimRewardAPI } from '@/shared/services/progressService'
+import { incrementFlameCount } from '@/shared/lib/gameLogic'
 import {
   LectureSidebarUI,
   type Course,
@@ -102,7 +103,7 @@ export function LectureSidebarContainer({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasAutoSelected, setHasAutoSelected] = useState(false)
-  const { gameProgress, claimedRewards, refreshStatus } = useGameProgress()
+  const { gameProgress, claimedRewards, flameCount, refreshStatus } = useGameProgress()
   const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([])
   const [flameHighlight, setFlameHighlight] = useState(false)
 
@@ -137,6 +138,11 @@ export function LectureSidebarContainer({
         if (result.error) {
           console.error('[LectureSidebarContainer] 보상 클레임 실패:', result.error)
           return
+        }
+
+        // API 성공 시 불꽃 개수 +1
+        if (result.data && courseId) {
+          incrementFlameCount(courseId)
         }
 
         refreshStatus()
@@ -393,6 +399,7 @@ export function LectureSidebarContainer({
       selectedLectureIds={selectedLectureIds}
       gameProgress={gameProgress}
       claimedRewards={claimedRewards}
+      flameCount={flameCount}
       isLoading={isLoading}
       error={error}
       isLocked={isLocked}
