@@ -142,13 +142,14 @@ export function useGameProgress() {
 
       // course_id가 있으면 즉시 flameCount 업데이트
       if (event.course_id) {
+        const courseId = event.course_id // 타입 가드를 위해 로컬 변수에 저장
         setFlameCount((prev) => {
-          const current = prev[event.course_id] || 0
+          const current = prev[courseId] || 0
           const amount = event.amount || 1
-          console.log(`[useGameProgress] flameCount 업데이트: ${event.course_id} = ${current} + ${amount}`)
+          console.log(`[useGameProgress] flameCount 업데이트: ${courseId} = ${current} + ${amount}`)
           return {
             ...prev,
-            [event.course_id]: current + amount,
+            [courseId]: current + amount,
           }
         })
       } else {
