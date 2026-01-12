@@ -1,5 +1,6 @@
 import { API_BASE_URL, TOKEN_KEY, REFRESH_TOKEN_KEY } from './utils'
 import { authService } from '@/features/auth/services/authService'
+import { resetSupabaseClient } from './supabase'
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -70,6 +71,9 @@ export async function apiRequest<T>(
                 localStorage.setItem(REFRESH_TOKEN_KEY, refreshResult.data.refresh_token)
               }
             }
+            
+            // Supabase 클라이언트 재생성 (새 토큰으로 헤더 업데이트)
+            resetSupabaseClient()
             
             // 원래 요청 재시도
             const newToken = refreshResult.data.access_token

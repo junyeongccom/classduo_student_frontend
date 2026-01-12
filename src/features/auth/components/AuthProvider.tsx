@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { TOKEN_KEY } from '@/shared/lib/utils'
+import { startTokenRefreshTimer, stopTokenRefreshTimer } from '@/shared/lib/supabase'
 
 /**
  * 앱 시작 시 인증 상태를 초기화하는 Provider
@@ -31,11 +32,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout()
       } else {
         setUser(result.data)
+        // 인증 성공 시 토큰 갱신 타이머 시작
+        startTokenRefreshTimer()
       }
       setLoading(false)
     }
 
     initAuth()
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    return () => {
+      stopTokenRefreshTimer()
+    }
   }, [])
 
   return <>{children}</>

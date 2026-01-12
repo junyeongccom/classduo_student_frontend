@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { getSupabaseClient, resetSupabaseClient } from '@/shared/lib/supabase'
+import { getSupabaseClient, resetSupabaseClient, onTokenRefresh } from '@/shared/lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface ProgressEvent {
@@ -35,6 +35,64 @@ class RealtimeSubscriptionManager {
   private rewardChannel: RealtimeChannel | null = null
   private progressHandlers: Set<ProgressEventHandler> = new Set()
   private rewardHandlers: Set<RewardEventHandler> = new Set()
+  private tokenRefreshUnsubscribe: (() => void) | null = null
+
+  constructor() {
+    // 토큰 갱신 이벤트 리스너 등록
+    this.tokenRefreshUnsubscribe = onTokenRefresh(() => {
+      this.reconnectChannels()
+    })
+  }
+
+  /**
+   * 토큰 갱신 시 모든 채널 재구독
+   */
+  private async reconnectChannels(): Promise<void> {
+    console.log('[realtimeService] 토큰 갱신 감지, 채널 재구독 시작...')
+    
+    // 기존 채널 해제
+    if (this.progressChannel) {
+      const supabase = getSupabaseClient()
+      supabase.removeChannel(this.progressChannel)
+      this.progressChannel = null
+    }
+    
+    if (this.rewardChannel) {
+      const supabase = getSupabaseClient()
+      supabase.removeChannel(this.rewardChannel)
+      this.rewardChannel = null
+    }
+
+    // 핸들러가 있으면 재구독
+    if (this.progressHandlers.size > 0) {
+      try {
+        await this.initializeProgressSubscription()
+        console.log('[realtimeService] user_progress_events 재구독 완료')
+      } catch (error) {
+        console.error('[realtimeService] user_progress_events 재구독 실패:', error)
+      }
+    }
+
+    if (this.rewardHandlers.size > 0) {
+      try {
+        await this.initializeRewardSubscription()
+        console.log('[realtimeService] user_lecture_rewards 재구독 완료')
+      } catch (error) {
+        console.error('[realtimeService] user_lecture_rewards 재구독 실패:', error)
+      }
+    }
+  }
+
+  /**
+   * 정리 작업
+   */
+  cleanup(): void {
+    if (this.tokenRefreshUnsubscribe) {
+      this.tokenRefreshUnsubscribe()
+      this.tokenRefreshUnsubscribe = null
+    }
+    this.unsubscribeAll()
+  }
 
   /**
    * user_progress_events INSERT 이벤트 구독 시작
@@ -216,5 +274,5 @@ export function subscribeRewardEvents(handler: RewardEventHandler): () => void {
  * 모든 Realtime 구독 해제
  */
 export function unsubscribeAllRealtime(): void {
-  realtimeManager.unsubscribeAll()
+  realtimeManager.cleanup()
 }

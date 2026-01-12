@@ -8,7 +8,7 @@ import {
   AuthError 
 } from '../types'
 import { TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/shared/lib/utils'
-import { resetSupabaseClient } from '@/shared/lib/supabase'
+import { resetSupabaseClient, startTokenRefreshTimer, stopTokenRefreshTimer } from '@/shared/lib/supabase'
 
 type AuthStore = AuthState & AuthActions
 
@@ -40,6 +40,8 @@ export const useAuthStore = create<AuthStore>()(
         set({ isAuthenticated: true, error: null })
         // Supabase 클라이언트 초기화
         resetSupabaseClient()
+        // 토큰 갱신 타이머 시작
+        startTokenRefreshTimer()
       },
 
       logout: () => {
@@ -49,6 +51,8 @@ export const useAuthStore = create<AuthStore>()(
           localStorage.removeItem(REFRESH_TOKEN_KEY)
         }
         set({ user: null, isAuthenticated: false, error: null })
+        // 토큰 갱신 타이머 정리
+        stopTokenRefreshTimer()
         // Supabase 클라이언트 초기화 (세션 정리)
         resetSupabaseClient()
       },

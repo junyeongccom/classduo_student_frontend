@@ -55,11 +55,22 @@ export async function getLectureProgressStatusAll(): Promise<{
           }
         }
         
-        // 토큰 갱신 성공 시에도 원래 쿼리는 실패로 반환 (사용자가 수동으로 재시도하도록)
-        return { 
-          data: null, 
-          error: new Error('세션이 만료되어 갱신되었습니다. 다시 시도해주세요.') 
+        // 토큰 갱신 성공 시 원래 쿼리 자동 재시도
+        console.log('[progressService] 토큰 갱신 성공, 쿼리 재시도 중...')
+        const retrySupabase = getSupabaseClient()
+        const retryResult = await retrySupabase
+          .from('v_my_lecture_progress_status_all')
+          .select('*')
+        
+        if (retryResult.error) {
+          console.error('[progressService] 재시도 실패:', retryResult.error)
+          return { 
+            data: null, 
+            error: new Error('세션이 갱신되었지만 쿼리 재시도에 실패했습니다. 다시 시도해주세요.') 
+          }
         }
+        
+        return { data: retryResult.data as LectureProgressStatus[], error: null }
       }
 
       // 에러 메시지 추출 개선 (error.message가 없을 때 대체 메시지 사용)
@@ -88,9 +99,29 @@ export async function getLectureProgressStatusAll(): Promise<{
         }
       }
       
-      return {
-        data: null,
-        error: new Error('세션이 만료되어 갱신되었습니다. 다시 시도해주세요.'),
+      // 토큰 갱신 성공 시 원래 쿼리 자동 재시도
+      console.log('[progressService] 토큰 갱신 성공, 쿼리 재시도 중...')
+      try {
+        const retrySupabase = getSupabaseClient()
+        const retryResult = await retrySupabase
+          .from('v_my_lecture_progress_status_all')
+          .select('*')
+        
+        if (retryResult.error) {
+          console.error('[progressService] 재시도 실패:', retryResult.error)
+          return {
+            data: null,
+            error: new Error('세션이 갱신되었지만 쿼리 재시도에 실패했습니다. 다시 시도해주세요.'),
+          }
+        }
+        
+        return { data: retryResult.data as LectureProgressStatus[], error: null }
+      } catch (retryError) {
+        console.error('[progressService] 재시도 중 예외 발생:', retryError)
+        return {
+          data: null,
+          error: new Error('세션이 갱신되었지만 쿼리 재시도 중 오류가 발생했습니다.'),
+        }
       }
     }
     
@@ -144,11 +175,41 @@ export async function getCourseRewardCounts(): Promise<{
           }
         }
         
-        // 토큰 갱신 성공 시에도 원래 쿼리는 실패로 반환 (사용자가 수동으로 재시도하도록)
-        return { 
-          data: null, 
-          error: new Error('세션이 만료되어 갱신되었습니다. 다시 시도해주세요.') 
+        // 토큰 갱신 성공 시 원래 쿼리 자동 재시도
+        console.log('[progressService] 토큰 갱신 성공, 쿼리 재시도 중...')
+        const retrySupabase = getSupabaseClient()
+        const retryResult = await retrySupabase
+          .from('user_lecture_rewards')
+          .select('course_id, amount')
+          .eq('reward_type', 'purple_gem')
+        
+        if (retryResult.error) {
+          console.error('[progressService] 재시도 실패:', retryResult.error)
+          return { 
+            data: null, 
+            error: new Error('세션이 갱신되었지만 쿼리 재시도에 실패했습니다. 다시 시도해주세요.') 
+          }
         }
+        
+        // course_id별로 amount 합산
+        const rewardCountsMap = new Map<string, number>()
+        
+        if (retryResult.data) {
+          retryResult.data.forEach((reward) => {
+            if (reward.course_id) {
+              const current = rewardCountsMap.get(reward.course_id) || 0
+              rewardCountsMap.set(reward.course_id, current + (reward.amount || 1))
+            }
+          })
+        }
+
+        // Map을 배열로 변환
+        const result: CourseRewardCount[] = Array.from(rewardCountsMap.entries()).map(([course_id, total_amount]) => ({
+          course_id,
+          total_amount,
+        }))
+
+        return { data: result, error: null }
       }
 
       // 에러 메시지 추출 개선 (error.message가 없을 때 대체 메시지 사용)
@@ -195,9 +256,48 @@ export async function getCourseRewardCounts(): Promise<{
         }
       }
       
-      return {
-        data: null,
-        error: new Error('세션이 만료되어 갱신되었습니다. 다시 시도해주세요.'),
+      // 토큰 갱신 성공 시 원래 쿼리 자동 재시도
+      console.log('[progressService] 토큰 갱신 성공, 쿼리 재시도 중...')
+      try {
+        const retrySupabase = getSupabaseClient()
+        const retryResult = await retrySupabase
+          .from('user_lecture_rewards')
+          .select('course_id, amount')
+          .eq('reward_type', 'purple_gem')
+        
+        if (retryResult.error) {
+          console.error('[progressService] 재시도 실패:', retryResult.error)
+          return {
+            data: null,
+            error: new Error('세션이 갱신되었지만 쿼리 재시도에 실패했습니다. 다시 시도해주세요.'),
+          }
+        }
+        
+        // course_id별로 amount 합산
+        const rewardCountsMap = new Map<string, number>()
+        
+        if (retryResult.data) {
+          retryResult.data.forEach((reward) => {
+            if (reward.course_id) {
+              const current = rewardCountsMap.get(reward.course_id) || 0
+              rewardCountsMap.set(reward.course_id, current + (reward.amount || 1))
+            }
+          })
+        }
+
+        // Map을 배열로 변환
+        const result: CourseRewardCount[] = Array.from(rewardCountsMap.entries()).map(([course_id, total_amount]) => ({
+          course_id,
+          total_amount,
+        }))
+
+        return { data: result, error: null }
+      } catch (retryError) {
+        console.error('[progressService] 재시도 중 예외 발생:', retryError)
+        return {
+          data: null,
+          error: new Error('세션이 갱신되었지만 쿼리 재시도 중 오류가 발생했습니다.'),
+        }
       }
     }
     

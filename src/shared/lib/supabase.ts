@@ -21,6 +21,55 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 let supabaseClient: SupabaseClient | null = null
 
 /**
+ * 토큰 갱신 타이머 (예방적 갱신용)
+ */
+let tokenRefreshTimer: NodeJS.Timeout | null = null
+
+/**
+ * 토큰 갱신 이벤트 리스너들 (realtimeService에서 사용)
+ */
+type TokenRefreshListener = () => void
+const tokenRefreshListeners: Set<TokenRefreshListener> = new Set()
+
+/**
+ * 토큰 갱신 이벤트 리스너 등록
+ */
+export function onTokenRefresh(listener: TokenRefreshListener): () => void {
+  tokenRefreshListeners.add(listener)
+  return () => {
+    tokenRefreshListeners.delete(listener)
+  }
+}
+
+/**
+ * JWT 토큰의 만료 시간 파싱
+ */
+function getTokenExpirationTime(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp ? payload.exp * 1000 : null // 초를 밀리초로 변환
+  } catch (error) {
+    console.error('[supabase] 토큰 만료 시간 파싱 실패:', error)
+    return null
+  }
+}
+
+/**
+ * 토큰 만료까지 남은 시간 계산 (밀리초)
+ */
+function getTimeUntilExpiration(token: string | null): number | null {
+  if (!token) return null
+  
+  const expTime = getTokenExpirationTime(token)
+  if (!expTime) return null
+  
+  const now = Date.now()
+  const timeUntilExpiration = expTime - now
+  
+  return timeUntilExpiration > 0 ? timeUntilExpiration : 0
+}
+
+/**
  * Supabase 클라이언트 가져오기
  * 백엔드 JWT 토큰은 쿼리 시 직접 헤더로 전달됩니다.
  */
@@ -76,16 +125,32 @@ export function getSupabaseHeaders(): Record<string, string> {
 
 /**
  * Supabase 클라이언트 초기화 (토큰 변경 시 호출)
+ * 채널 연결을 유지하기 위해 헤더만 업데이트하도록 개선
  */
 export function resetSupabaseClient(): void {
+  // 기존 클라이언트가 있고 채널이 활성화되어 있으면 헤더만 업데이트
   if (supabaseClient) {
-    // 기존 클라이언트의 모든 연결 정리
-    supabaseClient.removeAllChannels()
-    // GoTrueClient 인스턴스도 정리
-    if (supabaseClient.auth) {
-      supabaseClient.auth.signOut()
+    // 채널이 있는지 확인
+    const hasActiveChannels = supabaseClient.getChannels().length > 0
+    
+    if (hasActiveChannels) {
+      // 채널이 있으면 클라이언트를 재생성하지 않고 헤더만 업데이트
+      // Supabase 클라이언트는 헤더를 동적으로 읽지 않으므로,
+      // 새 클라이언트를 생성하되 기존 채널은 유지할 수 없음
+      // 따라서 채널을 재구독하도록 realtimeService에 알림을 보냄
+      // (토큰 갱신 이벤트 리스너가 처리함)
+      
+      // 기존 채널은 제거하되, realtimeService가 자동으로 재구독하도록 함
+      supabaseClient.removeAllChannels()
+    } else {
+      // 채널이 없으면 기존 클라이언트 정리
+      if (supabaseClient.auth) {
+        supabaseClient.auth.signOut()
+      }
     }
   }
+  
+  // 새 클라이언트 생성 (새 토큰으로 헤더 업데이트)
   supabaseClient = null
   getSupabaseClient()
 }
@@ -142,6 +207,18 @@ export async function refreshSupabaseToken(): Promise<boolean> {
       // Supabase 클라이언트 재생성 (새 토큰으로 헤더 업데이트)
       resetSupabaseClient()
       
+      // 토큰 갱신 성공 시 이벤트 발생
+      tokenRefreshListeners.forEach(listener => {
+        try {
+          listener()
+        } catch (error) {
+          console.error('[supabase] 토큰 갱신 리스너 실행 중 오류:', error)
+        }
+      })
+      
+      // 예방적 갱신 타이머 재설정
+      startTokenRefreshTimer()
+      
       return true
     } else {
       console.error('[supabase] 토큰 갱신 실패:', refreshResult.error)
@@ -150,6 +227,67 @@ export async function refreshSupabaseToken(): Promise<boolean> {
   } catch (error) {
     console.error('[supabase] 토큰 갱신 중 예외 발생:', error)
     return false
+  }
+}
+
+/**
+ * 토큰 만료 5분 전에 자동 갱신하는 타이머 시작
+ */
+export function startTokenRefreshTimer(): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  // 기존 타이머 정리
+  if (tokenRefreshTimer) {
+    clearTimeout(tokenRefreshTimer)
+    tokenRefreshTimer = null
+  }
+
+  const token = localStorage.getItem(TOKEN_KEY)
+  if (!token) {
+    return
+  }
+
+  const timeUntilExpiration = getTimeUntilExpiration(token)
+  if (!timeUntilExpiration || timeUntilExpiration <= 0) {
+    // 이미 만료된 토큰이면 즉시 갱신 시도
+    refreshSupabaseToken().catch(error => {
+      console.error('[supabase] 만료된 토큰 갱신 실패:', error)
+    })
+    return
+  }
+
+  // 만료 5분 전에 갱신 (5분 = 5 * 60 * 1000 밀리초)
+  const REFRESH_BEFORE_EXPIRATION = 5 * 60 * 1000
+  const timeUntilRefresh = Math.max(0, timeUntilExpiration - REFRESH_BEFORE_EXPIRATION)
+
+  // 이미 5분 이내라면 즉시 갱신
+  if (timeUntilRefresh <= 0) {
+    refreshSupabaseToken().catch(error => {
+      console.error('[supabase] 예방적 토큰 갱신 실패:', error)
+    })
+    return
+  }
+
+  // 타이머 설정
+  tokenRefreshTimer = setTimeout(() => {
+    console.log('[supabase] 예방적 토큰 갱신 시작 (만료 5분 전)')
+    refreshSupabaseToken().catch(error => {
+      console.error('[supabase] 예방적 토큰 갱신 실패:', error)
+    })
+  }, timeUntilRefresh)
+
+  console.log(`[supabase] 토큰 갱신 타이머 설정: ${Math.round(timeUntilRefresh / 1000 / 60)}분 후 갱신 예정`)
+}
+
+/**
+ * 토큰 갱신 타이머 정리
+ */
+export function stopTokenRefreshTimer(): void {
+  if (tokenRefreshTimer) {
+    clearTimeout(tokenRefreshTimer)
+    tokenRefreshTimer = null
   }
 }
 
