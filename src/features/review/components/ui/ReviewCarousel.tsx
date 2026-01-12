@@ -6,6 +6,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react'
 import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'

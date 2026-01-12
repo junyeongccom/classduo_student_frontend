@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getLectureProgressStatusAll, getFlameCountByCourse, type LectureProgressStatus } from '@/shared/services/progressService'
+import { getLectureProgressStatusAll, type LectureProgressStatus } from '@/shared/services/progressService'
 import {
   subscribeProgressEvents,
   subscribeRewardEvents,
