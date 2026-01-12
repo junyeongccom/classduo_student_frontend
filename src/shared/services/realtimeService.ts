@@ -19,6 +19,7 @@ export interface ProgressEvent {
 export interface RewardEvent {
   user_id: string
   lecture_id: string
+  course_id: string | null
   reward_type: string
   amount: number
 }

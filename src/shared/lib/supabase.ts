@@ -5,7 +5,8 @@
 'use client'
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { TOKEN_KEY } from './utils'
+import { TOKEN_KEY, REFRESH_TOKEN_KEY } from './utils'
+import { authService } from '@/features/auth/services/authService'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -87,4 +88,86 @@ export function resetSupabaseClient(): void {
   }
   supabaseClient = null
   getSupabaseClient()
+}
+
+/**
+ * 에러 메시지 추출 (error.message가 없을 때 대체 메시지 사용)
+ */
+export function getErrorMessage(error: any): string {
+  return error?.message || 
+         error?.code || 
+         '알 수 없는 오류가 발생했습니다'
+}
+
+/**
+ * JWT 만료 에러인지 확인
+ * PGRST303 에러 코드 또는 "JWT expired" 메시지 확인
+ */
+export function isJWTExpiredError(error: any): boolean {
+  if (!error) return false
+  
+  const code = error.code || error.error_code
+  const message = error.message || ''
+  
+  return code === 'PGRST303' || 
+         message.includes('JWT expired') ||
+         message.includes('JWT') ||
+         message.includes('expired')
+}
+
+/**
+ * Refresh token으로 새 access token 발급 및 Supabase 클라이언트 재생성
+ */
+export async function refreshSupabaseToken(): Promise<boolean> {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
+  if (!refreshToken) {
+    console.warn('[supabase] Refresh token이 없습니다.')
+    return false
+  }
+
+  try {
+    const refreshResult = await authService.refreshToken(refreshToken)
+    
+    if (refreshResult.data && !refreshResult.error) {
+      // 새 토큰 저장
+      localStorage.setItem(TOKEN_KEY, refreshResult.data.access_token)
+      if (refreshResult.data.refresh_token) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, refreshResult.data.refresh_token)
+      }
+      
+      // Supabase 클라이언트 재생성 (새 토큰으로 헤더 업데이트)
+      resetSupabaseClient()
+      
+      return true
+    } else {
+      console.error('[supabase] 토큰 갱신 실패:', refreshResult.error)
+      return false
+    }
+  } catch (error) {
+    console.error('[supabase] 토큰 갱신 중 예외 발생:', error)
+    return false
+  }
+}
+
+/**
+ * JWT 만료 에러 처리: 토큰 갱신 시도 및 실패 시 재로그인 유도
+ */
+export async function handleJWTExpiration(): Promise<boolean> {
+  const refreshSuccess = await refreshSupabaseToken()
+  
+  if (!refreshSuccess) {
+    // 토큰 갱신 실패 시 재로그인 유도
+    // authStore를 동적 import하여 순환 참조 방지
+    const { useAuthStore } = await import('@/features/auth/store/authStore')
+    const logout = useAuthStore.getState().logout
+    logout()
+    
+    console.warn('[supabase] 토큰 갱신 실패로 인해 로그아웃 처리되었습니다. 다시 로그인해주세요.')
+  }
+  
+  return refreshSuccess
 }

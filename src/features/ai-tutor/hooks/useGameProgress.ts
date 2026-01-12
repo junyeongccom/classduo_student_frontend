@@ -1,7 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getLectureProgressStatusAll, type LectureProgressStatus } from '@/shared/services/progressService'
+import { 
+  getLectureProgressStatusAll, 
+  getCourseRewardCounts,
+  type LectureProgressStatus 
+} from '@/shared/services/progressService'
 import {
   subscribeProgressEvents,
   subscribeRewardEvents,
@@ -26,6 +30,7 @@ export interface ClaimedRewards {
 export function useGameProgress() {
   const [gameProgress, setGameProgress] = useState<GameProgress>({})
   const [claimedRewards, setClaimedRewards] = useState<ClaimedRewards>({})
+  const [flameCount, setFlameCount] = useState<FlameCount>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   
@@ -42,27 +47,44 @@ export function useGameProgress() {
    */
   const refreshData = useCallback(async () => {
     try {
-      const result = await getLectureProgressStatusAll()
+      // 진척도 데이터와 보상 개수 데이터를 병렬로 조회
+      const [progressResult, rewardCountResult] = await Promise.all([
+        getLectureProgressStatusAll(),
+        getCourseRewardCounts(),
+      ])
       
-      if (result.error) {
-        setError(result.error)
+      if (progressResult.error) {
+        setError(progressResult.error)
         return
       }
 
-      if (result.data) {
+      if (progressResult.data) {
         // GameProgress 형식으로 변환
         const progress: GameProgress = {}
         const rewards: ClaimedRewards = {}
         
-        result.data.forEach((status) => {
+        progressResult.data.forEach((status) => {
           progress[status.lecture_id] = status.progress_count
           rewards[status.lecture_id] = status.is_claimed
         })
         
         setGameProgress(progress)
         setClaimedRewards(rewards)
-        setError(null)
       }
+
+      // 보상 개수 데이터 처리
+      if (rewardCountResult.data) {
+        const flameCountMap: FlameCount = {}
+        rewardCountResult.data.forEach((reward) => {
+          flameCountMap[reward.course_id] = reward.total_amount
+        })
+        setFlameCount(flameCountMap)
+      } else if (rewardCountResult.error) {
+        // 보상 개수 조회 실패는 경고만 표시 (진척도는 정상 동작)
+        console.warn('[useGameProgress] 보상 개수 조회 실패:', rewardCountResult.error)
+      }
+
+      setError(null)
     } catch (err) {
       console.error('[useGameProgress] 데이터 조회 실패:', err)
       setError(err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다'))
@@ -106,11 +128,37 @@ export function useGameProgress() {
         return // 다른 사용자의 이벤트는 무시
       }
       
-      // 해당 lecture_id의 is_claimed=true, is_claimable=false
+      console.log('[useGameProgress] Realtime 보상 이벤트 수신:', {
+        lecture_id: event.lecture_id,
+        course_id: event.course_id,
+        amount: event.amount,
+      })
+      
+      // 해당 lecture_id의 is_claimed=true
       setClaimedRewards((prev) => ({
         ...prev,
         [event.lecture_id]: true,
       }))
+
+      // course_id가 있으면 즉시 flameCount 업데이트
+      if (event.course_id) {
+        setFlameCount((prev) => {
+          const current = prev[event.course_id] || 0
+          const amount = event.amount || 1
+          console.log(`[useGameProgress] flameCount 업데이트: ${event.course_id} = ${current} + ${amount}`)
+          return {
+            ...prev,
+            [event.course_id]: current + amount,
+          }
+        })
+      } else {
+        // course_id가 없으면 refreshStatus 호출하여 최신 데이터 조회
+        // (트리거로 course_id가 채워졌을 수 있음)
+        console.log('[useGameProgress] course_id가 없어 refreshStatus 호출')
+        setTimeout(() => {
+          refreshStatus()
+        }, 500) // 트리거 실행 시간 고려
+      }
     })
 
     // 안전장치: 5초마다 재조회
@@ -152,12 +200,12 @@ export function useGameProgress() {
   return {
     gameProgress,
     claimedRewards,
+    flameCount,
     isLoading,
     error,
     refreshStatus,
-    // 하위 호환성을 위한 함수들 (deprecated)
-    flameCount: {} as FlameCount, // 불꽃 개수는 더 이상 사용하지 않음
+    // 하위 호환성을 위한 함수들
     setClaimedRewards, // optimistic update를 위한 setter
-    setFlameCount: () => {}, // 더 이상 사용하지 않음
+    setFlameCount, // flameCount 업데이트를 위한 setter
   }
 }

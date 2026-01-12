@@ -640,7 +640,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
     let animationFrameId: number
     let lastTime = 0
-    const BASE_SPEED = 5 // 기준 스크롤 속도 (1.25배속)
+    const BASE_SPEED = 8 // 기준 스크롤 속도 (1.25배속)
     const speed = BASE_SPEED * scaleFactor // 스케일에 비례한 스크롤 속도
     const doorHeight = 250 * scaleFactor
     const screenMiddle = dimensions.height / 2
