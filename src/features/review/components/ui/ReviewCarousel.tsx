@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-
 import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
 import { ReviewLoading } from '@/features/review'
+import { useReviewStore } from '@/features/review/store/useReviewStore'
 
 interface ReviewCarouselProps {
   data: ReviewCarouselResponse | null
@@ -20,11 +21,23 @@ interface ReviewCarouselProps {
 
 export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarouselProps) {
   const [currentPage, setCurrentPage] = useState(1) // 1-6 (1페이지 + 2-6페이지)
+  const { preloadBlanks, clearLectureData } = useReviewStore()
   
   // 다른 강의회차 선택 시 페이지를 1로 리셋
   useEffect(() => {
     setCurrentPage(1)
   }, [data])
+  
+  // 복습 콘텐츠 로딩 시 모든 빈칸 데이터를 미리 저장
+  useEffect(() => {
+    if (data && data.pages_2_6.length > 0) {
+      const lectureId = data.page_1.lecture_id
+      // 이전 강의 데이터 정리
+      clearLectureData(lectureId)
+      // 새 강의의 빈칸 데이터 미리 로드
+      preloadBlanks(lectureId, data.pages_2_6)
+    }
+  }, [data, preloadBlanks, clearLectureData])
 
   if (isLoading) {
     return <ReviewLoading message="복습 콘텐츠 준비 중..." size="inline" />
@@ -713,6 +726,8 @@ function AnswerWithBlanks({
               onReveal={handleReveal}
               lectureId={lectureId}
               reviewAnswerId={reviewAnswerId}
+              pageId={pageId}
+              blankIndex={part.blankIndex}
             />
           )
         }
@@ -730,33 +745,73 @@ function SimpleBlank({
   isRevealed, 
   onReveal,
   lectureId,
-  reviewAnswerId
+  reviewAnswerId,
+  pageId,
+  blankIndex
 }: { 
   answer: string
   isRevealed: boolean
   onReveal: () => void
   lectureId?: string
   reviewAnswerId?: string
+  pageId?: number
+  blankIndex?: number
 }) {
+  const { setBlankRevealed, isBlankRevealed: getIsBlankRevealed, getBlankData } = useReviewStore()
+  
+  // Store에서 빈칸 상태 확인 (pageId와 blankIndex가 있을 때만)
+  const storeRevealed = pageId !== undefined && blankIndex !== undefined && lectureId
+    ? getIsBlankRevealed(lectureId, pageId, blankIndex)
+    : isRevealed
+  
+  // Store의 revealed 상태를 우선 사용, 없으면 prop 사용
+  const actualIsRevealed = storeRevealed
+  
   const handleClick = () => {
-    // 빈칸이 처음 열릴 때만 POST 요청 (OX 퀴즈 패턴)
-    // reviewAnswerId가 null이거나 undefined인 경우는 POST 요청하지 않음
-    if (!isRevealed && lectureId && reviewAnswerId) {
-      // Fire-and-forget 방식으로 백그라운드에서 처리
-      reviewService.completeReview(lectureId, {
-        review_answer_id: reviewAnswerId,
-      })
-        .then((result) => {
-          if (result.error) {
-            console.error('[ReviewCarousel] 빈칸 클릭 POST 실패:', result.error)
-          }
+    // Store에 상태 즉시 업데이트 (pageId와 blankIndex가 있을 때만)
+    if (pageId !== undefined && blankIndex !== undefined && lectureId) {
+      const newRevealed = !actualIsRevealed
+      setBlankRevealed(lectureId, pageId, blankIndex, newRevealed)
+      
+      // 빈칸이 처음 열릴 때만 POST 요청 (OX 퀴즈 패턴)
+      if (newRevealed) {
+        const blankData = getBlankData(lectureId, pageId, blankIndex)
+        const answerId = blankData?.review_answer_id || reviewAnswerId
+        
+        if (answerId) {
+          // Fire-and-forget 방식으로 백그라운드에서 처리
+          reviewService.completeReview(lectureId, {
+            review_answer_id: answerId,
+          })
+            .then((result) => {
+              if (result.error) {
+                console.error('[ReviewCarousel] 빈칸 클릭 POST 실패:', result.error)
+              }
+            })
+            .catch((error) => {
+              console.error('[ReviewCarousel] 빈칸 클릭 POST 예외:', error)
+            })
+        }
+      }
+    } else {
+      // Store를 사용할 수 없는 경우 기존 로직 사용
+      if (!isRevealed && lectureId && reviewAnswerId) {
+        // Fire-and-forget 방식으로 백그라운드에서 처리
+        reviewService.completeReview(lectureId, {
+          review_answer_id: reviewAnswerId,
         })
-        .catch((error) => {
-          console.error('[ReviewCarousel] 빈칸 클릭 POST 예외:', error)
-        })
+          .then((result) => {
+            if (result.error) {
+              console.error('[ReviewCarousel] 빈칸 클릭 POST 실패:', result.error)
+            }
+          })
+          .catch((error) => {
+            console.error('[ReviewCarousel] 빈칸 클릭 POST 예외:', error)
+          })
+      }
+      
+      onReveal() // 토글 기능
     }
-    
-    onReveal() // 토글 기능
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -773,20 +828,20 @@ function SimpleBlank({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={`inline relative cursor-pointer rounded px-1 py-0 mx-0.5 font-bold transition-all overflow-hidden ${
-        isRevealed
+        actualIsRevealed
           ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white shadow-lg'
           : 'bg-gray-300 text-gray-300 hover:bg-gray-400 hover:shadow-md'
       }`}
       style={{
-        textShadow: isRevealed ? '0 1px 2px rgba(0,0,0,0.2)' : 'none',
+        textShadow: actualIsRevealed ? '0 1px 2px rgba(0,0,0,0.2)' : 'none',
         lineHeight: 'inherit',
         display: 'inline',
         verticalAlign: 'baseline',
       }}
-      aria-label={isRevealed ? '정답: ' + answer + ' (클릭하여 숨기기)' : '클릭하여 정답 보기'}
+      aria-label={actualIsRevealed ? '정답: ' + answer + ' (클릭하여 숨기기)' : '클릭하여 정답 보기'}
     >
       {/* 빈칸 상태일 때 shimmer 효과 - 항상 반복 */}
-      {!isRevealed && (
+      {!actualIsRevealed && (
         <span 
           className="absolute inset-0 pointer-events-none animate-shimmer"
           style={{
@@ -796,7 +851,7 @@ function SimpleBlank({
         />
       )}
       <span className="relative z-10">
-        {isRevealed ? answer : '_____'}
+        {actualIsRevealed ? answer : '_____'}
       </span>
     </span>
   )
