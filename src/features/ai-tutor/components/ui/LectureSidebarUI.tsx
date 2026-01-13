@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { ChevronDown, Loader2, BookOpen, Calendar, Gamepad2 } from 'lucide-react'
 
 // 타입 정의
@@ -106,6 +106,8 @@ export function LectureSidebarUI({
   onGameIconClick,
 }: LectureSidebarUIProps) {
   const lectureButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const [showFlameTooltip, setShowFlameTooltip] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number; arrowLeft: number } | null>(null)
 
   // 선택된 회차로 스크롤
   useEffect(() => {
@@ -167,6 +169,39 @@ export function LectureSidebarUI({
                 className={`flex items-center gap-1 shrink-0 transition-all duration-300 ${
                   flameHighlight ? 'scale-125' : ''
                 }`}
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  
+                  // 툴팁 위치 계산 (우측 정렬, 하단 배치)
+                  const tooltipWidth = 320 // 툴팁 예상 너비 (줄바꿈 반영하여 조정)
+                  const gap = 8 // 아이콘과 툴팁 사이 간격
+                  
+                  // 가로 정렬: 툴팁 오른쪽 끝을 컨테이너 오른쪽 끝(숫자 끝)에 맞춤
+                  let left = rect.right - tooltipWidth
+                  
+                  // 화면 왼쪽 벗어남 방지
+                  if (left < 10) left = 10
+                  
+                  // 세로 정렬: 아이콘 바로 아래
+                  const top = rect.bottom + gap
+                  
+                  // 꼬리 위치: 불꽃 아이콘의 중심을 가리키도록
+                  // 불꽃 아이콘은 flex 컨테이너의 첫 번째 자식이므로 rect.left 근처에 있음
+                  // 정확하게는 이미지 태그를 찾거나, 대략적으로 계산
+                  // 이미지 너비가 14px(w-3.5)이므로 rect.left + 7px 정도가 중심
+                  const flameCenterX = rect.left + 7
+                  const arrowLeft = flameCenterX - left
+                  
+                  setTooltipPosition({
+                    top: top,
+                    left: left,
+                    arrowLeft: arrowLeft
+                  })
+                  setShowFlameTooltip(true)
+                }}
+                onMouseLeave={() => {
+                  setShowFlameTooltip(false)
+                }}
               >
                 <img
                   src="/icon_flame.png"
@@ -409,6 +444,68 @@ export function LectureSidebarUI({
               </p>
             )
           )}
+        </div>
+      )}
+
+      {/* 불꽃 툴팁 */}
+      {showFlameTooltip && tooltipPosition && (
+        <div
+          className="fixed z-[10000] pointer-events-none"
+          style={{
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+          }}
+        >
+          <div className="bg-gray-900 rounded-lg px-4 py-3 text-white text-sm shadow-xl max-w-[320px]">
+            <p className="mb-3 leading-relaxed whitespace-pre-wrap">
+              {`매 수업일마다 미니게임 퀴즈 5개,
+50초 복습 빈칸 퀵필 5개를 진행하고
+상자를 열어 불꽃을 모으세요!`}
+            </p>
+            <div className="border-t border-gray-700 pt-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <img 
+                  src="/icon_flame.png" 
+                  alt="불꽃" 
+                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
+                />
+                <span className="leading-relaxed">불꽃 2개: 미니게임, 과제보조 기능 업그레이드</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <img 
+                  src="/icon_flame.png" 
+                  alt="불꽃" 
+                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
+                />
+                <span className="leading-relaxed">불꽃 4개: 캐릭터, 시험준비 기능 업그레이드</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <img 
+                  src="/icon_flame.png" 
+                  alt="불꽃" 
+                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
+                />
+                <span className="leading-relaxed">불꽃 8개: 클래스듀오 울트라 업그레이드</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-2 pl-6">
+                (더 많은 퀴즈 게임, 벼락치기 모드, 연구 모드 등)
+              </p>
+            </div>
+          </div>
+          {/* 삼각형 꼬리 (위쪽을 가리킴) */}
+          <div
+            className="absolute"
+            style={{
+              bottom: '100%',
+              left: `${tooltipPosition.arrowLeft}px`,
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '8px solid transparent',
+              borderRight: '8px solid transparent',
+              borderBottom: '8px solid rgb(17, 24, 39)', // gray-900
+            }}
+          />
         </div>
       )}
 
