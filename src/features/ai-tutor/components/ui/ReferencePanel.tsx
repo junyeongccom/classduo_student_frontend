@@ -515,7 +515,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
           {variant === 'notes' ? (
             <>
               <Mic className="h-5 w-5 text-primary-500" />
-              <h2 className="text-lg font-semibold text-gray-900">수업녹음본</h2>
+              <h2 className="text-lg font-semibold text-gray-900">수업녹음본 출처</h2>
               <span className="ml-2 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
                 {recordingRefs.length}개
               </span>
@@ -523,7 +523,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
           ) : (
             <>
               <FileText className="h-5 w-5 text-blue-500" />
-              <h2 className="text-lg font-semibold text-gray-900">강의자료</h2>
+              <h2 className="text-lg font-semibold text-gray-900">강의자료 출처</h2>
               <span className="ml-2 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
                 {materialRefs.length}개
               </span>

@@ -1337,7 +1337,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                                       </p>
                                     )}
                                     <p className="text-xs text-gray-500 mt-1.5">
-                                      {source.type === 'recording' ? '수업 녹음본' : '강의자료'}
+                                      {source.type === 'recording' ? '수업 녹음본 출처' : '강의자료 출처'}
                                     </p>
                                   </div>
                                 </div>

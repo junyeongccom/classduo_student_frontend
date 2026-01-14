@@ -331,7 +331,7 @@ export function AITutorContainer() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <span>수업녹음본</span>
+                <span>수업녹음본 출처</span>
                 {recordingCount > 0 && (
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
                     {recordingCount}
@@ -356,7 +356,7 @@ export function AITutorContainer() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <span>강의자료</span>
+                <span>강의자료 출처</span>
                 {materialCount > 0 && (
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
                     {materialCount}
