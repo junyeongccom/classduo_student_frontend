@@ -419,6 +419,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                 const isExpanded = expandedItems.has(itemId)
                 const { text, visualDescription } = parseMaterialContent(ref.content)
                 const highlightedText = highlightCitations(text, ref.citations || [], ref.content)
+                const highlightedVisualDescription = highlightCitations(visualDescription, ref.citations || [], ref.content)
                 const hasImage = Boolean(ref.metadata.image_url)
 
                 return (
@@ -491,9 +492,10 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 시각자료 설명
                               </h4>
-                              <p className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
-                                {visualDescription}
-                              </p>
+                              <p 
+                                className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700"
+                                dangerouslySetInnerHTML={{ __html: highlightedVisualDescription }}
+                              />
                             </div>
                           )}
                         </div>
