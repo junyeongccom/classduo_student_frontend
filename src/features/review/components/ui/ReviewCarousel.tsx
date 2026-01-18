@@ -6,6 +6,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react'
 import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
@@ -20,6 +21,7 @@ interface ReviewCarouselProps {
 }
 
 export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarouselProps) {
+  const t = useTranslations('review')
   const [currentPage, setCurrentPage] = useState(1) // 1-6 (1페이지 + 2-6페이지)
   const { preloadBlanks, clearLectureData } = useReviewStore()
   
@@ -54,7 +56,7 @@ export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarou
   if (!data) {
     return (
       <div className="flex h-full items-center justify-center text-gray-400">
-        복습 콘텐츠가 없습니다
+        {t('noContent')}
       </div>
     )
   }

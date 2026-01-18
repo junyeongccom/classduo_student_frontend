@@ -4,6 +4,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { X, FileText, Mic, ChevronDown, ChevronUp, Highlighter } from 'lucide-react'
 import { Reference } from '@/features/ai-tutor/types'
 
@@ -55,6 +56,7 @@ interface MaterialReference {
 }
 
 export function ReferencePanel({ allReferences, variant, onClose, messages, className }: ReferencePanelProps) {
+  const t = useTranslations('aiTutorReference')
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [scrollPositions, setScrollPositions] = useState({ notes: 0, materials: 0 })
   const notesContainerRef = useRef<HTMLDivElement>(null)
@@ -273,7 +275,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
       {recordingRefs.length === 0 ? (
         <div className="py-12 text-center text-gray-500">
           <Mic className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-4">참고한 녹음본이 없습니다</p>
+          <p className="mt-4">{t('empty.notes')}</p>
         </div>
       ) : (
         Array.from(referencesByMessage.entries())
@@ -398,7 +400,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
       {materialRefs.length === 0 ? (
         <div className="py-12 text-center text-gray-500">
           <FileText className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-4">참고한 강의자료가 없습니다</p>
+          <p className="mt-4">{t('empty.materials')}</p>
         </div>
       ) : (
         Array.from(referencesByMessage.entries())
@@ -407,11 +409,11 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
             <div key={`materials-${messageIndex}`} className="space-y-3">
               <div className="mb-4 flex items-center gap-2 border-b border-gray-200 pb-3">
                 <span className="text-sm font-semibold text-gray-900">
-                  답변 {Math.floor(messageIndex / 2) + 1}:{' '}
+                  {t('answer')} {Math.floor(messageIndex / 2) + 1}:{' '}
                   <span className="text-primary-600">{getKeywords(messageIndex)}</span>
                 </span>
                 <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                  {refs.materials.length}개 자료
+                  {t('materialCountBadge', { count: String(refs.materials.length) })}
                 </span>
               </div>
               {refs.materials.map((ref, index) => {
@@ -441,7 +443,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                           </p>
                           {ref.metadata.page_number && (
                             <p className="text-xs text-gray-500">
-                              페이지 {ref.metadata.page_number}
+                              {t('page')} {ref.metadata.page_number}
                             </p>
                           )}
                         </div>
@@ -517,17 +519,17 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
           {variant === 'notes' ? (
             <>
               <Mic className="h-5 w-5 text-primary-500" />
-              <h2 className="text-lg font-semibold text-gray-900">수업녹음본 출처</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('title.notes')}</h2>
               <span className="ml-2 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
-                {recordingRefs.length}개
+                {t('countBadge', { count: String(recordingRefs.length) })}
               </span>
             </>
           ) : (
             <>
               <FileText className="h-5 w-5 text-blue-500" />
-              <h2 className="text-lg font-semibold text-gray-900">강의자료 출처</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('title.materials')}</h2>
               <span className="ml-2 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
-                {materialRefs.length}개
+                {t('countBadge', { count: String(materialRefs.length) })}
               </span>
             </>
           )}

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { Button, Input } from '@/shared/components/ui'
 import { useLogin } from '@/features/auth/hooks/useLogin'
 import { useResetPassword } from '@/features/auth/hooks/useResetPassword'
@@ -47,6 +48,7 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup }: LoginModalProps) {
+  const t = useTranslations('loginModal')
   const { handleLogin, isLoading } = useLogin()
   const { error, clearError, user } = useAuthStore()
   const { requestResetPassword, isLoading: isResetting, successMessage, error: resetError, clearError: clearResetError, clearSuccessMessage } = useResetPassword()
@@ -206,13 +208,13 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
               className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="h-4 w-4" />
-              로그인으로 돌아가기
+              {t('backToLogin')}
             </button>
 
             {/* 제목 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-primary-500">비밀번호 찾기</h1>
-              <p className="mt-2 text-sm text-gray-500">가입한 이메일을 입력하세요</p>
+              <h1 className="text-2xl font-bold text-primary-500">{t('resetPasswordTitle')}</h1>
+              <p className="mt-2 text-sm text-gray-500">{t('resetPasswordSubtitle')}</p>
             </div>
 
             {/* 성공 메시지 */}
@@ -229,7 +231,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                 <Input
                   {...registerReset('email')}
                   type="email"
-                  placeholder="학교 이메일 (ex. @korea.ac.kr)"
+                  placeholder={t('emailPlaceholder')}
                   className="pl-12"
                   error={resetErrors.email?.message}
                 />
@@ -246,7 +248,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                 size="lg"
                 isLoading={isResetting}
               >
-                비밀번호 재설정 이메일 발송
+                {t('sendResetEmail')}
               </Button>
             </form>
           </>
@@ -254,8 +256,8 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
           <>
             {/* 로고 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-primary-500">로그인</h1>
-              <p className="mt-2 text-sm text-gray-500">계정을 선택하세요</p>
+              <h1 className="text-2xl font-bold text-primary-500">{t('loginTitle')}</h1>
+              <p className="mt-2 text-sm text-gray-500">{t('chooseAccount')}</p>
             </div>
 
             {/* 저장된 계정 목록 */}
@@ -290,7 +292,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                 <Input
                   {...register('email')}
                   type="email"
-                  placeholder="학교 이메일 (ex. @korea.ac.kr)"
+                  placeholder={t('emailPlaceholder')}
                   className="pl-12"
                   error={errors.email?.message}
                 />
@@ -302,7 +304,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                   <Input
                     {...register('password')}
                     type="password"
-                    placeholder="비밀번호"
+                    placeholder={t('passwordPlaceholder')}
                     className="pl-12"
                     error={errors.password?.message}
                   />
@@ -320,7 +322,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                 size="lg"
                 isLoading={isLoading}
               >
-                로그인
+                {t('loginTitle')}
               </Button>
             </form>
 
@@ -331,14 +333,14 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                   onClick={onSwitchToSignup}
                   className="text-sm text-gray-600 hover:text-gray-900"
                 >
-                  회원가입
+                  {t('signup')}
                 </button>
               ) : (
                 <Link 
                   href="/signup"
                   className="text-sm text-gray-600 hover:text-gray-900"
                 >
-                  회원가입
+                  {t('signup')}
                 </Link>
               )}
               
@@ -348,7 +350,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                 onClick={handleShowResetPassword}
                 className="text-sm text-gray-600 hover:text-gray-900"
               >
-                비밀번호 찾기
+                {t('findPassword')}
               </button>
             </div>
           </>

@@ -1,0 +1,119 @@
+{
+  "nav": {
+    "aiTutor": "AI Tutor",
+    "review50": "50-sec Review",
+    "preview50": "50-sec Preview",
+    "assignment": "Assignment Help",
+    "exam": "Exam Prep",
+    "profile": "Profile"
+  },
+  "aiTutorTopbar": {
+    "newChat": "New chat",
+    "chatHistory": "Chat history",
+    "tab": {
+      "answer": "Answer",
+      "notesSources": "Recording sources",
+      "materialsSources": "Material sources"
+    }
+  },
+  "aiTutorChat": {
+    "selectLectureTitle": "Please select a class",
+    "selectLectureDescription": "Select a class on the right to start chatting with the AI tutor",
+    "askAnythingPlaceholder": "Ask me anything.",
+    "referenceHint": "Check recording and material sources to better understand the answer"
+  },
+  "aiTutorSidebar": {
+    "courseSelectTitle": "Select class",
+    "selectCoursePlaceholder": "Select a class",
+    "lectureSelectHint": "Select sessions (multi-select)",
+    "selectAll": "Select all",
+    "deselectAll": "Clear all",
+    "lectureLabel": "Session {no}",
+    "selectedLecturesSummary": "Selected sessions: {count}",
+    "lockedLecturesSummary": "Current session: {count}"
+  },
+  "aiTutorHints": {
+    "multiSelectNoHookingQuestions": "Hooking questions are not available when multiple sessions are selected"
+  },
+  "aiTutorChatHistory": {
+    "title": "Chat history",
+    "newChat": "New chat",
+    "searchPlaceholder": "Search chat messages...",
+    "allList": "All chats",
+    "searchResults": "Search results",
+    "loadingHistory": "Loading chat history...",
+    "emptyTitle": "No chat history",
+    "emptySubtitle": "Start a new chat!",
+    "noSearchResults": "No results found",
+    "confirmDelete": "Delete this chat?",
+    "yesterday": "Yesterday",
+    "daysAgo": "{days} days ago",
+    "sessionTitleFallback": "New chat"
+  },
+  "review": {
+    "noContent": "No review content available"
+  },
+  "studyspacePlaceholder": {
+    "preview": {
+      "title": "50-sec Preview",
+      "body": "50-sec Preview page (coming soon)"
+    },
+    "assignment": {
+      "title": "Assignment Help",
+      "body": "Assignment Help page (coming soon)"
+    },
+    "exam": {
+      "title": "Exam Prep",
+      "body": "Exam Prep page (coming soon)"
+    }
+  },
+  "aiTutorReference": {
+    "title": {
+      "notes": "Recording sources",
+      "materials": "Material sources"
+    },
+    "empty": {
+      "notes": "No referenced recordings",
+      "materials": "No referenced materials"
+    },
+    "countBadge": "{count} items",
+    "answer": "Answer",
+    "materialCountBadge": "{count} materials",
+    "page": "Page"
+  },
+  "aiTutorFlameTooltip": {
+    "intro": "For each class session, solve 5 mini-game quizzes and 5 quick-fill review blanks, then open the box to collect flames!",
+    "flame2": "2 flames: Upgrade mini-game and assignment help",
+    "flame4": "4 flames: Upgrade character and exam prep",
+    "flame8": "8 flames: Upgrade to ClassDuo Ultra",
+    "note": "(More quiz games, cramming mode, research mode, etc.)"
+  },
+  "aiTutorSession": {
+    "lockedHint": "Start a new chat to select different sessions"
+  },
+  "loginModal": {
+    "loginTitle": "Log in",
+    "chooseAccount": "Choose an account",
+    "resetPasswordTitle": "Find password",
+    "resetPasswordSubtitle": "Enter your registered email",
+    "backToLogin": "Back to login",
+    "emailPlaceholder": "School email (e.g. @korea.ac.kr)",
+    "passwordPlaceholder": "Password",
+    "sendResetEmail": "Send reset email",
+    "signup": "Sign up",
+    "findPassword": "Find password"
+  },
+  "profile": {
+    "title": "Profile",
+    "loadingUser": "Loading user information...",
+    "verified": "Verified",
+    "actions": {
+      "editProfile": "Edit profile",
+      "changePassword": "Change password",
+      "logout": "Log out"
+    }
+  }
+}
+
+
+

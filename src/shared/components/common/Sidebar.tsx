@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { SIDEBAR_MENU, PROFILE_MENU } from '@/shared/constants/nav'
+import { LanguageToggle } from './LanguageToggle'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
   AI_TUTOR_NEW_CHAT_FLAG,
@@ -13,9 +15,11 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function Sidebar() {
+  const t = useTranslations()
   const pathname = usePathname()
   const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const profileLabel = t(PROFILE_MENU.labelKey)
   const triggerAiTutorNewChat = () => {
     if (typeof window === 'undefined') return
     sessionStorage.setItem(AI_TUTOR_NEW_CHAT_FLAG, Date.now().toString())
@@ -67,6 +71,7 @@ export function Sidebar() {
           {SIDEBAR_MENU.map((item) => {
             const Icon = item.icon
             const isActive = pathname.startsWith(item.href)
+            const label = t(item.labelKey)
 
             return (
               <Link
@@ -86,10 +91,10 @@ export function Sidebar() {
                     ? 'bg-gray-100 text-gray-900 font-medium'
                     : 'text-gray-600 hover:bg-gray-50'
                 )}
-                title={isCollapsed ? item.label : undefined}
+                title={isCollapsed ? label : undefined}
               >
                 <Icon className="h-5 w-5" />
-                {!isCollapsed && <span>{item.label}</span>}
+                {!isCollapsed && <span>{label}</span>}
               </Link>
             )
           })}
@@ -97,19 +102,25 @@ export function Sidebar() {
 
         {/* 프로필 (하단) */}
         <div className="px-2 py-4">
-          <Link
-            href={PROFILE_MENU.href}
-            className={cn(
-              'flex flex-col items-center gap-1 rounded-lg px-2 py-3 text-xs transition-colors',
-              pathname === PROFILE_MENU.href
-                ? 'bg-gray-100 text-gray-900 font-medium'
-                : 'text-gray-600 hover:bg-gray-50'
-            )}
-            title={isCollapsed ? PROFILE_MENU.label : undefined}
-          >
-            <PROFILE_MENU.icon className="h-5 w-5" />
-            {!isCollapsed && <span>{PROFILE_MENU.label}</span>}
-          </Link>
+          <div className="mb-3">
+            <Link
+              href={PROFILE_MENU.href}
+              className={cn(
+                'flex flex-col items-center gap-1 rounded-lg px-2 py-3 text-xs transition-colors',
+                pathname === PROFILE_MENU.href
+                  ? 'bg-gray-100 text-gray-900 font-medium'
+                  : 'text-gray-600 hover:bg-gray-50'
+              )}
+              title={isCollapsed ? profileLabel : undefined}
+            >
+              <PROFILE_MENU.icon className="h-5 w-5" />
+              {!isCollapsed && <span>{profileLabel}</span>}
+            </Link>
+          </div>
+
+          <div className={cn('flex justify-center', isCollapsed ? 'px-0' : 'px-1')}>
+            <LanguageToggle size="sm" />
+          </div>
         </div>
       </div>
     </aside>

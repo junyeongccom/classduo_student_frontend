@@ -7,6 +7,7 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { ChevronDown, Loader2, BookOpen, Calendar, Gamepad2 } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 // 타입 정의
 export interface Lecture {
@@ -105,6 +106,10 @@ export function LectureSidebarUI({
   onTreasureClick,
   onGameIconClick,
 }: LectureSidebarUIProps) {
+  const t = useTranslations('aiTutorSidebar')
+  const tHints = useTranslations('aiTutorHints')
+  const tFlame = useTranslations('aiTutorFlameTooltip')
+  const tSession = useTranslations('aiTutorSession')
   const lectureButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [showFlameTooltip, setShowFlameTooltip] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number; arrowLeft: number } | null>(null)
@@ -139,7 +144,7 @@ export function LectureSidebarUI({
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
           <BookOpen className="h-4 w-4" />
-          수업 선택
+          {t('courseSelectTitle')}
         </h2>
         {isLoading && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
       </div>
@@ -161,7 +166,7 @@ export function LectureSidebarUI({
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className={`truncate ${selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
-              {selectedCourse?.title || '강의를 선택하세요'}
+              {selectedCourse?.title || t('selectCoursePlaceholder')}
             </span>
             {selectedCourse && (
               <div
@@ -261,14 +266,14 @@ export function LectureSidebarUI({
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Calendar className="h-3.5 w-3.5" />
-              <span>회차 선택 (복수 선택 가능)</span>
+              <span>{t('lectureSelectHint')}</span>
             </div>
             {selectedCourseAvailableLectures.length > 0 && !isLocked && (
               <button
                 onClick={onToggleSelectAll}
                 className="text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
               >
-                {isAllSelected ? '전체 해제' : '전체 선택'}
+                {isAllSelected ? t('deselectAll') : t('selectAll')}
               </button>
             )}
           </div>
@@ -305,7 +310,7 @@ export function LectureSidebarUI({
                           isSelected ? 'text-white' : isDisabled ? 'text-gray-400' : 'text-gray-800'
                         }`}
                       >
-                        {lecture.lecture_no}회차
+                        {t('lectureLabel', { no: String(lecture.lecture_no) })}
                       </p>
                       <p className={`text-xs ${isSelected ? 'text-primary-100' : 'text-gray-400'}`}>
                         {lecture.lecture_date}
@@ -431,16 +436,18 @@ export function LectureSidebarUI({
           }`}
         >
           <p className={`text-xs font-medium ${isLocked ? 'text-gray-600' : 'text-primary-800'}`}>
-            {isLocked ? '현재 세션 회차' : '선택된 회차'}: {selectedLectureIds.length}개
+            {isLocked
+              ? t('lockedLecturesSummary', { count: String(selectedLectureIds.length) })
+              : t('selectedLecturesSummary', { count: String(selectedLectureIds.length) })}
           </p>
           {isLocked ? (
             <p className="mt-1 text-[10px] text-gray-500">
-              새 채팅을 시작하면 다른 회차를 선택할 수 있습니다
+              {tSession('lockedHint')}
             </p>
           ) : (
             selectedLectureIds.length > 1 && (
               <p className="mt-1 text-[10px] text-primary-600">
-                복수 선택 시 후킹 질문은 제공되지 않습니다
+                {tHints('multiSelectNoHookingQuestions')}
               </p>
             )
           )}
@@ -458,9 +465,7 @@ export function LectureSidebarUI({
         >
           <div className="bg-gray-900 rounded-lg px-4 py-3 text-white text-sm shadow-xl max-w-[320px]">
             <p className="mb-3 leading-relaxed whitespace-pre-wrap">
-              {`매 수업일마다 미니게임 퀴즈 5개,
-50초 복습 빈칸 퀵필 5개를 진행하고
-상자를 열어 불꽃을 모으세요!`}
+              {tFlame('intro')}
             </p>
             <div className="border-t border-gray-700 pt-3 space-y-2">
               <div className="flex items-start gap-2">
@@ -469,7 +474,7 @@ export function LectureSidebarUI({
                   alt="불꽃" 
                   className="h-4 w-4 object-contain mt-0.5 shrink-0"
                 />
-                <span className="leading-relaxed">불꽃 2개: 미니게임, 과제보조 기능 업그레이드</span>
+                <span className="leading-relaxed">{tFlame('flame2')}</span>
               </div>
               <div className="flex items-start gap-2">
                 <img 
@@ -477,7 +482,7 @@ export function LectureSidebarUI({
                   alt="불꽃" 
                   className="h-4 w-4 object-contain mt-0.5 shrink-0"
                 />
-                <span className="leading-relaxed">불꽃 4개: 캐릭터, 시험준비 기능 업그레이드</span>
+                <span className="leading-relaxed">{tFlame('flame4')}</span>
               </div>
               <div className="flex items-start gap-2">
                 <img 
@@ -485,10 +490,10 @@ export function LectureSidebarUI({
                   alt="불꽃" 
                   className="h-4 w-4 object-contain mt-0.5 shrink-0"
                 />
-                <span className="leading-relaxed">불꽃 8개: 클래스듀오 울트라 업그레이드</span>
+                <span className="leading-relaxed">{tFlame('flame8')}</span>
               </div>
               <p className="text-xs text-gray-400 mt-2 pl-6">
-                (더 많은 퀴즈 게임, 벼락치기 모드, 연구 모드 등)
+                {tFlame('note')}
               </p>
             </div>
           </div>

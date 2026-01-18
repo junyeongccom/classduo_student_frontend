@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { History } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useAITutorStore } from '../../store/useAITutorStore'
 import { useAITutorSession } from '../../hooks/useAITutorSession'
 import { useGameController } from '../../hooks/useGameController'
@@ -24,6 +25,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 export function AITutorContainer() {
+  const tTopbar = useTranslations('aiTutorTopbar')
   // Store State
   const {
     currentSessionId,
@@ -285,20 +287,20 @@ export function AITutorContainer() {
                 onClick={handleNewChat}
                 className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-primary-300 hover:text-primary-700"
               >
-                새 채팅
+                {tTopbar('newChat')}
               </button>
               <button
                 onClick={() => setIsChatSidebarOpen(true)}
                 className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100"
-                title="채팅 기록"
+                title={tTopbar('chatHistory')}
               >
                 <History className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="mr-2 flex rounded-lg bg-gray-100 p-1">
+          <div className="flex items-center gap-3">
+            <div className="flex rounded-lg bg-gray-100 p-1">
               <button
                 onClick={() => {
                   setActiveTab('answer')
@@ -311,7 +313,7 @@ export function AITutorContainer() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                답변
+                {tTopbar('tab.answer')}
               </button>
               <button
                 onClick={() => {
@@ -331,7 +333,7 @@ export function AITutorContainer() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <span>수업녹음본 출처</span>
+                <span>{tTopbar('tab.notesSources')}</span>
                 {recordingCount > 0 && (
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
                     {recordingCount}
@@ -356,7 +358,7 @@ export function AITutorContainer() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <span>강의자료 출처</span>
+                <span>{tTopbar('tab.materialsSources')}</span>
                 {materialCount > 0 && (
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
                     {materialCount}

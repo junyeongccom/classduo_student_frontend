@@ -13,31 +13,31 @@ import {
 export const SIDEBAR_MENU = [
   {
     id: 'ai-tutor',
-    label: 'AI 튜터',
+    labelKey: 'nav.aiTutor',
     icon: Bot,
     href: '/studyspace/ai-tutor',
   },
   {
     id: 'review-50',
-    label: '50초 복습',
+    labelKey: 'nav.review50',
     icon: PenLine,
     href: '/studyspace/review',
   },
   {
     id: 'preview-50',
-    label: '50초 예습',
+    labelKey: 'nav.preview50',
     icon: MessageCircle,
     href: '/studyspace/preview',
   },
   {
     id: 'assignment',
-    label: '과제 보조',
+    labelKey: 'nav.assignment',
     icon: Sparkles,
     href: '/studyspace/assignment',
   },
   {
     id: 'exam',
-    label: '시험 준비',
+    labelKey: 'nav.exam',
     icon: FileText,
     href: '/studyspace/exam',
   },
@@ -48,7 +48,7 @@ export const SIDEBAR_MENU = [
  */
 export const PROFILE_MENU = {
   id: 'profile',
-  label: '프로필',
+  labelKey: 'nav.profile',
   icon: User,
   href: '/mypage',
 } as const
