@@ -17,8 +17,39 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 /**
  * Supabase 클라이언트 인스턴스 (싱글톤)
+ * 번들 중복 로딩으로 인한 다중 생성 방지를 위해 globalThis에 보관
  */
 let supabaseClient: SupabaseClient | null = null
+const getGlobalClient = (): SupabaseClient | null => {
+  if (typeof window === 'undefined') {
+    return null
+  }
+  const globalWithClient = globalThis as typeof globalThis & { __classduoSupabaseClient?: SupabaseClient }
+  return globalWithClient.__classduoSupabaseClient ?? null
+}
+
+const setGlobalClient = (client: SupabaseClient) => {
+  if (typeof window === 'undefined') {
+    return
+  }
+  const globalWithClient = globalThis as typeof globalThis & { __classduoSupabaseClient?: SupabaseClient }
+  globalWithClient.__classduoSupabaseClient = client
+}
+
+const applyRealtimeAuth = (client: SupabaseClient) => {
+  const token = getAuthToken()
+  if (!token) return
+  client.realtime.setAuth(token)
+}
+
+const applyRestHeaders = (client: SupabaseClient) => {
+  const headers = getSupabaseHeaders()
+  if (Object.keys(headers).length === 0) return
+  ;(client.rest as { headers: Record<string, string> }).headers = {
+    ...(client.rest as { headers: Record<string, string> }).headers,
+    ...headers,
+  }
+}
 
 /**
  * 토큰 갱신 타이머 (예방적 갱신용)
@@ -80,6 +111,15 @@ export function getSupabaseClient(): SupabaseClient {
 
   // 클라이언트가 이미 생성되어 있으면 재사용
   if (supabaseClient) {
+    applyRestHeaders(supabaseClient)
+    applyRealtimeAuth(supabaseClient)
+    return supabaseClient
+  }
+  const globalClient = getGlobalClient()
+  if (globalClient) {
+    supabaseClient = globalClient
+    applyRestHeaders(supabaseClient)
+    applyRealtimeAuth(supabaseClient)
     return supabaseClient
   }
 
@@ -94,6 +134,8 @@ export function getSupabaseClient(): SupabaseClient {
       headers: getSupabaseHeaders(),
     },
   })
+  applyRealtimeAuth(supabaseClient)
+  setGlobalClient(supabaseClient)
 
   return supabaseClient
 }
@@ -128,31 +170,13 @@ export function getSupabaseHeaders(): Record<string, string> {
  * 채널 연결을 유지하기 위해 헤더만 업데이트하도록 개선
  */
 export function resetSupabaseClient(): void {
-  // 기존 클라이언트가 있고 채널이 활성화되어 있으면 헤더만 업데이트
   if (supabaseClient) {
-    // 채널이 있는지 확인
-    const hasActiveChannels = supabaseClient.getChannels().length > 0
-    
-    if (hasActiveChannels) {
-      // 채널이 있으면 클라이언트를 재생성하지 않고 헤더만 업데이트
-      // Supabase 클라이언트는 헤더를 동적으로 읽지 않으므로,
-      // 새 클라이언트를 생성하되 기존 채널은 유지할 수 없음
-      // 따라서 채널을 재구독하도록 realtimeService에 알림을 보냄
-      // (토큰 갱신 이벤트 리스너가 처리함)
-      
-      // 기존 채널은 제거하되, realtimeService가 자동으로 재구독하도록 함
-      supabaseClient.removeAllChannels()
-    } else {
-      // 채널이 없으면 기존 클라이언트 정리
-      if (supabaseClient.auth) {
-        supabaseClient.auth.signOut()
-      }
-    }
+    // 기존 클라이언트를 재생성하지 않고 헤더/Realtime 인증만 갱신
+    applyRestHeaders(supabaseClient)
+    applyRealtimeAuth(supabaseClient)
+    return
   }
-  
-  // 새 클라이언트 생성 (새 토큰으로 헤더 업데이트)
-  supabaseClient = null
-  getSupabaseClient()
+  supabaseClient = getSupabaseClient()
 }
 
 /**
