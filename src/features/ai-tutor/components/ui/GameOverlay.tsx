@@ -1021,7 +1021,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
             handleStartGame()
           }
           // 퀴즈 중이 아니고, idle/cleared 상태가 아니면 점프
-          else if (gamePhase !== 'quiz' && gamePhase !== 'idle' && gamePhase !== 'cleared' && !isJumping) {
+          else if (gamePhase !== 'quiz' && gamePhase !== 'cleared' && !isJumping) {
             setIsJumping(true)
           }
         }}
