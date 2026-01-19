@@ -9,64 +9,12 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { apiRequest } from '@/shared/lib/api'
 import { useGameProgress } from '../../hooks/useGameProgress'
 import { claimReward as claimRewardAPI } from '@/shared/services/progressService'
+import { useAuthStore } from '@/features/auth/store/authStore'
 import {
   LectureSidebarUI,
   type Course,
   type FlyingFlame,
 } from '../ui/LectureSidebarUI'
-
-// 임시 데이터 (API 없을 때 사용)
-const TEMP_COURSES: Course[] = [
-  {
-    course_id: 'temp-course-1',
-    title: '생명과학의 세계',
-    term: '2025-1학기',
-    lectures: [
-      {
-        lecture_id: 'temp-lec-1',
-        course_id: 'temp-course-1',
-        lecture_no: 1,
-        lecture_date: '2025-01-10',
-        status: 'completed',
-      },
-      {
-        lecture_id: 'temp-lec-2',
-        course_id: 'temp-course-1',
-        lecture_no: 2,
-        lecture_date: '2025-01-15',
-        status: 'completed',
-      },
-      {
-        lecture_id: 'temp-lec-3',
-        course_id: 'temp-course-1',
-        lecture_no: 3,
-        lecture_date: '2025-01-20',
-        status: 'scheduled',
-      },
-    ],
-  },
-  {
-    course_id: 'temp-course-2',
-    title: '컴퓨터과학개론',
-    term: '2025-1학기',
-    lectures: [
-      {
-        lecture_id: 'temp-lec-4',
-        course_id: 'temp-course-2',
-        lecture_no: 1,
-        lecture_date: '2025-01-11',
-        status: 'completed',
-      },
-      {
-        lecture_id: 'temp-lec-5',
-        course_id: 'temp-course-2',
-        lecture_no: 2,
-        lecture_date: '2025-01-18',
-        status: 'completed',
-      },
-    ],
-  },
-]
 
 interface LectureSidebarContainerProps {
   selectedLectureIds: string[]
@@ -105,6 +53,9 @@ export function LectureSidebarContainer({
   const { gameProgress, claimedRewards, flameCount, refreshStatus } = useGameProgress()
   const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([])
   const [flameHighlight, setFlameHighlight] = useState(false)
+  
+  // 인증 상태 구독
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated)
 
   // refs
   const flameCounterRef = useRef<HTMLDivElement>(null)
@@ -173,28 +124,35 @@ export function LectureSidebarContainer({
     [gameProgress, claimedRewards, refreshStatus]
   )
 
-  // 강의 목록 가져오기
+  // 강의 목록 가져오기 (재시도 로직 포함)
+  // isAuthenticated가 변경될 때마다 다시 호출 (로그인 직후 데이터 로드)
   useEffect(() => {
-    const fetchCourses = async () => {
-      if (courses.length === 0) {
-        setIsLoading(true)
-      }
-      setError(null)
+    // 인증되지 않은 상태면 API 호출하지 않음
+    if (!isAuthenticated) {
+      setIsLoading(false)
+      setCourses([])
+      return
+    }
 
+    let isMounted = true
+    let retryCount = 0
+    const maxRetries = 1
+
+    const fetchCourses = async (): Promise<boolean> => {
       try {
         const coursesResult = await apiRequest<{ courses: any[]; total: number }>('/courses/all', {
           auth: true,
         })
         const coursesList = coursesResult.data?.courses
 
-        if (
-          coursesResult.error ||
-          !coursesList ||
-          !Array.isArray(coursesList) ||
-          coursesList.length === 0
-        ) {
-          setCourses(TEMP_COURSES)
-          return
+        if (coursesResult.error) {
+          console.error('API error:', coursesResult.error)
+          return false
+        }
+
+        if (!coursesList || !Array.isArray(coursesList)) {
+          console.error('Invalid courses data:', coursesList)
+          return false
         }
 
         const coursesWithLectures: Course[] = coursesList.map((course: any) => ({
@@ -211,18 +169,51 @@ export function LectureSidebarContainer({
           })),
         }))
 
-        setCourses(coursesWithLectures)
+        if (isMounted) {
+          setCourses(coursesWithLectures)
+          setError(null)
+        }
+        return true
       } catch (err) {
         console.error('Failed to fetch courses:', err)
-        setError('강의 목록을 불러오는데 실패했습니다')
-        setCourses(TEMP_COURSES)
-      } finally {
+        return false
+      }
+    }
+
+    const loadWithRetry = async () => {
+      if (isMounted) {
+        setIsLoading(true)
+        setError(null)
+      }
+
+      // 토큰이 localStorage에 저장될 시간을 주기 위해 약간의 딜레이 추가
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      let success = await fetchCourses()
+
+      // 실패 시 재시도
+      while (!success && retryCount < maxRetries && isMounted) {
+        retryCount++
+        console.log(`Retrying fetch courses... (${retryCount}/${maxRetries})`)
+        await new Promise(resolve => setTimeout(resolve, 1000)) // 1초 대기 후 재시도
+        success = await fetchCourses()
+      }
+
+      if (isMounted) {
+        if (!success) {
+          setError('강의 목록을 불러오는데 실패했습니다. 페이지를 새로고침해주세요.')
+          setCourses([])
+        }
         setIsLoading(false)
       }
     }
 
-    fetchCourses()
-  }, [])
+    loadWithRetry()
+
+    return () => {
+      isMounted = false
+    }
+  }, [isAuthenticated])
 
   // 선택된 강의가 없거나 사라진 경우 보정
   useEffect(() => {

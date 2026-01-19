@@ -150,7 +150,14 @@ export function LectureSidebarUI({
       </div>
 
       {error && (
-        <p className="mb-3 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">{error}</p>
+        <p className="mb-3 text-xs text-red-600 bg-red-50 px-2 py-1 rounded">{error}</p>
+      )}
+
+      {/* 강좌 없음 메시지 */}
+      {!isLoading && !error && courses.length === 0 && (
+        <p className="mb-3 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded text-center">
+          등록된 강좌가 없습니다
+        </p>
       )}
 
       {/* 강의 선택 드롭다운 */}
