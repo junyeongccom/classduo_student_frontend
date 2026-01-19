@@ -45,8 +45,8 @@ const applyRealtimeAuth = (client: SupabaseClient) => {
 const applyRestHeaders = (client: SupabaseClient) => {
   const headers = getSupabaseHeaders()
   if (Object.keys(headers).length === 0) return
-  const restClient = client.rest as unknown as { headers?: Headers | Record<string, string> }
-  const currentHeaders = restClient.headers
+  const restClient = (client as unknown as { rest?: { headers?: Headers | Record<string, string> } }).rest
+  const currentHeaders = restClient?.headers
   const nextHeaders =
     currentHeaders instanceof Headers
       ? new Headers(currentHeaders)
@@ -54,7 +54,9 @@ const applyRestHeaders = (client: SupabaseClient) => {
   Object.entries(headers).forEach(([key, value]) => {
     nextHeaders.set(key, value)
   })
-  restClient.headers = nextHeaders
+  if (restClient) {
+    restClient.headers = nextHeaders
+  }
 }
 
 /**
