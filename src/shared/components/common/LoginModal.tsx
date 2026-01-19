@@ -226,15 +226,19 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
 
             {/* 비밀번호 재설정 폼 */}
             <form onSubmit={handleSubmitReset(onSubmitResetPassword)} className="space-y-5">
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <Input
-                  {...registerReset('email')}
-                  type="email"
-                  placeholder={t('emailPlaceholder')}
-                  className="pl-12"
-                  error={resetErrors.email?.message}
-                />
+              <div>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    {...registerReset('email')}
+                    type="email"
+                    placeholder={t('emailPlaceholder')}
+                    className={`pl-12 ${resetErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  />
+                </div>
+                {resetErrors.email?.message && (
+                  <p className="mt-1.5 text-xs text-red-500">{resetErrors.email.message}</p>
+                )}
               </div>
 
               {/* 에러 메시지 */}
@@ -287,15 +291,19 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
 
             {/* 로그인 폼 */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <Input
-                  {...register('email')}
-                  type="email"
-                  placeholder={t('emailPlaceholder')}
-                  className="pl-12"
-                  error={errors.email?.message}
-                />
+              <div>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    {...register('email')}
+                    type="email"
+                    placeholder={t('emailPlaceholder')}
+                    className={`pl-12 ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  />
+                </div>
+                {errors.email?.message && (
+                  <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>
+                )}
               </div>
 
               <div>
@@ -305,10 +313,12 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                     {...register('password')}
                     type="password"
                     placeholder={t('passwordPlaceholder')}
-                    className="pl-12"
-                    error={errors.password?.message}
+                    className={`pl-12 ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                   />
                 </div>
+                {errors.password?.message && (
+                  <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>
+                )}
                 
                 {/* 에러 메시지 - 비밀번호 입력 칸 아래 */}
                 {error && (
