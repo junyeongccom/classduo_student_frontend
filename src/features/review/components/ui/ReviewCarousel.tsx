@@ -256,6 +256,18 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
 }
 
 /**
+ * 빈칸 플레이스홀더 생성 함수
+ * 정답 텍스트의 글자 수에 맞게 O를 생성하고, 공백은 그대로 유지
+ * 예: '균형과 소통' -> 'OOO OO'
+ */
+function generateBlankPlaceholder(answer: string): string {
+  return answer
+    .split('')
+    .map(char => char === ' ' ? ' ' : 'O')
+    .join('')
+}
+
+/**
  * 텍스트 정리 함수
  */
 function cleanText(text: string, type: 'recording' | 'material'): string {
@@ -832,7 +844,7 @@ function SimpleBlank({
       className={`inline relative cursor-pointer rounded px-1 py-0 mx-0.5 font-bold transition-all overflow-hidden ${
         actualIsRevealed
           ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white shadow-lg'
-          : 'bg-gray-300 text-gray-300 hover:bg-gray-400 hover:shadow-md'
+          : 'bg-gray-200 text-gray-500 hover:bg-gray-300 hover:shadow-md border border-gray-300'
       }`}
       style={{
         textShadow: actualIsRevealed ? '0 1px 2px rgba(0,0,0,0.2)' : 'none',
@@ -853,7 +865,7 @@ function SimpleBlank({
         />
       )}
       <span className="relative z-10">
-        {actualIsRevealed ? answer : '_____'}
+        {actualIsRevealed ? answer : generateBlankPlaceholder(answer)}
       </span>
     </span>
   )
