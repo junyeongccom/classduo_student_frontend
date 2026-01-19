@@ -1,0 +1,119 @@
+{
+  "nav": {
+    "aiTutor": "AI 튜터",
+    "review50": "50초 복습",
+    "preview50": "50초 예습",
+    "assignment": "과제 보조",
+    "exam": "시험 준비",
+    "profile": "프로필"
+  },
+  "aiTutorTopbar": {
+    "newChat": "새 채팅",
+    "chatHistory": "채팅 기록",
+    "tab": {
+      "answer": "답변",
+      "notesSources": "수업녹음본 출처",
+      "materialsSources": "강의자료 출처"
+    }
+  },
+  "aiTutorChat": {
+    "selectLectureTitle": "수업을 선택해주세요",
+    "selectLectureDescription": "우측에서 수업을 선택하면 AI 튜터와 대화할 수 있습니다",
+    "askAnythingPlaceholder": "무엇이든 물어보세요.",
+    "referenceHint": "수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요"
+  },
+  "aiTutorSidebar": {
+    "courseSelectTitle": "수업 선택",
+    "selectCoursePlaceholder": "강의를 선택하세요",
+    "lectureSelectHint": "회차 선택 (복수 선택 가능)",
+    "selectAll": "전체 선택",
+    "deselectAll": "전체 해제",
+    "lectureLabel": "{no}회차",
+    "selectedLecturesSummary": "선택된 회차: {count}개",
+    "lockedLecturesSummary": "현재 세션 회차: {count}개"
+  },
+  "aiTutorHints": {
+    "multiSelectNoHookingQuestions": "복수 선택 시 후킹 질문은 제공되지 않습니다"
+  },
+  "aiTutorChatHistory": {
+    "title": "채팅 기록",
+    "newChat": "새 채팅",
+    "searchPlaceholder": "채팅 내용 검색...",
+    "allList": "전체 목록",
+    "searchResults": "검색 결과",
+    "loadingHistory": "채팅 기록 불러오는 중...",
+    "emptyTitle": "채팅 기록이 없습니다",
+    "emptySubtitle": "새 채팅을 시작해보세요!",
+    "noSearchResults": "검색 결과가 없습니다",
+    "confirmDelete": "이 채팅을 삭제하시겠습니까?",
+    "yesterday": "어제",
+    "daysAgo": "{days}일 전",
+    "sessionTitleFallback": "새 채팅"
+  },
+  "review": {
+    "noContent": "복습 콘텐츠가 없습니다"
+  },
+  "studyspacePlaceholder": {
+    "preview": {
+      "title": "50초 예습",
+      "body": "50초 예습 페이지 (준비 중)"
+    },
+    "assignment": {
+      "title": "과제 보조",
+      "body": "과제 보조 페이지 (준비 중)"
+    },
+    "exam": {
+      "title": "시험 준비",
+      "body": "시험 준비 페이지 (준비 중)"
+    }
+  },
+  "aiTutorReference": {
+    "title": {
+      "notes": "수업녹음본 출처",
+      "materials": "강의자료 출처"
+    },
+    "empty": {
+      "notes": "참고한 녹음본이 없습니다",
+      "materials": "참고한 강의자료가 없습니다"
+    },
+    "countBadge": "{count}개",
+    "answer": "답변",
+    "materialCountBadge": "{count}개 자료",
+    "page": "페이지"
+  },
+  "aiTutorFlameTooltip": {
+    "intro": "매 수업일마다 미니게임 퀴즈 5개,\n50초 복습 빈칸 퀵필 5개를 진행하고\n상자를 열어 불꽃을 모으세요!",
+    "flame2": "불꽃 2개: 미니게임, 과제보조 기능 업그레이드",
+    "flame4": "불꽃 4개: 캐릭터, 시험준비 기능 업그레이드",
+    "flame8": "불꽃 8개: 클래스듀오 울트라 업그레이드",
+    "note": "(더 많은 퀴즈 게임, 벼락치기 모드, 연구 모드 등)"
+  },
+  "aiTutorSession": {
+    "lockedHint": "새 채팅을 시작하면 다른 회차를 선택할 수 있습니다"
+  },
+  "loginModal": {
+    "loginTitle": "로그인",
+    "chooseAccount": "계정을 선택하세요",
+    "resetPasswordTitle": "비밀번호 찾기",
+    "resetPasswordSubtitle": "가입한 이메일을 입력하세요",
+    "backToLogin": "로그인으로 돌아가기",
+    "emailPlaceholder": "학교 이메일 (ex. @korea.ac.kr)",
+    "passwordPlaceholder": "비밀번호",
+    "sendResetEmail": "비밀번호 재설정 이메일 발송",
+    "signup": "회원가입",
+    "findPassword": "비밀번호 찾기"
+  },
+  "profile": {
+    "title": "프로필",
+    "loadingUser": "사용자 정보를 불러오는 중...",
+    "verified": "인증됨",
+    "actions": {
+      "editProfile": "프로필 수정",
+      "changePassword": "비밀번호 변경",
+      "logout": "로그아웃"
+    }
+  }
+}
+
+
+

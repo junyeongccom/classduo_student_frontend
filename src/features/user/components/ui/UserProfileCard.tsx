@@ -1,6 +1,7 @@
 'use client'
 
 import { Mail, School, User } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { UserProfileResponse } from '@/features/auth'
 
 interface UserProfileCardProps {
@@ -8,6 +9,7 @@ interface UserProfileCardProps {
 }
 
 export function UserProfileCard({ user }: UserProfileCardProps) {
+  const t = useTranslations('profile')
   return (
     <div className="rounded-lg border border-gray-200 p-6">
       <div className="mb-6 flex items-center gap-4">
@@ -26,7 +28,7 @@ export function UserProfileCard({ user }: UserProfileCardProps) {
           <span className="text-gray-600">{user.email}</span>
           {user.is_email_verified && (
             <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-600">
-              인증됨
+              {t('verified')}
             </span>
           )}
         </div>

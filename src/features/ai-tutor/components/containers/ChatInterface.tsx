@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Send, Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion } from '@/features/ai-tutor/types'
@@ -201,6 +202,7 @@ const DEFAULT_HOOKING_QUESTIONS = [
 ]
 
 export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel }: ChatInterfaceProps) {
+  const t = useTranslations('aiTutorChat')
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
@@ -1094,8 +1096,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     return (
       <div className="flex h-full items-center justify-center text-gray-400">
         <div className="text-center">
-          <p className="text-lg font-medium">수업을 선택해주세요</p>
-          <p className="mt-2 text-sm">우측에서 수업을 선택하면 AI 튜터와 대화할 수 있습니다</p>
+          <p className="text-lg font-medium">{t('selectLectureTitle')}</p>
+          <p className="mt-2 text-sm">{t('selectLectureDescription')}</p>
         </div>
       </div>
     )
@@ -1150,7 +1152,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                     // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
                     setTimeout(() => setIsInputFocused(false), 200)
                   }}
-                  placeholder="무엇이든 물어보세요."
+                  placeholder={t('askAnythingPlaceholder')}
                   disabled={isLoading}
                   className="w-full rounded-full border border-gray-300 bg-gray-50 px-5 py-3.5 pr-14 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
                 />
@@ -1281,7 +1283,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                             strokeWidth={3}
                           />
                           <span className="font-serif text-[10px] font-semibold text-primary-800 italic leading-relaxed tracking-wide whitespace-nowrap">
-                            수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요
+                            {t('referenceHint')}
                           </span>
                           <ArrowUp 
                             className="h-4 w-4 text-primary-600 animate-pulse flex-shrink-0" 
@@ -1371,7 +1373,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="무엇이든 물어보세요."
+              placeholder={t('askAnythingPlaceholder')}
               disabled={isLoading}
               className="w-full rounded-full border border-gray-300 bg-gray-50 px-5 py-3 pr-14 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
             />

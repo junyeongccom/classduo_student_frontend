@@ -1,6 +1,7 @@
 'use client'
 
 import { LogOut } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/shared/components/ui'
 
 interface UserProfileActionsProps {
@@ -8,13 +9,14 @@ interface UserProfileActionsProps {
 }
 
 export function UserProfileActions({ onLogout }: UserProfileActionsProps) {
+  const t = useTranslations('profile')
   return (
     <div className="space-y-3">
       <Button variant="outline" className="w-full justify-start">
-        프로필 수정
+        {t('actions.editProfile')}
       </Button>
       <Button variant="outline" className="w-full justify-start">
-        비밀번호 변경
+        {t('actions.changePassword')}
       </Button>
       <Button
         variant="ghost"
@@ -22,7 +24,7 @@ export function UserProfileActions({ onLogout }: UserProfileActionsProps) {
         onClick={onLogout}
       >
         <LogOut className="mr-2 h-4 w-4" />
-        로그아웃
+        {t('actions.logout')}
       </Button>
     </div>
   )

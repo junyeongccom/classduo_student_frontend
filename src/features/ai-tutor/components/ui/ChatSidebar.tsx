@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatSession, SearchResult } from '@/features/ai-tutor/types'
 import { AITutorLoading } from '@/features/ai-tutor'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 
 interface ChatSidebarProps {
   isOpen: boolean
@@ -20,6 +22,8 @@ export default function ChatSidebar({
   onNewChat,
   currentSessionId,
 }: ChatSidebarProps) {
+  const t = useTranslations('aiTutorChatHistory')
+  const { locale } = useI18n()
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -71,7 +75,7 @@ export default function ChatSidebar({
   // 세션 삭제
   const handleDeleteSession = async (e: React.MouseEvent, sessionId: string) => {
     e.stopPropagation()
-    if (!confirm('이 채팅을 삭제하시겠습니까?')) return
+    if (!confirm(t('confirmDelete'))) return
 
     try {
       const { error } = await chatService.deleteSession(sessionId)
@@ -92,15 +96,16 @@ export default function ChatSidebar({
     const now = new Date()
     const diff = now.getTime() - date.getTime()
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const localeTag = locale === 'en' ? 'en-US' : 'ko-KR'
 
     if (days === 0) {
-      return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      return date.toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' })
     } else if (days === 1) {
-      return '어제'
+      return t('yesterday')
     } else if (days < 7) {
-      return `${days}일 전`
+      return t('daysAgo', { days: String(days) })
     } else {
-      return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+      return date.toLocaleDateString(localeTag, { month: 'short', day: 'numeric' })
     }
   }
 
@@ -119,7 +124,7 @@ export default function ChatSidebar({
         {/* 헤더 */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">채팅 기록</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 rounded"
@@ -141,7 +146,7 @@ export default function ChatSidebar({
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            새 채팅
+            {t('newChat')}
           </button>
         </div>
 
@@ -153,7 +158,7 @@ export default function ChatSidebar({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="채팅 내용 검색..."
+              placeholder={t('searchPlaceholder')}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
             />
             <svg 
@@ -182,7 +187,7 @@ export default function ChatSidebar({
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                전체 목록
+                {t('allList')}
               </button>
               <button
                 onClick={() => setActiveTab('search')}
@@ -192,7 +197,7 @@ export default function ChatSidebar({
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                검색 결과 ({searchResults.length})
+                {t('searchResults')} ({searchResults.length})
               </button>
             </div>
           )}
@@ -202,7 +207,7 @@ export default function ChatSidebar({
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <AITutorLoading message="채팅 기록 불러오는 중..." size="compact" />
+              <AITutorLoading message={t('loadingHistory')} size="compact" />
             </div>
           ) : activeTab === 'list' ? (
             // 세션 목록
@@ -211,8 +216,8 @@ export default function ChatSidebar({
                 <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
-                <p>채팅 기록이 없습니다</p>
-                <p className="text-sm mt-1">새 채팅을 시작해보세요!</p>
+                <p>{t('emptyTitle')}</p>
+                <p className="text-sm mt-1">{t('emptySubtitle')}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -230,7 +235,7 @@ export default function ChatSidebar({
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900 truncate">
-                          {session.title || '새 채팅'}
+                          {session.title || t('sessionTitleFallback')}
                         </h3>
                         <p className="text-xs text-gray-500 mt-1">
                           {formatDate(session.updated_at)}
@@ -253,7 +258,7 @@ export default function ChatSidebar({
             // 검색 결과
             searchResults.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                <p>검색 결과가 없습니다</p>
+                <p>{t('noSearchResults')}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
