@@ -28,7 +28,7 @@ const pickRandomAnswer = (answers: string[], exclude?: string) => {
 
 export function AnswerLoadingReviewBanner({
   answers,
-  intervalMs = 3000,
+  intervalMs = 10000,
   fallbackText = '정답 준비 중...',
   className = '',
 }: AnswerLoadingReviewBannerProps) {
@@ -109,17 +109,14 @@ export function AnswerLoadingReviewBanner({
           />
         </div>
         <div className="flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-            복습 정답
-          </p>
-          <div className="relative mt-2 h-12 overflow-hidden">
+          <div className="relative h-16 overflow-hidden">
             <div
-              className={`absolute inset-0 flex items-center text-xs font-semibold text-gray-900 transition-opacity duration-300 ease-out ${
+              className={`absolute inset-0 flex items-center text-sm font-semibold text-gray-900 transition-opacity duration-300 ease-out ${
                 isAnimating ? 'opacity-0' : 'opacity-100'
               }`}
               style={{
                 lineHeight: '1.4',
-                maxHeight: '3.2em',
+                maxHeight: '4.2em',
                 overflow: 'hidden',
               }}
             >
@@ -127,12 +124,12 @@ export function AnswerLoadingReviewBanner({
             </div>
             {nextAnswer && (
               <div
-                className={`absolute inset-0 flex items-center text-xs font-semibold text-gray-900 transition-all duration-300 ease-out ${
+                className={`absolute inset-0 flex items-center text-sm font-semibold text-gray-900 transition-all duration-300 ease-out ${
                   isAnimating ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
                 }`}
                 style={{
                   lineHeight: '1.4',
-                  maxHeight: '3.2em',
+                  maxHeight: '4.2em',
                   overflow: 'hidden',
                 }}
               >
