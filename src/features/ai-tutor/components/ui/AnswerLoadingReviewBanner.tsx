@@ -26,12 +26,6 @@ const pickRandomAnswer = (answers: string[], exclude?: string) => {
   return next
 }
 
-const getTextSizeClass = (text: string) => {
-  if (text.length > 120) return 'text-[11px]'
-  if (text.length > 80) return 'text-xs'
-  return 'text-sm'
-}
-
 export function AnswerLoadingReviewBanner({
   answers,
   intervalMs = 3000,
@@ -118,15 +112,14 @@ export function AnswerLoadingReviewBanner({
           <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
             복습 정답
           </p>
-          <div className="relative mt-2 h-10 overflow-hidden">
+          <div className="relative mt-2 h-12 overflow-hidden">
             <div
-              className={`absolute inset-0 flex items-center font-semibold text-gray-900 transition-opacity duration-300 ease-out ${
-                getTextSizeClass(currentAnswer)
-              } ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+              className={`absolute inset-0 flex items-center text-xs font-semibold text-gray-900 transition-opacity duration-300 ease-out ${
+                isAnimating ? 'opacity-0' : 'opacity-100'
+              }`}
               style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
+                lineHeight: '1.4',
+                maxHeight: '3.2em',
                 overflow: 'hidden',
               }}
             >
@@ -134,13 +127,12 @@ export function AnswerLoadingReviewBanner({
             </div>
             {nextAnswer && (
               <div
-                className={`absolute inset-0 flex items-center font-semibold text-gray-900 transition-all duration-300 ease-out ${
-                  getTextSizeClass(nextAnswer)
-                } ${isAnimating ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
+                className={`absolute inset-0 flex items-center text-xs font-semibold text-gray-900 transition-all duration-300 ease-out ${
+                  isAnimating ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+                }`}
                 style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
+                  lineHeight: '1.4',
+                  maxHeight: '3.2em',
                   overflow: 'hidden',
                 }}
               >
