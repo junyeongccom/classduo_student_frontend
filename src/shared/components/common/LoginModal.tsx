@@ -20,25 +20,29 @@ interface SavedAccount {
   lastLoginAt: string
 }
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, '이메일을 입력해주세요')
-    .email('올바른 이메일 형식이 아닙니다'),
-  password: z
-    .string()
-    .min(1, '비밀번호를 입력해주세요'),
-})
+function createLoginSchema(tv: ReturnType<typeof useTranslations<'auth.validation'>>) {
+  return z.object({
+    email: z
+      .string()
+      .min(1, tv('emailRequired'))
+      .email(tv('emailInvalid')),
+    password: z
+      .string()
+      .min(1, tv('passwordRequired')),
+  })
+}
 
-const resetPasswordSchema = z.object({
-  email: z
-    .string()
-    .min(1, '이메일을 입력해주세요')
-    .email('올바른 이메일 형식이 아닙니다'),
-})
+function createResetPasswordSchema(tv: ReturnType<typeof useTranslations<'auth.validation'>>) {
+  return z.object({
+    email: z
+      .string()
+      .min(1, tv('emailRequired'))
+      .email(tv('emailInvalid')),
+  })
+}
 
-type LoginFormData = z.infer<typeof loginSchema>
-type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
+type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>
+type ResetPasswordFormData = z.infer<ReturnType<typeof createResetPasswordSchema>>
 
 interface LoginModalProps {
   isOpen: boolean
@@ -49,12 +53,16 @@ interface LoginModalProps {
 
 export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup }: LoginModalProps) {
   const t = useTranslations('loginModal')
+  const tv = useTranslations('auth.validation')
   const { handleLogin, isLoading } = useLogin()
   const { error, clearError, user } = useAuthStore()
   const { requestResetPassword, isLoading: isResetting, successMessage, error: resetError, clearError: clearResetError, clearSuccessMessage } = useResetPassword()
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([])
   const [showForm, setShowForm] = useState(false)
   const [showResetPassword, setShowResetPassword] = useState(false)
+
+  const loginSchema = createLoginSchema(tv)
+  const resetPasswordSchema = createResetPasswordSchema(tv)
 
   const {
     register,

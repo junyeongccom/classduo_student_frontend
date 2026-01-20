@@ -98,7 +98,7 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   isNotesPanelOpen: false,
   isMaterialsPanelOpen: false,
   notesPanelWidth: 380,
-  materialsPanelWidth: 320,
+  materialsPanelWidth: 360,
   isChatSidebarOpen: false,
   chatKey: 0,
   messages: [],

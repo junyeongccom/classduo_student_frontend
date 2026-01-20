@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { Send, Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion } from '@/features/ai-tutor/types'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 
 // 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
 function renderMarkdown(text: string) {
@@ -193,16 +194,17 @@ interface ChatInterfaceProps {
   onShowReferencePanel?: (type: 'notes' | 'materials') => void
 }
 
-// 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
-const DEFAULT_HOOKING_QUESTIONS = [
-  '이 수업에서 가장 중요한 개념은 무엇인가요?',
-  '이 내용을 실생활에 어떻게 적용할 수 있나요?',
-  '이 주제와 관련된 최신 연구는 무엇인가요?',
-  '이 개념을 더 쉽게 이해하려면 어떻게 해야 하나요?',
-]
-
 export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel }: ChatInterfaceProps) {
   const t = useTranslations('aiTutorChat')
+  const { locale } = useI18n()
+  
+  // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
+  const DEFAULT_HOOKING_QUESTIONS = [
+    t('defaultHookingQuestions.importantConcept'),
+    t('defaultHookingQuestions.realLifeApplication'),
+    t('defaultHookingQuestions.latestResearch'),
+    t('defaultHookingQuestions.easierUnderstanding'),
+  ]
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
@@ -222,7 +224,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }>>(
+  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>(
     DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q }))
   )
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
@@ -315,7 +317,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             question: data.question,
             answer: data.answer,
             reference_data: data.reference_data || null,
-            summary_keywords: data.summary_keywords || null
+            summary_keywords: data.summary_keywords || null,
+            summary_keywords_eng: data.summary_keywords_eng || null
           }])
         } else {
           // 후킹 질문이 없으면 기본 질문 사용
@@ -713,9 +716,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         if (sessionResult.error || !sessionResult.data) {
           // 401 에러 확인 (error_code 또는 status로 확인)
           if (sessionResult.error && (sessionResult.error.error_code === 'UNAUTHORIZED' || (sessionResult as any).status === 401)) {
-            throw new Error('인증이 만료되었습니다. 페이지를 새로고침해주세요.')
+            throw new Error(t('authExpired'))
           }
-          throw new Error(sessionResult.error?.message || '세션 생성 실패')
+          throw new Error(sessionResult.error?.message || t('sessionCreateFailed'))
         }
         
         sessionIdToUse = sessionResult.data.id
@@ -745,7 +748,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 // 상태 메시지가 없으면 기본 상태 추가
                 return [{
                   step: progressData.step || 'searching',
-                  message: '관련 자료를 검색하는 중...',
+                  message: t('searchingSources'),
                   sources: [{
                     type: progressData.source_type!,
                     title: sourceData.title || '',
@@ -803,11 +806,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         },
         // onError: 에러 처리
         (error) => {
-          const errorMessage = error.message || '채팅 중 오류가 발생했습니다'
+          const errorMessage = error.message || t('chatError')
           setError(errorMessage)
           console.error('Chat error:', error)
           
-          if (errorMessage.includes('인증이 만료되었습니다')) {
+          if (errorMessage.includes(t('authExpired'))) {
             if (typeof window !== 'undefined') {
               localStorage.removeItem('classduo_access_token')
               localStorage.removeItem('classduo_refresh_token')
@@ -828,11 +831,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         }
       )
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '채팅 중 오류가 발생했습니다'
+      const errorMessage = err instanceof Error ? err.message : t('chatError')
       setError(errorMessage)
       console.error('Chat error:', err)
       
-      if (errorMessage.includes('인증이 만료되었습니다')) {
+      if (errorMessage.includes(t('authExpired'))) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('classduo_access_token')
           localStorage.removeItem('classduo_refresh_token')
@@ -857,9 +860,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     await sendMessage(question)
   }
 
-  const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null }) => {
+  const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
     if (hooking.answer) {
+      // 현재 locale에 따라 summary_keywords 선택
+      const summaryKeywords = locale === 'en' 
+        ? (hooking.summary_keywords_eng || hooking.summary_keywords || null)
+        : (hooking.summary_keywords || null)
+      
       // 사용자 메시지 추가
       const userMessage: ChatMessage = {
         role: 'user',
@@ -871,7 +879,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       const assistantMessage: ChatMessage & { summary_keywords?: string | null } = {
         role: 'assistant',
         content: hooking.answer,
-        summary_keywords: hooking.summary_keywords || null,
+        summary_keywords: summaryKeywords,
       }
       setMessages(prev => {
         const updated = [...prev, assistantMessage]
@@ -899,11 +907,15 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       if (!currentSessionId) {
         try {
           console.log('[후킹 질문] 세션 생성 시도:', { selectedLectureIds })
-          const sessionResult = await chatService.createSession(selectedLectureIds)
+          // 질문의 처음 50자를 title로 사용
+          const sessionTitle = hooking.question.length > 50 
+            ? hooking.question.substring(0, 50) + '...' 
+            : hooking.question
+          const sessionResult = await chatService.createSession(selectedLectureIds, sessionTitle)
           console.log('[후킹 질문] 세션 생성 결과:', sessionResult)
           if (sessionResult.error) {
             console.error('[후킹 질문] 세션 생성 실패:', sessionResult.error)
-            setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
+            setError(t('sessionCreateError'))
             return
           }
           if (sessionResult.data && sessionResult.data.id) {
@@ -919,7 +931,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 question: hooking.question,
                 answer: hooking.answer,
                 reference_data: hooking.reference_data,
-                summary_keywords: hooking.summary_keywords,
+                summary_keywords: summaryKeywords,
                 hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
               })
               console.log('[후킹 질문] 메시지 저장 완료')
@@ -928,20 +940,25 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             }
           } else {
             console.error('[후킹 질문] 세션 생성 실패: 세션 ID 없음', sessionResult)
-            setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
+            setError(t('sessionCreateError'))
           }
         } catch (err) {
           console.error('[후킹 질문] 세션 생성 예외:', err)
-          setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
+          setError(t('sessionCreateError'))
         }
       } else {
         // 기존 세션에 후킹 질문/답변 저장 (미리 준비된 답변 사용)
+        // 현재 locale에 따라 summary_keywords 선택
+        const summaryKeywords = locale === 'en' 
+          ? (hooking.summary_keywords_eng || hooking.summary_keywords || null)
+          : (hooking.summary_keywords || null)
+        
         try {
           await chatService.saveHookingMessage(currentSessionId, {
             question: hooking.question,
             answer: hooking.answer,
             reference_data: hooking.reference_data,
-            summary_keywords: hooking.summary_keywords,
+            summary_keywords: summaryKeywords,
             hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
           })
         } catch (err) {
@@ -1007,9 +1024,15 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
     
     // AI 답변 추가 (타이핑 애니메이션 없이 바로 표시)
-    const assistantMessage: ChatMessage = {
+    // 현재 locale에 따라 summary_keywords 선택
+    const summaryKeywords = locale === 'en' 
+      ? (pqmQuestion.summary_keywords_eng || pqmQuestion.summary_keywords || null)
+      : (pqmQuestion.summary_keywords || null)
+    
+    const assistantMessage: ChatMessage & { summary_keywords?: string | null } = {
       role: 'assistant',
       content: pqmQuestion.answer,
+      summary_keywords: summaryKeywords,
     }
     setMessages(prev => {
       const updated = [...prev, assistantMessage]
@@ -1042,11 +1065,15 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     if (!currentSessionId) {
       try {
         console.log('[PQM 질문] 세션 생성 시도:', { selectedLectureIds })
-        const sessionResult = await chatService.createSession(selectedLectureIds)
+        // 질문의 처음 50자를 title로 사용
+        const sessionTitle = pqmQuestion.question.length > 50 
+          ? pqmQuestion.question.substring(0, 50) + '...' 
+          : pqmQuestion.question
+        const sessionResult = await chatService.createSession(selectedLectureIds, sessionTitle)
         console.log('[PQM 질문] 세션 생성 결과:', sessionResult)
         if (sessionResult.error) {
           console.error('[PQM 질문] 세션 생성 실패:', sessionResult.error)
-          setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
+          setError(t('sessionCreateError'))
           return
         }
         if (sessionResult.data && sessionResult.data.id) {
@@ -1062,6 +1089,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               question: pqmQuestion.question,
               answer: pqmQuestion.answer,
               reference_data: references,
+              summary_keywords: summaryKeywords,
               pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)
             })
             console.log('[PQM 질문] 메시지 저장 완료')
@@ -1070,11 +1098,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           }
         } else {
           console.error('[PQM 질문] 세션 생성 실패: 세션 ID 없음', sessionResult)
-          setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
+          setError(t('sessionCreateError'))
         }
       } catch (err) {
         console.error('[PQM 질문] 세션 생성 예외:', err)
-        setError('세션 생성에 실패했습니다. 다시 시도해주세요.')
+        setError(t('sessionCreateError'))
       }
     } else {
       // 기존 세션에 PQM 메시지 저장
@@ -1083,6 +1111,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           question: pqmQuestion.question,
           answer: pqmQuestion.answer,
           reference_data: references,
+          summary_keywords: summaryKeywords,
           pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)
         })
       } catch (err) {
@@ -1339,7 +1368,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                                       </p>
                                     )}
                                     <p className="text-xs text-gray-500 mt-1.5">
-                                      {source.type === 'recording' ? '수업 녹음본 출처' : '강의자료 출처'}
+                                      {source.type === 'recording' ? t('sourceLabels.recording') : t('sourceLabels.material')}
                                     </p>
                                   </div>
                                 </div>

@@ -4,38 +4,11 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslations } from 'next-intl'
 import { Button, Input } from '@/shared/components/ui'
 import { useSignup } from '@/features/auth/hooks/useSignup'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { Mail, Lock, User, AlertCircle, CheckCircle, X } from 'lucide-react'
-
-const signupSchema = z.object({
-  email: z
-    .string()
-    .min(1, '이메일을 입력해주세요')
-    .email('올바른 이메일 형식이 아닙니다')
-    .refine(
-      (email) => email.endsWith('@korea.ac.kr'),
-      '학교 이메일(@korea.ac.kr)만 사용 가능합니다'
-    ),
-  full_name: z
-    .string()
-    .min(2, '이름은 2자 이상이어야 합니다')
-    .max(50, '이름은 50자 이하여야 합니다'),
-  password: z
-    .string()
-    .min(8, '비밀번호는 8자 이상이어야 합니다')
-    .regex(/[A-Za-z]/, '영문자를 포함해야 합니다')
-    .regex(/[0-9]/, '숫자를 포함해야 합니다'),
-  password_confirm: z
-    .string()
-    .min(1, '비밀번호 확인을 입력해주세요'),
-}).refine((data) => data.password === data.password_confirm, {
-  message: '비밀번호가 일치하지 않습니다',
-  path: ['password_confirm'],
-})
-
-type SignupFormData = z.infer<typeof signupSchema>
 
 interface SignupModalProps {
   isOpen: boolean
@@ -44,8 +17,39 @@ interface SignupModalProps {
 }
 
 export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) {
+  const t = useTranslations('auth.signup')
+  const tm = useTranslations('auth.signupModal')
+  const tv = useTranslations('auth.validation')
   const { handleSignup, handleResendVerification, isLoading, signupSuccess, registeredEmail } = useSignup()
   const { error, clearError } = useAuthStore()
+
+  const signupSchema = z.object({
+    email: z
+      .string()
+      .min(1, tv('emailRequired'))
+      .email(tv('emailInvalid'))
+      .refine(
+        (email) => email.endsWith('@korea.ac.kr'),
+        tv('emailSchoolOnly')
+      ),
+    full_name: z
+      .string()
+      .min(2, tv('nameMin'))
+      .max(50, tv('nameMax')),
+    password: z
+      .string()
+      .min(8, tv('passwordMin'))
+      .regex(/[A-Za-z]/, tv('passwordLetter'))
+      .regex(/[0-9]/, tv('passwordNumber')),
+    password_confirm: z
+      .string()
+      .min(1, tv('passwordConfirmRequired')),
+  }).refine((data) => data.password === data.password_confirm, {
+    message: tv('passwordMismatch'),
+    path: ['password_confirm'],
+  })
+
+  type SignupFormData = z.infer<typeof signupSchema>
 
   const {
     register,
@@ -98,10 +102,10 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
               </div>
             </div>
             
-            <h2 className="mb-2 text-xl font-bold text-gray-900">이메일 인증을 완료해주세요</h2>
+            <h2 className="mb-2 text-xl font-bold text-gray-900">{t('emailVerificationTitle')}</h2>
             <p className="mb-6 text-sm text-gray-500">
               <span className="font-medium text-gray-700">{registeredEmail}</span>으로<br />
-              인증 링크를 발송했습니다.
+              {t('emailVerificationSent')}
             </p>
 
             <div className="space-y-3">
@@ -111,7 +115,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 className="w-full"
                 isLoading={isLoading}
               >
-                인증 메일 재전송
+                {t('resendVerification')}
               </Button>
               
               <Button
@@ -122,20 +126,20 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 variant="secondary"
                 className="w-full"
               >
-                로그인하기
+                {t('goToLoginModal')}
               </Button>
             </div>
 
             <p className="mt-6 text-xs text-gray-400">
-              메일이 도착하지 않았다면 스팸함을 확인해주세요.
+              {t('checkSpam')}
             </p>
           </div>
         ) : (
           <>
             {/* 로고 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-primary-500">회원가입</h1>
-              <p className="mt-2 text-sm text-gray-500">회원 정보를 입력하세요</p>
+              <h1 className="text-2xl font-bold text-primary-500">{tm('title')}</h1>
+              <p className="mt-2 text-sm text-gray-500">{tm('subtitle')}</p>
             </div>
 
             {/* 에러 메시지 */}
@@ -174,7 +178,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 <Input
                   {...register('full_name')}
                   type="text"
-                  placeholder="이름"
+                  placeholder={t('namePlaceholder')}
                   className="pl-12"
                   error={errors.full_name?.message}
                 />
@@ -185,7 +189,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 <Input
                   {...register('email')}
                   type="email"
-                  placeholder="학교 이메일 (ex. classduo@korea.ac.kr)"
+                  placeholder={t('emailPlaceholderModal')}
                   className="pl-12"
                   error={errors.email?.message}
                 />
@@ -196,7 +200,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 <Input
                   {...register('password')}
                   type="password"
-                  placeholder="비밀번호 (8자 이상, 문자/숫자/기호 조합)"
+                  placeholder={t('passwordPlaceholderModal')}
                   className="pl-12"
                   error={errors.password?.message}
                 />
@@ -207,7 +211,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 <Input
                   {...register('password_confirm')}
                   type="password"
-                  placeholder="비밀번호 확인"
+                  placeholder={t('passwordConfirmPlaceholder')}
                   className="pl-12"
                   error={errors.password_confirm?.message}
                 />
@@ -219,18 +223,18 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                 size="lg"
                 isLoading={isLoading}
               >
-                완료
+                {t('buttonModal')}
               </Button>
             </form>
 
             {/* 로그인 링크 */}
             <div className="mt-6 text-center text-sm text-gray-500">
-              <span>이미 계정이 있으신가요? </span>
+              <span>{t('hasAccount')}</span>
               <button 
                 onClick={onSwitchToLogin}
                 className="font-medium text-primary-500 hover:underline"
               >
-                로그인
+                {t('loginLink')}
               </button>
             </div>
           </>

@@ -223,6 +223,7 @@ export const chatService = {
       question: string
       answer: string
       reference_data?: Reference[] | null
+      summary_keywords?: string | null
       pqm_question_id?: string  // 원본 PQM 질문 ID (source_question_id로 저장됨)
     }
   ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {

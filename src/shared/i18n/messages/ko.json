@@ -20,7 +20,22 @@
     "selectLectureTitle": "수업을 선택해주세요",
     "selectLectureDescription": "우측에서 수업을 선택하면 AI 튜터와 대화할 수 있습니다",
     "askAnythingPlaceholder": "무엇이든 물어보세요.",
-    "referenceHint": "수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요"
+    "referenceHint": "수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요",
+    "searchingSources": "관련 자료를 검색하는 중...",
+    "chatError": "채팅 중 오류가 발생했습니다",
+    "authExpired": "인증이 만료되었습니다. 페이지를 새로고침해주세요.",
+    "sessionCreateFailed": "세션 생성 실패",
+    "sessionCreateError": "세션 생성에 실패했습니다. 다시 시도해주세요.",
+    "defaultHookingQuestions": {
+      "importantConcept": "이 수업에서 가장 중요한 개념은 무엇인가요?",
+      "realLifeApplication": "이 내용을 실생활에 어떻게 적용할 수 있나요?",
+      "latestResearch": "이 주제와 관련된 최신 연구는 무엇인가요?",
+      "easierUnderstanding": "이 개념을 더 쉽게 이해하려면 어떻게 해야 하나요?"
+    },
+    "sourceLabels": {
+      "recording": "수업 녹음본 출처",
+      "material": "강의자료 출처"
+    }
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "수업 선택",
@@ -48,10 +63,24 @@
     "confirmDelete": "이 채팅을 삭제하시겠습니까?",
     "yesterday": "어제",
     "daysAgo": "{days}일 전",
-    "sessionTitleFallback": "새 채팅"
+    "sessionTitleFallback": "새 채팅",
+    "messageRole": {
+      "question": "질문",
+      "answer": "답변"
+    }
   },
   "review": {
-    "noContent": "복습 콘텐츠가 없습니다"
+    "noContent": "복습 콘텐츠가 없습니다",
+    "preparingContent": "복습 콘텐츠 준비 중...",
+    "noPageData": "페이지 데이터가 없습니다",
+    "thumbnailLoadFailed": "썸네일 로드 실패",
+    "thumbnailGenerating": "썸네일 생성 중...",
+    "lectureCore": "강의 핵심",
+    "fiveKeyQuestions": "5개 핵심 질문",
+    "question": "질문",
+    "keyAnswer": "핵심정답",
+    "additionalExplanation": "부연설명",
+    "viewSource": "출처 보기"
   },
   "studyspacePlaceholder": {
     "preview": {
@@ -79,6 +108,10 @@
     "countBadge": "{count}개",
     "answer": "답변",
     "materialCountBadge": "{count}개 자료",
+    "recordingSegmentsBadge": "{count}개 구간",
+    "recordingSegmentLabel": "녹음 구간 #",
+    "relevance": "관련도",
+    "materialFallback": "강의자료",
     "page": "페이지"
   },
   "aiTutorFlameTooltip": {
@@ -112,6 +145,105 @@
       "changePassword": "비밀번호 변경",
       "logout": "로그아웃"
     }
+  },
+  "loadingMessages": {
+    "general": [
+      "잠시만 기다려주세요! 🎯",
+      "곧 준비될 거예요! ⏰",
+      "열심히 준비 중이에요! 💪",
+      "거의 다 됐어요! 🚀",
+      "조금만 더 기다려주세요! ⏳",
+      "마법을 부리는 중... ✨",
+      "데이터를 불러오는 중... 📦",
+      "준비 완료까지 조금만요! 🎨"
+    ],
+    "aiTutor": [
+      "AI 교수님이 커피 마시는 중... ☕",
+      "똑똑한 답변 준비 중... 🧠",
+      "AI가 책을 뒤적이는 중... 📚",
+      "강의 자료를 찾고 있어요... 🔍",
+      "AI 두뇌가 작동 중... 🤖",
+      "최고의 답변을 고민하는 중... 💡",
+      "강의 노트를 정리하는 중... 📝",
+      "AI 교수님이 생각에 잠겨있어요... 🤔",
+      "지식 데이터베이스 검색 중... 🗄️",
+      "똑똑한 대답을 위해 공부 중... 📖"
+    ],
+    "review": [
+      "복습 카드뉴스 꾸미는 중... 🎨",
+      "지식을 예쁘게 포장 중... 🎁",
+      "복습 자료를 준비하는 중... 📋",
+      "카드뉴스가 로딩되는 중... 🖼️",
+      "복습 콘텐츠 준비 완료까지 조금만... ⏱️",
+      "중요한 내용을 정리하는 중... 📌",
+      "핵심만 쏙쏙 뽑아내는 중... 🎯",
+      "기억에 남을 복습 준비 중... 🧠",
+      "복습 마법을 걸고 있어요... ✨"
+    ],
+    "game": [
+      "OX 퀴즈 문제 섞는 중... 🎲",
+      "캐릭터가 준비운동 중... 🏃",
+      "게임 시작 준비 중... 🎮",
+      "문제를 꺼내는 중... 📝",
+      "캐릭터가 긴장하고 있어요... 😤",
+      "퀴즈 무대를 꾸미는 중... 🎪",
+      "게임 규칙을 확인하는 중... 📜",
+      "보물상자를 준비하는 중... 💎",
+      "도전 과제 로딩 중... 🏆"
+    ]
+  },
+  "auth": {
+    "login": {
+      "tagline": "학습의 새로운 파트너",
+      "emailPlaceholder": "학교 이메일",
+      "passwordPlaceholder": "비밀번호",
+      "button": "로그인",
+      "noAccount": "계정이 없으신가요? ",
+      "signupLink": "회원가입"
+    },
+    "signup": {
+      "title": "새로운 계정 만들기",
+      "namePlaceholder": "이름",
+      "emailPlaceholder": "학교 이메일 (@korea.ac.kr)",
+      "emailPlaceholderModal": "학교 이메일 (ex. classduo@korea.ac.kr)",
+      "passwordPlaceholder": "비밀번호 (8자 이상, 영문+숫자)",
+      "passwordPlaceholderModal": "비밀번호 (8자 이상, 문자/숫자/기호 조합)",
+      "passwordConfirmPlaceholder": "비밀번호 확인",
+      "button": "회원가입",
+      "buttonModal": "완료",
+      "hasAccount": "이미 계정이 있으신가요? ",
+      "loginLink": "로그인",
+      "emailVerificationTitle": "이메일 인증을 완료해주세요",
+      "emailVerificationSent": "인증 링크를 발송했습니다.",
+      "resendVerification": "인증 메일 재전송",
+      "goToLogin": "로그인 페이지로 이동",
+      "goToLoginModal": "로그인하기",
+      "checkSpam": "메일이 도착하지 않았다면 스팸함을 확인해주세요."
+    },
+    "signupModal": {
+      "title": "회원가입",
+      "subtitle": "회원 정보를 입력하세요"
+    },
+    "validation": {
+      "emailRequired": "이메일을 입력해주세요",
+      "emailInvalid": "올바른 이메일 형식이 아닙니다",
+      "emailSchoolOnly": "학교 이메일(@korea.ac.kr)만 사용 가능합니다",
+      "nameMin": "이름은 2자 이상이어야 합니다",
+      "nameMax": "이름은 50자 이하여야 합니다",
+      "passwordRequired": "비밀번호를 입력해주세요",
+      "passwordMin": "비밀번호는 8자 이상이어야 합니다",
+      "passwordLetter": "영문자를 포함해야 합니다",
+      "passwordNumber": "숫자를 포함해야 합니다",
+      "passwordConfirmRequired": "비밀번호 확인을 입력해주세요",
+      "passwordMismatch": "비밀번호가 일치하지 않습니다"
+    }
+  },
+  "errors": {
+    "unknown": "알 수 없는 오류가 발생했습니다",
+    "cors": "CORS 오류: 백엔드 서버에 접근할 수 없습니다. 서버가 실행 중인지 확인해주세요.",
+    "network": "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.",
+    "sessionExpired": "세션이 만료되었습니다. 다시 로그인해주세요.",
+    "sessionExpiredRenewed": "세션이 만료되어 갱신되었습니다. 다시 시도해주세요."
   }
 }
 

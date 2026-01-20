@@ -25,7 +25,7 @@ interface AITutorLoadingProps {
 
 export function AITutorLoading({
   message,
-  messageCategory = 'ai-tutor',
+  messageCategory = 'aiTutor',
   characterImageUrl,
   showProgress = false,
   size = 'inline',

@@ -34,8 +34,14 @@ export async function apiRequest<T>(
 ): Promise<ApiResponse<T>> {
   const { method = 'GET', body, headers = {}, auth = false } = options
 
+  // 언어 설정 읽기 (Accept-Language 헤더용)
+  const locale = typeof window !== 'undefined' 
+    ? localStorage.getItem('classduo_locale') || 'ko'
+    : 'ko'
+
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
+    'Accept-Language': locale,
     ...headers,
   }
 

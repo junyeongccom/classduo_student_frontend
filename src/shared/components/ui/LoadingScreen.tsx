@@ -8,6 +8,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { getRandomMessage, type LoadingMessageCategory } from '@/shared/constants/loadingMessages'
 
 interface LoadingScreenProps {
@@ -36,14 +37,15 @@ export function LoadingScreen({
   className = '',
   minDisplayTime,
 }: LoadingScreenProps) {
+  const t = useTranslations('loadingMessages')
   const [displayMessage, setDisplayMessage] = useState<string>('')
   const [isVisible, setIsVisible] = useState(false)
 
   // 메시지 설정
   useEffect(() => {
-    const msg = message || getRandomMessage(messageCategory)
+    const msg = message || getRandomMessage(t, messageCategory)
     setDisplayMessage(msg)
-  }, [message, messageCategory])
+  }, [message, messageCategory, t])
 
   // 최소 표시 시간 처리
   useEffect(() => {

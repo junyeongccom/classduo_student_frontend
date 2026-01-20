@@ -20,7 +20,22 @@
     "selectLectureTitle": "Please select a class",
     "selectLectureDescription": "Select a class on the right to start chatting with the AI tutor",
     "askAnythingPlaceholder": "Ask me anything.",
-    "referenceHint": "Check recording and material sources to better understand the answer"
+    "referenceHint": "Check recording and material sources to better understand the answer",
+    "searchingSources": "Searching for relevant materials...",
+    "chatError": "An error occurred while chatting",
+    "authExpired": "Authentication has expired. Please refresh the page.",
+    "sessionCreateFailed": "Failed to create session",
+    "sessionCreateError": "Failed to create session. Please try again.",
+    "defaultHookingQuestions": {
+      "importantConcept": "What is the most important concept in this class?",
+      "realLifeApplication": "How can I apply this content to real life?",
+      "latestResearch": "What is the latest research related to this topic?",
+      "easierUnderstanding": "How can I understand this concept more easily?"
+    },
+    "sourceLabels": {
+      "recording": "Recording source",
+      "material": "Material source"
+    }
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "Select class",
@@ -48,10 +63,24 @@
     "confirmDelete": "Delete this chat?",
     "yesterday": "Yesterday",
     "daysAgo": "{days} days ago",
-    "sessionTitleFallback": "New chat"
+    "sessionTitleFallback": "New chat",
+    "messageRole": {
+      "question": "Question",
+      "answer": "Answer"
+    }
   },
   "review": {
-    "noContent": "No review content available"
+    "noContent": "No review content available",
+    "preparingContent": "Preparing review content...",
+    "noPageData": "No page data available",
+    "thumbnailLoadFailed": "Thumbnail load failed",
+    "thumbnailGenerating": "Generating thumbnail...",
+    "lectureCore": "Lecture Core",
+    "fiveKeyQuestions": "5 Key Questions",
+    "question": "Question",
+    "keyAnswer": "Key Answer",
+    "additionalExplanation": "Additional Explanation",
+    "viewSource": "View Source"
   },
   "studyspacePlaceholder": {
     "preview": {
@@ -79,6 +108,10 @@
     "countBadge": "{count} items",
     "answer": "Answer",
     "materialCountBadge": "{count} materials",
+    "recordingSegmentsBadge": "{count} segments",
+    "recordingSegmentLabel": "Recording segment #",
+    "relevance": "Relevance",
+    "materialFallback": "Material",
     "page": "Page"
   },
   "aiTutorFlameTooltip": {
@@ -112,6 +145,105 @@
       "changePassword": "Change password",
       "logout": "Log out"
     }
+  },
+  "loadingMessages": {
+    "general": [
+      "Please wait a moment! 🎯",
+      "Almost ready! ⏰",
+      "Working hard! 💪",
+      "Almost done! 🚀",
+      "Just a little more! ⏳",
+      "Working magic... ✨",
+      "Loading data... 📦",
+      "Almost ready! 🎨"
+    ],
+    "aiTutor": [
+      "AI professor is having coffee... ☕",
+      "Preparing a smart answer... 🧠",
+      "AI is browsing books... 📚",
+      "Looking for lecture materials... 🔍",
+      "AI brain is working... 🤖",
+      "Thinking of the best answer... 💡",
+      "Organizing lecture notes... 📝",
+      "AI professor is deep in thought... 🤔",
+      "Searching knowledge database... 🗄️",
+      "Studying for a smart answer... 📖"
+    ],
+    "review": [
+      "Designing review card news... 🎨",
+      "Packaging knowledge beautifully... 🎁",
+      "Preparing review materials... 📋",
+      "Loading card news... 🖼️",
+      "Almost ready with review content... ⏱️",
+      "Organizing important content... 📌",
+      "Extracting key points... 🎯",
+      "Preparing memorable review... 🧠",
+      "Casting review magic... ✨"
+    ],
+    "game": [
+      "Shuffling OX quiz questions... 🎲",
+      "Character is warming up... 🏃",
+      "Preparing to start game... 🎮",
+      "Getting questions ready... 📝",
+      "Character is nervous... 😤",
+      "Setting up quiz stage... 🎪",
+      "Checking game rules... 📜",
+      "Preparing treasure chest... 💎",
+      "Loading challenges... 🏆"
+    ]
+  },
+  "auth": {
+    "login": {
+      "tagline": "Your New Learning Partner",
+      "emailPlaceholder": "School email",
+      "passwordPlaceholder": "Password",
+      "button": "Log in",
+      "noAccount": "Don't have an account? ",
+      "signupLink": "Sign up"
+    },
+    "signup": {
+      "title": "Create New Account",
+      "namePlaceholder": "Name",
+      "emailPlaceholder": "School email (@korea.ac.kr)",
+      "emailPlaceholderModal": "School email (e.g. classduo@korea.ac.kr)",
+      "passwordPlaceholder": "Password (8+ chars, letters + numbers)",
+      "passwordPlaceholderModal": "Password (8+ chars, letters/numbers/symbols)",
+      "passwordConfirmPlaceholder": "Confirm password",
+      "button": "Sign up",
+      "buttonModal": "Complete",
+      "hasAccount": "Already have an account? ",
+      "loginLink": "Log in",
+      "emailVerificationTitle": "Please complete email verification",
+      "emailVerificationSent": "Verification link has been sent.",
+      "resendVerification": "Resend verification email",
+      "goToLogin": "Go to login page",
+      "goToLoginModal": "Log in",
+      "checkSpam": "If you don't receive the email, please check your spam folder."
+    },
+    "signupModal": {
+      "title": "Sign up",
+      "subtitle": "Enter your information"
+    },
+    "validation": {
+      "emailRequired": "Please enter your email",
+      "emailInvalid": "Invalid email format",
+      "emailSchoolOnly": "Only school email (@korea.ac.kr) is allowed",
+      "nameMin": "Name must be at least 2 characters",
+      "nameMax": "Name must be 50 characters or less",
+      "passwordRequired": "Please enter your password",
+      "passwordMin": "Password must be at least 8 characters",
+      "passwordLetter": "Must include letters",
+      "passwordNumber": "Must include numbers",
+      "passwordConfirmRequired": "Please confirm your password",
+      "passwordMismatch": "Passwords do not match"
+    }
+  },
+  "errors": {
+    "unknown": "An unknown error occurred",
+    "cors": "CORS error: Cannot access backend server. Please check if the server is running.",
+    "network": "Network error occurred. Please check your internet connection.",
+    "sessionExpired": "Session has expired. Please log in again.",
+    "sessionExpiredRenewed": "Session expired and has been renewed. Please try again."
   }
 }
 

@@ -277,7 +277,7 @@ export default function ChatSidebar({
                           ? 'bg-primary-100 text-primary-700' 
                           : 'bg-gray-100 text-gray-700'
                       }`}>
-                        {result.message_role === 'user' ? '질문' : '답변'}
+                        {result.message_role === 'user' ? t('messageRole.question') : t('messageRole.answer')}
                       </span>
                       <span className="text-xs text-gray-400">
                         {formatDate(result.message_created_at)}
