@@ -42,7 +42,7 @@ export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarou
   }, [data, preloadBlanks, clearLectureData])
 
   if (isLoading) {
-    return <ReviewLoading message="복습 콘텐츠 준비 중..." size="inline" />
+    return <ReviewLoading message={t('preparingContent')} size="inline" />
   }
 
   if (error) {
@@ -137,6 +137,9 @@ export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarou
  * 복습 캐러셀 1페이지 - 인스타그램 카드뉴스 스타일
  */
 function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselResponse['page_1']; currentPage: number; totalPages: number }) {
+  const t = useTranslations('review')
+  const thumbnailLoadFailed = t('thumbnailLoadFailed')
+  
   return (
     <div className="h-full flex items-center justify-center p-4">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl relative" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
@@ -164,7 +167,7 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
             {data.essence_one_line && (
               <div className="mb-6">
                 <div className="inline-block px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-3">
-                  <span className="text-xs font-semibold text-white">강의 핵심</span>
+                  <span className="text-xs font-semibold text-white">{t('lectureCore')}</span>
                 </div>
                 <p className="text-base leading-relaxed text-gray-800 font-medium">
                   {data.essence_one_line}
@@ -175,7 +178,7 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
             {/* 5개 핵심 질문 */}
             {data.questions.length > 0 && (
               <div className="flex-1">
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">5개 핵심 질문</h2>
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">{t('fiveKeyQuestions')}</h2>
                 <div className="space-y-2.5">
                   {data.questions.map((question, index) => (
                     <div key={index} className="flex items-start gap-3 group">
@@ -228,7 +231,7 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                               </svg>
                             </div>
-                            <p class="text-sm text-gray-400 font-medium">썸네일 로드 실패</p>
+                            <p class="text-sm text-gray-400 font-medium">${thumbnailLoadFailed}</p>
                           </div>
                         </div>
                       `
@@ -244,7 +247,7 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <p className="text-sm text-gray-400 font-medium">썸네일 생성 중...</p>
+                  <p className="text-sm text-gray-400 font-medium">{t('thumbnailGenerating')}</p>
                 </div>
               </div>
             )}
@@ -474,11 +477,12 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
  * 복습 캐러셀 2-6페이지 - 인스타그램 카드뉴스 스타일
  */
 function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: { data: ReviewCarouselResponse['pages_2_6'][0]; currentPage: number; totalPages: number; lectureId: string; courseId?: string }) {
+  const t = useTranslations('review')
 
   if (!data) {
     return (
       <div className="flex h-full items-center justify-center text-gray-400">
-        페이지 데이터가 없습니다
+        {t('noPageData')}
       </div>
     )
   }
@@ -547,7 +551,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
               </span>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{data.course_title}</h2>
-                <p className="text-xs text-gray-500 font-medium">질문 {data.page_number - 1}</p>
+                <p className="text-xs text-gray-500 font-medium">{t('question')} {data.page_number - 1}</p>
               </div>
             </div>
           </div>
@@ -555,7 +559,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
           {/* 질문 */}
           <div className="mb-8">
             <div className="inline-block px-3 py-1 bg-gray-100 rounded-full mb-3">
-              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">질문</span>
+              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('question')}</span>
             </div>
             <p className="text-xl font-bold text-gray-900 leading-relaxed">{data.question.question_name}</p>
           </div>
@@ -563,7 +567,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
           {/* 핵심정답 */}
           <div className="mb-8">
             <div className="inline-block px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mb-3">
-              <span className="text-xs font-semibold text-white">핵심정답</span>
+              <span className="text-xs font-semibold text-white">{t('keyAnswer')}</span>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500">
               <AnswerWithBlanks
@@ -584,7 +588,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
           {/* 부연설명 */}
           <div className="mb-6">
             <div className="inline-block px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-3">
-              <span className="text-xs font-semibold text-white">부연설명</span>
+              <span className="text-xs font-semibold text-white">{t('additionalExplanation')}</span>
             </div>
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500">
               <AnswerWithBlanks
@@ -608,7 +612,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
             className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
           >
             <FileText className="h-4 w-4" />
-            출처 보기
+            {t('viewSource')}
           </button>
         </div>
       </div>

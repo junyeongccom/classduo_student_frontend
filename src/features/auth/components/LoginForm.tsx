@@ -4,26 +4,29 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { Button, Input } from '@/shared/components/ui'
 import { useLogin } from '../hooks/useLogin'
 import { useAuthStore } from '../store/authStore'
 import { Mail, Lock, AlertCircle } from 'lucide-react'
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, '이메일을 입력해주세요')
-    .email('올바른 이메일 형식이 아닙니다'),
-  password: z
-    .string()
-    .min(1, '비밀번호를 입력해주세요'),
-})
-
-type LoginFormData = z.infer<typeof loginSchema>
-
 export function LoginForm() {
+  const t = useTranslations('auth.login')
+  const tv = useTranslations('auth.validation')
   const { handleLogin, isLoading } = useLogin()
   const { error, clearError } = useAuthStore()
+
+  const loginSchema = z.object({
+    email: z
+      .string()
+      .min(1, tv('emailRequired'))
+      .email(tv('emailInvalid')),
+    password: z
+      .string()
+      .min(1, tv('passwordRequired')),
+  })
+
+  type LoginFormData = z.infer<typeof loginSchema>
 
   const {
     register,
@@ -43,7 +46,7 @@ export function LoginForm() {
       {/* 로고 */}
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-primary-500">CLASSDUO</h1>
-        <p className="mt-2 text-sm text-gray-500">학습의 새로운 파트너</p>
+        <p className="mt-2 text-sm text-gray-500">{t('tagline')}</p>
       </div>
 
       {/* 에러 메시지 */}
@@ -81,7 +84,7 @@ export function LoginForm() {
           <Input
             {...register('email')}
             type="email"
-            placeholder="학교 이메일"
+            placeholder={t('emailPlaceholder')}
             className="pl-12"
             error={errors.email?.message}
           />
@@ -92,7 +95,7 @@ export function LoginForm() {
           <Input
             {...register('password')}
             type="password"
-            placeholder="비밀번호"
+            placeholder={t('passwordPlaceholder')}
             className="pl-12"
             error={errors.password?.message}
           />
@@ -104,15 +107,15 @@ export function LoginForm() {
           size="lg"
           isLoading={isLoading}
         >
-          로그인
+          {t('button')}
         </Button>
       </form>
 
       {/* 하단 링크 */}
       <div className="mt-6 text-center text-sm text-gray-500">
-        <span>계정이 없으신가요? </span>
+        <span>{t('noAccount')}</span>
         <Link href="/signup" className="font-medium text-primary-500 hover:underline">
-          회원가입
+          {t('signupLink')}
         </Link>
       </div>
     </div>

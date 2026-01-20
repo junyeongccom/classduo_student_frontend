@@ -56,7 +56,8 @@ export interface HookingResponse {
   question: string
   answer: string
   reference_data?: Reference[] | null  // 참고자료 (선택적)
-  summary_keywords?: string | null  // 핵심 키워드 (선택적)
+  summary_keywords?: string | null  // 핵심 키워드 (한국어, 선택적)
+  summary_keywords_eng?: string | null  // 핵심 키워드 (영어, 선택적)
 }
 
 export interface PQMQuestion {
@@ -82,6 +83,8 @@ export interface PQMQuestion {
     }>
   }
   question_order: number
+  summary_keywords?: string | null  // 핵심 키워드 (한국어, 선택적)
+  summary_keywords_eng?: string | null  // 핵심 키워드 (영어, 선택적)
 }
 
 // 채팅 세션 관련 타입

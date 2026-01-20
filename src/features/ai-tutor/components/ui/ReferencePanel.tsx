@@ -65,7 +65,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
   // 메시지에서 키워드 가져오기 (DB에서 저장된 summary_keywords 사용)
   const getKeywords = (messageIndex: number): string => {
     const message = messages[messageIndex]
-    if (!message) return '답변'
+    if (!message) return t('answer')
     
     // assistant 메시지이고 summary_keywords가 있으면 사용
     if (message.role === 'assistant' && message.summary_keywords) {
@@ -75,7 +75,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
       }
     }
     
-    return '답변'
+    return t('answer')
   }
 
   // 메시지 인덱스별로 그룹화 (인용이 있는 레퍼런스만 표시)
@@ -284,11 +284,11 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
             <div key={`message-${messageIndex}`} className="space-y-3">
               <div className="mb-4 flex items-center gap-2 border-b border-gray-200 pb-3">
                 <span className="text-sm font-semibold text-gray-900">
-                  답변 {Math.floor(messageIndex / 2) + 1}:{' '}
+                  {t('answer')} {Math.floor(messageIndex / 2) + 1}:{' '}
                   <span className="text-primary-600">{getKeywords(messageIndex)}</span>
                 </span>
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                  {refs.recordings.length}개 구간
+                <span className="rounded-full bg-gray-100 px-3 py-0.5 text-xs text-gray-500 whitespace-nowrap">
+                  {t('recordingSegmentsBadge', { count: String(refs.recordings.length) })}
                 </span>
               </div>
               {refs.recordings.map((ref, index) => {
@@ -308,7 +308,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                           <Mic className="h-4 w-4 text-white" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-gray-900">녹음 구간 #{index + 1}</p>
+                          <p className="text-sm font-semibold text-gray-900">{t('recordingSegmentLabel')}{index + 1}</p>
                           <div className="mt-0.5 flex flex-wrap items-center gap-2">
                             {ref.metadata.start_time !== undefined && (
                               <div className="flex items-center gap-1">
@@ -329,7 +329,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                                 <div className="flex items-center gap-1.5">
                                   <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
                                   <p className="text-xs text-gray-500">
-                                    관련도 {(ref.metadata.score * 100).toFixed(0)}%
+                                    {t('relevance')} {(ref.metadata.score * 100).toFixed(0)}%
                                   </p>
                                 </div>
                               </>
@@ -412,7 +412,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                   {t('answer')} {Math.floor(messageIndex / 2) + 1}:{' '}
                   <span className="text-primary-600">{getKeywords(messageIndex)}</span>
                 </span>
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                <span className="rounded-full bg-gray-100 px-3 py-0.5 text-xs text-gray-500 whitespace-nowrap">
                   {t('materialCountBadge', { count: String(refs.materials.length) })}
                 </span>
               </div>
@@ -439,7 +439,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-gray-900">
-                            {ref.metadata.original_filename || `강의자료 ${index + 1}`}
+                            {ref.metadata.original_filename || `${t('materialFallback')} ${index + 1}`}
                           </p>
                           {ref.metadata.page_number && (
                             <p className="text-xs text-gray-500">
@@ -520,7 +520,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
             <>
               <Mic className="h-5 w-5 text-primary-500" />
               <h2 className="text-lg font-semibold text-gray-900">{t('title.notes')}</h2>
-              <span className="ml-2 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
+              <span className="ml-2 rounded-full bg-primary-100 px-3 py-0.5 text-xs text-primary-700 whitespace-nowrap">
                 {t('countBadge', { count: String(recordingRefs.length) })}
               </span>
             </>
@@ -528,7 +528,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
             <>
               <FileText className="h-5 w-5 text-blue-500" />
               <h2 className="text-lg font-semibold text-gray-900">{t('title.materials')}</h2>
-              <span className="ml-2 rounded-full bg-primary-100 px-2 py-0.5 text-xs text-primary-700">
+              <span className="ml-2 rounded-full bg-primary-100 px-3 py-0.5 text-xs text-primary-700 whitespace-nowrap">
                 {t('countBadge', { count: String(materialRefs.length) })}
               </span>
             </>

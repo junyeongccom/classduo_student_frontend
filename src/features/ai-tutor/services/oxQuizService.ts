@@ -16,8 +16,10 @@ export interface OXQuizQuestion {
   lecture_id: string
   question_no: number
   question_text: string
+  question_text_eng?: string // 영어 질문 (선택적)
   correct_answer: boolean
   explanation?: string // 퀴즈 해설
+  explanation_eng?: string // 영어 해설 (선택적)
 }
 
 /**
@@ -31,6 +33,12 @@ export async function getOXQuizQuestions(lectureId: string): Promise<{
   try {
     const supabase = getSupabaseClient()
 
+    // 언어 설정 읽기
+    const locale = typeof window !== 'undefined' 
+      ? localStorage.getItem('classduo_locale') || 'ko'
+      : 'ko'
+
+    // 모든 필드 조회 (한국어 + 영어)
     const { data, error } = await supabase
       .from('ox_quiz_questions')
       .select('*')
@@ -71,7 +79,23 @@ export async function getOXQuizQuestions(lectureId: string): Promise<{
       return { data: null, error: new Error(errorMessage) }
     }
 
-    return { data: data as OXQuizQuestion[], error: null }
+    // 언어에 따라 필드 선택 (영어 필드가 없으면 한국어로 폴백)
+    const localizedData: OXQuizQuestion[] = (data || []).map((item: any) => ({
+      id: item.id,
+      lecture_id: item.lecture_id,
+      question_no: item.question_no,
+      question_text: locale === 'en' 
+        ? (item.question_text_eng || item.question_text)
+        : item.question_text,
+      question_text_eng: item.question_text_eng,
+      correct_answer: item.correct_answer,
+      explanation: locale === 'en'
+        ? (item.explanation_eng || item.explanation)
+        : item.explanation,
+      explanation_eng: item.explanation_eng,
+    }))
+
+    return { data: localizedData, error: null }
   } catch (error) {
     // 에러 객체 전체를 로깅하여 디버깅 용이하게
     console.error('[oxQuizService] OX 퀴즈 조회 예외:', {

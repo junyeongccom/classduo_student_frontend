@@ -4,10 +4,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { chatService } from '../services/chatService'
 import { ChatMessage, Reference } from '../types'
 
 export function useChat() {
+  const t = useTranslations('aiTutorChat')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [references, setReferences] = useState<Reference[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -31,7 +33,7 @@ export function useChat() {
       })
 
       if (apiError || !data) {
-        throw new Error(apiError?.message || '채팅 중 오류가 발생했습니다')
+        throw new Error(apiError?.message || t('chatError'))
       }
 
       // AI 답변 추가
@@ -44,7 +46,7 @@ export function useChat() {
       // 참고 데이터 저장
       setReferences(data.references)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '채팅 중 오류가 발생했습니다'
+      const errorMessage = err instanceof Error ? err.message : t('chatError')
       setError(errorMessage)
       console.error('Chat error:', err)
     } finally {
