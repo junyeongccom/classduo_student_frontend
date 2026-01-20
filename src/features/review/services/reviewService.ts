@@ -106,19 +106,21 @@ export const reviewService = {
   /**
    * 특정 강의의 회차 리스트 조회
    */
-  getLectureListByCourse: (courseId: string) =>
+  getLectureListByCourse: (courseId: string, locale?: string) =>
     apiRequest<LectureListResponse>(`/reviews/courses/${courseId}/lectures`, {
       method: 'GET',
       auth: true,
+      headers: locale ? { 'Accept-Language': locale } : undefined,
     }),
 
   /**
    * 복습 캐러셀 전체 데이터 조회
    */
-  getReviewCarousel: (lectureId: string) =>
+  getReviewCarousel: (lectureId: string, locale?: string) =>
     apiRequest<ReviewCarouselResponse>(`/reviews/lectures/${lectureId}/carousel`, {
       method: 'GET',
       auth: true,
+      headers: locale ? { 'Accept-Language': locale } : undefined,
     }),
 
   /**

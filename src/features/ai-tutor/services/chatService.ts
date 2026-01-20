@@ -45,16 +45,19 @@ export const chatService = {
   /**
    * 후킹 질문/답변 조회 (lecture_id 기반)
    */
-  async getHookingByLecture(lectureId: string): Promise<{ data: HookingResponse | null; error: any }> {
-    return apiRequest<HookingResponse>(`/ai-tutor/hooking/lecture/${lectureId}`)
+  async getHookingByLecture(lectureId: string, locale?: string): Promise<{ data: HookingResponse | null; error: any }> {
+    return apiRequest<HookingResponse>(`/ai-tutor/hooking/lecture/${lectureId}`, {
+      headers: locale ? { 'Accept-Language': locale } : undefined,
+    })
   },
 
   /**
    * PQM 질문 4개 조회 (lecture_id 기반)
    */
-  async getPQMQuestionsByLecture(lectureId: string): Promise<{ data: PQMQuestion[] | null; error: any }> {
+  async getPQMQuestionsByLecture(lectureId: string, locale?: string): Promise<{ data: PQMQuestion[] | null; error: any }> {
     return apiRequest<PQMQuestion[]>(`/ai-tutor/pqm/lectures/${lectureId}`, {
       auth: true,
+      headers: locale ? { 'Accept-Language': locale } : undefined,
     })
   },
 

@@ -12,6 +12,7 @@ import { ReviewCarouselResponse, reviewService } from '@/features/review/service
 import { tryIncrementPageProgress } from '@/features/review/hooks/useReviewProgress'
 import { ReviewLoading } from '@/features/review'
 import { useReviewStore } from '@/features/review/store/useReviewStore'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 
 interface ReviewCarouselProps {
   data: ReviewCarouselResponse | null
@@ -22,6 +23,7 @@ interface ReviewCarouselProps {
 
 export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarouselProps) {
   const t = useTranslations('review')
+  const { locale } = useI18n()
   const [currentPage, setCurrentPage] = useState(1) // 1-6 (1페이지 + 2-6페이지)
   const { preloadBlanks, clearLectureData } = useReviewStore()
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
@@ -43,11 +45,11 @@ export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarou
     if (data && data.pages_2_6.length > 0) {
       const lectureId = data.page_1.lecture_id
       // 이전 강의 데이터 정리
-      clearLectureData(lectureId)
+      clearLectureData(lectureId, locale)
       // 새 강의의 빈칸 데이터 미리 로드
-      preloadBlanks(lectureId, data.pages_2_6)
+      preloadBlanks(lectureId, data.pages_2_6, locale)
     }
-  }, [data, preloadBlanks, clearLectureData])
+  }, [data, preloadBlanks, clearLectureData, locale])
 
   if (isLoading) {
     return <ReviewLoading message={t('preparingContent')} size="inline" />
@@ -783,11 +785,12 @@ function SimpleBlank({
   pageId?: number
   blankIndex?: number
 }) {
+  const { locale } = useI18n()
   const { setBlankRevealed, isBlankRevealed: getIsBlankRevealed, getBlankData } = useReviewStore()
   
   // Store에서 빈칸 상태 확인 (pageId와 blankIndex가 있을 때만)
   const storeRevealed = pageId !== undefined && blankIndex !== undefined && lectureId
-    ? getIsBlankRevealed(lectureId, pageId, blankIndex)
+    ? getIsBlankRevealed(lectureId, pageId, blankIndex, locale)
     : isRevealed
   
   // Store의 revealed 상태를 우선 사용, 없으면 prop 사용
@@ -797,11 +800,11 @@ function SimpleBlank({
     // Store에 상태 즉시 업데이트 (pageId와 blankIndex가 있을 때만)
     if (pageId !== undefined && blankIndex !== undefined && lectureId) {
       const newRevealed = !actualIsRevealed
-      setBlankRevealed(lectureId, pageId, blankIndex, newRevealed)
+      setBlankRevealed(lectureId, pageId, blankIndex, newRevealed, locale)
       
       // 빈칸이 처음 열릴 때만 POST 요청 (OX 퀴즈 패턴)
       if (newRevealed) {
-        const blankData = getBlankData(lectureId, pageId, blankIndex)
+        const blankData = getBlankData(lectureId, pageId, blankIndex, locale)
         const answerId = blankData?.review_answer_id || reviewAnswerId
         
         if (answerId) {

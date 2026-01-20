@@ -1,6 +1,21 @@
 import { create } from 'zustand'
 import { TabType } from '@/shared/components/common'
-import { Reference } from '@/features/ai-tutor/types'
+import { Reference, HookingResponse, PQMQuestion } from '@/features/ai-tutor/types'
+import type { AppLocale } from '@/shared/i18n/I18nProvider'
+
+export interface AITutorCourse {
+  course_id: string
+  title: string
+  term: string
+  lectures: Array<{
+    lecture_id: string
+    course_id: string
+    lecture_no: number
+    lecture_date: string
+    status: string
+    is_available?: boolean
+  }>
+}
 
 // Message type definition (local to store or imported if defined elsewhere)
 export interface ChatMessage {
@@ -45,6 +60,11 @@ interface AITutorState {
   chatKey: number
   messages: ChatMessage[]
   allReferences: Map<number, Reference[]>
+
+  // Locale caches
+  coursesByLocale: Partial<Record<AppLocale, AITutorCourse[]>>
+  hookingByLocale: Partial<Record<AppLocale, Record<string, HookingResponse | null>>>
+  pqmByLocale: Partial<Record<AppLocale, Record<string, PQMQuestion[]>>>
   
   // Game
   game: GameState
@@ -74,6 +94,11 @@ interface AITutorActions {
   setAllReferences: (references: Map<number, Reference[]> | ((prev: Map<number, Reference[]>) => Map<number, Reference[]>)) => void
   updateReferences: (messageIndex: number, newRefs: Reference[]) => void
   resetChat: () => void
+
+  // Locale cache actions
+  setCoursesCache: (locale: AppLocale, courses: AITutorCourse[]) => void
+  setHookingCache: (locale: AppLocale, lectureId: string, data: HookingResponse | null) => void
+  setPqmCache: (locale: AppLocale, lectureId: string, data: PQMQuestion[]) => void
   
   // Game Actions
   openGame: (
@@ -103,6 +128,9 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   chatKey: 0,
   messages: [],
   allReferences: new Map(),
+  coursesByLocale: {},
+  hookingByLocale: {},
+  pqmByLocale: {},
   game: {
     isOpen: false,
     triggerPosition: null,
@@ -163,6 +191,33 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
     messages: [],
     allReferences: new Map(),
     activeTab: 'answer',
+  })),
+
+  setCoursesCache: (locale, courses) => set((state) => ({
+    coursesByLocale: {
+      ...state.coursesByLocale,
+      [locale]: courses,
+    },
+  })),
+
+  setHookingCache: (locale, lectureId, data) => set((state) => ({
+    hookingByLocale: {
+      ...state.hookingByLocale,
+      [locale]: {
+        ...(state.hookingByLocale[locale] || {}),
+        [lectureId]: data,
+      },
+    },
+  })),
+
+  setPqmCache: (locale, lectureId, data) => set((state) => ({
+    pqmByLocale: {
+      ...state.pqmByLocale,
+      [locale]: {
+        ...(state.pqmByLocale[locale] || {}),
+        [lectureId]: data,
+      },
+    },
   })),
   
   openGame: (lectureId, courseId, lectureNo, courseName, position) => set({

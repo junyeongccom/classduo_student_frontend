@@ -9,8 +9,10 @@ import { Send, Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import type { AppLocale } from '@/shared/i18n/I18nProvider'
 import { reviewService } from '@/features/review'
 import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
+import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 
 // 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
 function renderMarkdown(text: string) {
@@ -199,6 +201,12 @@ interface ChatInterfaceProps {
 export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel }: ChatInterfaceProps) {
   const t = useTranslations('aiTutorChat')
   const { locale } = useI18n()
+  const { hookingByLocale, pqmByLocale, setHookingCache, setPqmCache } = useAITutorStore(state => ({
+    hookingByLocale: state.hookingByLocale,
+    pqmByLocale: state.pqmByLocale,
+    setHookingCache: state.setHookingCache,
+    setPqmCache: state.setPqmCache,
+  }))
   
   // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
   const DEFAULT_HOOKING_QUESTIONS = [
@@ -323,62 +331,96 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }, [isLoading, selectedLectureIds])
 
 
-  // lecture_ids 변경 시 후킹 질문과 PQM 질문 동시 로드 (단일 선택 시에만)
+  // lecture_ids/locale 변경 시 후킹 질문과 PQM 질문 로드 (단일 선택 시에만)
   useEffect(() => {
-    // 복수 선택이거나 선택 없으면 둘 다 숨김
     if (selectedLectureIds.length !== 1) {
       setHookingQuestions([])
       setPQMQuestions([])
       return
     }
-    
-    const loadQuestions = async () => {
-      // 후킹 질문과 PQM 질문을 병렬로 동시에 로드
+
+    const lectureId = selectedLectureIds[0]
+    const cachedHooking = hookingByLocale[locale]?.[lectureId]
+    const cachedPqm = pqmByLocale[locale]?.[lectureId]
+
+    if (cachedHooking) {
+      setHookingQuestions([{
+        id: cachedHooking.id,
+        question: cachedHooking.question,
+        answer: cachedHooking.answer,
+        reference_data: cachedHooking.reference_data || null,
+        summary_keywords: cachedHooking.summary_keywords || null,
+        summary_keywords_eng: cachedHooking.summary_keywords_eng || null
+      }])
+    } else if (cachedHooking === null) {
+      setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+    }
+
+    if (cachedPqm) {
+      setPQMQuestions(cachedPqm)
+    } else if (cachedPqm === undefined) {
+      setPQMQuestions([])
+    }
+
+    const loadQuestions = async (targetLocale: AppLocale, updateState: boolean) => {
       const [hookingResult, pqmResult] = await Promise.allSettled([
-        chatService.getHookingByLecture(selectedLectureIds[0]),
-        chatService.getPQMQuestionsByLecture(selectedLectureIds[0])
+        chatService.getHookingByLecture(lectureId, targetLocale),
+        chatService.getPQMQuestionsByLecture(lectureId, targetLocale)
       ])
-      
-      // 후킹 질문 처리
+
       if (hookingResult.status === 'fulfilled') {
         const { data, error } = hookingResult.value
-        console.log('[후킹 질문 로드] API 응답:', { data, error })
         if (data && !error) {
-          console.log('[후킹 질문 로드] reference_data:', data.reference_data)
-          // 후킹 질문이 있으면 해당 질문과 답변, 참고자료, 키워드, ID 함께 저장
-          setHookingQuestions([{
-            id: data.id,  // 후킹질문 고유 ID (source_question_id로 사용)
-            question: data.question,
-            answer: data.answer,
-            reference_data: data.reference_data || null,
-            summary_keywords: data.summary_keywords || null,
-            summary_keywords_eng: data.summary_keywords_eng || null
-          }])
+          setHookingCache(targetLocale, lectureId, data)
+          if (updateState) {
+            setHookingQuestions([{
+              id: data.id,
+              question: data.question,
+              answer: data.answer,
+              reference_data: data.reference_data || null,
+              summary_keywords: data.summary_keywords || null,
+              summary_keywords_eng: data.summary_keywords_eng || null
+            }])
+          }
         } else {
-          // 후킹 질문이 없으면 기본 질문 사용
-          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+          setHookingCache(targetLocale, lectureId, null)
+          if (updateState) {
+            setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+          }
         }
       } else {
-        console.error('Failed to load hooking questions:', hookingResult.reason)
-        setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+        if (updateState) {
+          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+        }
       }
-      
-      // PQM 질문 처리
+
       if (pqmResult.status === 'fulfilled') {
         const { data, error } = pqmResult.value
         if (data && !error && data.length > 0) {
-          setPQMQuestions(data)
+          setPqmCache(targetLocale, lectureId, data)
+          if (updateState) {
+            setPQMQuestions(data)
+          }
         } else {
-          setPQMQuestions([])
+          setPqmCache(targetLocale, lectureId, [])
+          if (updateState) {
+            setPQMQuestions([])
+          }
         }
-      } else {
-        console.error('Failed to load PQM questions:', pqmResult.reason)
+      } else if (updateState) {
         setPQMQuestions([])
       }
     }
-    
-    loadQuestions()
-  }, [selectedLectureIds])
+
+    if (cachedHooking === undefined || cachedPqm === undefined) {
+      loadQuestions(locale, true)
+    }
+
+    const oppositeLocale: AppLocale = locale === 'ko' ? 'en' : 'ko'
+    if (!hookingByLocale[oppositeLocale]?.[lectureId] || !pqmByLocale[oppositeLocale]?.[lectureId]) {
+      loadQuestions(oppositeLocale, false)
+    }
+  }, [selectedLectureIds, locale, hookingByLocale, pqmByLocale, setHookingCache, setPqmCache])
 
   // 컴포넌트 마운트 시 세션 확인 (페이지 복귀 시 작업 완료 확인)
   useEffect(() => {

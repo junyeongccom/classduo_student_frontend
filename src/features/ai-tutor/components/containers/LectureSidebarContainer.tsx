@@ -10,6 +10,9 @@ import { apiRequest } from '@/shared/lib/api'
 import { useGameProgress } from '../../hooks/useGameProgress'
 import { claimReward as claimRewardAPI } from '@/shared/services/progressService'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { useI18n } from '@/shared/i18n/I18nProvider'
+import type { AppLocale } from '@/shared/i18n/I18nProvider'
+import { useAITutorStore, type AITutorCourse } from '../../store/useAITutorStore'
 import {
   LectureSidebarUI,
   type Course,
@@ -56,6 +59,11 @@ export function LectureSidebarContainer({
   
   // 인증 상태 구독
   const isAuthenticated = useAuthStore(state => state.isAuthenticated)
+  const { locale } = useI18n()
+  const { coursesByLocale, setCoursesCache } = useAITutorStore(state => ({
+    coursesByLocale: state.coursesByLocale,
+    setCoursesCache: state.setCoursesCache,
+  }))
 
   // refs
   const flameCounterRef = useRef<HTMLDivElement>(null)
@@ -138,10 +146,11 @@ export function LectureSidebarContainer({
     let retryCount = 0
     const maxRetries = 1
 
-    const fetchCourses = async (): Promise<boolean> => {
+    const fetchCourses = async (targetLocale: AppLocale, updateState: boolean): Promise<boolean> => {
       try {
         const coursesResult = await apiRequest<{ courses: any[]; total: number }>('/courses/all', {
           auth: true,
+          headers: { 'Accept-Language': targetLocale },
         })
         const coursesList = coursesResult.data?.courses
 
@@ -155,7 +164,7 @@ export function LectureSidebarContainer({
           return false
         }
 
-        const coursesWithLectures: Course[] = coursesList.map((course: any) => ({
+        const coursesWithLectures: AITutorCourse[] = coursesList.map((course: any) => ({
           course_id: course.course_id,
           title: course.title,
           term: `${course.academic_year}-${course.term_code}`,
@@ -170,8 +179,11 @@ export function LectureSidebarContainer({
         }))
 
         if (isMounted) {
-          setCourses(coursesWithLectures)
-          setError(null)
+          setCoursesCache(targetLocale, coursesWithLectures)
+          if (updateState) {
+            setCourses(coursesWithLectures)
+            setError(null)
+          }
         }
         return true
       } catch (err) {
@@ -189,14 +201,14 @@ export function LectureSidebarContainer({
       // 토큰이 localStorage에 저장될 시간을 주기 위해 약간의 딜레이 추가
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      let success = await fetchCourses()
+      let success = await fetchCourses(locale, true)
 
       // 실패 시 재시도
       while (!success && retryCount < maxRetries && isMounted) {
         retryCount++
         console.log(`Retrying fetch courses... (${retryCount}/${maxRetries})`)
         await new Promise(resolve => setTimeout(resolve, 1000)) // 1초 대기 후 재시도
-        success = await fetchCourses()
+        success = await fetchCourses(locale, true)
       }
 
       if (isMounted) {
@@ -208,12 +220,23 @@ export function LectureSidebarContainer({
       }
     }
 
-    loadWithRetry()
+    const cached = coursesByLocale[locale]
+    if (cached) {
+      setCourses(cached)
+      setIsLoading(false)
+    } else {
+      loadWithRetry()
+    }
+
+    const oppositeLocale: AppLocale = locale === 'ko' ? 'en' : 'ko'
+    if (!coursesByLocale[oppositeLocale]) {
+      fetchCourses(oppositeLocale, false)
+    }
 
     return () => {
       isMounted = false
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, locale, coursesByLocale, setCoursesCache])
 
   // 선택된 강의가 없거나 사라진 경우 보정
   useEffect(() => {
