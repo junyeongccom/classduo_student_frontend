@@ -13,8 +13,8 @@ const STORAGE_KEY = 'classduo_locale'
 const DEFAULT_LOCALE: AppLocale = 'ko'
 
 const MESSAGES_BY_LOCALE: Record<AppLocale, AbstractIntlMessages> = {
-  ko: koMessages,
-  en: enMessages,
+  ko: koMessages as unknown as AbstractIntlMessages,
+  en: enMessages as unknown as AbstractIntlMessages,
 }
 
 interface I18nContextValue {
