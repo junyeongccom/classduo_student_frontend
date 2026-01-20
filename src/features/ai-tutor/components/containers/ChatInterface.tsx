@@ -201,11 +201,13 @@ interface ChatInterfaceProps {
 export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel }: ChatInterfaceProps) {
   const t = useTranslations('aiTutorChat')
   const { locale } = useI18n()
-  const { hookingByLocale, pqmByLocale, setHookingCache, setPqmCache } = useAITutorStore(state => ({
+  const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache } = useAITutorStore(state => ({
     hookingByLocale: state.hookingByLocale,
     pqmByLocale: state.pqmByLocale,
+    reviewKeyAnswersByLocale: state.reviewKeyAnswersByLocale,
     setHookingCache: state.setHookingCache,
     setPqmCache: state.setPqmCache,
+    setReviewKeyAnswersCache: state.setReviewKeyAnswersCache,
   }))
   
   // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
@@ -300,35 +302,53 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }, [showVideo])
 
-  // 로딩 중 복습 정답 조회
+  // 로딩 중 복습 정답 조회 (locale 캐시 스위치)
   useEffect(() => {
     if (!isLoading || selectedLectureIds.length === 0) return
 
-    let cancelled = false
-    setIsReviewAnswersLoading(true)
+    const lectureKey = [...selectedLectureIds].sort().join(',')
+    const cached = reviewKeyAnswersByLocale[locale]?.[lectureKey]
+    if (cached) {
+      setReviewKeyAnswers(cached)
+    }
 
-    reviewService
-      .getKeyAnswersByLectures(selectedLectureIds)
-      .then(({ data, error }) => {
+    let cancelled = false
+    const loadAnswers = async (targetLocale: AppLocale, updateState: boolean) => {
+      if (updateState) {
+        setIsReviewAnswersLoading(true)
+      }
+      try {
+        const { data, error } = await reviewService.getKeyAnswersByLectures(selectedLectureIds, targetLocale)
         if (cancelled) return
         if (data && !error) {
           const answers = data.flatMap(item => item.key_answers).filter(Boolean)
-          setReviewKeyAnswers(answers)
-        } else {
+          setReviewKeyAnswersCache(targetLocale, lectureKey, answers)
+          if (updateState) {
+            setReviewKeyAnswers(answers)
+          }
+        } else if (updateState) {
           setReviewKeyAnswers([])
         }
-      })
-      .catch(() => {
-        if (!cancelled) setReviewKeyAnswers([])
-      })
-      .finally(() => {
-        if (!cancelled) setIsReviewAnswersLoading(false)
-      })
+      } catch {
+        if (!cancelled && updateState) setReviewKeyAnswers([])
+      } finally {
+        if (!cancelled && updateState) setIsReviewAnswersLoading(false)
+      }
+    }
+
+    if (!cached) {
+      loadAnswers(locale, true)
+    }
+
+    const oppositeLocale: AppLocale = locale === 'ko' ? 'en' : 'ko'
+    if (!reviewKeyAnswersByLocale[oppositeLocale]?.[lectureKey]) {
+      loadAnswers(oppositeLocale, false)
+    }
 
     return () => {
       cancelled = true
     }
-  }, [isLoading, selectedLectureIds])
+  }, [isLoading, selectedLectureIds, locale, reviewKeyAnswersByLocale, setReviewKeyAnswersCache])
 
 
   // lecture_ids/locale 변경 시 후킹 질문과 PQM 질문 로드 (단일 선택 시에만)
@@ -1405,7 +1425,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           {isLoading && (
             <AnswerLoadingReviewBanner
               answers={reviewKeyAnswers}
-              fallbackText={isReviewAnswersLoading ? '정답 준비 중...' : '정답 준비 중...'}
+              fallbackText={locale === 'en' ? 'Loading answer...' : '정답 준비 중...'}
               className="mb-6"
             />
           )}

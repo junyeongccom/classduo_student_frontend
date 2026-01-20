@@ -65,6 +65,7 @@ interface AITutorState {
   coursesByLocale: Partial<Record<AppLocale, AITutorCourse[]>>
   hookingByLocale: Partial<Record<AppLocale, Record<string, HookingResponse | null>>>
   pqmByLocale: Partial<Record<AppLocale, Record<string, PQMQuestion[]>>>
+  reviewKeyAnswersByLocale: Partial<Record<AppLocale, Record<string, string[]>>>
   
   // Game
   game: GameState
@@ -99,6 +100,7 @@ interface AITutorActions {
   setCoursesCache: (locale: AppLocale, courses: AITutorCourse[]) => void
   setHookingCache: (locale: AppLocale, lectureId: string, data: HookingResponse | null) => void
   setPqmCache: (locale: AppLocale, lectureId: string, data: PQMQuestion[]) => void
+  setReviewKeyAnswersCache: (locale: AppLocale, lectureKey: string, answers: string[]) => void
   
   // Game Actions
   openGame: (
@@ -131,6 +133,7 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   coursesByLocale: {},
   hookingByLocale: {},
   pqmByLocale: {},
+  reviewKeyAnswersByLocale: {},
   game: {
     isOpen: false,
     triggerPosition: null,
@@ -216,6 +219,16 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
       [locale]: {
         ...(state.pqmByLocale[locale] || {}),
         [lectureId]: data,
+      },
+    },
+  })),
+
+  setReviewKeyAnswersCache: (locale, lectureKey, answers) => set((state) => ({
+    reviewKeyAnswersByLocale: {
+      ...state.reviewKeyAnswersByLocale,
+      [locale]: {
+        ...(state.reviewKeyAnswersByLocale[locale] || {}),
+        [lectureKey]: answers,
       },
     },
   })),

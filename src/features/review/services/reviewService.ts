@@ -126,11 +126,12 @@ export const reviewService = {
   /**
    * lecture_id 리스트로 핵심정답 조회
    */
-  getKeyAnswersByLectures: (lectureIds: string[]) => {
+  getKeyAnswersByLectures: (lectureIds: string[], locale?: string) => {
     const lectureParam = encodeURIComponent(lectureIds.join(','))
     return apiRequest<ReviewKeyAnswersByLecture[]>(`/reviews/answers?lecture_ids=${lectureParam}`, {
       method: 'GET',
       auth: true,
+      headers: locale ? { 'Accept-Language': locale } : undefined,
     })
   },
 

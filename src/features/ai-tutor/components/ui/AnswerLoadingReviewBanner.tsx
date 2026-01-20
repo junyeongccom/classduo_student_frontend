@@ -115,8 +115,8 @@ export function AnswerLoadingReviewBanner({
                 isAnimating ? 'opacity-0' : 'opacity-100'
               }`}
               style={{
-                lineHeight: '1.4',
-                maxHeight: '4.2em',
+                lineHeight: '1.2',
+                maxHeight: '4.8em',
                 overflow: 'hidden',
               }}
             >
@@ -128,8 +128,8 @@ export function AnswerLoadingReviewBanner({
                   isAnimating ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
                 }`}
                 style={{
-                  lineHeight: '1.4',
-                  maxHeight: '4.2em',
+                  lineHeight: '1.2',
+                  maxHeight: '4.8em',
                   overflow: 'hidden',
                 }}
               >
