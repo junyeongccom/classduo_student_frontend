@@ -5,7 +5,7 @@
  */
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react'
 import { ReviewCarouselResponse, reviewService } from '@/features/review/services/reviewService'
@@ -24,11 +24,19 @@ export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarou
   const t = useTranslations('review')
   const [currentPage, setCurrentPage] = useState(1) // 1-6 (1페이지 + 2-6페이지)
   const { preloadBlanks, clearLectureData } = useReviewStore()
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   
   // 다른 강의회차 선택 시 페이지를 1로 리셋
   useEffect(() => {
     setCurrentPage(1)
   }, [data])
+
+  // 페이지/데이터 변경 시 상단으로 스크롤
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0
+    }
+  }, [currentPage, data])
   
   // 복습 콘텐츠 로딩 시 모든 빈칸 데이터를 미리 저장
   useEffect(() => {
@@ -74,7 +82,7 @@ export function ReviewCarousel({ data, isLoading, error, courseId }: ReviewCarou
   return (
     <div className="flex h-full flex-col relative">
       {/* 캐러셀 콘텐츠 */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {currentPage === 1 ? (
           <ReviewPage1 data={data.page_1} currentPage={currentPage} totalPages={totalPages} />
         ) : (
@@ -141,7 +149,7 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
   const thumbnailLoadFailed = t('thumbnailLoadFailed')
   
   return (
-    <div className="h-full flex items-center justify-center p-4">
+    <div className="min-h-full flex items-start justify-center p-4">
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl relative" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
         {/* 페이지 번호 표시 - 우측 위 (overflow-hidden 밖에 위치) */}
         <div className="absolute -top-2 -right-2 z-20">
@@ -150,12 +158,12 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
           </div>
         </div>
         {/* 그리드 레이아웃: 좌측 텍스트, 우측 썸네일 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 h-full overflow-hidden rounded-2xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden rounded-2xl">
           {/* 좌측: 텍스트 콘텐츠 */}
-          <div className="p-8 lg:p-10 flex flex-col justify-between overflow-y-auto">
+          <div className="p-8 lg:p-10 flex flex-col justify-start">
             {/* 수업명 */}
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              <h1 className="text-2xl font-bold text-gray-900 mb-1 leading-snug whitespace-normal break-words">
                 {data.course_title}
               </h1>
               {data.section && (
