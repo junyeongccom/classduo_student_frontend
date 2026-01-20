@@ -88,6 +88,11 @@ export interface ReviewCarouselResponse {
   pages_2_6: ReviewCarouselPage2_6[]
 }
 
+export interface ReviewKeyAnswersByLecture {
+  lecture_id: string
+  key_answers: string[]
+}
+
 export interface CompleteReviewRequest {
   review_answer_id: string
 }
@@ -115,6 +120,17 @@ export const reviewService = {
       method: 'GET',
       auth: true,
     }),
+
+  /**
+   * lecture_id 리스트로 핵심정답 조회
+   */
+  getKeyAnswersByLectures: (lectureIds: string[]) => {
+    const lectureParam = encodeURIComponent(lectureIds.join(','))
+    return apiRequest<ReviewKeyAnswersByLecture[]>(`/reviews/answers?lecture_ids=${lectureParam}`, {
+      method: 'GET',
+      auth: true,
+    })
+  },
 
   /**
    * 복습 빈칸 클릭 완료 API 호출

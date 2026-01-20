@@ -9,6 +9,8 @@ import { Send, Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { reviewService } from '@/features/review'
+import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
 
 // 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
 function renderMarkdown(text: string) {
@@ -209,6 +211,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [reviewKeyAnswers, setReviewKeyAnswers] = useState<string[]>([])
+  const [isReviewAnswersLoading, setIsReviewAnswersLoading] = useState(false)
   // 타이핑 애니메이션 상태: 메시지 인덱스 -> 현재 표시된 텍스트 길이
   const [typingProgress, setTypingProgress] = useState<Map<number, number>>(new Map())
   // 타이핑 완료 상태: 메시지 인덱스 -> 타이핑 완료 여부
@@ -287,6 +291,36 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       }
     }
   }, [showVideo])
+
+  // 로딩 중 복습 정답 조회
+  useEffect(() => {
+    if (!isLoading || selectedLectureIds.length === 0) return
+
+    let cancelled = false
+    setIsReviewAnswersLoading(true)
+
+    reviewService
+      .getKeyAnswersByLectures(selectedLectureIds)
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (data && !error) {
+          const answers = data.flatMap(item => item.key_answers).filter(Boolean)
+          setReviewKeyAnswers(answers)
+        } else {
+          setReviewKeyAnswers([])
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setReviewKeyAnswers([])
+      })
+      .finally(() => {
+        if (!cancelled) setIsReviewAnswersLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [isLoading, selectedLectureIds])
 
 
   // lecture_ids 변경 시 후킹 질문과 PQM 질문 동시 로드 (단일 선택 시에만)
@@ -1326,6 +1360,13 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               )
             }
           })}
+          {isLoading && (
+            <AnswerLoadingReviewBanner
+              answers={reviewKeyAnswers}
+              fallbackText={isReviewAnswersLoading ? '정답 준비 중...' : '정답 준비 중...'}
+              className="mb-6"
+            />
+          )}
           {isLoading && loadingStatusItems.length > 0 && (
             <div className="flex justify-start">
               <div className="rounded-2xl bg-gray-50 border border-gray-200 px-5 py-4 max-w-[85%] w-full">
