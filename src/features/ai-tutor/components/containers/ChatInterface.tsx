@@ -54,7 +54,7 @@ function renderMarkdown(text: string) {
     }
   }
 
-  const parseInlineMarkdown = (text: string): (string | JSX.Element)[] => {
+  const parseBold = (text: string, keyPrefix: string) => {
     const parts: (string | JSX.Element)[] = []
     const boldRegex = /\*\*(.+?)\*\*/g
     let lastIndex = 0
@@ -69,7 +69,7 @@ function renderMarkdown(text: string) {
       }
       // 볼드 텍스트
       parts.push(
-        <strong key={`bold-${keyCounter++}`} className="font-semibold text-gray-900">
+        <strong key={`${keyPrefix}-bold-${keyCounter++}`} className="font-semibold text-gray-900">
           {match[1]}
         </strong>
       )
@@ -82,6 +82,10 @@ function renderMarkdown(text: string) {
     }
 
     return parts.length > 0 ? parts : [text]
+  }
+
+  const parseInlineMarkdown = (text: string): (string | JSX.Element)[] => {
+    return parseBold(text, 'inline')
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -117,6 +121,28 @@ function renderMarkdown(text: string) {
 
     if (inCodeBlock) {
       codeBlockContent.push(line)
+      continue
+    }
+
+    // 헤딩 처리 (학생에게 ### 노출 방지)
+    if (trimmedLine.startsWith('### ')) {
+      flushParagraph()
+      flushList()
+      elements.push(
+        <h3 key={elements.length} className="mb-2 text-base font-semibold text-gray-900">
+          {parseInlineMarkdown(trimmedLine.replace(/^###\s+/, ''))}
+        </h3>
+      )
+      continue
+    }
+    if (trimmedLine.startsWith('## ')) {
+      flushParagraph()
+      flushList()
+      elements.push(
+        <h2 key={elements.length} className="mb-2 text-lg font-semibold text-gray-900">
+          {parseInlineMarkdown(trimmedLine.replace(/^##\s+/, ''))}
+        </h2>
+      )
       continue
     }
 
@@ -1365,7 +1391,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               const displayedText = message.content.slice(0, typingLength)
               const assistantMessage = message as ChatMessage & { follow_up_question?: string | null }
               const followUpQuestion = assistantMessage.follow_up_question
-              
               // 가장 마지막 assistant 메시지인지 확인
               const lastAssistantIndex = messages.map((m, i) => m.role === 'assistant' ? i : -1).filter(i => i >= 0).pop()
               const isLastAssistantMessage = index === lastAssistantIndex

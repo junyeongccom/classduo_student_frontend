@@ -68,7 +68,9 @@ export function AITutorContainer() {
     toggleNotesPanel: state.toggleNotesPanel,
     toggleMaterialsPanel: state.toggleMaterialsPanel,
     setNotesPanelWidth: state.setNotesPanelWidth,
-    setMaterialsPanelWidth: state.setMaterialsPanelWidth
+    setMaterialsPanelWidth: state.setMaterialsPanelWidth,
+    notesPanelWidth: state.notesPanelWidth,
+    materialsPanelWidth: state.materialsPanelWidth
   }))
 
   // Hooks
@@ -134,12 +136,43 @@ export function AITutorContainer() {
     }
   }
 
+  const resetPanelsForNewChat = useCallback(() => {
+    if (isNotesPanelOpen) {
+      toggleNotesPanel(false)
+    }
+    if (isMaterialsPanelOpen) {
+      toggleMaterialsPanel(false)
+    }
+    if (notesPanelWidth !== DEFAULT_NOTES_PANEL_WIDTH) {
+      setNotesPanelWidth(DEFAULT_NOTES_PANEL_WIDTH)
+    }
+    if (materialsPanelWidth !== DEFAULT_MATERIALS_PANEL_WIDTH) {
+      setMaterialsPanelWidth(DEFAULT_MATERIALS_PANEL_WIDTH)
+    }
+    setActiveTab('answer')
+  }, [
+    isNotesPanelOpen,
+    isMaterialsPanelOpen,
+    notesPanelWidth,
+    materialsPanelWidth,
+    toggleNotesPanel,
+    toggleMaterialsPanel,
+    setNotesPanelWidth,
+    setMaterialsPanelWidth,
+    setActiveTab
+  ])
+
+  const handleNewChatAndResetPanels = useCallback(() => {
+    resetPanelsForNewChat()
+    handleNewChat()
+  }, [resetPanelsForNewChat, handleNewChat])
+
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const triggerNewChat = () => {
       sessionStorage.removeItem(AI_TUTOR_NEW_CHAT_FLAG)
-      handleNewChat()
+      handleNewChatAndResetPanels()
     }
 
     if (sessionStorage.getItem(AI_TUTOR_NEW_CHAT_FLAG)) {
@@ -150,19 +183,19 @@ export function AITutorContainer() {
     return () => {
       window.removeEventListener(AI_TUTOR_NEW_CHAT_EVENT, triggerNewChat)
     }
-  }, [handleNewChat])
+  }, [handleNewChatAndResetPanels])
 
   useEffect(() => {
     if (!pendingNewChatParam) {
       return
     }
 
-    handleNewChat()
+    handleNewChatAndResetPanels()
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(AI_TUTOR_NEW_CHAT_FLAG)
     }
     router.replace(pathname, { scroll: false })
-  }, [pendingNewChatParam, handleNewChat, router, pathname])
+  }, [pendingNewChatParam, handleNewChatAndResetPanels, router, pathname])
 
   const { recordingCount, materialCount } = useMemo(() => {
     let recording = 0
@@ -284,7 +317,7 @@ export function AITutorContainer() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <button
-                onClick={handleNewChat}
+                onClick={handleNewChatAndResetPanels}
                 className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-primary-300 hover:text-primary-700"
               >
                 {tTopbar('newChat')}
@@ -465,7 +498,7 @@ export function AITutorContainer() {
         isOpen={isChatSidebarOpen}
         onClose={() => setIsChatSidebarOpen(false)}
         onSelectSession={handleSelectSession}
-        onNewChat={handleNewChat}
+        onNewChat={handleNewChatAndResetPanels}
         currentSessionId={currentSessionId}
       />
 
