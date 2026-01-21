@@ -137,14 +137,20 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
       }))
     }
 
+  const scrollPositionsRef = useRef(scrollPositions)
+
+  useEffect(() => {
+    scrollPositionsRef.current = scrollPositions
+  }, [scrollPositions])
+
   useEffect(() => {
     if (variant === 'notes' && notesContainerRef.current) {
-      notesContainerRef.current.scrollTop = scrollPositions.notes
+      notesContainerRef.current.scrollTop = scrollPositionsRef.current.notes
     }
     if (variant === 'materials' && materialsContainerRef.current) {
-      materialsContainerRef.current.scrollTop = scrollPositions.materials
+      materialsContainerRef.current.scrollTop = scrollPositionsRef.current.materials
     }
-  }, [variant, scrollPositions])
+  }, [variant])
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => {
@@ -218,7 +224,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
     if (!citations || citations.length === 0) return content
 
     let highlightedContent = content
-    citations.forEach(citation => {
+    citations.forEach((citation, citationIndex) => {
       if (citation.text) {
         // 인용 텍스트 정규화 (공백, 줄바꿈 통일)
         const normalizeText = (text: string) => text.replace(/\s+/g, ' ').trim()
@@ -237,10 +243,12 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
           
           if (matches && matches.length > 0) {
             // 첫 번째 매칭만 하이라이트 (중복 방지)
-            highlightedContent = highlightedContent.replace(
-              regex,
-              '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>'
-            )
+            let replaced = false
+            highlightedContent = highlightedContent.replace(regex, (match) => {
+              if (replaced) return match
+              replaced = true
+              return `<mark class="bg-yellow-200 px-0.5 rounded">${match}</mark>`
+            })
           } else {
             // 정확한 매칭 실패 시 부분 매칭 시도 (공백 무시)
             const citationWords = normalizedCitation.split(' ').filter(w => w.length > 1)
@@ -251,10 +259,12 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
               const flexibleRegex = new RegExp(`(${pattern})`, 'gi')
               
               if (normalizedContent.match(flexibleRegex)) {
-                highlightedContent = highlightedContent.replace(
-                  flexibleRegex,
-                  '<mark class="bg-yellow-200 px-0.5 rounded">$1</mark>'
-                )
+                let replaced = false
+                highlightedContent = highlightedContent.replace(flexibleRegex, (match) => {
+                  if (replaced) return match
+                  replaced = true
+                  return `<mark class="bg-yellow-200 px-0.5 rounded">${match}</mark>`
+                })
               }
             }
           }
@@ -304,7 +314,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                 const itemId = `recording-${messageIndex}-${index}`
                 const isExpanded = expandedItems.has(itemId)
                 const sortIndex = getRecordingSortIndex(ref)
-                const displayIndex = Number.isFinite(sortIndex) ? sortIndex + 1 : index + 1
+                const displayIndex = Number.isFinite(sortIndex) ? sortIndex : index
                 return (
                   <div
                     key={itemId}
