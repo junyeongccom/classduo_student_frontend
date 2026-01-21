@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { X, RotateCcw, LogOut } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { getOXQuizQuestions, submitOXQuiz, type OXQuizQuestion } from '../../services/oxQuizService'
 
 // 게임 페이즈 상태
@@ -387,6 +388,7 @@ interface GameOverlayProps {
 }
 
 export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId, lectureNo, courseName }: GameOverlayProps) {
+  const t = useTranslations('gameOverlay')
   const overlayRef = useRef<HTMLDivElement>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
@@ -1259,7 +1261,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                     textShadow: '0 0 20px rgba(255,255,255,0.5), 0 0 40px rgba(255,255,255,0.3)',
                   }}
                 >
-                  START
+                  {t('startTitle')}
                 </div>
                 <div 
                   className="text-white/70 mt-4"
@@ -1267,7 +1269,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                     fontSize: `${18 * scaleFactor}px`,
                   }}
                 >
-                  화면을 클릭하여 시작
+                  {t('startHint')}
                 </div>
               </div>
             </div>
@@ -1289,7 +1291,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                     color: '#FFD700',
                   }}
                 >
-                  CLEAR!
+                  {t('clearTitle')}
                 </div>
                 <div 
                   className="text-white/80 mt-2"
@@ -1297,7 +1299,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                     fontSize: `${20 * scaleFactor}px`,
                   }}
                 >
-                  모든 퀴즈를 완료했습니다!
+                  {t('clearMessage')}
                 </div>
                 
                 {/* 버튼 영역 */}
@@ -1323,7 +1325,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                       className="text-white font-medium"
                       style={{ fontSize: `${14 * scaleFactor}px` }}
                     >
-                      다시하기
+                      {t('restart')}
                     </span>
                   </button>
 
@@ -1349,7 +1351,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                       className="text-white font-medium"
                       style={{ fontSize: `${14 * scaleFactor}px` }}
                     >
-                      나가기
+                      {t('exit')}
                     </span>
                   </button>
                 </div>

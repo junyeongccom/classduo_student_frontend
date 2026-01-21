@@ -192,6 +192,14 @@
       "Loading challenges... 🏆"
     ]
   },
+  "gameOverlay": {
+    "startTitle": "START",
+    "startHint": "Click the screen to start",
+    "clearTitle": "CLEAR!",
+    "clearMessage": "All quizzes completed!",
+    "restart": "Restart",
+    "exit": "Exit"
+  },
   "auth": {
     "login": {
       "tagline": "Your New Learning Partner",

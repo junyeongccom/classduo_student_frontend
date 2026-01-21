@@ -192,6 +192,14 @@
       "도전 과제 로딩 중... 🏆"
     ]
   },
+  "gameOverlay": {
+    "startTitle": "START",
+    "startHint": "화면을 클릭하여 시작",
+    "clearTitle": "CLEAR!",
+    "clearMessage": "모든 퀴즈를 완료했습니다!",
+    "restart": "다시하기",
+    "exit": "나가기"
+  },
   "auth": {
     "login": {
       "tagline": "학습의 새로운 파트너",
