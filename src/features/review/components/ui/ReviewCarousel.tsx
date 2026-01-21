@@ -169,7 +169,7 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
                 {data.course_title}
               </h1>
               {data.section && (
-                <span className="text-sm text-gray-500 font-medium">{data.section}</span>
+                <span className="text-sm text-gray-500 font-medium">{data.section}{t('section')}</span>
               )}
             </div>
 
@@ -322,7 +322,17 @@ function escapeHtml(text: string): string {
 /**
  * 출처를 새 탭으로 열기
  */
-function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sources']) {
+function openSourceInNewTab(
+  sources: ReviewCarouselResponse['pages_2_6'][0]['sources'],
+  translations: {
+    source: string
+    recording: string
+    materialPage: string
+    second: string
+    page: string
+    recordingContent: string
+  }
+) {
   const newWindow = window.open('', '_blank', 'width=1200,height=800')
   if (!newWindow) return
 
@@ -330,7 +340,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
   const recordingChunksHtml = sources.recording_chunks.map((chunk, index) => {
     // summary가 있으면 인터뷰 기사 형식으로, 없으면 원문 사용
     const hasSummary = chunk.summary && chunk.summary.title && chunk.summary.content
-    const title = hasSummary ? chunk.summary!.title : '녹음본 내용'
+    const title = hasSummary ? chunk.summary!.title : translations.recordingContent
     const content = hasSummary ? chunk.summary!.content : cleanText(chunk.text_content, 'recording')
     
     // 백엔드에서 이미 완전한 문장으로 처리되어 전달되므로 그대로 사용
@@ -341,7 +351,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
     <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #f0fdf4, #d1fae5); padding: 1.5rem; border-left: 4px solid #10b981; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1.5rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
         <span style="padding: 0.375rem 0.75rem; background-color: #10b981; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-          ${chunk.start_time.toFixed(1)}초 ~ ${chunk.end_time.toFixed(1)}초
+          ${chunk.start_time.toFixed(1)}${translations.second} ~ ${chunk.end_time.toFixed(1)}${translations.second}
         </span>
       </div>
       <div>
@@ -367,7 +377,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
     
     const imageHtml = page.image_url
       ? `<div style="margin-top: 0.75rem; border-radius: 0.75rem; overflow: hidden; border: 2px solid #e5e7eb; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white;">
-          <img src="${escapeHtml(page.image_url)}" alt="페이지 ${page.page_number}" style="width: 100%; height: auto; display: block;" />
+          <img src="${escapeHtml(page.image_url)}" alt="${translations.page} ${page.page_number}" style="width: 100%; height: auto; display: block;" />
         </div>`
       : ''
     
@@ -375,7 +385,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
     <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #eff6ff, #dbeafe); padding: 1rem; border-left: 4px solid #3b82f6; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); margin-bottom: 1rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
         <span style="padding: 0.375rem 0.75rem; background-color: #3b82f6; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
-          페이지 ${page.page_number}
+          ${translations.page} ${page.page_number}
         </span>
       </div>
       ${textContentHtml}
@@ -390,7 +400,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>출처</title>
+      <title>${translations.source}</title>
       <style>
         * {
           margin: 0;
@@ -452,14 +462,14 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
     <body>
       <div class="container">
         <div class="header">
-          <h1>출처</h1>
+          <h1>${translations.source}</h1>
         </div>
         <div class="content">
           ${sources.recording_chunks.length > 0 ? `
             <div class="section">
               <div class="section-header">
                 <div class="section-line" style="background: linear-gradient(to right, #10b981, #059669);"></div>
-                <h2 class="section-title">녹음본</h2>
+                <h2 class="section-title">${translations.recording}</h2>
               </div>
               ${recordingChunksHtml}
             </div>
@@ -468,7 +478,7 @@ function openSourceInNewTab(sources: ReviewCarouselResponse['pages_2_6'][0]['sou
             <div class="section">
               <div class="section-header">
                 <div class="section-line" style="background: linear-gradient(to right, #3b82f6, #4f46e5);"></div>
-                <h2 class="section-title">강의자료 페이지</h2>
+                <h2 class="section-title">${translations.materialPage}</h2>
               </div>
               ${materialPagesHtml}
             </div>
@@ -618,7 +628,14 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
 
           {/* 출처 버튼 */}
           <button
-            onClick={() => openSourceInNewTab(data.sources)}
+            onClick={() => openSourceInNewTab(data.sources, {
+              source: t('source'),
+              recording: t('recording'),
+              materialPage: t('materialPage'),
+              second: t('second'),
+              page: t('page'),
+              recordingContent: t('recordingContent')
+            })}
             className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
           >
             <FileText className="h-4 w-4" />

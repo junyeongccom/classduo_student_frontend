@@ -80,7 +80,22 @@
     "question": "질문",
     "keyAnswer": "핵심정답",
     "additionalExplanation": "부연설명",
-    "viewSource": "출처 보기"
+    "viewSource": "출처 보기",
+    "section": "분반",
+    "class": "수업",
+    "selectSession": "회차 선택",
+    "analyzing": "분석 중",
+    "loadingCourseList": "강의 목록 불러오는 중...",
+    "loadingLectureList": "수업 목록 불러오는 중...",
+    "selectCoursePlaceholder": "강의를 선택하세요",
+    "noLectures": "등록된 회차가 없습니다",
+    "noEssence": "본질한줄 없음",
+    "source": "출처",
+    "recording": "녹음본",
+    "materialPage": "강의자료 페이지",
+    "second": "초",
+    "page": "페이지",
+    "recordingContent": "녹음본 내용"
   },
   "studyspacePlaceholder": {
     "preview": {
