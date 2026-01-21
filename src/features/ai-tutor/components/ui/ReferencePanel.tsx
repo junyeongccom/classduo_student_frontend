@@ -20,9 +20,11 @@ interface RecordingReference {
   type: 'recording'
   source_id: string
   content: string
+  reference_index?: number
   metadata: {
     job_id?: string
     chunk_id?: number
+    chunk_index?: number
     start_time?: number
     end_time?: number
     score?: number
@@ -80,6 +82,12 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
 
   // 메시지 인덱스별로 그룹화 (인용이 있는 레퍼런스만 표시)
   const referencesByMessage = new Map<number, { recordings: RecordingReference[]; materials: MaterialReference[] }>()
+
+  const getRecordingSortIndex = (ref: RecordingReference) => {
+    const refIndex = typeof ref.reference_index === 'number' ? ref.reference_index : undefined
+    const chunkIndex = typeof ref.metadata?.chunk_index === 'number' ? ref.metadata.chunk_index : undefined
+    return refIndex ?? chunkIndex ?? Number.POSITIVE_INFINITY
+  }
   
   allReferences.forEach((references, messageIndex) => {
     const recordings: RecordingReference[] = []
@@ -102,6 +110,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
     })
     
     if (recordings.length > 0 || materials.length > 0) {
+      recordings.sort((a, b) => getRecordingSortIndex(a) - getRecordingSortIndex(b))
       referencesByMessage.set(messageIndex, { recordings, materials })
     }
   })
@@ -294,6 +303,8 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
               {refs.recordings.map((ref, index) => {
                 const itemId = `recording-${messageIndex}-${index}`
                 const isExpanded = expandedItems.has(itemId)
+                const sortIndex = getRecordingSortIndex(ref)
+                const displayIndex = Number.isFinite(sortIndex) ? sortIndex + 1 : index + 1
                 return (
                   <div
                     key={itemId}
@@ -308,7 +319,9 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
                           <Mic className="h-4 w-4 text-white" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-gray-900">{t('recordingSegmentLabel')}{index + 1}</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {t('recordingSegmentLabel')}{displayIndex}
+                          </p>
                           <div className="mt-0.5 flex flex-wrap items-center gap-2">
                             {ref.metadata.start_time !== undefined && (
                               <div className="flex items-center gap-1">

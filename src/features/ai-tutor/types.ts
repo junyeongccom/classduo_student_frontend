@@ -7,6 +7,7 @@ export interface Reference {
   type: 'recording' | 'material'
   source_id: string
   content: string
+  reference_index?: number
   metadata: {
     chunk_index?: number
     start_time?: number
