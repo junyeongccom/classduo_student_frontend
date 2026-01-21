@@ -1,6 +1,7 @@
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
+  summary_keywords?: string | null
 }
 
 export interface Reference {

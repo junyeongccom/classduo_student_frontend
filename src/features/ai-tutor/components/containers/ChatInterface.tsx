@@ -1201,7 +1201,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         setError(t('sessionCreateError'))
       }
     } else {
-      // 기존 세션에 PQM 메시지 저장
+      // 기존 세션에 PQM 메시지 저장 (미리 준비된 답변 사용)
+      // 현재 locale에 따라 summary_keywords 선택
+      const summaryKeywords = locale === 'en' 
+        ? (pqmQuestion.summary_keywords_eng || pqmQuestion.summary_keywords || null)
+        : (pqmQuestion.summary_keywords || null)
+      
       try {
         await chatService.savePQMMessage(currentSessionId, {
           question: pqmQuestion.question,
