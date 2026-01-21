@@ -80,7 +80,22 @@
     "question": "Question",
     "keyAnswer": "Key Answer",
     "additionalExplanation": "Additional Explanation",
-    "viewSource": "View Source"
+    "viewSource": "View Source",
+    "section": "Section",
+    "class": "Class",
+    "selectSession": "Select session",
+    "analyzing": "Analyzing",
+    "loadingCourseList": "Loading course list...",
+    "loadingLectureList": "Loading lecture list...",
+    "selectCoursePlaceholder": "Select a course",
+    "noLectures": "No lectures registered",
+    "noEssence": "No essence",
+    "source": "Source",
+    "recording": "Recording",
+    "materialPage": "Material pages",
+    "second": "sec",
+    "page": "Page",
+    "recordingContent": "Recording content"
   },
   "studyspacePlaceholder": {
     "preview": {
@@ -191,14 +206,6 @@
       "Preparing treasure chest... 💎",
       "Loading challenges... 🏆"
     ]
-  },
-  "gameOverlay": {
-    "startTitle": "START",
-    "startHint": "Click the screen to start",
-    "clearTitle": "CLEAR!",
-    "clearMessage": "All quizzes completed!",
-    "restart": "Restart",
-    "exit": "Exit"
   },
   "auth": {
     "login": {

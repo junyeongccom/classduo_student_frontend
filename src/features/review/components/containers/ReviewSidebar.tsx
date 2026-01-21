@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, BookOpen, Calendar } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useLectureList } from '@/features/review/hooks/useReview'
 import { useReviewCourses } from '@/features/review/hooks/useReviewCourses'
 import { useGameStatus } from '@/features/review/hooks/useGameStatus'
@@ -29,7 +30,11 @@ interface ReviewSidebarProps {
   onCourseIdChange?: (courseId: string | null) => void // 강의 ID 변경 콜백
 }
 
+// 데이터베이스에서 오는 "분석 중" 상태 값 (하드코딩된 한국어 문자열)
+const ANALYZING_STATUS = '분석 중'
+
 export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseIdChange }: ReviewSidebarProps) {
+  const t = useTranslations('review')
   const { courses, isLoading: isLoadingCourses, error: coursesError } = useReviewCourses()
   const { gameProgress, flameCount, claimedRewards, claimReward } = useGameStatus()
   
@@ -113,8 +118,8 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
 
   // 회차 선택
   const handleSelectLecture = (lectureId: string, essence7words: string | null) => {
-    // "분석 중" 상태인 경우 클릭 불가
-    if (essence7words === "분석 중" || !essence7words) {
+    // "분석 중" 상태인 경우 클릭 불가 (데이터베이스 값은 하드코딩된 한국어 "분석 중")
+    if (essence7words === ANALYZING_STATUS || !essence7words) {
       return
     }
     onSelectLectureId(lectureId === selectedLectureId ? null : lectureId)
@@ -132,7 +137,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
     }
 
     const availableLectures = lectureList.lectures.filter(
-      (lecture) => lecture.essence_7words && lecture.essence_7words !== '분석 중'
+      (lecture) => lecture.essence_7words && lecture.essence_7words !== ANALYZING_STATUS
     )
 
     if (availableLectures.length === 0) {
@@ -172,7 +177,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   if (isLoadingCourses) {
     return (
       <div className="flex h-full w-[320px] items-center justify-center bg-white">
-        <ReviewLoading message="강의 목록 불러오는 중..." size="compact" />
+        <ReviewLoading message={t('loadingCourseList')} size="compact" />
       </div>
     )
   }
@@ -180,7 +185,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   if (isLoadingLectures) {
     return (
       <div className="flex h-full w-[320px] items-center justify-center bg-white">
-        <ReviewLoading message="수업 목록 불러오는 중..." size="compact" />
+        <ReviewLoading message={t('loadingLectureList')} size="compact" />
       </div>
     )
   }
@@ -190,7 +195,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
       {/* 헤더 */}
       <h2 className="mb-4 text-sm font-semibold text-gray-700 flex items-center gap-2">
         <BookOpen className="h-4 w-4" />
-        수업
+        {t('class')}
       </h2>
       
       {coursesError && (
@@ -205,7 +210,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className={`truncate ${selectedCourse ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
-              {selectedCourse?.title || '강의를 선택하세요'}
+              {selectedCourse?.title || t('selectCoursePlaceholder')}
             </span>
             {/* 불꽃 개수 표시 */}
             {selectedCourse && (
@@ -297,20 +302,20 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
         <>
           <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
             <Calendar className="h-3.5 w-3.5" />
-            <span>회차 선택</span>
+            <span>{t('selectSession')}</span>
           </div>
           
           <div className="flex-1 overflow-y-auto space-y-1.5">
             {isLoadingLectures ? (
-              <ReviewLoading message="수업 목록 불러오는 중..." size="compact" />
+              <ReviewLoading message={t('loadingLectureList')} size="compact" />
             ) : !lectureList || lectureList.lectures.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-4">
-                등록된 회차가 없습니다
+                {t('noLectures')}
               </p>
             ) : (
               lectureList.lectures.map(lecture => {
                 const isSelected = selectedLectureId === lecture.lecture_id
-                const isAnalyzing = lecture.essence_7words === "분석 중" || !lecture.essence_7words
+                const isAnalyzing = lecture.essence_7words === ANALYZING_STATUS || !lecture.essence_7words
                 const progress = gameProgress[lecture.lecture_id] || 0
                 
                 return (
@@ -337,7 +342,9 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                         <p className={`text-sm font-medium mt-0.5 ${
                           isSelected ? 'text-white' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
                         }`}>
-                          {lecture.essence_7words || '본질한줄 없음'}
+                          {lecture.essence_7words === ANALYZING_STATUS 
+                            ? t('analyzing') 
+                            : lecture.essence_7words || t('noEssence')}
                         </p>
                       </div>
                       {isSelected && !isAnalyzing && (
