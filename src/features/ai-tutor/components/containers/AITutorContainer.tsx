@@ -24,6 +24,9 @@ import {
 } from '@/shared/components/layouts/studyspace'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
+const DEFAULT_NOTES_PANEL_WIDTH = 380
+const DEFAULT_MATERIALS_PANEL_WIDTH = 360
+
 export function AITutorContainer() {
   const tTopbar = useTranslations('aiTutorTopbar')
   // Store State
