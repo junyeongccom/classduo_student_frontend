@@ -35,7 +35,8 @@
     "sourceLabels": {
       "recording": "수업 녹음본 출처",
       "material": "강의자료 출처"
-    }
+    },
+    "recordingSourceDisabled": "녹음본 출처가 비활성화되어 있습니다"
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "수업 선택",
