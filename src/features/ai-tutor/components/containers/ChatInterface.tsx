@@ -1438,11 +1438,28 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                     {/* 누적된 상태 메시지와 소스 목록 */}
                     {loadingStatusItems.map((statusItem, statusIdx) => (
                       <div key={statusIdx} className="space-y-3">
-                        {/* 상태 메시지 */}
-                        <p className="text-sm font-medium text-gray-900">{statusItem.message}</p>
-                        
-                        {/* 해당 상태의 소스 목록 */}
-                        {statusItem.sources.length > 0 && (
+                        {/* 녹음본 비활성화 안내 - 출처 박스 스타일 유지 */}
+                        {statusItem.step === 'recording_disabled' ? (
+                          <div className="flex items-start gap-3 px-4 py-3 bg-white rounded-lg border border-gray-200">
+                            <div className="flex-shrink-0 mt-0.5">
+                              <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+                                <span className="text-gray-400 text-base">🎙️</span>
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-400">{t('recordingSourceDisabled')}</p>
+                              <p className="text-xs text-gray-400 mt-1">{t('sourceLabels.recording')}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {/* 상태 메시지 */}
+                            <p className="text-sm font-medium text-gray-900">{statusItem.message}</p>
+                          </>
+                        )}
+
+                        {/* 해당 상태의 소스 목록 (녹음본 비활성화가 아닐 때만 표시) */}
+                        {statusItem.step !== 'recording_disabled' && statusItem.sources.length > 0 && (
                           <div className="space-y-2 pl-0">
                             <div className="space-y-2">
                               {statusItem.sources.map((source, sourceIdx) => (

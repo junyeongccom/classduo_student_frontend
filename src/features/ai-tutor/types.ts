@@ -126,7 +126,7 @@ export interface SearchResult {
 
 export interface StreamProgressData {
   type: 'status' | 'source' | 'result' | 'error'
-  step: 'searching' | 'selecting' | 'generating' | 'extracting' | 'complete'
+  step: 'searching' | 'selecting' | 'generating' | 'extracting' | 'summarizing' | 'recording_disabled' | 'complete'
   message?: string
   source_type?: 'recording' | 'material'
   data?: {

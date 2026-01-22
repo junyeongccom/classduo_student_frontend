@@ -35,7 +35,8 @@
     "sourceLabels": {
       "recording": "Recording source",
       "material": "Material source"
-    }
+    },
+    "recordingSourceDisabled": "Recording sources are disabled"
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "Select class",
