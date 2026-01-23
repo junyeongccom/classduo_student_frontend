@@ -169,7 +169,7 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
                 {data.course_title}
               </h1>
               {data.section && (
-                <span className="text-sm text-gray-500 font-medium">{data.section}{t('section')}</span>
+                <span className="text-sm text-gray-500 font-medium">{data.section}</span>
               )}
             </div>
 

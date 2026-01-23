@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { X, RotateCcw, LogOut } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { getOXQuizQuestions, submitOXQuiz, type OXQuizQuestion } from '../../services/oxQuizService'
 
 // 게임 페이즈 상태
@@ -387,6 +388,7 @@ interface GameOverlayProps {
 }
 
 export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId, lectureNo, courseName }: GameOverlayProps) {
+  const t = useTranslations('aiTutorChat')
   const overlayRef = useRef<HTMLDivElement>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
@@ -1267,7 +1269,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
                     fontSize: `${18 * scaleFactor}px`,
                   }}
                 >
-                  화면을 클릭하여 시작
+                  {t('clickToStart')}
                 </div>
               </div>
             </div>

@@ -36,7 +36,8 @@
       "recording": "Recording source",
       "material": "Material source"
     },
-    "recordingSourceDisabled": "Recording sources are disabled"
+    "recordingSourceDisabled": "Recording sources are disabled",
+    "clickToStart": "Click the screen to start"
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "Select class",
