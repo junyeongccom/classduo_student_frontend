@@ -331,6 +331,7 @@ function openSourceInNewTab(
     second: string
     page: string
     recordingContent: string
+    recordingSourceDisabled: string
   }
 ) {
   const newWindow = window.open('', '_blank', 'width=1200,height=800')
@@ -472,6 +473,18 @@ function openSourceInNewTab(
                 <h2 class="section-title">${translations.recording}</h2>
               </div>
               ${recordingChunksHtml}
+            </div>
+          ` : sources.is_recording_source_disabled ? `
+            <div class="section">
+              <div class="section-header">
+                <div class="section-line" style="background: linear-gradient(to right, #10b981, #059669);"></div>
+                <h2 class="section-title">${translations.recording}</h2>
+              </div>
+              <div style="border-radius: 0.75rem; background: linear-gradient(to bottom right, #f0fdf4, #d1fae5); padding: 1.5rem; border-left: 4px solid #10b981; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                <p style="font-size: 1rem; color: #6b7280; text-align: center; margin: 0;">
+                  ${translations.recordingSourceDisabled}
+                </p>
+              </div>
             </div>
           ` : ''}
           ${sources.material_pages.length > 0 ? `
@@ -634,7 +647,8 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
               materialPage: t('materialPage'),
               second: t('second'),
               page: t('page'),
-              recordingContent: t('recordingContent')
+              recordingContent: t('recordingContent'),
+              recordingSourceDisabled: t('recordingSourceDisabled')
             })}
             className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
           >

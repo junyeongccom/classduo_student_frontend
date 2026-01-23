@@ -96,7 +96,8 @@
     "materialPage": "강의자료 페이지",
     "second": "초",
     "page": "페이지",
-    "recordingContent": "녹음본 내용"
+    "recordingContent": "녹음본 내용",
+    "recordingSourceDisabled": "녹음 출처 표시가 비활성화된 수업입니다"
   },
   "studyspacePlaceholder": {
     "preview": {
