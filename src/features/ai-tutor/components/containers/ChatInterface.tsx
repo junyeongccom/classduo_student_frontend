@@ -227,13 +227,14 @@ interface ChatInterfaceProps {
 export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel }: ChatInterfaceProps) {
   const t = useTranslations('aiTutorChat')
   const { locale } = useI18n()
-  const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache } = useAITutorStore(state => ({
+  const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled } = useAITutorStore(state => ({
     hookingByLocale: state.hookingByLocale,
     pqmByLocale: state.pqmByLocale,
     reviewKeyAnswersByLocale: state.reviewKeyAnswersByLocale,
     setHookingCache: state.setHookingCache,
     setPqmCache: state.setPqmCache,
     setReviewKeyAnswersCache: state.setReviewKeyAnswersCache,
+    setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
   }))
   
   // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
@@ -715,6 +716,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         setMessages([])
         setCurrentSessionId(undefined)
         selfCreatedSessionId.current = undefined
+        setIsRecordingSourceDisabled(false)
       }
     }
 
@@ -856,6 +858,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         // onProgress: 진행 상황 업데이트 (누적)
         (progressData) => {
           if (progressData.type === 'status') {
+            // 녹음 출처 비활성화 상태 저장
+            if (progressData.step === 'recording_disabled') {
+              setIsRecordingSourceDisabled(true)
+            }
             // 새로운 상태 메시지 추가
             setLoadingStatusItems(prev => [...prev, {
               step: progressData.step,

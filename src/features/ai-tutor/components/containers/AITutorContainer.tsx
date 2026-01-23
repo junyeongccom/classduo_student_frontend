@@ -44,7 +44,8 @@ export function AITutorContainer() {
     allReferences,
     chatKey,
     autoSelectLatest,
-    isSessionLocked
+    isSessionLocked,
+    isRecordingSourceDisabled
   } = useAITutorStore()
 
   // Actions
@@ -456,6 +457,7 @@ export function AITutorContainer() {
                 allReferences={allReferences}
                 onClose={handleCloseNotesPanel}
                 messages={messages}
+                isRecordingSourceDisabled={isRecordingSourceDisabled}
               />
             </div>
           )}
@@ -492,6 +494,7 @@ export function AITutorContainer() {
             allReferences={allReferences}
             onClose={handleCloseMaterialsPanel}
             messages={messages}
+            isRecordingSourceDisabled={isRecordingSourceDisabled}
             className="flex-1"
           />
         </StudyspaceOverlaySlot>

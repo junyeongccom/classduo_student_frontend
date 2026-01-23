@@ -121,6 +121,7 @@
       "notes": "참고한 녹음본이 없습니다",
       "materials": "참고한 강의자료가 없습니다"
     },
+    "disabledNotes": "녹음 출처 표시가 비활성화된 수업입니다",
     "countBadge": "{count}개",
     "answer": "답변",
     "materialCountBadge": "{count}개 자료",

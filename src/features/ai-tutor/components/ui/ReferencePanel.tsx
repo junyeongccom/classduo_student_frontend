@@ -13,6 +13,7 @@ interface ReferencePanelProps {
   variant: 'notes' | 'materials'
   onClose: () => void
   messages: Array<{ role: 'user' | 'assistant'; content: string; summary_keywords?: string | null }>
+  isRecordingSourceDisabled?: boolean
   className?: string
 }
 
@@ -57,7 +58,7 @@ interface MaterialReference {
   }>
 }
 
-export function ReferencePanel({ allReferences, variant, onClose, messages, className }: ReferencePanelProps) {
+export function ReferencePanel({ allReferences, variant, onClose, messages, isRecordingSourceDisabled, className }: ReferencePanelProps) {
   const t = useTranslations('aiTutorReference')
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [scrollPositions, setScrollPositions] = useState({ notes: 0, materials: 0 })
@@ -294,7 +295,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, clas
       {recordingRefs.length === 0 ? (
         <div className="py-12 text-center text-gray-500">
           <Mic className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-4">{t('empty.notes')}</p>
+          <p className="mt-4">{isRecordingSourceDisabled ? t('disabledNotes') : t('empty.notes')}</p>
         </div>
       ) : (
         Array.from(referencesByMessage.entries())
