@@ -62,6 +62,7 @@ export interface ReviewSource {
     image_width: number | null
     image_height: number | null
   }>
+  is_recording_source_disabled?: boolean
 }
 
 export interface ReviewCarouselPage1 {

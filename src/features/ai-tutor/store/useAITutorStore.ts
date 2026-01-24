@@ -44,12 +44,12 @@ interface AITutorState {
   // Session
   currentSessionId: string | undefined
   isSessionLocked: boolean
-  
+
   // Lecture Selection
   selectedLectureIds: string[]
   selectedCourseId: string | null
   autoSelectLatest: boolean
-  
+
   // Chat & UI
   activeTab: TabType
   isNotesPanelOpen: boolean
@@ -60,6 +60,7 @@ interface AITutorState {
   chatKey: number
   messages: ChatMessage[]
   allReferences: Map<number, Reference[]>
+  isRecordingSourceDisabled: boolean
 
   // Locale caches
   coursesByLocale: Partial<Record<AppLocale, AITutorCourse[]>>
@@ -94,6 +95,7 @@ interface AITutorActions {
   setMessages: (messages: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void
   setAllReferences: (references: Map<number, Reference[]> | ((prev: Map<number, Reference[]>) => Map<number, Reference[]>)) => void
   updateReferences: (messageIndex: number, newRefs: Reference[]) => void
+  setIsRecordingSourceDisabled: (disabled: boolean) => void
   resetChat: () => void
 
   // Locale cache actions
@@ -130,6 +132,7 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   chatKey: 0,
   messages: [],
   allReferences: new Map(),
+  isRecordingSourceDisabled: false,
   coursesByLocale: {},
   hookingByLocale: {},
   pqmByLocale: {},
@@ -186,13 +189,16 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
     updated.set(messageIndex, newRefs)
     return { allReferences: updated }
   }),
-  
+
+  setIsRecordingSourceDisabled: (disabled) => set({ isRecordingSourceDisabled: disabled }),
+
   resetChat: () => set((state) => ({
     currentSessionId: undefined,
     isSessionLocked: false,
     chatKey: state.chatKey + 1,
     messages: [],
     allReferences: new Map(),
+    isRecordingSourceDisabled: false,
     activeTab: 'answer',
   })),
 

@@ -97,7 +97,8 @@
     "materialPage": "Material pages",
     "second": "sec",
     "page": "Page",
-    "recordingContent": "Recording content"
+    "recordingContent": "Recording content",
+    "recordingSourceDisabled": "Recording source display is disabled for this class"
   },
   "studyspacePlaceholder": {
     "preview": {
@@ -122,6 +123,7 @@
       "notes": "No referenced recordings",
       "materials": "No referenced materials"
     },
+    "disabledNotes": "Recording source display is disabled for this class",
     "countBadge": "{count} items",
     "answer": "Answer",
     "materialCountBadge": "{count} materials",
