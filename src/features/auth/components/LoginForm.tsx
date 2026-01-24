@@ -80,7 +80,7 @@ export function LoginForm() {
       {/* 로그인 폼 */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="relative">
-          <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <Mail className="absolute left-4 top-[21px] h-5 w-5 -translate-y-1/2 text-gray-400" />
           <Input
             {...register('email')}
             type="email"
@@ -91,7 +91,7 @@ export function LoginForm() {
         </div>
 
         <div className="relative">
-          <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <Lock className="absolute left-4 top-[21px] h-5 w-5 -translate-y-1/2 text-gray-400" />
           <Input
             {...register('password')}
             type="password"
