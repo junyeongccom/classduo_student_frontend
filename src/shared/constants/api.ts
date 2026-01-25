@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
     LOGIN: '/auth/login',
     ME: '/auth/me',
     RESEND_VERIFICATION: '/auth/resend-verification',
+    VERIFY_EMAIL: '/auth/verify-email',
     CHANGE_PASSWORD: '/auth/me/password',
     DELETE_ACCOUNT: '/auth/me',
     UPDATE_PROFILE: '/auth/me',

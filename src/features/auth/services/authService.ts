@@ -47,6 +47,15 @@ export const authService = {
     }),
 
   /**
+   * 이메일 인증 토큰 검증
+   */
+  verifyEmail: (token: string, type: string = 'signup') =>
+    apiRequest<AuthTokenResponse>(API_ENDPOINTS.AUTH.VERIFY_EMAIL, {
+      method: 'POST',
+      body: { token, type },
+    }),
+
+  /**
    * 내 프로필 조회
    */
   getMe: () =>
