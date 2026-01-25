@@ -24,15 +24,15 @@ function EmailConfirmedContent() {
       // Hash에서 확인 (Supabase가 hash에 토큰을 넣을 수 있음)
       const hash = window.location.hash.substring(1)
       const hashParams = new URLSearchParams(hash)
-      
+
       // Query params에서 확인
       const queryParams = new URLSearchParams(searchParams.toString())
-      
+
       // 에러 확인 (우선순위: hash > query)
       const hashError = hashParams.get('error')
       const queryError = queryParams.get('error')
       const error = hashError || queryError
-      
+
       if (error) {
         // 에러가 있으면 설정하고 종료
         setError({
@@ -43,7 +43,63 @@ function EmailConfirmedContent() {
         return
       }
 
-      // 토큰 확인 (우선순위: hash > query)
+      // 이메일 템플릿에서 직접 전달된 토큰 확인 (token + type)
+      const emailToken = queryParams.get('token')
+      const tokenType = queryParams.get('type') || 'signup'
+
+      if (emailToken) {
+        // 백엔드 API로 토큰 검증
+        try {
+          const result = await authService.verifyEmail(emailToken, tokenType)
+          if (!result.error && result.data) {
+            // 검증 성공 - 토큰으로 로그인 처리
+            login({
+              access_token: result.data.access_token,
+              refresh_token: result.data.refresh_token || '',
+              expires_in: result.data.expires_in || 3600,
+              token_type: result.data.token_type || 'bearer',
+            })
+
+            // 사용자 정보 조회
+            try {
+              setLoading(true)
+              const meResult = await authService.getMe()
+              if (!meResult.error && meResult.data) {
+                setUser(meResult.data)
+              }
+            } catch (meError) {
+              console.warn('[이메일 인증] 사용자 정보 조회 실패 (무시):', meError)
+            } finally {
+              setLoading(false)
+            }
+
+            setIsProcessing(false)
+            // URL에서 토큰 제거 (보안)
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, '', window.location.pathname)
+            }
+            return
+          } else {
+            // 검증 실패
+            setError({
+              code: 'verification_failed',
+              description: result.error?.message || '이메일 인증에 실패했습니다',
+            })
+            setIsProcessing(false)
+            return
+          }
+        } catch (verifyError) {
+          console.error('[이메일 인증] 토큰 검증 실패:', verifyError)
+          setError({
+            code: 'verification_failed',
+            description: '이메일 인증 중 오류가 발생했습니다',
+          })
+          setIsProcessing(false)
+          return
+        }
+      }
+
+      // 기존 방식: Supabase에서 직접 전달된 access_token 확인
       let accessToken = hashParams.get('access_token') || queryParams.get('access_token')
       let refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token')
 
