@@ -326,7 +326,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                       className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors duration-150 hover:bg-gray-50"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-3">
-                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 shadow-sm">
+                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 shadow-sm">
                           <Mic className="h-4 w-4 text-white" />
                         </div>
                         <div className="min-w-0 flex-1">
