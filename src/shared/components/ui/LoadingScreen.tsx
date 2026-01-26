@@ -108,7 +108,7 @@ export function LoadingScreen({
       {/* 프로그레스 바 (선택적) */}
       {showProgress && (
         <div className="mt-6 w-48 h-1 bg-gray-200 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-primary-400 to-primary-600 animate-shimmer" />
+          <div className="h-full bg-gradient-to-r from-gray-700 to-gray-900 animate-shimmer" />
         </div>
       )}
 
@@ -128,7 +128,7 @@ export function LoadingScreen({
 function LoadingDot({ delay }: { delay: string }) {
   return (
     <div
-      className="w-2 h-2 bg-primary-500 rounded-full animate-bounce-slow"
+      className="w-2 h-2 bg-gray-900 rounded-full animate-bounce-slow"
       style={{ animationDelay: delay }}
     />
   )

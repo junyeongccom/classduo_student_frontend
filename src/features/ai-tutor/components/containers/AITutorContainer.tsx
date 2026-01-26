@@ -322,7 +322,7 @@ export function AITutorContainer() {
             <div className="flex items-center gap-1">
               <button
                 onClick={handleNewChatAndResetPanels}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-primary-300 hover:text-primary-700"
+                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-700"
               >
                 {tTopbar('newChat')}
               </button>
@@ -448,8 +448,8 @@ export function AITutorContainer() {
                   e.preventDefault()
                   setIsResizingNotes(true)
                 }}
-                className={`absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-primary-500/50 ${
-                  isResizingNotes ? 'bg-primary-500' : 'bg-transparent'
+                className={`absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
+                  isResizingNotes ? 'bg-gray-900' : 'bg-transparent'
                 }`}
               />
               <ReferencePanel

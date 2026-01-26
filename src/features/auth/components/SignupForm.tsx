@@ -62,8 +62,8 @@ export function SignupForm() {
     return (
       <div className="w-full max-w-md text-center">
         <div className="mb-6 flex justify-center">
-          <div className="rounded-full bg-primary-100 p-4">
-            <CheckCircle className="h-12 w-12 text-primary-500" />
+          <div className="rounded-full bg-gray-100 p-4">
+            <CheckCircle className="h-12 w-12 text-gray-900" />
           </div>
         </div>
         
@@ -103,7 +103,7 @@ export function SignupForm() {
     <div className="w-full max-w-md">
       {/* 로고 */}
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-primary-500">CLASSDUO</h1>
+        <h1 className="text-2xl font-bold text-gray-900">CLASSDUO</h1>
         <p className="mt-2 text-sm text-gray-500">{t('title')}</p>
       </div>
 
@@ -195,7 +195,7 @@ export function SignupForm() {
       {/* 하단 링크 */}
       <div className="mt-6 text-center text-sm text-gray-500">
         <span>{t('hasAccount')}</span>
-        <Link href="/login" className="font-medium text-primary-500 hover:underline">
+        <Link href="/login" className="font-medium text-gray-900 hover:underline">
           {t('loginLink')}
         </Link>
       </div>

@@ -45,7 +45,7 @@ export function LoginForm() {
     <div className="w-full max-w-md">
       {/* 로고 */}
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-primary-500">CLASSDUO</h1>
+        <h1 className="text-2xl font-bold text-gray-900">CLASSDUO</h1>
         <p className="mt-2 text-sm text-gray-500">{t('tagline')}</p>
       </div>
 
@@ -114,7 +114,7 @@ export function LoginForm() {
       {/* 하단 링크 */}
       <div className="mt-6 text-center text-sm text-gray-500">
         <span>{t('noAccount')}</span>
-        <Link href="/signup" className="font-medium text-primary-500 hover:underline">
+        <Link href="/signup" className="font-medium text-gray-900 hover:underline">
           {t('signupLink')}
         </Link>
       </div>

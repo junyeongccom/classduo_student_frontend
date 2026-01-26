@@ -1316,12 +1316,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   }}
                   placeholder={t('askAnythingPlaceholder')}
                   disabled={isLoading}
-                  className="w-full rounded-full border border-gray-300 bg-gray-50 px-5 py-3.5 pr-14 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
+                  className="w-full rounded-full border border-gray-300 bg-gray-50 px-5 py-3.5 pr-14 text-sm focus:border-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-gray-900 disabled:bg-gray-100"
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-primary-500 text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+                  className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900 text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
                 >
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1343,7 +1343,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                     <button
                       key={`hooking-${index}`}
                       onClick={() => handleSuggestionClick(hooking)}
-                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-all hover:border-primary-300 hover:bg-primary-50 hover:shadow-md"
+                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md"
                     >
                       <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
                       <span>{hooking.question}</span>
@@ -1359,7 +1359,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                     <button
                       key={pqmQuestion.id}
                       onClick={() => handlePQMQuestionClick(pqmQuestion)}
-                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-all hover:border-primary-300 hover:bg-primary-50 hover:shadow-md"
+                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md"
                     >
                       <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
                       <span>{pqmQuestion.question}</span>
@@ -1385,7 +1385,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               // 사용자 메시지: 말풍선으로 표시 (오른쪽 정렬)
               return (
                 <div key={index} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-2xl bg-primary-500 px-4 py-3">
+                  <div className="max-w-[85%] rounded-2xl bg-gray-900 px-4 py-3">
                     <p className="whitespace-pre-wrap text-sm text-white">{message.content}</p>
                   </div>
                 </div>
@@ -1408,7 +1408,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                       {typingLength < message.content.length ? (
                         <>
                           {renderMarkdown(displayedText)}
-                          <span className="inline-block w-2 h-4 bg-primary-500 ml-1 animate-pulse" />
+                          <span className="inline-block w-2 h-4 bg-gray-900 ml-1 animate-pulse" />
                         </>
                       ) : (
                         renderMarkdown(message.content)
@@ -1425,7 +1425,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                             }
                           }}
                           disabled={isLoading}
-                          className="inline-flex items-center gap-2 rounded-lg border border-primary-300 bg-white px-4 py-2 text-sm font-medium text-primary-700 shadow-sm transition-all duration-200 hover:bg-primary-50 hover:border-primary-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <span>💡</span>
                           <span>{followUpQuestion}</span>
@@ -1437,17 +1437,17 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                       <div className="mt-6 flex justify-center animate-fade-in-up">
                         <div 
                           onClick={() => onShowReferencePanel?.('notes')}
-                          className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-primary-300 bg-gradient-to-r from-primary-50 via-blue-50 to-purple-50 px-3 py-2 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-pulse-scale cursor-pointer"
+                          className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-r from-gray-50 via-blue-50 to-purple-50 px-3 py-2 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-pulse-scale cursor-pointer"
                         >
                           <ArrowUp 
-                            className="h-4 w-4 text-primary-600 animate-pulse flex-shrink-0" 
+                            className="h-4 w-4 text-gray-600 animate-pulse flex-shrink-0" 
                             strokeWidth={3}
                           />
-                          <span className="font-serif text-[10px] font-semibold text-primary-800 italic leading-relaxed tracking-wide whitespace-nowrap">
+                          <span className="font-serif text-[10px] font-semibold text-gray-800 italic leading-relaxed tracking-wide whitespace-nowrap">
                             {t('referenceHint')}
                           </span>
                           <ArrowUp 
-                            className="h-4 w-4 text-primary-600 animate-pulse flex-shrink-0" 
+                            className="h-4 w-4 text-gray-600 animate-pulse flex-shrink-0" 
                             strokeWidth={3}
                           />
                         </div>
@@ -1469,7 +1469,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             <div className="flex justify-start">
               <div className="rounded-2xl bg-gray-50 border border-gray-200 px-5 py-4 max-w-[85%] w-full">
                 <div className="flex items-start gap-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary-500 mt-0.5 flex-shrink-0" />
+                  <Loader2 className="h-5 w-5 animate-spin text-gray-900 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 space-y-4">
                     {/* 누적된 상태 메시지와 소스 목록 */}
                     {loadingStatusItems.map((statusItem, statusIdx) => (
@@ -1505,8 +1505,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                                 >
                                   <div className="flex-shrink-0 mt-0.5">
                                     {source.type === 'recording' ? (
-                                      <div className="w-9 h-9 rounded-full bg-primary-50 border border-primary-200 flex items-center justify-center">
-                                        <span className="text-primary-600 text-base">🎙️</span>
+                                      <div className="w-9 h-9 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center">
+                                        <span className="text-gray-600 text-base">🎙️</span>
                                       </div>
                                     ) : (
                                       <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center">
@@ -1560,12 +1560,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               onChange={(e) => setInput(e.target.value)}
               placeholder={t('askAnythingPlaceholder')}
               disabled={isLoading}
-              className="w-full rounded-full border border-gray-300 bg-gray-50 px-5 py-3 pr-14 text-sm focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
+              className="w-full rounded-full border border-gray-300 bg-gray-50 px-5 py-3 pr-14 text-sm focus:border-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-gray-900 disabled:bg-gray-100"
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary-500 text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900 text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

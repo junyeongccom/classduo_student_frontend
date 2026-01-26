@@ -1043,7 +1043,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         </button>
 
         {/* 게임 화면 */}
-        <div className="relative z-10 h-full overflow-hidden bg-gradient-to-b from-green-500 via-green-600 to-green-700">
+        <div className="relative z-10 h-full overflow-hidden bg-gradient-to-b from-gray-900 via-gray-800 to-gray-700">
           
           {/* 레이어 1: 배경 (road.png 이미지 - 길 + 풀밭, 위에서 아래로 스크롤) */}
           <div 

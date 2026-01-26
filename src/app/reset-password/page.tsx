@@ -78,7 +78,7 @@ function ResetPasswordContent() {
           </p>
           <Button
             onClick={() => router.push('/')}
-            className="bg-primary-500"
+            className="bg-gray-900"
           >
             메인 페이지로 이동
           </Button>
@@ -113,7 +113,7 @@ function ResetPasswordContent() {
         {isSuccess ? (
           <div className="text-center">
             <div className="mb-4 flex justify-center">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+              <CheckCircle className="h-16 w-16 text-gray-900" />
             </div>
             <h1 className="mb-2 text-2xl font-bold text-gray-900">비밀번호 변경 완료</h1>
             <p className="mb-4 text-sm text-gray-600">
@@ -127,7 +127,7 @@ function ResetPasswordContent() {
           <>
             {/* 제목 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-primary-500">새 비밀번호 설정</h1>
+              <h1 className="text-2xl font-bold text-gray-900">새 비밀번호 설정</h1>
               <p className="mt-2 text-sm text-gray-500">새로운 비밀번호를 입력하세요</p>
             </div>
 
@@ -171,7 +171,7 @@ function ResetPasswordContent() {
 
               <Button
                 type="submit"
-                className="w-full bg-primary-500"
+                className="w-full bg-gray-900"
                 size="lg"
                 isLoading={isLoading}
               >
