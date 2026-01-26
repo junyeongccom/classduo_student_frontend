@@ -114,6 +114,31 @@
       "body": "Exam Prep page (coming soon)"
     }
   },
+  "examPrep": {
+    "title": "Exam Prep",
+    "subtitle": "Prepare summaries, quizzes, and memorization from your lecture materials.",
+    "materials": {
+      "title": "Select Materials",
+      "description": "Drag materials to preview the original PDF on the left.",
+      "courseLabel": "Select course",
+      "coursePlaceholder": "Select a course",
+      "empty": "In progress",
+      "dropHint": "Drop materials here (in progress)"
+    },
+    "pdf": {
+      "title": "Lecture Material PDF",
+      "placeholder": "In progress"
+    },
+    "tabs": {
+      "summary": "Summary",
+      "quiz": "Quiz",
+      "memorize": "Memorize",
+      "aiTutor": "AI Tutor"
+    },
+    "content": {
+      "placeholder": "In progress"
+    }
+  },
   "aiTutorReference": {
     "title": {
       "notes": "Recording sources",
