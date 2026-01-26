@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/shared/components/common'
 import {
   StudyspaceLayoutProvider,
@@ -11,6 +12,7 @@ import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 
 function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const { topbar, rightbar, overlay } = useStudyspaceLayoutSlots()
+  const pathname = usePathname()
   const [isMobileRightbarOpen, setIsMobileRightbarOpen] = useState(false)
   const [isResizingOverlay, setIsResizingOverlay] = useState(false)
   
@@ -26,6 +28,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   // Sidebar Logic: Hide Sidebar if Notes or Materials Panel is open
   const isAnyPanelOpen = isNotesPanelOpen || isMaterialsPanelOpen
   const showRightSidebar = !isAnyPanelOpen
+  const isExamPrep = pathname.startsWith('/studyspace/exam')
 
   const resizingRef = useRef<{ startX: number; startCombinedWidth: number } | null>(null)
 
@@ -122,19 +125,21 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
           className="flex h-full flex-col"
         >
           {/* Top Bar (Header) - Spans full width */}
-          <header className="flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-6">
-            <div className="flex h-full flex-1 items-center overflow-hidden">
-              {topbar ?? null}
-            </div>
-            
-            {/* Mobile Drawer Toggle */}
-            <button
-              onClick={() => setIsMobileRightbarOpen(true)}
-              className="ml-4 flex items-center justify-center rounded-md p-2 text-gray-500 hover:bg-gray-100 xl:hidden"
-            >
-              <PanelRightOpen className="h-5 w-5" />
-            </button>
-          </header>
+          {!isExamPrep && (
+            <header className="flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-6">
+              <div className="flex h-full flex-1 items-center overflow-hidden">
+                {topbar ?? null}
+              </div>
+              
+              {/* Mobile Drawer Toggle */}
+              <button
+                onClick={() => setIsMobileRightbarOpen(true)}
+                className="ml-4 flex items-center justify-center rounded-md p-2 text-gray-500 hover:bg-gray-100 xl:hidden"
+              >
+                <PanelRightOpen className="h-5 w-5" />
+              </button>
+            </header>
+          )}
           
           <div className="flex flex-1 overflow-hidden">
             {/* Main Content Area */}
@@ -145,7 +150,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             </main>
 
             {/* Right Sidebar (Desktop) - Only show if NO panels are open */}
-            {showRightSidebar && (
+            {!isExamPrep && showRightSidebar && (
               <aside className="hidden h-full min-h-0 w-[320px] flex-col border-l border-gray-200 bg-white xl:flex">
                 <div className="flex-1 overflow-y-auto">
                   {rightbar ?? null}
@@ -154,7 +159,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             )}
 
             {/* Materials Panel (Overlay Slot) - Render in layout flow if open */}
-            {overlay && (
+            {!isExamPrep && overlay && (
               <aside 
                 className="relative hidden h-full flex-col border-l border-gray-200 bg-white xl:flex"
                 style={{ width: materialsPanelWidth }}
@@ -182,7 +187,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               The drawer below handles 'xl:hidden'.
               So mobile drawer is independent of the desktop 'showRightSidebar' logic.
           */}
-          {isMobileRightbarOpen && (
+          {!isExamPrep && isMobileRightbarOpen && (
             <>
               {/* Backdrop */}
               <div

@@ -1,0 +1,173 @@
+'use client'
+
+import type { ReactNode } from 'react'
+import { FileText, Bot, Brain, ClipboardCheck } from 'lucide-react'
+import { cn } from '@/shared/lib/utils'
+import type { ExamPrepCourse, ExamPrepTab, ExamPrepMaterial } from '../../types'
+
+const TAB_ITEMS: Array<{ id: ExamPrepTab; icon: typeof FileText }> = [
+  { id: 'summary', icon: FileText },
+  { id: 'quiz', icon: ClipboardCheck },
+  { id: 'memorize', icon: Brain },
+  { id: 'aiTutor', icon: Bot },
+]
+
+interface ExamPrepLayoutProps {
+  title: string
+  subtitle: string
+  materialsCourseLabel: string
+  materialsCoursePlaceholder: string
+  materialsLabel: string
+  materialsPlaceholder: string
+  pdfTitle: string
+  pdfPlaceholder: string
+  courses: ExamPrepCourse[]
+  selectedCourseId: string | null
+  onSelectCourse: (courseId: string) => void
+  tabLabels: Record<ExamPrepTab, string>
+  activeTab: ExamPrepTab
+  onTabChange: (tab: ExamPrepTab) => void
+  materials: ExamPrepMaterial[]
+  selectedMaterialId: string | null
+  onSelectMaterial: (materialId: string) => void
+  selectedMaterialUrl: string | null
+  content: ReactNode
+  leftWidth: number
+  onResizeStart: (event: React.MouseEvent<HTMLDivElement>) => void
+}
+
+export function ExamPrepLayout({
+  title,
+  subtitle,
+  materialsCourseLabel,
+  materialsCoursePlaceholder,
+  materialsLabel,
+  materialsPlaceholder,
+  pdfTitle,
+  pdfPlaceholder,
+  courses,
+  selectedCourseId,
+  onSelectCourse,
+  tabLabels,
+  activeTab,
+  onTabChange,
+  materials,
+  selectedMaterialId,
+  onSelectMaterial,
+  selectedMaterialUrl,
+  content,
+  leftWidth,
+  onResizeStart,
+}: ExamPrepLayoutProps) {
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-gray-50 text-gray-900">
+      <header className="border-b border-gray-100 bg-white/90 backdrop-blur">
+        <div className="flex w-full flex-wrap items-center justify-between gap-6 px-6 py-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">{title}</h1>
+            <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+          </div>
+          <div className="flex flex-wrap items-end gap-6">
+            <div>
+              <label className="text-sm font-medium text-gray-600">{materialsCourseLabel}</label>
+              <select
+                value={selectedCourseId ?? ''}
+                onChange={event => onSelectCourse(event.target.value)}
+                className="mt-3.5 h-9 w-[280px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
+              >
+                <option value="" disabled>
+                  {materialsCoursePlaceholder}
+                </option>
+                {courses.map(course => (
+                  <option key={course.id} value={course.id}>
+                    {course.title}
+                    {course.professorName ? `(${course.professorName})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-600">{materialsLabel}</label>
+              <select
+                value={selectedMaterialId ?? ''}
+                onChange={event => onSelectMaterial(event.target.value)}
+                className="mt-3.5 h-9 w-[360px] rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
+              >
+                <option value="" disabled>
+                  {materialsPlaceholder}
+                </option>
+                {materials.map(material => (
+                  <option key={material.id} value={material.id}>
+                    {material.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex h-full min-h-0 w-full flex-1 gap-0 px-0 py-4">
+        <section className="flex h-full min-h-0 flex-col gap-4 pr-0" style={{ width: leftWidth }}>
+          <div className="flex h-full min-h-0 flex-1 flex-col rounded-2xl border border-gray-200 bg-white/80 shadow-sm backdrop-blur">
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <FileText className="h-4 w-4 text-gray-500" />
+                {pdfTitle}
+              </div>
+              <span className="text-xs text-gray-400">{pdfPlaceholder}</span>
+            </div>
+            {selectedMaterialUrl ? (
+              <iframe
+                src={selectedMaterialUrl}
+                title={pdfTitle}
+                className="h-full w-full border-0"
+              />
+            ) : (
+              <div className="flex flex-1 items-center justify-center px-6 py-10 text-sm text-gray-400">
+                {pdfPlaceholder}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <div
+          className="relative flex w-3 cursor-col-resize items-stretch justify-center"
+          onMouseDown={onResizeStart}
+        >
+          <div className="h-full w-px bg-gray-200 transition-colors hover:bg-gray-300" />
+        </div>
+
+        <section className="flex h-full min-h-0 flex-1 flex-col gap-4 pl-0">
+          <div className="rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 shadow-sm backdrop-blur">
+            <div className="flex flex-wrap items-center gap-2">
+              {TAB_ITEMS.map(({ id, icon: Icon }) => {
+                const isActive = activeTab === id
+                return (
+                  <button
+                    key={id}
+                    onClick={() => onTabChange(id)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition',
+                      isActive
+                        ? 'border-gray-900 bg-gray-900 text-white shadow'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tabLabels[id]}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex h-full min-h-0 flex-1 flex-col rounded-2xl border border-gray-200 bg-white/80 shadow-sm backdrop-blur">
+            {content}
+          </div>
+        </section>
+      </div>
+    </div>
+  )
+}
+
