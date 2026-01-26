@@ -137,6 +137,15 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   hookingByLocale: {},
   pqmByLocale: {},
   reviewKeyAnswersByLocale: {},
+  setReviewKeyAnswersCache: (locale, lectureKey, answers) => set((state) => ({
+    reviewKeyAnswersByLocale: {
+      ...state.reviewKeyAnswersByLocale,
+      [locale]: {
+        ...(state.reviewKeyAnswersByLocale[locale] || {}),
+        [lectureKey]: answers,
+      },
+    },
+  })),
   game: {
     isOpen: false,
     triggerPosition: null,
@@ -229,15 +238,6 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
     },
   })),
 
-  setReviewKeyAnswersCache: (locale, lectureKey, answers) => set((state) => ({
-    reviewKeyAnswersByLocale: {
-      ...state.reviewKeyAnswersByLocale,
-      [locale]: {
-        ...(state.reviewKeyAnswersByLocale[locale] || {}),
-        [lectureKey]: answers,
-      },
-    },
-  })),
   
   openGame: (lectureId, courseId, lectureNo, courseName, position) => set({
     game: {

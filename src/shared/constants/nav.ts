@@ -1,8 +1,6 @@
 import { 
   Bot, 
   PenLine, 
-  MessageCircle, 
-  Sparkles, 
   FileText,
   User
 } from 'lucide-react'
@@ -22,18 +20,6 @@ export const SIDEBAR_MENU = [
     labelKey: 'nav.review50',
     icon: PenLine,
     href: '/studyspace/review',
-  },
-  {
-    id: 'preview-50',
-    labelKey: 'nav.preview50',
-    icon: MessageCircle,
-    href: '/studyspace/preview',
-  },
-  {
-    id: 'assignment',
-    labelKey: 'nav.assignment',
-    icon: Sparkles,
-    href: '/studyspace/assignment',
   },
   {
     id: 'exam',
