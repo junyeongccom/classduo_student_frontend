@@ -248,12 +248,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [reviewKeyAnswers, setReviewKeyAnswers] = useState<string[]>([])
-  const [isReviewAnswersLoading, setIsReviewAnswersLoading] = useState(false)
   // 타이핑 애니메이션 상태: 메시지 인덱스 -> 현재 표시된 텍스트 길이
   const [typingProgress, setTypingProgress] = useState<Map<number, number>>(new Map())
   // 타이핑 완료 상태: 메시지 인덱스 -> 타이핑 완료 여부
   const [typingComplete, setTypingComplete] = useState<Map<number, boolean>>(new Map())
+  const [reviewKeyAnswers, setReviewKeyAnswers] = useState<string[]>([])
+  const [isReviewAnswersLoading, setIsReviewAnswersLoading] = useState(false)
   const [loadingStatusItems, setLoadingStatusItems] = useState<Array<{
     step: string
     message: string
@@ -376,7 +376,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       cancelled = true
     }
   }, [isLoading, selectedLectureIds, locale, reviewKeyAnswersByLocale, setReviewKeyAnswersCache])
-
 
   // lecture_ids/locale 변경 시 후킹 질문과 PQM 질문 로드 (단일 선택 시에만)
   useEffect(() => {
