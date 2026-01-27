@@ -26,7 +26,7 @@ const shuffleCards = (cards: CardMatchCard[]) => {
 
 export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatchGameProps) {
   const cards = useMemo(() => {
-    const base = pairs.flatMap(pair => [
+    const base: CardMatchCard[] = pairs.flatMap(pair => [
       { id: `${pair.pair_id}-term`, pairId: pair.pair_id, type: 'term', content: pair.term },
       { id: `${pair.pair_id}-desc`, pairId: pair.pair_id, type: 'desc', content: pair.description },
     ])
