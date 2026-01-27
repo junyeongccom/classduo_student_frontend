@@ -168,7 +168,7 @@ export function LectureSidebarUI({
           className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm ${
             isLocked
               ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
-              : 'border-gray-300 bg-white hover:border-primary-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500'
+              : 'border-gray-300 bg-white hover:border-gray-400 focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900'
           }`}
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -250,12 +250,12 @@ export function LectureSidebarUI({
                 key={course.course_id}
                 onClick={() => handleSelectCourse(course.course_id)}
                 className={`flex w-full flex-col px-3 py-2.5 text-left hover:bg-gray-50 ${
-                  course.course_id === selectedCourseId ? 'bg-primary-50' : ''
+                  course.course_id === selectedCourseId ? 'bg-gray-50' : ''
                 }`}
               >
                 <span
                   className={`text-sm font-medium ${
-                    course.course_id === selectedCourseId ? 'text-primary-700' : 'text-gray-900'
+                    course.course_id === selectedCourseId ? 'text-gray-700' : 'text-gray-900'
                   }`}
                 >
                   {course.title}
@@ -278,7 +278,7 @@ export function LectureSidebarUI({
             {selectedCourseAvailableLectures.length > 0 && !isLocked && (
               <button
                 onClick={onToggleSelectAll}
-                className="text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                className="text-xs text-gray-600 hover:text-gray-700 font-medium transition-colors"
               >
                 {isAllSelected ? t('deselectAll') : t('selectAll')}
               </button>
@@ -304,7 +304,7 @@ export function LectureSidebarUI({
                     disabled={isDisabled}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all ${
                       isSelected
-                        ? 'bg-primary-500 text-white shadow-sm'
+                        ? 'bg-gray-900 text-white shadow-sm'
                         : isDisabled
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
@@ -319,7 +319,7 @@ export function LectureSidebarUI({
                       >
                         {t('lectureLabel', { no: String(lecture.lecture_no) })}
                       </p>
-                      <p className={`text-xs ${isSelected ? 'text-primary-100' : 'text-gray-400'}`}>
+                      <p className={`text-xs ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>
                         {lecture.lecture_date}
                       </p>
                     </div>
@@ -439,10 +439,10 @@ export function LectureSidebarUI({
       {selectedLectureIds.length > 0 && (
         <div
           className={`mt-4 rounded-lg px-3 py-2.5 border ${
-            isLocked ? 'bg-gray-50 border-gray-200' : 'bg-primary-50 border-primary-100'
+            isLocked ? 'bg-gray-50 border-gray-200' : 'bg-gray-50 border-gray-100'
           }`}
         >
-          <p className={`text-xs font-medium ${isLocked ? 'text-gray-600' : 'text-primary-800'}`}>
+          <p className={`text-xs font-medium ${isLocked ? 'text-gray-600' : 'text-gray-800'}`}>
             {isLocked
               ? t('lockedLecturesSummary', { count: String(selectedLectureIds.length) })
               : t('selectedLecturesSummary', { count: String(selectedLectureIds.length) })}
@@ -453,7 +453,7 @@ export function LectureSidebarUI({
             </p>
           ) : (
             selectedLectureIds.length > 1 && (
-              <p className="mt-1 text-[10px] text-primary-600">
+              <p className="mt-1 text-[10px] text-gray-600">
                 {tHints('multiSelectNoHookingQuestions')}
               </p>
             )

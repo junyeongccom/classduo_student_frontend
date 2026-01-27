@@ -305,7 +305,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
               <div className="mb-4 flex items-center gap-2 border-b border-gray-200 pb-3">
                 <span className="text-sm font-semibold text-gray-900">
                   {t('answer')} {Math.floor(messageIndex / 2) + 1}:{' '}
-                  <span className="text-primary-600">{getKeywords(messageIndex)}</span>
+                  <span className="text-gray-600">{getKeywords(messageIndex)}</span>
                 </span>
                 <span className="rounded-full bg-gray-100 px-3 py-0.5 text-xs text-gray-500 whitespace-nowrap">
                   {t('recordingSegmentsBadge', { count: String(refs.recordings.length) })}
@@ -351,7 +351,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                                   <span className="text-xs text-gray-300">•</span>
                                 )}
                                 <div className="flex items-center gap-1.5">
-                                  <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                                  <div className="h-1.5 w-1.5 rounded-full bg-gray-900" />
                                   <p className="text-xs text-gray-500">
                                     {t('relevance')} {(ref.metadata.score * 100).toFixed(0)}%
                                   </p>
@@ -379,7 +379,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                       <div className="border-t border-gray-100 bg-gradient-to-b from-gray-50/50 to-white">
                         <div className="p-4">
                           <div className="flex gap-2.5">
-                            <div className="h-full w-1 flex-shrink-0 rounded-full bg-gradient-to-b from-primary-400 to-primary-600" />
+                            <div className="h-full w-1 flex-shrink-0 rounded-full bg-gradient-to-b from-gray-700 to-gray-900" />
                             <div className="min-w-0 flex-1">
                               {(ref as any).summary ? (
                                 <div className="space-y-3">
@@ -434,7 +434,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
               <div className="mb-4 flex items-center gap-2 border-b border-gray-200 pb-3">
                 <span className="text-sm font-semibold text-gray-900">
                   {t('answer')} {Math.floor(messageIndex / 2) + 1}:{' '}
-                  <span className="text-primary-600">{getKeywords(messageIndex)}</span>
+                  <span className="text-gray-600">{getKeywords(messageIndex)}</span>
                 </span>
                 <span className="rounded-full bg-gray-100 px-3 py-0.5 text-xs text-gray-500 whitespace-nowrap">
                   {t('materialCountBadge', { count: String(refs.materials.length) })}
@@ -544,7 +544,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
             <>
               <Mic className="h-5 w-5 text-primary-500" />
               <h2 className="text-lg font-semibold text-gray-900">{t('title.notes')}</h2>
-              <span className="ml-2 rounded-full bg-primary-100 px-3 py-0.5 text-xs text-primary-700 whitespace-nowrap">
+              <span className="ml-2 rounded-full bg-gray-100 px-3 py-0.5 text-xs text-gray-700 whitespace-nowrap">
                 {t('countBadge', { count: String(recordingRefs.length) })}
               </span>
             </>
@@ -552,7 +552,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
             <>
               <FileText className="h-5 w-5 text-blue-500" />
               <h2 className="text-lg font-semibold text-gray-900">{t('title.materials')}</h2>
-              <span className="ml-2 rounded-full bg-primary-100 px-3 py-0.5 text-xs text-primary-700 whitespace-nowrap">
+              <span className="ml-2 rounded-full bg-gray-100 px-3 py-0.5 text-xs text-gray-700 whitespace-nowrap">
                 {t('countBadge', { count: String(materialRefs.length) })}
               </span>
             </>

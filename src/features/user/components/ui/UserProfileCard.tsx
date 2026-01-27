@@ -13,8 +13,8 @@ export function UserProfileCard({ user }: UserProfileCardProps) {
   return (
     <div className="rounded-lg border border-gray-200 p-6">
       <div className="mb-6 flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-100">
-          <User className="h-8 w-8 text-primary-500" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+          <User className="h-8 w-8 text-gray-900" />
         </div>
         <div>
           <h2 className="text-lg font-semibold text-gray-900">{user.full_name}</h2>
@@ -27,7 +27,7 @@ export function UserProfileCard({ user }: UserProfileCardProps) {
           <Mail className="h-4 w-4 text-gray-400" />
           <span className="text-gray-600">{user.email}</span>
           {user.is_email_verified && (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-600">
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-900">
               {t('verified')}
             </span>
           )}

@@ -221,13 +221,13 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
 
             {/* 제목 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-primary-500">{t('resetPasswordTitle')}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('resetPasswordTitle')}</h1>
               <p className="mt-2 text-sm text-gray-500">{t('resetPasswordSubtitle')}</p>
             </div>
 
             {/* 성공 메시지 */}
             {successMessage && (
-              <div className="mb-4 rounded-lg bg-green-50 p-4 text-xs text-green-800 whitespace-pre-wrap break-words">
+              <div className="mb-4 rounded-lg bg-gray-100 p-4 text-xs text-gray-900 whitespace-pre-wrap break-words">
                 {successMessage}
               </div>
             )}
@@ -256,7 +256,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
 
               <Button
                 type="submit"
-                className="w-full bg-primary-500"
+                className="w-full bg-gray-900"
                 size="lg"
                 isLoading={isResetting}
               >
@@ -268,7 +268,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
           <>
             {/* 로고 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-primary-500">{t('loginTitle')}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('loginTitle')}</h1>
               <p className="mt-2 text-sm text-gray-500">{t('chooseAccount')}</p>
             </div>
 
@@ -283,9 +283,9 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                     <button
                       key={account.email}
                       onClick={() => handleSavedAccountClick(account.email)}
-                      className="flex w-full items-center gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 transition-colors hover:border-primary-500 hover:bg-gray-50"
+                      className="flex w-full items-center gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 transition-colors hover:border-gray-900 hover:bg-gray-50"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900">
                         <span className="text-sm font-bold text-white">{initial}</span>
                       </div>
                       <div className="flex-1 text-left">
@@ -336,7 +336,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
 
               <Button
                 type="submit"
-                className="w-full bg-primary-500"
+                className="w-full bg-gray-900"
                 size="lg"
                 isLoading={isLoading}
               >

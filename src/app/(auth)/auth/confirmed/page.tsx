@@ -173,7 +173,7 @@ function EmailConfirmedContent() {
       <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md text-center">
           <div className="mb-6 flex justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary-500" />
+            <Loader2 className="h-12 w-12 animate-spin text-gray-900" />
           </div>
           <p className="text-gray-500">이메일 인증을 처리하는 중...</p>
         </div>
@@ -238,8 +238,8 @@ function EmailConfirmedContent() {
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md text-center">
         <div className="mb-6 flex justify-center">
-          <div className="rounded-full bg-primary-100 p-4">
-            <CheckCircle className="h-12 w-12 text-primary-500" />
+          <div className="rounded-full bg-gray-100 p-4">
+            <CheckCircle className="h-12 w-12 text-gray-900" />
           </div>
         </div>
 
@@ -275,7 +275,7 @@ export default function EmailConfirmedPage() {
         <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
           <div className="w-full max-w-md text-center">
             <div className="mb-6 flex justify-center">
-              <Loader2 className="h-12 w-12 animate-spin text-primary-500" />
+              <Loader2 className="h-12 w-12 animate-spin text-gray-900" />
             </div>
             <p className="text-gray-500">로딩 중...</p>
           </div>

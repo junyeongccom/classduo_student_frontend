@@ -97,8 +97,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
         {signupSuccess && registeredEmail ? (
           <div className="text-center">
             <div className="mb-6 flex justify-center">
-              <div className="rounded-full bg-primary-100 p-4">
-                <CheckCircle className="h-12 w-12 text-primary-500" />
+              <div className="rounded-full bg-gray-100 p-4">
+                <CheckCircle className="h-12 w-12 text-gray-900" />
               </div>
             </div>
             
@@ -138,7 +138,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
           <>
             {/* 로고 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-primary-500">{tm('title')}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{tm('title')}</h1>
               <p className="mt-2 text-sm text-gray-500">{tm('subtitle')}</p>
             </div>
 
@@ -219,7 +219,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
 
               <Button
                 type="submit"
-                className="w-full bg-primary-500"
+                className="w-full bg-gray-900"
                 size="lg"
                 isLoading={isLoading}
               >
@@ -232,7 +232,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
               <span>{t('hasAccount')}</span>
               <button 
                 onClick={onSwitchToLogin}
-                className="font-medium text-primary-500 hover:underline"
+                className="font-medium text-gray-900 hover:underline"
               >
                 {t('loginLink')}
               </button>

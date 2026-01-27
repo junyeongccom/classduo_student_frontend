@@ -141,7 +141,7 @@ export default function ChatSidebar({
               onNewChat()
               onClose()
             }}
-            className="w-full py-2 px-4 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -159,7 +159,7 @@ export default function ChatSidebar({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder={t('searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
             />
             <svg 
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -171,7 +171,7 @@ export default function ChatSidebar({
             </svg>
             {isSearching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
           </div>
@@ -183,7 +183,7 @@ export default function ChatSidebar({
                 onClick={() => setActiveTab('list')}
                 className={`px-3 py-1 text-sm rounded-full transition-colors ${
                   activeTab === 'list'
-                    ? 'bg-primary-500 text-white'
+                    ? 'bg-gray-900 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -193,7 +193,7 @@ export default function ChatSidebar({
                 onClick={() => setActiveTab('search')}
                 className={`px-3 py-1 text-sm rounded-full transition-colors ${
                   activeTab === 'search'
-                    ? 'bg-primary-500 text-white'
+                    ? 'bg-gray-900 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -229,7 +229,7 @@ export default function ChatSidebar({
                       onClose()
                     }}
                     className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors group ${
-                      currentSessionId === session.id ? 'bg-primary-50' : ''
+                      currentSessionId === session.id ? 'bg-gray-50' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -273,8 +273,8 @@ export default function ChatSidebar({
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-xs px-2 py-0.5 rounded ${
-                        result.message_role === 'user' 
-                          ? 'bg-primary-100 text-primary-700' 
+                        result.message_role === 'user'
+                          ? 'bg-gray-100 text-gray-700'
                           : 'bg-gray-100 text-gray-700'
                       }`}>
                         {result.message_role === 'user' ? t('messageRole.question') : t('messageRole.answer')}
