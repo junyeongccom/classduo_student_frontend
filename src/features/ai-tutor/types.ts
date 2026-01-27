@@ -146,3 +146,24 @@ export interface StreamProgressData {
   }
 }
 
+export interface CardMatchPairSources {
+  recording_chunk_ids?: string[]
+  material_page_ids?: string[]
+}
+
+export interface CardMatchPair {
+  pair_id: string
+  term: string
+  description: string
+  sources?: CardMatchPairSources | null
+}
+
+export interface CardMatchSet {
+  lecture_id: string
+  status: 'PENDING' | 'READY' | 'FAILED' | string
+  pair_count: number
+  set_id?: string | null
+  pairs: CardMatchPair[]
+  updated_at?: string | null
+}
+
