@@ -13,6 +13,8 @@ import type { AppLocale } from '@/shared/i18n/I18nProvider'
 import { reviewService } from '@/features/review'
 import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
+import { useCardMatchSet } from '@/features/ai-tutor/hooks/useCardMatchSet'
+import { CardMatchGame } from '@/features/ai-tutor/components/ui/CardMatchGame'
 
 // 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
 function renderMarkdown(text: string) {
@@ -274,18 +276,32 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [showLogo, setShowLogo] = useState(false) // 로고 표시 여부 (로드 완료 후 표시)
   const [videoLoaded, setVideoLoaded] = useState(false) // 비디오 로드 완료 여부
   const [logoLoaded, setLogoLoaded] = useState(false) // 로고 이미지 로드 완료 여부
+  const [cardMatchState, setCardMatchState] = useState<'idle' | 'hidden' | 'completed'>('idle')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
   const prevLectureIdsRef = useRef<string[]>([]) // 이전 강의회차 선택 상태
 
-  // 강의회차 선택 시 비디오와 로고 로드 상태 초기화
+  const singleLectureId = selectedLectureIds.length === 1 ? selectedLectureIds[0] : null
+  const { data: cardMatchSet, isLoading: isCardMatchLoading } = useCardMatchSet(singleLectureId)
+
+  // 강의회차 선택 시 비디오/로고/카드매칭 상태 초기화
   useEffect(() => {
     // 강의회차가 선택되지 않은 상태에서 선택된 상태로 변경될 때 로드 상태 초기화
     if (prevLectureIdsRef.current.length === 0 && selectedLectureIds.length > 0) {
       setVideoLoaded(false)
       setLogoLoaded(false)
+      setShowVideo(false)
+      setShowLogo(false)
+      setCardMatchState(selectedLectureIds.length === 1 ? 'idle' : 'hidden')
+    }
+    if (selectedLectureIds.length === 0) {
+      setVideoLoaded(false)
+      setLogoLoaded(false)
+      setShowVideo(false)
+      setShowLogo(false)
+      setCardMatchState('hidden')
     }
     // 강의회차 선택이 변경될 때마다 로드 상태 초기화 (다른 회차 선택 시)
     else if (prevLectureIdsRef.current.length > 0 && selectedLectureIds.length > 0) {
@@ -295,18 +311,28 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       if (prevIds !== currentIds) {
         setVideoLoaded(false)
         setLogoLoaded(false)
+        setShowVideo(false)
+        setShowLogo(false)
+        setCardMatchState(selectedLectureIds.length === 1 ? 'idle' : 'hidden')
       }
     }
     prevLectureIdsRef.current = [...selectedLectureIds]
   }, [selectedLectureIds])
 
-  // 비디오와 로고가 모두 로드 완료되면 동시에 표시
+  // 비디오와 로고가 모두 로드 완료되면 동시에 표시 (카드매칭 완료 시에만)
   useEffect(() => {
-    if (videoLoaded && logoLoaded) {
+    if (videoLoaded && logoLoaded && cardMatchState === 'completed') {
       setShowVideo(true)
       setShowLogo(true)
     }
-  }, [videoLoaded, logoLoaded])
+  }, [cardMatchState, videoLoaded, logoLoaded])
+
+  useEffect(() => {
+    if (cardMatchState !== 'completed') {
+      setShowVideo(false)
+      setShowLogo(false)
+    }
+  }, [cardMatchState])
 
   // 비디오가 마운트되면 명시적으로 재생
   useEffect(() => {
@@ -1264,16 +1290,36 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     )
   }
 
+  const showCardMatchGame = cardMatchState === 'idle' && selectedLectureIds.length === 1
+  const showSuggestions = isInputFocused && !showCardMatchGame && selectedLectureIds.length === 1 && (hookingQuestions.length > 0 || pqmQuestions.length > 0)
+
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="flex h-full flex-col">
         {/* 중앙 컨텐츠 */}
-        <div className="flex flex-1 flex-col items-center justify-center px-4">
+        <div className={`flex flex-1 flex-col items-center px-4 max-w-full ${showCardMatchGame ? 'justify-start pt-6' : 'justify-center'}`}>
+          {showCardMatchGame && (
+            <div className="mb-6 flex w-full justify-center">
+              <CardMatchGame
+                pairs={cardMatchSet?.pairs ?? []}
+                status={cardMatchSet?.status}
+                isLoading={isCardMatchLoading}
+                onComplete={() => {
+                  setCardMatchState('completed')
+                }}
+              />
+            </div>
+          )}
           {/* 중앙 입력창 */}
           <div className="w-full max-w-2xl">
             <form onSubmit={handleSubmit}>
               <div className="relative">
+                {cardMatchState === 'completed' && (
+                  <div className="mb-4 flex items-center justify-center gap-3 text-sm font-semibold text-gray-900">
+                    <span className="rounded-full border border-gray-200 bg-white px-4 py-1 shadow-sm">SUCCESS</span>
+                  </div>
+                )}
                 {/* 비디오: 로드 상태 추적을 위해 항상 렌더링하되, showVideo로 표시 제어 */}
                 <video
                   ref={videoRef}
@@ -1307,8 +1353,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 <input
                   type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onFocus={() => setIsInputFocused(true)}
+                  onChange={(e) => {
+                    const nextValue = e.target.value
+                    setInput(nextValue)
+                    if (cardMatchState === 'idle' && nextValue.trim().length > 0) {
+                      setCardMatchState('hidden')
+                    }
+                  }}
+                  onFocus={() => {
+                    setIsInputFocused(true)
+                    if (cardMatchState === 'idle') {
+                      setCardMatchState('hidden')
+                    }
+                  }}
                   onBlur={() => {
                     // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
                     setTimeout(() => setIsInputFocused(false), 200)
@@ -1333,7 +1390,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           </div>
 
           {/* 입력창 포커스 시 나타나는 제안 질문 목록 (단일 선택 시에만 표시) */}
-          {isInputFocused && selectedLectureIds.length === 1 && (hookingQuestions.length > 0 || pqmQuestions.length > 0) && (
+          {showSuggestions && (
             <div className="mt-6 w-full max-w-2xl space-y-2 animate-fade-in-up">
               {/* 후킹 질문 (1개) */}
               {hookingQuestions.length > 0 && (
