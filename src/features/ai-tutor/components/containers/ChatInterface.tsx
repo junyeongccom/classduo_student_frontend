@@ -274,36 +274,44 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   )
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
-  const [showVideo, setShowVideo] = useState(false) // 비디오 표시 여부 (로드 완료 후 표시)
-  const [showLogo, setShowLogo] = useState(false) // 로고 표시 여부 (로드 완료 후 표시)
-  const [videoLoaded, setVideoLoaded] = useState(false) // 비디오 로드 완료 여부
-  const [logoLoaded, setLogoLoaded] = useState(false) // 로고 이미지 로드 완료 여부
   const [cardMatchState, setCardMatchState] = useState<'idle' | 'hidden' | 'completed'>('idle')
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [successFading, setSuccessFading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
   const prevLectureIdsRef = useRef<string[]>([]) // 이전 강의회차 선택 상태
+  const successFadeTimerRef = useRef<number | null>(null)
+  const successHideTimerRef = useRef<number | null>(null)
 
   const singleLectureId = selectedLectureIds.length === 1 ? selectedLectureIds[0] : null
   const { data: cardMatchSet, isLoading: isCardMatchLoading } = useCardMatchSet(singleLectureId)
 
-  // 강의회차 선택 시 비디오/로고/카드매칭 상태 초기화
+  const clearSuccessTimers = useCallback(() => {
+    if (successFadeTimerRef.current) {
+      window.clearTimeout(successFadeTimerRef.current)
+      successFadeTimerRef.current = null
+    }
+    if (successHideTimerRef.current) {
+      window.clearTimeout(successHideTimerRef.current)
+      successHideTimerRef.current = null
+    }
+  }, [])
+
+  // 강의회차 선택 시 카드매칭 상태 초기화
   useEffect(() => {
     // 강의회차가 선택되지 않은 상태에서 선택된 상태로 변경될 때 로드 상태 초기화
     if (prevLectureIdsRef.current.length === 0 && selectedLectureIds.length > 0) {
-      setVideoLoaded(false)
-      setLogoLoaded(false)
-      setShowVideo(false)
-      setShowLogo(false)
       setCardMatchState(selectedLectureIds.length === 1 ? 'idle' : 'hidden')
+      setShowSuccess(false)
+      setSuccessFading(false)
+      clearSuccessTimers()
     }
     if (selectedLectureIds.length === 0) {
-      setVideoLoaded(false)
-      setLogoLoaded(false)
-      setShowVideo(false)
-      setShowLogo(false)
       setCardMatchState('hidden')
+      setShowSuccess(false)
+      setSuccessFading(false)
+      clearSuccessTimers()
     }
     // 강의회차 선택이 변경될 때마다 로드 상태 초기화 (다른 회차 선택 시)
     else if (prevLectureIdsRef.current.length > 0 && selectedLectureIds.length > 0) {
@@ -311,51 +319,20 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       const prevIds = prevLectureIdsRef.current.sort().join(',')
       const currentIds = selectedLectureIds.sort().join(',')
       if (prevIds !== currentIds) {
-        setVideoLoaded(false)
-        setLogoLoaded(false)
-        setShowVideo(false)
-        setShowLogo(false)
         setCardMatchState(selectedLectureIds.length === 1 ? 'idle' : 'hidden')
+        setShowSuccess(false)
+        setSuccessFading(false)
+        clearSuccessTimers()
       }
     }
     prevLectureIdsRef.current = [...selectedLectureIds]
-  }, [selectedLectureIds])
-
-  // 비디오와 로고가 모두 로드 완료되면 동시에 표시 (카드매칭 완료 시에만)
-  useEffect(() => {
-    if (videoLoaded && logoLoaded && cardMatchState === 'completed') {
-      setShowVideo(true)
-      setShowLogo(true)
-    }
-  }, [cardMatchState, videoLoaded, logoLoaded])
+  }, [clearSuccessTimers, selectedLectureIds])
 
   useEffect(() => {
-    if (cardMatchState !== 'completed') {
-      setShowVideo(false)
-      setShowLogo(false)
+    return () => {
+      clearSuccessTimers()
     }
-  }, [cardMatchState])
-
-  // 비디오가 마운트되면 명시적으로 재생
-  useEffect(() => {
-    if (showVideo && videoRef.current) {
-      const video = videoRef.current
-      const playPromise = video.play()
-      
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            // 재생 성공
-          })
-          .catch((error) => {
-            // 재생 실패 시 로그 (개발 환경에서만)
-            if (process.env.NODE_ENV === 'development') {
-              console.log('비디오 자동 재생 실패:', error)
-            }
-          })
-      }
-    }
-  }, [showVideo])
+  }, [clearSuccessTimers])
 
   // 로딩 중 복습 정답 조회 (locale 캐시 스위치)
   useEffect(() => {
@@ -1310,15 +1287,24 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 isLoading={isCardMatchLoading}
                 onComplete={() => {
                   setCardMatchState('completed')
+                  setShowSuccess(true)
+                  setSuccessFading(false)
+                  clearSuccessTimers()
+                  successFadeTimerRef.current = window.setTimeout(() => {
+                    setSuccessFading(true)
+                  }, 2500)
+                  successHideTimerRef.current = window.setTimeout(() => {
+                    setShowSuccess(false)
+                  }, 3000)
                 }}
               />
             </div>
           )}
           {/* 중앙 입력창 */}
           <div className="w-full max-w-2xl">
-            {cardMatchState === 'completed' && (
-              <div className="mb-4 flex items-center justify-center gap-3 text-sm font-semibold text-gray-900">
-                <span className="rounded-full border border-gray-200 bg-white px-4 py-1 shadow-sm">SUCCESS</span>
+            {cardMatchState === 'completed' && showSuccess && (
+              <div className={`mb-4 flex items-center justify-center text-3xl font-bold text-gray-900 transition-opacity duration-500 ${successFading ? 'opacity-0' : 'opacity-100'}`}>
+                SUCCESS
               </div>
             )}
             <ChatComposer
@@ -1336,40 +1322,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
                 setTimeout(() => setIsInputFocused(false), 200)
               }}
-              topOverlay={
-                <>
-                  {/* 비디오: 로드 상태 추적을 위해 항상 렌더링하되, showVideo로 표시 제어 */}
-                  <video
-                    ref={videoRef}
-                    src="/TEST.mp4"
-                    autoPlay
-                    playsInline
-                    preload="auto"
-                    muted
-                    onEnded={() => {
-                      setShowVideo(false)
-                      setShowLogo(false)
-                    }}
-                    onLoadedData={() => {
-                      setVideoLoaded(true)
-                      // 비디오 로드 완료 시 재생 시도
-                      if (videoRef.current) {
-                        videoRef.current.play().catch(() => {
-                          // 재생 실패 시 무시 (브라우저 정책)
-                        })
-                      }
-                    }}
-                    className={`absolute left-3 bottom-full mb-0 h-20 w-30 object-cover z-10 ${showVideo ? '' : 'hidden'}`}
-                  />
-                  {/* 로고: 로드 상태 추적을 위해 항상 렌더링하되, showLogo로 표시 제어 */}
-                  <img
-                    src="/logo.png"
-                    alt="고려대학교 로고"
-                    onLoad={() => setLogoLoaded(true)}
-                    className={`absolute left-[calc(0.75rem+95px)] bottom-full mb-8 mb-0 h-15 w-20 object-contain z-20 animate-twinkle ${showLogo ? '' : 'hidden'}`}
-                  />
-                </>
-              }
             />
           </div>
 

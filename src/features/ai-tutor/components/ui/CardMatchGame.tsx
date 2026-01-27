@@ -81,8 +81,8 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
 
   if (isLoading || status === 'PENDING') {
     return (
-      <div className="w-full max-w-[90vw] rounded-3xl border border-gray-100 bg-white/60 p-10 shadow-sm">
-        <div className="grid grid-cols-4 gap-6">
+      <div className="w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/60 p-6 shadow-sm">
+        <div className="grid grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, idx) => (
             <div key={idx} className="card-match-skeleton" />
           ))}
@@ -93,15 +93,15 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
 
   if (!pairs.length || status === 'FAILED') {
     return (
-      <div className="w-full max-w-[90vw] rounded-3xl border border-gray-100 bg-white/60 p-10 text-center text-sm text-gray-400">
+      <div className="w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/60 p-6 text-center text-sm text-gray-400">
         카드 매칭 데이터를 준비 중입니다.
       </div>
     )
   }
 
   return (
-    <div className="w-full max-w-[90vw] rounded-3xl border border-gray-100 bg-white/70 p-10 shadow-sm">
-      <div className="grid grid-cols-4 gap-6">
+    <div className="w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/70 p-6 shadow-sm">
+      <div className="grid grid-cols-4 gap-4">
         {cards.map(card => {
           const isMatched = matchedIds.has(card.id)
           const isFlipped = true
