@@ -1384,8 +1384,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               // 사용자 메시지: 말풍선으로 표시 (오른쪽 정렬)
               return (
                 <div key={index} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-2xl bg-gray-900 px-4 py-3">
-                    <p className="whitespace-pre-wrap text-sm text-white">{message.content}</p>
+                  <div className="max-w-[85%] rounded-2xl bg-gray-200 px-4 py-3">
+                    <p className="whitespace-pre-wrap text-sm text-gray-900">{message.content}</p>
                   </div>
                 </div>
               )

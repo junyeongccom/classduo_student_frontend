@@ -63,7 +63,7 @@ export function ExamPrepAiTutorPanel({
               key={`${message.role}-${index}`}
               className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
                 message.role === 'user'
-                  ? 'ml-auto bg-gray-900 text-white'
+                  ? 'ml-auto bg-gray-200 text-gray-900'
                   : 'bg-gray-100 text-gray-800'
               }`}
             >

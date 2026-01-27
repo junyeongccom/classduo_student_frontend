@@ -304,7 +304,7 @@ export function LectureSidebarUI({
                     disabled={isDisabled}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all ${
                       isSelected
-                        ? 'bg-gray-900 text-white shadow-sm'
+                        ? 'bg-gray-200 text-gray-900'
                         : isDisabled
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
                         : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
@@ -314,12 +314,12 @@ export function LectureSidebarUI({
                     <div className="flex-1 min-w-0">
                       <p
                         className={`text-sm font-medium ${
-                          isSelected ? 'text-white' : isDisabled ? 'text-gray-400' : 'text-gray-800'
+                          isSelected ? 'text-gray-900' : isDisabled ? 'text-gray-400' : 'text-gray-800'
                         }`}
                       >
                         {t('lectureLabel', { no: String(lecture.lecture_no) })}
                       </p>
-                      <p className={`text-xs ${isSelected ? 'text-gray-300' : 'text-gray-400'}`}>
+                      <p className={`text-xs ${isSelected ? 'text-gray-500' : 'text-gray-400'}`}>
                         {lecture.lecture_date}
                       </p>
                     </div>
@@ -327,7 +327,7 @@ export function LectureSidebarUI({
                       <div className="ml-2 flex flex-col items-end gap-1">
                         {/* 상단: 체크 + 게임 버튼 */}
                         <div className="flex items-center gap-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-700">
                             <svg
                               className="h-3 w-3 text-white"
                               fill="none"
@@ -370,7 +370,7 @@ export function LectureSidebarUI({
                                   e.currentTarget.click()
                                 }
                               }}
-                              className="flex h-5 w-5 items-center justify-center rounded-full transition-colors cursor-pointer bg-white/20 hover:bg-white/30"
+                              className="flex h-5 w-5 items-center justify-center rounded-full transition-colors cursor-pointer bg-gray-700 hover:bg-gray-600"
                               title="게임 시작"
                             >
                               <Gamepad2 className="h-3 w-3 text-white" />
@@ -380,7 +380,7 @@ export function LectureSidebarUI({
                         {/* 하단: 진행도 바 */}
                         {showGameButton && (
                           <div className="flex items-center">
-                            <div className="relative h-2.5 w-[88px] rounded-l-full overflow-hidden bg-white/20">
+                            <div className="relative h-2.5 w-[88px] rounded-l-full overflow-hidden bg-gray-300">
                               <div
                                 className="h-full rounded-l-full transition-all bg-amber-400"
                                 style={{
@@ -470,11 +470,11 @@ export function LectureSidebarUI({
             left: `${tooltipPosition.left}px`,
           }}
         >
-          <div className="bg-gray-900 rounded-lg px-4 py-3 text-white text-sm shadow-xl max-w-[320px]">
+          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 text-sm shadow-lg max-w-[320px]">
             <p className="mb-3 leading-relaxed whitespace-pre-wrap">
               {tFlame('intro')}
             </p>
-            <div className="border-t border-gray-700 pt-3 space-y-2">
+            <div className="border-t border-gray-300 pt-3 space-y-2">
               <div className="flex items-start gap-2">
                 <img 
                   src="/icon_flame.png" 
