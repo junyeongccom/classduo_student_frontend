@@ -329,18 +329,18 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                     className={`flex w-full flex-col rounded-lg px-3 py-2.5 text-left transition-all ${
                       isAnalyzing
                         ? 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
-                        : isSelected 
-                          ? 'bg-gray-900 text-white shadow-sm' 
+                        : isSelected
+                          ? 'bg-gray-200 text-gray-900'
                           : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                     }`}
                   >
                     <div className="flex w-full items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs ${isSelected ? 'text-gray-300' : 'text-gray-500'}`}>
+                        <p className={`text-xs ${isSelected ? 'text-gray-500' : 'text-gray-500'}`}>
                           {lecture.lecture_date}
                         </p>
                         <p className={`text-sm font-medium mt-0.5 ${
-                          isSelected ? 'text-white' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
+                          isSelected ? 'text-gray-900' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
                         }`}>
                           {lecture.essence_7words === ANALYZING_STATUS 
                             ? t('analyzing') 
@@ -348,7 +348,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                         </p>
                       </div>
                       {isSelected && !isAnalyzing && (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 flex-shrink-0">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 flex-shrink-0">
                           <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
@@ -358,16 +358,13 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                     {/* 진행도 바 - 선택된 상태에서만 표시 */}
                     {isSelected && !isAnalyzing && (
                       <div className="flex items-center justify-end mt-2 w-full">
-                        <div className="relative h-2.5 w-[88px] rounded-l-full overflow-hidden bg-white/20" 
-                          style={{ backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.08)' }}
+                        <div className="relative h-2.5 w-[88px] rounded-l-full overflow-hidden bg-gray-300"
                         >
-                          <div 
+                          <div
                             className="h-full rounded-l-full transition-all bg-amber-400"
                             style={{ width: `${(progress / 10) * 100}%` }}
                           />
-                          <span className={`absolute inset-0 flex items-center justify-center text-[8px] font-medium ${
-                            isSelected ? 'text-white/80' : 'text-gray-500'
-                          }`}>
+                          <span className="absolute inset-0 flex items-center justify-center text-[8px] font-medium text-gray-600">
                             {progress}/10
                           </span>
                         </div>
@@ -417,13 +414,13 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
             left: `${tooltipPosition.left}px`,
           }}
         >
-          <div className="bg-gray-900 rounded-lg px-4 py-3 text-white text-sm shadow-xl max-w-[320px]">
+          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 text-sm shadow-lg max-w-[320px]">
             <p className="mb-3 leading-relaxed whitespace-pre-wrap">
               {`매 수업일마다 미니게임 퀴즈 5개,
 50초 복습 빈칸 퀵필 5개를 진행하고
 상자를 열어 불꽃을 모으세요!`}
             </p>
-            <div className="border-t border-gray-700 pt-3 space-y-2">
+            <div className="border-t border-gray-300 pt-3 space-y-2">
               <div className="flex items-start gap-2">
                 <img 
                   src="/icon_flame.png" 
