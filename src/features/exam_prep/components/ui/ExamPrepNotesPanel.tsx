@@ -59,6 +59,8 @@ export function ExamPrepNotesPanel({
     { id: "h2", label: "제목2", block: { type: "heading", props: { level: 2 }, content: "소제목" } },
     { id: "bullets", label: "글머리", block: { type: "bulletListItem", content: "항목" } },
     { id: "check", label: "체크리스트", block: { type: "checkListItem", content: "할 일" } },
+    // NOTE: BlockNote table block schema is not a simple string[][], so keep the template as a safe placeholder.
+    { id: "table", label: "표", block: { type: "paragraph", content: "표(테이블) 템플릿은 준비 중입니다." } },
   ]
 
   return (

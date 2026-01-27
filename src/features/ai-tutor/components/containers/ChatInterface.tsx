@@ -5,9 +5,9 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Send, Loader2, Search, ArrowUp } from 'lucide-react'
+import { Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
-import { ChatMessage, StoredMessage, Reference, PQMQuestion } from '@/features/ai-tutor/types'
+import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 import { reviewService } from '@/features/review'
@@ -15,6 +15,7 @@ import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 import { useCardMatchSet } from '@/features/ai-tutor/hooks/useCardMatchSet'
 import { CardMatchGame } from '@/features/ai-tutor/components/ui/CardMatchGame'
+import { ChatComposer } from '../ui/ChatComposer'
 
 // 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
 function renderMarkdown(text: string) {
@@ -247,6 +248,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     t('defaultHookingQuestions.easierUnderstanding'),
   ]
   const [input, setInput] = useState('')
+  const [chatMode, setChatMode] = useState<ChatMode>('hard')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -980,7 +982,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         // options: question_type, source_question_id 전달
         {
           question_type: options?.question_type || 'direct',  // 기본값: 직접 질문
-          source_question_id: options?.source_question_id
+          source_question_id: options?.source_question_id,
+          chat_mode: chatMode,
         }
       )
     } catch (err) {
@@ -1002,7 +1005,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       setLoadingStatusItems([])
       setIsLoading(false)
     }
-  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate])
+  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate, chatMode])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1317,7 +1320,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               <div className="relative">
                 {cardMatchState === 'completed' && (
                   <div className="mb-4 flex items-center justify-center gap-3 text-sm font-semibold text-gray-900">
-                    <span className="rounded-full border border-gray-200 bg-white px-4 py-1 shadow-sm">SUCCESS</span>
+                    <span clasName="rounded-full border border-gray-200 bg-white px-4 py-1 shadow-sm">SUCCESS</span>
                   </div>
                 )}
                 {/* 비디오: 로드 상태 추적을 위해 항상 렌더링하되, showVideo로 표시 제어 */}
@@ -1387,6 +1390,56 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 </button>
               </div>
             </form>
+            <ChatComposer
+              value={input}
+              onChange={setInput}
+              onSubmit={handleSubmit}
+              disabled={isLoading}
+              placeholder={t('askAnythingPlaceholder')}
+              chatMode={chatMode}
+              onChatModeChange={setChatMode}
+              modeHelpAriaLabel={t('chatModeHelpAriaLabel')}
+              modeHelpText={t('chatModeHelpText')}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => {
+                // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
+                setTimeout(() => setIsInputFocused(false), 200)
+              }}
+              topOverlay={
+                <>
+                  {/* 비디오: 로드 상태 추적을 위해 항상 렌더링하되, showVideo로 표시 제어 */}
+                  <video
+                    ref={videoRef}
+                    src="/TEST.mp4"
+                    autoPlay
+                    playsInline
+                    preload="auto"
+                    muted
+                    onEnded={() => {
+                      setShowVideo(false)
+                      setShowLogo(false)
+                    }}
+                    onLoadedData={() => {
+                      setVideoLoaded(true)
+                      // 비디오 로드 완료 시 재생 시도
+                      if (videoRef.current) {
+                        videoRef.current.play().catch(() => {
+                          // 재생 실패 시 무시 (브라우저 정책)
+                        })
+                      }
+                    }}
+                    className={`absolute left-3 bottom-full mb-0 h-20 w-30 object-cover z-10 ${showVideo ? '' : 'hidden'}`}
+                  />
+                  {/* 로고: 로드 상태 추적을 위해 항상 렌더링하되, showLogo로 표시 제어 */}
+                  <img
+                    src="/logo.png"
+                    alt="고려대학교 로고"
+                    onLoad={() => setLogoLoaded(true)}
+                    className={`absolute left-[calc(0.75rem+95px)] bottom-full mb-8 mb-0 h-15 w-20 object-contain z-20 animate-twinkle ${showLogo ? '' : 'hidden'}`}
+                  />
+                </>
+              }
+            />
           </div>
 
           {/* 입력창 포커스 시 나타나는 제안 질문 목록 (단일 선택 시에만 표시) */}
@@ -1608,29 +1661,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
       {/* 하단 입력 영역 */}
       <div className="border-t border-gray-200 px-4 py-3">
-        <form onSubmit={handleSubmit} className="mx-auto max-w-2xl">
-          <div className="relative">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={t('askAnythingPlaceholder')}
-              disabled={isLoading}
-              className="w-full rounded-full border border-gray-300 bg-gray-50 px-5 py-3 pr-14 text-sm focus:border-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-gray-900 disabled:bg-gray-100"
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-gray-900 text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-        </form>
+        <div className="mx-auto max-w-2xl">
+          <ChatComposer
+            value={input}
+            onChange={setInput}
+            onSubmit={handleSubmit}
+            disabled={isLoading}
+            placeholder={t('askAnythingPlaceholder')}
+            chatMode={chatMode}
+            onChatModeChange={setChatMode}
+            modeHelpAriaLabel={t('chatModeHelpAriaLabel')}
+            modeHelpText={t('chatModeHelpText')}
+          />
+        </div>
       </div>
     </div>
   )

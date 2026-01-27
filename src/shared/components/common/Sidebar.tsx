@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { SIDEBAR_MENU, PROFILE_MENU } from '@/shared/constants/nav'
-import { LanguageToggle } from './LanguageToggle'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
   AI_TUTOR_NEW_CHAT_FLAG,
@@ -116,10 +115,6 @@ export function Sidebar() {
               <PROFILE_MENU.icon className="h-5 w-5" />
               {!isCollapsed && <span>{profileLabel}</span>}
             </Link>
-          </div>
-
-          <div className={cn('flex justify-center', isCollapsed ? 'px-0' : 'px-1')}>
-            <LanguageToggle size="sm" />
           </div>
         </div>
       </div>

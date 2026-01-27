@@ -4,6 +4,8 @@ export interface ChatMessage {
   summary_keywords?: string | null
 }
 
+export type ChatMode = 'hard' | 'soft'
+
 export interface Reference {
   type: 'recording' | 'material'
   source_id: string
@@ -41,6 +43,7 @@ export interface ChatRequest {
   question: string
   lecture_ids: string[]
   chat_history: ChatMessage[]
+  chat_mode?: ChatMode
 }
 
 export interface ChatResponse {
