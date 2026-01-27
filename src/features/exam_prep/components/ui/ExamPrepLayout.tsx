@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { FileText, Bot, Brain, ClipboardCheck } from 'lucide-react'
+import { FileText, Bot, Brain, ClipboardCheck, NotebookText, Maximize2 } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import type { ExamPrepCourse, ExamPrepTab, ExamPrepMaterial } from '../../types'
 
@@ -9,6 +9,7 @@ const TAB_ITEMS: Array<{ id: ExamPrepTab; icon: typeof FileText }> = [
   { id: 'summary', icon: FileText },
   { id: 'quiz', icon: ClipboardCheck },
   { id: 'memorize', icon: Brain },
+  { id: 'notes', icon: NotebookText },
   { id: 'aiTutor', icon: Bot },
 ]
 
@@ -30,7 +31,10 @@ interface ExamPrepLayoutProps {
   materials: ExamPrepMaterial[]
   selectedMaterialId: string | null
   onSelectMaterial: (materialId: string) => void
-  selectedMaterialUrl: string | null
+  isPdfAvailable: boolean
+  pdfContent: ReactNode
+  pdfActionLabel: string
+  onPdfAction: () => void
   content: ReactNode
   leftWidth: number
   onResizeStart: (event: React.MouseEvent<HTMLDivElement>) => void
@@ -54,7 +58,10 @@ export function ExamPrepLayout({
   materials,
   selectedMaterialId,
   onSelectMaterial,
-  selectedMaterialUrl,
+  isPdfAvailable,
+  pdfContent,
+  pdfActionLabel,
+  onPdfAction,
   content,
   leftWidth,
   onResizeStart,
@@ -115,14 +122,23 @@ export function ExamPrepLayout({
                 <FileText className="h-4 w-4 text-gray-500" />
                 {pdfTitle}
               </div>
-              <span className="text-xs text-gray-400">{pdfPlaceholder}</span>
+              <button
+                type="button"
+                onClick={onPdfAction}
+                disabled={!isPdfAvailable}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium",
+                  isPdfAvailable
+                    ? "border-gray-200 text-gray-600 hover:border-gray-300"
+                    : "border-gray-100 text-gray-300"
+                )}
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+                {pdfActionLabel}
+              </button>
             </div>
-            {selectedMaterialUrl ? (
-              <iframe
-                src={selectedMaterialUrl}
-                title={pdfTitle}
-                className="h-full w-full border-0"
-              />
+            {isPdfAvailable ? (
+              pdfContent
             ) : (
               <div className="flex flex-1 items-center justify-center px-6 py-10 text-sm text-gray-400">
                 {pdfPlaceholder}

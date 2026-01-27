@@ -54,6 +54,36 @@ export interface ExamPrepGlossaryResponse {
   }>
 }
 
+export interface ExamPrepNotesResponse {
+  material_id: string
+  notes: Array<{
+    note_scope: 'single' | 'page'
+    page_number: number
+    content_json: Record<string, unknown>
+    updated_at?: string | null
+  }>
+}
+
+export interface ExamPrepNoteUpsertRequest {
+  note_scope: 'single' | 'page'
+  page_number: number
+  content_json: Record<string, unknown>
+}
+
+export interface ExamPrepAnnotationsResponse {
+  material_id: string
+  annotations: Array<{
+    page_number: number
+    data_json: Record<string, unknown>
+    updated_at?: string | null
+  }>
+}
+
+export interface ExamPrepAnnotationUpsertRequest {
+  page_number: number
+  data_json: Record<string, unknown>
+}
+
 export interface ExamPrepQuizSessionCreateRequest {
   quiz_types?: Array<'RECALL' | 'STRUCTURE' | 'MISCONCEPTION'>
   count: number
@@ -156,6 +186,35 @@ export const examPrepService = {
     apiRequest<ExamPrepGlossaryResponse>(`/exam-prep/materials/${materialId}/glossary?lang=${language}`, {
       method: 'GET',
       auth: true,
+    }),
+  getNotes: (materialId: string, noteScope: 'single' | 'page', pageNumber?: number) => {
+    const params = new URLSearchParams({ note_scope: noteScope })
+    if (pageNumber !== undefined) {
+      params.set('page_number', String(pageNumber))
+    }
+    return apiRequest<ExamPrepNotesResponse>(`/exam-prep/materials/${materialId}/notes?${params.toString()}`, {
+      method: 'GET',
+      auth: true,
+    })
+  },
+  saveNote: (materialId: string, payload: ExamPrepNoteUpsertRequest) =>
+    apiRequest<ExamPrepNotesResponse>(`/exam-prep/materials/${materialId}/notes`, {
+      method: 'PUT',
+      auth: true,
+      body: payload,
+    }),
+  getAnnotations: (materialId: string, pageNumber?: number) => {
+    const params = pageNumber !== undefined ? `?page_number=${pageNumber}` : ''
+    return apiRequest<ExamPrepAnnotationsResponse>(`/exam-prep/materials/${materialId}/annotations${params}`, {
+      method: 'GET',
+      auth: true,
+    })
+  },
+  saveAnnotation: (materialId: string, payload: ExamPrepAnnotationUpsertRequest) =>
+    apiRequest<ExamPrepAnnotationsResponse>(`/exam-prep/materials/${materialId}/annotations`, {
+      method: 'PUT',
+      auth: true,
+      body: payload,
     }),
   createQuizSession: (materialId: string, payload: ExamPrepQuizSessionCreateRequest) =>
     apiRequest<ExamPrepQuizSessionResponse>(`/exam-prep/materials/${materialId}/quiz-sessions`, {
