@@ -59,7 +59,6 @@ export function ExamPrepNotesPanel({
     { id: "h2", label: "제목2", block: { type: "heading", props: { level: 2 }, content: "소제목" } },
     { id: "bullets", label: "글머리", block: { type: "bulletListItem", content: "항목" } },
     { id: "check", label: "체크리스트", block: { type: "checkListItem", content: "할 일" } },
-    { id: "table", label: "표", block: { type: "table", content: [["헤더1", "헤더2"], ["내용1", "내용2"]] } },
   ]
 
   return (

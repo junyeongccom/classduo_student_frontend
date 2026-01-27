@@ -410,7 +410,7 @@ export function AITutorContainer() {
       <div className="flex h-full min-h-0 overflow-hidden bg-white">
         <div ref={containerRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <main
-            className="flex-1 overflow-y-auto"
+            className="flex-1 overflow-y-auto overflow-x-hidden"
             style={{ paddingRight: showInlineNotesPanel ? notesPanelWidth : 0 }}
           >
             <ChatInterface

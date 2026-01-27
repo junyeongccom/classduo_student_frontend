@@ -139,7 +139,7 @@ export function LectureSidebarUI({
     selectedAvailableCount === selectedCourseAvailableLectures.length
 
   return (
-    <div className="flex h-full w-[320px] flex-col bg-white p-4 overflow-y-auto">
+    <div className="flex h-full w-full flex-col bg-white p-4 overflow-y-auto overflow-x-hidden">
       {/* 헤더 */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -470,11 +470,11 @@ export function LectureSidebarUI({
             left: `${tooltipPosition.left}px`,
           }}
         >
-          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 text-sm shadow-lg max-w-[320px]">
+          <div className="rounded-lg bg-gray-900 px-4 py-3 text-sm text-white shadow-xl max-w-[320px]">
             <p className="mb-3 leading-relaxed whitespace-pre-wrap">
               {tFlame('intro')}
             </p>
-            <div className="border-t border-gray-300 pt-3 space-y-2">
+            <div className="border-t border-gray-700 pt-3 space-y-2">
               <div className="flex items-start gap-2">
                 <img 
                   src="/icon_flame.png" 
@@ -499,7 +499,7 @@ export function LectureSidebarUI({
                 />
                 <span className="leading-relaxed">{tFlame('flame8')}</span>
               </div>
-              <p className="text-xs text-gray-400 mt-2 pl-6">
+              <p className="mt-2 pl-6 text-xs text-gray-300">
                 {tFlame('note')}
               </p>
             </div>
