@@ -18,6 +18,8 @@
     "selectLectureTitle": "Please select a class",
     "selectLectureDescription": "Select a class on the right to start chatting with the AI tutor",
     "askAnythingPlaceholder": "Ask me anything.",
+    "chatModeHelpAriaLabel": "HARD/SOFT mode help",
+    "chatModeHelpText": "HARD: More concise and accuracy-focused, grounded in the lecture materials.\nSOFT: Longer and gentler explanations, with more use of general knowledge.",
     "referenceHint": "Check recording and material sources to better understand the answer",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",

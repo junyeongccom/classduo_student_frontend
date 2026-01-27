@@ -18,6 +18,8 @@
     "selectLectureTitle": "수업을 선택해주세요",
     "selectLectureDescription": "우측에서 수업을 선택하면 AI 튜터와 대화할 수 있습니다",
     "askAnythingPlaceholder": "무엇이든 물어보세요.",
+    "chatModeHelpAriaLabel": "HARD/SOFT 모드 도움말",
+    "chatModeHelpText": "HARD: 자료 기반으로 더 간결하고 정확하게 답변해요.\nSOFT: 더 길고 부드럽게 설명하고, 일반적 지식을 더 적극적으로 활용해요.",
     "referenceHint": "수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요",
     "searchingSources": "관련 자료를 검색하는 중...",
     "chatError": "채팅 중 오류가 발생했습니다",

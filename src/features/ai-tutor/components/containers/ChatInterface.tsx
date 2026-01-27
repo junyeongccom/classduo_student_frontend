@@ -979,7 +979,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       setLoadingStatusItems([])
       setIsLoading(false)
     }
-  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate])
+  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate, chatMode])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1283,6 +1283,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               placeholder={t('askAnythingPlaceholder')}
               chatMode={chatMode}
               onChatModeChange={setChatMode}
+              modeHelpAriaLabel={t('chatModeHelpAriaLabel')}
+              modeHelpText={t('chatModeHelpText')}
               onFocus={() => setIsInputFocused(true)}
               onBlur={() => {
                 // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
@@ -1553,6 +1555,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             placeholder={t('askAnythingPlaceholder')}
             chatMode={chatMode}
             onChatModeChange={setChatMode}
+            modeHelpAriaLabel={t('chatModeHelpAriaLabel')}
+            modeHelpText={t('chatModeHelpText')}
           />
         </div>
       </div>
