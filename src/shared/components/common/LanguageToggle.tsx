@@ -13,7 +13,7 @@ export function LanguageToggle({ className, size = 'md' }: LanguageToggleProps) 
 
   const base =
     size === 'sm'
-      ? 'h-8 text-xs px-2'
+      ? 'h-7 text-[11px] px-1.5'
       : 'h-9 text-sm px-3'
 
   const handleClick = (next: AppLocale) => setLocale(next)

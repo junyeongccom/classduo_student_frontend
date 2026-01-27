@@ -1,7 +1,7 @@
 /**
  * 복습 캐러셀 컴포넌트
- * - 1페이지: 수업명, 분반, 본질한줄, 5개 질문, 썸네일
- * - 2-6페이지: 각 질문별 페이지 (질문, 정답, 부연설명, 출처)
+ * - 1페이지: 수업명, 분반, 본질한줄, 썸네일
+ * - 2-6페이지: 각 질문별 페이지 (핵심내용, 부연설명, 출처)
  */
 'use client'
 
@@ -184,25 +184,6 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
                 </p>
               </div>
             )}
-
-            {/* 5개 핵심 질문 */}
-            {data.questions.length > 0 && (
-              <div className="flex-1">
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-4">{t('fiveKeyQuestions')}</h2>
-                <div className="space-y-2.5">
-                  {data.questions.map((question, index) => (
-                    <div key={index} className="flex items-start gap-3 group">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-500 text-xs font-bold text-white flex-shrink-0 mt-0.5 shadow-sm">
-                        {question.question_order}
-                      </span>
-                      <span className="flex-1 text-sm leading-relaxed text-gray-700 font-medium group-hover:text-gray-900 transition-colors">
-                        {question.question_name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* 우측: 썸네일 이미지 */}
@@ -270,13 +251,24 @@ function ReviewPage1({ data, currentPage, totalPages }: { data: ReviewCarouselRe
 
 /**
  * 빈칸 플레이스홀더 생성 함수
- * 정답 텍스트의 글자 수에 맞게 O를 생성하고, 공백은 그대로 유지
- * 예: '균형과 소통' -> 'OOO OO'
+ * 정답 텍스트의 글자 수에 맞게 공백을 생성하고, 공백은 그대로 유지
+ * 예: '균형과 소통' -> '   ' (공백으로 길이 유지)
  */
 function generateBlankPlaceholder(answer: string): string {
   return answer
     .split('')
-    .map(char => char === ' ' ? ' ' : 'O')
+    .map(char => char === ' ' ? ' ' : '\u00A0') // 공백은 그대로, 나머지는 non-breaking space
+    .join('')
+}
+
+/**
+ * 빈칸 마스크 문자열 생성 (○)
+ * 예: '세포 분열' -> '○○ ○○'
+ */
+function generateBlankCircleMask(answer: string): string {
+  return answer
+    .split('')
+    .map(char => (char === ' ' ? ' ' : '○'))
     .join('')
 }
 
@@ -547,6 +539,7 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
   const [isRevealed, setIsRevealed] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
   const [hasTriedProgress, setHasTriedProgress] = useState(false) // 진행도 시도 플래그
+  const [showSupplementary, setShowSupplementary] = useState(false) // 부연설명 표시 여부
 
   const toggleAllBlanks = async () => {
     // 빈칸을 열려고 할 때 (아직 안 열린 상태에서) 진행도 증가 시도
@@ -584,23 +577,14 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
               </span>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{data.course_title}</h2>
-                <p className="text-xs text-gray-500 font-medium">{t('question')} {data.page_number - 1}</p>
               </div>
             </div>
           </div>
 
-          {/* 질문 */}
-          <div className="mb-8">
-            <div className="inline-block px-3 py-1 bg-gray-100 rounded-full mb-3">
-              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{t('question')}</span>
-            </div>
-            <p className="text-xl font-bold text-gray-900 leading-relaxed">{data.question.question_name}</p>
-          </div>
-
-          {/* 핵심정답 */}
+          {/* 핵심내용 */}
           <div className="mb-8">
             <div className="inline-block px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mb-3">
-              <span className="text-xs font-semibold text-white">{t('keyAnswer')}</span>
+              <span className="text-xs font-semibold text-white">{t('keyContent')}</span>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-l-4 border-green-500">
               <AnswerWithBlanks
@@ -620,23 +604,28 @@ function ReviewPage2_6({ data, currentPage, totalPages, lectureId, courseId }: {
 
           {/* 부연설명 */}
           <div className="mb-6">
-            <div className="inline-block px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-3">
-              <span className="text-xs font-semibold text-white">{t('additionalExplanation')}</span>
-            </div>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500">
-              <AnswerWithBlanks
-                key={`page-${data.page_number}-supplementary`}
-                text={data.answer.supplementary_explanation}
-                blanks={allSupplementaryBlanks}
-                pageId={data.page_number}
-                sectionType="supplementary"
-                isRevealed={isRevealed}
-                isAnimating={isAnimating}
-                onToggle={toggleAllBlanks}
-                lectureId={lectureId}
-                reviewAnswerId={data.answer.review_answer_id ?? undefined}
-              />
-            </div>
+            <button
+              onClick={() => setShowSupplementary(!showSupplementary)}
+              className="inline-block px-3 py-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full mb-3 cursor-pointer hover:from-blue-600 hover:to-indigo-700 transition-all"
+            >
+              <span className="text-xs font-semibold text-white">{t('additionalExplanationClickable')}</span>
+            </button>
+            {showSupplementary && (
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-l-4 border-blue-500">
+                <AnswerWithBlanks
+                  key={`page-${data.page_number}-supplementary`}
+                  text={data.answer.supplementary_explanation}
+                  blanks={allSupplementaryBlanks}
+                  pageId={data.page_number}
+                  sectionType="supplementary"
+                  isRevealed={isRevealed}
+                  isAnimating={isAnimating}
+                  onToggle={toggleAllBlanks}
+                  lectureId={lectureId}
+                  reviewAnswerId={data.answer.review_answer_id ?? undefined}
+                />
+              </div>
+            )}
           </div>
 
           {/* 출처 버튼 */}
@@ -696,6 +685,11 @@ function AnswerWithBlanks({
   const handleReveal = externalOnToggle || (() => {
     setInternalIsRevealed(prev => !prev)
   })
+
+  // 부연설명 섹션에서는 빈칸을 찾지 않고 일반 텍스트로만 표시
+  if (sectionType === 'supplementary') {
+    return <p className="text-base leading-relaxed text-gray-800 font-medium">{text}</p>
+  }
 
   if (blanks.length === 0) {
     return <p className="text-base leading-relaxed text-gray-800 font-medium">{text}</p>
@@ -787,6 +781,7 @@ function AnswerWithBlanks({
               reviewAnswerId={reviewAnswerId}
               pageId={pageId}
               blankIndex={part.blankIndex}
+              sectionType={sectionType}
             />
           )
         }
@@ -806,7 +801,8 @@ function SimpleBlank({
   lectureId,
   reviewAnswerId,
   pageId,
-  blankIndex
+  blankIndex,
+  sectionType
 }: { 
   answer: string
   isRevealed: boolean
@@ -815,17 +811,21 @@ function SimpleBlank({
   reviewAnswerId?: string
   pageId?: number
   blankIndex?: number
+  sectionType?: string
 }) {
   const { locale } = useI18n()
   const { setBlankRevealed, isBlankRevealed: getIsBlankRevealed, getBlankData } = useReviewStore()
+  
+  // 부연설명 섹션에서는 항상 revealed 상태
+  const isSupplementary = sectionType === 'supplementary'
   
   // Store에서 빈칸 상태 확인 (pageId와 blankIndex가 있을 때만)
   const storeRevealed = pageId !== undefined && blankIndex !== undefined && lectureId
     ? getIsBlankRevealed(lectureId, pageId, blankIndex, locale)
     : isRevealed
   
-  // Store의 revealed 상태를 우선 사용, 없으면 prop 사용
-  const actualIsRevealed = storeRevealed
+  // 부연설명이면 항상 revealed, 아니면 Store의 revealed 상태를 우선 사용, 없으면 prop 사용
+  const actualIsRevealed = isSupplementary ? true : storeRevealed
   
   const handleClick = () => {
     // Store에 상태 즉시 업데이트 (pageId와 blankIndex가 있을 때만)
@@ -890,7 +890,7 @@ function SimpleBlank({
       className={`inline relative cursor-pointer rounded px-1 py-0 mx-0.5 font-bold transition-all overflow-hidden ${
         actualIsRevealed
           ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white shadow-lg'
-          : 'bg-gray-200 text-gray-500 hover:bg-gray-300 hover:shadow-md border border-gray-300'
+          : ''
       }`}
       style={{
         textShadow: actualIsRevealed ? '0 1px 2px rgba(0,0,0,0.2)' : 'none',
@@ -900,20 +900,36 @@ function SimpleBlank({
       }}
       aria-label={actualIsRevealed ? '정답: ' + answer + ' (클릭하여 숨기기)' : '클릭하여 정답 보기'}
     >
-      {/* 빈칸 상태일 때 shimmer 효과 - 항상 반복 */}
+      {/* 정답 텍스트 - 항상 렌더링 (길이 유지) */}
+      <span className={`relative z-0 ${actualIsRevealed ? '' : 'text-transparent'}`}>
+        {answer}
+      </span>
+      
+      {/* 빈칸 상태일 때 회색 배경과 shimmer 효과를 위에 덮기 */}
       {!actualIsRevealed && (
         <span 
-          className="absolute inset-0 pointer-events-none animate-shimmer"
+          className="absolute inset-0 pointer-events-none bg-gray-200 border border-gray-300 rounded hover:bg-gray-300"
           style={{
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%)',
-            backgroundSize: '200% 100%',
+            zIndex: 1,
           }}
-        />
+        >
+          {/* Shimmer 애니메이션 */}
+          <span 
+            className="absolute inset-0 animate-shimmer"
+            style={{
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%)',
+              backgroundSize: '200% 100%',
+            }}
+          />
+          {/* Masked answer (○○ ○○) */}
+          <span className="absolute inset-0 flex items-center justify-center text-gray-600 font-bold">
+            {generateBlankCircleMask(answer)}
+          </span>
+        </span>
       )}
-      <span className="relative z-10">
-        {actualIsRevealed ? answer : generateBlankPlaceholder(answer)}
-      </span>
     </span>
   )
 }
+
+
 
