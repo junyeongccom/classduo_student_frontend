@@ -4,6 +4,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { cn } from '@/shared/lib/utils'
 
 interface AnswerLoadingReviewBannerProps {
   answers: string[]
@@ -30,13 +31,13 @@ export function AnswerLoadingReviewBanner({
   answers,
   intervalMs = 10000,
   fallbackText = '정답 준비 중...',
-  className = '',
+  className,
 }: AnswerLoadingReviewBannerProps) {
   const [currentAnswer, setCurrentAnswer] = useState(fallbackText)
   const [nextAnswer, setNextAnswer] = useState<string | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const currentAnswerRef = useRef(currentAnswer)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -95,7 +96,7 @@ export function AnswerLoadingReviewBanner({
   }, [answers, intervalMs])
 
   return (
-    <div className={`rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm ${className}`}>
+    <div className={cn('rounded-2xl border border-gray-200 bg-white px-5 py-4 shadow-sm', className)}>
       <div className="flex items-center gap-4">
         <div className="flex-shrink-0">
           <video

@@ -13,7 +13,8 @@ import {
   SessionWithMessages,
   SearchResult,
   StreamProgressData,
-  Reference
+  Reference,
+  ChatMode,
 } from '../types'
 
 // Re-export types for backward compatibility (optional but good for refactoring safety)
@@ -134,6 +135,7 @@ export const chatService = {
     options?: {
       question_type?: 'hooking' | 'pqm' | 'direct' | 'followup'
       source_question_id?: string
+      chat_mode?: ChatMode
     }
   ): Promise<void> {
     const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
@@ -148,7 +150,8 @@ export const chatService = {
         body: JSON.stringify({ 
           question,
           question_type: options?.question_type,
-          source_question_id: options?.source_question_id
+          source_question_id: options?.source_question_id,
+          chat_mode: options?.chat_mode,
         }),
       })
 

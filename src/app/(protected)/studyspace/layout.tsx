@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/shared/components/common'
+import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import {
   StudyspaceLayoutProvider,
   useStudyspaceLayoutSlots,
@@ -125,21 +126,25 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
           className="flex h-full flex-col"
         >
           {/* Top Bar (Header) - Spans full width */}
-          {!isExamPrep && (
-            <header className="flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-6">
-              <div className="flex h-full flex-1 items-center overflow-hidden">
+          <header className="flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-6">
+            {/* Left: Language toggle + page topbar slot (so existing buttons shift right) */}
+            <div className="flex min-w-0 flex-1 items-center gap-6 overflow-hidden">
+              <LanguageToggle size="sm" />
+              <div className="flex min-w-0 flex-1 items-center overflow-hidden">
                 {topbar ?? null}
               </div>
-              
-              {/* Mobile Drawer Toggle */}
+            </div>
+            
+            {/* Mobile Drawer Toggle (kept on the far right) */}
+            {!isExamPrep && (
               <button
                 onClick={() => setIsMobileRightbarOpen(true)}
                 className="ml-4 flex items-center justify-center rounded-md p-2 text-gray-500 hover:bg-gray-100 xl:hidden"
               >
                 <PanelRightOpen className="h-5 w-5" />
               </button>
-            </header>
-          )}
+            )}
+          </header>
           
           <div className="flex flex-1 overflow-hidden">
             {/* Main Content Area */}
