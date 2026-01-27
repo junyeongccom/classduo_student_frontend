@@ -159,28 +159,34 @@
     100% { transform: translateX(140%) rotate(12deg); opacity: 0; }
   }
 
+  @keyframes card-match-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-match-fade-in {
+    animation: card-match-fade-in 0.35s ease-out;
+  }
+
   .card-match-card {
     @apply relative h-[120px] w-full rounded-2xl border border-gray-200 bg-transparent shadow-sm;
     perspective: 900px;
   }
 
   .card-match-card__inner {
-    @apply relative block h-full w-full rounded-2xl;
-    transform-style: preserve-3d;
+    @apply relative block h-full w-full rounded-2xl pointer-events-none;
   }
 
   .card-match-card__face {
-    @apply absolute inset-0 flex items-center justify-center rounded-2xl px-3 text-center text-xs text-gray-700;
-    backface-visibility: hidden;
+    @apply absolute inset-0 flex items-center justify-center rounded-2xl px-3 text-center text-xs text-gray-700 pointer-events-none;
   }
 
   .card-match-card__face--back {
-    @apply bg-gray-900/95;
+    @apply hidden;
   }
 
   .card-match-card__face--front {
     @apply bg-white;
-    transform: rotateY(180deg);
   }
 
   .card-match-card__content {
@@ -192,10 +198,6 @@
     background: linear-gradient(120deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.45) 35%, rgba(255,255,255,0.05) 70%);
     mix-blend-mode: screen;
     animation: card-match-sheen 2.4s ease-in-out infinite;
-  }
-
-  .card-match-card--flipped .card-match-card__inner {
-    transform: rotateY(180deg);
   }
 
   .card-match-card[data-selected='true'] {

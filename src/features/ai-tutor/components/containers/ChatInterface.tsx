@@ -1309,7 +1309,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             )}
             <ChatComposer
               value={input}
-              onChange={setInput}
+              onChange={(nextValue) => {
+                setInput(nextValue)
+                if (cardMatchState === 'idle' && nextValue.trim().length > 0) {
+                  setCardMatchState('hidden')
+                }
+              }}
               onSubmit={handleSubmit}
               disabled={isLoading}
               placeholder={t('askAnythingPlaceholder')}
@@ -1317,7 +1322,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               onChatModeChange={setChatMode}
               modeHelpAriaLabel={t('chatModeHelpAriaLabel')}
               modeHelpText={t('chatModeHelpText')}
-              onFocus={() => setIsInputFocused(true)}
+              onFocus={() => {
+                setIsInputFocused(true)
+                if (cardMatchState === 'idle') {
+                  setCardMatchState('hidden')
+                }
+              }}
               onBlur={() => {
                 // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
                 setTimeout(() => setIsInputFocused(false), 200)
