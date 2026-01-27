@@ -1,4 +1,4 @@
-export type ExamPrepTab = 'summary' | 'quiz' | 'memorize' | 'aiTutor'
+export type ExamPrepTab = 'summary' | 'quiz' | 'memorize' | 'notes' | 'aiTutor'
 
 export interface ExamPrepMaterial {
   id: string
@@ -42,6 +42,51 @@ export interface ExamPrepGlossaryTerm {
   source_page?: number | null
   source_text?: string | null
   created_at?: string | null
+}
+
+export type ExamPrepNoteScope = 'single' | 'page'
+
+export interface ExamPrepNoteItem {
+  noteScope: ExamPrepNoteScope
+  pageNumber: number
+  content: Record<string, unknown>
+  updatedAt?: string | null
+}
+
+export interface ExamPrepNotesResponse {
+  material_id: string
+  notes: Array<{
+    note_scope: ExamPrepNoteScope
+    page_number: number
+    content_json: Record<string, unknown>
+    updated_at?: string | null
+  }>
+}
+
+export interface ExamPrepNoteUpsertRequest {
+  note_scope: ExamPrepNoteScope
+  page_number: number
+  content_json: Record<string, unknown>
+}
+
+export interface ExamPrepAnnotationItem {
+  pageNumber: number
+  data: Record<string, unknown>
+  updatedAt?: string | null
+}
+
+export interface ExamPrepAnnotationsResponse {
+  material_id: string
+  annotations: Array<{
+    page_number: number
+    data_json: Record<string, unknown>
+    updated_at?: string | null
+  }>
+}
+
+export interface ExamPrepAnnotationUpsertRequest {
+  page_number: number
+  data_json: Record<string, unknown>
 }
 
 export type ExamPrepQuizType = 'RECALL' | 'STRUCTURE' | 'MISCONCEPTION'

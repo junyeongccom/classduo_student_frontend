@@ -117,12 +117,14 @@
     },
     "pdf": {
       "title": "Lecture Material PDF",
-      "placeholder": "In progress"
+      "placeholder": "Select a material to view the PDF",
+      "fullscreen": "View fullscreen"
     },
     "tabs": {
       "summary": "Summary",
       "quiz": "Quiz",
       "memorize": "Memorize",
+      "notes": "Notes",
       "aiTutor": "AI Tutor"
     },
     "content": {

@@ -117,12 +117,14 @@
     },
     "pdf": {
       "title": "강의자료 PDF",
-      "placeholder": "구현중입니다"
+      "placeholder": "자료를 선택하면 PDF가 표시됩니다",
+      "fullscreen": "전체화면으로 보기"
     },
     "tabs": {
       "summary": "요약",
       "quiz": "퀴즈",
       "memorize": "암기",
+      "notes": "노트",
       "aiTutor": "AI 튜터"
     },
     "content": {

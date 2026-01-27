@@ -7,7 +7,9 @@ import { ExamPrepSummaryPanel } from '../ui/ExamPrepSummaryPanel'
 import { ExamPrepGlossaryPanel } from '../ui/ExamPrepGlossaryPanel'
 import { ExamPrepQuizPanel } from '../ui/ExamPrepQuizPanel'
 import { ExamPrepAiTutorPanel } from '../ui/ExamPrepAiTutorPanel'
-import type { ExamPrepTab, ExamPrepMaterial, ExamPrepQuizType } from '../../types'
+import { ExamPrepNotesPanel } from '../ui/ExamPrepNotesPanel'
+import { ExamPrepPdfViewer } from '../ui/ExamPrepPdfViewer'
+import type { ExamPrepTab, ExamPrepMaterial, ExamPrepQuizType, ExamPrepNoteScope } from '../../types'
 import {
   useExamPrepCourses,
   useExamPrepMaterials,
@@ -15,6 +17,7 @@ import {
   useExamPrepGlossary,
   useExamPrepQuizSessions,
   useExamPrepQuizDetail,
+  useExamPrepNotes,
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
 
@@ -30,6 +33,8 @@ export function ExamPrepContainer() {
   const [activeTab, setActiveTab] = useState<ExamPrepTab>('summary')
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
+  const [isPdfFullscreen, setIsPdfFullscreen] = useState(false)
+  const [isPdfSlideshow, setIsPdfSlideshow] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const { courses } = useExamPrepCourses()
@@ -37,6 +42,13 @@ export function ExamPrepContainer() {
   const { materials: materialsList } = useExamPrepMaterials(selectedCourseId)
   const materials = useMemo<ExamPrepMaterial[]>(() => materialsList, [materialsList])
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null)
+  const selectedMaterial = useMemo(
+    () => materials.find(material => material.id === selectedMaterialId) ?? null,
+    [materials, selectedMaterialId]
+  )
+  const [pdfPageCount, setPdfPageCount] = useState(0)
+  const [selectedPdfPage, setSelectedPdfPage] = useState(1)
+  const [selectedNotePage, setSelectedNotePage] = useState(1)
   const { summary, isLoading: summaryLoading } = useExamPrepSummary(selectedMaterialId, language)
   const { terms, isLoading: glossaryLoading } = useExamPrepGlossary(selectedMaterialId, language)
   const {
@@ -51,6 +63,23 @@ export function ExamPrepContainer() {
     isLoading: quizzesLoading,
     refresh: refreshQuizzes,
   } = useExamPrepQuizDetail(selectedSessionId, onlyWrong)
+  const {
+    noteMode,
+    notes,
+    annotations,
+    setNoteMode,
+    saveNote,
+    saveAnnotation,
+  } = useExamPrepNotes(selectedMaterialId)
+  const pdfAnnotations = useMemo(() => {
+    const mapped: Record<number, { paths: Array<{ points: Array<{ x: number; y: number }>; color: string; width: number }> }> = {}
+    Object.entries(annotations).forEach(([page, entry]) => {
+      mapped[Number(page)] = (entry.data as { paths: Array<{ points: Array<{ x: number; y: number }>; color: string; width: number }> }) ?? {
+        paths: [],
+      }
+    })
+    return mapped
+  }, [annotations])
   const [quizTypes, setQuizTypes] = useState<ExamPrepQuizType[]>([
     'RECALL',
     'STRUCTURE',
@@ -86,8 +115,27 @@ export function ExamPrepContainer() {
   }, [materials, selectedMaterialId])
 
   useEffect(() => {
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [])
+
+  useEffect(() => {
     setSelectedSessionId(null)
   }, [selectedMaterialId])
+
+  useEffect(() => {
+    if (noteMode === 'page') {
+      setSelectedNotePage(prev => (prev > 0 ? prev : 1))
+    }
+  }, [noteMode])
+
+  useEffect(() => {
+    if (pdfPageCount > 0) {
+      setSelectedNotePage(prev => (prev >= 1 && prev <= pdfPageCount ? prev : 1))
+      setSelectedPdfPage(prev => (prev >= 1 && prev <= pdfPageCount ? prev : 1))
+    }
+  }, [pdfPageCount])
 
   useEffect(() => {
     if (sessions.length > 0 && !selectedSessionId) {
@@ -139,6 +187,29 @@ export function ExamPrepContainer() {
     event.preventDefault()
     setIsResizing(true)
   }
+
+  const handleOpenPdfFullscreen = () => {
+    if (!selectedMaterial?.signedUrl) return
+    setIsPdfFullscreen(true)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const handleClosePdfFullscreen = () => {
+    setIsPdfFullscreen(false)
+    setIsPdfSlideshow(false)
+    document.body.style.overflow = ''
+  }
+
+  useEffect(() => {
+    if (!isPdfFullscreen) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleClosePdfFullscreen()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isPdfFullscreen])
 
   const handleCreateSession = async () => {
     if (!selectedMaterialId || quizTypes.length === 0) return
@@ -255,6 +326,28 @@ export function ExamPrepContainer() {
       )
     }
 
+    if (activeTab === 'notes') {
+      const isSingle = noteMode === 'single'
+      const entry = isSingle ? notes.single : notes.pages[selectedNotePage]
+      const content = (entry?.content?.blocks as unknown as any[]) ?? null
+      const pageNumber = isSingle ? 0 : selectedNotePage
+
+      return (
+        <ExamPrepNotesPanel
+          mode={noteMode as ExamPrepNoteScope}
+          onModeChange={setNoteMode}
+          pageCount={pdfPageCount}
+          selectedPage={selectedNotePage}
+          onSelectPage={page => {
+            setSelectedNotePage(page)
+            setSelectedPdfPage(page)
+          }}
+          noteContent={content}
+          onChange={updated => saveNote(noteMode, pageNumber, { blocks: updated })}
+        />
+      )
+    }
+
     return (
       <ExamPrepAiTutorPanel
         messages={chatMessages}
@@ -288,6 +381,7 @@ export function ExamPrepContainer() {
           summary: t('tabs.summary'),
           quiz: t('tabs.quiz'),
           memorize: t('tabs.memorize'),
+          notes: t('tabs.notes'),
           aiTutor: t('tabs.aiTutor'),
         }}
         activeTab={activeTab}
@@ -295,13 +389,89 @@ export function ExamPrepContainer() {
         materials={materials}
         selectedMaterialId={selectedMaterialId}
         onSelectMaterial={setSelectedMaterialId}
-        selectedMaterialUrl={
-          materials.find(material => material.id === selectedMaterialId)?.signedUrl ?? null
+        isPdfAvailable={!!selectedMaterial?.signedUrl}
+        pdfContent={
+          selectedMaterial?.signedUrl ? (
+            <ExamPrepPdfViewer
+              url={selectedMaterial.signedUrl ?? ''}
+              annotations={pdfAnnotations}
+              onAnnotationChange={(pageNumber, data) => saveAnnotation(pageNumber, data)}
+              onPageCountChange={setPdfPageCount}
+              currentPage={selectedPdfPage}
+              onPageChange={page => {
+                setSelectedPdfPage(page)
+                if (noteMode === 'page') {
+                  setSelectedNotePage(page)
+                }
+              }}
+            />
+          ) : null
         }
+        pdfActionLabel={t('pdf.fullscreen')}
+        onPdfAction={handleOpenPdfFullscreen}
         content={renderContent()}
         leftWidth={leftWidth}
         onResizeStart={handleResizeStart}
       />
+      {isPdfFullscreen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black">
+          {!isPdfSlideshow && (
+            <div className="flex items-center justify-between px-6 py-4 text-white">
+              <div className="text-sm font-medium">{t('pdf.title')}</div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPdfSlideshow(true)}
+                  className="rounded-full border border-white/20 px-3 py-1 text-xs"
+                >
+                  슬라이드쇼
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClosePdfFullscreen}
+                  className="rounded-full border border-white/20 px-3 py-1 text-xs"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          )}
+          {isPdfSlideshow && (
+            <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPdfSlideshow(false)}
+                className="rounded-full border border-white/20 px-3 py-1 text-xs text-white"
+              >
+                도구 보기
+              </button>
+              <button
+                type="button"
+                onClick={handleClosePdfFullscreen}
+                className="rounded-full border border-white/20 px-3 py-1 text-xs text-white"
+              >
+                닫기
+              </button>
+            </div>
+          )}
+          <div className="flex-1 overflow-auto">
+            <ExamPrepPdfViewer
+              url={selectedMaterial?.signedUrl ?? ''}
+              annotations={pdfAnnotations}
+              onAnnotationChange={(pageNumber, data) => saveAnnotation(pageNumber, data)}
+              onPageCountChange={setPdfPageCount}
+              currentPage={selectedPdfPage}
+              onPageChange={page => {
+                setSelectedPdfPage(page)
+                if (noteMode === 'page') {
+                  setSelectedNotePage(page)
+                }
+              }}
+              hideToolbars={isPdfSlideshow}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
