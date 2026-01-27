@@ -273,6 +273,34 @@ function generateBlankCircleMask(answer: string): string {
 }
 
 /**
+ * 정규식 특수문자 이스케이프
+ */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * 빈칸 위치 찾기 (공백 차이를 허용, 대소문자 무시)
+ */
+function findBlankIndex(text: string, answerText: string, startIndex: number): number {
+  const trimmedAnswer = answerText.trim()
+  if (!trimmedAnswer) return -1
+
+  const pattern = escapeRegExp(trimmedAnswer).replace(/\s+/g, '\\s+')
+  const regex = new RegExp(pattern, 'i')
+  const slice = text.slice(startIndex)
+  const match = slice.match(regex)
+
+  if (match && match.index !== undefined) {
+    return startIndex + match.index
+  }
+
+  const lowerText = text.toLowerCase()
+  const lowerAnswer = trimmedAnswer.toLowerCase()
+  return lowerText.indexOf(lowerAnswer, startIndex)
+}
+
+/**
  * 텍스트 정리 함수
  */
 function cleanText(text: string, type: 'recording' | 'material'): string {
@@ -698,39 +726,10 @@ function AnswerWithBlanks({
   // 빈칸 위치 찾기 및 텍스트 분할
   const parts: Array<{ type: 'text' | 'blank'; content: string; blankIndex?: number; blankKey?: string }> = []
   let lastIndex = 0
-  const usedIndices = new Set<number>()
 
   // 빈칸을 텍스트에서 찾기 (공백 정규화)
   blanks.forEach((blank, index) => {
-    if (usedIndices.has(index)) return
-    
-    // 정답 텍스트 정규화 (공백 제거)
-    const normalizedAnswer = blank.answer_text.replace(/\s+/g, ' ').trim()
-    const normalizedText = text.replace(/\s+/g, ' ').trim()
-    
-    // 텍스트에서 정답 찾기 (대소문자 무시, 공백 무시)
-    let blankIndex = -1
-    let searchStart = lastIndex
-    
-    // 여러 번 시도 (텍스트의 다른 위치에서도 찾기)
-    while (blankIndex === -1 && searchStart < normalizedText.length) {
-      const foundIndex = normalizedText.toLowerCase().indexOf(
-        normalizedAnswer.toLowerCase(),
-        searchStart
-      )
-      if (foundIndex !== -1) {
-        // 실제 원본 텍스트에서의 위치 찾기
-        const originalIndex = text.toLowerCase().indexOf(
-          blank.answer_text.toLowerCase(),
-          searchStart
-        )
-        if (originalIndex !== -1) {
-          blankIndex = originalIndex
-          break
-        }
-      }
-      searchStart += 1
-    }
+    const blankIndex = findBlankIndex(text, blank.answer_text, lastIndex)
     
     if (blankIndex !== -1) {
       // 빈칸 이전 텍스트
@@ -749,7 +748,6 @@ function AnswerWithBlanks({
         blankKey: blankKey,
       })
       lastIndex = blankIndex + blank.answer_text.length
-      usedIndices.add(index)
     }
   })
 

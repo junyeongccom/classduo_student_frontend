@@ -81,7 +81,7 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
 
   if (isLoading || status === 'PENDING') {
     return (
-      <div className="card-match-fade-in w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/60 p-6 shadow-sm">
+      <div className="w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/60 p-6 shadow-sm">
         <div className="grid grid-cols-4 gap-4">
           {Array.from({ length: 12 }).map((_, idx) => (
             <div key={idx} className="card-match-skeleton" />
@@ -93,14 +93,14 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
 
   if (!pairs.length || status === 'FAILED') {
     return (
-      <div className="card-match-fade-in w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/60 p-6 text-center text-sm text-gray-400">
+      <div className="w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/60 p-6 text-center text-sm text-gray-400">
         카드 매칭 데이터를 준비 중입니다.
       </div>
     )
   }
 
   return (
-    <div className="card-match-fade-in w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/70 p-6 shadow-sm">
+    <div className="w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/70 p-6 shadow-sm">
       <div className="grid grid-cols-4 gap-4">
         {cards.map(card => {
           const isMatched = matchedIds.has(card.id)
@@ -123,7 +123,6 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
             >
               <span className="card-match-card__inner">
                 <span className="card-match-card__face card-match-card__face--back">
-                  <span className="card-match-card__sheen" />
                 </span>
                 <span className="card-match-card__face card-match-card__face--front">
                   <span className={`card-match-card__content ${card.type === 'term' ? 'font-semibold' : ''}`}>
