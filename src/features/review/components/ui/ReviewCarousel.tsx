@@ -675,6 +675,11 @@ function AnswerWithBlanks({
     setInternalIsRevealed(prev => !prev)
   })
 
+  // 부연설명 섹션에서는 빈칸을 찾지 않고 일반 텍스트로만 표시
+  if (sectionType === 'supplementary') {
+    return <p className="text-base leading-relaxed text-gray-800 font-medium">{text}</p>
+  }
+
   if (blanks.length === 0) {
     return <p className="text-base leading-relaxed text-gray-800 font-medium">{text}</p>
   }
@@ -765,6 +770,7 @@ function AnswerWithBlanks({
               reviewAnswerId={reviewAnswerId}
               pageId={pageId}
               blankIndex={part.blankIndex}
+              sectionType={sectionType}
             />
           )
         }
@@ -784,7 +790,8 @@ function SimpleBlank({
   lectureId,
   reviewAnswerId,
   pageId,
-  blankIndex
+  blankIndex,
+  sectionType
 }: { 
   answer: string
   isRevealed: boolean
@@ -793,17 +800,21 @@ function SimpleBlank({
   reviewAnswerId?: string
   pageId?: number
   blankIndex?: number
+  sectionType?: string
 }) {
   const { locale } = useI18n()
   const { setBlankRevealed, isBlankRevealed: getIsBlankRevealed, getBlankData } = useReviewStore()
+  
+  // 부연설명 섹션에서는 항상 revealed 상태
+  const isSupplementary = sectionType === 'supplementary'
   
   // Store에서 빈칸 상태 확인 (pageId와 blankIndex가 있을 때만)
   const storeRevealed = pageId !== undefined && blankIndex !== undefined && lectureId
     ? getIsBlankRevealed(lectureId, pageId, blankIndex, locale)
     : isRevealed
   
-  // Store의 revealed 상태를 우선 사용, 없으면 prop 사용
-  const actualIsRevealed = storeRevealed
+  // 부연설명이면 항상 revealed, 아니면 Store의 revealed 상태를 우선 사용, 없으면 prop 사용
+  const actualIsRevealed = isSupplementary ? true : storeRevealed
   
   const handleClick = () => {
     // Store에 상태 즉시 업데이트 (pageId와 blankIndex가 있을 때만)
@@ -868,7 +879,7 @@ function SimpleBlank({
       className={`inline relative cursor-pointer rounded px-1 py-0 mx-0.5 font-bold transition-all overflow-hidden ${
         actualIsRevealed
           ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white shadow-lg'
-          : 'bg-gray-200 text-gray-500 hover:bg-gray-300 hover:shadow-md border border-gray-300'
+          : ''
       }`}
       style={{
         textShadow: actualIsRevealed ? '0 1px 2px rgba(0,0,0,0.2)' : 'none',
@@ -878,19 +889,29 @@ function SimpleBlank({
       }}
       aria-label={actualIsRevealed ? '정답: ' + answer + ' (클릭하여 숨기기)' : '클릭하여 정답 보기'}
     >
-      {/* 빈칸 상태일 때 shimmer 효과 - 항상 반복 */}
+      {/* 정답 텍스트 - 항상 렌더링 (길이 유지) */}
+      <span className={`relative z-0 ${actualIsRevealed ? '' : 'text-transparent'}`}>
+        {answer}
+      </span>
+      
+      {/* 빈칸 상태일 때 회색 배경과 shimmer 효과를 위에 덮기 */}
       {!actualIsRevealed && (
         <span 
-          className="absolute inset-0 pointer-events-none animate-shimmer"
+          className="absolute inset-0 pointer-events-none bg-gray-200 border border-gray-300 rounded hover:bg-gray-300"
           style={{
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%)',
-            backgroundSize: '200% 100%',
+            zIndex: 1,
           }}
-        />
+        >
+          {/* Shimmer 애니메이션 */}
+          <span 
+            className="absolute inset-0 animate-shimmer"
+            style={{
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%)',
+              backgroundSize: '200% 100%',
+            }}
+          />
+        </span>
       )}
-      <span className="relative z-10">
-        {actualIsRevealed ? answer : generateBlankPlaceholder(answer)}
-      </span>
     </span>
   )
 }
