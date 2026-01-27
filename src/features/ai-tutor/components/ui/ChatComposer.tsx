@@ -98,7 +98,7 @@ export function ChatComposer({
             onBlur={onBlur}
             placeholder={placeholder}
             disabled={disabled}
-            rows={2}
+            rows={1}
             onKeyDown={(e) => {
               // Enter: send, Shift+Enter: newline
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -107,25 +107,25 @@ export function ChatComposer({
                 formRef.current?.requestSubmit()
               }
             }}
-            className="w-full resize-none bg-white px-5 py-2 text-sm leading-relaxed outline-none placeholder:text-gray-400 disabled:bg-gray-50"
+            className="w-full resize-none bg-white px-5 pt-[3px] pb-0 text-sm leading-[31px] outline-none placeholder:text-gray-400 disabled:bg-gray-50"
             style={{
               // Baseline: reduce to half of previous white input area height
               // Keep white/gray halves the same height (both slightly smaller)
-              minHeight: '56px',
+              minHeight: '34px',
             }}
           />
 
           {/* Bottom half: controls */}
           <div
-            className="flex items-center justify-between gap-3 border-t border-gray-200 bg-gray-100 px-4 py-2"
-            style={{ minHeight: '56px' }}
+            className="flex items-center justify-between gap-3 border-t border-gray-200 bg-gray-100 px-4 py-1"
+            style={{ minHeight: '34px' }}
           >
             <div className="flex items-center gap-2">
               <div className="inline-flex rounded-full bg-white/70 p-1">
                 <button
                   type="button"
                   onClick={() => onChatModeChange('hard')}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                  className={`px-3 py-0.5 text-xs font-semibold rounded-full transition-all ${
                     chatMode === 'hard' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                   aria-pressed={chatMode === 'hard'}
@@ -135,7 +135,7 @@ export function ChatComposer({
                 <button
                   type="button"
                   onClick={() => onChatModeChange('soft')}
-                  className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                  className={`px-3 py-0.5 text-xs font-semibold rounded-full transition-all ${
                     chatMode === 'soft' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                   aria-pressed={chatMode === 'soft'}
@@ -154,7 +154,7 @@ export function ChatComposer({
                     onMouseLeave={() => setIsHelpOpen(false)}
                     onFocus={() => setIsHelpOpen(true)}
                     onBlur={() => setIsHelpOpen(false)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-gray-600 hover:text-gray-800 hover:bg-white transition-colors"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/70 text-gray-600 hover:text-gray-800 hover:bg-white transition-colors"
                   >
                     <CircleHelp className="h-4 w-4" />
                   </button>
@@ -165,9 +165,9 @@ export function ChatComposer({
             <button
               type="submit"
               disabled={!canSend}
-              className="inline-flex items-center gap-2 rounded-full bg-primary-500 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary-500 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
             >
-              {disabled ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {disabled ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
               <span>Send</span>
             </button>
           </div>

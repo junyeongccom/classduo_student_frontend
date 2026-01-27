@@ -262,6 +262,17 @@ function generateBlankPlaceholder(answer: string): string {
 }
 
 /**
+ * 빈칸 마스크 문자열 생성 (○)
+ * 예: '세포 분열' -> '○○ ○○'
+ */
+function generateBlankCircleMask(answer: string): string {
+  return answer
+    .split('')
+    .map(char => (char === ' ' ? ' ' : '○'))
+    .join('')
+}
+
+/**
  * 텍스트 정리 함수
  */
 function cleanText(text: string, type: 'recording' | 'material'): string {
@@ -910,6 +921,10 @@ function SimpleBlank({
               backgroundSize: '200% 100%',
             }}
           />
+          {/* Masked answer (○○ ○○) */}
+          <span className="absolute inset-0 flex items-center justify-center text-gray-600 font-bold">
+            {generateBlankCircleMask(answer)}
+          </span>
         </span>
       )}
     </span>
