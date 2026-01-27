@@ -1303,7 +1303,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           {/* 중앙 입력창 */}
           <div className="w-full max-w-2xl">
             {cardMatchState === 'completed' && showSuccess && (
-              <div className={`mb-4 flex items-center justify-center text-3xl font-bold text-gray-900 transition-opacity duration-500 ${successFading ? 'opacity-0' : 'opacity-100'}`}>
+              <div className={`mb-6 -mt-3 flex items-center justify-center text-3xl font-bold text-gray-900 transition-opacity duration-500 ${successFading ? 'opacity-0' : 'opacity-100'}`}>
                 SUCCESS
               </div>
             )}
