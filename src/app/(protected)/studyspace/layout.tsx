@@ -127,6 +127,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
         >
           {/* Top Bar (Header) - Spans full width */}
           <header className="fixed left-0 top-0 z-40 flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-6 text-gray-700">
+            <div className="absolute left-[72px] top-0 h-full border-l border-gray-100" />
             {/* Left: Language toggle + page topbar slot (so existing buttons shift right) */}
             <div className="flex min-w-0 flex-1 items-center gap-6 overflow-hidden pl-[72px]">
               <LanguageToggle size="sm" />

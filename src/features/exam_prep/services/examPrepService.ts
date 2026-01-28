@@ -1,4 +1,95 @@
 import { apiRequest } from '@/shared/lib/api'
+import {
+  getSupabaseClient,
+  getErrorMessage,
+  handleJWTExpiration,
+  isJWTExpiredError,
+} from '@/shared/lib/supabase'
+
+const normalizeStoragePath = (path?: string | null) => {
+  if (!path) return null
+  const normalized = path.replace(/^\/+/, '')
+  const prefixes = ['materials_pdf_originals/', 'materials/']
+  for (const prefix of prefixes) {
+    if (normalized.startsWith(prefix)) {
+      return normalized.slice(prefix.length)
+    }
+  }
+  return normalized
+}
+
+const sanitizeFilename = (filename: string) => {
+  if (!filename) return 'unnamed.pdf'
+  if (filename.includes('.')) {
+    const lastIndex = filename.lastIndexOf('.')
+    const base = filename.slice(0, lastIndex)
+    const ext = filename.slice(lastIndex + 1)
+    let safeBase = base.replace(/[^A-Za-z0-9._-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '')
+    if (!safeBase) safeBase = 'unnamed'
+    const safeExt = ext.replace(/[^A-Za-z0-9]/g, '')
+    return safeExt ? `${safeBase}.${safeExt}` : safeBase
+  }
+  const safeName = filename.replace(/[^A-Za-z0-9._-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '')
+  return safeName || 'unnamed'
+}
+
+const buildOriginalPdfFilename = (originalFilename: string, fileType: string) => {
+  if (fileType === 'pdf') {
+    return sanitizeFilename(originalFilename)
+  }
+  const baseName = originalFilename.includes('.') ? originalFilename.slice(0, originalFilename.lastIndexOf('.')) : originalFilename
+  return sanitizeFilename(`${baseName}.pdf`)
+}
+
+const buildSignedUrlForMaterial = async (
+  material: {
+    material_id: string
+    original_filename: string | null
+    file_type: string | null
+    status: string | null
+    original_pdf_path?: string | null
+  },
+  expiresIn = 600
+) => {
+  const status = material.status ?? ''
+  const materialId = material.material_id
+  if (!materialId || ['FAILED', 'ERROR'].includes(status)) {
+    return null
+  }
+
+  const fileType = (material.file_type ?? '').toLowerCase()
+  const originalFilename = material.original_filename || 'unnamed.pdf'
+  const candidates: Array<{ bucket: string; path: string }> = []
+
+  const normalizedPath = normalizeStoragePath(material.original_pdf_path)
+  if (normalizedPath) {
+    candidates.push({ bucket: 'materials_pdf_originals', path: normalizedPath })
+  }
+
+  const filename = buildOriginalPdfFilename(originalFilename, fileType)
+  if (filename) {
+    candidates.push({ bucket: 'materials_pdf_originals', path: `raw/${materialId}/${filename}` })
+  }
+
+  candidates.push({ bucket: 'materials', path: `raw/${materialId}/source.pdf` })
+  candidates.push({ bucket: 'materials', path: `source/${materialId}/source.pdf` })
+
+  const supabase = getSupabaseClient()
+  for (const candidate of candidates) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(candidate.bucket)
+        .createSignedUrl(candidate.path, expiresIn)
+      if (data?.signedUrl && !error) {
+        return data.signedUrl
+      }
+    } catch {
+      // ignore and try next candidate
+    }
+  }
+
+  return null
+}
 
 export interface CourseApiResponse {
   courses: Array<{
@@ -177,6 +268,54 @@ export const examPrepService = {
       method: 'GET',
       auth: true,
     }),
+  getCourseMaterialsDirect: async (courseId: string) => {
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase
+        .from('lecture_materials')
+        .select('material_id, original_filename, file_type, status, original_pdf_path')
+        .eq('course_id', courseId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        if (isJWTExpiredError(error)) {
+          const refreshed = await handleJWTExpiration()
+          if (!refreshed) {
+            return { data: null, error: new Error('세션이 만료되었습니다. 다시 로그인해주세요.') }
+          }
+          return { data: null, error: new Error('세션이 만료되어 갱신되었습니다. 다시 시도해주세요.') }
+        }
+        return { data: null, error: new Error(getErrorMessage(error)) }
+      }
+
+      const materials = await Promise.all(
+        (data ?? []).map(async (material) => ({
+          material_id: material.material_id,
+          original_filename: material.original_filename || 'unnamed.pdf',
+          file_type: (material.file_type || '').toLowerCase(),
+          status: material.status || '',
+          signed_url: await buildSignedUrlForMaterial(material),
+        }))
+      )
+
+      return {
+        data: {
+          course_id: courseId,
+          materials,
+        },
+        error: null,
+      }
+    } catch (error) {
+      if (isJWTExpiredError(error)) {
+        const refreshed = await handleJWTExpiration()
+        if (!refreshed) {
+          return { data: null, error: new Error('세션이 만료되었습니다. 다시 로그인해주세요.') }
+        }
+        return { data: null, error: new Error('세션이 만료되어 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: error instanceof Error ? error : new Error(getErrorMessage(error)) }
+    }
+  },
   getSummary: (materialId: string, language: 'ko' | 'en') =>
     apiRequest<ExamPrepSummaryResponse>(`/exam-prep/materials/${materialId}/summary?lang=${language}`, {
       method: 'GET',
