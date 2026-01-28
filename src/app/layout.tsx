@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'ClassDuo - 대학생 공부중독 앱',
   description: 'AI 기반 학습 보조 플랫폼',
   icons: {
-    icon: '/Aplus_logo.png',
+    icon: '/Aplus_favicon.png',
   },
   openGraph: {
     title: 'ClassDuo - 대학생 공부중독 앱',
