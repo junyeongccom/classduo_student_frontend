@@ -99,8 +99,8 @@ export function Sidebar() {
               >
                 <span
                   className={cn(
-                    'flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-gray-50 transition-all',
-                    isActive ? 'bg-gray-100' : 'hover:bg-gray-100'
+                    'flex h-12 w-12 flex-col items-center justify-center rounded-lg transition-all',
+                    isActive ? 'bg-gray-100' : ''
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -130,8 +130,8 @@ export function Sidebar() {
         >
           <span
             className={cn(
-              'flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-gray-50 transition-all',
-              pathname === PROFILE_MENU.href ? 'bg-gray-100' : 'hover:bg-gray-100'
+              'flex h-12 w-12 flex-col items-center justify-center rounded-lg transition-all',
+              pathname === PROFILE_MENU.href ? 'bg-gray-100' : ''
             )}
           >
             <PROFILE_MENU.icon className="h-5 w-5" />
