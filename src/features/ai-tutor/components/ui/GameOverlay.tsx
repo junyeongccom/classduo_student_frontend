@@ -997,7 +997,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
       {/* 배경 오버레이 */}
       <div
-        className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-500 ${
+        className={`fixed inset-0 bg-black/50 z-[80] transition-opacity duration-500 ${
           animationState === 'entered' ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={handleClose}
@@ -1006,7 +1006,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
       {/* 게임 UI 컨테이너 */}
       <div
         ref={overlayRef}
-        className="fixed z-50 rounded-2xl bg-white shadow-2xl overflow-hidden game-overlay-container"
+        className="fixed z-[80] rounded-2xl bg-white shadow-2xl overflow-hidden game-overlay-container"
         style={{
           width: `${dimensions.width}px`,
           height: `${dimensions.height}px`,

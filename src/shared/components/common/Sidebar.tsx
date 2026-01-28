@@ -56,7 +56,7 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="fixed left-0 top-0 z-[70] flex h-14 w-[72px] items-center justify-center bg-white">
+      <div className="fixed left-0 top-0 z-[60] flex h-14 w-[72px] items-center justify-center bg-white">
         <button
           type="button"
           onClick={toggleMenu}
