@@ -157,7 +157,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             {/* Right Sidebar (Desktop) - Only show if NO panels are open */}
             {!isExamPrep && showRightSidebar && (
               <aside className="hidden h-full min-h-0 w-[320px] flex-col border-l border-gray-100 bg-white xl:flex">
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden">
                   {rightbar ?? null}
                 </div>
               </aside>

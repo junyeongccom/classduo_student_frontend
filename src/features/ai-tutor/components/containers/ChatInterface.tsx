@@ -248,7 +248,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     t('defaultHookingQuestions.easierUnderstanding'),
   ]
   const [input, setInput] = useState('')
-  const [chatMode, setChatMode] = useState<ChatMode>('hard')
+  const [chatMode, setChatMode] = useState<ChatMode>('simple')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
