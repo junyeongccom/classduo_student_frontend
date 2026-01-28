@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { TabType } from '@/shared/components/common'
-import { Reference, HookingResponse, PQMQuestion } from '@/features/ai-tutor/types'
+import { Reference, HookingResponse, PQMQuestion, CardMatchSet } from '@/features/ai-tutor/types'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
 export interface AITutorCourse {
@@ -67,6 +67,7 @@ interface AITutorState {
   hookingByLocale: Partial<Record<AppLocale, Record<string, HookingResponse | null>>>
   pqmByLocale: Partial<Record<AppLocale, Record<string, PQMQuestion[]>>>
   reviewKeyAnswersByLocale: Partial<Record<AppLocale, Record<string, string[]>>>
+  cardMatchByLocale: Partial<Record<AppLocale, Record<string, CardMatchSet | null>>>
   
   // Game
   game: GameState
@@ -103,6 +104,7 @@ interface AITutorActions {
   setHookingCache: (locale: AppLocale, lectureId: string, data: HookingResponse | null) => void
   setPqmCache: (locale: AppLocale, lectureId: string, data: PQMQuestion[]) => void
   setReviewKeyAnswersCache: (locale: AppLocale, lectureKey: string, answers: string[]) => void
+  setCardMatchCache: (locale: AppLocale, lectureId: string, data: CardMatchSet | null) => void
   
   // Game Actions
   openGame: (
@@ -137,12 +139,22 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   hookingByLocale: {},
   pqmByLocale: {},
   reviewKeyAnswersByLocale: {},
+  cardMatchByLocale: {},
   setReviewKeyAnswersCache: (locale, lectureKey, answers) => set((state) => ({
     reviewKeyAnswersByLocale: {
       ...state.reviewKeyAnswersByLocale,
       [locale]: {
         ...(state.reviewKeyAnswersByLocale[locale] || {}),
         [lectureKey]: answers,
+      },
+    },
+  })),
+  setCardMatchCache: (locale, lectureId, data) => set((state) => ({
+    cardMatchByLocale: {
+      ...state.cardMatchByLocale,
+      [locale]: {
+        ...(state.cardMatchByLocale[locale] || {}),
+        [lectureId]: data,
       },
     },
   })),
