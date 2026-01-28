@@ -4,7 +4,7 @@ export interface ChatMessage {
   summary_keywords?: string | null
 }
 
-export type ChatMode = 'hard' | 'soft'
+export type ChatMode = 'simple' | 'deep'
 
 export interface Reference {
   type: 'recording' | 'material'

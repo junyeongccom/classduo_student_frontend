@@ -129,17 +129,17 @@ export function ChatComposer({
                 <button
                   type="button"
                   ref={simpleButtonRef}
-                  onClick={() => onChatModeChange('hard')}
+                  onClick={() => onChatModeChange('simple')}
                   onMouseEnter={() => setActiveTooltip('simple')}
                   onMouseLeave={() => setActiveTooltip(null)}
                   onFocus={() => setActiveTooltip('simple')}
                   onBlur={() => setActiveTooltip(null)}
                   className={`flex h-6 w-8 items-center justify-center rounded-md border text-gray-600 transition-colors ${
-                    chatMode === 'hard'
+                    chatMode === 'simple'
                       ? 'border-gray-900 bg-gray-900 text-white'
                       : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
                   }`}
-                  aria-pressed={chatMode === 'hard'}
+                  aria-pressed={chatMode === 'simple'}
                   aria-label={simpleLabel}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
@@ -147,17 +147,17 @@ export function ChatComposer({
                 <button
                   type="button"
                   ref={deepButtonRef}
-                  onClick={() => onChatModeChange('soft')}
+                  onClick={() => onChatModeChange('deep')}
                   onMouseEnter={() => setActiveTooltip('deep')}
                   onMouseLeave={() => setActiveTooltip(null)}
                   onFocus={() => setActiveTooltip('deep')}
                   onBlur={() => setActiveTooltip(null)}
                   className={`flex h-6 w-8 items-center justify-center rounded-md border text-gray-600 transition-colors ${
-                    chatMode === 'soft'
+                    chatMode === 'deep'
                       ? 'border-gray-900 bg-gray-900 text-white'
                       : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
                   }`}
-                  aria-pressed={chatMode === 'soft'}
+                  aria-pressed={chatMode === 'deep'}
                   aria-label={deepLabel}
                 >
                   <Brain className="h-3.5 w-3.5" />
