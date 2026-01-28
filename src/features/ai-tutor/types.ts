@@ -154,7 +154,9 @@ export interface CardMatchPairSources {
 export interface CardMatchPair {
   pair_id: string
   term: string
+  term_eng?: string | null
   description: string
+  description_eng?: string | null
   sources?: CardMatchPairSources | null
 }
 
