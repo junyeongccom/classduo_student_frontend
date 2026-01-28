@@ -78,7 +78,7 @@ export function useExamPrepMaterials(courseId: string | null) {
           writeLocalJson(cacheKey, payload)
         }
         setIsLoading(false)
-        return
+
       }
 
       const result = await examPrepService.getCourseMaterials(courseId)
