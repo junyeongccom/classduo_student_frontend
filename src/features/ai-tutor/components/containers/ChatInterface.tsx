@@ -1320,8 +1320,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               placeholder={t('askAnythingPlaceholder')}
               chatMode={chatMode}
               onChatModeChange={setChatMode}
-              modeHelpAriaLabel={t('chatModeHelpAriaLabel')}
-              modeHelpText={t('chatModeHelpText')}
+              sendLabel={t('sendLabel')}
+              simpleLabel={t('simpleLabel')}
+              deepLabel={t('deepLabel')}
+              simpleHelpText={t('simpleHelpText')}
+              deepHelpText={t('deepHelpText')}
               onFocus={() => {
                 setIsInputFocused(true)
                 if (cardMatchState === 'idle') {
@@ -1563,8 +1566,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             placeholder={t('askAnythingPlaceholder')}
             chatMode={chatMode}
             onChatModeChange={setChatMode}
-            modeHelpAriaLabel={t('chatModeHelpAriaLabel')}
-            modeHelpText={t('chatModeHelpText')}
+            sendLabel={t('sendLabel')}
+            simpleLabel={t('simpleLabel')}
+            deepLabel={t('deepLabel')}
+            simpleHelpText={t('simpleHelpText')}
+            deepHelpText={t('deepHelpText')}
           />
         </div>
       </div>

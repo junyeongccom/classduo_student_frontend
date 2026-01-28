@@ -120,15 +120,15 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
       <div
         className="flex-1 transition-all duration-300"
-        style={{ marginLeft: 'var(--sidebar-width, 140px)' }}
+        style={{ marginLeft: 'var(--sidebar-width, 72px)' }}
       >
         <div 
           className="flex h-full flex-col"
         >
           {/* Top Bar (Header) - Spans full width */}
-          <header className="flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-6">
+          <header className="fixed left-0 top-0 z-40 flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-6 text-gray-700">
             {/* Left: Language toggle + page topbar slot (so existing buttons shift right) */}
-            <div className="flex min-w-0 flex-1 items-center gap-6 overflow-hidden">
+            <div className="flex min-w-0 flex-1 items-center gap-6 overflow-hidden pl-[72px]">
               <LanguageToggle size="sm" />
               <div className="flex min-w-0 flex-1 items-center overflow-hidden">
                 {topbar ?? null}
@@ -146,7 +146,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             )}
           </header>
           
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex flex-1 overflow-hidden pt-14">
             {/* Main Content Area */}
             <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
               <div className="flex h-full flex-col">
@@ -156,7 +156,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
             {/* Right Sidebar (Desktop) - Only show if NO panels are open */}
             {!isExamPrep && showRightSidebar && (
-              <aside className="hidden h-full min-h-0 w-[320px] flex-col border-l border-gray-200 bg-white xl:flex">
+              <aside className="hidden h-full min-h-0 w-[320px] flex-col border-l border-gray-100 bg-white xl:flex">
                 <div className="flex-1 overflow-y-auto">
                   {rightbar ?? null}
                 </div>
@@ -166,7 +166,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             {/* Materials Panel (Overlay Slot) - Render in layout flow if open */}
             {!isExamPrep && overlay && (
               <aside 
-                className="relative hidden h-full flex-col border-l border-gray-200 bg-white xl:flex"
+                className="relative hidden h-full flex-col border-l border-gray-100 bg-white xl:flex"
                 style={{ width: materialsPanelWidth }}
               >
                 {/* Resizer Handle */}
@@ -202,8 +202,8 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               
               {/* Drawer */}
               <aside className="fixed inset-y-0 right-0 z-50 flex w-[320px] flex-col bg-white shadow-xl transition-transform duration-300 xl:hidden">
-                <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4">
-                  <span className="font-semibold text-gray-900">메뉴</span>
+                <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4 text-gray-700">
+                  <span className="font-semibold text-gray-800">메뉴</span>
                   <button
                     onClick={() => setIsMobileRightbarOpen(false)}
                     className="rounded-md p-2 text-gray-500 hover:bg-gray-100"

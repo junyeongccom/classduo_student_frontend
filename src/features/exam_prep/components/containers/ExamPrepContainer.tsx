@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { ExamPrepLayout } from '../ui/ExamPrepLayout'
 import { ExamPrepSummaryPanel } from '../ui/ExamPrepSummaryPanel'
@@ -20,6 +20,7 @@ import {
   useExamPrepNotes,
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
+import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 
 const DEFAULT_LEFT_WIDTH = 620
 const MIN_LEFT_WIDTH = 400
@@ -33,6 +34,7 @@ export function ExamPrepContainer() {
   const [activeTab, setActiveTab] = useState<ExamPrepTab>('summary')
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
+  const [hasUserResized, setHasUserResized] = useState(false)
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false)
   const [isPdfSlideshow, setIsPdfSlideshow] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -99,20 +101,28 @@ export function ExamPrepContainer() {
   const [isChatLoading, setIsChatLoading] = useState(false)
 
   useEffect(() => {
-    if (!selectedCourseId && courses.length > 0) {
-      setSelectedCourseId(courses[0]?.id ?? null)
-    }
-  }, [courses, selectedCourseId])
-
-  useEffect(() => {
     setSelectedMaterialId(null)
   }, [selectedCourseId])
 
-  useEffect(() => {
-    if (!selectedMaterialId && materials.length > 0) {
-      setSelectedMaterialId(materials[0]?.id ?? null)
+  useLayoutEffect(() => {
+    if (!containerRef.current) return
+    const element = containerRef.current
+    const getHalfWidth = (containerWidth: number) => {
+      const maxLeftWidth = containerWidth - MIN_RIGHT_WIDTH
+      const target = Math.floor(containerWidth / 2)
+      return Math.min(Math.max(target, MIN_LEFT_WIDTH), maxLeftWidth)
     }
-  }, [materials, selectedMaterialId])
+    const updateWidth = () => {
+      if (hasUserResized) return
+      const containerRect = element.getBoundingClientRect()
+      if (!containerRect.width) return
+      setLeftWidth(getHalfWidth(containerRect.width))
+    }
+    updateWidth()
+    const observer = new ResizeObserver(() => updateWidth())
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [hasUserResized])
 
   useEffect(() => {
     return () => {
@@ -185,6 +195,7 @@ export function ExamPrepContainer() {
 
   const handleResizeStart = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault()
+    setHasUserResized(true)
     setIsResizing(true)
   }
 
@@ -365,6 +376,46 @@ export function ExamPrepContainer() {
 
   return (
     <div ref={containerRef} className="h-full w-full">
+      <StudyspaceTopbarSlot>
+        <div className="flex w-full items-center justify-end gap-5">
+          <div className="flex min-w-0 flex-col items-end">
+            <select
+              value={selectedCourseId ?? ''}
+              onChange={event => setSelectedCourseId(event.target.value)}
+              aria-label={t('materials.courseLabel')}
+              className="h-8 w-full rounded-lg border border-transparent bg-gray-50 px-3 text-sm text-gray-700 focus:outline-none focus:ring-0 md:w-[260px]"
+            >
+              <option value="" disabled>
+                {t('materials.courseSelectPlaceholder')}
+              </option>
+              {courses.map(course => (
+                <option key={course.id} value={course.id}>
+                  {course.title}
+                  {course.professorName ? `(${course.professorName})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex min-w-0 flex-col items-end">
+            <select
+              value={selectedMaterialId ?? ''}
+              onChange={event => setSelectedMaterialId(event.target.value)}
+              title={selectedMaterial?.title ?? t('materials.materialSelectPlaceholder')}
+              aria-label={t('materials.title')}
+              className="h-8 w-full rounded-lg border border-transparent bg-gray-50 px-3 text-sm text-gray-700 focus:outline-none focus:ring-0 md:w-[380px] truncate"
+            >
+              <option value="" disabled>
+                {t('materials.materialSelectPlaceholder')}
+              </option>
+              {materials.map(material => (
+                <option key={material.id} value={material.id}>
+                  {material.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </StudyspaceTopbarSlot>
       <ExamPrepLayout
         title={t('title')}
         subtitle={t('subtitle')}

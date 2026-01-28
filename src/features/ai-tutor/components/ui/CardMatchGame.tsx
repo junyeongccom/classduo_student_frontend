@@ -100,7 +100,7 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
   }
 
   return (
-    <div className="w-full max-w-[820px] rounded-3xl border border-gray-100 bg-white/70 p-6 shadow-sm">
+    <div className="w-full max-w-[820px] rounded-3xl bg-white/70 p-6">
       <div className="grid grid-cols-4 gap-4">
         {cards.map(card => {
           const isMatched = matchedIds.has(card.id)
@@ -112,7 +112,7 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
               type="button"
               className={`card-match-card ${isMatched ? 'card-match-card--matched' : ''} ${
                 isShaking ? 'card-match-card--shake' : ''
-              }`}
+              } ${card.type === 'term' ? 'card-match-card--term' : 'card-match-card--desc'}`}
               data-selected={isSelected ? 'true' : 'false'}
               onClick={() => {
                 if (isMatched) return

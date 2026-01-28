@@ -219,13 +219,13 @@ export function LectureSidebarUI({
                   src="/icon_flame.png"
                   alt="flame"
                   className={`h-3.5 w-3.5 object-contain transition-all duration-300 ${
-                    flameHighlight ? 'animate-pulse drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]' : ''
+                    flameHighlight ? 'animate-pulse drop-shadow-[0_0_8px_rgba(129,140,248,0.7)]' : ''
                   }`}
                   style={{ imageRendering: 'auto' }}
                 />
                 <span
                   className={`text-xs font-medium transition-all duration-300 ${
-                    flameHighlight ? 'text-amber-500 scale-110' : 'text-amber-600'
+                    flameHighlight ? 'text-indigo-500 scale-110' : 'text-indigo-600'
                   }`}
                 >
                   {flameCount[selectedCourse.course_id] || 0}
@@ -302,24 +302,24 @@ export function LectureSidebarUI({
                     key={lecture.lecture_id}
                     onClick={() => onToggleLecture(lecture.lecture_id)}
                     disabled={isDisabled}
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all ${
+                    className={`flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left transition-all ${
                       isSelected
-                        ? 'bg-gray-200 text-gray-900'
+                        ? 'bg-blue-50 border-blue-200 text-blue-900'
                         : isDisabled
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-                        : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                        ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                        : 'bg-gray-50 border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'
                     }`}
                     title={!lecture.is_available ? '강의자료가 준비되지 않은 회차입니다' : undefined}
                   >
                     <div className="flex-1 min-w-0">
                       <p
                         className={`text-sm font-medium ${
-                          isSelected ? 'text-gray-900' : isDisabled ? 'text-gray-400' : 'text-gray-800'
+                          isSelected ? 'text-blue-900' : isDisabled ? 'text-gray-400' : 'text-gray-800'
                         }`}
                       >
                         {t('lectureLabel', { no: String(lecture.lecture_no) })}
                       </p>
-                      <p className={`text-xs ${isSelected ? 'text-gray-500' : 'text-gray-400'}`}>
+                      <p className={`text-xs ${isSelected ? 'text-blue-600' : 'text-gray-400'}`}>
                         {lecture.lecture_date}
                       </p>
                     </div>
@@ -327,7 +327,7 @@ export function LectureSidebarUI({
                       <div className="ml-2 flex flex-col items-end gap-1">
                         {/* 상단: 체크 + 게임 버튼 */}
                         <div className="flex items-center gap-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-700">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
                             <svg
                               className="h-3 w-3 text-white"
                               fill="none"
@@ -370,7 +370,7 @@ export function LectureSidebarUI({
                                   e.currentTarget.click()
                                 }
                               }}
-                              className="flex h-5 w-5 items-center justify-center rounded-full transition-colors cursor-pointer bg-gray-700 hover:bg-gray-600"
+                              className="flex h-5 w-5 items-center justify-center rounded-full transition-colors cursor-pointer bg-blue-500 hover:bg-blue-600"
                               title="게임 시작"
                             >
                               <Gamepad2 className="h-3 w-3 text-white" />
@@ -470,16 +470,16 @@ export function LectureSidebarUI({
             left: `${tooltipPosition.left}px`,
           }}
         >
-          <div className="rounded-lg bg-gray-900 px-4 py-3 text-sm text-white shadow-xl max-w-[320px]">
+          <div className="rounded-xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-800/95 px-4 py-3 text-sm text-slate-100 shadow-[0_12px_30px_rgba(15,23,42,0.45)] max-w-[320px]">
             <p className="mb-3 leading-relaxed whitespace-pre-wrap">
               {tFlame('intro')}
             </p>
-            <div className="border-t border-gray-700 pt-3 space-y-2">
+            <div className="border-t border-slate-700/60 pt-3 space-y-2">
               <div className="flex items-start gap-2">
                 <img 
                   src="/icon_flame.png" 
                   alt="불꽃" 
-                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
+                  className="h-4 w-4 object-contain mt-0.5 shrink-0 opacity-90 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]"
                 />
                 <span className="leading-relaxed">{tFlame('flame2')}</span>
               </div>
@@ -487,7 +487,7 @@ export function LectureSidebarUI({
                 <img 
                   src="/icon_flame.png" 
                   alt="불꽃" 
-                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
+                  className="h-4 w-4 object-contain mt-0.5 shrink-0 opacity-90 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]"
                 />
                 <span className="leading-relaxed">{tFlame('flame4')}</span>
               </div>
@@ -495,11 +495,11 @@ export function LectureSidebarUI({
                 <img 
                   src="/icon_flame.png" 
                   alt="불꽃" 
-                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
+                  className="h-4 w-4 object-contain mt-0.5 shrink-0 opacity-90 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]"
                 />
                 <span className="leading-relaxed">{tFlame('flame8')}</span>
               </div>
-              <p className="mt-2 pl-6 text-xs text-gray-300">
+              <p className="mt-2 pl-6 text-xs text-slate-300">
                 {tFlame('note')}
               </p>
             </div>
@@ -515,7 +515,7 @@ export function LectureSidebarUI({
               height: 0,
               borderLeft: '8px solid transparent',
               borderRight: '8px solid transparent',
-              borderBottom: '8px solid rgb(17, 24, 39)', // gray-900
+              borderBottom: '8px solid rgb(15, 23, 42)', // slate-900
             }}
           />
         </div>

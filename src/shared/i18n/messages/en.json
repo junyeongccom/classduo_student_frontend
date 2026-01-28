@@ -1,8 +1,10 @@
 {
   "nav": {
+    "home": "Home",
     "aiTutor": "AI Tutor",
-    "review50": "50-sec Review",
+    "smartReview": "Smart Review",
     "exam": "Exam Prep",
+    "repeat": "Repetition",
     "profile": "Profile"
   },
   "aiTutorTopbar": {
@@ -18,8 +20,11 @@
     "selectLectureTitle": "Please select a class",
     "selectLectureDescription": "Select a class on the right to start chatting with the AI tutor",
     "askAnythingPlaceholder": "Ask me anything.",
-    "chatModeHelpAriaLabel": "HARD/SOFT mode help",
-    "chatModeHelpText": "HARD: More concise and accuracy-focused, grounded in the lecture materials.\nSOFT: Longer and gentler explanations, with more use of general knowledge.",
+    "simpleHelpText": "SIMPLE: More concise and accuracy-focused, grounded in the lecture materials.",
+    "deepHelpText": "DEEP: Longer and gentler explanations, with more use of general knowledge.",
+    "sendLabel": "Send",
+    "simpleLabel": "SIMPLE",
+    "deepLabel": "DEEP",
     "referenceHint": "Check recording and material sources to better understand the answer",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",
@@ -116,6 +121,8 @@
       "description": "Drag materials to preview the original PDF on the left.",
       "courseLabel": "Select course",
       "coursePlaceholder": "Select a course",
+      "courseSelectPlaceholder": "Please select a course",
+      "materialSelectPlaceholder": "Please select materials",
       "empty": "In progress",
       "dropHint": "Drop materials here (in progress)"
     },
