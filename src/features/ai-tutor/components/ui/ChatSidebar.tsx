@@ -115,12 +115,12 @@ export default function ChatSidebar({
     <>
       {/* 오버레이 */}
       <div 
-        className="fixed inset-0 bg-black/30 z-40"
+        className="fixed inset-0 bg-black/30 z-[70]"
         onClick={onClose}
       />
 
       {/* 사이드바 */}
-      <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-50 flex flex-col">
+      <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-[80] flex flex-col">
         {/* 헤더 */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">

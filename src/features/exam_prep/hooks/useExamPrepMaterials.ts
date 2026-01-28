@@ -62,12 +62,31 @@ export function useExamPrepMaterials(courseId: string | null) {
 
       setIsLoading(!(materialsCache.get(cacheKey ?? '')?.items?.length))
       setError(null)
+      const directResult = await examPrepService.getCourseMaterialsDirect(courseId)
+      if (!directResult.error && directResult.data) {
+        const mapped = directResult.data.materials.map(material => ({
+          id: material.material_id,
+          title: material.original_filename,
+          fileType: material.file_type,
+          signedUrl: material.signed_url,
+        }))
+
+        setMaterials(mapped)
+        if (cacheKey) {
+          const payload = { items: mapped, updatedAt: Date.now() }
+          materialsCache.set(cacheKey, payload)
+          writeLocalJson(cacheKey, payload)
+        }
+        setIsLoading(false)
+        return
+      }
+
       const result = await examPrepService.getCourseMaterials(courseId)
 
       if (!isMounted) return
 
       if (result.error || !result.data) {
-        setError(result.error?.message ?? '강의자료를 불러오지 못했습니다')
+        setError(result.error?.message ?? directResult.error?.message ?? '강의자료를 불러오지 못했습니다')
         if (!materialsCache.get(cacheKey ?? '')?.items?.length) {
           setMaterials([])
         }
