@@ -1,13 +1,13 @@
 /**
  * Chat composer (Pure UI)
  * - Input
- * - Bottom row: HARD/SOFT toggle + Send button
+ * - Bottom row: SIMPLE/DEEP icon toggle + Send button
  */
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Send, Loader2, CircleHelp } from 'lucide-react'
+import { Send, Loader2, Sparkles, Brain } from 'lucide-react'
 import type { ChatMode } from '@/features/ai-tutor/types'
 
 interface ChatComposerProps {
@@ -21,8 +21,11 @@ interface ChatComposerProps {
   onFocus?: () => void
   onBlur?: () => void
   topOverlay?: React.ReactNode
-  modeHelpText?: string
-  modeHelpAriaLabel?: string
+  simpleHelpText?: string
+  deepHelpText?: string
+  sendLabel?: string
+  simpleLabel?: string
+  deepLabel?: string
 }
 
 export function ChatComposer({
@@ -36,14 +39,18 @@ export function ChatComposer({
   onFocus,
   onBlur,
   topOverlay,
-  modeHelpText,
-  modeHelpAriaLabel,
+  sendLabel = 'Send',
+  simpleLabel = 'SIMPLE',
+  deepLabel = 'DEEP',
+  simpleHelpText,
+  deepHelpText,
 }: ChatComposerProps) {
   const canSend = !disabled && !!value.trim()
   const formRef = useRef<HTMLFormElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
-  const helpButtonRef = useRef<HTMLButtonElement | null>(null)
-  const [isHelpOpen, setIsHelpOpen] = useState(false)
+  const simpleButtonRef = useRef<HTMLButtonElement | null>(null)
+  const deepButtonRef = useRef<HTMLButtonElement | null>(null)
+  const [activeTooltip, setActiveTooltip] = useState<'simple' | 'deep' | null>(null)
   const [helpPos, setHelpPos] = useState<{ left: number; top: number; placement: 'top' | 'bottom' } | null>(null)
 
   // Auto-resize textarea (top half grows with content)
@@ -55,10 +62,10 @@ export function ChatComposer({
   }, [value])
 
   const updateHelpPosition = useCallback(() => {
-    const el = helpButtonRef.current
+    const el = activeTooltip === 'simple' ? simpleButtonRef.current : deepButtonRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    const tooltipWidth = 280
+    const tooltipWidth = 260
     const margin = 8
     const left = Math.min(
       Math.max(margin, rect.left + rect.width / 2 - tooltipWidth / 2),
@@ -72,7 +79,7 @@ export function ChatComposer({
   }, [])
 
   useEffect(() => {
-    if (!isHelpOpen) return
+    if (!activeTooltip) return
     updateHelpPosition()
 
     const onScrollOrResize = () => updateHelpPosition()
@@ -82,7 +89,7 @@ export function ChatComposer({
       window.removeEventListener('scroll', onScrollOrResize, true)
       window.removeEventListener('resize', onScrollOrResize)
     }
-  }, [isHelpOpen, updateHelpPosition])
+  }, [activeTooltip, updateHelpPosition])
 
   return (
     <form ref={formRef} onSubmit={onSubmit}>
@@ -116,77 +123,78 @@ export function ChatComposer({
           />
 
           {/* Bottom half: controls */}
-          <div
-            className="flex items-center justify-between gap-3 border-t border-gray-200 bg-gray-100 px-4 py-1"
-            style={{ minHeight: '34px' }}
-          >
+          <div className="flex items-center justify-between gap-3 px-4 py-1" style={{ minHeight: '34px' }}>
             <div className="flex items-center gap-2">
-              <div className="inline-flex rounded-full bg-white/70 p-1">
+              <div className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-1 py-1">
                 <button
                   type="button"
+                  ref={simpleButtonRef}
                   onClick={() => onChatModeChange('hard')}
-                  className={`px-3 py-0.5 text-xs font-semibold rounded-full transition-all ${
-                    chatMode === 'hard' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  onMouseEnter={() => setActiveTooltip('simple')}
+                  onMouseLeave={() => setActiveTooltip(null)}
+                  onFocus={() => setActiveTooltip('simple')}
+                  onBlur={() => setActiveTooltip(null)}
+                  className={`flex h-6 w-8 items-center justify-center rounded-md border text-gray-600 transition-colors ${
+                    chatMode === 'hard'
+                      ? 'border-gray-900 bg-gray-900 text-white'
+                      : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   aria-pressed={chatMode === 'hard'}
+                  aria-label={simpleLabel}
                 >
-                  HARD
+                  <Sparkles className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="button"
+                  ref={deepButtonRef}
                   onClick={() => onChatModeChange('soft')}
-                  className={`px-3 py-0.5 text-xs font-semibold rounded-full transition-all ${
-                    chatMode === 'soft' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  onMouseEnter={() => setActiveTooltip('deep')}
+                  onMouseLeave={() => setActiveTooltip(null)}
+                  onFocus={() => setActiveTooltip('deep')}
+                  onBlur={() => setActiveTooltip(null)}
+                  className={`flex h-6 w-8 items-center justify-center rounded-md border text-gray-600 transition-colors ${
+                    chatMode === 'soft'
+                      ? 'border-gray-900 bg-gray-900 text-white'
+                      : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   aria-pressed={chatMode === 'soft'}
+                  aria-label={deepLabel}
                 >
-                  SOFT
+                  <Brain className="h-3.5 w-3.5" />
                 </button>
               </div>
-
-              {modeHelpText && (
-                <div className="relative flex items-center">
-                  <button
-                    type="button"
-                    ref={helpButtonRef}
-                    aria-label={modeHelpAriaLabel || 'Chat mode help'}
-                    onMouseEnter={() => setIsHelpOpen(true)}
-                    onMouseLeave={() => setIsHelpOpen(false)}
-                    onFocus={() => setIsHelpOpen(true)}
-                    onBlur={() => setIsHelpOpen(false)}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/70 text-gray-600 hover:text-gray-800 hover:bg-white transition-colors"
-                  >
-                    <CircleHelp className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
             </div>
 
             <button
               type="submit"
               disabled={!canSend}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary-500 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-primary-600 disabled:opacity-50"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black text-xs font-semibold text-white transition-colors hover:bg-gray-900 disabled:bg-gray-300 disabled:text-gray-500"
             >
-              {disabled ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-              <span>Send</span>
+              {disabled ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-white" />
+              ) : (
+                <Send className="h-3.5 w-3.5 text-white" />
+              )}
             </button>
           </div>
         </div>
       </div>
 
       {/* Help tooltip rendered in a portal to avoid being clipped by overflow/containers */}
-      {isHelpOpen && modeHelpText && helpPos && typeof document !== 'undefined'
+      {activeTooltip && helpPos && typeof document !== 'undefined'
         ? createPortal(
             <div
               role="tooltip"
-              className="pointer-events-none fixed z-50 w-[280px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 shadow-lg"
+              className="pointer-events-none fixed z-50 inline-flex max-w-[420px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 shadow-lg"
               style={{
                 left: helpPos.left,
                 top: helpPos.top,
                 transform: helpPos.placement === 'top' ? 'translateY(-100%)' : undefined,
               }}
             >
-              <div className="whitespace-pre-line leading-relaxed">{modeHelpText}</div>
+              <div className="whitespace-pre-line leading-relaxed">
+                {activeTooltip === 'simple' ? simpleHelpText : deepHelpText}
+              </div>
             </div>,
             document.body,
           )

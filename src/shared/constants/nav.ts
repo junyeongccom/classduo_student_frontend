@@ -1,8 +1,10 @@
-import { 
-  Bot, 
-  PenLine, 
+import {
+  Bot,
+  PenLine,
   FileText,
-  User
+  User,
+  Home,
+  Repeat,
 } from 'lucide-react'
 
 /**
@@ -10,14 +12,20 @@ import {
  */
 export const SIDEBAR_MENU = [
   {
+    id: 'home',
+    labelKey: 'nav.home',
+    icon: Home,
+    href: '/studyspace/home',
+  },
+  {
     id: 'ai-tutor',
     labelKey: 'nav.aiTutor',
     icon: Bot,
     href: '/studyspace/ai-tutor',
   },
   {
-    id: 'review-50',
-    labelKey: 'nav.review50',
+    id: 'smart-review',
+    labelKey: 'nav.smartReview',
     icon: PenLine,
     href: '/studyspace/review',
   },
@@ -26,6 +34,12 @@ export const SIDEBAR_MENU = [
     labelKey: 'nav.exam',
     icon: FileText,
     href: '/studyspace/exam',
+  },
+  {
+    id: 'repeat',
+    labelKey: 'nav.repeat',
+    icon: Repeat,
+    href: '/studyspace/repeat',
   },
 ] as const
 

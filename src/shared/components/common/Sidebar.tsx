@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -11,13 +11,12 @@ import {
   AI_TUTOR_NEW_CHAT_FLAG,
   AI_TUTOR_NEW_CHAT_PARAM,
 } from '@/shared/constants/aiTutor'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function Sidebar() {
   const t = useTranslations()
   const pathname = usePathname()
   const router = useRouter()
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(true)
   const profileLabel = t(PROFILE_MENU.labelKey)
   const triggerAiTutorNewChat = () => {
     if (typeof window === 'undefined') return
@@ -29,45 +28,53 @@ export function Sidebar() {
     const url = `/studyspace/ai-tutor?${AI_TUTOR_NEW_CHAT_PARAM}=${timestamp}`
     router.push(url)
   }
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen((prev) => !prev)
+  }, [])
+  const menuItems = useMemo(() => {
+    return SIDEBAR_MENU
+  }, [])
 
   useEffect(() => {
-    const width = isCollapsed ? '80px' : '140px'
+    const width = isMenuOpen ? '72px' : '0px'
     document.documentElement.style.setProperty('--sidebar-width', width)
     return () => {
-      document.documentElement.style.setProperty('--sidebar-width', width)
+      document.documentElement.style.setProperty('--sidebar-width', '0px')
     }
-  }, [isCollapsed])
+  }, [isMenuOpen])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleToggle = () => {
+      toggleMenu()
+    }
+    window.addEventListener('classduo:sidebar-toggle', handleToggle)
+    return () => {
+      window.removeEventListener('classduo:sidebar-toggle', handleToggle)
+    }
+  }, [toggleMenu])
 
   return (
-    <aside className={cn(
-      "group fixed left-0 top-0 z-40 h-screen border-r border-gray-200 bg-white transition-all duration-300",
-      isCollapsed ? "w-[80px]" : "w-[140px]"
-    )}>
-      <div className="flex h-full flex-col">
-        {/* 로고 + 토글 버튼 */}
-        <div className="relative flex h-16 items-center justify-center">
-          <Link href="/studyspace/ai-tutor" className="flex items-center justify-center">
-            {!isCollapsed && (
-              <img src="/logo_korea.png" alt="CLASSDUO" className="h-5 w-auto" />
-            )}
-          </Link>
-          
-          {/* 접기/펼치기 버튼 - 사이드바 오른쪽에서 튀어나옴 */}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 rounded-full border border-gray-200 bg-white p-1 text-gray-400 opacity-0 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-600 group-hover:opacity-100"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronLeft className="h-3.5 w-3.5" />
-            )}
-          </button>
-        </div>
-
-        {/* 메인 메뉴 */}
-        <nav className="flex-1 space-y-1 px-2 py-4">
-          {SIDEBAR_MENU.map((item) => {
+    <>
+      <div className="fixed left-0 top-0 z-[70] flex h-14 w-[72px] items-center justify-center bg-white">
+        <button
+          type="button"
+          onClick={toggleMenu}
+          className="flex items-center justify-center"
+          aria-label="Toggle sidebar menu"
+        >
+          <img src="/Aplus_logo.png" alt="CLASSDUO" className="h-8 w-auto" />
+        </button>
+      </div>
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-50 h-screen overflow-hidden border-r border-gray-100 bg-white transition-all duration-300',
+          isMenuOpen ? 'w-[72px]' : 'w-0'
+        )}
+      >
+        <div className="flex h-full flex-col items-center py-6 pt-16">
+          <nav className="mt-8 flex flex-1 flex-col items-center justify-center gap-5">
+          {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname.startsWith(item.href)
             const label = t(item.labelKey)
@@ -85,40 +92,55 @@ export function Sidebar() {
                   }
                 }}
                 className={cn(
-                  'flex flex-col items-center gap-1 rounded-lg px-2 py-3 text-xs transition-colors',
-                  isActive
-                    ? 'bg-gray-100 text-gray-900 font-medium'
-                    : 'text-gray-600 hover:bg-gray-50'
+                  'flex flex-col items-center text-[11px] transition-colors',
+                  isActive ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
                 )}
-                title={isCollapsed ? label : undefined}
+                title={label}
               >
-                <Icon className="h-5 w-5" />
-                {!isCollapsed && <span>{label}</span>}
+                <span
+                  className={cn(
+                    'flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-gray-50 transition-all',
+                    isActive ? 'bg-gray-100' : 'hover:bg-gray-100'
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span
+                    className={cn(
+                      'mt-1 whitespace-nowrap text-[10px] text-gray-700',
+                      item.id === 'repeat' ? 'text-[9px]' : ''
+                    )}
+                  >
+                    {label}
+                  </span>
+                </span>
               </Link>
             )
           })}
         </nav>
 
-        {/* 프로필 (하단) */}
-        <div className="px-2 py-4">
-          <div className="mb-3">
-            <Link
-              href={PROFILE_MENU.href}
-              className={cn(
-                'flex flex-col items-center gap-1 rounded-lg px-2 py-3 text-xs transition-colors',
-                pathname === PROFILE_MENU.href
-                  ? 'bg-gray-100 text-gray-900 font-medium'
-                  : 'text-gray-600 hover:bg-gray-50'
-              )}
-              title={isCollapsed ? profileLabel : undefined}
-            >
-              <PROFILE_MENU.icon className="h-5 w-5" />
-              {!isCollapsed && <span>{profileLabel}</span>}
-            </Link>
-          </div>
+        <Link
+          href={PROFILE_MENU.href}
+          className={cn(
+            'mb-2 flex flex-col items-center text-[11px] transition-colors',
+            pathname === PROFILE_MENU.href
+              ? 'text-gray-900'
+              : 'text-gray-600 hover:text-gray-900'
+          )}
+          title={profileLabel}
+        >
+          <span
+            className={cn(
+              'flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-gray-50 transition-all',
+              pathname === PROFILE_MENU.href ? 'bg-gray-100' : 'hover:bg-gray-100'
+            )}
+          >
+            <PROFILE_MENU.icon className="h-5 w-5" />
+            <span className="mt-1 text-[10px] text-gray-700">{profileLabel}</span>
+          </span>
+        </Link>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   )
 }
 

@@ -1,8 +1,10 @@
 {
   "nav": {
+    "home": "홈",
     "aiTutor": "AI 튜터",
-    "review50": "50초 복습",
+    "smartReview": "스마트복습",
     "exam": "시험 준비",
+    "repeat": "간격반복학습",
     "profile": "프로필"
   },
   "aiTutorTopbar": {
@@ -18,8 +20,11 @@
     "selectLectureTitle": "수업을 선택해주세요",
     "selectLectureDescription": "우측에서 수업을 선택하면 AI 튜터와 대화할 수 있습니다",
     "askAnythingPlaceholder": "무엇이든 물어보세요.",
-    "chatModeHelpAriaLabel": "HARD/SOFT 모드 도움말",
-    "chatModeHelpText": "HARD: 자료 기반으로 더 간결하고 정확하게 답변해요.\nSOFT: 더 길고 부드럽게 설명하고, 일반적 지식을 더 적극적으로 활용해요.",
+    "simpleHelpText": "SIMPLE: 자료 기반으로 더 간결하고 정확하게 답변해요.",
+    "deepHelpText": "DEEP: 더 길고 부드럽게 설명하고, 일반적 지식을 더 적극적으로 활용해요.",
+    "sendLabel": "질문하기",
+    "simpleLabel": "SIMPLE",
+    "deepLabel": "DEEP",
     "referenceHint": "수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요",
     "searchingSources": "관련 자료를 검색하는 중...",
     "chatError": "채팅 중 오류가 발생했습니다",
@@ -116,6 +121,8 @@
       "description": "강의자료를 드래그해 선택하면 좌측에 원본 PDF가 표시됩니다.",
       "courseLabel": "수업 선택",
       "coursePlaceholder": "강의를 선택하세요",
+      "courseSelectPlaceholder": "수업을 선택해주세요",
+      "materialSelectPlaceholder": "강의자료를 선택해주세요",
       "empty": "구현중입니다",
       "dropHint": "자료를 끌어다 놓으세요 (구현중)"
     },

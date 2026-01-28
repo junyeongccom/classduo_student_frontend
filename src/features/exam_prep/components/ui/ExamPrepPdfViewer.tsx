@@ -104,6 +104,12 @@ export function ExamPrepPdfViewer({
     [zoom]
   )
 
+  const handleFitToWidth = useCallback(() => {
+    // In this viewer, zoom=1 maps page width to the container width
+    // (or half-width for spread view), which removes horizontal scrollbars.
+    applyZoom(1)
+  }, [applyZoom])
+
   useEffect(() => {
     GlobalWorkerOptions.workerSrc = new URL(
       "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -296,7 +302,7 @@ export function ExamPrepPdfViewer({
           </button>
           <button
             type="button"
-            onClick={() => applyZoom(1)}
+            onClick={handleFitToWidth}
             className="rounded border border-gray-700 px-2 py-1"
           >
             맞춤

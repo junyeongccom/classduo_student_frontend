@@ -186,7 +186,15 @@
   }
 
   .card-match-card__face--front {
-    @apply bg-white;
+    @apply bg-gray-50;
+  }
+
+  .card-match-card--term .card-match-card__face--front {
+    @apply bg-gray-50;
+  }
+
+  .card-match-card--desc .card-match-card__face--front {
+    @apply bg-slate-50;
   }
 
   .card-match-card__content {
@@ -205,11 +213,11 @@
   }
 
   .card-match-card--matched {
-    @apply border-blue-400 pointer-events-none;
+    @apply border-gray-400 pointer-events-none;
   }
 
   .card-match-card--matched .card-match-card__face--front {
-    @apply bg-blue-600;
+    @apply bg-gray-700;
   }
 
   .card-match-card--matched .card-match-card__content {
