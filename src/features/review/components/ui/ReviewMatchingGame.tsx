@@ -196,7 +196,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMat
         <div className="mt-3 flex items-center gap-2">
           <button
             type="button"
-            onClick={buildGame}
+            onClick={() => buildGame()}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             다시 시작
