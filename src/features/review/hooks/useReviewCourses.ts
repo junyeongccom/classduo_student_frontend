@@ -38,7 +38,8 @@ export function useReviewCourses() {
           title: course.title,
           academic_year: course.academic_year,
           term_code: course.term_code,
-          section: course.section,
+          professor_name: course.professor_name ?? course.professorName ?? null,
+          section: course.section ?? course.section_no ?? course.sectionNo ?? null,
         }))
         
         setCoursesCache(targetLocale, coursesData)
