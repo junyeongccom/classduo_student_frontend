@@ -77,6 +77,34 @@
     }
   },
   "review": {
+    "ui": {
+      "tabs": {
+        "list": "List",
+        "deck": "Deck",
+        "game": "Game"
+      },
+      "countLabel": "Total {count} flashcards",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "addWord": "Add word"
+      },
+      "deckComingSoon": "Coming soon.",
+      "games": {
+        "matching": {
+          "title": "Matching",
+          "description": "Match terms and definitions quickly."
+        },
+        "ox": {
+          "title": "O/X Quiz",
+          "description": "Read a statement and pick O or X."
+        },
+        "quickfill": {
+          "title": "Quick Fill",
+          "description": "Fill in the blanks to review key concepts."
+        }
+      }
+    },
     "noContent": "No review content available",
     "preparingContent": "Preparing review content...",
     "noPageData": "No page data available",
