@@ -306,11 +306,17 @@ export function LectureSidebarContainer({
       return
     }
 
+    const hasSelectedInCourse = selectedLectureIds.length > 0
+      && currentCourse.lectures.some(lec => selectedLectureIds.includes(lec.lecture_id))
+    if (hasSelectedInCourse) {
+      return
+    }
+
     const latestLecture = getLatestAvailableLecture(currentCourse)
     if (latestLecture) {
       onSelectLectureIds([latestLecture.lecture_id])
     }
-  }, [selectedCourseId, courses, isLoading, isLocked, onSelectLectureIds, getLatestAvailableLecture])
+  }, [selectedCourseId, courses, isLoading, isLocked, onSelectLectureIds, getLatestAvailableLecture, selectedLectureIds])
 
   // autoSelectLatest가 true일 때 가장 최신 회차 선택
   useEffect(() => {

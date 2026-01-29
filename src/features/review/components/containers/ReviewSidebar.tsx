@@ -26,6 +26,7 @@ interface FlyingFlame {
 
 interface ReviewSidebarProps {
   selectedLectureId: string | null
+  selectedCourseId: string | null
   onSelectLectureId: (lectureId: string | null) => void
   onCourseIdChange?: (courseId: string | null) => void // 강의 ID 변경 콜백
 }
@@ -33,12 +34,11 @@ interface ReviewSidebarProps {
 // 데이터베이스에서 오는 "분석 중" 상태 값 (하드코딩된 한국어 문자열)
 const ANALYZING_STATUS = '분석 중'
 
-export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseIdChange }: ReviewSidebarProps) {
+export function ReviewSidebar({ selectedLectureId, selectedCourseId, onSelectLectureId, onCourseIdChange }: ReviewSidebarProps) {
   const t = useTranslations('review')
   const { courses, isLoading: isLoadingCourses, error: coursesError } = useReviewCourses()
   const { gameProgress, flameCount, claimedRewards, claimReward } = useGameStatus()
   
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([]) // 날아가는 불꽃들
   const [flameHighlight, setFlameHighlight] = useState(false) // 불꽃 카운터 강조 효과
@@ -56,7 +56,6 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   useEffect(() => {
     if (courses.length > 0 && !selectedCourseId) {
       const firstCourseId = courses[0].course_id
-      setSelectedCourseId(firstCourseId)
       onCourseIdChange?.(firstCourseId)
     }
   }, [courses, selectedCourseId, onCourseIdChange])
@@ -110,7 +109,6 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
 
   // 강의 선택 시 회차 선택 초기화
   const handleSelectCourse = (courseId: string) => {
-    setSelectedCourseId(courseId)
     setIsDropdownOpen(false)
     onSelectLectureId(null) // 회차 선택 초기화
     onCourseIdChange?.(courseId) // 강의 ID 변경 알림
@@ -147,11 +145,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
       return
     }
 
-    const selectedLectureStillValid = selectedLectureId
-      ? availableLectures.some((lecture) => lecture.lecture_id === selectedLectureId)
-      : false
-
-    if (selectedLectureStillValid) {
+    if (selectedLectureId) {
       return
     }
 

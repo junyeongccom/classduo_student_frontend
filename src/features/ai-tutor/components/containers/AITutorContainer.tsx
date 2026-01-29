@@ -23,6 +23,7 @@ import {
   StudyspaceOverlaySlot,
 } from '@/shared/components/layouts/studyspace'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { STUDYSPACE_SELECTION_KEY, type StudyspaceSelection } from '@/shared/constants/selection'
 
 const DEFAULT_NOTES_PANEL_WIDTH = 380
 const DEFAULT_MATERIALS_PANEL_WIDTH = 360
@@ -102,6 +103,58 @@ export function AITutorContainer() {
   const handleSelectCourse = useCallback((courseId: string | null) => {
     setSelectedCourseId(courseId)
   }, [setSelectedCourseId])
+
+  const hasHydratedSelection = useRef(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (hasHydratedSelection.current) return
+    try {
+      const raw = localStorage.getItem(STUDYSPACE_SELECTION_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as StudyspaceSelection
+      if (parsed.courseId) {
+        setSelectedCourseId(parsed.courseId)
+      }
+      if (Array.isArray(parsed.lectureIds) && parsed.lectureIds.length > 0) {
+        setSelectedLectureIds(parsed.lectureIds)
+      }
+      hasHydratedSelection.current = true
+    } catch {
+      // ignore
+    }
+  }, [setSelectedCourseId, setSelectedLectureIds])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (selectedCourseId) return
+    try {
+      const raw = localStorage.getItem(STUDYSPACE_SELECTION_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as StudyspaceSelection
+      if (parsed.courseId) {
+        setSelectedCourseId(parsed.courseId)
+      }
+    } catch {
+      // ignore
+    }
+  }, [selectedCourseId, setSelectedCourseId])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = localStorage.getItem(STUDYSPACE_SELECTION_KEY)
+      const parsed = raw ? (JSON.parse(raw) as StudyspaceSelection) : {}
+      const next: StudyspaceSelection = {
+        ...parsed,
+        courseId: selectedCourseId,
+        lectureIds: selectedLectureIds,
+      }
+      localStorage.setItem(STUDYSPACE_SELECTION_KEY, JSON.stringify(next))
+    } catch {
+      // ignore
+    }
+  }, [selectedCourseId, selectedLectureIds])
 
   const handleLectureIdsLoaded = useCallback((ids: string[]) => {
     setSelectedLectureIds(ids)

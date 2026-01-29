@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Share2, Download } from 'lucide-react'
 import { ReviewSidebar } from './ReviewSidebar'
 import {
@@ -12,11 +12,12 @@ import { useLectureReviewItems } from '@/features/review/hooks/useLectureReviewI
 import { reviewService } from '@/features/review/services/reviewService'
 import { useDefinitionBuilderGame } from '@/features/review/hooks/useDefinitionBuilderGame'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { STUDYSPACE_SELECTION_KEY, type StudyspaceSelection } from '@/shared/constants/selection'
 
 export function ReviewContainer() {
   const { locale } = useI18n()
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
-  const [, setSelectedCourseId] = useState<string | null>(null)
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<SmartReviewTab>('list')
   const [activeGameId, setActiveGameId] = useState<string | null>(null)
   const [isMutating, setIsMutating] = useState(false)
@@ -43,6 +44,43 @@ export function ReviewContainer() {
       setActiveGameId(null)
     }
   }, [activeTab])
+
+  const hasHydratedSelection = useRef(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (hasHydratedSelection.current) return
+    try {
+      const raw = localStorage.getItem(STUDYSPACE_SELECTION_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as StudyspaceSelection
+      if (parsed.courseId && parsed.courseId !== selectedCourseId) {
+        setSelectedCourseId(parsed.courseId)
+      }
+      if (Array.isArray(parsed.lectureIds) && parsed.lectureIds.length > 0) {
+        setSelectedLectureId(parsed.lectureIds[0])
+      }
+      hasHydratedSelection.current = true
+    } catch {
+      // ignore
+    }
+  }, [selectedCourseId, setSelectedCourseId])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const raw = localStorage.getItem(STUDYSPACE_SELECTION_KEY)
+      const parsed = raw ? (JSON.parse(raw) as StudyspaceSelection) : {}
+      const next: StudyspaceSelection = {
+        ...parsed,
+        courseId: selectedCourseId ?? parsed.courseId ?? null,
+        lectureIds: selectedLectureId ? [selectedLectureId] : [],
+      }
+      localStorage.setItem(STUDYSPACE_SELECTION_KEY, JSON.stringify(next))
+    } catch {
+      // ignore
+    }
+  }, [selectedCourseId, selectedLectureId])
   // 회차 변경 시, 미리보기 캐시 초기화
   useEffect(() => {
     setImportPreviewItems([])
@@ -88,6 +126,7 @@ export function ReviewContainer() {
       <StudyspaceRightbarSlot>
         <ReviewSidebar
           selectedLectureId={selectedLectureId}
+          selectedCourseId={selectedCourseId}
           onSelectLectureId={setSelectedLectureId}
           onCourseIdChange={setSelectedCourseId}
         />
