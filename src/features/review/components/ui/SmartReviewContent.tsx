@@ -89,6 +89,7 @@ export function SmartReviewContent({
       id: 'matching',
       title: t('games.matching.title'),
       description: t('games.matching.description'),
+      thumbnail: '/matching_thumbnail.png',
     },
     {
       id: 'definition-builder',
