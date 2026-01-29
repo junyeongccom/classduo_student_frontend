@@ -10,6 +10,7 @@ import type {
   DeleteLectureReviewItemResponse,
   ImportLectureKeywordsResponse,
   LectureReviewListResponse,
+  RecordingLectureKeywordsResponse,
   UpdateLectureReviewItemRequest,
   UpdateLectureReviewItemResponse,
 } from '@/features/review/types'
@@ -194,6 +195,16 @@ export const reviewService = {
   deleteLectureReviewItem: (reviewItemId: string) =>
     apiRequest<DeleteLectureReviewItemResponse>(API_ENDPOINTS.REVIEW.DELETE_REVIEW_ITEM(reviewItemId), {
       method: 'DELETE',
+      auth: true,
+    }),
+
+  /**
+   * 강의 회차별 추천 키워드(lecture_keywords) 조회 (미리보기용)
+   * - recording 도메인의 조회 API를 사용합니다.
+   */
+  getLectureKeywordsPreview: (lectureId: string) =>
+    apiRequest<RecordingLectureKeywordsResponse>(API_ENDPOINTS.RECORDING.GET_LECTURE_KEYWORDS(lectureId), {
+      method: 'GET',
       auth: true,
     }),
 }

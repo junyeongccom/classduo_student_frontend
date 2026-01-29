@@ -66,6 +66,17 @@ export interface DefinitionBuilderQuestion {
 export interface DefinitionBuilderGameResponse {
   lecture_id: string
   questions: DefinitionBuilderQuestion[]
+export interface RecordingLectureKeywordItem {
+  keyword: string
+  description: string
+  keyword_eng?: string | null
+  description_eng?: string | null
+  keyword_index: number
+}
+
+export interface RecordingLectureKeywordsResponse {
+  lecture_id: string
+  keywords: RecordingLectureKeywordItem[]
   total_count: number
 }
 
