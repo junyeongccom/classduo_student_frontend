@@ -108,7 +108,7 @@ export const reviewService = {
    * 특정 강의의 회차 리스트 조회
    */
   getLectureListByCourse: (courseId: string, locale?: string) =>
-    apiRequest<LectureListResponse>(`/reviews/courses/${courseId}/lectures`, {
+    apiRequest<LectureListResponse>(API_ENDPOINTS.REVIEW.GET_LECTURE_LIST(courseId), {
       method: 'GET',
       auth: true,
       headers: locale ? { 'Accept-Language': locale } : undefined,

@@ -6,7 +6,7 @@ export const cardMatchService = {
     lectureId: string,
     locale?: 'ko' | 'en'
   ): Promise<{ data: CardMatchSet | null; error: any }> {
-    return apiRequest<CardMatchSet>(`/card-match/lectures/${lectureId}`, {
+    return apiRequest<CardMatchSet>(`/ai-tutor/lectures/${lectureId}/card-match`, {
       auth: true,
       method: 'GET',
       headers: locale ? { 'Accept-Language': locale } : undefined,
