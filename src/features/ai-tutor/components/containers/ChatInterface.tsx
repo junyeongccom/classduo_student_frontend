@@ -10,12 +10,20 @@ import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
-import { reviewService } from '@/features/review'
 import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 import { useCardMatchSet } from '@/features/ai-tutor/hooks/useCardMatchSet'
 import { CardMatchGame } from '@/features/ai-tutor/components/ui/CardMatchGame'
 import { ChatComposer } from '../ui/ChatComposer'
+
+const shuffleArray = <T,>(items: T[]) => {
+  const array = [...items]
+  for (let i = array.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
+  }
+  return array
+}
 
 // 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
 function renderMarkdown(text: string) {
@@ -350,13 +358,30 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         setIsReviewAnswersLoading(true)
       }
       try {
-        const { data, error } = await reviewService.getKeyAnswersByLectures(selectedLectureIds, targetLocale)
+        const responses = await Promise.all(
+          selectedLectureIds.map(lectureId => chatService.getLectureKeywords(lectureId, targetLocale))
+        )
+        const errors = responses.filter(res => res.error)
+        const keywords = responses.flatMap(res => res.data?.keywords ?? [])
         if (cancelled) return
-        if (data && !error) {
-          const answers = data.flatMap(item => item.key_answers).filter(Boolean)
-          setReviewKeyAnswersCache(targetLocale, lectureKey, answers)
+        if (errors.length === 0 && keywords.length > 0) {
+          const answers = keywords
+            .map(item => {
+              const keyword = targetLocale === 'en' ? (item.keyword_eng || item.keyword) : item.keyword
+              const description = targetLocale === 'en'
+                ? (item.description_eng || item.description)
+                : item.description
+              if (keyword && description) {
+                return `${keyword} - ${description}`
+              }
+              return keyword || description || ''
+            })
+            .filter(Boolean)
+          const uniqueAnswers = Array.from(new Set(answers))
+          const randomized = shuffleArray(uniqueAnswers)
+          setReviewKeyAnswersCache(targetLocale, lectureKey, randomized)
           if (updateState) {
-            setReviewKeyAnswers(answers)
+            setReviewKeyAnswers(randomized)
           }
         } else if (updateState) {
           setReviewKeyAnswers([])

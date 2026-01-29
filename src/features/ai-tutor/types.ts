@@ -92,6 +92,21 @@ export interface PQMQuestion {
   summary_keywords_eng?: string | null  // 핵심 키워드 (영어, 선택적)
 }
 
+export interface LectureKeywordItem {
+  lecture_id: string
+  keyword: string
+  keyword_eng?: string | null
+  description: string
+  description_eng?: string | null
+  keyword_index: number
+}
+
+export interface LectureKeywordsResponse {
+  lecture_id: string
+  keywords: LectureKeywordItem[]
+  total_count: number
+}
+
 // 채팅 세션 관련 타입
 export interface ChatSession {
   id: string

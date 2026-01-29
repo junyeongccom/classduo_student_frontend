@@ -32,6 +32,8 @@ interface ExamPrepLayoutProps {
   selectedMaterialId: string | null
   onSelectMaterial: (materialId: string) => void
   isPdfAvailable: boolean
+  pdfLoading?: boolean
+  pdfLoadingContent?: ReactNode
   pdfContent: ReactNode
   pdfActionLabel: string
   onPdfAction: () => void
@@ -59,6 +61,8 @@ export function ExamPrepLayout({
   selectedMaterialId,
   onSelectMaterial,
   isPdfAvailable,
+  pdfLoading = false,
+  pdfLoadingContent,
   pdfContent,
   pdfActionLabel,
   onPdfAction,
@@ -96,6 +100,8 @@ export function ExamPrepLayout({
             </div>
             {isPdfAvailable ? (
               pdfContent
+            ) : pdfLoading && pdfLoadingContent ? (
+              pdfLoadingContent
             ) : (
               <div className="flex flex-1 items-center justify-center px-6 py-10 text-sm text-gray-400">
                 {pdfPlaceholder}

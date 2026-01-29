@@ -15,6 +15,7 @@ import {
   StreamProgressData,
   Reference,
   ChatMode,
+  LectureKeywordsResponse,
 } from '../types'
 
 // Re-export types for backward compatibility (optional but good for refactoring safety)
@@ -57,6 +58,16 @@ export const chatService = {
    */
   async getPQMQuestionsByLecture(lectureId: string, locale?: string): Promise<{ data: PQMQuestion[] | null; error: any }> {
     return apiRequest<PQMQuestion[]>(`/ai-tutor/pqm/lectures/${lectureId}`, {
+      auth: true,
+      headers: locale ? { 'Accept-Language': locale } : undefined,
+    })
+  },
+
+  /**
+   * 강의 회차 핵심 단어 목록 조회 (lecture_keywords)
+   */
+  async getLectureKeywords(lectureId: string, locale?: string): Promise<{ data: LectureKeywordsResponse | null; error: any }> {
+    return apiRequest<LectureKeywordsResponse>(`/recordings/audio/lectures/${lectureId}/keywords`, {
       auth: true,
       headers: locale ? { 'Accept-Language': locale } : undefined,
     })

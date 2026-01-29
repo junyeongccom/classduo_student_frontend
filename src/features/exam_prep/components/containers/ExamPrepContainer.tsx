@@ -41,12 +41,31 @@ export function ExamPrepContainer() {
 
   const { courses } = useExamPrepCourses()
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
-  const { materials: materialsList } = useExamPrepMaterials(selectedCourseId)
+  const { materials: materialsList, isLoading: materialsLoading } = useExamPrepMaterials(selectedCourseId)
   const materials = useMemo<ExamPrepMaterial[]>(() => materialsList, [materialsList])
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null)
   const selectedMaterial = useMemo(
     () => materials.find(material => material.id === selectedMaterialId) ?? null,
     [materials, selectedMaterialId]
+  )
+  const isPdfLoading = !!selectedMaterialId && (materialsLoading || !selectedMaterial?.signedUrl)
+  const pdfLoadingContent = (
+    <div className="flex flex-1 items-center justify-center px-6 py-10">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <video
+          className="w-full max-w-[240px] rounded-lg shadow-sm"
+          src="/TEST.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+        <div className="space-y-1 text-sm text-gray-600">
+          <p className="font-medium text-gray-700">자료를 준비하고 있어요</p>
+          <p className="text-xs text-gray-500">잠시만 기다리면 PDF가 열립니다.</p>
+        </div>
+      </div>
+    </div>
   )
   const [pdfPageCount, setPdfPageCount] = useState(0)
   const [selectedPdfPage, setSelectedPdfPage] = useState(1)
@@ -441,6 +460,8 @@ export function ExamPrepContainer() {
         selectedMaterialId={selectedMaterialId}
         onSelectMaterial={setSelectedMaterialId}
         isPdfAvailable={!!selectedMaterial?.signedUrl}
+        pdfLoading={isPdfLoading}
+        pdfLoadingContent={pdfLoadingContent}
         pdfContent={
           selectedMaterial?.signedUrl ? (
             <ExamPrepPdfViewer

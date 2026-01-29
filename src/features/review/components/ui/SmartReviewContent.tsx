@@ -32,6 +32,7 @@ export function SmartReviewContent({
       id: 'ox',
       title: t('games.ox.title'),
       description: t('games.ox.description'),
+      thumbnail: '/스크린샷 2026-01-29 171432.png',
     },
     {
       id: 'quickfill',
@@ -121,7 +122,17 @@ export function SmartReviewContent({
               key={game.id}
               className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
-              <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50" />
+              <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
+                {game.thumbnail ? (
+                  <img
+                    src={game.thumbnail}
+                    alt={`${game.title} 썸네일`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : null}
+              </div>
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
                 <p className="mt-1 text-xs text-slate-500">{game.description}</p>
