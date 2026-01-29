@@ -117,6 +117,13 @@
         "back": "목록으로",
         "successTitle": "SUCCESS",
         "finalScoreLabel": "최종 점수: {score}"
+      },
+      "importTooltip": "해당 회차의 수업녹음본을 학습한 AI가 핵심 키워드를 추출해 제공합니다.",
+      "guard": {
+        "title": "안내",
+        "message": "목록에서 단어를 먼저 생성해야 해당 기능을 이용할 수 있습니다.",
+        "confirm": "확인",
+        "cancel": "닫기"
       }
     },
     "noContent": "복습 콘텐츠가 없습니다",

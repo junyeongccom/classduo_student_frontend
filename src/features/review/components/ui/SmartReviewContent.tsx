@@ -68,6 +68,7 @@ export function SmartReviewContent({
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<LectureReviewItem | null>(null)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [isTabGuardOpen, setIsTabGuardOpen] = useState(false)
   const [definitionScore, setDefinitionScore] = useState(0)
   const [scoreDelta, setScoreDelta] = useState(0)
   const [scoreTone, setScoreTone] = useState<'positive' | 'negative' | null>(null)
@@ -105,7 +106,13 @@ export function SmartReviewContent({
           {tabItems.map(tab => (
             <button
               key={tab.id}
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => {
+                if ((tab.id === 'deck' || tab.id === 'game') && reviewItems.length === 0) {
+                  setIsTabGuardOpen(true)
+                  return
+                }
+                onTabChange(tab.id)
+              }}
               className={`pb-3 text-sm font-semibold transition ${
                 activeTab === tab.id
                   ? 'border-b-2 border-slate-900 text-slate-900'
@@ -128,17 +135,23 @@ export function SmartReviewContent({
                 {t('countLabel', { count: reviewItems.length })}
               </div>
               {hasSelectedLecture && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onRequestImportPreview()
-                    setIsConfirmDialogOpen(true)
-                  }}
-                  disabled={isMutating}
-                  className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors disabled:opacity-60"
-                >
-                  {isMutating ? '처리 중...' : '추천 단어 불러오기'}
-                </button>
+                <div className="group relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRequestImportPreview()
+                      setIsConfirmDialogOpen(true)
+                    }}
+                    disabled={isMutating}
+                    className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors disabled:opacity-60"
+                  >
+                    {isMutating ? '처리 중...' : '추천 단어 불러오기'}
+                  </button>
+                  <div className="pointer-events-none absolute left-1/2 top-0 z-30 hidden w-max -translate-x-1/2 -translate-y-full rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 shadow-lg group-hover:block">
+                    {t('importTooltip')}
+                    <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-purple-200 bg-purple-50" />
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -477,6 +490,16 @@ export function SmartReviewContent({
           setIsDeleteConfirmOpen(false)
           setDeleteTarget(null)
         }}
+      />
+
+      <ConfirmDialog
+        isOpen={isTabGuardOpen}
+        title={t('guard.title')}
+        message={t('guard.message')}
+        confirmLabel={t('guard.confirm')}
+        cancelLabel={t('guard.cancel')}
+        onConfirm={() => setIsTabGuardOpen(false)}
+        onCancel={() => setIsTabGuardOpen(false)}
       />
     </div>
   )

@@ -117,6 +117,13 @@
         "back": "Back to list",
         "successTitle": "SUCCESS",
         "finalScoreLabel": "Final score: {score}"
+      },
+      "importTooltip": "AI trained on the lecture recording extracts and recommends key keywords for this session.",
+      "guard": {
+        "title": "Notice",
+        "message": "Create words in the list first to use this feature.",
+        "confirm": "OK",
+        "cancel": "Close"
       }
     },
     "noContent": "No review content available",
