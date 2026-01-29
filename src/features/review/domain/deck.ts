@@ -24,7 +24,11 @@ export function clampDeckLevel(level: number): DeckLevel {
 
 export function getNextDeckLevel(current: DeckLevel, rating: DeckRating): DeckLevel {
   if (rating === 'good') return clampDeckLevel(current + 1)
-  if (rating === 'bad') return clampDeckLevel(current - 1)
+  if (rating === 'bad') {
+    // 숙련됨(4)에서 틀렸어요를 누르면 바로 전 단계가 아니라 복습 중(2)으로 이동
+    if (current === 4) return 2
+    return clampDeckLevel(current - 1)
+  }
   return current
 }
 
@@ -33,23 +37,11 @@ export function buildDeckOrder(
   levelsByItemId: DeckLevelsByItemId,
   options?: { excludeLevel4?: boolean }
 ): string[] {
-  const excludeLevel4 = options?.excludeLevel4 ?? true
-
-  const level1: string[] = []
-  const level2: string[] = []
-  const level3: string[] = []
-  const level4: string[] = []
-
-  for (const item of reviewItems) {
-    const level = levelsByItemId[item.id] ?? 2
-    if (level === 1) level1.push(item.id)
-    else if (level === 2) level2.push(item.id)
-    else if (level === 3) level3.push(item.id)
-    else level4.push(item.id)
-  }
-
-  if (excludeLevel4) return [...level1, ...level2, ...level3]
-  return [...level1, ...level2, ...level3, ...level4]
+  // 단계와 무관하게 항상 API 순서(reviewItems 배열 순서)대로 제시한다.
+  // options/levelsByItemId는 하위호환을 위해 시그니처에 남겨두지만, 정렬에는 사용하지 않는다.
+  void levelsByItemId
+  void options
+  return reviewItems.map((it) => it.id)
 }
 
 export function countDeckLevels(

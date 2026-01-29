@@ -115,7 +115,11 @@
         "clickToRevealKeyword": "Click to reveal keyword",
         "clickToGoBack": "Click to go back",
         "description": "Description",
-        "keyword": "Keyword"
+        "keyword": "Keyword",
+        "levelModal": {
+          "empty": "No words in this level.",
+          "close": "Close"
+        }
       },
       "games": {
         "matching": {

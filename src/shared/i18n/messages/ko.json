@@ -115,7 +115,11 @@
         "clickToRevealKeyword": "단어 보기",
         "clickToGoBack": "돌아가기",
         "description": "설명",
-        "keyword": "단어"
+        "keyword": "단어",
+        "levelModal": {
+          "empty": "이 단계에 해당하는 단어가 없습니다.",
+          "close": "닫기"
+        }
       },
       "games": {
         "matching": {
