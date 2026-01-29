@@ -189,6 +189,116 @@
     @apply bg-gray-50;
   }
 
+  @keyframes definition-builder-sheen {
+    0% { background-position: 140% 0; }
+    100% { background-position: -140% 0; }
+  }
+
+  .definition-builder-complete {
+    background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(209, 250, 229, 0.95), rgba(255, 255, 255, 0.05));
+    background-size: 200% 100%;
+    animation: definition-builder-sheen 1.2s ease-out 1;
+  }
+
+  @keyframes definition-builder-success {
+    0% { transform: scale(0.9); opacity: 0; }
+    60% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .definition-builder-success {
+    animation: definition-builder-success 0.7s ease-out;
+  }
+
+  @keyframes matching-game-start {
+    0% { opacity: 0; transform: translateY(-8px); }
+    30% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(6px); }
+  }
+
+  @keyframes matching-game-success {
+    0% { transform: scale(0.9); opacity: 0; }
+    60% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes matching-game-shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+  }
+
+  .matching-game-start {
+    animation: matching-game-start 1s ease-out;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .matching-game-success {
+    animation: matching-game-success 0.7s ease-out;
+  }
+
+  .matching-game-card {
+    @apply relative h-full w-full rounded-2xl border border-slate-200 px-3 py-3 text-left text-xs text-slate-700 shadow-sm transition;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.8));
+  }
+
+  .matching-game-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 1rem;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.6), rgba(148, 163, 184, 0.15), rgba(255, 255, 255, 0.4));
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .matching-game-card--term {
+    @apply bg-slate-200 text-slate-900;
+  }
+
+  .matching-game-card--desc {
+    @apply bg-white text-slate-700;
+  }
+
+  .matching-game-card[data-selected="true"] {
+    @apply border-blue-400 shadow-md;
+  }
+
+  .matching-game-card--wrong {
+    @apply border-rose-400 shadow-[0_0_0_2px_rgba(251,113,133,0.25)];
+  }
+
+  .matching-game-card--wrong[data-selected="true"] {
+    @apply border-rose-400;
+  }
+
+  .matching-game-card--shake {
+    animation: matching-game-shake 0.35s ease-in-out;
+  }
+
+  .matching-game-card--matched {
+    @apply opacity-40;
+  }
+
+  .matching-game-card__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .matching-game-board {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .card-match-card--term .card-match-card__face--front {
     @apply bg-gray-50;
   }

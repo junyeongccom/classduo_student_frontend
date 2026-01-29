@@ -420,7 +420,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
           <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 text-sm shadow-lg max-w-[320px]">
             <p className="mb-3 leading-relaxed whitespace-pre-wrap">
               {`매 수업일마다 미니게임 퀴즈 5개,
-50초 복습 빈칸 퀵필 5개를 진행하고
+50초 복습 빈칸 정의조립 5개를 진행하고
 상자를 열어 불꽃을 모으세요!`}
             </p>
             <div className="border-t border-gray-300 pt-3 space-y-2">

@@ -101,8 +101,22 @@
         },
         "quickfill": {
           "title": "Definition Builder",
-          "description": "Fill in the blanks to review key concepts."
+          "description": "Pick tokens to complete the definition."
         }
+      },
+      "definitionBuilder": {
+        "scorePrefix": "Score:",
+        "scoreLabel": "Score: {score}",
+        "progressLabel": "{current}/{total}",
+        "loading": "Preparing the game...",
+        "noItems": "Add at least 6 review terms to start.",
+        "selectLecture": "Select a lecture to start the game.",
+        "retry": "Retry",
+        "next": "Next",
+        "restart": "Restart",
+        "back": "Back to list",
+        "successTitle": "SUCCESS",
+        "finalScoreLabel": "Final score: {score}"
       }
     },
     "noContent": "No review content available",

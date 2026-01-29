@@ -48,4 +48,25 @@ export interface ImportLectureKeywordsResponse {
   skipped_count: number
 }
 
+export interface DefinitionBuilderBlank {
+  index: number
+  token: string
+}
+
+export interface DefinitionBuilderQuestion {
+  review_item_id: string
+  keyword: string
+  definition: string
+  tokens: string[]
+  blank_indices: number[]
+  blanks: DefinitionBuilderBlank[]
+  choices: string[]
+}
+
+export interface DefinitionBuilderGameResponse {
+  lecture_id: string
+  questions: DefinitionBuilderQuestion[]
+  total_count: number
+}
+
 
