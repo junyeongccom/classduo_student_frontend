@@ -5,9 +5,14 @@ import { useTranslations } from 'next-intl'
 import type { LectureReviewItem } from '@/features/review/types'
 import { AddReviewWordModal } from './AddReviewWordModal'
 import { ConfirmDialog } from './ConfirmDialog'
+<<<<<<< HEAD
 import { DefinitionBuilderGame } from './DefinitionBuilderGame'
 import { ReviewMatchingGame } from './ReviewMatchingGame'
 import type { DefinitionBuilderGameResponse } from '@/features/review/types'
+=======
+import { ReviewDeckView } from './ReviewDeckView'
+import type { ReviewDeckViewModel } from '@/features/review/hooks/useReviewDeck'
+>>>>>>> 27efc85 (덱 기능 1차 도입)
 
 export type SmartReviewTab = 'list' | 'deck' | 'game'
 
@@ -21,10 +26,14 @@ interface SmartReviewContentProps {
   isReviewItemsLoading: boolean
   reviewItemsError: string | null
   hasSelectedLecture: boolean
+<<<<<<< HEAD
   definitionBuilderData: DefinitionBuilderGameResponse | null
   isDefinitionBuilderLoading: boolean
   definitionBuilderError: string | null
   onRetryDefinitionBuilder: () => void
+=======
+  deck: ReviewDeckViewModel
+>>>>>>> 27efc85 (덱 기능 1차 도입)
   isMutating: boolean
   mutationError: string | null
   onAddReviewWord: (keyword: string, description: string) => Promise<boolean>
@@ -47,10 +56,14 @@ export function SmartReviewContent({
   isReviewItemsLoading,
   reviewItemsError,
   hasSelectedLecture,
+<<<<<<< HEAD
   definitionBuilderData,
   isDefinitionBuilderLoading,
   definitionBuilderError,
   onRetryDefinitionBuilder,
+=======
+  deck,
+>>>>>>> 27efc85 (덱 기능 1차 도입)
   isMutating,
   mutationError,
   onAddReviewWord,
@@ -85,18 +98,26 @@ export function SmartReviewContent({
     { id: 'deck', label: t('tabs.deck') },
     { id: 'game', label: t('tabs.game') },
   ]
-  const gameItems = [
+  const gameItems: Array<{ id: string; title: string; description: string; thumbnail?: string | null }> = [
     {
       id: 'matching',
       title: t('games.matching.title'),
       description: t('games.matching.description'),
+<<<<<<< HEAD
       thumbnail: '/matching_thumbnail.png',
+=======
+      thumbnail: null,
+>>>>>>> 27efc85 (덱 기능 1차 도입)
     },
     {
       id: 'definition-builder',
       title: t('games.quickfill.title'),
       description: t('games.quickfill.description'),
+<<<<<<< HEAD
       thumbnail: '/DB_thumbnail.png',
+=======
+      thumbnail: null,
+>>>>>>> 27efc85 (덱 기능 1차 도입)
     },
   ]
   return (
@@ -261,9 +282,12 @@ export function SmartReviewContent({
       )}
 
       {activeTab === 'deck' && (
-        <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white">
-          <p className="text-sm font-medium text-slate-400">{t('deckComingSoon')}</p>
-        </div>
+        <ReviewDeckView
+          hasSelectedLecture={hasSelectedLecture}
+          isReviewItemsLoading={isReviewItemsLoading}
+          reviewItemsError={reviewItemsError}
+          deck={deck}
+        />
       )}
 
       {activeTab === 'game' && (

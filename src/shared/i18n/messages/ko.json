@@ -90,6 +90,24 @@
         "addWord": "단어 추가하기"
       },
       "deckComingSoon": "준비중입니다.",
+      "deck": {
+        "needLecture": "회차를 선택하면 덱 학습을 시작할 수 있어요.",
+        "loading": "불러오는 중...",
+        "empty": "덱을 시작할 단어가 없습니다.",
+        "progressLabel": "진행",
+        "levelsLabel": "이해 단계 분포",
+        "cardLabel": "키워드",
+        "currentLevelLabel": "현재 단계: {level}",
+        "bad": "나쁨",
+        "okay": "보통",
+        "good": "좋음",
+        "level": "{level}단계",
+        "roundCompletedTitle": "이번 라운드가 끝났어요",
+        "roundCompletedBody": "‘다시 시작’으로 현재 단계 분포를 기준으로 다음 라운드를 진행할 수 있어요.",
+        "allCompletedTitle": "학습 완료!",
+        "allCompletedBody": "모든 단어가 4단계에 도달했습니다.",
+        "restart": "다시 시작"
+      },
       "games": {
         "matching": {
           "title": "매칭게임",

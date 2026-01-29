@@ -90,6 +90,24 @@
         "addWord": "Add word"
       },
       "deckComingSoon": "Coming soon.",
+      "deck": {
+        "needLecture": "Select a session to start the deck.",
+        "loading": "Loading...",
+        "empty": "No words to study in this deck.",
+        "progressLabel": "Progress",
+        "levelsLabel": "Level distribution",
+        "cardLabel": "Keyword",
+        "currentLevelLabel": "Current level: {level}",
+        "bad": "Bad",
+        "okay": "Okay",
+        "good": "Good",
+        "level": "Level {level}",
+        "roundCompletedTitle": "Round completed",
+        "roundCompletedBody": "Click “Restart” to run the next round based on the current levels.",
+        "allCompletedTitle": "Completed!",
+        "allCompletedBody": "All words have reached level 4.",
+        "restart": "Restart"
+      },
       "games": {
         "matching": {
           "title": "Matching",
