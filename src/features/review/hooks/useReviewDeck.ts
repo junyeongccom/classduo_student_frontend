@@ -185,7 +185,7 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     return reviewItems.find((it) => it.id === currentItemId) || null
   }, [currentItemId, reviewItems])
 
-  const currentLevel: DeckLevel | null = currentItem ? (levelsByItemId[currentItem.id] ?? 1) : null
+  const currentLevel: DeckLevel | null = currentItem ? (levelsByItemId[currentItem.id] ?? 2) : null
   
   // 현재 카드의 앞면 정보 (기본값은 'keyword')
   const currentCardSide: 'keyword' | 'description' = useMemo(() => {
@@ -206,7 +206,7 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
       if (!session) return
       if (session.cursor >= session.order.length) return
       const itemId = session.order[session.cursor]
-      const current = levelsByItemId[itemId] ?? 1
+      const current = levelsByItemId[itemId] ?? 2
       const nextLevel = getNextDeckLevel(current, rating)
       setDeckItemLevel(userId, lectureId, itemId, nextLevel)
 
