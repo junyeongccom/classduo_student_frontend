@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import '@/shared/styles/globals.css'
 import { AuthProvider } from '@/features/auth'
-import { I18nProvider } from '@/shared/i18n/I18nProvider'
+import { I18nRootProvider } from '@/shared/i18n/I18nRootProvider'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://korea.classduo.io.kr'),
@@ -42,9 +42,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <I18nProvider>
+        <I18nRootProvider>
           <AuthProvider>{children}</AuthProvider>
-        </I18nProvider>
+        </I18nRootProvider>
       </body>
     </html>
   )

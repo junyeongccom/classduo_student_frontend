@@ -11,6 +11,7 @@ export type AppLocale = 'ko' | 'en'
 
 const STORAGE_KEY = 'classduo_locale'
 const DEFAULT_LOCALE: AppLocale = 'ko'
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 const MESSAGES_BY_LOCALE: Record<AppLocale, AbstractIntlMessages> = {
   ko: koMessages as unknown as AbstractIntlMessages,
@@ -28,8 +29,18 @@ function isAppLocale(value: unknown): value is AppLocale {
   return value === 'ko' || value === 'en'
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<AppLocale>(DEFAULT_LOCALE)
+interface I18nProviderProps {
+  children: React.ReactNode
+  initialLocale?: AppLocale
+  initialMessages?: AbstractIntlMessages
+}
+
+export function I18nProvider({ children, initialLocale, initialMessages }: I18nProviderProps) {
+  const resolvedInitialLocale = initialLocale ?? DEFAULT_LOCALE
+  const [locale, setLocaleState] = useState<AppLocale>(resolvedInitialLocale)
+  const [messages, setMessages] = useState<AbstractIntlMessages>(
+    initialMessages ?? MESSAGES_BY_LOCALE[resolvedInitialLocale]
+  )
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -37,6 +48,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     const saved = window.localStorage.getItem(STORAGE_KEY)
     if (isAppLocale(saved)) {
       setLocaleState(saved)
+      document.cookie = `${STORAGE_KEY}=${saved}; path=/; max-age=${COOKIE_MAX_AGE}`
+      return
+    }
+    if (initialLocale) {
+      window.localStorage.setItem(STORAGE_KEY, initialLocale)
     }
   }, [])
 
@@ -49,8 +65,13 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     setLocaleState(nextLocale)
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(STORAGE_KEY, nextLocale)
+      document.cookie = `${STORAGE_KEY}=${nextLocale}; path=/; max-age=${COOKIE_MAX_AGE}`
     }
   }, [])
+
+  useEffect(() => {
+    setMessages(MESSAGES_BY_LOCALE[locale])
+  }, [locale])
 
   const value = useMemo(() => ({ locale, setLocale }), [locale, setLocale])
 
@@ -58,7 +79,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     <I18nContext.Provider value={value}>
       <NextIntlClientProvider
         locale={locale}
-        messages={MESSAGES_BY_LOCALE[locale]}
+        messages={messages}
         timeZone="Asia/Seoul"
       >
         {children}
