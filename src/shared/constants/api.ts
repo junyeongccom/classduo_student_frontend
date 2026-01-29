@@ -22,6 +22,7 @@ export const API_ENDPOINTS = {
     CREATE_JOB: '/recordings/audio/jobs',
     GET_STATUS: (jobId: string) => `/recordings/audio/jobs/${jobId}/status`,
     GET_TRANSCRIPT: (jobId: string) => `/recordings/audio/jobs/${jobId}/transcript`,
+    GET_LECTURE_KEYWORDS: (lectureId: string) => `/recordings/audio/lectures/${lectureId}/keywords`,
   },
 
   // Review

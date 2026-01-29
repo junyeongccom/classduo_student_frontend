@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Share2, Download } from 'lucide-react'
 import { ReviewSidebar } from './ReviewSidebar'
 import {
@@ -10,16 +10,28 @@ import {
 import { SmartReviewContent, type SmartReviewTab } from '@/features/review/components/ui/SmartReviewContent'
 import { useLectureReviewItems } from '@/features/review/hooks/useLectureReviewItems'
 import { reviewService } from '@/features/review/services/reviewService'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 
 export function ReviewContainer() {
+  const { locale } = useI18n()
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
   const [, setSelectedCourseId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<SmartReviewTab>('list')
   const [isMutating, setIsMutating] = useState(false)
   const [mutationError, setMutationError] = useState<string | null>(null)
+  const [importPreviewItems, setImportPreviewItems] = useState<Array<{ keyword: string; description: string }>>([])
+  const [isImportPreviewLoading, setIsImportPreviewLoading] = useState(false)
+  const [importPreviewError, setImportPreviewError] = useState<string | null>(null)
 
   const { data: reviewItemsData, isLoading: isLoadingReviewItems, error: reviewItemsError, refetch } =
     useLectureReviewItems(selectedLectureId)
+
+  // 회차 변경 시, 미리보기 캐시 초기화
+  useEffect(() => {
+    setImportPreviewItems([])
+    setIsImportPreviewLoading(false)
+    setImportPreviewError(null)
+  }, [selectedLectureId, locale])
 
   // 공유 기능 (아직 구현 안 함)
   const handleShare = () => {
@@ -74,6 +86,39 @@ export function ReviewContainer() {
           hasSelectedLecture={Boolean(selectedLectureId)}
           isMutating={isMutating}
           mutationError={mutationError}
+          onRequestImportPreview={async () => {
+            if (!selectedLectureId) return
+            setIsImportPreviewLoading(true)
+            setImportPreviewError(null)
+            try {
+              const result = await reviewService.getLectureKeywordsPreview(selectedLectureId)
+              if (result.error || !result.data) {
+                setImportPreviewError(result.error?.message || '추천 단어를 불러오는데 실패했습니다')
+                setImportPreviewItems([])
+                return
+              }
+
+              const existing = new Set((reviewItemsData?.items || []).map(i => (i.keyword || '').trim()))
+              const localized = (result.data.keywords || [])
+                .map(k => {
+                  const keyword = (locale === 'en' ? (k.keyword_eng || k.keyword) : k.keyword) || ''
+                  const description = (locale === 'en' ? (k.description_eng || k.description) : k.description) || ''
+                  return { keyword: keyword.trim(), description: description.trim() }
+                })
+                .filter(k => k.keyword && k.description)
+                .filter(k => !existing.has(k.keyword))
+
+              setImportPreviewItems(localized)
+            } catch {
+              setImportPreviewError('추천 단어를 불러오는데 실패했습니다')
+              setImportPreviewItems([])
+            } finally {
+              setIsImportPreviewLoading(false)
+            }
+          }}
+          importPreviewItems={importPreviewItems}
+          isImportPreviewLoading={isImportPreviewLoading}
+          importPreviewError={importPreviewError}
           onAddReviewWord={async (keyword, description) => {
             if (!selectedLectureId) return false
             setIsMutating(true)
