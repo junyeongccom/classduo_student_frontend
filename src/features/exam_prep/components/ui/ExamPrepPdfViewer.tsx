@@ -65,6 +65,7 @@ export function ExamPrepPdfViewer({
   const [pdfDoc, setPdfDoc] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null)
   const [pageCount, setPageCount] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [internalPage, setInternalPage] = useState(1)
   const [tool, setTool] = useState<"none" | "draw" | "erase" | "text">("none")
@@ -122,6 +123,7 @@ export function ExamPrepPdfViewer({
     const loadPdf = async () => {
       if (!url) return
       try {
+        setIsLoading(true)
         setLoadError(null)
         const loadingTask = getDocument({ url })
         const doc = await loadingTask.promise
@@ -139,6 +141,10 @@ export function ExamPrepPdfViewer({
           error instanceof Error ? error.message : typeof error === "string" ? error : "알 수 없는 오류"
         setLoadError(`PDF를 불러오지 못했습니다. (${message})`)
         console.error("PDF load failed:", { url, error })
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
     loadPdf()
@@ -452,6 +458,21 @@ export function ExamPrepPdfViewer({
           {loadError ? (
             <div className="flex h-[420px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white text-sm text-gray-400">
               {loadError}
+            </div>
+          ) : isLoading ? (
+            <div className="flex min-h-[420px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-gray-200 bg-white px-6 py-8 text-center">
+              <video
+                className="w-full max-w-[240px] rounded-lg shadow-sm"
+                src="/TEST.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+              <div className="space-y-1 text-sm text-gray-600">
+                <p className="font-medium text-gray-700">자료를 준비하고 있어요</p>
+                <p className="text-xs text-gray-500">잠시만 기다리면 PDF가 열립니다.</p>
+              </div>
             </div>
           ) : (
             pdfDoc &&

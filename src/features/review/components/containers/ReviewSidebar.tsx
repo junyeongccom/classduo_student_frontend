@@ -331,27 +331,27 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                     key={lecture.lecture_id}
                     onClick={() => handleSelectLecture(lecture.lecture_id, lecture.essence_7words)}
                     disabled={isAnalyzing}
-                    className={`flex w-full flex-col rounded-lg px-3 py-2.5 text-left transition-all ${
+                    className={`flex w-full flex-col rounded-lg px-3 py-2.5 text-left transition-all border ${
                       isAnalyzing
-                        ? 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-60'
+                        ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60'
                         : isSelected
-                          ? 'bg-gray-200 text-gray-900'
-                          : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+                          ? 'bg-blue-50 border-blue-200 text-blue-900'
+                          : 'bg-gray-50 border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'
                     }`}
                   >
                     <div className="flex w-full items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs ${isSelected ? 'text-gray-500' : 'text-gray-500'}`}>
+                        <p className={`text-xs ${isSelected ? 'text-blue-600' : 'text-gray-500'}`}>
                           {lecture.lecture_date}
                         </p>
                         <p className={`text-sm font-medium mt-0.5 ${
-                          isSelected ? 'text-gray-900' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
+                          isSelected ? 'text-blue-900' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
                         }`}>
                         {isAnalyzing ? '준비중' : lecture.essence_7words}
                         </p>
                       </div>
                       {isSelected && !isAnalyzing && (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 flex-shrink-0">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 flex-shrink-0">
                           <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                           </svg>
