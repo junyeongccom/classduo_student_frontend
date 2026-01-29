@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatSession, SearchResult } from '@/features/ai-tutor/types'
@@ -30,6 +30,7 @@ export default function ChatSidebar({
   const [isSearching, setIsSearching] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'list' | 'search'>('list')
+  const searchAbortRef = useRef<AbortController | null>(null)
 
   // 세션 목록 로드
   const loadSessions = useCallback(async () => {
@@ -58,13 +59,17 @@ export default function ChatSidebar({
 
     const trimmedQuery = searchQuery.trim()
     if (!trimmedQuery) {
+      searchAbortRef.current?.abort()
       setSearchResults([])
       setActiveTab('list')
       return
     }
 
     const debounceId = window.setTimeout(() => {
-      handleSearch(trimmedQuery)
+      searchAbortRef.current?.abort()
+      const controller = new AbortController()
+      searchAbortRef.current = controller
+      handleSearch(trimmedQuery, controller.signal)
     }, 250)
 
     return () => {
@@ -73,9 +78,9 @@ export default function ChatSidebar({
   }, [isOpen, searchQuery])
 
   // 검색
-  const handleSearch = async (rawQuery: string) => {
+  const handleSearch = async (rawQuery: string, signal?: AbortSignal) => {
     const trimmedQuery = rawQuery.trim()
-    if (trimmedQuery.length < 2) {
+    if (!trimmedQuery) {
       setSearchResults([])
       setActiveTab('list')
       return
@@ -84,18 +89,22 @@ export default function ChatSidebar({
     setIsSearching(true)
     setActiveTab('search')
     try {
-      const { data, error } = await chatService.searchMessages(trimmedQuery)
+      const { data, error } = await chatService.searchSessions(trimmedQuery, { signal })
+      if (signal?.aborted) return
       if (!error) {
-        // 백엔드에서 이미 rank DESC, created_at DESC로 정렬되어 있음
+        // 백엔드에서 이미 rank DESC, updated_at DESC로 정렬되어 있음
         setSearchResults(data ?? [])
       } else {
         setSearchResults([])
       }
     } catch (err) {
+      if (signal?.aborted) return
       console.error('Search failed:', err)
       setSearchResults([])
     } finally {
-      setIsSearching(false)
+      if (!signal?.aborted) {
+        setIsSearching(false)
+      }
     }
   }
 
@@ -187,11 +196,19 @@ export default function ChatSidebar({
                 const value = e.target.value
                 setSearchQuery(value)
                 if (!value.trim()) {
+                  searchAbortRef.current?.abort()
                   setSearchResults([])
                   setActiveTab('list')
                 }
               }}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  searchAbortRef.current?.abort()
+                  const controller = new AbortController()
+                  searchAbortRef.current = controller
+                  handleSearch(searchQuery, controller.signal)
+                }
+              }}
               placeholder={t('searchPlaceholder')}
               className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
@@ -300,33 +317,23 @@ export default function ChatSidebar({
               <div className="divide-y divide-slate-100">
                 {searchResults.map((result) => (
                   <div
-                    key={result.message_id}
+                    key={result.session_id}
                     onClick={() => {
                       onSelectSession(result.session_id)
                       onClose()
                     }}
                     className="px-5 py-4 cursor-pointer transition hover:bg-slate-50"
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                        result.message_role === 'user'
-                          ? 'bg-slate-100 text-slate-600'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {result.message_role === 'user' ? t('messageRole.question') : t('messageRole.answer')}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        {formatDate(result.message_created_at)}
-                      </span>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-slate-900 truncate">
+                          {result.title || t('sessionTitleFallback')}
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {formatDate(result.updated_at)}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-slate-900 line-clamp-2">
-                      {result.message_content}
-                    </p>
-                    {result.session_title && (
-                      <p className="mt-1 text-xs text-slate-500 truncate">
-                        📁 {result.session_title}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
