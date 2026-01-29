@@ -286,6 +286,22 @@ export function LectureSidebarContainer({
     })
   }, [])
 
+  const getLatestLectureAcrossCourses = useCallback((courseList: Course[]) => {
+    const candidates = courseList
+      .map(course => {
+        const latestLecture = getLatestAvailableLecture(course)
+        return latestLecture ? { course, lecture: latestLecture } : null
+      })
+      .filter(Boolean) as Array<{ course: Course; lecture: Course['lectures'][number] }>
+
+    if (candidates.length === 0) return null
+    return candidates.reduce((latest, item) => {
+      const latestTime = new Date(latest.lecture.lecture_date).getTime()
+      const currentTime = new Date(item.lecture.lecture_date).getTime()
+      return currentTime > latestTime ? item : latest
+    })
+  }, [getLatestAvailableLecture])
+
   // 과목 변경 시 최신 회차 자동 선택 (이전 과목 ID 추적하여 실제 변경 시에만 실행)
   const prevCourseIdRef = useRef<string | null>(null)
   
@@ -321,36 +337,18 @@ export function LectureSidebarContainer({
       return
     }
 
-    let courseToUse =
-      courses.find(course => course.course_id === selectedCourseId) ||
-      courses.find(course => course.lectures.length > 0) ||
-      null
-
-    if (!courseToUse) {
+    const latest = getLatestLectureAcrossCourses(courses)
+    if (!latest) {
       return
     }
 
-    let latestLecture = getLatestAvailableLecture(courseToUse)
-
-    if (!latestLecture) {
-      const fallbackCourse = courses.find(course => getLatestAvailableLecture(course))
-      if (!fallbackCourse) {
-        return
-      }
-      courseToUse = fallbackCourse
-      if (fallbackCourse.course_id !== selectedCourseId) {
-        onSelectCourse(fallbackCourse.course_id)
-      }
-      latestLecture = getLatestAvailableLecture(fallbackCourse)
+    if (latest.course.course_id !== selectedCourseId) {
+      onSelectCourse(latest.course.course_id)
     } else if (!selectedCourseId) {
-      onSelectCourse(courseToUse.course_id)
+      onSelectCourse(latest.course.course_id)
     }
 
-    if (!latestLecture) {
-      return
-    }
-
-    onSelectLectureIds([latestLecture.lecture_id])
+    onSelectLectureIds([latest.lecture.lecture_id])
     setHasAutoSelected(true)
     onAutoSelectComplete?.()
   }, [
@@ -363,7 +361,7 @@ export function LectureSidebarContainer({
     onSelectCourse,
     onSelectLectureIds,
     onAutoSelectComplete,
-    getLatestAvailableLecture,
+    getLatestLectureAcrossCourses,
   ])
 
   // 강의 선택 시 기존 회차 선택 초기화

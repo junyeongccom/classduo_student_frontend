@@ -16,6 +16,10 @@ export interface ReviewCourse {
   term_code: string
   professor_name?: string | null
   section: string | null
+  lectures?: Array<{
+    lecture_id: string
+    lecture_date: string
+  }>
 }
 
 interface BlankState {

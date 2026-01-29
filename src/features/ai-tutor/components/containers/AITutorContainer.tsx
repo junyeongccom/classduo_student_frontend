@@ -12,6 +12,13 @@ import ChatSidebar from '../ui/ChatSidebar'
 import { ReferencePanel } from '../ui/ReferencePanel'
 import { GameOverlay } from '../ui/GameOverlay'
 import { TabType } from '@/shared/components/common'
+import { useAuthStore } from '@/features/auth/store/authStore'
+import {
+  hasVisitedStudyspaceTab,
+  markVisitedStudyspaceTab,
+  readStudyspaceSelection,
+  writeStudyspaceSelection,
+} from '@/shared/lib/studyspaceSelection'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
   AI_TUTOR_NEW_CHAT_FLAG,
@@ -47,6 +54,7 @@ export function AITutorContainer() {
     isSessionLocked,
     isRecordingSourceDisabled
   } = useAITutorStore()
+  const userId = useAuthStore(state => state.user?.user_id ?? null)
 
   // Actions
   const {
@@ -93,6 +101,39 @@ export function AITutorContainer() {
     handleGameIconClick,
     handleCloseGameOverlay
   } = useGameController()
+
+  const selectionReadyRef = useRef(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const saved = readStudyspaceSelection(userId)
+    if (saved) {
+      setSelectedCourseId(saved.courseId)
+      setSelectedLectureIds(saved.lectureIds)
+      setAutoSelectLatest(false)
+      selectionReadyRef.current = true
+      return
+    }
+
+    const visited = hasVisitedStudyspaceTab('ai-tutor', userId)
+    if (!visited) {
+      setAutoSelectLatest(true)
+      markVisitedStudyspaceTab('ai-tutor', userId)
+    } else {
+      setAutoSelectLatest(false)
+    }
+    selectionReadyRef.current = true
+  }, [userId, setSelectedCourseId, setSelectedLectureIds, setAutoSelectLatest])
+
+  useEffect(() => {
+    if (!selectionReadyRef.current) return
+    writeStudyspaceSelection(userId, {
+      courseId: selectedCourseId,
+      lectureIds: selectedLectureIds,
+      source: 'ai-tutor',
+      updatedAt: Date.now(),
+    })
+  }, [userId, selectedCourseId, selectedLectureIds])
 
   // Handlers
   const handleSelectLectureIds = useCallback((ids: string[]) => {
