@@ -4,9 +4,11 @@ import type { CardMatchSet } from '../types'
 export const cardMatchService = {
   async getCardMatchSet(
     lectureId: string,
-    locale?: 'ko' | 'en'
+    locale?: 'ko' | 'en',
+    fetchAll: boolean = false,
   ): Promise<{ data: CardMatchSet | null; error: any }> {
-    return apiRequest<CardMatchSet>(`/ai-tutor/lectures/${lectureId}/card-match`, {
+    const query = fetchAll ? '?fetch_all=true' : ''
+    return apiRequest<CardMatchSet>(`/ai-tutor/lectures/${lectureId}/card-match${query}`, {
       auth: true,
       method: 'GET',
       headers: locale ? { 'Accept-Language': locale } : undefined,
