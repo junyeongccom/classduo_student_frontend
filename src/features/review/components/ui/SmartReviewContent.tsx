@@ -64,12 +64,6 @@ export function SmartReviewContent({
       description: t('games.matching.description'),
     },
     {
-      id: 'ox',
-      title: t('games.ox.title'),
-      description: t('games.ox.description'),
-      thumbnail: '/스크린샷 2026-01-29 171432.png',
-    },
-    {
       id: 'quickfill',
       title: t('games.quickfill.title'),
       description: t('games.quickfill.description'),
