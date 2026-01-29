@@ -1333,7 +1333,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               }}
               onBlur={() => {
                 // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
-                setTimeout(() => setIsInputFocused(false), 200)
+                setTimeout(() => {
+                  setIsInputFocused(false)
+                  if (cardMatchState !== 'completed' && input.trim().length === 0) {
+                    setCardMatchState('idle')
+                  }
+                }, 200)
               }}
             />
           </div>

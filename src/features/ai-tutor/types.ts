@@ -120,11 +120,8 @@ export interface SessionWithMessages {
 
 export interface SearchResult {
   session_id: string
-  session_title: string | null
-  message_id: string
-  message_content: string
-  message_role: string
-  message_created_at: string
+  title: string | null
+  updated_at: string
   rank: number
 }
 

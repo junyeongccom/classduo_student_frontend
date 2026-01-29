@@ -244,11 +244,41 @@ export const chatService = {
   },
 
   /**
-   * 채팅 검색
+   * 채팅 세션 검색
    */
-  async searchMessages(query: string): Promise<{ data: SearchResult[] | null; error: any }> {
-    return apiRequest<SearchResult[]>(`/ai-tutor/search?q=${encodeURIComponent(query)}`, {
-      auth: true,
+  async searchSessions(
+    query: string,
+    options?: { limit?: number; offset?: number; signal?: AbortSignal }
+  ): Promise<{ data: SearchResult[] | null; error: any }> {
+    const params = new URLSearchParams({
+      q: query,
+      limit: String(options?.limit ?? 50),
+      offset: String(options?.offset ?? 0),
     })
+
+    const locale = typeof window !== 'undefined'
+      ? localStorage.getItem('classduo_locale') || 'ko'
+      : 'ko'
+    const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
+
+    const response = await fetch(`${API_BASE_URL}/ai-tutor/search?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept-Language': locale,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      signal: options?.signal,
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+      return {
+        data: null,
+        error: data.detail || { error_code: 'UNKNOWN_ERROR', message: '알 수 없는 오류가 발생했습니다' },
+      }
+    }
+
+    return { data, error: null }
   },
 }
