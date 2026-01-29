@@ -1,9 +1,12 @@
 'use client'
 
+import type { ReactNode } from 'react'
+
 interface ConfirmDialogProps {
   isOpen: boolean
   title: string
   message: string
+  children?: ReactNode
   confirmLabel?: string
   cancelLabel?: string
   isLoading?: boolean
@@ -15,6 +18,7 @@ export function ConfirmDialog({
   isOpen,
   title,
   message,
+  children,
   confirmLabel = '예',
   cancelLabel = '아니오',
   isLoading = false,
@@ -37,7 +41,9 @@ export function ConfirmDialog({
         <h3 className="mb-3 text-lg font-semibold text-slate-900">{title}</h3>
         
         {/* 메시지 */}
-        <p className="mb-6 text-sm text-slate-600">{message}</p>
+        <p className="text-sm text-slate-600">{message}</p>
+
+        {children ? <div className="mt-4 mb-6">{children}</div> : <div className="mb-6" />}
 
         {/* 버튼 그룹 */}
         <div className="flex items-center justify-end gap-3">

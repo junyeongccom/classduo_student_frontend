@@ -48,4 +48,18 @@ export interface ImportLectureKeywordsResponse {
   skipped_count: number
 }
 
+export interface RecordingLectureKeywordItem {
+  keyword: string
+  description: string
+  keyword_eng?: string | null
+  description_eng?: string | null
+  keyword_index: number
+}
+
+export interface RecordingLectureKeywordsResponse {
+  lecture_id: string
+  keywords: RecordingLectureKeywordItem[]
+  total_count: number
+}
+
 
