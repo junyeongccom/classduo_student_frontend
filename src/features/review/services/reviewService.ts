@@ -3,6 +3,15 @@
  */
 import { apiRequest } from '@/shared/lib/api'
 import { API_ENDPOINTS } from '@/shared/constants/api'
+import type {
+  CreateLectureReviewItemRequest,
+  CreateLectureReviewItemResponse,
+  DeleteLectureReviewItemResponse,
+  ImportLectureKeywordsResponse,
+  LectureReviewListResponse,
+  UpdateLectureReviewItemRequest,
+  UpdateLectureReviewItemResponse,
+} from '@/features/review/types'
 
 // API 응답 타입
 export interface LectureListItem {
@@ -143,6 +152,41 @@ export const reviewService = {
     apiRequest<CompleteReviewResponse>(API_ENDPOINTS.REVIEW.COMPLETE(lectureId), {
       method: 'POST',
       body: request,
+      auth: true,
+    }),
+
+  /**
+   * 사용자 강의 회차별 복습 어휘(lecture_review) 목록 조회
+   */
+  getLectureReviewItems: (lectureId: string) =>
+    apiRequest<LectureReviewListResponse>(API_ENDPOINTS.REVIEW.GET_REVIEW_ITEMS(lectureId), {
+      method: 'GET',
+      auth: true,
+    }),
+
+  createLectureReviewItem: (lectureId: string, request: CreateLectureReviewItemRequest) =>
+    apiRequest<CreateLectureReviewItemResponse>(API_ENDPOINTS.REVIEW.CREATE_REVIEW_ITEM(lectureId), {
+      method: 'POST',
+      auth: true,
+      body: request,
+    }),
+
+  importLectureKeywordsToReview: (lectureId: string) =>
+    apiRequest<ImportLectureKeywordsResponse>(API_ENDPOINTS.REVIEW.IMPORT_KEYWORDS(lectureId), {
+      method: 'POST',
+      auth: true,
+    }),
+
+  updateLectureReviewItem: (reviewItemId: string, request: UpdateLectureReviewItemRequest) =>
+    apiRequest<UpdateLectureReviewItemResponse>(API_ENDPOINTS.REVIEW.UPDATE_REVIEW_ITEM(reviewItemId), {
+      method: 'PATCH',
+      auth: true,
+      body: request,
+    }),
+
+  deleteLectureReviewItem: (reviewItemId: string) =>
+    apiRequest<DeleteLectureReviewItemResponse>(API_ENDPOINTS.REVIEW.DELETE_REVIEW_ITEM(reviewItemId), {
+      method: 'DELETE',
       auth: true,
     }),
 }
