@@ -100,7 +100,7 @@
           "description": "Read a statement and pick O or X."
         },
         "quickfill": {
-          "title": "Quick Fill",
+          "title": "Definition Builder",
           "description": "Fill in the blanks to review key concepts."
         }
       }
