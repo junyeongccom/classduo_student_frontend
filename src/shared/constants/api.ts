@@ -29,6 +29,10 @@ export const API_ENDPOINTS = {
     GET_LECTURE_LIST: (courseId: string) => `/courses/${courseId}/lectures`,
     GET_CAROUSEL: (lectureId: string) => `/reviews/lectures/${lectureId}/carousel`,
     GET_REVIEW_ITEMS: (lectureId: string) => `/reviews/lectures/${lectureId}/review-items`,
+    CREATE_REVIEW_ITEM: (lectureId: string) => `/reviews/lectures/${lectureId}/review-items`,
+    DELETE_REVIEW_ITEM: (reviewItemId: string) => `/reviews/review-items/${reviewItemId}`,
+    UPDATE_REVIEW_ITEM: (reviewItemId: string) => `/reviews/review-items/${reviewItemId}`,
+    IMPORT_KEYWORDS: (lectureId: string) => `/reviews/lectures/${lectureId}/review-items/import-keywords`,
     COMPLETE: (lectureId: string) => `/reviews/lectures/${lectureId}/review/complete`,
   },
 

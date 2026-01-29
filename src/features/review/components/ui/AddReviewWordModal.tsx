@@ -1,26 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 
 interface AddReviewWordModalProps {
   isOpen: boolean
   onClose: () => void
-  onAdd: (keyword: string, description: string) => void
+  isSubmitting?: boolean
+  errorMessage?: string | null
+  title: string
+  submitLabel: string
+  initialKeyword?: string
+  initialDescription?: string
+  onSubmit: (keyword: string, description: string) => Promise<boolean> | boolean
 }
 
-export function AddReviewWordModal({ isOpen, onClose, onAdd }: AddReviewWordModalProps) {
+export function AddReviewWordModal({
+  isOpen,
+  onClose,
+  isSubmitting = false,
+  errorMessage = null,
+  title,
+  submitLabel,
+  initialKeyword = '',
+  initialDescription = '',
+  onSubmit,
+}: AddReviewWordModalProps) {
   const [keyword, setKeyword] = useState('')
   const [description, setDescription] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isOpen) return
+    setKeyword(initialKeyword)
+    setDescription(initialDescription)
+  }, [isOpen, initialKeyword, initialDescription])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (keyword.trim() && description.trim()) {
-      onAdd(keyword.trim(), description.trim())
-      // 모달 닫기 전에 폼 초기화는 나중에 백엔드 연동 시 처리
-      setKeyword('')
-      setDescription('')
-      onClose()
+    if (!keyword.trim() || !description.trim()) return
+    const ok = await onSubmit(keyword.trim(), description.trim())
+    if (ok) {
+      handleClose()
     }
   }
 
@@ -53,8 +73,14 @@ export function AddReviewWordModal({ isOpen, onClose, onAdd }: AddReviewWordModa
 
         {/* 제목 */}
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-slate-900">단어 추가하기</h2>
+          <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
         </div>
+
+        {errorMessage && (
+          <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {errorMessage}
+          </div>
+        )}
 
         {/* 폼 */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -71,6 +97,7 @@ export function AddReviewWordModal({ isOpen, onClose, onAdd }: AddReviewWordModa
               placeholder="핵심 어휘를 입력하세요"
               className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -87,15 +114,17 @@ export function AddReviewWordModal({ isOpen, onClose, onAdd }: AddReviewWordModa
               rows={4}
               className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 resize-none"
               required
+              disabled={isSubmitting}
             />
           </div>
 
           {/* 단어 추가하기 버튼 */}
           <button
             type="submit"
+            disabled={isSubmitting}
             className="mt-2 w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors"
           >
-            단어 추가하기
+            {isSubmitting ? '처리 중...' : submitLabel}
           </button>
         </form>
       </div>

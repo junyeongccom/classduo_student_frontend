@@ -18,4 +18,34 @@ export interface LectureReviewListResponse {
   total_count: number
 }
 
+export interface CreateLectureReviewItemRequest {
+  keyword: string
+  description: string
+}
+
+export interface CreateLectureReviewItemResponse {
+  success: boolean
+  item_id: string
+}
+
+export interface DeleteLectureReviewItemResponse {
+  success: boolean
+}
+
+export interface UpdateLectureReviewItemRequest {
+  keyword: string
+  description: string
+}
+
+export interface UpdateLectureReviewItemResponse {
+  success: boolean
+  item_id: string
+}
+
+export interface ImportLectureKeywordsResponse {
+  success: boolean
+  inserted_count: number
+  skipped_count: number
+}
+
 

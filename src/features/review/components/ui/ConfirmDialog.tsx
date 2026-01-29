@@ -6,6 +6,7 @@ interface ConfirmDialogProps {
   message: string
   confirmLabel?: string
   cancelLabel?: string
+  isLoading?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -16,6 +17,7 @@ export function ConfirmDialog({
   message,
   confirmLabel = '예',
   cancelLabel = '아니오',
+  isLoading = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -26,7 +28,7 @@ export function ConfirmDialog({
       {/* 배경 오버레이 */}
       <div 
         className="absolute inset-0 bg-black/30"
-        onClick={onCancel}
+        onClick={isLoading ? undefined : onCancel}
       />
       
       {/* 다이얼로그 컨텐츠 */}
@@ -42,6 +44,7 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
+            disabled={isLoading}
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors"
           >
             {cancelLabel}
@@ -49,9 +52,10 @@ export function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
+            disabled={isLoading}
             className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors"
           >
-            {confirmLabel}
+            {isLoading ? '처리 중...' : confirmLabel}
           </button>
         </div>
       </div>

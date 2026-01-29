@@ -15,6 +15,12 @@ interface SmartReviewContentProps {
   isReviewItemsLoading: boolean
   reviewItemsError: string | null
   hasSelectedLecture: boolean
+  isMutating: boolean
+  mutationError: string | null
+  onAddReviewWord: (keyword: string, description: string) => Promise<boolean>
+  onUpdateReviewWord: (reviewItemId: string, keyword: string, description: string) => Promise<boolean>
+  onDeleteReviewWord: (reviewItemId: string) => Promise<boolean>
+  onImportRecommendedWords: () => Promise<boolean>
 }
 
 export function SmartReviewContent({
@@ -24,10 +30,19 @@ export function SmartReviewContent({
   isReviewItemsLoading,
   reviewItemsError,
   hasSelectedLecture,
+  isMutating,
+  mutationError,
+  onAddReviewWord,
+  onUpdateReviewWord,
+  onDeleteReviewWord,
+  onImportRecommendedWords,
 }: SmartReviewContentProps) {
   const t = useTranslations('review.ui')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<LectureReviewItem | null>(null)
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<LectureReviewItem | null>(null)
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
   const tabItems: Array<{ id: SmartReviewTab; label: string }> = [
     { id: 'list', label: t('tabs.list') },
     { id: 'deck', label: t('tabs.deck') },
@@ -84,13 +99,20 @@ export function SmartReviewContent({
                 <button
                   type="button"
                   onClick={() => setIsConfirmDialogOpen(true)}
+                  disabled={isMutating}
                   className="rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors"
                 >
-                  추천 단어 불러오기
+                  {isMutating ? '처리 중...' : '추천 단어 불러오기'}
                 </button>
               )}
             </div>
           </div>
+
+          {mutationError && (
+            <div className="w-full max-w-[66%] rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm text-rose-700">
+              {mutationError}
+            </div>
+          )}
 
           {/* 상태 UI */}
           {!hasSelectedLecture && (
@@ -125,15 +147,22 @@ export function SmartReviewContent({
               <div className="pointer-events-none absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                 <button
                   type="button"
-                  disabled
-                  className="pointer-events-auto cursor-not-allowed rounded-lg border border-indigo-100 bg-indigo-50/60 px-2 py-1 text-[11px] font-semibold text-indigo-400 shadow-sm"
+                  disabled={isMutating}
+                  onClick={() => {
+                    setEditingItem(item)
+                  }}
+                  className="pointer-events-auto rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-600 shadow-sm hover:border-indigo-200 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {t('actions.edit')}
                 </button>
                 <button
                   type="button"
-                  disabled
-                  className="pointer-events-auto cursor-not-allowed rounded-lg border border-rose-100 bg-rose-50/60 px-2 py-1 text-[11px] font-semibold text-rose-400 shadow-sm"
+                  disabled={isMutating}
+                  onClick={() => {
+                    setDeleteTarget(item)
+                    setIsDeleteConfirmOpen(true)
+                  }}
+                  className="pointer-events-auto rounded-lg border border-rose-100 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-600 shadow-sm hover:border-rose-200 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {t('actions.delete')}
                 </button>
@@ -148,6 +177,7 @@ export function SmartReviewContent({
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
+            disabled={!hasSelectedLecture || isMutating}
             className="mt-3 w-full max-w-[66%] rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-50"
           >
             <span className="inline-flex items-center justify-center gap-2">
@@ -197,9 +227,30 @@ export function SmartReviewContent({
       <AddReviewWordModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onAdd={(keyword, description) => {
-          // 백엔드 연동은 나중에 추가
-          console.log('Add word:', { keyword, description })
+        isSubmitting={isMutating}
+        errorMessage={mutationError}
+        title="단어 추가하기"
+        submitLabel="단어 추가하기"
+        onSubmit={async (keyword, description) => {
+          return await onAddReviewWord(keyword, description)
+        }}
+      />
+
+      {/* 단어 수정 모달 */}
+      <AddReviewWordModal
+        isOpen={Boolean(editingItem)}
+        onClose={() => setEditingItem(null)}
+        isSubmitting={isMutating}
+        errorMessage={mutationError}
+        title="단어 수정하기"
+        submitLabel="수정하기"
+        initialKeyword={editingItem?.keyword || ''}
+        initialDescription={editingItem?.description || ''}
+        onSubmit={async (keyword, description) => {
+          if (!editingItem) return false
+          const ok = await onUpdateReviewWord(editingItem.id, keyword, description)
+          if (ok) setEditingItem(null)
+          return ok
         }}
       />
 
@@ -210,12 +261,34 @@ export function SmartReviewContent({
         message="이번 회차의 추천 단어를 불러오시겠습니까?"
         confirmLabel="예"
         cancelLabel="아니오"
-        onConfirm={() => {
-          // 백엔드 연동은 나중에 추가
-          console.log('Load recommended words')
-          setIsConfirmDialogOpen(false)
+        isLoading={isMutating}
+        onConfirm={async () => {
+          const ok = await onImportRecommendedWords()
+          if (ok) setIsConfirmDialogOpen(false)
         }}
         onCancel={() => setIsConfirmDialogOpen(false)}
+      />
+
+      {/* 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        title="단어 삭제"
+        message={deleteTarget ? `\"${deleteTarget.keyword}\"를 삭제하시겠습니까?` : '삭제하시겠습니까?'}
+        confirmLabel="예"
+        cancelLabel="아니오"
+        isLoading={isMutating}
+        onConfirm={async () => {
+          if (!deleteTarget) return
+          const ok = await onDeleteReviewWord(deleteTarget.id)
+          if (ok) {
+            setIsDeleteConfirmOpen(false)
+            setDeleteTarget(null)
+          }
+        }}
+        onCancel={() => {
+          setIsDeleteConfirmOpen(false)
+          setDeleteTarget(null)
+        }}
       />
     </div>
   )
