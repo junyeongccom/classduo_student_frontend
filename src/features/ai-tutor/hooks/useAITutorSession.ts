@@ -20,21 +20,14 @@ export function useAITutorSession() {
   const setSelectedLectureIds = useAITutorStore(state => state.setSelectedLectureIds)
 
   // Initialize session ID from localStorage
-useEffect(() => {
-  if (typeof window === 'undefined') return
+  useEffect(() => {
+    if (typeof window === 'undefined') return
 
-  const savedSessionId = localStorage.getItem(AI_TUTOR_SESSION_KEY) || undefined
-  if (savedSessionId) {
-    setCurrentSessionId(savedSessionId)
-  } else {
-    /**
-     * 기존에는 선택된 회차가 없으면 항상 최신 회차를 자동 선택했는데,
-     * 이러면 사용자가 수동으로 해제할 수 없으므로 기본값을 유지한다.
-     * 자동 선택은 명시적으로 새 채팅을 시작하거나 사이드바에서 AI 튜터를 클릭했을 때만 수행한다.
-     */
-    setAutoSelectLatest(false)
-  }
-}, [setCurrentSessionId, setAutoSelectLatest])
+    const savedSessionId = localStorage.getItem(AI_TUTOR_SESSION_KEY) || undefined
+    if (savedSessionId) {
+      setCurrentSessionId(savedSessionId)
+    }
+  }, [setCurrentSessionId])
 
   // Sync session ID to localStorage
   useEffect(() => {
