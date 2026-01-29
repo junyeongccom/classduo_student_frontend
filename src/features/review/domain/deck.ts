@@ -11,6 +11,10 @@ export interface DeckSession {
   // 각 아이템의 앞뒷면 정보: itemId -> 'keyword' | 'description'
   // 'keyword'면 단어가 앞면, 'description'이면 설명이 앞면
   cardSides?: Record<string, 'keyword' | 'description'>
+  // 최초 한 바퀴(모든 단어)를 완료했는지 여부
+  initialRoundCompleted?: boolean
+  // 현재 진행 중인 타겟 단계 (null이면 최초 한 바퀴 진행 중)
+  currentTargetLevel?: DeckLevel | null
 }
 
 export type DeckLevelsByItemId = Record<string, DeckLevel>

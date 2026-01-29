@@ -6,6 +6,7 @@ import { useReviewStore } from '@/features/review/store/useReviewStore'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import {
   buildDeckOrder,
+  buildDeckOrderForLevel,
   findLowestLevel,
   countDeckLevels,
   getNextDeckLevel,
@@ -89,21 +90,29 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     if (reviewItems.length === 0) return
 
     // 세션이 있고 현재 커서가 유효하면 그대로 사용
-    // 단, 현재 order의 단어들이 더 이상 가장 낮은 단계가 아니면 재구성
     if (session && session.order.length > 0 && session.cursor >= 0 && session.cursor < session.order.length) {
-      const currentItemId = session.order[session.cursor]
-      const currentItemLevel = levelsByItemId[currentItemId] ?? 2
-      const lowestLevel = findLowestLevel(reviewItems, levelsByItemId)
+      // 최초 한 바퀴 진행 중이면 그대로 유지
+      if (!session.initialRoundCompleted) {
+        return
+      }
       
-      // 현재 order의 단어들이 더 이상 가장 낮은 단계가 아니면 재구성
-      if (lowestLevel && currentItemLevel !== lowestLevel) {
-        const desiredOrder = buildDeckOrder(reviewItems, levelsByItemId)
-        const nextSession: DeckSession = {
-          ...session,
-          order: desiredOrder,
-          cursor: 0,
+      // 타겟 단계의 단어들이 더 이상 해당 단계가 아니면 재구성
+      if (session.currentTargetLevel !== null && session.currentTargetLevel !== undefined) {
+        const currentItemId = session.order[session.cursor]
+        const currentItemLevel = levelsByItemId[currentItemId] ?? 2
+        
+        // 현재 타겟 단계가 더 이상 가장 낮은 단계가 아니면 재구성
+        const lowestLevel = findLowestLevel(reviewItems, levelsByItemId)
+        if (lowestLevel && currentItemLevel !== session.currentTargetLevel && currentItemLevel !== lowestLevel) {
+          const desiredOrder = buildDeckOrderForLevel(reviewItems, levelsByItemId, lowestLevel)
+          const nextSession: DeckSession = {
+            ...session,
+            order: desiredOrder,
+            cursor: 0,
+            currentTargetLevel: lowestLevel,
+          }
+          setDeckSession(userId, lectureId, nextSession)
         }
-        setDeckSession(userId, lectureId, nextSession)
       }
       return
     }
@@ -112,13 +121,15 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     // 중복 set 방지(동일 order 구성)
     if (prevSessionKeyRef.current === sessionKey && session) return
 
-    const order = buildDeckOrder(reviewItems, levelsByItemId)
+    // 최초에는 모든 단어를 한 바퀴 제시 (복습 중인 모든 단어)
+    const allItemIds = reviewItems.map((it) => it.id)
     const now = Date.now()
     const nextSession: DeckSession = {
-      order,
+      order: allItemIds,
       cursor: 0,
       startedAt: now,
-      // completedAt/cardSides는 더 이상 사용하지 않음(하위호환을 위해 남길 수 있음)
+      initialRoundCompleted: false,
+      currentTargetLevel: null,
     }
     setDeckSession(userId, lectureId, nextSession)
     prevSessionKeyRef.current = sessionKey
@@ -171,33 +182,59 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
       // 현재 단계의 다음 단어로 이동
       const nextCursor = session.cursor + 1
       
-      // 현재 단계의 모든 단어를 제시했는지 확인
-      const isCurrentLevelComplete = nextCursor >= session.order.length
-      
       let finalOrder = session.order
       let finalCursor = nextCursor
+      let finalInitialRoundCompleted = session.initialRoundCompleted ?? false
+      let finalCurrentTargetLevel: DeckLevel | null | undefined = session.currentTargetLevel
       
-      if (isCurrentLevelComplete) {
-        // 현재 단계의 한 바퀴가 끝났으므로, 다시 가장 낮은 단계를 찾아서 그 단계의 단어들로 재구성
-        const lowestLevel = findLowestLevel(reviewItems, updatedLevels)
-        if (lowestLevel) {
-          finalOrder = buildDeckOrder(reviewItems, updatedLevels)
-          finalCursor = 0
-        } else {
-          // 모든 단어가 없어진 경우 (이론적으로는 발생하지 않아야 함)
-          finalOrder = []
-          finalCursor = 0
+      // 최초 한 바퀴 진행 중인지 확인
+      if (!finalInitialRoundCompleted) {
+        // 최초 한 바퀴의 모든 단어를 제시했는지 확인
+        if (nextCursor >= session.order.length) {
+          // 최초 한 바퀴 완료
+          finalInitialRoundCompleted = true
+          // 다음 가장 낮은 단계를 찾아서 그 단계의 단어들로 재구성
+          const lowestLevel = findLowestLevel(reviewItems, updatedLevels)
+          if (lowestLevel) {
+            finalOrder = buildDeckOrderForLevel(reviewItems, updatedLevels, lowestLevel)
+            finalCursor = 0
+            finalCurrentTargetLevel = lowestLevel
+          } else {
+            // 모든 단어가 없어진 경우 (이론적으로는 발생하지 않아야 함)
+            finalOrder = []
+            finalCursor = 0
+            finalCurrentTargetLevel = null
+          }
         }
       } else {
-        // 현재 단계의 단어들이 레벨이 변경되어 order에 없을 수 있으므로 확인
-        const currentItemIdInOrder = session.order[nextCursor]
-        const currentItemLevel = updatedLevels[currentItemIdInOrder] ?? 2
-        const currentLowestLevel = findLowestLevel(reviewItems, updatedLevels)
+        // 최초 한 바퀴 완료 후: 현재 타겟 단계의 모든 단어를 제시했는지 확인
+        const isCurrentTargetLevelComplete = nextCursor >= session.order.length
         
-        // 현재 order의 다음 단어가 더 이상 가장 낮은 단계가 아니면, 새로운 가장 낮은 단계로 전환
-        if (currentLowestLevel && currentItemLevel !== currentLowestLevel) {
-          finalOrder = buildDeckOrder(reviewItems, updatedLevels)
-          finalCursor = 0
+        if (isCurrentTargetLevelComplete) {
+          // 현재 타겟 단계의 한 바퀴가 끝났으므로, 다음 가장 낮은 단계를 찾아서 그 단계의 단어들로 재구성
+          const lowestLevel = findLowestLevel(reviewItems, updatedLevels)
+          if (lowestLevel) {
+            finalOrder = buildDeckOrderForLevel(reviewItems, updatedLevels, lowestLevel)
+            finalCursor = 0
+            finalCurrentTargetLevel = lowestLevel
+          } else {
+            // 모든 단어가 없어진 경우
+            finalOrder = []
+            finalCursor = 0
+            finalCurrentTargetLevel = null
+          }
+        } else {
+          // 현재 타겟 단계의 단어들이 레벨이 변경되어 더 이상 해당 단계가 아니면 확인
+          const currentItemIdInOrder = session.order[nextCursor]
+          const currentItemLevel = updatedLevels[currentItemIdInOrder] ?? 2
+          
+          // 현재 타겟 단계와 다르면, 타겟 단계의 단어들만 필터링하여 order 재구성
+          if (finalCurrentTargetLevel !== null && finalCurrentTargetLevel !== undefined && currentItemLevel !== finalCurrentTargetLevel) {
+            // 타겟 단계의 단어들만 남기기
+            finalOrder = session.order.filter((id) => (updatedLevels[id] ?? 2) === finalCurrentTargetLevel)
+            // 필터링 후 cursor가 범위를 벗어나면 0으로 조정
+            finalCursor = finalOrder.length > 0 ? Math.min(nextCursor, finalOrder.length - 1) : 0
+          }
         }
       }
       
@@ -207,6 +244,8 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
         order: finalOrder,
         cursor: finalCursor,
         startedAt: session.startedAt ?? now,
+        initialRoundCompleted: finalInitialRoundCompleted,
+        currentTargetLevel: finalCurrentTargetLevel,
       }
       setDeckSession(userId, lectureId, nextSession)
     },
