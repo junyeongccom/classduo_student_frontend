@@ -6,6 +6,7 @@ import { useReviewStore } from '@/features/review/store/useReviewStore'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import {
   buildDeckOrder,
+  findLowestLevel,
   countDeckLevels,
   getNextDeckLevel,
   type DeckLevel,
@@ -88,26 +89,26 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     if (reviewItems.length === 0) return
 
     // 세션이 있고 현재 커서가 유효하면 그대로 사용
+    // 단, 현재 order의 단어들이 더 이상 가장 낮은 단계가 아니면 재구성
     if (session && session.order.length > 0 && session.cursor >= 0 && session.cursor < session.order.length) {
-      // order가 API 순서와 달라졌으면, 현재 itemId를 기준으로 cursor를 보정
-      const desiredOrder = buildDeckOrder(reviewItems, levelsByItemId)
       const currentItemId = session.order[session.cursor]
-      const desiredCursor = desiredOrder.indexOf(currentItemId)
-      const nextCursor = desiredCursor >= 0 ? desiredCursor : 0
-      const sameOrder = desiredOrder.length === session.order.length && desiredOrder.every((id, i) => id === session.order[i])
-      const needsUpdate = !sameOrder || nextCursor !== session.cursor
-
-      if (needsUpdate) {
+      const currentItemLevel = levelsByItemId[currentItemId] ?? 2
+      const lowestLevel = findLowestLevel(reviewItems, levelsByItemId)
+      
+      // 현재 order의 단어들이 더 이상 가장 낮은 단계가 아니면 재구성
+      if (lowestLevel && currentItemLevel !== lowestLevel) {
+        const desiredOrder = buildDeckOrder(reviewItems, levelsByItemId)
         const nextSession: DeckSession = {
           ...session,
           order: desiredOrder,
-          cursor: desiredOrder.length === 0 ? 0 : nextCursor,
+          cursor: 0,
         }
         setDeckSession(userId, lectureId, nextSession)
       }
       return
     }
 
+    // 세션이 없거나 유효하지 않으면 새로 생성
     // 중복 set 방지(동일 order 구성)
     if (prevSessionKeyRef.current === sessionKey && session) return
 
@@ -162,16 +163,54 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
       const nextLevel = getNextDeckLevel(current, rating)
       setDeckItemLevel(userId, lectureId, itemId, nextLevel)
 
-      const nextCursor = (session.cursor + 1) % session.order.length
+      // 업데이트된 levelsByItemId를 가져오기 위해 getState 사용
+      const updatedState = useReviewStore.getState()
+      const updatedDeckState = updatedState.deckByUserId[userId]?.[lectureId]
+      const updatedLevels = updatedDeckState?.levelsByItemId || { ...levelsByItemId, [itemId]: nextLevel }
+      
+      // 현재 단계의 다음 단어로 이동
+      const nextCursor = session.cursor + 1
+      
+      // 현재 단계의 모든 단어를 제시했는지 확인
+      const isCurrentLevelComplete = nextCursor >= session.order.length
+      
+      let finalOrder = session.order
+      let finalCursor = nextCursor
+      
+      if (isCurrentLevelComplete) {
+        // 현재 단계의 한 바퀴가 끝났으므로, 다시 가장 낮은 단계를 찾아서 그 단계의 단어들로 재구성
+        const lowestLevel = findLowestLevel(reviewItems, updatedLevels)
+        if (lowestLevel) {
+          finalOrder = buildDeckOrder(reviewItems, updatedLevels)
+          finalCursor = 0
+        } else {
+          // 모든 단어가 없어진 경우 (이론적으로는 발생하지 않아야 함)
+          finalOrder = []
+          finalCursor = 0
+        }
+      } else {
+        // 현재 단계의 단어들이 레벨이 변경되어 order에 없을 수 있으므로 확인
+        const currentItemIdInOrder = session.order[nextCursor]
+        const currentItemLevel = updatedLevels[currentItemIdInOrder] ?? 2
+        const currentLowestLevel = findLowestLevel(reviewItems, updatedLevels)
+        
+        // 현재 order의 다음 단어가 더 이상 가장 낮은 단계가 아니면, 새로운 가장 낮은 단계로 전환
+        if (currentLowestLevel && currentItemLevel !== currentLowestLevel) {
+          finalOrder = buildDeckOrder(reviewItems, updatedLevels)
+          finalCursor = 0
+        }
+      }
+      
       const now = Date.now()
       const nextSession: DeckSession = {
         ...session,
-        cursor: nextCursor,
+        order: finalOrder,
+        cursor: finalCursor,
         startedAt: session.startedAt ?? now,
       }
       setDeckSession(userId, lectureId, nextSession)
     },
-    [lectureId, levelsByItemId, session, setDeckItemLevel, setDeckSession, userId]
+    [lectureId, levelsByItemId, reviewItems, session, setDeckItemLevel, setDeckSession, userId]
   )
 
   return {
