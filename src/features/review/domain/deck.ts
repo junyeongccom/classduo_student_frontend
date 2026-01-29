@@ -32,16 +32,49 @@ export function getNextDeckLevel(current: DeckLevel, rating: DeckRating): DeckLe
   return current
 }
 
+/**
+ * 현재 가장 낮은 단계를 찾는다.
+ */
+export function findLowestLevel(
+  reviewItems: LectureReviewItem[],
+  levelsByItemId: DeckLevelsByItemId
+): DeckLevel | null {
+  if (reviewItems.length === 0) return null
+  
+  for (const level of [1, 2, 3, 4] as DeckLevel[]) {
+    const hasItems = reviewItems.some((item) => (levelsByItemId[item.id] ?? 2) === level)
+    if (hasItems) return level
+  }
+  
+  return null
+}
+
+/**
+ * 특정 단계의 단어들만 반환한다 (같은 단계 내에서는 API 순서 유지).
+ */
+export function buildDeckOrderForLevel(
+  reviewItems: LectureReviewItem[],
+  levelsByItemId: DeckLevelsByItemId,
+  targetLevel: DeckLevel
+): string[] {
+  const items = reviewItems.filter((item) => (levelsByItemId[item.id] ?? 2) === targetLevel)
+  return items.map((it) => it.id)
+}
+
 export function buildDeckOrder(
   reviewItems: LectureReviewItem[],
   levelsByItemId: DeckLevelsByItemId,
   options?: { excludeLevel4?: boolean }
 ): string[] {
-  // 단계와 무관하게 항상 API 순서(reviewItems 배열 순서)대로 제시한다.
-  // options/levelsByItemId는 하위호환을 위해 시그니처에 남겨두지만, 정렬에는 사용하지 않는다.
-  void levelsByItemId
-  void options
-  return reviewItems.map((it) => it.id)
+  // 가장 낮은 단계의 단어만 반환한다.
+  // 같은 단계 내에서는 API 순서(reviewItems 배열 순서)를 유지한다.
+  const excludeLevel4 = options?.excludeLevel4 ?? false
+  
+  const lowestLevel = findLowestLevel(reviewItems, levelsByItemId)
+  if (!lowestLevel) return []
+  if (excludeLevel4 && lowestLevel === 4) return []
+  
+  return buildDeckOrderForLevel(reviewItems, levelsByItemId, lowestLevel)
 }
 
 export function countDeckLevels(
