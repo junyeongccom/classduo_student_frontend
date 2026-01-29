@@ -283,7 +283,7 @@ export const useReviewStore = create<ReviewStore>()(
           let changed = false
           for (const id of itemIds) {
             if (!nextLevels[id]) {
-              nextLevels[id] = 1
+              nextLevels[id] = 2
               changed = true
             }
           }
@@ -352,9 +352,9 @@ export const useReviewStore = create<ReviewStore>()(
           const lectureDeck = userDeck[lectureId] || { levelsByItemId: {}, session: null }
           const nextLevels: Record<string, DeckLevel> = {}
           
-          // 모든 아이템을 1단계로 설정
+          // 모든 아이템을 2단계로 설정
           for (const id of itemIds) {
-            nextLevels[id] = 1
+            nextLevels[id] = 2
           }
 
           return {

@@ -41,7 +41,7 @@ export function buildDeckOrder(
   const level4: string[] = []
 
   for (const item of reviewItems) {
-    const level = levelsByItemId[item.id] ?? 1
+    const level = levelsByItemId[item.id] ?? 2
     if (level === 1) level1.push(item.id)
     else if (level === 2) level2.push(item.id)
     else if (level === 3) level3.push(item.id)
@@ -58,7 +58,7 @@ export function countDeckLevels(
 ): Record<DeckLevel, number> {
   const counts: Record<DeckLevel, number> = { 1: 0, 2: 0, 3: 0, 4: 0 }
   for (const item of reviewItems) {
-    const level = levelsByItemId[item.id] ?? 1
+    const level = levelsByItemId[item.id] ?? 2
     counts[level] += 1
   }
   return counts
@@ -66,7 +66,7 @@ export function countDeckLevels(
 
 export function areAllItemsLevel4(reviewItems: LectureReviewItem[], levelsByItemId: DeckLevelsByItemId): boolean {
   if (reviewItems.length === 0) return false
-  return reviewItems.every((item) => (levelsByItemId[item.id] ?? 1) === 4)
+  return reviewItems.every((item) => (levelsByItemId[item.id] ?? 2) === 4)
 }
 
 

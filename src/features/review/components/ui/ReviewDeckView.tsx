@@ -148,7 +148,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
             <div className="mt-2 grid grid-cols-4 gap-2 text-center">
               {[1, 2, 3, 4].map((lv) => (
                 <div key={lv} className="rounded-xl border border-slate-100 bg-slate-50 px-2 py-2">
-                  <div className="text-[10px] font-semibold text-slate-500">{t('level', { level: lv })}</div>
+                  <div className="text-[10px] font-semibold text-slate-500">{t(`level${lv}` as 'level1' | 'level2' | 'level3' | 'level4')}</div>
                   <div className="mt-0.5 text-sm font-bold text-slate-900">
                     {deck.levelCounts[lv as 1 | 2 | 3 | 4]}
                   </div>
@@ -204,7 +204,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
                       </div>
                       {/* 단계 배지 - 항상 같은 위치 */}
                       <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600">
-                        {t('currentLevelLabel', { level: deck.currentLevel ?? 1 })}
+                        {deck.currentLevel ? t(`level${deck.currentLevel}` as 'level1' | 'level2' | 'level3' | 'level4') : t('level2')}
                       </div>
                       {/* 힌트 - 항상 같은 위치 */}
                       <div className="mt-3 text-[11px] font-medium text-slate-400 opacity-80">
