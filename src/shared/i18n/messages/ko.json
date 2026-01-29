@@ -106,7 +106,12 @@
         "roundCompletedBody": "‘다시 시작’으로 현재 단계 분포를 기준으로 다음 라운드를 진행할 수 있어요.",
         "allCompletedTitle": "학습 완료!",
         "allCompletedBody": "모든 단어가 4단계에 도달했습니다.",
-        "restart": "다시 시작"
+        "restart": "다시 시작",
+        "clickToRevealDescription": "설명 보기",
+        "clickToRevealKeyword": "단어 보기",
+        "clickToGoBack": "돌아가기",
+        "description": "설명",
+        "keyword": "단어"
       },
       "games": {
         "matching": {

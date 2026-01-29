@@ -8,6 +8,9 @@ export interface DeckSession {
   cursor: number
   startedAt: number
   completedAt?: number
+  // 각 아이템의 앞뒷면 정보: itemId -> 'keyword' | 'description'
+  // 'keyword'면 단어가 앞면, 'description'이면 설명이 앞면
+  cardSides?: Record<string, 'keyword' | 'description'>
 }
 
 export type DeckLevelsByItemId = Record<string, DeckLevel>

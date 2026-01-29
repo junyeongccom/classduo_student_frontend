@@ -106,7 +106,12 @@
         "roundCompletedBody": "Click “Restart” to run the next round based on the current levels.",
         "allCompletedTitle": "Completed!",
         "allCompletedBody": "All words have reached level 4.",
-        "restart": "Restart"
+        "restart": "Restart",
+        "clickToRevealDescription": "Click to reveal description",
+        "clickToRevealKeyword": "Click to reveal keyword",
+        "clickToGoBack": "Click to go back",
+        "description": "Description",
+        "keyword": "Keyword"
       },
       "games": {
         "matching": {

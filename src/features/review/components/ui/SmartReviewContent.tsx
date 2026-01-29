@@ -355,12 +355,12 @@ export function SmartReviewContent({
               />
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {gameItems.map(game => {
                 const isPlayable = game.id === 'definition-builder' || game.id === 'matching'
                 return (
                   <button
-                    key={game.id}
+              key={game.id}
                     type="button"
                     onClick={() => {
                       if (isPlayable) onSelectGame(game.id)
@@ -368,22 +368,22 @@ export function SmartReviewContent({
                     className={`flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition ${
                       isPlayable ? 'hover:-translate-y-0.5 hover:border-slate-300' : 'cursor-not-allowed opacity-60'
                     }`}
-                  >
-                    <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
-                      {game.thumbnail ? (
-                        <img
-                          src={game.thumbnail}
-                          alt={`${game.title} 썸네일`}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : null}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
-                      <p className="mt-1 text-xs text-slate-500">{game.description}</p>
-                    </div>
+            >
+              <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
+                {game.thumbnail ? (
+                  <img
+                    src={game.thumbnail}
+                    alt={`${game.title} 썸네일`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : null}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
+                <p className="mt-1 text-xs text-slate-500">{game.description}</p>
+              </div>
                   </button>
                 )
               })}
