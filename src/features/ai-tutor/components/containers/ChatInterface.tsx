@@ -283,6 +283,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
   const [cardMatchState, setCardMatchState] = useState<'idle' | 'hidden' | 'completed'>('idle')
+  const [cardMatchOffset, setCardMatchOffset] = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
   const [successFading, setSuccessFading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -294,6 +295,16 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   const singleLectureId = selectedLectureIds.length === 1 ? selectedLectureIds[0] : null
   const { data: cardMatchSet, isLoading: isCardMatchLoading } = useCardMatchSet(singleLectureId)
+  const cardMatchPairs = useMemo(() => {
+    const pairs = cardMatchSet?.pairs ?? []
+    if (pairs.length === 0) return []
+    const total = pairs.length
+    const normalizedOffset = ((cardMatchOffset % total) + total) % total
+    const targetCount = Math.min(6, total)
+    return Array.from({ length: targetCount }, (_, idx) => {
+      return pairs[(normalizedOffset + idx) % total]
+    })
+  }, [cardMatchSet?.pairs, cardMatchOffset])
 
   const clearSuccessTimers = useCallback(() => {
     if (successFadeTimerRef.current) {
@@ -311,6 +322,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     // 강의회차가 선택되지 않은 상태에서 선택된 상태로 변경될 때 로드 상태 초기화
     if (prevLectureIdsRef.current.length === 0 && selectedLectureIds.length > 0) {
       setCardMatchState(selectedLectureIds.length === 1 ? 'idle' : 'hidden')
+      setCardMatchOffset(0)
       setShowSuccess(false)
       setSuccessFading(false)
       clearSuccessTimers()
@@ -320,6 +332,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       setShowSuccess(false)
       setSuccessFading(false)
       clearSuccessTimers()
+      setCardMatchOffset(0)
     }
     // 강의회차 선택이 변경될 때마다 로드 상태 초기화 (다른 회차 선택 시)
     else if (prevLectureIdsRef.current.length > 0 && selectedLectureIds.length > 0) {
@@ -331,6 +344,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         setShowSuccess(false)
         setSuccessFading(false)
         clearSuccessTimers()
+        setCardMatchOffset(0)
       }
     }
     prevLectureIdsRef.current = [...selectedLectureIds]
@@ -341,6 +355,15 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       clearSuccessTimers()
     }
   }, [clearSuccessTimers])
+
+  useEffect(() => {
+    if (cardMatchState !== 'completed') return
+    if (showSuccess) return
+    if (selectedLectureIds.length !== 1) return
+    if (isInputFocused) return
+    if (input.trim().length > 0) return
+    setCardMatchState('idle')
+  }, [cardMatchState, showSuccess, selectedLectureIds.length, isInputFocused, input])
 
   // 로딩 중 복습 정답 조회 (locale 캐시 스위치)
   useEffect(() => {
@@ -1305,15 +1328,16 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     return (
       <div className="flex h-full flex-col">
         {/* 중앙 컨텐츠 */}
-        <div className={`flex flex-1 flex-col items-center px-4 max-w-full ${showCardMatchGame ? 'justify-start pt-6' : 'justify-center'}`}>
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 max-w-full">
           {showCardMatchGame && (
             <div className="mb-6 flex w-full justify-center">
               <CardMatchGame
-                pairs={cardMatchSet?.pairs ?? []}
+                pairs={cardMatchPairs}
                 status={cardMatchSet?.status}
                 isLoading={isCardMatchLoading}
                 onComplete={() => {
                   setCardMatchState('completed')
+                  setCardMatchOffset((prev) => prev + 6)
                   setShowSuccess(true)
                   setSuccessFading(false)
                   clearSuccessTimers()
@@ -1328,7 +1352,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             </div>
           )}
           {/* 중앙 입력창 */}
-          <div className="w-full max-w-[772px]">
+          <div className="w-full max-w-[772px] mx-auto">
             {cardMatchState === 'completed' && showSuccess && (
               <div className={`mb-6 -mt-3 flex items-center justify-center text-3xl font-bold text-gray-900 transition-opacity duration-500 ${successFading ? 'opacity-0' : 'opacity-100'}`}>
                 SUCCESS

@@ -57,7 +57,7 @@ export function useCardMatchSet(lectureId: string | null) {
     const fetchSet = async () => {
       setIsLoading(true)
       setError(null)
-      const result = await cardMatchService.getCardMatchSet(lectureId)
+      const result = await cardMatchService.getCardMatchSet(lectureId, locale, true)
       if (!isMounted) return
       if (result.error || !result.data) {
         setError(result.error?.message ?? '카드 매칭 데이터를 불러오지 못했습니다')
