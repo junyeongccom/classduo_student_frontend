@@ -29,7 +29,6 @@ export function ReviewContainer() {
   const { data: reviewItemsData, isLoading: isLoadingReviewItems, error: reviewItemsError, refetch } =
     useLectureReviewItems(selectedLectureId)
 
-<<<<<<< HEAD
   const {
     data: definitionBuilderData,
     isLoading: isDefinitionBuilderLoading,
@@ -45,10 +44,8 @@ export function ReviewContainer() {
       setActiveGameId(null)
     }
   }, [activeTab])
-=======
   const deck = useReviewDeck(selectedLectureId, reviewItemsData?.items || [])
 
->>>>>>> 27efc85 (덱 기능 1차 도입)
   // 회차 변경 시, 미리보기 캐시 초기화
   useEffect(() => {
     setImportPreviewItems([])
@@ -110,14 +107,11 @@ export function ReviewContainer() {
           isReviewItemsLoading={Boolean(selectedLectureId) && isLoadingReviewItems}
           reviewItemsError={reviewItemsError}
           hasSelectedLecture={Boolean(selectedLectureId)}
-<<<<<<< HEAD
           definitionBuilderData={definitionBuilderData}
           isDefinitionBuilderLoading={isDefinitionBuilderLoading}
           definitionBuilderError={definitionBuilderError}
           onRetryDefinitionBuilder={refetchDefinitionBuilder}
-=======
           deck={deck}
->>>>>>> 27efc85 (덱 기능 1차 도입)
           isMutating={isMutating}
           mutationError={mutationError}
           onRequestImportPreview={async () => {
