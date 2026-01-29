@@ -22,7 +22,8 @@ export interface Lecture {
 export interface Course {
   course_id: string
   title: string
-  term: string
+  professor_name?: string | null
+  section?: string | null
   lectures: Lecture[]
 }
 
@@ -260,7 +261,14 @@ export function LectureSidebarUI({
                 >
                   {course.title}
                 </span>
-                {course.term && <span className="text-xs text-gray-400">{course.term}</span>}
+                {(() => {
+                  const professorName = course.professor_name?.trim()
+                  const rawSection = course.section
+                  const sectionValue = rawSection === null || rawSection === undefined ? '' : String(rawSection).trim()
+                  const sectionLabel = sectionValue ? `${sectionValue}분반` : ''
+                  const meta = [professorName, sectionLabel].filter(Boolean).join(' · ')
+                  return meta ? <span className="text-xs text-gray-400">{meta}</span> : null
+                })()}
               </button>
             ))}
           </div>

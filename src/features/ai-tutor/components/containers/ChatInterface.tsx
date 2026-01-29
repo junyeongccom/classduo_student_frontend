@@ -1471,7 +1471,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           {isLoading && (
             <AnswerLoadingReviewBanner
               answers={reviewKeyAnswers}
-              fallbackText={locale === 'en' ? 'Loading answer...' : '정답 준비 중...'}
+              fallbackText={locale === 'en' ? 'Loading answer...' : '핵심 단어 준비중...'}
               className="mb-6"
             />
           )}

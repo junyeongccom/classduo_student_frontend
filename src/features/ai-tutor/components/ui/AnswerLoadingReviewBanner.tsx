@@ -30,7 +30,7 @@ const pickRandomAnswer = (answers: string[], exclude?: string) => {
 export function AnswerLoadingReviewBanner({
   answers,
   intervalMs = 10000,
-  fallbackText = '정답 준비 중...',
+  fallbackText = '핵심 단어 준비중...',
   className,
 }: AnswerLoadingReviewBannerProps) {
   const [currentAnswer, setCurrentAnswer] = useState(fallbackText)
