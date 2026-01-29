@@ -119,7 +119,10 @@
         "levelModal": {
           "empty": "No words in this level.",
           "close": "Close"
-        }
+        },
+        "modeBasic": "Full Review",
+        "modeLowest": "Forgetting Curve Review",
+        "cycleProgress": "{current} / {total}"
       },
       "games": {
         "matching": {

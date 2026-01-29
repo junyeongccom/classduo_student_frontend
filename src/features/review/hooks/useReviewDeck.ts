@@ -6,11 +6,14 @@ import { useReviewStore } from '@/features/review/store/useReviewStore'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import {
   buildDeckOrder,
+  buildDeckOrderBasic,
+  buildDeckOrderLowest,
   buildDeckOrderForLevel,
   findLowestLevel,
   countDeckLevels,
   getNextDeckLevel,
   type DeckLevel,
+  type DeckMode,
   type DeckRating,
   type DeckSession,
 } from '@/features/review/domain/deck'
@@ -21,6 +24,9 @@ export interface ReviewDeckViewModel {
   levelCounts: Record<DeckLevel, number>
   currentItem: LectureReviewItem | null
   itemsByLevel: Record<DeckLevel, LectureReviewItem[]>
+  mode: DeckMode
+  cycleTotal: number
+  cycleCurrent: number
   rateCurrent: (rating: DeckRating) => void
 }
 
@@ -91,28 +97,26 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
 
     // 세션이 있고 현재 커서가 유효하면 그대로 사용
     if (session && session.order.length > 0 && session.cursor >= 0 && session.cursor < session.order.length) {
-      // 최초 한 바퀴 진행 중이면 그대로 유지
-      if (!session.initialRoundCompleted) {
-        return
-      }
+      // 현재 모드에 맞게 order가 유효한지 확인
+      const currentMode = session.mode ?? 'basic'
+      const expectedOrder = currentMode === 'basic' 
+        ? buildDeckOrderBasic(reviewItems, levelsByItemId)
+        : buildDeckOrderLowest(reviewItems, levelsByItemId)
       
-      // 타겟 단계의 단어들이 더 이상 해당 단계가 아니면 재구성
-      if (session.currentTargetLevel !== null && session.currentTargetLevel !== undefined) {
-        const currentItemId = session.order[session.cursor]
-        const currentItemLevel = levelsByItemId[currentItemId] ?? 2
-        
-        // 현재 타겟 단계가 더 이상 가장 낮은 단계가 아니면 재구성
-        const lowestLevel = findLowestLevel(reviewItems, levelsByItemId)
-        if (lowestLevel && currentItemLevel !== session.currentTargetLevel && currentItemLevel !== lowestLevel) {
-          const desiredOrder = buildDeckOrderForLevel(reviewItems, levelsByItemId, lowestLevel)
-          const nextSession: DeckSession = {
-            ...session,
-            order: desiredOrder,
-            cursor: 0,
-            currentTargetLevel: lowestLevel,
-          }
-          setDeckSession(userId, lectureId, nextSession)
+      // order가 변경되었으면 재구성 (단어가 추가/삭제되었거나 레벨이 변경된 경우)
+      const currentItemId = session.order[session.cursor]
+      const isValidOrder = expectedOrder.length === session.order.length && 
+        expectedOrder.every((id, i) => id === session.order[i])
+      
+      if (!isValidOrder && expectedOrder.length > 0) {
+        // 현재 아이템이 새로운 order에 있는지 확인
+        const newCursor = expectedOrder.indexOf(currentItemId)
+        const nextSession: DeckSession = {
+          ...session,
+          order: expectedOrder,
+          cursor: newCursor >= 0 ? newCursor : 0,
         }
+        setDeckSession(userId, lectureId, nextSession)
       }
       return
     }
@@ -121,15 +125,14 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     // 중복 set 방지(동일 order 구성)
     if (prevSessionKeyRef.current === sessionKey && session) return
 
-    // 최초에는 모든 단어를 한 바퀴 제시 (복습 중인 모든 단어)
-    const allItemIds = reviewItems.map((it) => it.id)
+    // 최초에는 기본 모드로 모든 단어를 제시 (가장 낮은 단계부터 높은 단계 순서)
+    const allItemIds = buildDeckOrderBasic(reviewItems, levelsByItemId)
     const now = Date.now()
     const nextSession: DeckSession = {
       order: allItemIds,
       cursor: 0,
       startedAt: now,
-      initialRoundCompleted: false,
-      currentTargetLevel: null,
+      mode: 'basic',
     }
     setDeckSession(userId, lectureId, nextSession)
     prevSessionKeyRef.current = sessionKey
@@ -181,59 +184,45 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
       
       // 현재 단계의 다음 단어로 이동
       const nextCursor = session.cursor + 1
+      const currentMode = session.mode ?? 'basic'
       
       let finalOrder = session.order
       let finalCursor = nextCursor
-      let finalInitialRoundCompleted = session.initialRoundCompleted ?? false
-      let finalCurrentTargetLevel: DeckLevel | null | undefined = session.currentTargetLevel
+      let finalMode: DeckMode = currentMode
       
-      // 최초 한 바퀴 진행 중인지 확인
-      if (!finalInitialRoundCompleted) {
-        // 최초 한 바퀴의 모든 단어를 제시했는지 확인
-        if (nextCursor >= session.order.length) {
-          // 최초 한 바퀴 완료
-          finalInitialRoundCompleted = true
-          // 다음 가장 낮은 단계를 찾아서 그 단계의 단어들로 재구성
-          const lowestLevel = findLowestLevel(reviewItems, updatedLevels)
-          if (lowestLevel) {
-            finalOrder = buildDeckOrderForLevel(reviewItems, updatedLevels, lowestLevel)
-            finalCursor = 0
-            finalCurrentTargetLevel = lowestLevel
-          } else {
-            // 모든 단어가 없어진 경우 (이론적으로는 발생하지 않아야 함)
-            finalOrder = []
-            finalCursor = 0
-            finalCurrentTargetLevel = null
-          }
+      // 현재 모드의 모든 단어를 제시했는지 확인
+      const isCurrentModeComplete = nextCursor >= session.order.length
+      
+      if (isCurrentModeComplete) {
+        // 현재 모드 완료 → 다음 모드로 전환
+        if (currentMode === 'basic') {
+          // 기본 모드 완료 → 최저 모드로 전환
+          finalMode = 'lowest'
+          finalOrder = buildDeckOrderLowest(reviewItems, updatedLevels)
+          finalCursor = 0
+        } else {
+          // 최저 모드 완료 → 기본 모드로 전환
+          finalMode = 'basic'
+          finalOrder = buildDeckOrderBasic(reviewItems, updatedLevels)
+          finalCursor = 0
         }
       } else {
-        // 최초 한 바퀴 완료 후: 현재 타겟 단계의 모든 단어를 제시했는지 확인
-        const isCurrentTargetLevelComplete = nextCursor >= session.order.length
+        // 현재 모드 진행 중: order가 유효한지 확인하고 필요시 재구성
+        const expectedOrder = currentMode === 'basic'
+          ? buildDeckOrderBasic(reviewItems, updatedLevels)
+          : buildDeckOrderLowest(reviewItems, updatedLevels)
         
-        if (isCurrentTargetLevelComplete) {
-          // 현재 타겟 단계의 한 바퀴가 끝났으므로, 다음 가장 낮은 단계를 찾아서 그 단계의 단어들로 재구성
-          const lowestLevel = findLowestLevel(reviewItems, updatedLevels)
-          if (lowestLevel) {
-            finalOrder = buildDeckOrderForLevel(reviewItems, updatedLevels, lowestLevel)
-            finalCursor = 0
-            finalCurrentTargetLevel = lowestLevel
-          } else {
-            // 모든 단어가 없어진 경우
-            finalOrder = []
-            finalCursor = 0
-            finalCurrentTargetLevel = null
-          }
-        } else {
-          // 현재 타겟 단계의 단어들이 레벨이 변경되어 더 이상 해당 단계가 아니면 확인
-          const currentItemIdInOrder = session.order[nextCursor]
-          const currentItemLevel = updatedLevels[currentItemIdInOrder] ?? 2
+        // 현재 order의 다음 단어가 더 이상 유효하지 않으면 재구성
+        if (nextCursor < session.order.length) {
+          const nextItemId = session.order[nextCursor]
+          const isNextItemValid = expectedOrder.includes(nextItemId)
           
-          // 현재 타겟 단계와 다르면, 타겟 단계의 단어들만 필터링하여 order 재구성
-          if (finalCurrentTargetLevel !== null && finalCurrentTargetLevel !== undefined && currentItemLevel !== finalCurrentTargetLevel) {
-            // 타겟 단계의 단어들만 남기기
-            finalOrder = session.order.filter((id) => (updatedLevels[id] ?? 2) === finalCurrentTargetLevel)
-            // 필터링 후 cursor가 범위를 벗어나면 0으로 조정
-            finalCursor = finalOrder.length > 0 ? Math.min(nextCursor, finalOrder.length - 1) : 0
+          if (!isNextItemValid) {
+            // order 재구성 (현재 아이템이 새로운 order에 있는지 확인)
+            const currentItemId = session.order[session.cursor]
+            const newCursor = expectedOrder.indexOf(currentItemId)
+            finalOrder = expectedOrder
+            finalCursor = newCursor >= 0 ? newCursor + 1 : 0
           }
         }
       }
@@ -244,13 +233,18 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
         order: finalOrder,
         cursor: finalCursor,
         startedAt: session.startedAt ?? now,
-        initialRoundCompleted: finalInitialRoundCompleted,
-        currentTargetLevel: finalCurrentTargetLevel,
+        mode: finalMode,
       }
       setDeckSession(userId, lectureId, nextSession)
     },
     [lectureId, levelsByItemId, reviewItems, session, setDeckItemLevel, setDeckSession, userId]
   )
+
+  const mode = (session?.mode ?? 'basic') as DeckMode
+  const cycleTotal = session?.order?.length ?? 0
+  const cycleCurrent = session && session.cursor >= 0 && session.cursor < session.order.length
+    ? session.cursor + 1
+    : 0
 
   return {
     hasLecture: Boolean(lectureId),
@@ -258,6 +252,9 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     levelCounts,
     currentItem,
     itemsByLevel,
+    mode,
+    cycleTotal,
+    cycleCurrent,
     rateCurrent,
   }
 }

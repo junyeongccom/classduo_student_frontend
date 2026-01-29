@@ -80,23 +80,36 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
     <div className="flex flex-1 justify-center">
       {/* 목록과 동일한 가로 폭(max-w-[66%])로 통일 */}
       <div className="flex w-full max-w-[66%] flex-col gap-4">
-        {/* 이해 단계 분포 (가운데 정렬) */}
+        {/* 모드 정보 + 이해 단계 분포 */}
         <div className="flex justify-center">
-          <div className="w-full max-w-[520px] rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <div className="grid grid-cols-4 gap-2 text-center">
-              {[1, 2, 3, 4].map((lv) => (
-                <button
-                  key={lv}
-                  type="button"
-                  onClick={() => setSelectedLevel(lv as DeckLevel)}
-                  className="rounded-xl border border-slate-100 bg-slate-50 px-2 py-2 hover:bg-slate-100 hover:border-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
-                >
-                  <div className="text-[10px] font-semibold text-slate-500">{t(`level${lv}` as 'level1' | 'level2' | 'level3' | 'level4')}</div>
-                  <div className="mt-0.5 text-[35px] font-bold text-slate-900">
-                    {deck.levelCounts[lv as 1 | 2 | 3 | 4]}
-                  </div>
-                </button>
-              ))}
+          <div className="w-full max-w-[520px] grid grid-cols-[1fr_2fr] gap-2">
+            {/* 모드 정보 칸 */}
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm flex flex-col items-center justify-center">
+              <div className="text-[11px] font-semibold text-slate-500 mb-2">
+                {deck.mode === 'basic' ? t('modeBasic') : t('modeLowest')}
+              </div>
+              <div className="text-[35px] font-semibold text-slate-700">
+                {t('cycleProgress', { current: deck.cycleCurrent, total: deck.cycleTotal })}
+              </div>
+            </div>
+            
+            {/* 이해 단계 분포 칸 */}
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <div className="grid grid-cols-4 gap-2 text-center">
+                {[1, 2, 3, 4].map((lv) => (
+                  <button
+                    key={lv}
+                    type="button"
+                    onClick={() => setSelectedLevel(lv as DeckLevel)}
+                    className="rounded-xl border border-slate-100 bg-slate-50 px-2 py-2 hover:bg-slate-100 hover:border-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+                  >
+                    <div className="text-[10px] font-semibold text-slate-500">{t(`level${lv}` as 'level1' | 'level2' | 'level3' | 'level4')}</div>
+                    <div className="mt-0.5 text-[35px] font-bold text-slate-900">
+                      {deck.levelCounts[lv as 1 | 2 | 3 | 4]}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

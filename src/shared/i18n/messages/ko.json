@@ -119,7 +119,10 @@
         "levelModal": {
           "empty": "이 단계에 해당하는 단어가 없습니다.",
           "close": "닫기"
-        }
+        },
+        "modeBasic": "전부 점검",
+        "modeLowest": "취약 부분 점검",
+        "cycleProgress": "{current} / {total}"
       },
       "games": {
         "matching": {
