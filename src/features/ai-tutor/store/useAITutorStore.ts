@@ -6,7 +6,8 @@ import type { AppLocale } from '@/shared/i18n/I18nProvider'
 export interface AITutorCourse {
   course_id: string
   title: string
-  term: string
+  professor_name?: string | null
+  section?: string | null
   lectures: Array<{
     lecture_id: string
     course_id: string

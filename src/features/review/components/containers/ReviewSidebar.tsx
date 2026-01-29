@@ -288,9 +288,14 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                 }`}>
                   {course.title}
                 </span>
-                {course.section && (
-                  <span className="text-xs text-gray-400">{course.section}</span>
-                )}
+                {(() => {
+                  const professorName = course.professor_name?.trim()
+                  const rawSection = course.section
+                  const sectionValue = rawSection === null || rawSection === undefined ? '' : String(rawSection).trim()
+                  const sectionLabel = sectionValue ? `${sectionValue}분반` : ''
+                  const meta = [professorName, sectionLabel].filter(Boolean).join(' · ')
+                  return meta ? <span className="text-xs text-gray-400">{meta}</span> : null
+                })()}
               </button>
             ))}
           </div>
@@ -342,9 +347,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                         <p className={`text-sm font-medium mt-0.5 ${
                           isSelected ? 'text-gray-900' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
                         }`}>
-                          {lecture.essence_7words === ANALYZING_STATUS 
-                            ? t('analyzing') 
-                            : lecture.essence_7words || t('noEssence')}
+                        {isAnalyzing ? '준비중' : lecture.essence_7words}
                         </p>
                       </div>
                       {isSelected && !isAnalyzing && (

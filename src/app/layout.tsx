@@ -5,13 +5,13 @@ import { I18nProvider } from '@/shared/i18n/I18nProvider'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://korea.classduo.io.kr'),
-  title: 'Aplus - 학습효과 좋은 AI 스터디툴',
+  title: 'Aplus - 매일매일 A+학점을 향해!',
   description: 'AI 기반 학습 보조 플랫폼',
   icons: {
     icon: '/Aplus_favicon.png',
   },
   openGraph: {
-    title: 'Aplus - 학습효과 좋은 AI 스터디툴',
+    title: 'Aplus - 매일매일 A+학점을 향해!',
     description: 'AI 기반 학습 보조 플랫폼',
     url: 'https://korea.classduo.io.kr',
     siteName: 'ClassDuo',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Aplus - 학습효과 좋은 AI 스터디툴',
+    title: 'Aplus - 매일매일 A+학점을 향해!',
     description: 'AI 기반 학습 보조 플랫폼',
     images: ['/present_image.png'],
   },

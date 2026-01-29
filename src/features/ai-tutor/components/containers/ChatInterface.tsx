@@ -468,7 +468,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
 
     const oppositeLocale: AppLocale = locale === 'ko' ? 'en' : 'ko'
-    if (!hookingByLocale[oppositeLocale]?.[lectureId] || !pqmByLocale[oppositeLocale]?.[lectureId]) {
+    const oppositeHooking = hookingByLocale[oppositeLocale]?.[lectureId]
+    const oppositePqm = pqmByLocale[oppositeLocale]?.[lectureId]
+    if (oppositeHooking === undefined || oppositePqm === undefined) {
       loadQuestions(oppositeLocale, false)
     }
   }, [selectedLectureIds, locale, hookingByLocale, pqmByLocale, setHookingCache, setPqmCache])
@@ -1471,7 +1473,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           {isLoading && (
             <AnswerLoadingReviewBanner
               answers={reviewKeyAnswers}
-              fallbackText={locale === 'en' ? 'Loading answer...' : '정답 준비 중...'}
+              fallbackText={locale === 'en' ? 'Loading answer...' : '핵심 단어 준비중...'}
               className="mb-6"
             />
           )}

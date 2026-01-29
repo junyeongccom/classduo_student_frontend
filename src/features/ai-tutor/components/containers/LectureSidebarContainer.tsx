@@ -167,7 +167,8 @@ export function LectureSidebarContainer({
         const coursesWithLectures: AITutorCourse[] = coursesList.map((course: any) => ({
           course_id: course.course_id,
           title: course.title,
-          term: `${course.academic_year}-${course.term_code}`,
+          professor_name: course.professor_name ?? course.professorName ?? null,
+          section: course.section ?? course.section_no ?? course.sectionNo ?? null,
           lectures: (course.lectures || []).map((lec: any) => ({
             lecture_id: lec.lecture_id,
             course_id: lec.course_id,
@@ -224,6 +225,10 @@ export function LectureSidebarContainer({
     if (cached) {
       setCourses(cached)
       setIsLoading(false)
+      const hasMeta = cached.some(course => course.professor_name || course.section)
+      if (!hasMeta) {
+        loadWithRetry()
+      }
     } else {
       loadWithRetry()
     }

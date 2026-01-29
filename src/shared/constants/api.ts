@@ -26,7 +26,7 @@ export const API_ENDPOINTS = {
 
   // Review
   REVIEW: {
-    GET_LECTURE_LIST: (courseId: string) => `/reviews/courses/${courseId}/lectures`,
+    GET_LECTURE_LIST: (courseId: string) => `/courses/${courseId}/lectures`,
     GET_CAROUSEL: (lectureId: string) => `/reviews/lectures/${lectureId}/carousel`,
     COMPLETE: (lectureId: string) => `/reviews/lectures/${lectureId}/review/complete`,
   },

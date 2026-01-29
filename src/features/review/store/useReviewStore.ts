@@ -11,6 +11,7 @@ export interface ReviewCourse {
   title: string
   academic_year: number
   term_code: string
+  professor_name?: string | null
   section: string | null
 }
 
