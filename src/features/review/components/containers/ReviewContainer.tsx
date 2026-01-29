@@ -10,6 +10,7 @@ import {
 import { SmartReviewContent, type SmartReviewTab } from '@/features/review/components/ui/SmartReviewContent'
 import { useLectureReviewItems } from '@/features/review/hooks/useLectureReviewItems'
 import { reviewService } from '@/features/review/services/reviewService'
+import { useDefinitionBuilderGame } from '@/features/review/hooks/useDefinitionBuilderGame'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 export function ReviewContainer() {
@@ -17,6 +18,7 @@ export function ReviewContainer() {
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
   const [, setSelectedCourseId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<SmartReviewTab>('list')
+  const [activeGameId, setActiveGameId] = useState<string | null>(null)
   const [isMutating, setIsMutating] = useState(false)
   const [mutationError, setMutationError] = useState<string | null>(null)
   const [importPreviewItems, setImportPreviewItems] = useState<Array<{ keyword: string; description: string }>>([])
@@ -26,6 +28,21 @@ export function ReviewContainer() {
   const { data: reviewItemsData, isLoading: isLoadingReviewItems, error: reviewItemsError, refetch } =
     useLectureReviewItems(selectedLectureId)
 
+  const {
+    data: definitionBuilderData,
+    isLoading: isDefinitionBuilderLoading,
+    error: definitionBuilderError,
+    refetch: refetchDefinitionBuilder,
+  } = useDefinitionBuilderGame(
+    selectedLectureId,
+    Boolean(selectedLectureId) && activeTab === 'game' && activeGameId === 'definition-builder'
+  )
+
+  useEffect(() => {
+    if (activeTab !== 'game') {
+      setActiveGameId(null)
+    }
+  }, [activeTab])
   // 회차 변경 시, 미리보기 캐시 초기화
   useEffect(() => {
     setImportPreviewItems([])
@@ -80,10 +97,17 @@ export function ReviewContainer() {
         <SmartReviewContent
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          activeGameId={activeGameId}
+          onSelectGame={setActiveGameId}
+          onExitGame={() => setActiveGameId(null)}
           reviewItems={reviewItemsData?.items || []}
           isReviewItemsLoading={Boolean(selectedLectureId) && isLoadingReviewItems}
           reviewItemsError={reviewItemsError}
           hasSelectedLecture={Boolean(selectedLectureId)}
+          definitionBuilderData={definitionBuilderData}
+          isDefinitionBuilderLoading={isDefinitionBuilderLoading}
+          definitionBuilderError={definitionBuilderError}
+          onRetryDefinitionBuilder={refetchDefinitionBuilder}
           isMutating={isMutating}
           mutationError={mutationError}
           onRequestImportPreview={async () => {

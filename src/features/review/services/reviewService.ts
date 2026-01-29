@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from '@/shared/constants/api'
 import type {
   CreateLectureReviewItemRequest,
   CreateLectureReviewItemResponse,
+  DefinitionBuilderGameResponse,
   DeleteLectureReviewItemResponse,
   ImportLectureKeywordsResponse,
   LectureReviewListResponse,
@@ -161,6 +162,12 @@ export const reviewService = {
    */
   getLectureReviewItems: (lectureId: string) =>
     apiRequest<LectureReviewListResponse>(API_ENDPOINTS.REVIEW.GET_REVIEW_ITEMS(lectureId), {
+      method: 'GET',
+      auth: true,
+    }),
+
+  getDefinitionBuilderGame: (lectureId: string) =>
+    apiRequest<DefinitionBuilderGameResponse>(API_ENDPOINTS.REVIEW.GET_DEFINITION_BUILDER(lectureId), {
       method: 'GET',
       auth: true,
     }),

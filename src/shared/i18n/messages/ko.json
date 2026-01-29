@@ -101,8 +101,22 @@
         },
         "quickfill": {
           "title": "정의 조립 게임",
-          "description": "빈칸을 채워 핵심 개념을 복습하세요."
+          "description": "어절을 골라 정의 문장을 완성하세요."
         }
+      },
+      "definitionBuilder": {
+        "scorePrefix": "현재 점수:",
+        "scoreLabel": "점수: {score}",
+        "progressLabel": "{current}/{total}",
+        "loading": "게임을 준비하고 있어요...",
+        "noItems": "복습 단어가 6개 이상 있어야 시작할 수 있어요.",
+        "selectLecture": "회차를 선택하면 게임을 시작할 수 있어요.",
+        "retry": "다시 불러오기",
+        "next": "다음 문제",
+        "restart": "다시 시작",
+        "back": "목록으로",
+        "successTitle": "SUCCESS",
+        "finalScoreLabel": "최종 점수: {score}"
       }
     },
     "noContent": "복습 콘텐츠가 없습니다",

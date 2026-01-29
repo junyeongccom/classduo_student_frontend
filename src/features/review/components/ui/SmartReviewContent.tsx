@@ -1,20 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { LectureReviewItem } from '@/features/review/types'
 import { AddReviewWordModal } from './AddReviewWordModal'
 import { ConfirmDialog } from './ConfirmDialog'
+import { DefinitionBuilderGame } from './DefinitionBuilderGame'
+import { ReviewMatchingGame } from './ReviewMatchingGame'
+import type { DefinitionBuilderGameResponse } from '@/features/review/types'
 
 export type SmartReviewTab = 'list' | 'deck' | 'game'
 
 interface SmartReviewContentProps {
   activeTab: SmartReviewTab
   onTabChange: (tab: SmartReviewTab) => void
+  activeGameId: string | null
+  onSelectGame: (gameId: string) => void
+  onExitGame: () => void
   reviewItems: LectureReviewItem[]
   isReviewItemsLoading: boolean
   reviewItemsError: string | null
   hasSelectedLecture: boolean
+  definitionBuilderData: DefinitionBuilderGameResponse | null
+  isDefinitionBuilderLoading: boolean
+  definitionBuilderError: string | null
+  onRetryDefinitionBuilder: () => void
   isMutating: boolean
   mutationError: string | null
   onAddReviewWord: (keyword: string, description: string) => Promise<boolean>
@@ -30,10 +40,17 @@ interface SmartReviewContentProps {
 export function SmartReviewContent({
   activeTab,
   onTabChange,
+  activeGameId,
+  onSelectGame,
+  onExitGame,
   reviewItems,
   isReviewItemsLoading,
   reviewItemsError,
   hasSelectedLecture,
+  definitionBuilderData,
+  isDefinitionBuilderLoading,
+  definitionBuilderError,
+  onRetryDefinitionBuilder,
   isMutating,
   mutationError,
   onAddReviewWord,
@@ -51,6 +68,16 @@ export function SmartReviewContent({
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<LectureReviewItem | null>(null)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [definitionScore, setDefinitionScore] = useState(0)
+  const [scoreDelta, setScoreDelta] = useState(0)
+  const [scoreTone, setScoreTone] = useState<'positive' | 'negative' | null>(null)
+  useEffect(() => {
+    if (activeGameId === 'definition-builder') {
+      setDefinitionScore(0)
+      setScoreDelta(0)
+      setScoreTone(null)
+    }
+  }, [activeGameId])
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
   const tabItems: Array<{ id: SmartReviewTab; label: string }> = [
     { id: 'list', label: t('tabs.list') },
@@ -64,9 +91,10 @@ export function SmartReviewContent({
       description: t('games.matching.description'),
     },
     {
-      id: 'quickfill',
+      id: 'definition-builder',
       title: t('games.quickfill.title'),
       description: t('games.quickfill.description'),
+      thumbnail: '/DB_thumbnail.png',
     },
   ]
   return (
@@ -225,29 +253,121 @@ export function SmartReviewContent({
       )}
 
       {activeTab === 'game' && (
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {gameItems.map(game => (
-            <div
-              key={game.id}
-              className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
-                {game.thumbnail ? (
-                  <img
-                    src={game.thumbnail}
-                    alt={`${game.title} 썸네일`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : null}
+        <div className="flex flex-col gap-6">
+          {activeGameId === 'definition-builder' ? (
+            <div className="flex flex-col gap-4">
+              <div className="mt-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-sm font-semibold text-slate-900">{t('games.quickfill.title')}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onExitGame}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  {t('definitionBuilder.back')}
+                </button>
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
-                <p className="mt-1 text-xs text-slate-500">{game.description}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500">{t('definitionBuilder.scorePrefix')}</span>
+                <span
+                  className={`text-2xl font-bold ${
+                    scoreTone === 'positive'
+                      ? 'text-emerald-600'
+                      : scoreTone === 'negative'
+                        ? 'text-rose-600'
+                        : 'text-slate-800'
+                  }`}
+                >
+                  {definitionScore}
+                </span>
+                {scoreDelta !== 0 && (
+                  <span
+                    className={`text-sm font-semibold ${
+                      scoreDelta > 0 ? 'text-emerald-600' : 'text-rose-600'
+                    }`}
+                  >
+                    {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta}
+                  </span>
+                )}
               </div>
+              <DefinitionBuilderGame
+                data={definitionBuilderData}
+                isLoading={isDefinitionBuilderLoading}
+                error={definitionBuilderError}
+                onRetry={onRetryDefinitionBuilder}
+                isEnabled={hasSelectedLecture}
+                currentScore={definitionScore}
+                onScoreDelta={(delta) => {
+                  setDefinitionScore(prev => prev + delta)
+                  setScoreDelta(delta)
+                  setScoreTone(delta > 0 ? 'positive' : 'negative')
+                  window.setTimeout(() => {
+                    setScoreDelta(0)
+                    setScoreTone(null)
+                  }, 800)
+                }}
+                onRestart={() => {
+                  setDefinitionScore(0)
+                  setScoreDelta(0)
+                  setScoreTone(null)
+                  onRetryDefinitionBuilder()
+                }}
+              />
             </div>
-          ))}
+          ) : activeGameId === 'matching' ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-slate-900">{t('games.matching.title')}</div>
+                <button
+                  type="button"
+                  onClick={onExitGame}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  {t('definitionBuilder.back')}
+                </button>
+              </div>
+              <ReviewMatchingGame
+                reviewItems={reviewItems}
+                isEnabled={hasSelectedLecture}
+                onExit={onExitGame}
+              />
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {gameItems.map(game => {
+                const isPlayable = game.id === 'definition-builder' || game.id === 'matching'
+                return (
+                  <button
+                    key={game.id}
+                    type="button"
+                    onClick={() => {
+                      if (isPlayable) onSelectGame(game.id)
+                    }}
+                    className={`flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition ${
+                      isPlayable ? 'hover:-translate-y-0.5 hover:border-slate-300' : 'cursor-not-allowed opacity-60'
+                    }`}
+                  >
+                    <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
+                      {game.thumbnail ? (
+                        <img
+                          src={game.thumbnail}
+                          alt={`${game.title} 썸네일`}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      ) : null}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
+                      <p className="mt-1 text-xs text-slate-500">{game.description}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
