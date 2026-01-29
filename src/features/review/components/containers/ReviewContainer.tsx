@@ -9,6 +9,7 @@ import {
 } from '@/shared/components/layouts/studyspace'
 import { SmartReviewContent, type SmartReviewTab } from '@/features/review/components/ui/SmartReviewContent'
 import { useLectureReviewItems } from '@/features/review/hooks/useLectureReviewItems'
+import { useReviewDeck } from '@/features/review/hooks/useReviewDeck'
 import { reviewService } from '@/features/review/services/reviewService'
 import { useDefinitionBuilderGame } from '@/features/review/hooks/useDefinitionBuilderGame'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -43,6 +44,8 @@ export function ReviewContainer() {
       setActiveGameId(null)
     }
   }, [activeTab])
+  const deck = useReviewDeck(selectedLectureId, reviewItemsData?.items || [])
+
   // 회차 변경 시, 미리보기 캐시 초기화
   useEffect(() => {
     setImportPreviewItems([])
@@ -108,6 +111,7 @@ export function ReviewContainer() {
           isDefinitionBuilderLoading={isDefinitionBuilderLoading}
           definitionBuilderError={definitionBuilderError}
           onRetryDefinitionBuilder={refetchDefinitionBuilder}
+          deck={deck}
           isMutating={isMutating}
           mutationError={mutationError}
           onRequestImportPreview={async () => {

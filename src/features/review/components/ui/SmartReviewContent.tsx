@@ -8,6 +8,8 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { DefinitionBuilderGame } from './DefinitionBuilderGame'
 import { ReviewMatchingGame } from './ReviewMatchingGame'
 import type { DefinitionBuilderGameResponse } from '@/features/review/types'
+import { ReviewDeckView } from './ReviewDeckView'
+import type { ReviewDeckViewModel } from '@/features/review/hooks/useReviewDeck'
 
 export type SmartReviewTab = 'list' | 'deck' | 'game'
 
@@ -25,6 +27,7 @@ interface SmartReviewContentProps {
   isDefinitionBuilderLoading: boolean
   definitionBuilderError: string | null
   onRetryDefinitionBuilder: () => void
+  deck: ReviewDeckViewModel
   isMutating: boolean
   mutationError: string | null
   onAddReviewWord: (keyword: string, description: string) => Promise<boolean>
@@ -51,6 +54,7 @@ export function SmartReviewContent({
   isDefinitionBuilderLoading,
   definitionBuilderError,
   onRetryDefinitionBuilder,
+  deck,
   isMutating,
   mutationError,
   onAddReviewWord,
@@ -85,7 +89,7 @@ export function SmartReviewContent({
     { id: 'deck', label: t('tabs.deck') },
     { id: 'game', label: t('tabs.game') },
   ]
-  const gameItems = [
+  const gameItems: Array<{ id: string; title: string; description: string; thumbnail?: string | null }> = [
     {
       id: 'matching',
       title: t('games.matching.title'),
@@ -261,9 +265,12 @@ export function SmartReviewContent({
       )}
 
       {activeTab === 'deck' && (
-        <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white">
-          <p className="text-sm font-medium text-slate-400">{t('deckComingSoon')}</p>
-        </div>
+        <ReviewDeckView
+          hasSelectedLecture={hasSelectedLecture}
+          isReviewItemsLoading={isReviewItemsLoading}
+          reviewItemsError={reviewItemsError}
+          deck={deck}
+        />
       )}
 
       {activeTab === 'game' && (
@@ -348,12 +355,12 @@ export function SmartReviewContent({
               />
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {gameItems.map(game => {
                 const isPlayable = game.id === 'definition-builder' || game.id === 'matching'
                 return (
                   <button
-                    key={game.id}
+              key={game.id}
                     type="button"
                     onClick={() => {
                       if (isPlayable) onSelectGame(game.id)
@@ -361,22 +368,22 @@ export function SmartReviewContent({
                     className={`flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition ${
                       isPlayable ? 'hover:-translate-y-0.5 hover:border-slate-300' : 'cursor-not-allowed opacity-60'
                     }`}
-                  >
-                    <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
-                      {game.thumbnail ? (
-                        <img
-                          src={game.thumbnail}
-                          alt={`${game.title} 썸네일`}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : null}
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
-                      <p className="mt-1 text-xs text-slate-500">{game.description}</p>
-                    </div>
+            >
+              <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
+                {game.thumbnail ? (
+                  <img
+                    src={game.thumbnail}
+                    alt={`${game.title} 썸네일`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : null}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
+                <p className="mt-1 text-xs text-slate-500">{game.description}</p>
+              </div>
                   </button>
                 )
               })}

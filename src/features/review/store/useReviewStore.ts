@@ -3,9 +3,11 @@
  * 빈칸의 revealed 상태를 미리 로드하여 즉시 표시 가능하도록 관리
  */
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { ReviewCarouselResponse, LectureListResponse } from '../services/reviewService'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 import type { LectureReviewListResponse } from '@/features/review/types'
+import type { DeckLevel, DeckSession } from '@/features/review/domain/deck'
 
 export interface ReviewCourse {
   course_id: string
@@ -47,6 +49,18 @@ interface ReviewStore {
 
   // lecture_id별 사용자 복습어휘(lecture_review) 캐시
   lectureReviewItemsByLectureId: Record<string, LectureReviewListResponse>
+
+  // Deck 상태: userId -> lectureId -> deck state
+  deckByUserId: Record<
+    string,
+    Record<
+      string,
+      {
+        levelsByItemId: Record<string, DeckLevel>
+        session: DeckSession | null
+      }
+    >
+  >
   
   // Actions
   preloadBlanks: (lectureId: string, pages: ReviewCarouselResponse['pages_2_6'], locale: AppLocale) => void
@@ -62,28 +76,41 @@ interface ReviewStore {
   setLectureListCache: (locale: AppLocale, courseId: string, data: LectureListResponse) => void
   setReviewCarouselCache: (locale: AppLocale, lectureId: string, data: ReviewCarouselResponse) => void
   setLectureReviewItemsCache: (lectureId: string, data: LectureReviewListResponse) => void
+
+  // Deck actions
+  ensureDeckState: (userId: string, lectureId: string) => void
+  ensureDeckLevels: (userId: string, lectureId: string, itemIds: string[]) => void
+  setDeckItemLevel: (userId: string, lectureId: string, itemId: string, level: DeckLevel) => void
+  setDeckSession: (userId: string, lectureId: string, session: DeckSession | null) => void
+  resetAllDeckLevels: (userId: string, lectureId: string, itemIds: string[]) => void
 }
 
-export const useReviewStore = create<ReviewStore>((set, get) => ({
+export const useReviewStore = create<ReviewStore>()(
+  persist(
+    (set, get) => ({
   blankStatesByLocale: { ko: {}, en: {} },
   blankDataByLocale: { ko: {}, en: {} },
   coursesByLocale: {},
   lectureListByLocale: {},
   reviewCarouselByLocale: {},
   lectureReviewItemsByLectureId: {},
+      deckByUserId: {},
   
   /**
    * 복습 콘텐츠 로딩 시 모든 빈칸 데이터를 미리 저장
    */
   preloadBlanks: (lectureId, pages, locale) => {
-    const blankData: Record<string, {
+        const blankData: Record<
+          string,
+          {
       [pageId: number]: {
         blanks: Array<{
           answer_text: string
           review_answer_id?: string | null
         }>
       }
-    }> = {}
+          }
+        > = {}
     const blankStates: BlankState = {}
     
     pages.forEach((page) => {
@@ -228,5 +255,132 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
       },
     }))
   },
-}))
+
+      ensureDeckState: (userId, lectureId) => {
+        set((state) => {
+          if (state.deckByUserId[userId]?.[lectureId]) return state
+          return {
+            deckByUserId: {
+              ...state.deckByUserId,
+              [userId]: {
+                ...(state.deckByUserId[userId] || {}),
+                [lectureId]: {
+                  levelsByItemId: {},
+                  session: null,
+                },
+              },
+            },
+          }
+        })
+      },
+
+      ensureDeckLevels: (userId, lectureId, itemIds) => {
+        set((state) => {
+          const userDeck = state.deckByUserId[userId] || {}
+          const lectureDeck = userDeck[lectureId] || { levelsByItemId: {}, session: null }
+          const nextLevels = { ...lectureDeck.levelsByItemId }
+
+          let changed = false
+          for (const id of itemIds) {
+            if (!nextLevels[id]) {
+              nextLevels[id] = 1
+              changed = true
+            }
+          }
+
+          if (!changed && userDeck[lectureId]) return state
+
+          return {
+            deckByUserId: {
+              ...state.deckByUserId,
+              [userId]: {
+                ...userDeck,
+                [lectureId]: {
+                  ...lectureDeck,
+                  levelsByItemId: nextLevels,
+                },
+              },
+            },
+          }
+        })
+      },
+
+      setDeckItemLevel: (userId, lectureId, itemId, level) => {
+        set((state) => {
+          const userDeck = state.deckByUserId[userId] || {}
+          const lectureDeck = userDeck[lectureId] || { levelsByItemId: {}, session: null }
+          return {
+            deckByUserId: {
+              ...state.deckByUserId,
+              [userId]: {
+                ...userDeck,
+                [lectureId]: {
+                  ...lectureDeck,
+                  levelsByItemId: {
+                    ...lectureDeck.levelsByItemId,
+                    [itemId]: level,
+                  },
+                },
+              },
+            },
+          }
+        })
+      },
+
+      setDeckSession: (userId, lectureId, session) => {
+        set((state) => {
+          const userDeck = state.deckByUserId[userId] || {}
+          const lectureDeck = userDeck[lectureId] || { levelsByItemId: {}, session: null }
+          return {
+            deckByUserId: {
+              ...state.deckByUserId,
+              [userId]: {
+                ...userDeck,
+                [lectureId]: {
+                  ...lectureDeck,
+                  session,
+                },
+              },
+            },
+          }
+        })
+      },
+
+      resetAllDeckLevels: (userId, lectureId, itemIds) => {
+        set((state) => {
+          const userDeck = state.deckByUserId[userId] || {}
+          const lectureDeck = userDeck[lectureId] || { levelsByItemId: {}, session: null }
+          const nextLevels: Record<string, DeckLevel> = {}
+          
+          // 모든 아이템을 1단계로 설정
+          for (const id of itemIds) {
+            nextLevels[id] = 1
+          }
+
+          return {
+            deckByUserId: {
+              ...state.deckByUserId,
+              [userId]: {
+                ...userDeck,
+                [lectureId]: {
+                  ...lectureDeck,
+                  levelsByItemId: nextLevels,
+                  // 세션도 초기화
+                  session: null,
+                },
+              },
+            },
+          }
+        })
+      },
+    }),
+    {
+      name: 'review-storage',
+      partialize: (state) => ({
+        lectureReviewItemsByLectureId: state.lectureReviewItemsByLectureId,
+        deckByUserId: state.deckByUserId,
+      }),
+    }
+  )
+)
 
