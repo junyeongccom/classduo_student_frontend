@@ -1,6 +1,6 @@
-import {
-  Bot,
-  PenLine,
+import { 
+  Bot, 
+  PenLine, 
   FileText,
   User,
   Home,

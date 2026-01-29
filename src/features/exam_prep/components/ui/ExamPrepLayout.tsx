@@ -111,24 +111,24 @@ export function ExamPrepLayout({
 
         <section className="flex h-full min-h-0 flex-1 flex-col">
           <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
-            {TAB_ITEMS.map(({ id, icon: Icon }) => {
-              const isActive = activeTab === id
-              return (
-                <button
-                  key={id}
-                  onClick={() => onTabChange(id)}
-                  className={cn(
+              {TAB_ITEMS.map(({ id, icon: Icon }) => {
+                const isActive = activeTab === id
+                return (
+                  <button
+                    key={id}
+                    onClick={() => onTabChange(id)}
+                    className={cn(
                     'flex items-center gap-2 px-3 py-2 text-sm font-medium transition',
-                    isActive
+                      isActive
                       ? 'border-b-2 border-gray-900 text-gray-900'
                       : 'border-b-2 border-transparent text-gray-500 hover:text-gray-900'
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tabLabels[id]}
-                </button>
-              )
-            })}
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tabLabels[id]}
+                  </button>
+                )
+              })}
           </div>
 
           <div className="flex h-full min-h-0 flex-1 flex-col bg-white">

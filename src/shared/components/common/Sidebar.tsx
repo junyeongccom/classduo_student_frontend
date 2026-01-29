@@ -57,15 +57,15 @@ export function Sidebar() {
   return (
     <>
       <div className="fixed left-0 top-0 z-[60] flex h-14 w-[72px] items-center justify-center bg-white">
-        <button
+          <button
           type="button"
           onClick={toggleMenu}
           className="flex items-center justify-center"
           aria-label="Toggle sidebar menu"
-        >
+          >
           <img src="/Aplus_logo.png" alt="CLASSDUO" className="h-8 w-auto" />
-        </button>
-      </div>
+          </button>
+        </div>
       <aside
         className={cn(
           'fixed left-0 top-0 z-50 h-screen overflow-hidden border-r border-gray-100 bg-white transition-all duration-300',
@@ -102,8 +102,8 @@ export function Sidebar() {
                     'flex h-12 w-12 flex-col items-center justify-center rounded-lg transition-all',
                     isActive ? 'bg-gray-100' : ''
                   )}
-                >
-                  <Icon className="h-5 w-5" />
+              >
+                <Icon className="h-5 w-5" />
                   <span
                     className={cn(
                       'mt-1 whitespace-nowrap text-[10px] text-gray-700',
@@ -118,14 +118,14 @@ export function Sidebar() {
           })}
         </nav>
 
-        <Link
-          href={PROFILE_MENU.href}
-          className={cn(
+            <Link
+              href={PROFILE_MENU.href}
+              className={cn(
             'mb-2 flex flex-col items-center text-[11px] transition-colors',
-            pathname === PROFILE_MENU.href
+                pathname === PROFILE_MENU.href
               ? 'text-gray-900'
               : 'text-gray-600 hover:text-gray-900'
-          )}
+              )}
           title={profileLabel}
         >
           <span
@@ -133,13 +133,13 @@ export function Sidebar() {
               'flex h-12 w-12 flex-col items-center justify-center rounded-lg transition-all',
               pathname === PROFILE_MENU.href ? 'bg-gray-100' : ''
             )}
-          >
-            <PROFILE_MENU.icon className="h-5 w-5" />
+            >
+              <PROFILE_MENU.icon className="h-5 w-5" />
             <span className="mt-1 text-[10px] text-gray-700">{profileLabel}</span>
           </span>
-        </Link>
-        </div>
-      </aside>
+            </Link>
+      </div>
+    </aside>
     </>
   )
 }

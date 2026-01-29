@@ -53,20 +53,47 @@ export default function ChatSidebar({
     }
   }, [isOpen, loadSessions])
 
+  useEffect(() => {
+    if (!isOpen) return
+
+    const trimmedQuery = searchQuery.trim()
+    if (!trimmedQuery) {
+      setSearchResults([])
+      setActiveTab('list')
+      return
+    }
+
+    const debounceId = window.setTimeout(() => {
+      handleSearch(trimmedQuery)
+    }, 250)
+
+    return () => {
+      window.clearTimeout(debounceId)
+    }
+  }, [isOpen, searchQuery])
+
   // 검색
-  const handleSearch = async () => {
-    if (searchQuery.length < 2) return
+  const handleSearch = async (rawQuery: string) => {
+    const trimmedQuery = rawQuery.trim()
+    if (trimmedQuery.length < 2) {
+      setSearchResults([])
+      setActiveTab('list')
+      return
+    }
 
     setIsSearching(true)
+    setActiveTab('search')
     try {
-      const { data, error } = await chatService.searchMessages(searchQuery)
-      if (data && !error) {
+      const { data, error } = await chatService.searchMessages(trimmedQuery)
+      if (!error) {
         // 백엔드에서 이미 rank DESC, created_at DESC로 정렬되어 있음
-        setSearchResults(data)
-        setActiveTab('search')
+        setSearchResults(data ?? [])
+      } else {
+        setSearchResults([])
       }
     } catch (err) {
       console.error('Search failed:', err)
+      setSearchResults([])
     } finally {
       setIsSearching(false)
     }
@@ -115,21 +142,21 @@ export default function ChatSidebar({
     <>
       {/* 오버레이 */}
       <div 
-        className="fixed inset-0 bg-black/30 z-[70]"
+        className="fixed inset-0 bg-slate-900/35 backdrop-blur-[2px] z-[70]"
         onClick={onClose}
       />
 
       {/* 사이드바 */}
-      <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-[80] flex flex-col">
+      <div className="fixed left-0 top-0 h-full w-80 bg-slate-50 border-r border-slate-200 shadow-[0_24px_60px_rgba(15,23,42,0.18)] z-[80] flex flex-col">
         {/* 헤더 */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-5 border-b border-slate-200">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
+            <h2 className="text-base font-semibold text-slate-900">{t('title')}</h2>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded"
+              className="rounded-full p-1.5 text-slate-500 hover:bg-slate-200/70 hover:text-slate-700"
             >
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -141,9 +168,9 @@ export default function ChatSidebar({
               onNewChat()
               onClose()
             }}
-            className="w-full py-2 px-4 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+            className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-slate-900/20 transition hover:bg-slate-800 flex items-center justify-center gap-2"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             {t('newChat')}
@@ -151,18 +178,25 @@ export default function ChatSidebar({
         </div>
 
         {/* 검색 */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="px-5 py-4 border-b border-slate-200">
           <div className="relative">
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              onChange={(e) => {
+                const value = e.target.value
+                setSearchQuery(value)
+                if (!value.trim()) {
+                  setSearchResults([])
+                  setActiveTab('list')
+                }
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
               placeholder={t('searchPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent text-sm"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
             <svg 
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -171,7 +205,7 @@ export default function ChatSidebar({
             </svg>
             {isSearching && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
               </div>
             )}
           </div>
@@ -181,20 +215,20 @@ export default function ChatSidebar({
             <div className="flex mt-3 gap-2">
               <button
                 onClick={() => setActiveTab('list')}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                   activeTab === 'list'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 }`}
               >
                 {t('allList')}
               </button>
               <button
                 onClick={() => setActiveTab('search')}
-                className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                   activeTab === 'search'
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                 }`}
               >
                 {t('searchResults')} ({searchResults.length})
@@ -204,7 +238,7 @@ export default function ChatSidebar({
         </div>
 
         {/* 목록 */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-white/60">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <AITutorLoading message={t('loadingHistory')} size="compact" />
@@ -220,7 +254,7 @@ export default function ChatSidebar({
                 <p className="text-sm mt-1">{t('emptySubtitle')}</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-slate-100">
                 {sessions.map((session) => (
                   <div
                     key={session.id}
@@ -228,24 +262,26 @@ export default function ChatSidebar({
                       onSelectSession(session.id, session.lecture_ids)
                       onClose()
                     }}
-                    className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors group ${
-                      currentSessionId === session.id ? 'bg-gray-50' : ''
+                    className={`px-5 py-4 cursor-pointer transition group ${
+                      currentSessionId === session.id
+                        ? 'bg-slate-100/70'
+                        : 'hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">
+                        <h3 className="text-sm font-semibold text-slate-900 truncate">
                           {session.title || t('sessionTitleFallback')}
                         </h3>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="mt-1 text-xs text-slate-500">
                           {formatDate(session.updated_at)}
                         </p>
                       </div>
                       <button
                         onClick={(e) => handleDeleteSession(e, session.id)}
-                        className="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-200 rounded transition-all"
+                        className="rounded-full p-1 opacity-0 transition group-hover:opacity-100 hover:bg-slate-200"
                       >
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
@@ -261,7 +297,7 @@ export default function ChatSidebar({
                 <p>{t('noSearchResults')}</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-slate-100">
                 {searchResults.map((result) => (
                   <div
                     key={result.message_id}
@@ -269,25 +305,25 @@ export default function ChatSidebar({
                       onSelectSession(result.session_id)
                       onClose()
                     }}
-                    className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="px-5 py-4 cursor-pointer transition hover:bg-slate-50"
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs px-2 py-0.5 rounded ${
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                         result.message_role === 'user'
-                          ? 'bg-gray-100 text-gray-700'
-                          : 'bg-gray-100 text-gray-700'
+                          ? 'bg-slate-100 text-slate-600'
+                          : 'bg-slate-100 text-slate-600'
                       }`}>
                         {result.message_role === 'user' ? t('messageRole.question') : t('messageRole.answer')}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-slate-400">
                         {formatDate(result.message_created_at)}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-900 line-clamp-2">
+                    <p className="text-sm text-slate-900 line-clamp-2">
                       {result.message_content}
                     </p>
                     {result.session_title && (
-                      <p className="text-xs text-gray-500 mt-1 truncate">
+                      <p className="mt-1 text-xs text-slate-500 truncate">
                         📁 {result.session_title}
                       </p>
                     )}

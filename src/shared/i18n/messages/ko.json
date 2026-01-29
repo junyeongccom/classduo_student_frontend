@@ -77,6 +77,34 @@
     }
   },
   "review": {
+    "ui": {
+      "tabs": {
+        "list": "목록",
+        "deck": "덱",
+        "game": "게임"
+      },
+      "countLabel": "총 {count}개의 플래시카드",
+      "actions": {
+        "edit": "수정",
+        "delete": "삭제",
+        "addWord": "단어 추가하기"
+      },
+      "deckComingSoon": "준비중입니다.",
+      "games": {
+        "matching": {
+          "title": "매칭게임",
+          "description": "용어와 정의를 빠르게 매칭해 보세요."
+        },
+        "ox": {
+          "title": "OX게임",
+          "description": "문장을 보고 OX를 선택해 보세요."
+        },
+        "quickfill": {
+          "title": "퀵필게임",
+          "description": "빈칸을 채워 핵심 개념을 복습하세요."
+        }
+      }
+    },
     "noContent": "복습 콘텐츠가 없습니다",
     "preparingContent": "복습 콘텐츠 준비 중...",
     "noPageData": "페이지 데이터가 없습니다",
