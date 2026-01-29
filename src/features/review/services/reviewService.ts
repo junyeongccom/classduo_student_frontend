@@ -3,6 +3,7 @@
  */
 import { apiRequest } from '@/shared/lib/api'
 import { API_ENDPOINTS } from '@/shared/constants/api'
+import type { LectureReviewListResponse } from '@/features/review/types'
 
 // API 응답 타입
 export interface LectureListItem {
@@ -143,6 +144,15 @@ export const reviewService = {
     apiRequest<CompleteReviewResponse>(API_ENDPOINTS.REVIEW.COMPLETE(lectureId), {
       method: 'POST',
       body: request,
+      auth: true,
+    }),
+
+  /**
+   * 사용자 강의 회차별 복습 어휘(lecture_review) 목록 조회
+   */
+  getLectureReviewItems: (lectureId: string) =>
+    apiRequest<LectureReviewListResponse>(API_ENDPOINTS.REVIEW.GET_REVIEW_ITEMS(lectureId), {
+      method: 'GET',
       auth: true,
     }),
 }

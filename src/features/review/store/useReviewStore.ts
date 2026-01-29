@@ -5,6 +5,7 @@
 import { create } from 'zustand'
 import type { ReviewCarouselResponse, LectureListResponse } from '../services/reviewService'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
+import type { LectureReviewListResponse } from '@/features/review/types'
 
 export interface ReviewCourse {
   course_id: string
@@ -43,6 +44,9 @@ interface ReviewStore {
   coursesByLocale: Partial<Record<AppLocale, ReviewCourse[]>>
   lectureListByLocale: Partial<Record<AppLocale, Record<string, LectureListResponse>>>
   reviewCarouselByLocale: Partial<Record<AppLocale, Record<string, ReviewCarouselResponse>>>
+
+  // lecture_id별 사용자 복습어휘(lecture_review) 캐시
+  lectureReviewItemsByLectureId: Record<string, LectureReviewListResponse>
   
   // Actions
   preloadBlanks: (lectureId: string, pages: ReviewCarouselResponse['pages_2_6'], locale: AppLocale) => void
@@ -57,6 +61,7 @@ interface ReviewStore {
   setCoursesCache: (locale: AppLocale, courses: ReviewCourse[]) => void
   setLectureListCache: (locale: AppLocale, courseId: string, data: LectureListResponse) => void
   setReviewCarouselCache: (locale: AppLocale, lectureId: string, data: ReviewCarouselResponse) => void
+  setLectureReviewItemsCache: (lectureId: string, data: LectureReviewListResponse) => void
 }
 
 export const useReviewStore = create<ReviewStore>((set, get) => ({
@@ -65,6 +70,7 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
   coursesByLocale: {},
   lectureListByLocale: {},
   reviewCarouselByLocale: {},
+  lectureReviewItemsByLectureId: {},
   
   /**
    * 복습 콘텐츠 로딩 시 모든 빈칸 데이터를 미리 저장
@@ -210,6 +216,15 @@ export const useReviewStore = create<ReviewStore>((set, get) => ({
           ...(state.reviewCarouselByLocale[locale] || {}),
           [lectureId]: data,
         },
+      },
+    }))
+  },
+
+  setLectureReviewItemsCache: (lectureId, data) => {
+    set((state) => ({
+      lectureReviewItemsByLectureId: {
+        ...state.lectureReviewItemsByLectureId,
+        [lectureId]: data,
       },
     }))
   },

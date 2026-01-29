@@ -8,12 +8,14 @@ import {
   StudyspaceTopbarSlot,
 } from '@/shared/components/layouts/studyspace'
 import { SmartReviewContent, type SmartReviewTab } from '@/features/review/components/ui/SmartReviewContent'
-import { SMART_REVIEW_FLASHCARDS } from '@/features/review/mocks/smartReviewMock'
+import { useLectureReviewItems } from '@/features/review/hooks/useLectureReviewItems'
 
 export function ReviewContainer() {
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
   const [, setSelectedCourseId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<SmartReviewTab>('list')
+  const { data: reviewItemsData, isLoading: isLoadingReviewItems, error: reviewItemsError } =
+    useLectureReviewItems(selectedLectureId)
 
   // 공유 기능 (아직 구현 안 함)
   const handleShare = () => {
@@ -62,7 +64,10 @@ export function ReviewContainer() {
         <SmartReviewContent
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          flashcards={SMART_REVIEW_FLASHCARDS}
+          reviewItems={reviewItemsData?.items || []}
+          isReviewItemsLoading={Boolean(selectedLectureId) && isLoadingReviewItems}
+          reviewItemsError={reviewItemsError}
+          hasSelectedLecture={Boolean(selectedLectureId)}
         />
       </div>
     </>
