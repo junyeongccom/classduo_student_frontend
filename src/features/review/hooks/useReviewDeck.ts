@@ -5,12 +5,10 @@ import type { LectureReviewItem } from '@/features/review/types'
 import { useReviewStore } from '@/features/review/store/useReviewStore'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import {
-  buildDeckOrder,
-  buildDeckOrderForLevel,
-  findLowestLevel,
   countDeckLevels,
   getNextDeckLevel,
   type DeckLevel,
+  type DeckMode,
   type DeckRating,
   type DeckSession,
 } from '@/features/review/domain/deck'
@@ -21,7 +19,9 @@ export interface ReviewDeckViewModel {
   levelCounts: Record<DeckLevel, number>
   currentItem: LectureReviewItem | null
   itemsByLevel: Record<DeckLevel, LectureReviewItem[]>
+  mode: DeckMode
   rateCurrent: (rating: DeckRating) => void
+  resetDeck: () => void
 }
 
 function safeUserId(userId: string | undefined | null) {
@@ -84,63 +84,60 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     setDeckSession(userId, lectureId, nextSession)
   }, [lectureId, session, itemIdSet, setDeckSession, userId])
 
-  // Auto-start session if missing (무한 반복)
+  function buildListOrderIds(items: LectureReviewItem[]): string[] {
+    // '목록' 순서 = API 반환 순서 (reviewItems 배열 순서)
+    return items.map((it) => it.id)
+  }
+
+  function initCycleSession(opts: { cycleNo: number; ids: string[] }): DeckSession {
+    const now = Date.now()
+    return {
+      order: [...opts.ids], // 큐
+      cursor: 0,
+      startedAt: now,
+      mode: 'basic',
+      phase: 'cycle',
+      unresolvedIds: [...opts.ids],
+      wrongIds: [],
+      cycleNo: opts.cycleNo,
+    }
+  }
+
+  function initWeakSession(opts: { cycleNo: number; ids: string[] }): DeckSession {
+    const now = Date.now()
+    return {
+      order: [...opts.ids], // 큐
+      cursor: 0,
+      startedAt: now,
+      mode: 'lowest',
+      phase: 'weak',
+      unresolvedIds: [...opts.ids],
+      cycleNo: opts.cycleNo,
+    }
+  }
+
+  // Auto-start session if missing (new policy)
   useEffect(() => {
     if (!lectureId) return
     if (reviewItems.length === 0) return
 
-    // 세션이 있고 현재 커서가 유효하면 그대로 사용
-    if (session && session.order.length > 0 && session.cursor >= 0 && session.cursor < session.order.length) {
-      // 최초 한 바퀴 진행 중이면 그대로 유지
-      if (!session.initialRoundCompleted) {
-        return
-      }
-      
-      // 타겟 단계의 단어들이 더 이상 해당 단계가 아니면 재구성
-      if (session.currentTargetLevel !== null && session.currentTargetLevel !== undefined) {
-        const currentItemId = session.order[session.cursor]
-        const currentItemLevel = levelsByItemId[currentItemId] ?? 2
-        
-        // 현재 타겟 단계가 더 이상 가장 낮은 단계가 아니면 재구성
-        const lowestLevel = findLowestLevel(reviewItems, levelsByItemId)
-        if (lowestLevel && currentItemLevel !== session.currentTargetLevel && currentItemLevel !== lowestLevel) {
-          const desiredOrder = buildDeckOrderForLevel(reviewItems, levelsByItemId, lowestLevel)
-          const nextSession: DeckSession = {
-            ...session,
-            order: desiredOrder,
-            cursor: 0,
-            currentTargetLevel: lowestLevel,
-          }
-          setDeckSession(userId, lectureId, nextSession)
-        }
-      }
-      return
-    }
+    const baseOrder = buildListOrderIds(reviewItems)
+
+    // 기존 세션이 있고, 최소한의 필드가 유효하면 그대로 사용
+    if (session && Array.isArray(session.order) && session.order.length > 0) return
 
     // 세션이 없거나 유효하지 않으면 새로 생성
     // 중복 set 방지(동일 order 구성)
     if (prevSessionKeyRef.current === sessionKey && session) return
 
-    // 최초에는 모든 단어를 한 바퀴 제시 (복습 중인 모든 단어)
-    const allItemIds = reviewItems.map((it) => it.id)
-    const now = Date.now()
-    const nextSession: DeckSession = {
-      order: allItemIds,
-      cursor: 0,
-      startedAt: now,
-      initialRoundCompleted: false,
-      currentTargetLevel: null,
-    }
+    // 초기: 1사이클(전체 사이클) 시작
+    const nextSession = initCycleSession({ cycleNo: 1, ids: baseOrder })
     setDeckSession(userId, lectureId, nextSession)
     prevSessionKeyRef.current = sessionKey
   }, [
     lectureId, 
     reviewItems.length, 
-    session?.cursor,
-    session?.order?.length,
     sessionKey,
-    itemIds,
-    levelsByItemId,
     session,
     setDeckSession, 
     userId
@@ -163,94 +160,117 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     return buckets
   }, [reviewItems, levelsByItemId])
 
+  const resetAllDeckLevels = useReviewStore((s) => s.resetAllDeckLevels)
+
   const rateCurrent = useCallback(
     (rating: DeckRating) => {
       if (!lectureId) return
       if (!session) return
       if (session.order.length === 0) return
-      if (session.cursor < 0 || session.cursor >= session.order.length) return
-      const itemId = session.order[session.cursor]
-      const current = levelsByItemId[itemId] ?? 2
-      const nextLevel = getNextDeckLevel(current, rating)
-      setDeckItemLevel(userId, lectureId, itemId, nextLevel)
+      // 큐의 앞에서 현재 아이템 선택 (cursor=0 고정)
+      const itemId = session.order[0]
+      if (!itemId) return
 
-      // 업데이트된 levelsByItemId를 가져오기 위해 getState 사용
-      const updatedState = useReviewStore.getState()
-      const updatedDeckState = updatedState.deckByUserId[userId]?.[lectureId]
-      const updatedLevels = updatedDeckState?.levelsByItemId || { ...levelsByItemId, [itemId]: nextLevel }
-      
-      // 현재 단계의 다음 단어로 이동
-      const nextCursor = session.cursor + 1
-      
-      let finalOrder = session.order
-      let finalCursor = nextCursor
-      let finalInitialRoundCompleted = session.initialRoundCompleted ?? false
-      let finalCurrentTargetLevel: DeckLevel | null | undefined = session.currentTargetLevel
-      
-      // 최초 한 바퀴 진행 중인지 확인
-      if (!finalInitialRoundCompleted) {
-        // 최초 한 바퀴의 모든 단어를 제시했는지 확인
-        if (nextCursor >= session.order.length) {
-          // 최초 한 바퀴 완료
-          finalInitialRoundCompleted = true
-          // 다음 가장 낮은 단계를 찾아서 그 단계의 단어들로 재구성
-          const lowestLevel = findLowestLevel(reviewItems, updatedLevels)
-          if (lowestLevel) {
-            finalOrder = buildDeckOrderForLevel(reviewItems, updatedLevels, lowestLevel)
-            finalCursor = 0
-            finalCurrentTargetLevel = lowestLevel
-          } else {
-            // 모든 단어가 없어진 경우 (이론적으로는 발생하지 않아야 함)
-            finalOrder = []
-            finalCursor = 0
-            finalCurrentTargetLevel = null
-          }
-        }
-      } else {
-        // 최초 한 바퀴 완료 후: 현재 타겟 단계의 모든 단어를 제시했는지 확인
-        const isCurrentTargetLevelComplete = nextCursor >= session.order.length
-        
-        if (isCurrentTargetLevelComplete) {
-          // 현재 타겟 단계의 한 바퀴가 끝났으므로, 다음 가장 낮은 단계를 찾아서 그 단계의 단어들로 재구성
-          const lowestLevel = findLowestLevel(reviewItems, updatedLevels)
-          if (lowestLevel) {
-            finalOrder = buildDeckOrderForLevel(reviewItems, updatedLevels, lowestLevel)
-            finalCursor = 0
-            finalCurrentTargetLevel = lowestLevel
-          } else {
-            // 모든 단어가 없어진 경우
-            finalOrder = []
-            finalCursor = 0
-            finalCurrentTargetLevel = null
-          }
+      const phase = session.phase ?? 'cycle'
+      const cycleNo = session.cycleNo ?? 1
+      const baseOrder = buildListOrderIds(reviewItems)
+
+      // unresolved/wrong 상태
+      const unresolved = new Set<string>(session.unresolvedIds ?? baseOrder)
+      const wrong = new Set<string>(session.wrongIds ?? [])
+
+      // 레벨 업데이트(현행 유지): okay는 레벨 변화 없음
+      if (rating !== 'okay') {
+        const current = levelsByItemId[itemId] ?? 2
+        const nextLevel = getNextDeckLevel(current, rating)
+        setDeckItemLevel(userId, lectureId, itemId, nextLevel)
+      }
+
+      // 큐 업데이트
+      const restQueue = session.order.slice(1)
+
+      if (phase === 'cycle') {
+        if (rating === 'bad') wrong.add(itemId)
+        if (rating === 'good' || rating === 'bad') {
+          unresolved.delete(itemId)
+          // 결론이 났으므로 큐에서 제거(재질문 없음)
         } else {
-          // 현재 타겟 단계의 단어들이 레벨이 변경되어 더 이상 해당 단계가 아니면 확인
-          const currentItemIdInOrder = session.order[nextCursor]
-          const currentItemLevel = updatedLevels[currentItemIdInOrder] ?? 2
-          
-          // 현재 타겟 단계와 다르면, 타겟 단계의 단어들만 필터링하여 order 재구성
-          if (finalCurrentTargetLevel !== null && finalCurrentTargetLevel !== undefined && currentItemLevel !== finalCurrentTargetLevel) {
-            // 타겟 단계의 단어들만 남기기
-            finalOrder = session.order.filter((id) => (updatedLevels[id] ?? 2) === finalCurrentTargetLevel)
-            // 필터링 후 cursor가 범위를 벗어나면 0으로 조정
-            finalCursor = finalOrder.length > 0 ? Math.min(nextCursor, finalOrder.length - 1) : 0
-          }
+          // okay: 판단 보류 → 뒤로 보내 재질문
+          restQueue.push(itemId)
         }
+
+        // 1사이클 종료 조건: 모든 단어가 good/bad 결론을 얻음(=unresolved empty)
+        if (unresolved.size === 0) {
+          const wrongIdsInOrder = baseOrder.filter((id) => wrong.has(id))
+          if (wrongIdsInOrder.length === 0) {
+            // 취약 대상이 없으면 곧바로 다음 전체 사이클 시작
+            setDeckSession(userId, lectureId, initCycleSession({ cycleNo: cycleNo + 1, ids: baseOrder }))
+            return
+          }
+          setDeckSession(userId, lectureId, initWeakSession({ cycleNo, ids: wrongIdsInOrder }))
+          return
+        }
+
+        // 안전장치: 큐가 비었는데 unresolved가 남아있으면 unresolved로 큐 재구성
+        const nextQueue = restQueue.length > 0 ? restQueue : baseOrder.filter((id) => unresolved.has(id))
+
+        setDeckSession(userId, lectureId, {
+          ...session,
+          mode: 'basic',
+          phase: 'cycle',
+          order: nextQueue,
+          cursor: 0,
+          unresolvedIds: [...unresolved],
+          wrongIds: [...wrong],
+          cycleNo,
+        })
+        return
       }
-      
-      const now = Date.now()
-      const nextSession: DeckSession = {
+
+      // 취약 사이클: 목표는 각 단어에서 good을 1번씩 얻는 것
+      if (rating === 'good') {
+        unresolved.delete(itemId)
+        // good이면 반드시 1단계 전진(현행 +1) -> 이미 위에서 적용됨
+        // 큐에서 제거
+      } else {
+        // bad/okay: 나중에 다시 물어보기(큐 뒤로)
+        restQueue.push(itemId)
+      }
+
+      if (unresolved.size === 0) {
+        // 취약 사이클 종료 → 다음 전체 사이클 시작
+        setDeckSession(userId, lectureId, initCycleSession({ cycleNo: cycleNo + 1, ids: baseOrder }))
+        return
+      }
+
+      const nextQueue = restQueue.length > 0 ? restQueue : baseOrder.filter((id) => unresolved.has(id))
+      setDeckSession(userId, lectureId, {
         ...session,
-        order: finalOrder,
-        cursor: finalCursor,
-        startedAt: session.startedAt ?? now,
-        initialRoundCompleted: finalInitialRoundCompleted,
-        currentTargetLevel: finalCurrentTargetLevel,
-      }
-      setDeckSession(userId, lectureId, nextSession)
+        mode: 'lowest',
+        phase: 'weak',
+        order: nextQueue,
+        cursor: 0,
+        unresolvedIds: [...unresolved],
+        wrongIds: [],
+        cycleNo,
+      })
     },
     [lectureId, levelsByItemId, reviewItems, session, setDeckItemLevel, setDeckSession, userId]
   )
+
+  const resetDeck = useCallback(() => {
+    if (!lectureId) return
+    if (reviewItems.length === 0) return
+    
+    // 모든 단어를 레벨 2(복습 중)로 초기화
+    resetAllDeckLevels(userId, lectureId, itemIds)
+
+    // 초기화 후 1사이클 재시작: '목록(=API 순서)'로 큐 생성
+    const baseOrder = buildListOrderIds(reviewItems)
+    setDeckSession(userId, lectureId, initCycleSession({ cycleNo: 1, ids: baseOrder }))
+  }, [lectureId, reviewItems, itemIds, resetAllDeckLevels, setDeckSession, userId])
+
+  const mode = (session?.mode ?? 'basic') as DeckMode
 
   return {
     hasLecture: Boolean(lectureId),
@@ -258,7 +278,9 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
     levelCounts,
     currentItem,
     itemsByLevel,
+    mode,
     rateCurrent,
+    resetDeck,
   }
 }
 

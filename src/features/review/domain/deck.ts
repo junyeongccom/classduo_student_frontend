@@ -3,6 +3,8 @@ import type { LectureReviewItem } from '@/features/review/types'
 export type DeckLevel = 1 | 2 | 3 | 4
 export type DeckRating = 'good' | 'okay' | 'bad'
 
+export type DeckMode = 'basic' | 'lowest'
+
 export interface DeckSession {
   order: string[] // LectureReviewItem.id[]
   cursor: number
@@ -11,10 +13,19 @@ export interface DeckSession {
   // 각 아이템의 앞뒷면 정보: itemId -> 'keyword' | 'description'
   // 'keyword'면 단어가 앞면, 'description'이면 설명이 앞면
   cardSides?: Record<string, 'keyword' | 'description'>
-  // 최초 한 바퀴(모든 단어)를 완료했는지 여부
-  initialRoundCompleted?: boolean
-  // 현재 진행 중인 타겟 단계 (null이면 최초 한 바퀴 진행 중)
-  currentTargetLevel?: DeckLevel | null
+  // 현재 모드: 'basic' (모든 단계) 또는 'lowest' (가장 낮은 단계만)
+  mode?: DeckMode
+  /**
+   * 새로운 덱 정책용 필드
+   * - phase='cycle': 전체 사이클(모든 단어가 bad/good 결론을 얻을 때까지)
+   * - phase='weak': 취약 사이클(직전 cycle에서 bad였던 단어가 모두 good이 될 때까지)
+   *
+   * order는 "현재 큐"를 의미하며, 구현에서는 cursor=0(큐의 앞)로 고정하는 것을 권장합니다.
+   */
+  phase?: 'cycle' | 'weak'
+  unresolvedIds?: string[] // 아직 결론(또는 weak에서 good)을 얻지 못한 아이템 id 목록
+  wrongIds?: string[] // 직전 cycle에서 'bad'였던 id 목록(weak 진입용)
+  cycleNo?: number // 1,2,3... (전체 사이클 번호)
 }
 
 export type DeckLevelsByItemId = Record<string, DeckLevel>
@@ -65,20 +76,50 @@ export function buildDeckOrderForLevel(
   return items.map((it) => it.id)
 }
 
+/**
+ * 기본 모드: 모든 단계의 단어들을 가장 낮은 단계부터 높은 단계 순서로 반환
+ */
+export function buildDeckOrderBasic(
+  reviewItems: LectureReviewItem[],
+  levelsByItemId: DeckLevelsByItemId
+): string[] {
+  // 단계별로 분류 (1, 2, 3, 4 순서)
+  const byLevel: Record<DeckLevel, LectureReviewItem[]> = { 1: [], 2: [], 3: [], 4: [] }
+  
+  for (const item of reviewItems) {
+    const level = (levelsByItemId[item.id] ?? 2) as DeckLevel
+    byLevel[level].push(item)
+  }
+  
+  // 가장 낮은 단계부터 순서대로 합치기
+  const result: string[] = []
+  for (const level of [1, 2, 3, 4] as DeckLevel[]) {
+    result.push(...byLevel[level].map((it) => it.id))
+  }
+  
+  return result
+}
+
+/**
+ * 최저 모드: 가장 낮은 단계의 단어들만 반환
+ */
+export function buildDeckOrderLowest(
+  reviewItems: LectureReviewItem[],
+  levelsByItemId: DeckLevelsByItemId
+): string[] {
+  const lowestLevel = findLowestLevel(reviewItems, levelsByItemId)
+  if (!lowestLevel) return []
+  
+  return buildDeckOrderForLevel(reviewItems, levelsByItemId, lowestLevel)
+}
+
 export function buildDeckOrder(
   reviewItems: LectureReviewItem[],
   levelsByItemId: DeckLevelsByItemId,
   options?: { excludeLevel4?: boolean }
 ): string[] {
-  // 가장 낮은 단계의 단어만 반환한다.
-  // 같은 단계 내에서는 API 순서(reviewItems 배열 순서)를 유지한다.
-  const excludeLevel4 = options?.excludeLevel4 ?? false
-  
-  const lowestLevel = findLowestLevel(reviewItems, levelsByItemId)
-  if (!lowestLevel) return []
-  if (excludeLevel4 && lowestLevel === 4) return []
-  
-  return buildDeckOrderForLevel(reviewItems, levelsByItemId, lowestLevel)
+  // 하위호환을 위해 유지 (기본적으로 최저 모드)
+  return buildDeckOrderLowest(reviewItems, levelsByItemId)
 }
 
 export function countDeckLevels(
