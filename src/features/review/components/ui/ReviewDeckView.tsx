@@ -82,14 +82,15 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
       <div className="flex w-full max-w-[66%] flex-col gap-4">
         {/* 모드 정보 + 이해 단계 분포 */}
         <div className="flex justify-center">
-          <div className="w-full max-w-[520px] grid grid-cols-[1fr_2fr] gap-2">
+          <div className="w-full max-w-[780px] grid grid-cols-[1fr_2fr] gap-2">
             {/* 모드 정보 칸 */}
-            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm flex flex-col items-center justify-center">
-              <div className="text-[11px] font-semibold text-slate-500 mb-2">
+            <div className={`rounded-2xl border px-4 py-3 shadow-sm flex flex-col items-center justify-center ${
+              deck.mode === 'lowest' 
+                ? 'border-rose-200 bg-rose-50' 
+                : 'border-slate-200 bg-white'
+            }`}>
+              <div className="text-[22px] font-semibold text-slate-500 mb-2">
                 {deck.mode === 'basic' ? t('modeBasic') : t('modeLowest')}
-              </div>
-              <div className="text-[35px] font-semibold text-slate-700">
-                {t('cycleProgress', { current: deck.cycleCurrent, total: deck.cycleTotal })}
               </div>
             </div>
             
@@ -200,6 +201,17 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
               {t('good')}
             </button>
           </div>
+        </div>
+
+        {/* 초기화 버튼 */}
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => deck.resetDeck()}
+            className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+          >
+            초기화
+          </button>
         </div>
       </div>
 

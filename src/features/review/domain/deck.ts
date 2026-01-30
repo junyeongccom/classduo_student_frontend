@@ -15,6 +15,17 @@ export interface DeckSession {
   cardSides?: Record<string, 'keyword' | 'description'>
   // 현재 모드: 'basic' (모든 단계) 또는 'lowest' (가장 낮은 단계만)
   mode?: DeckMode
+  /**
+   * 새로운 덱 정책용 필드
+   * - phase='cycle': 전체 사이클(모든 단어가 bad/good 결론을 얻을 때까지)
+   * - phase='weak': 취약 사이클(직전 cycle에서 bad였던 단어가 모두 good이 될 때까지)
+   *
+   * order는 "현재 큐"를 의미하며, 구현에서는 cursor=0(큐의 앞)로 고정하는 것을 권장합니다.
+   */
+  phase?: 'cycle' | 'weak'
+  unresolvedIds?: string[] // 아직 결론(또는 weak에서 good)을 얻지 못한 아이템 id 목록
+  wrongIds?: string[] // 직전 cycle에서 'bad'였던 id 목록(weak 진입용)
+  cycleNo?: number // 1,2,3... (전체 사이클 번호)
 }
 
 export type DeckLevelsByItemId = Record<string, DeckLevel>
