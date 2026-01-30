@@ -245,10 +245,9 @@
     "page": "Page"
   },
   "aiTutorFlameTooltip": {
-    "intro": "For each class session, solve 5 mini-game quizzes and 5 quick-fill review blanks, then open the box to collect flames!",
-    "flame2": "2 flames: Upgrade mini-game",
-    "flame4": "4 flames: Upgrade character and exam prep",
-    "flame8": "8 flames: Upgrade to ClassDuo Ultra",
+    "intro": "For each class session, solve OX quiz and card match game, then open the box to collect flames!",
+    "flame2": "5 flames: Upgrade mini-game",
+    "flame4": "10 flames: Upgrade character and exam prep",
     "note": "(More quiz games, cramming mode, research mode, etc.)"
   },
   "aiTutorSession": {
