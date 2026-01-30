@@ -247,7 +247,7 @@
   "aiTutorFlameTooltip": {
     "intro": "For each class session, solve OX quiz and card match game, then open the box to collect flames!",
     "flame2": "5 flames: Upgrade mini-game",
-    "flame4": "10 flames: Upgrade character and exam prep",
+    "flame4": "10 flames: Upgrade character",
     "note": "(More quiz games, cramming mode, research mode, etc.)"
   },
   "aiTutorSession": {

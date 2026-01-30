@@ -499,14 +499,6 @@ export function LectureSidebarUI({
                 />
                 <span className="leading-relaxed">{tFlame('flame4')}</span>
               </div>
-              <div className="flex items-start gap-2">
-                <img 
-                  src="/icon_flame.png" 
-                  alt="불꽃" 
-                  className="h-4 w-4 object-contain mt-0.5 shrink-0 opacity-90 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]"
-                />
-                <span className="leading-relaxed">{tFlame('flame8')}</span>
-              </div>
               <p className="mt-2 pl-6 text-xs text-slate-300">
                 {tFlame('note')}
               </p>
