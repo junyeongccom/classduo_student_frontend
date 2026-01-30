@@ -13,6 +13,7 @@ import type { AppLocale } from '@/shared/i18n/I18nProvider'
 import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 import { useCardMatchSet } from '@/features/ai-tutor/hooks/useCardMatchSet'
+import { useCardMatchAttemptLogger } from '@/features/ai-tutor/hooks/useCardMatchAttemptLogger'
 import { CardMatchGame } from '@/features/ai-tutor/components/ui/CardMatchGame'
 import { ChatComposer } from '../ui/ChatComposer'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
@@ -97,6 +98,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const successHideTimerRef = useRef<number | null>(null)
 
   const singleLectureId = selectedLectureIds.length === 1 ? selectedLectureIds[0] : null
+  const { logAttempt } = useCardMatchAttemptLogger(singleLectureId)
   const { data: cardMatchSet, isLoading: isCardMatchLoading } = useCardMatchSet(singleLectureId)
   const cardMatchPairs = useMemo(() => {
     const pairs = cardMatchSet?.pairs ?? []
@@ -1180,6 +1182,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 pairs={cardMatchPairs}
                 status={cardMatchSet?.status}
                 isLoading={isCardMatchLoading}
+                onAttempt={logAttempt}
                 onComplete={() => {
                   setCardMatchState('completed')
                   setCardMatchOffset((prev) => prev + 6)

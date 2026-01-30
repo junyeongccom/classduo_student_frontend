@@ -14,5 +14,16 @@ export const cardMatchService = {
       headers: locale ? { 'Accept-Language': locale } : undefined,
     })
   },
+
+  async submitCardMatchAttempt(
+    lectureId: string,
+    request: { correct: boolean }
+  ): Promise<{ data: { success: boolean } | null; error: any }> {
+    return apiRequest<{ success: boolean }>(`/ai-tutor/lectures/${lectureId}/card-match/attempts`, {
+      auth: true,
+      method: 'POST',
+      body: request,
+    })
+  },
 }
 
