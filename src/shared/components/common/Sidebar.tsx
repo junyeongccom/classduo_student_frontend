@@ -110,8 +110,7 @@ export function Sidebar() {
                   <span
                     className={cn(
                       'mt-1 whitespace-nowrap text-[10px]',
-                      isActive ? 'text-white' : 'text-gray-700',
-                      item.id === 'repeat' ? 'text-[9px]' : ''
+                      isActive ? 'text-white' : 'text-gray-700'
                     )}
                   >
                     {label}
