@@ -1329,28 +1329,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       <div className="flex h-full flex-col">
         {/* 중앙 컨텐츠 */}
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 max-w-full">
-          {showCardMatchGame && (
-            <div className="mb-6 flex w-full justify-center">
-              <CardMatchGame
-                pairs={cardMatchPairs}
-                status={cardMatchSet?.status}
-                isLoading={isCardMatchLoading}
-                onComplete={() => {
-                  setCardMatchState('completed')
-                  setCardMatchOffset((prev) => prev + 6)
-                  setShowSuccess(true)
-                  setSuccessFading(false)
-                  clearSuccessTimers()
-                  successFadeTimerRef.current = window.setTimeout(() => {
-                    setSuccessFading(true)
-                  }, 2500)
-                  successHideTimerRef.current = window.setTimeout(() => {
-                    setShowSuccess(false)
-                  }, 3000)
-                }}
-              />
-            </div>
-          )}
           {/* 중앙 입력창 */}
           <div className="w-full max-w-[772px] mx-auto">
             {cardMatchState === 'completed' && showSuccess && (
@@ -1393,6 +1371,28 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               }}
             />
           </div>
+          {showCardMatchGame && (
+            <div className="mt-6 flex w-full justify-center">
+              <CardMatchGame
+                pairs={cardMatchPairs}
+                status={cardMatchSet?.status}
+                isLoading={isCardMatchLoading}
+                onComplete={() => {
+                  setCardMatchState('completed')
+                  setCardMatchOffset((prev) => prev + 6)
+                  setShowSuccess(true)
+                  setSuccessFading(false)
+                  clearSuccessTimers()
+                  successFadeTimerRef.current = window.setTimeout(() => {
+                    setSuccessFading(true)
+                  }, 2500)
+                  successHideTimerRef.current = window.setTimeout(() => {
+                    setShowSuccess(false)
+                  }, 3000)
+                }}
+              />
+            </div>
+          )}
 
           {/* 입력창 포커스 시 나타나는 제안 질문 목록 (단일 선택 시에만 표시) */}
           {showSuggestions && (

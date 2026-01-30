@@ -30,6 +30,8 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const isAnyPanelOpen = isNotesPanelOpen || isMaterialsPanelOpen
   const showRightSidebar = !isAnyPanelOpen
   const isExamPrep = pathname.startsWith('/studyspace/exam')
+  const isTutorOrReview = pathname.startsWith('/studyspace/ai-tutor') || pathname.startsWith('/studyspace/review')
+  const borderTone = isExamPrep || isTutorOrReview ? 'border-gray-200' : 'border-gray-100'
 
   const resizingRef = useRef<{ startX: number; startCombinedWidth: number } | null>(null)
 
@@ -126,12 +128,12 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
           className="flex h-full flex-col"
         >
           {/* Top Bar (Header) - Spans full width */}
-          <header className="fixed left-0 top-0 z-40 flex h-14 w-full items-center justify-between border-b border-gray-100 bg-white px-6 text-gray-700">
-            <div className="absolute left-[72px] top-0 h-full border-l border-gray-100" />
+          <header className={`fixed left-0 top-0 z-40 flex h-14 w-full items-center justify-between border-b ${borderTone} bg-white px-6 text-gray-700`}>
+            <div className={`absolute left-[72px] top-0 h-full border-l ${borderTone}`} />
             {/* Left: Language toggle + page topbar slot (so existing buttons shift right) */}
-            <div className="flex min-w-0 flex-1 items-center gap-6 overflow-hidden pl-[72px]">
+            <div className={`flex min-w-0 flex-1 items-center gap-6 pl-[72px] ${isExamPrep ? 'overflow-visible' : 'overflow-hidden'}`}>
               <LanguageToggle size="sm" />
-              <div className="flex min-w-0 flex-1 items-center overflow-hidden">
+              <div className={`flex min-w-0 flex-1 items-center ${isExamPrep ? 'overflow-visible' : 'overflow-hidden'}`}>
                 {topbar ?? null}
               </div>
             </div>
@@ -157,7 +159,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
             {/* Right Sidebar (Desktop) - Only show if NO panels are open */}
             {!isExamPrep && showRightSidebar && (
-              <aside className="hidden h-full min-h-0 w-[320px] flex-col border-l border-gray-100 bg-white xl:flex">
+              <aside className={`hidden h-full min-h-0 w-[320px] flex-col border-l ${borderTone} bg-white xl:flex`}>
                 <div className="flex-1 overflow-y-auto overflow-x-hidden">
                   {rightbar ?? null}
                 </div>
@@ -167,7 +169,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             {/* Materials Panel (Overlay Slot) - Render in layout flow if open */}
             {!isExamPrep && overlay && (
               <aside 
-                className="relative hidden h-full flex-col border-l border-gray-100 bg-white xl:flex"
+                className={`relative hidden h-full flex-col border-l ${borderTone} bg-white xl:flex`}
                 style={{ width: materialsPanelWidth }}
               >
                 {/* Resizer Handle */}

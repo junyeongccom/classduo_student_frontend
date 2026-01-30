@@ -45,7 +45,7 @@ export function ExamPrepAiTutorPanel({
   return (
     <div className="flex h-full flex-col gap-4 overflow-hidden px-6 py-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-semibold text-gray-900">AI 튜터</h3>
+        <h3 className="text-base font-semibold text-gray-900">AI 조교</h3>
         <button
           onClick={onReset}
           className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-500 hover:border-gray-300 hover:text-gray-700"
@@ -101,7 +101,7 @@ export function ExamPrepAiTutorPanel({
         <input
           value={input}
           onChange={event => onInputChange(event.target.value)}
-          placeholder="AI 튜터에게 질문해보세요"
+          placeholder="AI 조교에게 질문해보세요"
           className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
         />
         <button

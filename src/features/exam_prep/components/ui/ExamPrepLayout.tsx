@@ -1,16 +1,14 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { FileText, Bot, Brain, ClipboardCheck, NotebookText, Maximize2 } from 'lucide-react'
+import { FileText, Brain, ClipboardCheck, Maximize2 } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import type { ExamPrepCourse, ExamPrepTab, ExamPrepMaterial } from '../../types'
 
 const TAB_ITEMS: Array<{ id: ExamPrepTab; icon: typeof FileText }> = [
   { id: 'summary', icon: FileText },
-  { id: 'quiz', icon: ClipboardCheck },
   { id: 'memorize', icon: Brain },
-  { id: 'notes', icon: NotebookText },
-  { id: 'aiTutor', icon: Bot },
+  { id: 'quiz', icon: ClipboardCheck },
 ]
 
 interface ExamPrepLayoutProps {
@@ -78,7 +76,7 @@ export function ExamPrepLayout({
       <div className="flex h-full min-h-0 w-full flex-1">
         <section className="flex h-full min-h-0 flex-col" style={{ width: leftWidth }}>
           <div className="flex h-full min-h-0 flex-1 flex-col bg-white">
-            <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+            <div className="flex h-11 items-center justify-between border-b border-gray-200 px-3">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <FileText className="h-4 w-4 text-gray-500" />
                 {pdfTitle}
@@ -111,12 +109,12 @@ export function ExamPrepLayout({
         </section>
 
         <div
-          className="relative flex w-px cursor-col-resize items-stretch justify-center bg-gray-200"
+          className="relative flex w-px cursor-col-resize items-stretch justify-center bg-gray-300/80"
           onMouseDown={onResizeStart}
         />
 
         <section className="flex h-full min-h-0 flex-1 flex-col">
-          <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
+          <div className="flex h-11 items-center gap-2 border-b border-gray-200 px-3">
               {TAB_ITEMS.map(({ id, icon: Icon }) => {
                 const isActive = activeTab === id
                 return (

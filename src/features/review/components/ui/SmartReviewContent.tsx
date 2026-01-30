@@ -33,6 +33,7 @@ interface SmartReviewContentProps {
   onAddReviewWord: (keyword: string, description: string) => Promise<boolean>
   onUpdateReviewWord: (reviewItemId: string, keyword: string, description: string) => Promise<boolean>
   onDeleteReviewWord: (reviewItemId: string) => Promise<boolean>
+  onDeleteAllReviewWords: () => Promise<boolean>
   onImportRecommendedWords: () => Promise<boolean>
   onRequestImportPreview: () => Promise<void>
   importPreviewItems: Array<{ keyword: string; description: string }>
@@ -60,6 +61,7 @@ export function SmartReviewContent({
   onAddReviewWord,
   onUpdateReviewWord,
   onDeleteReviewWord,
+  onDeleteAllReviewWords,
   onImportRecommendedWords,
   onRequestImportPreview,
   importPreviewItems,
@@ -72,6 +74,7 @@ export function SmartReviewContent({
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<LectureReviewItem | null>(null)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
+  const [isDeleteAllConfirmOpen, setIsDeleteAllConfirmOpen] = useState(false)
   const [isTabGuardOpen, setIsTabGuardOpen] = useState(false)
   const [definitionScore, setDefinitionScore] = useState(0)
   const [scoreDelta, setScoreDelta] = useState(0)
@@ -106,7 +109,7 @@ export function SmartReviewContent({
   return (
     <div className="flex h-full flex-col gap-6">
       <div className="border-b border-slate-200">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center justify-end gap-6">
           {tabItems.map(tab => (
             <button
               key={tab.id}
@@ -133,7 +136,7 @@ export function SmartReviewContent({
       {activeTab === 'list' && (
         <div className="flex flex-col items-center gap-3 pb-10">
           <div className="w-full max-w-[66%]">
-            <div className="mb-1 flex items-center gap-3">
+            <div className="mb-1 flex flex-wrap items-center gap-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
                 {t('countLabel', { count: reviewItems.length })}
@@ -156,6 +159,16 @@ export function SmartReviewContent({
                     <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-purple-200 bg-purple-50" />
                   </div>
                 </div>
+              )}
+              {hasSelectedLecture && reviewItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteAllConfirmOpen(true)}
+                  disabled={isMutating}
+                  className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 hover:border-rose-300 hover:bg-rose-100 disabled:opacity-60"
+                >
+                  전체 삭제
+                </button>
               )}
             </div>
           </div>
@@ -497,6 +510,20 @@ export function SmartReviewContent({
           setIsDeleteConfirmOpen(false)
           setDeleteTarget(null)
         }}
+      />
+
+      <ConfirmDialog
+        isOpen={isDeleteAllConfirmOpen}
+        title="전체 삭제"
+        message="플래시카드 단어쌍을 모두 삭제하시겠습니까?"
+        confirmLabel="예"
+        cancelLabel="아니오"
+        isLoading={isMutating}
+        onConfirm={async () => {
+          const ok = await onDeleteAllReviewWords()
+          if (ok) setIsDeleteAllConfirmOpen(false)
+        }}
+        onCancel={() => setIsDeleteAllConfirmOpen(false)}
       />
 
       <ConfirmDialog
