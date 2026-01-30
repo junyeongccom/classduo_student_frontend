@@ -15,6 +15,7 @@ import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 import { useCardMatchSet } from '@/features/ai-tutor/hooks/useCardMatchSet'
 import { CardMatchGame } from '@/features/ai-tutor/components/ui/CardMatchGame'
 import { ChatComposer } from '../ui/ChatComposer'
+import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 
 const shuffleArray = <T,>(items: T[]) => {
   const array = [...items]
@@ -25,205 +26,7 @@ const shuffleArray = <T,>(items: T[]) => {
   return array
 }
 
-// 마크다운 렌더링 헬퍼 함수 (ChatGPT 스타일)
-function renderMarkdown(text: string) {
-  const lines = text.split('\n')
-  const elements: JSX.Element[] = []
-  let currentParagraph: string[] = []
-  let inCodeBlock = false
-  let codeBlockContent: string[] = []
-  let inList = false
-  let listItems: string[] = []
-
-  const flushParagraph = () => {
-    if (currentParagraph.length > 0) {
-      const paragraphText = currentParagraph.join('\n')
-      if (paragraphText.trim()) {
-        elements.push(
-          <p key={elements.length} className="mb-2 last:mb-0 leading-snug text-sm">
-            {parseInlineMarkdown(paragraphText)}
-          </p>
-        )
-      }
-      currentParagraph = []
-    }
-  }
-
-  const flushList = () => {
-    if (listItems.length > 0) {
-      elements.push(
-        <ul key={elements.length} className="list-disc ml-5 mb-2 space-y-0.5">
-          {listItems.map((item, idx) => (
-            <li key={idx} className="leading-snug text-sm">
-              {parseInlineMarkdown(item)}
-            </li>
-          ))}
-        </ul>
-      )
-      listItems = []
-      inList = false
-    }
-  }
-
-  const parseBold = (text: string, keyPrefix: string) => {
-    const parts: (string | JSX.Element)[] = []
-    const boldRegex = /\*\*(.+?)\*\*/g
-    let lastIndex = 0
-    let match
-    let keyCounter = 0
-
-    // **bold** 처리
-    while ((match = boldRegex.exec(text)) !== null) {
-      // 볼드 이전 텍스트
-      if (match.index > lastIndex) {
-        parts.push(text.substring(lastIndex, match.index))
-      }
-      // 볼드 텍스트
-      parts.push(
-        <strong key={`${keyPrefix}-bold-${keyCounter++}`} className="font-semibold text-gray-900">
-          {match[1]}
-        </strong>
-      )
-      lastIndex = match.index + match[0].length
-    }
-
-    // 남은 텍스트
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex))
-    }
-
-    return parts.length > 0 ? parts : [text]
-  }
-
-  const parseInlineMarkdown = (text: string): (string | JSX.Element)[] => {
-    return parseBold(text, 'inline')
-  }
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const trimmedLine = line.trim()
-
-    // 마크다운 구분선(---) 무시 (3개 이상의 하이픈만)
-    if (/^---+$/.test(trimmedLine)) {
-      continue
-    }
-
-    // 코드 블록 처리
-    if (trimmedLine.startsWith('```')) {
-      if (inCodeBlock) {
-        // 코드 블록 종료
-        flushParagraph()
-        flushList()
-        elements.push(
-          <pre key={elements.length} className="bg-gray-100 rounded-lg p-3 my-2 overflow-x-auto border border-gray-200">
-            <code className="text-xs text-gray-800 font-mono leading-snug">{codeBlockContent.join('\n')}</code>
-          </pre>
-        )
-        codeBlockContent = []
-        inCodeBlock = false
-      } else {
-        // 코드 블록 시작
-        flushParagraph()
-        flushList()
-        inCodeBlock = true
-      }
-      continue
-    }
-
-    if (inCodeBlock) {
-      codeBlockContent.push(line)
-      continue
-    }
-
-    // 헤딩 처리 (학생에게 ### 노출 방지)
-    if (trimmedLine.startsWith('### ')) {
-      flushParagraph()
-      flushList()
-      elements.push(
-        <h3 key={elements.length} className="mb-2 text-base font-semibold text-gray-900">
-          {parseInlineMarkdown(trimmedLine.replace(/^###\s+/, ''))}
-        </h3>
-      )
-      continue
-    }
-    if (trimmedLine.startsWith('## ')) {
-      flushParagraph()
-      flushList()
-      elements.push(
-        <h2 key={elements.length} className="mb-2 text-lg font-semibold text-gray-900">
-          {parseInlineMarkdown(trimmedLine.replace(/^##\s+/, ''))}
-        </h2>
-      )
-      continue
-    }
-
-    // 헤딩 처리 (3가지 크기: 대제목, 소제목, 내용)
-    if (trimmedLine.startsWith('### ')) {
-      flushParagraph()
-      flushList()
-      const headingText = trimmedLine.replace(/^###\s+/, '')
-      elements.push(
-        <h3 key={elements.length} className="text-sm font-semibold mb-1.5 mt-3 first:mt-0 text-gray-900">
-          {parseInlineMarkdown(headingText)}
-        </h3>
-      )
-      continue
-    }
-
-    if (trimmedLine.startsWith('## ')) {
-      flushParagraph()
-      flushList()
-      const headingText = trimmedLine.replace(/^##\s+/, '')
-      elements.push(
-        <h2 key={elements.length} className="text-base font-bold mb-2 mt-4 first:mt-0 text-gray-900">
-          {parseInlineMarkdown(headingText)}
-        </h2>
-      )
-      continue
-    }
-
-    if (trimmedLine.startsWith('# ')) {
-      flushParagraph()
-      flushList()
-      const headingText = trimmedLine.replace(/^#\s+/, '')
-      elements.push(
-        <h1 key={elements.length} className="text-lg font-bold mb-2.5 mt-4 first:mt-0 text-gray-900">
-          {parseInlineMarkdown(headingText)}
-        </h1>
-      )
-      continue
-    }
-
-    // 리스트 항목 처리
-    if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
-      flushParagraph()
-      if (!inList) {
-        inList = true
-      }
-      const listText = trimmedLine.replace(/^[-*]\s+/, '')
-      listItems.push(listText)
-      continue
-    }
-
-    // 빈 줄 처리
-    if (trimmedLine === '') {
-      flushParagraph()
-      flushList()
-      continue
-    }
-
-    // 일반 텍스트
-    if (inList) {
-      flushList()
-    }
-    currentParagraph.push(line)
-  }
-
-  flushParagraph()
-  flushList()
-
-  return <div className="markdown-content">{elements}</div>
-}
+// NOTE: ai-tutor chat uses a Markdown renderer with GFM support (tables) via `MarkdownMessage`.
 
 interface ChatInterfaceProps {
   selectedLectureIds: string[]
@@ -1468,11 +1271,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                     <div className="text-gray-900">
                       {typingLength < message.content.length ? (
                         <>
-                          {renderMarkdown(displayedText)}
+                          <MarkdownMessage markdown={displayedText} className="markdown-content" />
                           <span className="inline-block w-2 h-4 bg-gray-900 ml-1 animate-pulse" />
                         </>
                       ) : (
-                        renderMarkdown(message.content)
+                        <MarkdownMessage markdown={message.content} className="markdown-content" />
                       )}
                     </div>
                     {/* 후속 질문 버튼 - 가장 마지막 답변에만 표시 */}
