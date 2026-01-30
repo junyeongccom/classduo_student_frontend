@@ -13,6 +13,7 @@ type CardMatchGameProps = {
   status?: string
   isLoading?: boolean
   onComplete: () => void
+  onAttempt?: (correct: boolean) => void
 }
 
 const shuffleCards = (cards: CardMatchCard[]) => {
@@ -24,7 +25,7 @@ const shuffleCards = (cards: CardMatchCard[]) => {
   return next
 }
 
-export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatchGameProps) {
+export function CardMatchGame({ pairs, status, isLoading, onComplete, onAttempt }: CardMatchGameProps) {
   const cards = useMemo(() => {
     const base: CardMatchCard[] = pairs.flatMap(pair => [
       { id: `${pair.pair_id}-term`, pairId: pair.pair_id, type: 'term', content: pair.term },
@@ -51,6 +52,8 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
     if (!first || !second) return
 
     const isMatch = first.pairId === second.pairId
+    // 카드 2장 비교가 발생할 때마다 1회 로그
+    onAttempt?.(isMatch)
     if (isMatch) {
       const timer = window.setTimeout(() => {
         setMatchedIds(prev => new Set([...prev, firstId, secondId]))
@@ -67,7 +70,7 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete }: CardMatc
       }, 260)
     }, 120)
     return () => window.clearTimeout(timer)
-  }, [cards, flippedIds])
+  }, [cards, flippedIds, onAttempt])
 
   useEffect(() => {
     if (cards.length > 0 && matchedIds.size === cards.length) {
