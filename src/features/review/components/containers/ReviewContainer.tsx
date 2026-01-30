@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Share2, Download } from 'lucide-react'
 import { ReviewSidebar } from './ReviewSidebar'
 import {
   StudyspaceRightbarSlot,
@@ -13,12 +12,16 @@ import { useReviewDeck } from '@/features/review/hooks/useReviewDeck'
 import { reviewService } from '@/features/review/services/reviewService'
 import { useDefinitionBuilderGame } from '@/features/review/hooks/useDefinitionBuilderGame'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { useAuthStore } from '@/features/auth/store/authStore'
+import { useStudyspaceSelectionSync } from '@/shared/hooks/useStudyspaceSelectionSync'
 
 export function ReviewContainer() {
   const { locale } = useI18n()
+  const userId = useAuthStore(state => state.user?.user_id ?? null)
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
   const [, setSelectedCourseId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<SmartReviewTab>('list')
+  useStudyspaceSelectionSync(userId)
   const [activeGameId, setActiveGameId] = useState<string | null>(null)
   const [isMutating, setIsMutating] = useState(false)
   const [mutationError, setMutationError] = useState<string | null>(null)
@@ -45,6 +48,7 @@ export function ReviewContainer() {
     }
   }, [activeTab])
   const deck = useReviewDeck(selectedLectureId, reviewItemsData?.items || [])
+  const reviewItems = reviewItemsData?.items || []
 
   // 회차 변경 시, 미리보기 캐시 초기화
   useEffect(() => {
@@ -53,39 +57,10 @@ export function ReviewContainer() {
     setImportPreviewError(null)
   }, [selectedLectureId, locale])
 
-  // 공유 기능 (아직 구현 안 함)
-  const handleShare = () => {
-    // TODO: 공유 기능 구현
-    console.log('Share clicked')
-  }
-
-  // 다운로드 기능 (아직 구현 안 함)
-  const handleDownload = () => {
-    // TODO: 다운로드 기능 구현
-    console.log('Download clicked')
-  }
-
   return (
     <>
       <StudyspaceTopbarSlot>
-        <div className="flex w-full items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-              title="공유"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleDownload}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-              title="다운로드"
-            >
-              <Download className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+        <div className="flex w-full items-center justify-between" />
       </StudyspaceTopbarSlot>
 
       <StudyspaceRightbarSlot>
@@ -103,7 +78,7 @@ export function ReviewContainer() {
           activeGameId={activeGameId}
           onSelectGame={setActiveGameId}
           onExitGame={() => setActiveGameId(null)}
-          reviewItems={reviewItemsData?.items || []}
+          reviewItems={reviewItems}
           isReviewItemsLoading={Boolean(selectedLectureId) && isLoadingReviewItems}
           reviewItemsError={reviewItemsError}
           hasSelectedLecture={Boolean(selectedLectureId)}
@@ -185,6 +160,23 @@ export function ReviewContainer() {
               const result = await reviewService.deleteLectureReviewItem(reviewItemId)
               if (result.error) {
                 setMutationError(result.error.message || '단어 삭제에 실패했습니다')
+                return false
+              }
+              await refetch()
+              return true
+            } finally {
+              setIsMutating(false)
+            }
+          }}
+          onDeleteAllReviewWords={async () => {
+            if (!selectedLectureId) return false
+            if (reviewItems.length === 0) return true
+            setIsMutating(true)
+            setMutationError(null)
+            try {
+              const result = await reviewService.deleteLectureReviewItems(selectedLectureId)
+              if (result.error) {
+                setMutationError(result.error.message || '단어 전체 삭제에 실패했습니다')
                 return false
               }
               await refetch()

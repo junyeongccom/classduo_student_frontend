@@ -16,8 +16,8 @@ export function useAITutorSession() {
   const setAllReferences = useAITutorStore(state => state.setAllReferences)
   const setActiveTab = useAITutorStore(state => state.setActiveTab)
   const setAutoSelectLatest = useAITutorStore(state => state.setAutoSelectLatest)
-
   const setSelectedLectureIds = useAITutorStore(state => state.setSelectedLectureIds)
+
 
   // Initialize session ID from localStorage
   useEffect(() => {
@@ -67,14 +67,14 @@ export function useAITutorSession() {
     setAllReferences(new Map())
     setMessages([])
     setActiveTab('answer')
-    
-    setSelectedLectureIds([])
-    setAutoSelectLatest(true)
+
+    const shouldAutoSelectLatest = selectedLectureIds.length === 0
+    setAutoSelectLatest(shouldAutoSelectLatest)
     
     if (typeof window !== 'undefined') {
       localStorage.removeItem(AI_TUTOR_SESSION_KEY)
     }
-  }, [setCurrentSessionId, setIsSessionLocked, incrementChatKey, setAllReferences, setMessages, setActiveTab, setSelectedLectureIds, setAutoSelectLatest])
+  }, [setCurrentSessionId, setIsSessionLocked, incrementChatKey, setAllReferences, setMessages, setActiveTab, setAutoSelectLatest, selectedLectureIds])
 
   return {
     currentSessionId,

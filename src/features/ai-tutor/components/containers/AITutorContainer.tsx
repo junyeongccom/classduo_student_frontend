@@ -16,14 +16,15 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 import {
   hasVisitedStudyspaceTab,
   markVisitedStudyspaceTab,
-  readStudyspaceSelection,
-  writeStudyspaceSelection,
 } from '@/shared/lib/studyspaceSelection'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
   AI_TUTOR_NEW_CHAT_FLAG,
   AI_TUTOR_NEW_CHAT_PARAM,
 } from '@/shared/constants/aiTutor'
+import { areLectureIdsEqual } from '@/shared/lib/studyspaceSelection'
+import { useStudyspaceSelectionSync } from '@/shared/hooks/useStudyspaceSelectionSync'
+import { useStudyspaceSelectionStore } from '@/shared/store/useStudyspaceSelectionStore'
 import {
   StudyspaceRightbarSlot,
   StudyspaceTopbarSlot,
@@ -102,16 +103,31 @@ export function AITutorContainer() {
     handleCloseGameOverlay
   } = useGameController()
 
-  const selectionReadyRef = useRef(false)
+  const {
+    courseId: sharedCourseId,
+    lectureIds: sharedLectureIds,
+    updatedAt: sharedUpdatedAt,
+    isHydrated: isSharedHydrated,
+    setSelection: setSharedSelection,
+  } = useStudyspaceSelectionStore(state => ({
+    courseId: state.courseId,
+    lectureIds: state.lectureIds,
+    updatedAt: state.updatedAt,
+    isHydrated: state.isHydrated,
+    setSelection: state.setSelection,
+  }))
+
+  useStudyspaceSelectionSync(userId)
+  const syncingFromSharedRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const saved = readStudyspaceSelection(userId)
-    if (saved) {
-      setSelectedCourseId(saved.courseId)
-      setSelectedLectureIds(saved.lectureIds)
+    if (!isSharedHydrated) return
+
+    if (sharedCourseId || sharedLectureIds.length > 0) {
+      syncingFromSharedRef.current = sharedUpdatedAt
+      setSelectedCourseId(sharedCourseId)
+      setSelectedLectureIds(sharedLectureIds)
       setAutoSelectLatest(false)
-      selectionReadyRef.current = true
       return
     }
 
@@ -122,18 +138,49 @@ export function AITutorContainer() {
     } else {
       setAutoSelectLatest(false)
     }
-    selectionReadyRef.current = true
-  }, [userId, setSelectedCourseId, setSelectedLectureIds, setAutoSelectLatest])
+  }, [
+    isSharedHydrated,
+    sharedCourseId,
+    sharedLectureIds,
+    sharedUpdatedAt,
+    userId,
+    setSelectedCourseId,
+    setSelectedLectureIds,
+    setAutoSelectLatest,
+  ])
 
   useEffect(() => {
-    if (!selectionReadyRef.current) return
-    writeStudyspaceSelection(userId, {
+    const inSync =
+      sharedCourseId === selectedCourseId &&
+      areLectureIdsEqual(sharedLectureIds, selectedLectureIds)
+    if (inSync) {
+      syncingFromSharedRef.current = null
+    }
+  }, [sharedCourseId, sharedLectureIds, selectedCourseId, selectedLectureIds])
+
+  useEffect(() => {
+    if (!isSharedHydrated) return
+    const needsSync =
+      sharedCourseId !== selectedCourseId ||
+      !areLectureIdsEqual(sharedLectureIds, selectedLectureIds)
+    if (!needsSync) return
+    if (syncingFromSharedRef.current === sharedUpdatedAt) {
+      return
+    }
+    setSharedSelection({
       courseId: selectedCourseId,
       lectureIds: selectedLectureIds,
       source: 'ai-tutor',
-      updatedAt: Date.now(),
     })
-  }, [userId, selectedCourseId, selectedLectureIds])
+  }, [
+    isSharedHydrated,
+    sharedCourseId,
+    sharedLectureIds,
+    sharedUpdatedAt,
+    selectedCourseId,
+    selectedLectureIds,
+    setSharedSelection,
+  ])
 
   // Handlers
   const handleSelectLectureIds = useCallback((ids: string[]) => {

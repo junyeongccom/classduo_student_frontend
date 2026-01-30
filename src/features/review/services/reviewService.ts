@@ -8,6 +8,7 @@ import type {
   CreateLectureReviewItemResponse,
   DefinitionBuilderGameResponse,
   DeleteLectureReviewItemResponse,
+  DeleteLectureReviewItemsResponse,
   ImportLectureKeywordsResponse,
   LectureReviewListResponse,
   RecordingLectureKeywordsResponse,
@@ -194,6 +195,12 @@ export const reviewService = {
 
   deleteLectureReviewItem: (reviewItemId: string) =>
     apiRequest<DeleteLectureReviewItemResponse>(API_ENDPOINTS.REVIEW.DELETE_REVIEW_ITEM(reviewItemId), {
+      method: 'DELETE',
+      auth: true,
+    }),
+
+  deleteLectureReviewItems: (lectureId: string) =>
+    apiRequest<DeleteLectureReviewItemsResponse>(API_ENDPOINTS.REVIEW.DELETE_REVIEW_ITEMS(lectureId), {
       method: 'DELETE',
       auth: true,
     }),

@@ -9,6 +9,7 @@ import { ExamPrepQuizPanel } from '../ui/ExamPrepQuizPanel'
 import { ExamPrepAiTutorPanel } from '../ui/ExamPrepAiTutorPanel'
 import { ExamPrepNotesPanel } from '../ui/ExamPrepNotesPanel'
 import { ExamPrepPdfViewer } from '../ui/ExamPrepPdfViewer'
+import { ExamPrepSelect } from '../ui/ExamPrepSelect'
 import type { ExamPrepTab, ExamPrepMaterial, ExamPrepQuizType, ExamPrepNoteScope } from '../../types'
 import {
   useExamPrepCourses,
@@ -39,7 +40,13 @@ export function ExamPrepContainer() {
   const [isPdfSlideshow, setIsPdfSlideshow] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const { courses } = useExamPrepCourses()
+  useEffect(() => {
+    if (activeTab === 'notes' || activeTab === 'aiTutor') {
+      setActiveTab('summary')
+    }
+  }, [activeTab])
+
+  const { courses, isLoading: coursesLoading, error: coursesError } = useExamPrepCourses()
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const { materials: materialsList, isLoading: materialsLoading } = useExamPrepMaterials(selectedCourseId)
   const materials = useMemo<ExamPrepMaterial[]>(() => materialsList, [materialsList])
@@ -387,7 +394,7 @@ export function ExamPrepContainer() {
         onInputChange={setChatInput}
         onSend={handleSendChat}
         onReset={handleResetChat}
-        emptyText="AI 튜터에게 질문을 남겨보세요."
+        emptyText="AI 조교에게 질문을 남겨보세요."
         loadingMessage="KUI가 자료에서 답을 찾고 있어요..."
       />
     )
@@ -396,42 +403,33 @@ export function ExamPrepContainer() {
   return (
     <div ref={containerRef} className="h-full w-full">
       <StudyspaceTopbarSlot>
-        <div className="flex w-full items-center justify-end gap-5">
-          <div className="flex min-w-0 flex-col items-end">
-            <select
-              value={selectedCourseId ?? ''}
-              onChange={event => setSelectedCourseId(event.target.value)}
-              aria-label={t('materials.courseLabel')}
-              className="h-8 w-full rounded-lg border border-transparent bg-gray-50 px-3 text-sm text-gray-700 focus:outline-none focus:ring-0 md:w-[260px]"
-            >
-              <option value="" disabled>
-                {t('materials.courseSelectPlaceholder')}
-              </option>
-              {courses.map(course => (
-                <option key={course.id} value={course.id}>
-                  {course.title}
-                  {course.professorName ? `(${course.professorName})` : ''}
-                </option>
-              ))}
-            </select>
+        <div className="flex w-full items-center gap-3">
+          <div className="w-[220px]">
+            <ExamPrepSelect
+              value={selectedCourseId}
+              placeholder={t('materials.courseSelectPlaceholder')}
+              options={courses.map(course => ({
+                value: course.id,
+                label: `${course.title}${course.professorName ? `(${course.professorName})` : ''}`,
+              }))}
+              onChange={value => setSelectedCourseId(value)}
+              isLoading={coursesLoading}
+              errorLabel={coursesError ?? undefined}
+              emptyLabel="강의가 없습니다"
+            />
           </div>
-          <div className="flex min-w-0 flex-col items-end">
-            <select
-              value={selectedMaterialId ?? ''}
-              onChange={event => setSelectedMaterialId(event.target.value)}
-              title={selectedMaterial?.title ?? t('materials.materialSelectPlaceholder')}
-              aria-label={t('materials.title')}
-              className="h-8 w-full rounded-lg border border-transparent bg-gray-50 px-3 text-sm text-gray-700 focus:outline-none focus:ring-0 md:w-[380px] truncate"
-            >
-              <option value="" disabled>
-                {t('materials.materialSelectPlaceholder')}
-              </option>
-              {materials.map(material => (
-                <option key={material.id} value={material.id}>
-                  {material.title}
-                </option>
-              ))}
-            </select>
+          <div className="w-[280px]">
+            <ExamPrepSelect
+              value={selectedMaterialId}
+              placeholder={t('materials.materialSelectPlaceholder')}
+              options={materials.map(material => ({
+                value: material.id,
+                label: material.title,
+              }))}
+              onChange={value => setSelectedMaterialId(value)}
+              isLoading={materialsLoading}
+              emptyLabel={selectedCourseId ? '자료가 없습니다' : '수업을 먼저 선택하세요'}
+            />
           </div>
         </div>
       </StudyspaceTopbarSlot>
@@ -449,8 +447,8 @@ export function ExamPrepContainer() {
         onSelectCourse={setSelectedCourseId}
         tabLabels={{
           summary: t('tabs.summary'),
-          quiz: t('tabs.quiz'),
           memorize: t('tabs.memorize'),
+          quiz: t('tabs.quiz'),
           notes: t('tabs.notes'),
           aiTutor: t('tabs.aiTutor'),
         }}
@@ -486,7 +484,7 @@ export function ExamPrepContainer() {
         onResizeStart={handleResizeStart}
       />
       {isPdfFullscreen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black">
+        <div className="fixed inset-0 z-[80] flex flex-col bg-black">
           {!isPdfSlideshow && (
             <div className="flex items-center justify-between px-6 py-4 text-white">
               <div className="text-sm font-medium">{t('pdf.title')}</div>

@@ -32,7 +32,7 @@ export function Sidebar() {
     setIsMenuOpen((prev) => !prev)
   }, [])
   const menuItems = useMemo(() => {
-    return SIDEBAR_MENU
+    return SIDEBAR_MENU.filter(item => item.id !== 'home' && item.id !== 'repeat')
   }, [])
 
   useEffect(() => {
@@ -68,7 +68,10 @@ export function Sidebar() {
         </div>
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen overflow-hidden border-r border-gray-100 bg-white transition-all duration-300',
+          'fixed left-0 top-0 z-50 h-screen overflow-hidden border-r bg-white transition-all duration-300',
+          pathname.startsWith('/studyspace/ai-tutor') || pathname.startsWith('/studyspace/review')
+            ? 'border-gray-200'
+            : 'border-gray-100',
           isMenuOpen ? 'w-[72px]' : 'w-0'
         )}
       >
@@ -93,20 +96,21 @@ export function Sidebar() {
                 }}
                 className={cn(
                   'flex flex-col items-center text-[11px] transition-colors',
-                  isActive ? 'text-gray-900' : 'text-gray-600 hover:text-gray-900'
+                  isActive ? 'text-white' : 'text-gray-600 hover:text-gray-900'
                 )}
                 title={label}
               >
                 <span
                   className={cn(
                     'flex h-12 w-12 flex-col items-center justify-center rounded-lg transition-all',
-                    isActive ? 'bg-gray-100' : ''
+                    isActive ? 'bg-gray-900 shadow-sm' : ''
                   )}
               >
                 <Icon className="h-5 w-5" />
                   <span
                     className={cn(
-                      'mt-1 whitespace-nowrap text-[10px] text-gray-700',
+                      'mt-1 whitespace-nowrap text-[10px]',
+                      isActive ? 'text-white' : 'text-gray-700',
                       item.id === 'repeat' ? 'text-[9px]' : ''
                     )}
                   >
@@ -123,7 +127,7 @@ export function Sidebar() {
               className={cn(
             'mb-2 flex flex-col items-center text-[11px] transition-colors',
                 pathname === PROFILE_MENU.href
-              ? 'text-gray-900'
+              ? 'text-white'
               : 'text-gray-600 hover:text-gray-900'
               )}
           title={profileLabel}
@@ -131,11 +135,13 @@ export function Sidebar() {
           <span
             className={cn(
               'flex h-12 w-12 flex-col items-center justify-center rounded-lg transition-all',
-              pathname === PROFILE_MENU.href ? 'bg-gray-100' : ''
+              pathname === PROFILE_MENU.href ? 'bg-gray-900 shadow-sm' : ''
             )}
             >
               <PROFILE_MENU.icon className="h-5 w-5" />
-            <span className="mt-1 text-[10px] text-gray-700">{profileLabel}</span>
+            <span className={cn('mt-1 text-[10px]', pathname === PROFILE_MENU.href ? 'text-white' : 'text-gray-700')}>
+              {profileLabel}
+            </span>
           </span>
             </Link>
       </div>

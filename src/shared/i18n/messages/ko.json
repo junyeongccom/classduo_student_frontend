@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "홈",
-    "aiTutor": "AI 튜터",
+    "aiTutor": "AI 조교",
     "smartReview": "스마트복습",
     "exam": "시험 준비",
     "repeat": "간격반복학습",
@@ -18,7 +18,7 @@
   },
   "aiTutorChat": {
     "selectLectureTitle": "수업을 선택해주세요",
-    "selectLectureDescription": "우측에서 수업을 선택하면 AI 튜터와 대화할 수 있습니다",
+    "selectLectureDescription": "우측에서 수업을 선택하면 AI 조교와 대화할 수 있습니다",
     "askAnythingPlaceholder": "무엇이든 물어보세요.",
     "simpleHelpText": "SIMPLE: 자료 기반으로 더 간결하고 정확하게 답변해요.",
     "deepHelpText": "DEEP: 더 길고 부드럽게 설명하고, 일반적 지식을 더 적극적으로 활용해요.",
@@ -219,7 +219,7 @@
       "quiz": "퀴즈",
       "memorize": "암기",
       "notes": "노트",
-      "aiTutor": "AI 튜터"
+      "aiTutor": "AI 조교"
     },
     "content": {
       "placeholder": "구현중입니다"

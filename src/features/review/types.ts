@@ -32,6 +32,11 @@ export interface DeleteLectureReviewItemResponse {
   success: boolean
 }
 
+export interface DeleteLectureReviewItemsResponse {
+  success: boolean
+  deleted_count: number
+}
+
 export interface UpdateLectureReviewItemRequest {
   keyword: string
   description: string

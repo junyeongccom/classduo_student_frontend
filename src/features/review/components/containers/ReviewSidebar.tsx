@@ -16,9 +16,9 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 import {
   hasVisitedStudyspaceTab,
   markVisitedStudyspaceTab,
-  readStudyspaceSelection,
-  writeStudyspaceSelection,
+  pickLatestLectureId,
 } from '@/shared/lib/studyspaceSelection'
+import { useStudyspaceSelectionStore } from '@/shared/store/useStudyspaceSelectionStore'
 
 // 날아가는 불꽃 애니메이션 상태
 interface FlyingFlame {
@@ -46,7 +46,19 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   const { gameProgress, flameCount, claimedRewards, claimReward } = useGameStatus()
   const userId = useAuthStore(state => state.user?.user_id ?? null)
   
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
+  const {
+    courseId: selectedCourseId,
+    lectureIds: sharedLectureIds,
+    updatedAt: sharedUpdatedAt,
+    isHydrated: isSharedHydrated,
+    setSelection: setSharedSelection,
+  } = useStudyspaceSelectionStore(state => ({
+    courseId: state.courseId,
+    lectureIds: state.lectureIds,
+    updatedAt: state.updatedAt,
+    isHydrated: state.isHydrated,
+    setSelection: state.setSelection,
+  }))
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [flyingFlames, setFlyingFlames] = useState<FlyingFlame[]>([]) // 날아가는 불꽃들
   const [flameHighlight, setFlameHighlight] = useState(false) // 불꽃 카운터 강조 효과
@@ -55,7 +67,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   const lectureButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [pendingSharedLectureIds, setPendingSharedLectureIds] = useState<string[] | null>(null)
   const [shouldAutoSelectLatest, setShouldAutoSelectLatest] = useState(false)
-  const selectionReadyRef = useRef(false)
+  const syncingFromSharedRef = useRef<number | null>(null)
   
   // refs
   const flameCounterRef = useRef<HTMLDivElement>(null) // 불꽃 카운터 위치 참조
@@ -64,18 +76,17 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   const { data: lectureList, isLoading: isLoadingLectures } = useLectureList(selectedCourseId)
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    const saved = readStudyspaceSelection(userId)
-    if (saved) {
-      setSelectedCourseId(saved.courseId)
-      onCourseIdChange?.(saved.courseId)
-      if (saved.lectureIds.length <= 1) {
-        onSelectLectureId(saved.lectureIds[0] ?? null)
+    if (!isSharedHydrated) return
+    if (selectedCourseId || sharedLectureIds.length > 0) {
+      syncingFromSharedRef.current = sharedUpdatedAt
+      onCourseIdChange?.(selectedCourseId)
+      if (sharedLectureIds.length <= 1) {
+        onSelectLectureId(sharedLectureIds[0] ?? null)
+        setPendingSharedLectureIds(null)
       } else {
-        setPendingSharedLectureIds(saved.lectureIds)
+        setPendingSharedLectureIds(sharedLectureIds)
       }
       setShouldAutoSelectLatest(false)
-      selectionReadyRef.current = true
       return
     }
 
@@ -86,8 +97,15 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
     } else {
       setShouldAutoSelectLatest(false)
     }
-    selectionReadyRef.current = true
-  }, [userId, onSelectLectureId, onCourseIdChange])
+  }, [
+    isSharedHydrated,
+    selectedCourseId,
+    sharedLectureIds,
+    sharedUpdatedAt,
+    userId,
+    onSelectLectureId,
+    onCourseIdChange,
+  ])
 
   const getLatestCourseId = (list: typeof courses) => {
     const candidates = list
@@ -114,10 +132,21 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   useEffect(() => {
     if (courses.length > 0 && !selectedCourseId && !pendingSharedLectureIds) {
       const nextCourseId = shouldAutoSelectLatest ? getLatestCourseId(courses) : courses[0].course_id
-      setSelectedCourseId(nextCourseId)
+      setSharedSelection({
+        courseId: nextCourseId,
+        lectureIds: [],
+        source: 'review',
+      })
       onCourseIdChange?.(nextCourseId)
     }
-  }, [courses, selectedCourseId, onCourseIdChange, pendingSharedLectureIds, shouldAutoSelectLatest])
+  }, [
+    courses,
+    selectedCourseId,
+    onCourseIdChange,
+    pendingSharedLectureIds,
+    shouldAutoSelectLatest,
+    setSharedSelection,
+  ])
 
   // 보물상자 클릭 핸들러 (보상 수령)
   const handleTreasureClick = (lectureId: string, courseId: string, e: React.MouseEvent<HTMLImageElement>) => {
@@ -168,7 +197,11 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
 
   // 강의 선택 시 회차 선택 초기화
   const handleSelectCourse = (courseId: string) => {
-    setSelectedCourseId(courseId)
+    setSharedSelection({
+      courseId,
+      lectureIds: [],
+      source: 'review',
+    })
     setIsDropdownOpen(false)
     onSelectLectureId(null) // 회차 선택 초기화
     onCourseIdChange?.(courseId) // 강의 ID 변경 알림
@@ -180,7 +213,13 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
     if (essence7words === ANALYZING_STATUS || !essence7words) {
       return
     }
-    onSelectLectureId(lectureId === selectedLectureId ? null : lectureId)
+    const nextLectureId = lectureId === selectedLectureId ? null : lectureId
+    onSelectLectureId(nextLectureId)
+    setSharedSelection({
+      courseId: selectedCourseId ?? null,
+      lectureIds: nextLectureId ? [nextLectureId] : [],
+      source: 'review',
+    })
   }
 
   const selectedCourse = courses.find(c => c.course_id === selectedCourseId)
@@ -194,7 +233,8 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
       return
     }
 
-    const availableLectures = lectureList.lectures.filter(
+    const allLectures = lectureList.lectures || []
+    const availableLectures = allLectures.filter(
       (lecture) => lecture.essence_7words && lecture.essence_7words !== ANALYZING_STATUS
     )
 
@@ -207,34 +247,17 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
     }
 
     if (pendingSharedLectureIds && pendingSharedLectureIds.length > 0) {
-      const candidates = availableLectures.filter(lecture =>
-        pendingSharedLectureIds.includes(lecture.lecture_id)
-      )
-      if (candidates.length > 0) {
-        const latestShared = [...candidates].sort((a, b) => {
-          const dateA = new Date(a.lecture_date).getTime()
-          const dateB = new Date(b.lecture_date).getTime()
-          return dateB - dateA
-        })[0]
-        onSelectLectureId(latestShared.lecture_id)
-        setShouldAutoSelectLatest(false)
-      } else if (shouldAutoSelectLatest) {
-        const latestOverall = [...availableLectures].sort((a, b) => {
-          const dateA = new Date(a.lecture_date).getTime()
-          const dateB = new Date(b.lecture_date).getTime()
-          return dateB - dateA
-        })[0]
-        onSelectLectureId(latestOverall?.lecture_id ?? null)
-        setShouldAutoSelectLatest(false)
-      } else {
-        onSelectLectureId(null)
+      const latestShared = pickLatestLectureId(pendingSharedLectureIds, allLectures)
+      if (latestShared) {
+        onSelectLectureId(latestShared)
       }
+      setShouldAutoSelectLatest(false)
       setPendingSharedLectureIds(null)
       return
     }
 
     const selectedLectureStillValid = selectedLectureId
-      ? availableLectures.some((lecture) => lecture.lecture_id === selectedLectureId)
+      ? allLectures.some((lecture) => lecture.lecture_id === selectedLectureId)
       : false
 
     if (selectedLectureStillValid) {
@@ -250,12 +273,26 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
 
       if (latestLecture) {
         onSelectLectureId(latestLecture.lecture_id)
+        setSharedSelection({
+          courseId: selectedCourseId ?? null,
+          lectureIds: [latestLecture.lecture_id],
+          source: 'review',
+        })
       }
       setShouldAutoSelectLatest(false)
     } else {
       onSelectLectureId(null)
     }
-  }, [selectedCourseId, lectureList, isLoadingLectures, selectedLectureId, onSelectLectureId, pendingSharedLectureIds, shouldAutoSelectLatest])
+  }, [
+    selectedCourseId,
+    lectureList,
+    isLoadingLectures,
+    selectedLectureId,
+    onSelectLectureId,
+    pendingSharedLectureIds,
+    shouldAutoSelectLatest,
+    setSharedSelection,
+  ])
 
   useEffect(() => {
     if (!selectedLectureId) return
@@ -266,24 +303,11 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   }, [selectedLectureId])
 
   useEffect(() => {
-    if (!selectionReadyRef.current) return
-    if (selectedCourseId === null && selectedLectureId === null && !pendingSharedLectureIds) {
-      writeStudyspaceSelection(userId, {
-        courseId: null,
-        lectureIds: [],
-        source: 'review',
-        updatedAt: Date.now(),
-      })
-      return
+    const inSync = syncingFromSharedRef.current === sharedUpdatedAt
+    if (inSync && selectedLectureId !== null) {
+      syncingFromSharedRef.current = null
     }
-    if (!selectedCourseId) return
-    writeStudyspaceSelection(userId, {
-      courseId: selectedCourseId,
-      lectureIds: selectedLectureId ? [selectedLectureId] : [],
-      source: 'review',
-      updatedAt: Date.now(),
-    })
-  }, [userId, selectedCourseId, selectedLectureId, pendingSharedLectureIds])
+  }, [sharedUpdatedAt, selectedLectureId])
 
   if (isLoadingCourses) {
     return (
