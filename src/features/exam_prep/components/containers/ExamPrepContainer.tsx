@@ -21,11 +21,7 @@ import {
   useExamPrepNotes,
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
-<<<<<<< HEAD
-=======
-import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { gradeQuizAnswer } from '../../domain/gradeQuiz'
->>>>>>> 4c8dd33 (시험준비 퀴즈 기능 추가)
 
 const DEFAULT_LEFT_WIDTH = 620
 const MIN_LEFT_WIDTH = 400
