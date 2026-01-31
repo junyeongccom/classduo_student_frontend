@@ -107,6 +107,15 @@ export async function apiRequest<T>(
       }
     }
 
+    // 204 No Content 등 body가 없는 응답은 json 파싱을 하지 않는다.
+    if (response.status === 204) {
+      return {
+        data: null,
+        error: null,
+        status: response.status,
+      }
+    }
+
     const data = await response.json()
 
     if (!response.ok) {

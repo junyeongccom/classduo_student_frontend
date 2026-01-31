@@ -116,6 +116,7 @@ export interface ExamPrepQuizItem {
 export interface ExamPrepQuizSession {
   session_id: string
   generation_batch_id: string
+  title?: string | null
   quiz_count: number
   correct_count: number
   incorrect_count: number

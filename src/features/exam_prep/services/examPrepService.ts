@@ -176,8 +176,7 @@ export interface ExamPrepAnnotationUpsertRequest {
 }
 
 export interface ExamPrepQuizSessionCreateRequest {
-  quiz_types?: Array<'RECALL' | 'STRUCTURE' | 'MISCONCEPTION'>
-  count: number
+  // 프론트에서는 유형/문항 수를 선택하지 않는다. (백엔드에서 정책적으로 결정)
   language: 'ko' | 'en'
 }
 
@@ -194,11 +193,22 @@ export interface ExamPrepQuizSessionListResponse {
   sessions: Array<{
     session_id: string
     generation_batch_id: string
+    title?: string | null
     quiz_count: number
     correct_count: number
     incorrect_count: number
     created_at: string
   }>
+}
+
+export interface ExamPrepQuizSessionRenameRequest {
+  title: string
+}
+
+export interface ExamPrepQuizSessionRenameResponse {
+  session_id: string
+  title?: string | null
+  updated_at?: string | null
 }
 
 export interface ExamPrepQuizSessionDetailResponse {
@@ -381,6 +391,17 @@ export const examPrepService = {
       method: 'POST',
       auth: true,
       body: payload,
+    }),
+  renameQuizSession: (sessionId: string, payload: ExamPrepQuizSessionRenameRequest) =>
+    apiRequest<ExamPrepQuizSessionRenameResponse>(`/exam-prep/quiz-sessions/${sessionId}`, {
+      method: 'PATCH',
+      auth: true,
+      body: payload,
+    }),
+  deleteQuizSession: (sessionId: string) =>
+    apiRequest<null>(`/exam-prep/quiz-sessions/${sessionId}`, {
+      method: 'DELETE',
+      auth: true,
     }),
   aiTutorChat: (payload: ExamPrepAiTutorChatRequest) =>
     apiRequest<ExamPrepAiTutorChatResponse>('/ai-tutor/chat', {
