@@ -119,7 +119,7 @@ export function SmartReviewContent({
     },
   ]
   return (
-    <div className="flex h-full flex-col gap-6">
+    <div className="flex h-full flex-col gap-6 overflow-hidden">
       <div className="border-b border-slate-200">
         <div className="flex items-center justify-start gap-6">
           {tabItems.map(tab => (
@@ -146,7 +146,7 @@ export function SmartReviewContent({
       </div>
 
       {activeTab === 'list' && (
-        <div className="flex flex-col items-center gap-3 pb-10">
+        <div className="flex flex-1 flex-col items-center gap-3 pb-10 overflow-y-auto">
           <div className="w-full max-w-[66%]">
             <div className="mb-1 flex flex-wrap items-center gap-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
