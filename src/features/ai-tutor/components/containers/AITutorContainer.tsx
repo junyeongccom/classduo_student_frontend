@@ -406,17 +406,18 @@ export function AITutorContainer() {
       <div className="flex h-full min-h-0 overflow-hidden bg-transparent">
         <div ref={containerRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <main
-            className="flex flex-1 min-h-0 items-center justify-center overflow-y-hidden overflow-x-hidden p-6"
+            className="flex flex-1 min-h-0 overflow-y-hidden overflow-x-hidden p-6"
             style={{ paddingRight: showInlineNotesPanel ? notesPanelWidth : 0 }}
           >
-            <div
-              className="mx-auto w-full max-w-5xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
-              style={{
-                height: 'var(--studyspace-card-height, 650px)',
-                maxHeight: 'var(--studyspace-card-max-height, 650px)',
-              }}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 pb-4">
+            <div className="flex h-full w-full items-center justify-center -ml-3">
+              <div
+                className="mx-auto flex w-full max-w-6xl flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm overflow-hidden"
+                style={{
+                  height: 'var(--studyspace-card-height, 700px)',
+                  maxHeight: 'var(--studyspace-card-max-height, 700px)',
+                }}
+              >
+              <div className="flex items-center justify-between gap-4 border-b border-gray-200 pb-4 shrink-0">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleNewChatAndResetPanels}
@@ -500,28 +501,31 @@ export function AITutorContainer() {
                   </button>
                 </div>
               </div>
-              <ChatInterface
-                key={chatKey}
-                selectedLectureIds={selectedLectureIds}
-                sessionId={currentSessionId}
-                onSessionCreated={handleSessionCreated}
-                onReferencesUpdate={handleReferencesUpdate}
-                onLectureIdsLoaded={handleLectureIdsLoaded}
-                onMessagesUpdate={handleMessagesUpdate}
-                onShowReferencePanel={(type) => {
-                  if (type === 'notes') {
-                    if (!isNotesPanelOpen) {
-                      toggleNotesPanel(true)
+              <div className="flex-1 min-h-0">
+                <ChatInterface
+                  key={chatKey}
+                  selectedLectureIds={selectedLectureIds}
+                  sessionId={currentSessionId}
+                  onSessionCreated={handleSessionCreated}
+                  onReferencesUpdate={handleReferencesUpdate}
+                  onLectureIdsLoaded={handleLectureIdsLoaded}
+                  onMessagesUpdate={handleMessagesUpdate}
+                  onShowReferencePanel={(type) => {
+                    if (type === 'notes') {
+                      if (!isNotesPanelOpen) {
+                        toggleNotesPanel(true)
+                      }
+                      setActiveTab('notes')
+                    } else {
+                      if (!isMaterialsPanelOpen) {
+                        toggleMaterialsPanel(true)
+                      }
+                      setActiveTab('materials')
                     }
-                    setActiveTab('notes')
-                  } else {
-                    if (!isMaterialsPanelOpen) {
-                      toggleMaterialsPanel(true)
-                    }
-                    setActiveTab('materials')
-                  }
-                }}
-              />
+                  }}
+                />
+              </div>
+              </div>
             </div>
           </main>
 
