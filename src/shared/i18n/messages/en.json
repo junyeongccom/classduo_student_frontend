@@ -136,6 +136,10 @@
         "quickfill": {
           "title": "Definition Builder",
           "description": "Pick tokens to complete the definition."
+        },
+        "guessTheTerm": {
+          "title": "Guess the Term",
+          "description": "Ask yes/no questions to narrow down the term."
         }
       },
       "definitionBuilder": {
@@ -151,6 +155,19 @@
         "back": "Back to list",
         "successTitle": "SUCCESS",
         "finalScoreLabel": "Final score: {score}"
+      },
+      "guessTheTerm": {
+        "selectLecture": "Select a lecture to start the game.",
+        "instructions": "Instructions:\nThe goal of the game is to accurately guess the term chosen by the system.\nA list of terms will be displayed on the screen. The system selects a term that is not revealed to you.\nKeep asking yes-or-no questions to narrow down and eliminate terms from the list.\nWhen you're ready, click 'Select answer' to submit your guess.\nThe number of attempts for asking questions and making guesses is limited.",
+        "newGame": "New game",
+        "chatHint": "Ask yes-or-no questions in chat to guess the secret term",
+        "questionsUsed": "You have used {used} out of {total} questions.",
+        "inputPlaceholder": "Is it related to...?",
+        "giveUp": "Give up",
+        "selectAnswer": "Select answer",
+        "showDescription": "Show description",
+        "noTerms": "No terms to display.",
+        "send": "Send"
       },
       "importTooltip": "AI trained on the lecture recording extracts and recommends key keywords for this session.",
       "guard": {
