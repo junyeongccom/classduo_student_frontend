@@ -417,7 +417,7 @@ export function AITutorContainer() {
                   maxHeight: 'var(--studyspace-card-max-height, 700px)',
                 }}
               >
-              <div className="flex items-center justify-between gap-4 border-b border-gray-200 pb-2 shrink-0">
+               <div className="flex items-center justify-between gap-4 border-b border-gray-200 pb-2 shrink-0 pt-0 -mt-3">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleNewChatAndResetPanels}
