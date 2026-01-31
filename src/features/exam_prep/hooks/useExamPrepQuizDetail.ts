@@ -14,8 +14,8 @@ export function useExamPrepQuizDetail(sessionId: string | null, onlyWrong: boole
     }
 
     if (!options?.silent) {
-      setIsLoading(true)
-      setError(null)
+    setIsLoading(true)
+    setError(null)
     }
     const result = onlyWrong
       ? await examPrepService.getQuizSessionWrong(sessionId)
@@ -23,18 +23,18 @@ export function useExamPrepQuizDetail(sessionId: string | null, onlyWrong: boole
 
     if (result.error || !result.data) {
       if (!options?.silent) {
-        setError(result.error?.message ?? '퀴즈를 불러오지 못했습니다')
+      setError(result.error?.message ?? '퀴즈를 불러오지 못했습니다')
       }
       setQuizzes([])
       if (!options?.silent) {
-        setIsLoading(false)
+      setIsLoading(false)
       }
       return
     }
 
     setQuizzes(result.data.quizzes)
     if (!options?.silent) {
-      setIsLoading(false)
+    setIsLoading(false)
     }
   }, [sessionId, onlyWrong])
 

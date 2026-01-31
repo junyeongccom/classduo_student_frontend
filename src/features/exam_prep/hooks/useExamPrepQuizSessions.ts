@@ -14,25 +14,25 @@ export function useExamPrepQuizSessions(materialId: string | null) {
     }
 
     if (!options?.silent) {
-      setIsLoading(true)
-      setError(null)
+    setIsLoading(true)
+    setError(null)
     }
     const result = await examPrepService.getQuizSessions(materialId)
 
     if (result.error || !result.data) {
       if (!options?.silent) {
-        setError(result.error?.message ?? '퀴즈 세션을 불러오지 못했습니다')
+      setError(result.error?.message ?? '퀴즈 세션을 불러오지 못했습니다')
       }
       setSessions([])
       if (!options?.silent) {
-        setIsLoading(false)
+      setIsLoading(false)
       }
       return
     }
 
     setSessions(result.data.sessions)
     if (!options?.silent) {
-      setIsLoading(false)
+    setIsLoading(false)
     }
   }, [materialId])
 
