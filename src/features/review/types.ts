@@ -88,4 +88,19 @@ export interface RecordingLectureKeywordsResponse {
   total_count: number
 }
 
+export type GuessTheTermSecretTerm = {
+  keyword: string
+  description: string
+}
+
+export interface GuessTheTermChatRequest {
+  question: string
+  secret_term: GuessTheTermSecretTerm
+  locale: 'ko' | 'en'
+}
+
+export interface GuessTheTermChatResponse {
+  answer: string
+}
+
 

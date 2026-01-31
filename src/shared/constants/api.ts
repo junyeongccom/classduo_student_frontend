@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
     IMPORT_KEYWORDS: (lectureId: string) => `/reviews/lectures/${lectureId}/review-items/import-keywords`,
     COMPLETE: (lectureId: string) => `/reviews/lectures/${lectureId}/review/complete`,
     GET_DEFINITION_BUILDER: (lectureId: string) => `/reviews/lectures/${lectureId}/definition-builder`,
+    GUESS_THE_TERM_CHAT: (lectureId: string) => `/reviews/lectures/${lectureId}/guess-the-term/chat`,
   },
 
   // OX Quiz

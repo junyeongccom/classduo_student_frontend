@@ -73,6 +73,8 @@ export function ReviewContainer() {
 
       <div className="h-full overflow-y-auto p-6">
         <SmartReviewContent
+          lectureId={selectedLectureId}
+          locale={locale}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           activeGameId={activeGameId}

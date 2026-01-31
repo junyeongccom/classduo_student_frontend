@@ -6,7 +6,8 @@ import type { LectureReviewItem } from '@/features/review/types'
 import { AddReviewWordModal } from './AddReviewWordModal'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DefinitionBuilderGame } from './DefinitionBuilderGame'
-import { GuessTheTermGame } from './GuessTheTermGame'
+import type { AppLocale } from '@/shared/i18n/I18nProvider'
+import { GuessTheTermGameContainer } from '@/features/review/components/containers/GuessTheTermGameContainer'
 import { ReviewMatchingGame } from './ReviewMatchingGame'
 import type { DefinitionBuilderGameResponse } from '@/features/review/types'
 import { ReviewDeckView } from './ReviewDeckView'
@@ -15,6 +16,8 @@ import type { ReviewDeckViewModel } from '@/features/review/hooks/useReviewDeck'
 export type SmartReviewTab = 'list' | 'deck' | 'game'
 
 interface SmartReviewContentProps {
+  lectureId: string | null
+  locale: AppLocale
   activeTab: SmartReviewTab
   onTabChange: (tab: SmartReviewTab) => void
   activeGameId: string | null
@@ -43,6 +46,8 @@ interface SmartReviewContentProps {
 }
 
 export function SmartReviewContent({
+  lectureId,
+  locale,
   activeTab,
   onTabChange,
   activeGameId,
@@ -386,7 +391,13 @@ export function SmartReviewContent({
                   {t('definitionBuilder.back')}
                 </button>
               </div>
-              <GuessTheTermGame isEnabled={hasSelectedLecture} reviewItems={reviewItems} onExitGame={onExitGame} />
+              <GuessTheTermGameContainer
+                lectureId={lectureId}
+                locale={locale}
+                isEnabled={hasSelectedLecture}
+                reviewItems={reviewItems}
+                onExitGame={onExitGame}
+              />
             </div>
           ) : (
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
