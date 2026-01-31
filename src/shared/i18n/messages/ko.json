@@ -136,6 +136,10 @@
         "quickfill": {
           "title": "정의 조립 게임",
           "description": "어절을 골라 정의 문장을 완성하세요."
+        },
+        "guessTheTerm": {
+          "title": "용어 추측 게임",
+          "description": "예/아니오 질문으로 용어를 좁혀 정답을 맞혀보세요."
         }
       },
       "definitionBuilder": {
@@ -151,6 +155,28 @@
         "back": "목록으로",
         "successTitle": "SUCCESS",
         "finalScoreLabel": "최종 점수: {score}"
+      },
+      "guessTheTerm": {
+        "selectLecture": "회차를 선택하면 게임을 시작할 수 있어요.",
+        "instructions": "지침:\n게임의 목표는 시스템이 선택한 용어를 정확히 추측하는 것입니다.\n화면에 용어 목록이 표시됩니다. 시스템은 여러분에게 공개하지 않은 용어를 선택합니다.\n예-아니오 질문을 계속하여 목록에서 용어를 좁히고 제외하세요.\n준비가 되면 '답변 선택'을 클릭하여 답변을 제출하세요.\n질문을 하고 추측을 하기 위한 시도 횟수가 제한됩니다.",
+        "newGame": "새 게임",
+        "chatHint": "비밀 용어를 추측하기 위해 채팅에서 예/아니오 질문을 해보세요",
+        "questionsUsed": "질문 {total}개 중 {used}개를 사용했습니다.",
+        "inputPlaceholder": "다음과 관련이 있나요...?",
+        "giveUp": "포기",
+        "selectAnswer": "답 선택",
+        "cancelSelect": "취소",
+        "choose": "선택",
+        "confirmTitle": "답 확인",
+        "confirmYes": "예",
+        "confirmNo": "아니오",
+        "successTitle": "축하합니다!",
+        "successFound": "단 {count}개 질문으로 정답을 찾았습니다.",
+        "successWrong": "{count}번의 잘못된 추측을 했습니다. 완벽한 점수를 위해 다시 시도하세요!",
+        "backToList": "목록으로",
+        "showDescription": "설명 표시",
+        "noTerms": "표시할 용어가 없습니다.",
+        "send": "전송"
       },
       "importTooltip": "해당 회차의 수업녹음본을 학습한 AI가 핵심 키워드를 추출해 제공합니다.",
       "guard": {

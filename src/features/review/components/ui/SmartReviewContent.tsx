@@ -6,6 +6,8 @@ import type { LectureReviewItem } from '@/features/review/types'
 import { AddReviewWordModal } from './AddReviewWordModal'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DefinitionBuilderGame } from './DefinitionBuilderGame'
+import type { AppLocale } from '@/shared/i18n/I18nProvider'
+import { GuessTheTermGameContainer } from '@/features/review/components/containers/GuessTheTermGameContainer'
 import { ReviewMatchingGame } from './ReviewMatchingGame'
 import type { DefinitionBuilderGameResponse } from '@/features/review/types'
 import { ReviewDeckView } from './ReviewDeckView'
@@ -14,6 +16,8 @@ import type { ReviewDeckViewModel } from '@/features/review/hooks/useReviewDeck'
 export type SmartReviewTab = 'list' | 'deck' | 'game'
 
 interface SmartReviewContentProps {
+  lectureId: string | null
+  locale: AppLocale
   activeTab: SmartReviewTab
   onTabChange: (tab: SmartReviewTab) => void
   activeGameId: string | null
@@ -42,6 +46,8 @@ interface SmartReviewContentProps {
 }
 
 export function SmartReviewContent({
+  lectureId,
+  locale,
   activeTab,
   onTabChange,
   activeGameId,
@@ -104,6 +110,12 @@ export function SmartReviewContent({
       title: t('games.quickfill.title'),
       description: t('games.quickfill.description'),
       thumbnail: '/DB_thumbnail.png',
+    },
+    {
+      id: 'guess-the-term',
+      title: t('games.guessTheTerm.title'),
+      description: t('games.guessTheTerm.description'),
+      thumbnail: null,
     },
   ]
   return (
@@ -367,10 +379,31 @@ export function SmartReviewContent({
                 onExit={onExitGame}
               />
             </div>
+          ) : activeGameId === 'guess-the-term' ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-slate-900">{t('games.guessTheTerm.title')}</div>
+                <button
+                  type="button"
+                  onClick={onExitGame}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  {t('definitionBuilder.back')}
+                </button>
+              </div>
+              <GuessTheTermGameContainer
+                lectureId={lectureId}
+                locale={locale}
+                isEnabled={hasSelectedLecture}
+                reviewItems={reviewItems}
+                onExitGame={onExitGame}
+              />
+            </div>
           ) : (
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {gameItems.map(game => {
-                const isPlayable = game.id === 'definition-builder' || game.id === 'matching'
+                const isPlayable =
+                  game.id === 'definition-builder' || game.id === 'matching' || game.id === 'guess-the-term'
                 return (
                   <button
               key={game.id}
