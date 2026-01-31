@@ -7,25 +7,33 @@ export function useExamPrepQuizSessions(materialId: string | null) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchSessions = useCallback(async () => {
+  const fetchSessions = useCallback(async (options?: { silent?: boolean }) => {
     if (!materialId) {
       setSessions([])
       return
     }
 
-    setIsLoading(true)
-    setError(null)
+    if (!options?.silent) {
+      setIsLoading(true)
+      setError(null)
+    }
     const result = await examPrepService.getQuizSessions(materialId)
 
     if (result.error || !result.data) {
-      setError(result.error?.message ?? '퀴즈 세션을 불러오지 못했습니다')
+      if (!options?.silent) {
+        setError(result.error?.message ?? '퀴즈 세션을 불러오지 못했습니다')
+      }
       setSessions([])
-      setIsLoading(false)
+      if (!options?.silent) {
+        setIsLoading(false)
+      }
       return
     }
 
     setSessions(result.data.sessions)
-    setIsLoading(false)
+    if (!options?.silent) {
+      setIsLoading(false)
+    }
   }, [materialId])
 
   useEffect(() => {
@@ -36,7 +44,8 @@ export function useExamPrepQuizSessions(materialId: string | null) {
     sessions,
     isLoading,
     error,
-    refresh: fetchSessions,
+    refresh: () => fetchSessions(),
+    refreshSilently: () => fetchSessions({ silent: true }),
   }
 }
 

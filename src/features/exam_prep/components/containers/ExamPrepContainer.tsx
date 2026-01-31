@@ -10,7 +10,7 @@ import { ExamPrepAiTutorPanel } from '../ui/ExamPrepAiTutorPanel'
 import { ExamPrepNotesPanel } from '../ui/ExamPrepNotesPanel'
 import { ExamPrepPdfViewer } from '../ui/ExamPrepPdfViewer'
 import { ExamPrepSelect } from '../ui/ExamPrepSelect'
-import type { ExamPrepTab, ExamPrepMaterial, ExamPrepQuizType, ExamPrepNoteScope } from '../../types'
+import type { ExamPrepTab, ExamPrepMaterial, ExamPrepNoteScope, ExamPrepUserAnswer } from '../../types'
 import {
   useExamPrepCourses,
   useExamPrepMaterials,
@@ -21,6 +21,11 @@ import {
   useExamPrepNotes,
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
+<<<<<<< HEAD
+=======
+import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { gradeQuizAnswer } from '../../domain/gradeQuiz'
+>>>>>>> 4c8dd33 (시험준비 퀴즈 기능 추가)
 
 const DEFAULT_LEFT_WIDTH = 620
 const MIN_LEFT_WIDTH = 400
@@ -83,14 +88,16 @@ export function ExamPrepContainer() {
     sessions,
     isLoading: sessionsLoading,
     refresh: refreshSessions,
+    refreshSilently: refreshSessionsSilently,
   } = useExamPrepQuizSessions(selectedMaterialId)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [onlyWrong, setOnlyWrong] = useState(false)
   const {
     quizzes,
     isLoading: quizzesLoading,
-    refresh: refreshQuizzes,
+    refreshSilently: refreshQuizzesSilently,
   } = useExamPrepQuizDetail(selectedSessionId, onlyWrong)
+  const [optimisticAnswersByQuizId, setOptimisticAnswersByQuizId] = useState<Record<string, ExamPrepUserAnswer>>({})
   const {
     noteMode,
     notes,
@@ -108,12 +115,6 @@ export function ExamPrepContainer() {
     })
     return mapped
   }, [annotations])
-  const [quizTypes, setQuizTypes] = useState<ExamPrepQuizType[]>([
-    'RECALL',
-    'STRUCTURE',
-    'MISCONCEPTION',
-  ])
-  const [quizCount, setQuizCount] = useState(10)
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
@@ -158,6 +159,7 @@ export function ExamPrepContainer() {
 
   useEffect(() => {
     setSelectedSessionId(null)
+    setOptimisticAnswersByQuizId({})
   }, [selectedMaterialId])
 
   useEffect(() => {
@@ -178,6 +180,9 @@ export function ExamPrepContainer() {
       setSelectedSessionId(sessions[0]?.session_id ?? null)
     }
   }, [sessions, selectedSessionId])
+  useEffect(() => {
+    setOptimisticAnswersByQuizId({})
+  }, [selectedSessionId, onlyWrong])
 
   useEffect(() => {
     if (!isResizing) return
@@ -249,11 +254,9 @@ export function ExamPrepContainer() {
   }, [isPdfFullscreen])
 
   const handleCreateSession = async () => {
-    if (!selectedMaterialId || quizTypes.length === 0) return
+    if (!selectedMaterialId) return
     setIsCreatingQuiz(true)
     const result = await examPrepService.createQuizSession(selectedMaterialId, {
-      quiz_types: quizTypes,
-      count: quizCount,
       language,
     })
     setIsCreatingQuiz(false)
@@ -263,21 +266,52 @@ export function ExamPrepContainer() {
     }
   }
 
-  const handleToggleQuizType = (type: ExamPrepQuizType) => {
-    setQuizTypes(prev =>
-      prev.includes(type) ? prev.filter(item => item !== type) : [...prev, type]
-    )
+  const handleRenameSession = async (sessionId: string, title: string) => {
+    const result = await examPrepService.renameQuizSession(sessionId, { title })
+    if (result.data && !result.error) {
+      await refreshSessionsSilently()
+    }
+  }
+
+  const handleDeleteSession = async (sessionId: string) => {
+    const result = await examPrepService.deleteQuizSession(sessionId)
+    if (result.error) return
+
+    const remaining = sessions.filter(session => session.session_id !== sessionId)
+    if (selectedSessionId === sessionId) {
+      setSelectedSessionId(remaining[0]?.session_id ?? null)
+    }
+    await refreshSessionsSilently()
+    await refreshQuizzesSilently()
   }
 
   const handleSubmitAnswer = async (quizId: string, answerText: string | null, choiceOrder: number | null) => {
     if (!selectedSessionId) return
-    await examPrepService.submitQuizAnswer(selectedSessionId, {
-      quiz_id: quizId,
-      answer_text: answerText,
-      choice_order: choiceOrder,
-    })
-    await refreshQuizzes()
-    await refreshSessions()
+    const quiz = quizzes.find(item => item.quiz_id === quizId) ?? null
+    if (quiz) {
+      const graded = gradeQuizAnswer(quiz, answerText, choiceOrder)
+      if (graded) {
+        setOptimisticAnswersByQuizId(prev => ({ ...prev, [quizId]: graded }))
+      }
+    }
+
+    // 요구사항: 답 제출 후 로딩으로 UI를 막지 않는다. 서버 제출은 백그라운드로만 수행.
+    examPrepService
+      .submitQuizAnswer(selectedSessionId, {
+        quiz_id: quizId,
+        answer_text: answerText,
+        choice_order: choiceOrder,
+      })
+      .then(() => {
+        // 서버 데이터 동기화(정답률 집계/오답 필터)를 위해 백그라운드 갱신만 수행
+        setTimeout(() => {
+          void refreshQuizzesSilently()
+          void refreshSessionsSilently()
+        }, 600)
+      })
+      .catch(() => {
+        // ignore: UI는 optimistic 상태 유지
+      })
   }
 
   const handleSendChat = async () => {
@@ -341,18 +375,20 @@ export function ExamPrepContainer() {
     }
 
     if (activeTab === 'quiz') {
+      const displayQuizzes = quizzes.map(quiz => {
+        const optimistic = optimisticAnswersByQuizId[quiz.quiz_id]
+        return optimistic ? { ...quiz, user_answer: optimistic } : quiz
+      })
       return (
         <ExamPrepQuizPanel
           sessions={sessions}
           selectedSessionId={selectedSessionId}
           onSelectSession={setSelectedSessionId}
+          onRenameSession={handleRenameSession}
+          onDeleteSession={handleDeleteSession}
           onCreateSession={handleCreateSession}
           isCreating={isCreatingQuiz}
-          quizTypes={quizTypes}
-          onToggleQuizType={handleToggleQuizType}
-          count={quizCount}
-          onChangeCount={setQuizCount}
-          quizzes={quizzes}
+          quizzes={displayQuizzes}
           isLoading={sessionsLoading || quizzesLoading}
           onlyWrong={onlyWrong}
           onToggleWrong={() => setOnlyWrong(prev => !prev)}
