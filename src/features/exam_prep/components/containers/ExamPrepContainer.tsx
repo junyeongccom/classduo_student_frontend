@@ -403,7 +403,7 @@ export function ExamPrepContainer() {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="px-6 pt-6">
-        <div className="relative ml-[96px] w-[1410px] pb-4 -mt-2 pt-10">
+        <div className="relative w-full pb-4 -mt-2 pt-10">
           <div
             className="absolute"
             style={{
@@ -449,7 +449,7 @@ export function ExamPrepContainer() {
           </div>
         </div>
       </div>
-      <div ref={containerRef} className="flex-1 min-h-1 ml-[120px] w-[1410px] border-b border-gray-200 pb-4">
+      <div ref={containerRef} className="flex-1 min-h-1 w-full border-b border-gray-200 pb-4">
         <ExamPrepLayout
         title={t('title')}
         subtitle={t('subtitle')}
