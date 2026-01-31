@@ -115,7 +115,7 @@ export function SmartReviewContent({
       id: 'guess-the-term',
       title: t('games.guessTheTerm.title'),
       description: t('games.guessTheTerm.description'),
-      thumbnail: null,
+      thumbnail: '/스크린샷 2026-02-01 060037.png',
     },
   ]
   return (
@@ -146,7 +146,7 @@ export function SmartReviewContent({
       </div>
 
       {activeTab === 'list' && (
-        <div className="flex flex-1 flex-col items-center gap-3 pb-10 overflow-y-auto">
+        <div className="flex flex-1 flex-col items-center gap-3 pb-10">
           <div className="w-full max-w-[66%]">
             <div className="mb-1 flex flex-wrap items-center gap-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
@@ -300,142 +300,142 @@ export function SmartReviewContent({
 
       {activeTab === 'game' && (
         <div className="flex flex-col gap-6">
-          {activeGameId === 'definition-builder' ? (
-            <div className="flex flex-col gap-4">
-              <div className="mt-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-sm font-semibold text-slate-900">{t('games.quickfill.title')}</div>
+            {activeGameId === 'definition-builder' ? (
+              <div className="flex flex-col gap-4">
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm font-semibold text-slate-900">{t('games.quickfill.title')}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onExitGame}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    {t('definitionBuilder.back')}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={onExitGame}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                  {t('definitionBuilder.back')}
-                </button>
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-500">{t('definitionBuilder.scorePrefix')}</span>
-                <span
-                  className={`text-2xl font-bold ${
-                    scoreTone === 'positive'
-                      ? 'text-emerald-600'
-                      : scoreTone === 'negative'
-                        ? 'text-rose-600'
-                        : 'text-slate-800'
-                  }`}
-                >
-                  {definitionScore}
-                </span>
-                {scoreDelta !== 0 && (
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500">{t('definitionBuilder.scorePrefix')}</span>
                   <span
-                    className={`text-sm font-semibold ${
-                      scoreDelta > 0 ? 'text-emerald-600' : 'text-rose-600'
+                    className={`text-2xl font-bold ${
+                      scoreTone === 'positive'
+                        ? 'text-emerald-600'
+                        : scoreTone === 'negative'
+                          ? 'text-rose-600'
+                          : 'text-slate-800'
                     }`}
                   >
-                    {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta}
+                    {definitionScore}
                   </span>
-                )}
-              </div>
-              <DefinitionBuilderGame
-                data={definitionBuilderData}
-                isLoading={isDefinitionBuilderLoading}
-                error={definitionBuilderError}
-                onRetry={onRetryDefinitionBuilder}
-                isEnabled={hasSelectedLecture}
-                currentScore={definitionScore}
-                onScoreDelta={(delta) => {
-                  setDefinitionScore(prev => prev + delta)
-                  setScoreDelta(delta)
-                  setScoreTone(delta > 0 ? 'positive' : 'negative')
-                  window.setTimeout(() => {
+                  {scoreDelta !== 0 && (
+                    <span
+                      className={`text-sm font-semibold ${
+                        scoreDelta > 0 ? 'text-emerald-600' : 'text-rose-600'
+                      }`}
+                    >
+                      {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta}
+                    </span>
+                  )}
+                </div>
+                <DefinitionBuilderGame
+                  data={definitionBuilderData}
+                  isLoading={isDefinitionBuilderLoading}
+                  error={definitionBuilderError}
+                  onRetry={onRetryDefinitionBuilder}
+                  isEnabled={hasSelectedLecture}
+                  currentScore={definitionScore}
+                  onScoreDelta={(delta) => {
+                    setDefinitionScore(prev => prev + delta)
+                    setScoreDelta(delta)
+                    setScoreTone(delta > 0 ? 'positive' : 'negative')
+                    window.setTimeout(() => {
+                      setScoreDelta(0)
+                      setScoreTone(null)
+                    }, 800)
+                  }}
+                  onRestart={() => {
+                    setDefinitionScore(0)
                     setScoreDelta(0)
                     setScoreTone(null)
-                  }, 800)
-                }}
-                onRestart={() => {
-                  setDefinitionScore(0)
-                  setScoreDelta(0)
-                  setScoreTone(null)
-                  onRetryDefinitionBuilder()
-                }}
-              />
-            </div>
-          ) : activeGameId === 'matching' ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-slate-900">{t('games.matching.title')}</div>
-                <button
-                  type="button"
-                  onClick={onExitGame}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                  {t('definitionBuilder.back')}
-                </button>
+                    onRetryDefinitionBuilder()
+                  }}
+                />
               </div>
-              <ReviewMatchingGame
-                reviewItems={reviewItems}
-                isEnabled={hasSelectedLecture}
-                onExit={onExitGame}
-              />
-            </div>
-          ) : activeGameId === 'guess-the-term' ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-slate-900">{t('games.guessTheTerm.title')}</div>
-                <button
-                  type="button"
-                  onClick={onExitGame}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                  {t('definitionBuilder.back')}
-                </button>
-              </div>
-              <GuessTheTermGameContainer
-                lectureId={lectureId}
-                locale={locale}
-                isEnabled={hasSelectedLecture}
-                reviewItems={reviewItems}
-                onExitGame={onExitGame}
-              />
-            </div>
-          ) : (
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {gameItems.map(game => {
-                const isPlayable =
-                  game.id === 'definition-builder' || game.id === 'matching' || game.id === 'guess-the-term'
-                return (
+            ) : activeGameId === 'matching' ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-slate-900">{t('games.matching.title')}</div>
                   <button
-              key={game.id}
                     type="button"
-                    onClick={() => {
-                      if (isPlayable) onSelectGame(game.id)
-                    }}
-                    className={`flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition ${
-                      isPlayable ? 'hover:-translate-y-0.5 hover:border-slate-300' : 'cursor-not-allowed opacity-60'
-                    }`}
-            >
-              <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
-                {game.thumbnail ? (
-                  <img
-                    src={game.thumbnail}
-                    alt={`${game.title} 썸네일`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : null}
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
-                <p className="mt-1 text-xs text-slate-500">{game.description}</p>
-              </div>
+                    onClick={onExitGame}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    {t('definitionBuilder.back')}
                   </button>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                </div>
+                <ReviewMatchingGame
+                  reviewItems={reviewItems}
+                  isEnabled={hasSelectedLecture}
+                  onExit={onExitGame}
+                />
+              </div>
+            ) : activeGameId === 'guess-the-term' ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-slate-900">{t('games.guessTheTerm.title')}</div>
+                  <button
+                    type="button"
+                    onClick={onExitGame}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    {t('definitionBuilder.back')}
+                  </button>
+                </div>
+                <GuessTheTermGameContainer
+                  lectureId={lectureId}
+                  locale={locale}
+                  isEnabled={hasSelectedLecture}
+                  reviewItems={reviewItems}
+                  onExitGame={onExitGame}
+                />
+              </div>
+            ) : (
+              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {gameItems.map(game => {
+                  const isPlayable =
+                    game.id === 'definition-builder' || game.id === 'matching' || game.id === 'guess-the-term'
+                  return (
+                    <button
+                      key={game.id}
+                      type="button"
+                      onClick={() => {
+                        if (isPlayable) onSelectGame(game.id)
+                      }}
+                      className={`flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition ${
+                        isPlayable ? 'hover:-translate-y-0.5 hover:border-slate-300' : 'cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      <div className="aspect-[4/3] w-full rounded-xl border border-slate-100 bg-slate-50 overflow-hidden">
+                        {game.thumbnail ? (
+                          <img
+                            src={game.thumbnail}
+                            alt={`${game.title} 썸네일`}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : null}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>
+                        <p className="mt-1 text-xs text-slate-500">{game.description}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
       )}
 
       {/* 단어 추가 모달 */}

@@ -184,15 +184,30 @@ export function AITutorContainer() {
   // Handlers
   const handleSelectLectureIds = useCallback((ids: string[]) => {
     setSelectedLectureIds(ids)
-  }, [setSelectedLectureIds])
+    setSharedSelection({
+      courseId: selectedCourseId ?? null,
+      lectureIds: ids,
+      source: 'ai-tutor',
+    })
+  }, [setSelectedLectureIds, setSharedSelection, selectedCourseId])
 
   const handleSelectCourse = useCallback((courseId: string | null) => {
     setSelectedCourseId(courseId)
-  }, [setSelectedCourseId])
+    setSharedSelection({
+      courseId,
+      lectureIds: [],
+      source: 'ai-tutor',
+    })
+  }, [setSelectedCourseId, setSharedSelection])
 
   const handleLectureIdsLoaded = useCallback((ids: string[]) => {
     setSelectedLectureIds(ids)
-  }, [setSelectedLectureIds])
+    setSharedSelection({
+      courseId: selectedCourseId ?? null,
+      lectureIds: ids,
+      source: 'ai-tutor',
+    })
+  }, [setSelectedLectureIds, setSharedSelection, selectedCourseId])
 
   const handleMessagesUpdate = useCallback((newMessages: any[]) => {
     setMessages(newMessages)
@@ -413,8 +428,8 @@ export function AITutorContainer() {
               <div
                 className="mx-auto flex w-full max-w-6xl flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm overflow-hidden"
                 style={{
-                  height: 'var(--studyspace-card-height, 700px)',
-                  maxHeight: 'var(--studyspace-card-max-height, 700px)',
+                  height: '70vw',
+                  maxHeight: '94vh',
                 }}
               >
                <div className="flex items-center justify-between gap-4 border-b border-gray-200 pb-2 shrink-0 pt-0 -mt-3">

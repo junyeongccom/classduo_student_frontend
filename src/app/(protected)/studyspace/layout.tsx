@@ -124,6 +124,15 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
           className="flex h-full flex-col"
         >
           <div className="flex flex-1 overflow-hidden pl-[88px]">
+            {!isExamPrep && showRightSidebar && (
+              <button
+                onClick={() => setIsMobileRightbarOpen(true)}
+                className="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 xl:hidden"
+                aria-label="Open right sidebar"
+              >
+                <PanelRightOpen className="h-5 w-5" />
+              </button>
+            )}
             {/* Right Sidebar (Desktop) - Now between left menu and main */}
             {!isExamPrep && showRightSidebar && (
               <aside className={`hidden h-full min-h-0 w-[320px] flex-col border-r ${borderTone} bg-white xl:flex`}>
