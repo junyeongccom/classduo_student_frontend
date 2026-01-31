@@ -1418,7 +1418,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       )}
 
       {/* 하단 입력 영역 */}
-      <div className="border-t border-gray-200 px-4 py-3">
+      <div className="border-t border-gray-200 px-4 py-1.5">
         <div className="mx-auto max-w-[772px]">
           <ChatComposer
             value={input}
