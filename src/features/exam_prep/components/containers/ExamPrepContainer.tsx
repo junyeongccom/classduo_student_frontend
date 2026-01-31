@@ -21,12 +21,12 @@ import {
   useExamPrepNotes,
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
-import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 
 const DEFAULT_LEFT_WIDTH = 620
 const MIN_LEFT_WIDTH = 400
 const MIN_RIGHT_WIDTH = 340
 const SIDEBAR_WIDTH = 140
+const RESIZER_WIDTH = 1
 
 export function ExamPrepContainer() {
   const t = useTranslations('examPrep')
@@ -135,7 +135,7 @@ export function ExamPrepContainer() {
     const element = containerRef.current
     const getHalfWidth = (containerWidth: number) => {
       const maxLeftWidth = containerWidth - MIN_RIGHT_WIDTH
-      const target = Math.floor(containerWidth / 2)
+      const target = Math.floor((containerWidth - RESIZER_WIDTH) / 2)
       return Math.min(Math.max(target, MIN_LEFT_WIDTH), maxLeftWidth)
     }
     const updateWidth = () => {
@@ -401,46 +401,63 @@ export function ExamPrepContainer() {
   }
 
   return (
-    <div ref={containerRef} className="h-full w-full">
-      <StudyspaceTopbarSlot>
-        <div className="flex w-full items-center gap-3">
-          <div className="w-[220px]">
-            <ExamPrepSelect
-              value={selectedCourseId}
-              placeholder={t('materials.courseSelectPlaceholder')}
-              options={courses.map(course => ({
-                value: course.id,
-                label: `${course.title}${course.professorName ? `(${course.professorName})` : ''}`,
-              }))}
-              onChange={value => setSelectedCourseId(value)}
-              isLoading={coursesLoading}
-              errorLabel={coursesError ?? undefined}
-              emptyLabel="강의가 없습니다"
-            />
+    <div className="flex h-full w-full flex-col">
+      <div className="px-6 pt-6">
+        <div className="relative ml-[96px] w-[1410px] pb-4 -mt-2 pt-10">
+          <div
+            className="absolute"
+            style={{
+              left: 'var(--exam-course-left, 0px)',
+              top: 'var(--exam-course-top, 0px)',
+            }}
+          >
+            <div className="w-[220px]">
+              <ExamPrepSelect
+                value={selectedCourseId}
+                placeholder={t('materials.courseSelectPlaceholder')}
+                options={courses.map(course => ({
+                  value: course.id,
+                  label: `${course.title}${course.professorName ? `(${course.professorName})` : ''}`,
+                }))}
+                onChange={value => setSelectedCourseId(value)}
+                isLoading={coursesLoading}
+                errorLabel={coursesError ?? undefined}
+                emptyLabel="강의가 없습니다"
+              />
+            </div>
           </div>
-          <div className="w-[280px]">
-            <ExamPrepSelect
-              value={selectedMaterialId}
-              placeholder={t('materials.materialSelectPlaceholder')}
-              options={materials.map(material => ({
-                value: material.id,
-                label: material.title,
-              }))}
-              onChange={value => setSelectedMaterialId(value)}
-              isLoading={materialsLoading}
-              emptyLabel={selectedCourseId ? '자료가 없습니다' : '수업을 먼저 선택하세요'}
-            />
+          <div
+            className="absolute"
+            style={{
+              left: 'var(--exam-material-left, 260px)',
+              top: 'var(--exam-material-top, 0px)',
+            }}
+          >
+            <div className="w-[280px]">
+              <ExamPrepSelect
+                value={selectedMaterialId}
+                placeholder={t('materials.materialSelectPlaceholder')}
+                options={materials.map(material => ({
+                  value: material.id,
+                  label: material.title,
+                }))}
+                onChange={value => setSelectedMaterialId(value)}
+                isLoading={materialsLoading}
+                emptyLabel={selectedCourseId ? '자료가 없습니다' : '수업을 먼저 선택하세요'}
+              />
+            </div>
           </div>
         </div>
-      </StudyspaceTopbarSlot>
-      <ExamPrepLayout
+      </div>
+      <div ref={containerRef} className="flex-1 min-h-1 ml-[120px] w-[1410px] border-b border-gray-200 pb-4">
+        <ExamPrepLayout
         title={t('title')}
         subtitle={t('subtitle')}
         materialsCourseLabel={t('materials.courseLabel')}
         materialsCoursePlaceholder={t('materials.coursePlaceholder')}
         materialsLabel="자료 선택"
         materialsPlaceholder="자료를 선택하세요"
-        pdfTitle={t('pdf.title')}
+        pdfTitle={selectedMaterial?.title ?? t('pdf.title')}
         pdfPlaceholder={t('pdf.placeholder')}
         courses={courses}
         selectedCourseId={selectedCourseId}
@@ -483,6 +500,7 @@ export function ExamPrepContainer() {
         leftWidth={leftWidth}
         onResizeStart={handleResizeStart}
       />
+      </div>
       {isPdfFullscreen && (
         <div className="fixed inset-0 z-[80] flex flex-col bg-black">
           {!isPdfSlideshow && (

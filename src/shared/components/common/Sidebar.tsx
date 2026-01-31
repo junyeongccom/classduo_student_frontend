@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
+import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import { SIDEBAR_MENU, PROFILE_MENU } from '@/shared/constants/nav'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
@@ -36,12 +37,11 @@ export function Sidebar() {
   }, [])
 
   useEffect(() => {
-    const width = isMenuOpen ? '72px' : '0px'
-    document.documentElement.style.setProperty('--sidebar-width', width)
+    document.documentElement.style.setProperty('--sidebar-width', '0px')
     return () => {
       document.documentElement.style.setProperty('--sidebar-width', '0px')
     }
-  }, [isMenuOpen])
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -56,26 +56,21 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="fixed left-0 top-0 z-[60] flex h-14 w-[72px] items-center justify-center bg-white">
-          <button
-          type="button"
-          onClick={toggleMenu}
-          className="flex items-center justify-center"
-          aria-label="Toggle sidebar menu"
-          >
+      <div className="fixed left-2 top-4 z-[60] flex w-[72px] items-center justify-center bg-transparent">
+        <div className="flex items-center justify-center">
           <img src="/Aplus_logo.png" alt="CLASSDUO" className="h-8 w-auto" />
-          </button>
         </div>
+      </div>
+      <div className="fixed left-2 top-[72px] z-[60] flex w-[72px] items-center justify-center bg-transparent">
+        <LanguageToggle size="sm" />
+      </div>
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen overflow-hidden border-r bg-white transition-all duration-300',
-          pathname.startsWith('/studyspace/ai-tutor') || pathname.startsWith('/studyspace/review')
-            ? 'border-gray-200'
-            : 'border-gray-100',
+          'fixed left-2 top-16 z-50 h-[calc(100vh-4rem)] overflow-visible bg-transparent transition-all duration-300',
           isMenuOpen ? 'w-[72px]' : 'w-0'
         )}
       >
-        <div className="flex h-full flex-col items-center py-6 pt-16">
+        <div className="flex h-full flex-col items-center py-6">
           <nav className="mt-8 flex flex-1 flex-col items-center justify-center gap-5">
           {menuItems.map((item) => {
             const Icon = item.icon
