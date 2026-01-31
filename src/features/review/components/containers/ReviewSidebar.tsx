@@ -330,7 +330,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
       {/* 헤더 */}
       <h2 className="mb-4 text-sm font-semibold text-gray-700 flex items-center gap-2">
         <BookOpen className="h-4 w-4" />
-        {t('class')}
+        수업 선택
       </h2>
       
       {coursesError && (

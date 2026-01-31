@@ -2,10 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { ReviewSidebar } from './ReviewSidebar'
-import {
-  StudyspaceRightbarSlot,
-  StudyspaceTopbarSlot,
-} from '@/shared/components/layouts/studyspace'
 import { SmartReviewContent, type SmartReviewTab } from '@/features/review/components/ui/SmartReviewContent'
 import { useLectureReviewItems } from '@/features/review/hooks/useLectureReviewItems'
 import { useReviewDeck } from '@/features/review/hooks/useReviewDeck'
@@ -13,6 +9,7 @@ import { reviewService } from '@/features/review/services/reviewService'
 import { useDefinitionBuilderGame } from '@/features/review/hooks/useDefinitionBuilderGame'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { StudyspaceRightbarSlot } from '@/shared/components/layouts/studyspace'
 import { useStudyspaceSelectionSync } from '@/shared/hooks/useStudyspaceSelectionSync'
 
 export function ReviewContainer() {
@@ -59,10 +56,6 @@ export function ReviewContainer() {
 
   return (
     <>
-      <StudyspaceTopbarSlot>
-        <div className="flex w-full items-center justify-between" />
-      </StudyspaceTopbarSlot>
-
       <StudyspaceRightbarSlot>
         <ReviewSidebar
           selectedLectureId={selectedLectureId}
@@ -71,139 +64,147 @@ export function ReviewContainer() {
         />
       </StudyspaceRightbarSlot>
 
-      <div className="h-full overflow-y-auto p-6">
-        <SmartReviewContent
-          lectureId={selectedLectureId}
-          locale={locale}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          activeGameId={activeGameId}
-          onSelectGame={setActiveGameId}
-          onExitGame={() => setActiveGameId(null)}
-          reviewItems={reviewItems}
-          isReviewItemsLoading={Boolean(selectedLectureId) && isLoadingReviewItems}
-          reviewItemsError={reviewItemsError}
-          hasSelectedLecture={Boolean(selectedLectureId)}
-          definitionBuilderData={definitionBuilderData}
-          isDefinitionBuilderLoading={isDefinitionBuilderLoading}
-          definitionBuilderError={definitionBuilderError}
-          onRetryDefinitionBuilder={refetchDefinitionBuilder}
-          deck={deck}
-          isMutating={isMutating}
-          mutationError={mutationError}
-          onRequestImportPreview={async () => {
-            if (!selectedLectureId) return
-            setIsImportPreviewLoading(true)
-            setImportPreviewError(null)
-            try {
-              const result = await reviewService.getLectureKeywordsPreview(selectedLectureId)
-              if (result.error || !result.data) {
-                setImportPreviewError(result.error?.message || '추천 단어를 불러오는데 실패했습니다')
-                setImportPreviewItems([])
-                return
-              }
+      <div className="flex h-full min-h-0 flex-1 items-center justify-center overflow-y-hidden p-6">
+        <div
+          className="mx-auto w-full max-w-5xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+          style={{
+            height: 'var(--studyspace-card-height, 650px)',
+            maxHeight: 'var(--studyspace-card-max-height, 650px)',
+          }}
+        >
+              <SmartReviewContent
+                lectureId={selectedLectureId}
+                locale={locale}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                activeGameId={activeGameId}
+                onSelectGame={setActiveGameId}
+                onExitGame={() => setActiveGameId(null)}
+                reviewItems={reviewItems}
+                isReviewItemsLoading={Boolean(selectedLectureId) && isLoadingReviewItems}
+                reviewItemsError={reviewItemsError}
+                hasSelectedLecture={Boolean(selectedLectureId)}
+                definitionBuilderData={definitionBuilderData}
+                isDefinitionBuilderLoading={isDefinitionBuilderLoading}
+                definitionBuilderError={definitionBuilderError}
+                onRetryDefinitionBuilder={refetchDefinitionBuilder}
+                deck={deck}
+                isMutating={isMutating}
+                mutationError={mutationError}
+                onRequestImportPreview={async () => {
+                  if (!selectedLectureId) return
+                  setIsImportPreviewLoading(true)
+                  setImportPreviewError(null)
+                  try {
+                    const result = await reviewService.getLectureKeywordsPreview(selectedLectureId)
+                    if (result.error || !result.data) {
+                      setImportPreviewError(result.error?.message || '추천 단어를 불러오는데 실패했습니다')
+                      setImportPreviewItems([])
+                      return
+                    }
 
-              const existing = new Set((reviewItemsData?.items || []).map(i => (i.keyword || '').trim()))
-              const localized = (result.data.keywords || [])
-                .map(k => {
-                  const keyword = (locale === 'en' ? (k.keyword_eng || k.keyword) : k.keyword) || ''
-                  const description = (locale === 'en' ? (k.description_eng || k.description) : k.description) || ''
-                  return { keyword: keyword.trim(), description: description.trim() }
-                })
-                .filter(k => k.keyword && k.description)
-                .filter(k => !existing.has(k.keyword))
+                    const existing = new Set((reviewItemsData?.items || []).map(i => (i.keyword || '').trim()))
+                    const localized = (result.data.keywords || [])
+                      .map(k => {
+                        const keyword = (locale === 'en' ? (k.keyword_eng || k.keyword) : k.keyword) || ''
+                        const description = (locale === 'en' ? (k.description_eng || k.description) : k.description) || ''
+                        return { keyword: keyword.trim(), description: description.trim() }
+                      })
+                      .filter(k => k.keyword && k.description)
+                      .filter(k => !existing.has(k.keyword))
 
-              setImportPreviewItems(localized)
-            } catch {
-              setImportPreviewError('추천 단어를 불러오는데 실패했습니다')
-              setImportPreviewItems([])
-            } finally {
-              setIsImportPreviewLoading(false)
-            }
-          }}
-          importPreviewItems={importPreviewItems}
-          isImportPreviewLoading={isImportPreviewLoading}
-          importPreviewError={importPreviewError}
-          onAddReviewWord={async (keyword, description) => {
-            if (!selectedLectureId) return false
-            setIsMutating(true)
-            setMutationError(null)
-            try {
-              const result = await reviewService.createLectureReviewItem(selectedLectureId, { keyword, description })
-              if (result.error) {
-                setMutationError(result.error.message || '단어 추가에 실패했습니다')
-                return false
-              }
-              await refetch()
-              return true
-            } finally {
-              setIsMutating(false)
-            }
-          }}
-          onUpdateReviewWord={async (reviewItemId, keyword, description) => {
-            setIsMutating(true)
-            setMutationError(null)
-            try {
-              const result = await reviewService.updateLectureReviewItem(reviewItemId, { keyword, description })
-              if (result.error) {
-                setMutationError(result.error.message || '단어 수정에 실패했습니다')
-                return false
-              }
-              await refetch()
-              return true
-            } finally {
-              setIsMutating(false)
-            }
-          }}
-          onDeleteReviewWord={async (reviewItemId) => {
-            setIsMutating(true)
-            setMutationError(null)
-            try {
-              const result = await reviewService.deleteLectureReviewItem(reviewItemId)
-              if (result.error) {
-                setMutationError(result.error.message || '단어 삭제에 실패했습니다')
-                return false
-              }
-              await refetch()
-              return true
-            } finally {
-              setIsMutating(false)
-            }
-          }}
-          onDeleteAllReviewWords={async () => {
-            if (!selectedLectureId) return false
-            if (reviewItems.length === 0) return true
-            setIsMutating(true)
-            setMutationError(null)
-            try {
-              const result = await reviewService.deleteLectureReviewItems(selectedLectureId)
-              if (result.error) {
-                setMutationError(result.error.message || '단어 전체 삭제에 실패했습니다')
-                return false
-              }
-              await refetch()
-              return true
-            } finally {
-              setIsMutating(false)
-            }
-          }}
-          onImportRecommendedWords={async () => {
-            if (!selectedLectureId) return false
-            setIsMutating(true)
-            setMutationError(null)
-            try {
-              const result = await reviewService.importLectureKeywordsToReview(selectedLectureId)
-              if (result.error) {
-                setMutationError(result.error.message || '추천 단어 불러오기에 실패했습니다')
-                return false
-              }
-              await refetch()
-              return true
-            } finally {
-              setIsMutating(false)
-            }
-          }}
-        />
+                    setImportPreviewItems(localized)
+                  } catch {
+                    setImportPreviewError('추천 단어를 불러오는데 실패했습니다')
+                    setImportPreviewItems([])
+                  } finally {
+                    setIsImportPreviewLoading(false)
+                  }
+                }}
+                importPreviewItems={importPreviewItems}
+                isImportPreviewLoading={isImportPreviewLoading}
+                importPreviewError={importPreviewError}
+                onAddReviewWord={async (keyword, description) => {
+                  if (!selectedLectureId) return false
+                  setIsMutating(true)
+                  setMutationError(null)
+                  try {
+                    const result = await reviewService.createLectureReviewItem(selectedLectureId, { keyword, description })
+                    if (result.error) {
+                      setMutationError(result.error.message || '단어 추가에 실패했습니다')
+                      return false
+                    }
+                    await refetch()
+                    return true
+                  } finally {
+                    setIsMutating(false)
+                  }
+                }}
+                onUpdateReviewWord={async (reviewItemId, keyword, description) => {
+                  setIsMutating(true)
+                  setMutationError(null)
+                  try {
+                    const result = await reviewService.updateLectureReviewItem(reviewItemId, { keyword, description })
+                    if (result.error) {
+                      setMutationError(result.error.message || '단어 수정에 실패했습니다')
+                      return false
+                    }
+                    await refetch()
+                    return true
+                  } finally {
+                    setIsMutating(false)
+                  }
+                }}
+                onDeleteReviewWord={async (reviewItemId) => {
+                  setIsMutating(true)
+                  setMutationError(null)
+                  try {
+                    const result = await reviewService.deleteLectureReviewItem(reviewItemId)
+                    if (result.error) {
+                      setMutationError(result.error.message || '단어 삭제에 실패했습니다')
+                      return false
+                    }
+                    await refetch()
+                    return true
+                  } finally {
+                    setIsMutating(false)
+                  }
+                }}
+                onDeleteAllReviewWords={async () => {
+                  if (!selectedLectureId) return false
+                  if (reviewItems.length === 0) return true
+                  setIsMutating(true)
+                  setMutationError(null)
+                  try {
+                    const result = await reviewService.deleteLectureReviewItems(selectedLectureId)
+                    if (result.error) {
+                      setMutationError(result.error.message || '단어 전체 삭제에 실패했습니다')
+                      return false
+                    }
+                    await refetch()
+                    return true
+                  } finally {
+                    setIsMutating(false)
+                  }
+                }}
+                onImportRecommendedWords={async () => {
+                  if (!selectedLectureId) return false
+                  setIsMutating(true)
+                  setMutationError(null)
+                  try {
+                    const result = await reviewService.importLectureKeywordsToReview(selectedLectureId)
+                    if (result.error) {
+                      setMutationError(result.error.message || '추천 단어 불러오기에 실패했습니다')
+                      return false
+                    }
+                    await refetch()
+                    return true
+                  } finally {
+                    setIsMutating(false)
+                  }
+                }}
+            />
+        </div>
       </div>
     </>
   )

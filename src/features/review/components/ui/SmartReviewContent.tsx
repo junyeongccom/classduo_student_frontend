@@ -121,7 +121,7 @@ export function SmartReviewContent({
   return (
     <div className="flex h-full flex-col gap-6">
       <div className="border-b border-slate-200">
-        <div className="flex items-center justify-end gap-6">
+        <div className="flex items-center justify-start gap-6">
           {tabItems.map(tab => (
             <button
               key={tab.id}

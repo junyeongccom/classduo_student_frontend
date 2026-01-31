@@ -72,7 +72,7 @@ export function ExamPrepLayout({
     ? materials.find(material => material.id === selectedMaterialId)?.title
     : undefined
   return (
-    <div className="flex h-full min-h-0 flex-col bg-gray-50 text-gray-900">
+    <div className="flex h-full min-h-0 flex-col border-t border-gray-200 bg-gray-50 text-gray-900">
       <div className="flex h-full min-h-0 w-full flex-1">
         <section className="flex h-full min-h-0 flex-col" style={{ width: leftWidth }}>
           <div className="flex h-full min-h-0 flex-1 flex-col bg-white">
@@ -135,7 +135,7 @@ export function ExamPrepLayout({
               })}
           </div>
 
-          <div className="flex h-full min-h-0 flex-1 flex-col bg-white">
+          <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-white">
             {content}
           </div>
         </section>

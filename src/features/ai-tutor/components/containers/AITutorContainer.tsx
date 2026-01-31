@@ -27,7 +27,6 @@ import { useStudyspaceSelectionSync } from '@/shared/hooks/useStudyspaceSelectio
 import { useStudyspaceSelectionStore } from '@/shared/store/useStudyspaceSelectionStore'
 import {
   StudyspaceRightbarSlot,
-  StudyspaceTopbarSlot,
   StudyspaceOverlaySlot,
 } from '@/shared/components/layouts/studyspace'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -404,125 +403,126 @@ export function AITutorContainer() {
 
   return (
     <>
-      <StudyspaceTopbarSlot>
-        <div className="flex w-full items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleNewChatAndResetPanels}
-                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-700"
-              >
-                {tTopbar('newChat')}
-              </button>
-              <button
-                onClick={() => setIsChatSidebarOpen(true)}
-                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100"
-                title={tTopbar('chatHistory')}
-              >
-                <History className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex rounded-lg bg-gray-100 p-1">
-              <button
-                onClick={() => {
-                  setActiveTab('answer')
-                  if (isNotesPanelOpen) toggleNotesPanel(false)
-                  if (isMaterialsPanelOpen) toggleMaterialsPanel(false)
-                }}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  !isNotesPanelOpen && !isMaterialsPanelOpen
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tTopbar('tab.answer')}
-              </button>
-              <button
-                onClick={() => {
-                  const nextState = !isNotesPanelOpen
-                  toggleNotesPanel(nextState)
-                  if (nextState) {
-                    setActiveTab('notes')
-                  } else if (isMaterialsPanelOpen) {
-                    setActiveTab('materials')
-                  } else {
-                    setActiveTab('answer')
-                  }
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  isNotesPanelOpen
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <span>{tTopbar('tab.notesSources')}</span>
-                {recordingCount > 0 && (
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
-                    {recordingCount}
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  const nextState = !isMaterialsPanelOpen
-                  toggleMaterialsPanel(nextState)
-                  if (nextState) {
-                    setActiveTab('materials')
-                  } else if (isNotesPanelOpen) {
-                    setActiveTab('notes')
-                  } else {
-                    setActiveTab('answer')
-                  }
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  isMaterialsPanelOpen
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <span>{tTopbar('tab.materialsSources')}</span>
-                {materialCount > 0 && (
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
-                    {materialCount}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </StudyspaceTopbarSlot>
-
-      <div className="flex h-full min-h-0 overflow-hidden bg-white">
+      <div className="flex h-full min-h-0 overflow-hidden bg-transparent">
         <div ref={containerRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <main
-            className="flex-1 overflow-y-auto overflow-x-hidden"
+            className="flex flex-1 min-h-0 items-center justify-center overflow-y-hidden overflow-x-hidden p-6"
             style={{ paddingRight: showInlineNotesPanel ? notesPanelWidth : 0 }}
           >
-            <ChatInterface
-              key={chatKey}
-              selectedLectureIds={selectedLectureIds}
-              sessionId={currentSessionId}
-              onSessionCreated={handleSessionCreated}
-              onReferencesUpdate={handleReferencesUpdate}
-              onLectureIdsLoaded={handleLectureIdsLoaded}
-              onMessagesUpdate={handleMessagesUpdate}
-              onShowReferencePanel={(type) => {
-                if (type === 'notes') {
-                  if (!isNotesPanelOpen) {
-                    toggleNotesPanel(true)
-                  }
-                  setActiveTab('notes')
-                } else {
-                  if (!isMaterialsPanelOpen) {
-                    toggleMaterialsPanel(true)
-                  }
-                  setActiveTab('materials')
-                }
+            <div
+              className="mx-auto w-full max-w-5xl rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+              style={{
+                height: 'var(--studyspace-card-height, 650px)',
+                maxHeight: 'var(--studyspace-card-max-height, 650px)',
               }}
-            />
+            >
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 pb-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleNewChatAndResetPanels}
+                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-700"
+                  >
+                    {tTopbar('newChat')}
+                  </button>
+                  <button
+                    onClick={() => setIsChatSidebarOpen(true)}
+                    className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100"
+                    title={tTopbar('chatHistory')}
+                  >
+                    <History className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="flex rounded-lg bg-gray-100 p-1">
+                  <button
+                    onClick={() => {
+                      setActiveTab('answer')
+                      if (isNotesPanelOpen) toggleNotesPanel(false)
+                      if (isMaterialsPanelOpen) toggleMaterialsPanel(false)
+                    }}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      !isNotesPanelOpen && !isMaterialsPanelOpen
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {tTopbar('tab.answer')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const nextState = !isNotesPanelOpen
+                      toggleNotesPanel(nextState)
+                      if (nextState) {
+                        setActiveTab('notes')
+                      } else if (isMaterialsPanelOpen) {
+                        setActiveTab('materials')
+                      } else {
+                        setActiveTab('answer')
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      isNotesPanelOpen
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <span>{tTopbar('tab.notesSources')}</span>
+                    {recordingCount > 0 && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
+                        {recordingCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const nextState = !isMaterialsPanelOpen
+                      toggleMaterialsPanel(nextState)
+                      if (nextState) {
+                        setActiveTab('materials')
+                      } else if (isNotesPanelOpen) {
+                        setActiveTab('notes')
+                      } else {
+                        setActiveTab('answer')
+                      }
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      isMaterialsPanelOpen
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <span>{tTopbar('tab.materialsSources')}</span>
+                    {materialCount > 0 && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gray-200 text-[10px]">
+                        {materialCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <ChatInterface
+                key={chatKey}
+                selectedLectureIds={selectedLectureIds}
+                sessionId={currentSessionId}
+                onSessionCreated={handleSessionCreated}
+                onReferencesUpdate={handleReferencesUpdate}
+                onLectureIdsLoaded={handleLectureIdsLoaded}
+                onMessagesUpdate={handleMessagesUpdate}
+                onShowReferencePanel={(type) => {
+                  if (type === 'notes') {
+                    if (!isNotesPanelOpen) {
+                      toggleNotesPanel(true)
+                    }
+                    setActiveTab('notes')
+                  } else {
+                    if (!isMaterialsPanelOpen) {
+                      toggleMaterialsPanel(true)
+                    }
+                    setActiveTab('materials')
+                  }
+                }}
+              />
+            </div>
           </main>
 
           {showInlineNotesPanel && (
@@ -553,11 +553,6 @@ export function AITutorContainer() {
       </div>
 
       <StudyspaceRightbarSlot>
-        {/* Only render Rightbar content if it's going to be shown.
-            However, 'layout.tsx' controls visibility. 
-            We can always render it into the slot, layout will hide the slot container if needed.
-            Or we can conditionally render here to save resources, but layout logic is the source of truth for visibility.
-        */}
         <div className="relative h-full w-[320px]">
           <div className="h-full opacity-100">
             <LectureSidebarContainer

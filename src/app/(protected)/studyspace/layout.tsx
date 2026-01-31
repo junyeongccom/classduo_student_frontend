@@ -3,7 +3,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/shared/components/common'
-import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import {
   StudyspaceLayoutProvider,
   useStudyspaceLayoutSlots,
@@ -12,7 +11,7 @@ import { PanelRightOpen, X } from 'lucide-react'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 
 function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
-  const { topbar, rightbar, overlay } = useStudyspaceLayoutSlots()
+  const { rightbar, overlay } = useStudyspaceLayoutSlots()
   const pathname = usePathname()
   const [isMobileRightbarOpen, setIsMobileRightbarOpen] = useState(false)
   const [isResizingOverlay, setIsResizingOverlay] = useState(false)
@@ -120,51 +119,26 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen bg-gray-50 text-gray-900">
       <Sidebar />
 
-      <div
-        className="flex-1 transition-all duration-300"
-        style={{ marginLeft: 'var(--sidebar-width, 72px)' }}
-      >
+      <div className="flex-1 transition-all duration-300">
         <div 
           className="flex h-full flex-col"
         >
-          {/* Top Bar (Header) - Spans full width */}
-          <header className={`fixed left-0 top-0 z-40 flex h-14 w-full items-center justify-between border-b ${borderTone} bg-white px-6 text-gray-700`}>
-            <div className={`absolute left-[72px] top-0 h-full border-l ${borderTone}`} />
-            {/* Left: Language toggle + page topbar slot (so existing buttons shift right) */}
-            <div className={`flex min-w-0 flex-1 items-center gap-6 pl-[72px] ${isExamPrep ? 'overflow-visible' : 'overflow-hidden'}`}>
-              <LanguageToggle size="sm" />
-              <div className={`flex min-w-0 flex-1 items-center ${isExamPrep ? 'overflow-visible' : 'overflow-hidden'}`}>
-                {topbar ?? null}
-              </div>
-            </div>
-            
-            {/* Mobile Drawer Toggle (kept on the far right) */}
-            {!isExamPrep && (
-              <button
-                onClick={() => setIsMobileRightbarOpen(true)}
-                className="ml-4 flex items-center justify-center rounded-md p-2 text-gray-500 hover:bg-gray-100 xl:hidden"
-              >
-                <PanelRightOpen className="h-5 w-5" />
-              </button>
+          <div className="flex flex-1 overflow-hidden pl-[88px]">
+            {/* Right Sidebar (Desktop) - Now between left menu and main */}
+            {!isExamPrep && showRightSidebar && (
+              <aside className={`hidden h-full min-h-0 w-[320px] flex-col border-r ${borderTone} bg-white xl:flex`}>
+                <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                  {rightbar ?? null}
+                </div>
+              </aside>
             )}
-          </header>
-          
-          <div className="flex flex-1 overflow-hidden pt-14">
+
             {/* Main Content Area */}
             <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white">
               <div className="flex h-full flex-col">
                 {children}
               </div>
             </main>
-
-            {/* Right Sidebar (Desktop) - Only show if NO panels are open */}
-            {!isExamPrep && showRightSidebar && (
-              <aside className={`hidden h-full min-h-0 w-[320px] flex-col border-l ${borderTone} bg-white xl:flex`}>
-                <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                  {rightbar ?? null}
-                </div>
-              </aside>
-            )}
 
             {/* Materials Panel (Overlay Slot) - Render in layout flow if open */}
             {!isExamPrep && overlay && (
