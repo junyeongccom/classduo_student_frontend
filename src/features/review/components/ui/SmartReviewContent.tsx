@@ -386,7 +386,7 @@ export function SmartReviewContent({
                   {t('definitionBuilder.back')}
                 </button>
               </div>
-              <GuessTheTermGame isEnabled={hasSelectedLecture} reviewItems={reviewItems} />
+              <GuessTheTermGame isEnabled={hasSelectedLecture} reviewItems={reviewItems} onExitGame={onExitGame} />
             </div>
           ) : (
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">

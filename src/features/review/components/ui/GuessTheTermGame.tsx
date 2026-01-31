@@ -1,13 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Eye, X as XIcon } from 'lucide-react'
 import type { LectureReviewItem } from '@/features/review/types'
+import { ConfirmDialog } from './ConfirmDialog'
 
 interface GuessTheTermGameProps {
   isEnabled: boolean
   reviewItems: LectureReviewItem[]
+  onExitGame: () => void
 }
 
 type GuessTheTermMessage = {
@@ -16,7 +18,7 @@ type GuessTheTermMessage = {
   text: string
 }
 
-export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGameProps) {
+export function GuessTheTermGame({ isEnabled, reviewItems, onExitGame }: GuessTheTermGameProps) {
   const t = useTranslations('review.ui')
   const maxQuestions = 10
   const [stage, setStage] = useState<'intro' | 'play'>('intro')
@@ -26,8 +28,24 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
   const [disabledTermIds, setDisabledTermIds] = useState<Set<string>>(new Set())
   const [secretTermId, setSecretTermId] = useState<string | null>(null)
   const [showDescription, setShowDescription] = useState(false)
-  const [isAnswerPickerOpen, setIsAnswerPickerOpen] = useState(false)
+  const [isSelectingAnswer, setIsSelectingAnswer] = useState(false)
+  const [confirmCandidateId, setConfirmCandidateId] = useState<string | null>(null)
+  const [lockedWrongIds, setLockedWrongIds] = useState<Set<string>>(new Set())
+  const [correctId, setCorrectId] = useState<string | null>(null)
+  const [wrongGuessCount, setWrongGuessCount] = useState(0)
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false)
   const [isGameOver, setIsGameOver] = useState(false)
+  const chatScrollRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (stage !== 'play') return
+    const el = chatScrollRef.current
+    if (!el) return
+    // Ensure layout is updated before scrolling.
+    window.requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight
+    })
+  }, [messages.length, stage])
 
   if (!isEnabled) {
     return (
@@ -75,7 +93,12 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
     setMessages([])
     setDisabledTermIds(new Set())
     setShowDescription(false)
-    setIsAnswerPickerOpen(false)
+    setIsSelectingAnswer(false)
+    setConfirmCandidateId(null)
+    setLockedWrongIds(new Set())
+    setCorrectId(null)
+    setWrongGuessCount(0)
+    setIsSuccessOpen(false)
     setIsGameOver(false)
   }
 
@@ -114,12 +137,15 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
   const handleGiveUp = () => {
     if (isGameOver) return
     setIsGameOver(true)
-    setIsAnswerPickerOpen(false)
+    setIsSelectingAnswer(false)
+    setConfirmCandidateId(null)
     const answer = secretTerm?.keyword ? `정답은 "${secretTerm.keyword}" 입니다.` : '정답을 불러오지 못했습니다.'
     appendMessage('system', `포기했습니다. ${answer}`)
   }
 
   const toggleDisabledTerm = (id: string) => {
+    if (lockedWrongIds.has(id)) return
+    if (correctId === id) return
     setDisabledTermIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -129,18 +155,22 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
   }
 
   const submitAnswer = (id: string) => {
-    setIsAnswerPickerOpen(false)
     if (isGameOver) return
     if (!secretTermId) return
+    setIsSelectingAnswer(false)
+    setConfirmCandidateId(null)
     const picked = reviewItems.find(item => item.id === id)
     const label = picked?.keyword ? `"${picked.keyword}"` : '선택한 용어'
     if (id === secretTermId) {
       setIsGameOver(true)
-      appendMessage('system', `정답입니다! ${label}`)
+      setCorrectId(id)
+      setIsSuccessOpen(true)
       return
     }
+    // Wrong answer: lock as wrong (red) and disallow further toggling.
+    setLockedWrongIds(prev => new Set([...prev, id]))
+    setWrongGuessCount(prev => prev + 1)
     appendMessage('system', `아니오. ${label} 는(은) 정답이 아닙니다.`)
-    setDisabledTermIds(prev => new Set([...prev, id]))
   }
 
   if (stage === 'intro') {
@@ -171,8 +201,69 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
     )
   }
 
+  const userChatCount = messages.filter(m => m.role === 'user').length
+  const confirmCandidate = confirmCandidateId ? reviewItems.find(it => it.id === confirmCandidateId) ?? null : null
+
   return (
     <div className="mt-4 grid grid-cols-1 gap-6 md:[grid-template-columns:3fr_7fr]">
+      <ConfirmDialog
+        isOpen={Boolean(confirmCandidate)}
+        title={t('guessTheTerm.confirmTitle')}
+        message={
+          confirmCandidate?.keyword
+            ? `${confirmCandidate.keyword}을(를) 답으로 선택하시겠습니까?`
+            : t('guessTheTerm.confirmTitle')
+        }
+        confirmLabel={t('guessTheTerm.confirmYes')}
+        cancelLabel={t('guessTheTerm.confirmNo')}
+        onConfirm={() => {
+          if (!confirmCandidateId) return
+          submitAnswer(confirmCandidateId)
+        }}
+        onCancel={() => setConfirmCandidateId(null)}
+      />
+
+      {isSuccessOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
+            <div className="text-center">
+              <div className="text-3xl font-extrabold text-slate-900">{t('guessTheTerm.successTitle')}</div>
+              <div className="mt-6 text-sm text-slate-700">
+                {t('guessTheTerm.successFound', { count: userChatCount })}
+              </div>
+              <div className="mt-2 text-sm text-slate-700">
+                {t('guessTheTerm.successWrong', { count: wrongGuessCount })}
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSuccessOpen(false)
+                  startNewGame()
+                }}
+                className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                {t('guessTheTerm.newGame')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  // Close modal and return to game list within SmartReviewContent.
+                  setIsSuccessOpen(false)
+                  onExitGame()
+                }}
+                className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                {t('guessTheTerm.backToList')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Left: Chat */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="text-sm font-semibold text-slate-900">{t('guessTheTerm.chatHint')}</div>
@@ -181,7 +272,7 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
         </div>
 
         <div className="mt-3 flex h-[240px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-          <div className="flex-1 overflow-y-auto p-3">
+          <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-3">
             {messages.length === 0 ? (
               <div className="text-xs text-slate-400">채팅을 시작해 보세요.</div>
             ) : (
@@ -234,33 +325,18 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
           >
             {t('guessTheTerm.giveUp')}
           </button>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsAnswerPickerOpen(prev => !prev)}
-              disabled={isGameOver}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {t('guessTheTerm.selectAnswer')}
-            </button>
-
-            {isAnswerPickerOpen && (
-              <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg z-20">
-                <div className="max-h-64 overflow-y-auto p-2">
-                  {reviewItems.map(item => (
-                    <button
-                      key={`answer-${item.id}`}
-                      type="button"
-                      onClick={() => submitAnswer(item.id)}
-                      className="w-full rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                    >
-                      {item.keyword}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (isGameOver) return
+              setConfirmCandidateId(null)
+              setIsSelectingAnswer(prev => !prev)
+            }}
+            disabled={isGameOver}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSelectingAnswer ? t('guessTheTerm.cancelSelect') : t('guessTheTerm.selectAnswer')}
+          </button>
         </div>
       </div>
 
@@ -287,20 +363,40 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
           <div className="grid grid-cols-3 gap-3">
             {reviewItems.map(item => {
               const isDisabled = disabledTermIds.has(item.id)
+              const isLockedWrong = lockedWrongIds.has(item.id)
+              const isCorrect = correctId === item.id
+              const canToggle = !isLockedWrong && !isCorrect
+              const canChoose = isSelectingAnswer && !isDisabled && !isLockedWrong && !isCorrect
               return (
-                <button
+                <div
                   key={item.id}
-                  type="button"
-                  onClick={() => toggleDisabledTerm(item.id)}
+                  role="button"
+                  tabIndex={canToggle ? 0 : -1}
+                  aria-disabled={canToggle ? 'false' : 'true'}
+                  onClick={() => {
+                    if (!canToggle) return
+                    toggleDisabledTerm(item.id)
+                  }}
+                  onKeyDown={(e) => {
+                    if (!canToggle) return
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      toggleDisabledTerm(item.id)
+                    }
+                  }}
                   className={[
                     'group relative overflow-hidden rounded-xl border p-3 text-left transition h-[96px]',
-                    isDisabled
-                      ? 'border-slate-200 bg-slate-100 text-slate-400'
-                      : 'border-slate-200 bg-white hover:border-slate-300',
+                    isCorrect
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                      : isLockedWrong
+                        ? 'border-rose-200 bg-rose-50 text-rose-700'
+                        : isDisabled
+                          ? 'border-slate-200 bg-slate-100 text-slate-400'
+                          : 'border-slate-200 bg-white hover:border-slate-300',
                   ].join(' ')}
                 >
                   {/* Hover overlay: big X in the center */}
-                  {!isDisabled && (
+                  {!isDisabled && !isLockedWrong && !isCorrect && (
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
                       <XIcon className="h-14 w-14 text-slate-700/50" strokeWidth={2.5} />
                     </div>
@@ -346,7 +442,20 @@ export function GuessTheTermGame({ isEnabled, reviewItems }: GuessTheTermGamePro
                       )}
                     </div>
                   </div>
-                </button>
+
+                  {canChoose && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setConfirmCandidateId(item.id)
+                      }}
+                      className="absolute bottom-2 right-2 rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-slate-800"
+                    >
+                      {t('guessTheTerm.choose')}
+                    </button>
+                  )}
+                </div>
               )
             })}
           </div>
