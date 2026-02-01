@@ -338,76 +338,72 @@ export function AITutorContainer() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!containerRef.current) return
       
-      const SIDEBAR_WIDTH = 140
-      const MIN_CHAT_WIDTH = 400
-      const MIN_NOTES_WIDTH = 300
-      const MIN_MATERIALS_WIDTH = 340
+      // 레이아웃 상수
+      const LEFT_MENU_WIDTH = 88      // 좌측 메뉴
+      const LECTURE_SIDEBAR_WIDTH = 320 // 수업선택바
+      const MIN_CHAT_WIDTH = 280      // 채팅창 최소 너비
+      const MIN_NOTES_WIDTH = 300     // 노트 패널 최소 너비
+      const MIN_MATERIALS_WIDTH = 340 // 머티리얼 패널 최소 너비
       
       const containerRect = containerRef.current.getBoundingClientRect()
-      // New Width = Right Edge of Container - Mouse X
-      // Note: Container Right Edge excludes the Materials Panel if it's rendered by layout.tsx
-      // But here, AITutorContainer is inside Main Content.
-      // Wait, layout.tsx handles Materials Panel outside Main Content.
-      // So containerRef (inside Main) only spans [Sidebar ... MaterialsStart].
-      // So containerRect.right IS the edge of Materials Panel.
+      const totalFixedWidth = LEFT_MENU_WIDTH + LECTURE_SIDEBAR_WIDTH
       
-      const newWidth = containerRect.right - e.clientX
+      // 마우스 위치 기준 원하는 노트 패널 너비
+      const desiredNotesWidth = containerRect.right - e.clientX
       
-      // 노트 패널 최대 너비 계산 (화면 밖으로 밀림 방지)
-      // 1. 기본: 컨테이너 너비 - 채팅창 최소 너비(400px)
-      // 2. 추가: 전체 화면의 60%를 넘지 않도록 제한
-      // 3. 수정: 강의자료 패널이 열려있다면 그 공간도 확보해야 함.
-      const availableSpace = window.innerWidth - SIDEBAR_WIDTH - MIN_CHAT_WIDTH - (isMaterialsPanelOpen ? materialsPanelWidth : 0);
-      
-      const maxNotesWidth = Math.min(
-        containerRect.width - MIN_CHAT_WIDTH,
-        window.innerWidth * 0.6,
-        availableSpace // 추가된 제약 조건: 강의자료 패널 공간 + 채팅창 최소 너비 보장
-      )
-      const minNotesWidth = Math.min(MIN_NOTES_WIDTH, Math.max(0, maxNotesWidth))
-      
-      let targetNotesWidth = newWidth
-      
-      // 채팅창 최소 너비(MIN_CHAT_WIDTH) 보장 로직
-      // 채팅창 너비 = containerRect.width - targetNotesWidth
-      // 따라서 targetNotesWidth는 (containerRect.width - MIN_CHAT_WIDTH)를 넘을 수 없음 (최대 너비 제약과 동일하지만 재확인)
-      
-      // 사용자가 "채팅창이 최소 너비가 됐을 때는... 경계선이 왼쪽으로 작동하지 않게 해줘" 라고 함.
-      // 즉, targetNotesWidth가 maxNotesWidth를 초과하려고 하면 막아야 함.
-      // 이 로직은 이미 아래 'else if (targetNotesWidth > maxNotesWidth)' 에서 처리됨.
-      
-      // 그러나 "오른쪽으로만 당겨지게 해줘" 라는 의미는, 
-      // 현재 상태가 이미 Max Width에 도달해 있다면, 더 이상 왼쪽으로 드래그해도 반응하지 않아야 한다는 뜻.
-      
-      if (targetNotesWidth < minNotesWidth) {
-         // 노트 패널 최소 너비 도달 시 로직 (기존 유지)
-         targetNotesWidth = minNotesWidth
-         
-         if (isMaterialsPanelOpen) {
-            const mouseRelativeX = e.clientX - containerRect.left
-            const desiredChatWidth = mouseRelativeX
-            const effectiveChatWidth = Math.max(desiredChatWidth, MIN_CHAT_WIDTH)
+      if (isMaterialsPanelOpen) {
+        // 전체 가용 공간 = 화면 - 좌측메뉴 - 수업선택바
+        const availableSpace = window.innerWidth - totalFixedWidth
+        
+        let targetNotesWidth = desiredNotesWidth
+        let targetMaterialsWidth = materialsPanelWidth
+        
+        // 채팅창 너비 계산 (현재 강의자료 너비 기준)
+        const chatWidth = availableSpace - targetNotesWidth - targetMaterialsWidth
+        
+        if (targetNotesWidth > notesPanelWidth) {
+          // 노트 패널 확장 (첫 번째 경계선을 오른쪽으로 밀기)
+          if (chatWidth < MIN_CHAT_WIDTH) {
+            // 채팅창이 최소 미만이면 → 강의자료 패널을 밀어서 공간 확보
+            const deficit = MIN_CHAT_WIDTH - chatWidth
+            targetMaterialsWidth = materialsPanelWidth - deficit
             
-            // 남은 공간 계산 (채팅 최소 너비 보장)
-            const maxMaterialsWidth =
-              window.innerWidth - SIDEBAR_WIDTH - minNotesWidth - effectiveChatWidth
-            const nextMaterialsWidth = Math.max(
-              MIN_MATERIALS_WIDTH,
-              Math.min(maxMaterialsWidth, window.innerWidth)
-            )
+            // 강의자료도 최소에 도달하면 노트 확장 중지
+            if (targetMaterialsWidth < MIN_MATERIALS_WIDTH) {
+              targetMaterialsWidth = MIN_MATERIALS_WIDTH
+              targetNotesWidth = availableSpace - MIN_CHAT_WIDTH - MIN_MATERIALS_WIDTH
+            }
             
-            setMaterialsPanelWidth(nextMaterialsWidth)
-         }
-      } 
-      else if (targetNotesWidth >= maxNotesWidth) {
-         // 채팅창 최소 너비 도달 시 (노트 패널 최대 너비)
-         // 왼쪽 드래그(확장) 시도 시 막음. 오른쪽 드래그(축소)는 허용됨(newWidth가 maxNotesWidth보다 작아지므로 이 블록에 안 들어옴).
-         // 하지만 newWidth가 maxNotesWidth보다 크면 여기 들어옴.
-         // 따라서 그냥 maxNotesWidth로 고정하면 됨.
-         targetNotesWidth = maxNotesWidth
+            setMaterialsPanelWidth(targetMaterialsWidth)
+          }
+        } else {
+          // 노트 패널 축소 (첫 번째 경계선을 왼쪽으로 밀기)
+          // 노트가 최소면 → 강의자료도 같이 줄여서 공간 확보
+          if (targetNotesWidth < MIN_NOTES_WIDTH) {
+            // 노트가 최소 미만 → 강의자료를 줄여서 채팅창 확장
+            const notesDeficit = MIN_NOTES_WIDTH - targetNotesWidth
+            targetNotesWidth = MIN_NOTES_WIDTH
+            targetMaterialsWidth = materialsPanelWidth - notesDeficit
+            
+            // 강의자료도 최소에 도달하면 더 이상 축소 불가
+            if (targetMaterialsWidth < MIN_MATERIALS_WIDTH) {
+              targetMaterialsWidth = MIN_MATERIALS_WIDTH
+            }
+            
+            setMaterialsPanelWidth(targetMaterialsWidth)
+          }
+        }
+        
+        // 노트 패널 최소 보장
+        targetNotesWidth = Math.max(MIN_NOTES_WIDTH, targetNotesWidth)
+        
+        setNotesPanelWidth(targetNotesWidth)
+      } else {
+        // 강의자료 패널이 닫혀있을 때
+        const maxNotesWidth = containerRect.width - MIN_CHAT_WIDTH
+        const targetNotesWidth = Math.max(MIN_NOTES_WIDTH, Math.min(desiredNotesWidth, maxNotesWidth))
+        setNotesPanelWidth(targetNotesWidth)
       }
-      
-      setNotesPanelWidth(targetNotesWidth)
     }
 
     const handleMouseUp = () => {
@@ -421,7 +417,7 @@ export function AITutorContainer() {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isResizingNotes, setNotesPanelWidth, isMaterialsPanelOpen, materialsPanelWidth, setMaterialsPanelWidth])
+  }, [isResizingNotes, setNotesPanelWidth, isMaterialsPanelOpen, materialsPanelWidth, setMaterialsPanelWidth, notesPanelWidth])
 
   const rightbarContent = useMemo(() => (
     <div className="relative h-full w-[320px]">

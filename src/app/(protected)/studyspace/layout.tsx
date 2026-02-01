@@ -53,51 +53,59 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     if (!isResizingOverlay) return
 
     const handleMouseMove = (e: MouseEvent) => {
-      const SIDEBAR_WIDTH = 140
-      const MIN_CHAT_WIDTH = 400
-      const MIN_NOTES_WIDTH = 300
-      const MIN_MATERIALS_WIDTH = 340
+      // 레이아웃 상수
+      const LEFT_MENU_WIDTH = 88      // 좌측 메뉴
+      const LECTURE_SIDEBAR_WIDTH = 320 // 수업선택바
+      const MIN_CHAT_WIDTH = 280      // 채팅창 최소 너비
+      const MIN_NOTES_WIDTH = 300     // 노트 패널 최소 너비
+      const MIN_MATERIALS_WIDTH = 340 // 머티리얼 패널 최소 너비
       
-      const newMaterialsWidth = window.innerWidth - e.clientX
+      const desiredMaterialsWidth = window.innerWidth - e.clientX
+      const totalFixedWidth = LEFT_MENU_WIDTH + LECTURE_SIDEBAR_WIDTH
       
-      if (isNotesPanelOpen && resizingRef.current) {
-        // Mutual Resizing Logic (Trading Widths)
-        const { startCombinedWidth } = resizingRef.current
+      if (isNotesPanelOpen) {
+        // 전체 가용 공간 = 화면 - 좌측메뉴 - 수업선택바
+        const availableSpace = window.innerWidth - totalFixedWidth
+        // 현재 채팅창 너비
+        const currentChatWidth = availableSpace - notesPanelWidth - materialsPanelWidth
         
-        let targetMaterialsWidth = newMaterialsWidth
+        let targetMaterialsWidth = desiredMaterialsWidth
+        let targetNotesWidth = notesPanelWidth
         
-        // 1. Calculate Target Notes Width first
-        let targetNotesWidth = startCombinedWidth - targetMaterialsWidth
-
-        // 2. Chain Reaction: If Notes hits MIN, allow Materials to expand further by shrinking Chat
-        //    This means we ignore the 'startCombinedWidth' constraint if expanding left beyond MIN_NOTES.
-        if (targetNotesWidth < MIN_NOTES_WIDTH) {
-           // We are pushing Notes to MIN.
-           targetNotesWidth = MIN_NOTES_WIDTH
-           // Materials can continue to grow, taking space from Chat.
-           // Constraint: Materials Width must not squeeze Chat below MIN_CHAT.
-           // Total Available for Materials = Window - Sidebar - Min Chat - Min Notes
-           const absoluteMaxMaterials = window.innerWidth - SIDEBAR_WIDTH - MIN_CHAT_WIDTH - MIN_NOTES_WIDTH
-           targetMaterialsWidth = Math.min(newMaterialsWidth, absoluteMaxMaterials)
-        } else {
-           // Standard trading.
-           // Ensure Materials doesn't shrink below MIN.
-           if (targetMaterialsWidth < MIN_MATERIALS_WIDTH) {
-             targetMaterialsWidth = MIN_MATERIALS_WIDTH
-             targetNotesWidth = startCombinedWidth - MIN_MATERIALS_WIDTH
-           }
+        // 머티리얼 최소 보장
+        if (targetMaterialsWidth < MIN_MATERIALS_WIDTH) {
+          targetMaterialsWidth = MIN_MATERIALS_WIDTH
         }
         
-        // Update both
+        if (desiredMaterialsWidth > materialsPanelWidth) {
+          // 강의자료 확장 (두 번째 경계선을 왼쪽으로 밀기)
+          // 채팅창 고정, 녹음본↔강의자료 트레이드
+          const combinedPanelWidth = notesPanelWidth + materialsPanelWidth
+          targetNotesWidth = combinedPanelWidth - targetMaterialsWidth
+          
+          // 녹음본이 최소에 도달하면 → 채팅창도 밀기
+          if (targetNotesWidth < MIN_NOTES_WIDTH) {
+            targetNotesWidth = MIN_NOTES_WIDTH
+            // 강의자료 최대 = 전체 - 채팅최소 - 녹음본최소
+            const maxMaterialsWidth = availableSpace - MIN_CHAT_WIDTH - MIN_NOTES_WIDTH
+            targetMaterialsWidth = Math.min(desiredMaterialsWidth, maxMaterialsWidth)
+          }
+        } else {
+          // 강의자료 축소 (두 번째 경계선을 오른쪽으로 당기기)
+          // 채팅창 고정, 녹음본↔강의자료 트레이드
+          const combinedPanelWidth = notesPanelWidth + materialsPanelWidth
+          targetNotesWidth = combinedPanelWidth - targetMaterialsWidth
+          
+          // 녹음본 최대 제한 없음 (첫 번째 경계선이 고정이므로)
+        }
+        
         setMaterialsPanelWidth(targetMaterialsWidth)
         setNotesPanelWidth(targetNotesWidth)
-        
       } else {
-        // Standard Resizing (Only Materials Panel open)
-        // Constraint: Must leave space for Sidebar + Min Chat
-        const maxMaterialsWidth = window.innerWidth - SIDEBAR_WIDTH - MIN_CHAT_WIDTH
-        const constrainedWidth = Math.max(MIN_MATERIALS_WIDTH, Math.min(newMaterialsWidth, maxMaterialsWidth))
-        setMaterialsPanelWidth(constrainedWidth)
+        // 노트 패널이 닫혀있을 때: 채팅↔강의자료 트레이드
+        const maxMaterialsWidth = window.innerWidth - totalFixedWidth - MIN_CHAT_WIDTH
+        const targetMaterialsWidth = Math.max(MIN_MATERIALS_WIDTH, Math.min(desiredMaterialsWidth, maxMaterialsWidth))
+        setMaterialsPanelWidth(targetMaterialsWidth)
       }
     }
 
@@ -113,7 +121,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isResizingOverlay, setMaterialsPanelWidth, isNotesPanelOpen, notesPanelWidth, setNotesPanelWidth])
+  }, [isResizingOverlay, setMaterialsPanelWidth, isNotesPanelOpen, notesPanelWidth, setNotesPanelWidth, materialsPanelWidth])
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900">
