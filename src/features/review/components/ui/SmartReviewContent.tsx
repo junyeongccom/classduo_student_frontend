@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import type { LectureReviewItem } from '@/features/review/types'
 import { AddReviewWordModal } from './AddReviewWordModal'
@@ -93,6 +93,9 @@ export function SmartReviewContent({
     }
   }, [activeGameId])
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
+  const [showImportTooltip, setShowImportTooltip] = useState(false)
+  const [importTooltipPos, setImportTooltipPos] = useState<{ top: number; left: number } | null>(null)
+  const importBtnRef = useRef<HTMLButtonElement>(null)
   const tabItems: Array<{ id: SmartReviewTab; label: string }> = [
     { id: 'list', label: t('tabs.list') },
     { id: 'deck', label: t('tabs.deck') },
@@ -146,7 +149,7 @@ export function SmartReviewContent({
       </div>
 
       {activeTab === 'list' && (
-        <div className="flex flex-1 flex-col items-center gap-3 pb-10">
+        <div className="flex flex-1 flex-col items-center gap-3 overflow-y-auto pb-10">
           <div className="w-full max-w-[66%]">
             <div className="mb-1 flex flex-wrap items-center gap-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
@@ -154,22 +157,39 @@ export function SmartReviewContent({
                 {t('countLabel', { count: reviewItems.length })}
               </div>
               {hasSelectedLecture && (
-                <div className="group relative">
+                <div className="relative">
                   <button
+                    ref={importBtnRef}
                     type="button"
                     onClick={() => {
                       onRequestImportPreview()
                       setIsConfirmDialogOpen(true)
                     }}
+                    onMouseEnter={() => {
+                      if (importBtnRef.current) {
+                        const rect = importBtnRef.current.getBoundingClientRect()
+                        setImportTooltipPos({
+                          top: rect.top - 8,
+                          left: rect.left + rect.width / 2,
+                        })
+                        setShowImportTooltip(true)
+                      }
+                    }}
+                    onMouseLeave={() => setShowImportTooltip(false)}
                     disabled={isMutating}
                     className="rounded-lg bg-slate-900 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 transition-colors disabled:opacity-60"
                   >
                     {isMutating ? '처리 중...' : '추천 단어 불러오기'}
                   </button>
-                  <div className="pointer-events-none absolute left-1/2 top-0 z-30 hidden w-max -translate-x-1/2 -translate-y-full rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 shadow-lg group-hover:block">
-                    {t('importTooltip')}
-                    <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-purple-200 bg-purple-50" />
-                  </div>
+                </div>
+              )}
+              {showImportTooltip && importTooltipPos && (
+                <div
+                  className="pointer-events-none fixed z-[10000] w-max -translate-x-1/2 -translate-y-full rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-medium text-purple-700 shadow-lg"
+                  style={{ top: importTooltipPos.top, left: importTooltipPos.left }}
+                >
+                  {t('importTooltip')}
+                  <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-purple-200 bg-purple-50" />
                 </div>
               )}
               {hasSelectedLecture && reviewItems.length > 0 && (

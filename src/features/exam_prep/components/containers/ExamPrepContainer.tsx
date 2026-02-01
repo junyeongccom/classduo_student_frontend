@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { ExamPrepLayout } from '../ui/ExamPrepLayout'
 import { ExamPrepSummaryPanel } from '../ui/ExamPrepSummaryPanel'
 import { ExamPrepGlossaryPanel } from '../ui/ExamPrepGlossaryPanel'
@@ -34,6 +35,10 @@ export function ExamPrepContainer() {
   const t = useTranslations('examPrep')
   const locale = useLocale()
   const language = locale === 'en' ? 'en' : 'ko'
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  
   const [activeTab, setActiveTab] = useState<ExamPrepTab>('summary')
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
@@ -49,10 +54,44 @@ export function ExamPrepContainer() {
   }, [activeTab])
 
   const { courses, isLoading: coursesLoading, error: coursesError, refresh: refreshCourses } = useExamPrepCourses()
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
+  
+  // URL에서 초기값 읽기
+  const initialCourseId = searchParams.get('courseId')
+  const initialMaterialId = searchParams.get('materialId')
+  
+  const [selectedCourseId, setSelectedCourseIdState] = useState<string | null>(initialCourseId)
   const { materials: materialsList, isLoading: materialsLoading, refresh: refreshMaterials } = useExamPrepMaterials(selectedCourseId)
   const materials = useMemo<ExamPrepMaterial[]>(() => materialsList, [materialsList])
-  const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null)
+  const [selectedMaterialId, setSelectedMaterialIdState] = useState<string | null>(initialMaterialId)
+  
+  // URL 파라미터 업데이트 함수
+  const updateUrlParams = useCallback((courseId: string | null, materialId: string | null) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (courseId) {
+      params.set('courseId', courseId)
+    } else {
+      params.delete('courseId')
+    }
+    if (materialId) {
+      params.set('materialId', materialId)
+    } else {
+      params.delete('materialId')
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [pathname, router, searchParams])
+  
+  // 수업 선택 핸들러
+  const setSelectedCourseId = useCallback((courseId: string | null) => {
+    setSelectedCourseIdState(courseId)
+    updateUrlParams(courseId, null) // 수업 변경 시 자료 초기화
+    setSelectedMaterialIdState(null)
+  }, [updateUrlParams])
+  
+  // 자료 선택 핸들러
+  const setSelectedMaterialId = useCallback((materialId: string | null) => {
+    setSelectedMaterialIdState(materialId)
+    updateUrlParams(selectedCourseId, materialId)
+  }, [selectedCourseId, updateUrlParams])
   const selectedMaterial = useMemo(
     () => materials.find(material => material.id === selectedMaterialId) ?? null,
     [materials, selectedMaterialId]
@@ -127,9 +166,27 @@ export function ExamPrepContainer() {
   }>>([])
   const [isChatLoading, setIsChatLoading] = useState(false)
 
+  // URL에서 복원된 courseId가 유효한지 확인
   useEffect(() => {
-    setSelectedMaterialId(null)
-  }, [selectedCourseId])
+    if (!coursesLoading && courses.length > 0 && initialCourseId) {
+      const isValidCourse = courses.some(c => c.id === initialCourseId)
+      if (!isValidCourse) {
+        setSelectedCourseIdState(null)
+        updateUrlParams(null, null)
+      }
+    }
+  }, [courses, coursesLoading, initialCourseId, updateUrlParams])
+  
+  // URL에서 복원된 materialId가 유효한지 확인
+  useEffect(() => {
+    if (!materialsLoading && materials.length > 0 && initialMaterialId && selectedCourseId) {
+      const isValidMaterial = materials.some(m => m.id === initialMaterialId)
+      if (!isValidMaterial) {
+        setSelectedMaterialIdState(null)
+        updateUrlParams(selectedCourseId, null)
+      }
+    }
+  }, [materials, materialsLoading, initialMaterialId, selectedCourseId, updateUrlParams])
 
   // locale 변경 시 강좌와 학습자료 목록 다시 불러오기
   useEffect(() => {
@@ -140,10 +197,11 @@ export function ExamPrepContainer() {
   }, [locale, refreshCourses, refreshMaterials, selectedCourseId])
 
   // quiz 탭에서만: 퀴즈 생성(백그라운드) 완료 전까지 세션 목록을 폴링해서 즉시 활성화되게 한다.
+  // isCreatingQuiz가 true이거나 hasPendingQuizSessions가 true일 때 폴링
   useEffect(() => {
     if (activeTab !== 'quiz') return
     if (!selectedMaterialId) return
-    if (!hasPendingQuizSessions) return
+    if (!hasPendingQuizSessions && !isCreatingQuiz) return
 
     const intervalId = window.setInterval(() => {
       void refreshSessionsSilently()
@@ -152,7 +210,7 @@ export function ExamPrepContainer() {
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [activeTab, hasPendingQuizSessions, refreshSessionsSilently, selectedMaterialId])
+  }, [activeTab, hasPendingQuizSessions, isCreatingQuiz, refreshSessionsSilently, selectedMaterialId])
 
   useLayoutEffect(() => {
     if (!containerRef.current) return
@@ -302,10 +360,8 @@ export function ExamPrepContainer() {
     setIsCreatingQuiz(false)
     if (result.data?.session_id) {
       await refreshSessions()
-      setSelectedSessionId(result.data.session_id)
-      setCurrentQuizIndex(0)
-      setOnlyWrong(false)
-      setIsSessionViewOpen(true)
+      // 퀴즈 목록에 남아있도록 세션 뷰를 열지 않음
+      // 사용자가 직접 세션을 클릭해서 들어가도록 함
     }
   }
 

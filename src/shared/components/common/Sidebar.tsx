@@ -63,7 +63,7 @@ export function Sidebar() {
       </div>
       <div className="fixed left-2 top-[72px] z-[60] flex w-[72px] items-center justify-center bg-transparent">
         <LanguageToggle size="sm" />
-      </div>
+        </div>
       <aside
         className={cn(
           'fixed left-2 top-16 z-50 h-[calc(100vh-4rem)] overflow-visible bg-transparent transition-all duration-300',
