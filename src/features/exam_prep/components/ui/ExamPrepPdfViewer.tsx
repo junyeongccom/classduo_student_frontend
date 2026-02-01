@@ -121,7 +121,13 @@ export function ExamPrepPdfViewer({
   useEffect(() => {
     let isMounted = true
     const loadPdf = async () => {
-      if (!url) return
+      if (!url || url.trim() === '') {
+        if (isMounted) {
+          setLoadError('PDF URL이 제공되지 않았습니다.')
+          setIsLoading(false)
+        }
+        return
+      }
       try {
         setIsLoading(true)
         setLoadError(null)
@@ -137,10 +143,22 @@ export function ExamPrepPdfViewer({
         setPdfDoc(null)
         setPageCount(0)
         onPageCountChange?.(0)
-        const message =
-          error instanceof Error ? error.message : typeof error === "string" ? error : "알 수 없는 오류"
+        let message = '알 수 없는 오류'
+        if (error instanceof Error) {
+          message = error.message || error.name || '알 수 없는 오류'
+        } else if (typeof error === 'string') {
+          message = error
+        } else if (error && typeof error === 'object') {
+          message = JSON.stringify(error)
+        }
         setLoadError(`PDF를 불러오지 못했습니다. (${message})`)
-        console.error("PDF load failed:", { url, error })
+        console.error("PDF load failed:", {
+          url: url || 'undefined',
+          errorMessage: message,
+          errorType: error instanceof Error ? error.constructor.name : typeof error,
+          errorStack: error instanceof Error ? error.stack : undefined,
+          errorString: String(error),
+        })
       } finally {
         if (isMounted) {
           setIsLoading(false)

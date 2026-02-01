@@ -4,6 +4,8 @@ import type { ExamPrepQuizItem, ExamPrepQuizSession } from '../../types'
 import { ExamPrepLoadingState } from './ExamPrepLoadingState'
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 
 interface ExamPrepQuizPanelProps {
   sessions: ExamPrepQuizSession[]
@@ -58,6 +60,8 @@ export function ExamPrepQuizPanel({
   isReviewMode = false,
   onStartReview,
 }: ExamPrepQuizPanelProps) {
+  const t = useTranslations('examPrep.quiz')
+  const { locale } = useI18n()
   const [openMenuSessionId, setOpenMenuSessionId] = useState<string | null>(null)
   const [renameTargetSessionId, setRenameTargetSessionId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
@@ -138,7 +142,7 @@ export function ExamPrepQuizPanel({
                 onClick={onCloseSessionView}
                 className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:border-gray-300"
               >
-                목록
+                {t('sessionView.backToList')}
               </button>
               <div className="flex flex-1 items-center gap-3">
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
@@ -155,15 +159,15 @@ export function ExamPrepQuizPanel({
           <div className="flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <div className="flex h-full flex-col items-center justify-center gap-6 px-4 py-6">
               <div className="text-center">
-                <h2 className="text-3xl font-bold text-gray-900">퀴즈 결과</h2>
-                <p className="mt-2 text-sm text-gray-400">퀴즈를 완료하였습니다. 아래에서 결과를 확인하세요</p>
+                <h2 className="text-3xl font-bold text-gray-900">{t('sessionView.resultTitle')}</h2>
+                <p className="mt-2 text-sm text-gray-400">{t('sessionView.resultDescription')}</p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-gray-900">
-                  <span className="text-2xl font-bold text-gray-900">{score}점</span>
+                  <span className="text-2xl font-bold text-gray-900">{score}{locale === 'ko' ? '점' : ''}</span>
                 </div>
                 <p className="text-base font-semibold text-gray-900">
-                  문제 정답: {correctCount} / {totalQuizCount}
+                  {t('sessionView.resultScore', { correctCount, totalQuizCount })}
                 </p>
               </div>
               <button
@@ -174,7 +178,7 @@ export function ExamPrepQuizPanel({
                 }}
                 className="rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800"
               >
-                문제 다시보기
+                {t('sessionView.reviewAgain')}
               </button>
             </div>
           </div>
@@ -191,7 +195,7 @@ export function ExamPrepQuizPanel({
               onClick={onCloseSessionView}
               className="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:border-gray-300"
             >
-              목록
+              {t('sessionView.backToList')}
             </button>
             <div className="flex flex-1 items-center gap-3">
               <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100">
@@ -213,7 +217,7 @@ export function ExamPrepQuizPanel({
           ) : (
             <div className="flex h-full flex-col overflow-y-auto px-4 py-4">
               <div className="flex-1">
-                <div className="text-xs text-gray-400">문항 {safeIndex + 1}</div>
+                <div className="text-xs text-gray-400">{t('sessionView.questionLabel', { number: safeIndex + 1 })}</div>
                 <p className="mt-2 text-sm font-semibold text-gray-900">{currentQuiz.question}</p>
 
                 {currentQuiz.choices?.length ? (
@@ -254,7 +258,7 @@ export function ExamPrepQuizPanel({
                           <span>{choice.choice_order}. {choice.choice_text}</span>
                           {isSelected && !isUnansweredWrong ? (
                             <span className={`text-[11px] ${isCorrect ? 'text-emerald-500' : 'text-rose-500'}`}>
-                              {isCorrect ? '정답' : '오답'}
+                              {isCorrect ? t('sessionView.correct') : t('sessionView.incorrect')}
                             </span>
                           ) : null}
                         </button>
@@ -268,7 +272,7 @@ export function ExamPrepQuizPanel({
                         key={`quiz-input-${currentQuiz.quiz_id}`}
                         type="text"
                         id={`quiz-input-${currentQuiz.quiz_id}`}
-                        placeholder="답을 입력하세요"
+                        placeholder={t('sessionView.answerPlaceholder')}
                         defaultValue={currentQuiz.user_answer?.answer_text ?? ''}
                         onKeyDown={event => {
                           if (event.key === 'Enter') {
@@ -302,7 +306,7 @@ export function ExamPrepQuizPanel({
                               displayQuiz.user_answer.is_correct ? 'text-emerald-600' : 'text-rose-600'
                             }`}
                           >
-                            {displayQuiz.user_answer.is_correct ? '정답' : '오답'}
+                            {displayQuiz.user_answer.is_correct ? t('sessionView.correct') : t('sessionView.incorrect')}
                           </span>
                         ) : null
                       })()}
@@ -315,7 +319,7 @@ export function ExamPrepQuizPanel({
                       }}
                       className="rounded-xl bg-gray-900 px-3 py-2 text-xs font-semibold text-white"
                     >
-                      제출
+                      {t('sessionView.submit')}
                     </button>
                   </div>
                 )}
@@ -327,7 +331,7 @@ export function ExamPrepQuizPanel({
                     !displayQuiz.user_answer.is_correct &&
                     currentQuiz.answer ? (
                     <div className="mt-3 flex items-center gap-2">
-                      <span className="whitespace-nowrap rounded-full bg-black px-2 py-1 text-[11px] font-semibold text-white">정답</span>
+                      <span className="whitespace-nowrap rounded-full bg-black px-2 py-1 text-[11px] font-semibold text-white">{t('sessionView.answer')}</span>
                       <span 
                         className="text-xs text-gray-900"
                         onCopy={(e) => {
@@ -346,7 +350,7 @@ export function ExamPrepQuizPanel({
                   const displayQuiz = gradedQuizzes.find(q => q.quiz_id === currentQuiz.quiz_id) || currentQuiz
                   return currentQuiz.explanation && displayQuiz.user_answer ? (
                     <div className="mt-3 flex items-start gap-2">
-                      <span className="whitespace-nowrap rounded-full bg-black px-2 py-1 text-[11px] font-semibold text-white">해설</span>
+                      <span className="whitespace-nowrap rounded-full bg-black px-2 py-1 text-[11px] font-semibold text-white">{t('sessionView.explanation')}</span>
                       <span 
                         className="text-xs text-gray-700"
                         onCopy={(e) => {
@@ -369,7 +373,7 @@ export function ExamPrepQuizPanel({
                   disabled={!canPrev}
                   className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40"
                 >
-                  이전
+                  {t('sessionView.prev')}
                 </button>
                 <button
                   type="button"
@@ -386,7 +390,7 @@ export function ExamPrepQuizPanel({
                   disabled={isReviewMode ? isLastQuiz : false}
                   className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
                 >
-                  {isLastQuiz && !isReviewMode ? '결과 보기' : '다음'}
+                  {isLastQuiz && !isReviewMode ? t('sessionView.viewResults') : t('sessionView.next')}
                 </button>
               </div>
             </div>
@@ -401,15 +405,15 @@ export function ExamPrepQuizPanel({
       <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-base font-bold text-gray-900">퀴즈 생성</p>
-            <p className="text-sm text-gray-500">원하는 문제 유형, 난이도 등으로 퀴즈 세트를 만들어보세요</p>
+            <p className="text-base font-bold text-gray-900">{t('create.title')}</p>
+            <p className="text-sm text-gray-500">{t('create.description')}</p>
           </div>
           <button
             onClick={onCreateSession}
             disabled={isCreating}
             className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
           >
-            {isCreating ? '생성 중' : '생성'}
+            {isCreating ? t('create.creating') : t('create.button')}
           </button>
         </div>
       </div>
@@ -417,95 +421,119 @@ export function ExamPrepQuizPanel({
       <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-base font-bold text-gray-900">복습하기</p>
-            <p className="text-sm text-gray-500">지금까지 틀린 모든 문제를 다시 풀어보세요</p>
+            <p className="text-base font-bold text-gray-900">{t('review.title')}</p>
+            <p className="text-sm text-gray-500">{t('review.description')}</p>
           </div>
           <button
             onClick={onStartReview}
             disabled={!onStartReview || sessions.length === 0}
             className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
           >
-            다시 풀기
+            {t('review.button')}
           </button>
         </div>
       </div>
 
       <div className="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-gray-900">내 퀴즈</p>
+          <p className="text-sm font-semibold text-gray-900">{t('myQuizzes.title')}</p>
         </div>
         {sessions.length === 0 ? (
-          <p className="mt-3 text-xs text-gray-400">생성된 퀴즈 세션이 없습니다.</p>
+          <p className="mt-3 text-xs text-gray-400">{t('myQuizzes.empty')}</p>
         ) : (
           <div className="mt-3 flex flex-col gap-2">
             {sessions.map(session => (
               <div key={session.session_id} className="relative">
-                <div
-                  onClick={() => onSelectSession(session.session_id)}
-                  className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left cursor-pointer ${
-                    selectedSessionId === session.session_id
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                  }`}
+                {(() => {
+                  const isPending = session.quiz_count < 10
+                  const isSelected = selectedSessionId === session.session_id
+                  const sessionTitle = session.title?.trim()
+                    ? session.title
+                    : new Date(session.created_at).toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US')
+                  const subtitle = isPending
+                    ? t('myQuizzes.preparing')
+                    : new Date(session.created_at).toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US')
+                  const rootClass = isPending
+                    ? `flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left cursor-not-allowed opacity-60 ${
+                        isSelected ? 'border-gray-300 bg-gray-100 text-gray-700' : 'border-gray-200 bg-white text-gray-700'
+                      }`
+                    : `flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left cursor-pointer ${
+                        isSelected ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`
+
+                  return (
+                    <>
+                      <div
+                  onClick={() => {
+                    if (isPending) return
+                    onSelectSession(session.session_id)
+                  }}
+                  className={rootClass}
                 >
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold">
-                      {session.title?.trim()
-                        ? session.title
-                        : new Date(session.created_at).toLocaleString('ko-KR')}
+                      {sessionTitle}
                     </div>
-                    <div className={`mt-1 truncate text-xs ${selectedSessionId === session.session_id ? 'text-white/70' : 'text-gray-400'}`}>
-                      {new Date(session.created_at).toLocaleString('ko-KR')}
+                    <div className={`mt-1 truncate text-xs ${
+                      isPending ? 'text-gray-500' : isSelected ? 'text-white/70' : 'text-gray-400'
+                    }`}>
+                      {subtitle}
                     </div>
                   </div>
                   <span className="relative ml-3 flex items-center">
                     <button
                       type="button"
                       aria-label="Quiz session menu"
+                      disabled={isPending}
                       onClick={event => {
                         event.stopPropagation()
+                        if (isPending) return
                         setOpenMenuSessionId(prev => (prev === session.session_id ? null : session.session_id))
                       }}
                       className={`flex h-9 w-9 items-center justify-center rounded-lg border ${
-                        selectedSessionId === session.session_id
+                        isSelected
                           ? 'border-white/20 hover:bg-white/10'
                           : 'border-gray-200 hover:bg-gray-50'
-                      }`}
+                      } ${isPending ? 'pointer-events-none opacity-50' : ''}`}
                     >
-                      <MoreVertical className={`h-4 w-4 ${selectedSessionId === session.session_id ? 'text-white' : 'text-gray-500'}`} />
+                      <MoreVertical className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-gray-500'}`} />
                     </button>
                   </span>
                 </div>
-                {openMenuSessionId === session.session_id ? (
-                  <div
-                    className="absolute right-3 top-[52px] z-10 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
-                    onClick={event => event.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50"
-                      onClick={() => {
-                        handleOpenRenameModal(session)
-                      }}
-                    >
-                      <Pencil className="h-4 w-4 text-gray-500" />
-                      이름 변경
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50"
-                      onClick={() => {
-                        const confirmed = window.confirm('이 퀴즈 세션을 삭제할까요?')
-                        if (!confirmed) return
-                        onDeleteSession(session.session_id)
-                        setOpenMenuSessionId(null)
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      삭제
-                    </button>
-                  </div>
-                ) : null}
+
+                      {openMenuSessionId === session.session_id && !isPending ? (
+                        <div
+                          className="absolute right-3 top-[52px] z-10 w-40 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                          onClick={event => event.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50"
+                            onClick={() => {
+                              handleOpenRenameModal(session)
+                            }}
+                          >
+                            <Pencil className="h-4 w-4 text-gray-500" />
+                            이름 변경
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50"
+                            onClick={() => {
+                              const confirmed = window.confirm('이 퀴즈 세션을 삭제할까요?')
+                              if (!confirmed) return
+                              onDeleteSession(session.session_id)
+                              setOpenMenuSessionId(null)
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            삭제
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
+                  )
+                })()}
               </div>
             ))}
           </div>

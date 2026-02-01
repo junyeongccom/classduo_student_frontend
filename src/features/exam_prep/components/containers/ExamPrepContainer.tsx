@@ -21,10 +21,7 @@ import {
   useExamPrepNotes,
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
-<<<<<<< HEAD
-=======
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
->>>>>>> 443aabc (수정 시작)
 import { gradeQuizAnswer } from '../../domain/gradeQuiz'
 
 const DEFAULT_LEFT_WIDTH = 620
@@ -51,9 +48,9 @@ export function ExamPrepContainer() {
     }
   }, [activeTab])
 
-  const { courses, isLoading: coursesLoading, error: coursesError } = useExamPrepCourses()
+  const { courses, isLoading: coursesLoading, error: coursesError, refresh: refreshCourses } = useExamPrepCourses()
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
-  const { materials: materialsList, isLoading: materialsLoading } = useExamPrepMaterials(selectedCourseId)
+  const { materials: materialsList, isLoading: materialsLoading, refresh: refreshMaterials } = useExamPrepMaterials(selectedCourseId)
   const materials = useMemo<ExamPrepMaterial[]>(() => materialsList, [materialsList])
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null)
   const selectedMaterial = useMemo(
@@ -90,6 +87,7 @@ export function ExamPrepContainer() {
     refresh: refreshSessions,
     refreshSilently: refreshSessionsSilently,
   } = useExamPrepQuizSessions(selectedMaterialId)
+  const hasPendingQuizSessions = useMemo(() => sessions.some(session => session.quiz_count < 10), [sessions])
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [onlyWrong, setOnlyWrong] = useState(false)
   const {
@@ -98,6 +96,8 @@ export function ExamPrepContainer() {
     refreshSilently: refreshQuizzesSilently,
   } = useExamPrepQuizDetail(selectedSessionId, onlyWrong)
   const [optimisticAnswersByQuizId, setOptimisticAnswersByQuizId] = useState<Record<string, ExamPrepUserAnswer>>({})
+  const [currentQuizIndex, setCurrentQuizIndex] = useState(0)
+  const [isSessionViewOpen, setIsSessionViewOpen] = useState(false)
   const {
     noteMode,
     notes,
@@ -131,6 +131,29 @@ export function ExamPrepContainer() {
     setSelectedMaterialId(null)
   }, [selectedCourseId])
 
+  // locale 변경 시 강좌와 학습자료 목록 다시 불러오기
+  useEffect(() => {
+    refreshCourses()
+    if (selectedCourseId) {
+      refreshMaterials()
+    }
+  }, [locale, refreshCourses, refreshMaterials, selectedCourseId])
+
+  // quiz 탭에서만: 퀴즈 생성(백그라운드) 완료 전까지 세션 목록을 폴링해서 즉시 활성화되게 한다.
+  useEffect(() => {
+    if (activeTab !== 'quiz') return
+    if (!selectedMaterialId) return
+    if (!hasPendingQuizSessions) return
+
+    const intervalId = window.setInterval(() => {
+      void refreshSessionsSilently()
+    }, 2000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [activeTab, hasPendingQuizSessions, refreshSessionsSilently, selectedMaterialId])
+
   useLayoutEffect(() => {
     if (!containerRef.current) return
     const element = containerRef.current
@@ -160,6 +183,8 @@ export function ExamPrepContainer() {
   useEffect(() => {
     setSelectedSessionId(null)
     setOptimisticAnswersByQuizId({})
+    setCurrentQuizIndex(0)
+    setIsSessionViewOpen(false)
   }, [selectedMaterialId])
 
   useEffect(() => {
@@ -182,7 +207,18 @@ export function ExamPrepContainer() {
   }, [sessions, selectedSessionId])
   useEffect(() => {
     setOptimisticAnswersByQuizId({})
+    setCurrentQuizIndex(0)
   }, [selectedSessionId, onlyWrong])
+  
+  // 세션 뷰 열림 상태 관리: selectedSessionId가 있고 quizzes가 있으면 열림
+  useEffect(() => {
+    if (selectedSessionId && quizzes.length > 0) {
+      setIsSessionViewOpen(true)
+      setCurrentQuizIndex(0)
+    } else if (!selectedSessionId) {
+      setIsSessionViewOpen(false)
+    }
+  }, [selectedSessionId, quizzes.length])
 
   useEffect(() => {
     if (!isResizing) return
@@ -263,6 +299,8 @@ export function ExamPrepContainer() {
     if (result.data?.session_id) {
       await refreshSessions()
       setSelectedSessionId(result.data.session_id)
+      setCurrentQuizIndex(0)
+      // quizzes가 로드되면 useEffect에서 isSessionViewOpen이 true로 설정됨
     }
   }
 
@@ -280,9 +318,49 @@ export function ExamPrepContainer() {
     const remaining = sessions.filter(session => session.session_id !== sessionId)
     if (selectedSessionId === sessionId) {
       setSelectedSessionId(remaining[0]?.session_id ?? null)
+      setIsSessionViewOpen(false)
+      setCurrentQuizIndex(0)
     }
     await refreshSessionsSilently()
     await refreshQuizzesSilently()
+  }
+
+  const handleSelectSession = (sessionId: string) => {
+    setSelectedSessionId(sessionId)
+    setCurrentQuizIndex(0)
+    setIsSessionViewOpen(true)
+  }
+
+  const handleCloseSessionView = () => {
+    setIsSessionViewOpen(false)
+    setCurrentQuizIndex(0)
+  }
+
+  const handlePrevQuiz = () => {
+    setCurrentQuizIndex(prev => Math.max(0, prev - 1))
+  }
+
+  const handleNextQuiz = () => {
+    setCurrentQuizIndex(prev => Math.min(quizzes.length - 1, prev + 1))
+  }
+
+  const handleGoToFirstQuiz = () => {
+    setCurrentQuizIndex(0)
+  }
+
+  const handleStartReview = () => {
+    if (sessions.length === 0) return
+    
+    // 현재 선택된 세션이 있으면 그 세션 사용, 없으면 첫 번째 세션 사용
+    const targetSessionId = selectedSessionId || sessions[0]?.session_id
+    if (!targetSessionId) return
+    
+    // onlyWrong을 true로 설정하여 틀린 문제만 보기
+    setOnlyWrong(true)
+    // 세션 선택 및 뷰 열기
+    setSelectedSessionId(targetSessionId)
+    setCurrentQuizIndex(0)
+    // quizzes가 로드되면 useEffect에서 isSessionViewOpen이 true로 설정됨
   }
 
   const handleSubmitAnswer = async (quizId: string, answerText: string | null, choiceOrder: number | null) => {
@@ -379,22 +457,35 @@ export function ExamPrepContainer() {
         const optimistic = optimisticAnswersByQuizId[quiz.quiz_id]
         return optimistic ? { ...quiz, user_answer: optimistic } : quiz
       })
+      const currentQuiz = displayQuizzes.length > 0 && currentQuizIndex >= 0 && currentQuizIndex < displayQuizzes.length
+        ? displayQuizzes[currentQuizIndex]
+        : null
       return (
         <ExamPrepQuizPanel
           sessions={sessions}
           selectedSessionId={selectedSessionId}
-          onSelectSession={setSelectedSessionId}
+          onSelectSession={handleSelectSession}
           onRenameSession={handleRenameSession}
           onDeleteSession={handleDeleteSession}
           onCreateSession={handleCreateSession}
           isCreating={isCreatingQuiz}
           quizzes={displayQuizzes}
+          isSessionViewOpen={isSessionViewOpen}
+          currentIndex={currentQuizIndex}
+          totalCount={displayQuizzes.length}
+          currentQuiz={currentQuiz}
+          onCloseSessionView={handleCloseSessionView}
+          onPrevQuiz={handlePrevQuiz}
+          onNextQuiz={handleNextQuiz}
+          onGoToFirstQuiz={handleGoToFirstQuiz}
           isLoading={sessionsLoading || quizzesLoading}
           onlyWrong={onlyWrong}
           onToggleWrong={() => setOnlyWrong(prev => !prev)}
           onSubmitAnswer={handleSubmitAnswer}
           loadingMessage="KUI가 퀴즈를 만들고 있어요..."
           emptyText="퀴즈를 생성하거나 세션을 선택해주세요."
+          onStartReview={handleStartReview}
+          isReviewMode={onlyWrong}
         />
       )
     }
