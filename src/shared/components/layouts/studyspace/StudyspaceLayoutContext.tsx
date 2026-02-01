@@ -56,34 +56,32 @@ export function useStudyspaceLayoutSlots() {
   return context
 }
 
-function createSlotSetter(
-  setter: Dispatch<SetStateAction<ReactNode | null>>,
-  node: ReactNode | null
-) {
-  setter(node)
-  return () => setter(prev => (prev === node ? null : prev))
-}
-
 export function StudyspaceTopbarSlot({ children }: { children: ReactNode }) {
   const { setTopbar } = useStudyspaceLayoutSlots()
-
-  useEffect(() => createSlotSetter(setTopbar, children), [children, setTopbar])
+  useEffect(() => {
+    setTopbar(children)
+  }, [children, setTopbar])
+  useEffect(() => () => setTopbar(null), [setTopbar])
 
   return null
 }
 
 export function StudyspaceRightbarSlot({ children }: { children: ReactNode }) {
   const { setRightbar } = useStudyspaceLayoutSlots()
-
-  useEffect(() => createSlotSetter(setRightbar, children), [children, setRightbar])
+  useEffect(() => {
+    setRightbar(children)
+  }, [children, setRightbar])
+  useEffect(() => () => setRightbar(null), [setRightbar])
 
   return null
 }
 
 export function StudyspaceOverlaySlot({ children }: { children: ReactNode }) {
   const { setOverlay } = useStudyspaceLayoutSlots()
-
-  useEffect(() => createSlotSetter(setOverlay, children), [children, setOverlay])
+  useEffect(() => {
+    setOverlay(children)
+  }, [children, setOverlay])
+  useEffect(() => () => setOverlay(null), [setOverlay])
 
   return null
 }

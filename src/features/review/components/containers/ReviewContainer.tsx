@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ReviewSidebar } from './ReviewSidebar'
 import { SmartReviewContent, type SmartReviewTab } from '@/features/review/components/ui/SmartReviewContent'
 import { useLectureReviewItems } from '@/features/review/hooks/useLectureReviewItems'
@@ -54,15 +54,17 @@ export function ReviewContainer() {
     setImportPreviewError(null)
   }, [selectedLectureId, locale])
 
+  const rightbarContent = useMemo(() => (
+    <ReviewSidebar
+      selectedLectureId={selectedLectureId}
+      onSelectLectureId={setSelectedLectureId}
+      onCourseIdChange={setSelectedCourseId}
+    />
+  ), [selectedLectureId])
+
   return (
     <>
-      <StudyspaceRightbarSlot>
-        <ReviewSidebar
-          selectedLectureId={selectedLectureId}
-          onSelectLectureId={setSelectedLectureId}
-          onCourseIdChange={setSelectedCourseId}
-        />
-      </StudyspaceRightbarSlot>
+      <StudyspaceRightbarSlot>{rightbarContent}</StudyspaceRightbarSlot>
 
       <div className="flex h-full min-h-0 flex-1 items-center justify-center overflow-y-hidden p-6">
         <div

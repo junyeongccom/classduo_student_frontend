@@ -42,6 +42,7 @@ const ANALYZING_STATUS = '분석 중'
 
 export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseIdChange }: ReviewSidebarProps) {
   const t = useTranslations('review')
+  const tFlame = useTranslations('aiTutorFlameTooltip')
   const { courses, isLoading: isLoadingCourses, error: coursesError } = useReviewCourses()
   const { gameProgress, flameCount, claimedRewards, claimReward } = useGameStatus()
   const userId = useAuthStore(state => state.user?.user_id ?? null)
@@ -552,39 +553,29 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
             left: `${tooltipPosition.left}px`,
           }}
         >
-          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-gray-900 text-sm shadow-lg max-w-[320px]">
+          <div className="rounded-xl border border-slate-700/60 bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-800/95 px-4 py-3 text-sm text-slate-100 shadow-[0_12px_30px_rgba(15,23,42,0.45)] max-w-[320px]">
             <p className="mb-3 leading-relaxed whitespace-pre-wrap">
-              {`매 수업일마다 미니게임 퀴즈 5개,
-50초 복습 빈칸 정의조립 5개를 진행하고
-상자를 열어 불꽃을 모으세요!`}
+              {tFlame('intro')}
             </p>
-            <div className="border-t border-gray-300 pt-3 space-y-2">
+            <div className="border-t border-slate-700/60 pt-3 space-y-2">
               <div className="flex items-start gap-2">
                 <img 
                   src="/icon_flame.png" 
                   alt="불꽃" 
-                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
+                  className="h-4 w-4 object-contain mt-0.5 shrink-0 opacity-90 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]"
                 />
-                <span className="leading-relaxed">불꽃 2개: 미니게임, 과제보조 기능 업그레이드</span>
+                <span className="leading-relaxed">{tFlame('flame2')}</span>
               </div>
               <div className="flex items-start gap-2">
                 <img 
                   src="/icon_flame.png" 
                   alt="불꽃" 
-                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
+                  className="h-4 w-4 object-contain mt-0.5 shrink-0 opacity-90 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]"
                 />
-                <span className="leading-relaxed">불꽃 4개: 캐릭터, 시험준비 기능 업그레이드</span>
+                <span className="leading-relaxed">{tFlame('flame4')}</span>
               </div>
-              <div className="flex items-start gap-2">
-                <img 
-                  src="/icon_flame.png" 
-                  alt="불꽃" 
-                  className="h-4 w-4 object-contain mt-0.5 shrink-0"
-                />
-                <span className="leading-relaxed">불꽃 8개: 클래스듀오 울트라 업그레이드</span>
-              </div>
-              <p className="text-xs text-gray-400 mt-2 pl-6">
-                (더 많은 퀴즈 게임, 벼락치기 모드, 연구 모드 등)
+              <p className="mt-2 pl-6 text-xs text-slate-300">
+                {tFlame('note')}
               </p>
             </div>
           </div>
@@ -599,7 +590,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
               height: 0,
               borderLeft: '8px solid transparent',
               borderRight: '8px solid transparent',
-              borderBottom: '8px solid rgb(17, 24, 39)', // gray-900
+              borderBottom: '8px solid rgb(15, 23, 42)', // slate-900
             }}
           />
         </div>

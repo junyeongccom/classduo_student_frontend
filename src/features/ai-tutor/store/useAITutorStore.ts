@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { TabType } from '@/shared/components/common'
+import { areLectureIdsEqual } from '@/shared/lib/studyspaceSelection'
 import { Reference, HookingResponse, PQMQuestion, CardMatchSet } from '@/features/ai-tutor/types'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
@@ -172,8 +173,15 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   setCurrentSessionId: (sessionId) => set({ currentSessionId: sessionId }),
   setIsSessionLocked: (isLocked) => set({ isSessionLocked: isLocked }),
   
-  setSelectedLectureIds: (lectureIds) => set({ selectedLectureIds: lectureIds }),
-  setSelectedCourseId: (courseId) => set({ selectedCourseId: courseId }),
+  setSelectedLectureIds: (lectureIds) =>
+    set((state) => {
+      if (areLectureIdsEqual(state.selectedLectureIds, lectureIds)) {
+        return state
+      }
+      return { selectedLectureIds: lectureIds }
+    }),
+  setSelectedCourseId: (courseId) =>
+    set((state) => (state.selectedCourseId === courseId ? state : { selectedCourseId: courseId })),
   setAutoSelectLatest: (autoSelect) => set({ autoSelectLatest: autoSelect }),
   
   setActiveTab: (tab) => set({ activeTab: tab }),

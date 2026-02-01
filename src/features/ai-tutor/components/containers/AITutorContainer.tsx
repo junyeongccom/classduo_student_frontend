@@ -157,20 +157,48 @@ export function AITutorContainer() {
     }
   }, [sharedCourseId, sharedLectureIds, selectedCourseId, selectedLectureIds])
 
+  // Handlers - 로컬 상태만 업데이트, shared sync는 아래 effect에서 처리
+  const handleSelectLectureIds = useCallback((ids: string[]) => {
+    setSelectedLectureIds(ids)
+  }, [setSelectedLectureIds])
+
+  const handleSelectCourse = useCallback((courseId: string | null) => {
+    setSelectedCourseId(courseId)
+  }, [setSelectedCourseId])
+
+  // 로컬 상태 → shared 상태 동기화 (단방향, 디바운스)
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     if (!isSharedHydrated) return
-    const needsSync =
-      sharedCourseId !== selectedCourseId ||
-      !areLectureIdsEqual(sharedLectureIds, selectedLectureIds)
-    if (!needsSync) return
+    // 이미 동기화된 상태면 skip
+    if (
+      sharedCourseId === selectedCourseId &&
+      areLectureIdsEqual(sharedLectureIds, selectedLectureIds)
+    ) {
+      return
+    }
+    // shared에서 받아온 직후면 skip
     if (syncingFromSharedRef.current === sharedUpdatedAt) {
       return
     }
-    setSharedSelection({
-      courseId: selectedCourseId,
-      lectureIds: selectedLectureIds,
-      source: 'ai-tutor',
-    })
+    // 디바운스: 연속 변경 시 마지막 값만 동기화
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current)
+    }
+    syncTimeoutRef.current = setTimeout(() => {
+      setSharedSelection({
+        courseId: selectedCourseId,
+        lectureIds: selectedLectureIds,
+        source: 'ai-tutor',
+      })
+      syncTimeoutRef.current = null
+    }, 50)
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+        syncTimeoutRef.current = null
+      }
+    }
   }, [
     isSharedHydrated,
     sharedCourseId,
@@ -181,33 +209,9 @@ export function AITutorContainer() {
     setSharedSelection,
   ])
 
-  // Handlers
-  const handleSelectLectureIds = useCallback((ids: string[]) => {
-    setSelectedLectureIds(ids)
-    setSharedSelection({
-      courseId: selectedCourseId ?? null,
-      lectureIds: ids,
-      source: 'ai-tutor',
-    })
-  }, [setSelectedLectureIds, setSharedSelection, selectedCourseId])
-
-  const handleSelectCourse = useCallback((courseId: string | null) => {
-    setSelectedCourseId(courseId)
-    setSharedSelection({
-      courseId,
-      lectureIds: [],
-      source: 'ai-tutor',
-    })
-  }, [setSelectedCourseId, setSharedSelection])
-
   const handleLectureIdsLoaded = useCallback((ids: string[]) => {
     setSelectedLectureIds(ids)
-    setSharedSelection({
-      courseId: selectedCourseId ?? null,
-      lectureIds: ids,
-      source: 'ai-tutor',
-    })
-  }, [setSelectedLectureIds, setSharedSelection, selectedCourseId])
+  }, [setSelectedLectureIds])
 
   const handleMessagesUpdate = useCallback((newMessages: any[]) => {
     setMessages(newMessages)
@@ -360,6 +364,7 @@ export function AITutorContainer() {
         window.innerWidth * 0.6,
         availableSpace // 추가된 제약 조건: 강의자료 패널 공간 + 채팅창 최소 너비 보장
       )
+      const minNotesWidth = Math.min(MIN_NOTES_WIDTH, Math.max(0, maxNotesWidth))
       
       let targetNotesWidth = newWidth
       
@@ -374,22 +379,24 @@ export function AITutorContainer() {
       // 그러나 "오른쪽으로만 당겨지게 해줘" 라는 의미는, 
       // 현재 상태가 이미 Max Width에 도달해 있다면, 더 이상 왼쪽으로 드래그해도 반응하지 않아야 한다는 뜻.
       
-      if (targetNotesWidth < MIN_NOTES_WIDTH) {
+      if (targetNotesWidth < minNotesWidth) {
          // 노트 패널 최소 너비 도달 시 로직 (기존 유지)
-         targetNotesWidth = MIN_NOTES_WIDTH
+         targetNotesWidth = minNotesWidth
          
          if (isMaterialsPanelOpen) {
             const mouseRelativeX = e.clientX - containerRect.left
             const desiredChatWidth = mouseRelativeX
+            const effectiveChatWidth = Math.max(desiredChatWidth, MIN_CHAT_WIDTH)
             
-            // 남은 공간 계산
-            const availableForMaterials = window.innerWidth - SIDEBAR_WIDTH - desiredChatWidth - MIN_NOTES_WIDTH
+            // 남은 공간 계산 (채팅 최소 너비 보장)
+            const maxMaterialsWidth =
+              window.innerWidth - SIDEBAR_WIDTH - minNotesWidth - effectiveChatWidth
+            const nextMaterialsWidth = Math.max(
+              MIN_MATERIALS_WIDTH,
+              Math.min(maxMaterialsWidth, window.innerWidth)
+            )
             
-            if (availableForMaterials >= MIN_MATERIALS_WIDTH) {
-               setMaterialsPanelWidth(availableForMaterials)
-            } else {
-               setMaterialsPanelWidth(MIN_MATERIALS_WIDTH)
-            }
+            setMaterialsPanelWidth(nextMaterialsWidth)
          }
       } 
       else if (targetNotesWidth >= maxNotesWidth) {
@@ -415,6 +422,44 @@ export function AITutorContainer() {
       document.removeEventListener('mouseup', handleMouseUp)
     }
   }, [isResizingNotes, setNotesPanelWidth, isMaterialsPanelOpen, materialsPanelWidth, setMaterialsPanelWidth])
+
+  const rightbarContent = useMemo(() => (
+    <div className="relative h-full w-[320px]">
+      <div className="h-full opacity-100">
+        <LectureSidebarContainer
+          selectedLectureIds={selectedLectureIds}
+          onSelectLectureIds={handleSelectLectureIds}
+          initialLectureIds={selectedLectureIds}
+          selectedCourseId={selectedCourseId}
+          onSelectCourse={handleSelectCourse}
+          isLocked={isSessionLocked}
+          autoSelectLatest={autoSelectLatest}
+          onAutoSelectComplete={() => setAutoSelectLatest(false)}
+          onGameIconClick={handleGameIconClick}
+        />
+      </div>
+    </div>
+  ), [
+    autoSelectLatest,
+    handleGameIconClick,
+    handleSelectCourse,
+    handleSelectLectureIds,
+    isSessionLocked,
+    selectedCourseId,
+    selectedLectureIds,
+    setAutoSelectLatest,
+  ])
+
+  const materialsPanelContent = useMemo(() => (
+    <ReferencePanel
+      variant="materials"
+      allReferences={allReferences}
+      onClose={handleCloseMaterialsPanel}
+      messages={messages}
+      isRecordingSourceDisabled={isRecordingSourceDisabled}
+      className="flex-1"
+    />
+  ), [allReferences, handleCloseMaterialsPanel, isRecordingSourceDisabled, messages])
 
   return (
     <>
@@ -571,35 +616,10 @@ export function AITutorContainer() {
         </div>
       </div>
 
-      <StudyspaceRightbarSlot>
-        <div className="relative h-full w-[320px]">
-          <div className="h-full opacity-100">
-            <LectureSidebarContainer
-              selectedLectureIds={selectedLectureIds}
-              onSelectLectureIds={handleSelectLectureIds}
-              initialLectureIds={selectedLectureIds}
-              selectedCourseId={selectedCourseId}
-              onSelectCourse={handleSelectCourse}
-              isLocked={isSessionLocked}
-              autoSelectLatest={autoSelectLatest}
-              onAutoSelectComplete={() => setAutoSelectLatest(false)}
-              onGameIconClick={handleGameIconClick}
-            />
-          </div>
-        </div>
-      </StudyspaceRightbarSlot>
+      <StudyspaceRightbarSlot>{rightbarContent}</StudyspaceRightbarSlot>
 
       {isMaterialsPanelOpen && (
-        <StudyspaceOverlaySlot>
-          <ReferencePanel
-            variant="materials"
-            allReferences={allReferences}
-            onClose={handleCloseMaterialsPanel}
-            messages={messages}
-            isRecordingSourceDisabled={isRecordingSourceDisabled}
-            className="flex-1"
-          />
-        </StudyspaceOverlaySlot>
+        <StudyspaceOverlaySlot>{materialsPanelContent}</StudyspaceOverlaySlot>
       )}
 
       <ChatSidebar
