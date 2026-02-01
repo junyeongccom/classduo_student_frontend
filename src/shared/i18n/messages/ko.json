@@ -284,6 +284,23 @@
         "reviewAgain": "문제 다시보기",
         "answerPlaceholder": "답을 입력하세요",
         "questionLabel": "문항 {number}"
+      },
+      "sessionMenu": {
+        "rename": "이름 변경",
+        "delete": "삭제",
+        "renameModal": {
+          "title": "이름 변경",
+          "description": "변경할 이름을 입력해 주세요.",
+          "placeholder": "예) 1차 복습 퀴즈",
+          "cancel": "취소",
+          "confirm": "확인"
+        },
+        "deleteModal": {
+          "title": "퀴즈 세션 삭제",
+          "description": "이 퀴즈 세션을 삭제할까요?",
+          "cancel": "취소",
+          "confirm": "삭제"
+        }
       }
     }
   },

@@ -87,7 +87,7 @@ export function ExamPrepContainer() {
     refresh: refreshSessions,
     refreshSilently: refreshSessionsSilently,
   } = useExamPrepQuizSessions(selectedMaterialId)
-  const hasPendingQuizSessions = useMemo(() => sessions.some(session => session.quiz_count < 10), [sessions])
+  const hasPendingQuizSessions = useMemo(() => sessions.some(session => session.status === 'CREATING'), [sessions])
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [onlyWrong, setOnlyWrong] = useState(false)
   const {

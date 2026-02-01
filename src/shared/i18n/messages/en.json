@@ -284,6 +284,23 @@
         "reviewAgain": "Review Again",
         "answerPlaceholder": "Enter your answer",
         "questionLabel": "Question {number}"
+      },
+      "sessionMenu": {
+        "rename": "Rename",
+        "delete": "Delete",
+        "renameModal": {
+          "title": "Rename",
+          "description": "Enter a new name for this quiz session.",
+          "placeholder": "e.g., First Review Quiz",
+          "cancel": "Cancel",
+          "confirm": "Confirm"
+        },
+        "deleteModal": {
+          "title": "Delete Quiz Session",
+          "description": "Are you sure you want to delete this quiz session?",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        }
       }
     }
   },

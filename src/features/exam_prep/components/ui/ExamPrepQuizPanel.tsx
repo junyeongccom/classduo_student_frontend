@@ -65,6 +65,7 @@ export function ExamPrepQuizPanel({
   const [openMenuSessionId, setOpenMenuSessionId] = useState<string | null>(null)
   const [renameTargetSessionId, setRenameTargetSessionId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
+  const [deleteTargetSessionId, setDeleteTargetSessionId] = useState<string | null>(null)
   const [showResultView, setShowResultView] = useState(false)
   // "결과 보기"를 한 번이라도 눌렀는지 (그때부터 '미답=오답' 표시/채점 적용)
   const [hasFinalizedResults, setHasFinalizedResults] = useState(false)
@@ -85,6 +86,21 @@ export function ExamPrepQuizPanel({
   const handleCloseRenameModal = () => {
     setRenameTargetSessionId(null)
     setRenameValue('')
+  }
+
+  const handleOpenDeleteModal = (session: ExamPrepQuizSession) => {
+    setDeleteTargetSessionId(session.session_id)
+    setOpenMenuSessionId(null)
+  }
+
+  const handleCloseDeleteModal = () => {
+    setDeleteTargetSessionId(null)
+  }
+
+  const handleConfirmDelete = () => {
+    if (!deleteTargetSessionId) return
+    onDeleteSession(deleteTargetSessionId)
+    handleCloseDeleteModal()
   }
 
   useEffect(() => {
@@ -445,7 +461,7 @@ export function ExamPrepQuizPanel({
             {sessions.map(session => (
               <div key={session.session_id} className="relative">
                 {(() => {
-                  const isPending = session.quiz_count < 10
+                  const isPending = session.status !== 'COMPLETED'
                   const isSelected = selectedSessionId === session.session_id
                   const sessionTitle = session.title?.trim()
                     ? session.title
@@ -514,20 +530,17 @@ export function ExamPrepQuizPanel({
                             }}
                           >
                             <Pencil className="h-4 w-4 text-gray-500" />
-                            이름 변경
+                            {t('sessionMenu.rename')}
                           </button>
                           <button
                             type="button"
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-rose-600 hover:bg-rose-50"
                             onClick={() => {
-                              const confirmed = window.confirm('이 퀴즈 세션을 삭제할까요?')
-                              if (!confirmed) return
-                              onDeleteSession(session.session_id)
-                              setOpenMenuSessionId(null)
+                              handleOpenDeleteModal(session)
                             }}
                           >
                             <Trash2 className="h-4 w-4" />
-                            삭제
+                            {t('sessionMenu.delete')}
                           </button>
                         </div>
                       ) : null}
@@ -550,8 +563,8 @@ export function ExamPrepQuizPanel({
             className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
             onClick={event => event.stopPropagation()}
           >
-            <div className="text-base font-semibold text-gray-900">이름 변경</div>
-            <div className="mt-1 text-sm text-gray-500">변경할 이름을 입력해 주세요.</div>
+            <div className="text-base font-semibold text-gray-900">{t('sessionMenu.renameModal.title')}</div>
+            <div className="mt-1 text-sm text-gray-500">{t('sessionMenu.renameModal.description')}</div>
             <input
               value={renameValue}
               onChange={event => setRenameValue(event.target.value)}
@@ -562,7 +575,7 @@ export function ExamPrepQuizPanel({
               }}
               autoFocus
               className="mt-4 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-gray-300"
-              placeholder="예) 1차 복습 퀴즈"
+              placeholder={t('sessionMenu.renameModal.placeholder')}
             />
             <div className="mt-4 flex justify-end gap-2">
               <button
@@ -570,14 +583,45 @@ export function ExamPrepQuizPanel({
                 className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-300"
                 onClick={handleCloseRenameModal}
               >
-                취소
+                {t('sessionMenu.renameModal.cancel')}
               </button>
               <button
                 type="button"
                 className="rounded-xl bg-gray-900 px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800"
                 onClick={handleConfirmRename}
               >
-                확인
+                {t('sessionMenu.renameModal.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteTargetSessionId ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 px-6"
+          onClick={handleCloseDeleteModal}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="text-base font-semibold text-gray-900">{t('sessionMenu.deleteModal.title')}</div>
+            <div className="mt-1 text-sm text-gray-500">{t('sessionMenu.deleteModal.description')}</div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-300"
+                onClick={handleCloseDeleteModal}
+              >
+                {t('sessionMenu.deleteModal.cancel')}
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                onClick={handleConfirmDelete}
+              >
+                {t('sessionMenu.deleteModal.confirm')}
               </button>
             </div>
           </div>
