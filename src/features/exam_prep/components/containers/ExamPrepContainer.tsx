@@ -21,6 +21,10 @@ import {
   useExamPrepNotes,
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
+<<<<<<< HEAD
+=======
+import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+>>>>>>> 443aabc (수정 시작)
 import { gradeQuizAnswer } from '../../domain/gradeQuiz'
 
 const DEFAULT_LEFT_WIDTH = 620
@@ -87,42 +91,13 @@ export function ExamPrepContainer() {
     refreshSilently: refreshSessionsSilently,
   } = useExamPrepQuizSessions(selectedMaterialId)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
-  const [isQuizSessionViewOpen, setIsQuizSessionViewOpen] = useState(false)
-  const [currentQuizIndex, setCurrentQuizIndex] = useState(0)
   const [onlyWrong, setOnlyWrong] = useState(false)
-  const [isReviewMode, setIsReviewMode] = useState(false)
   const {
-    quizzes: allQuizzes,
+    quizzes,
     isLoading: quizzesLoading,
     refreshSilently: refreshQuizzesSilently,
-  } = useExamPrepQuizDetail(selectedSessionId, false)
-  
-  // 복습 모드일 때는 오답만 필터링
-  const quizzes = isReviewMode 
-    ? allQuizzes.filter(q => q.user_answer && !q.user_answer.is_correct)
-    : allQuizzes
+  } = useExamPrepQuizDetail(selectedSessionId, onlyWrong)
   const [optimisticAnswersByQuizId, setOptimisticAnswersByQuizId] = useState<Record<string, ExamPrepUserAnswer>>({})
-
-  // localStorage에서 답변 복원
-  useEffect(() => {
-    if (!selectedSessionId) {
-      setOptimisticAnswersByQuizId({})
-      return
-    }
-    const storageKey = `exam_prep_answers_${selectedSessionId}`
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) {
-        const parsed = JSON.parse(saved) as Record<string, ExamPrepUserAnswer>
-        setOptimisticAnswersByQuizId(parsed)
-      } else {
-        setOptimisticAnswersByQuizId({})
-      }
-    } catch (error) {
-      console.error('Failed to load saved answers:', error)
-      setOptimisticAnswersByQuizId({})
-    }
-  }, [selectedSessionId])
   const {
     noteMode,
     notes,
@@ -184,11 +159,7 @@ export function ExamPrepContainer() {
 
   useEffect(() => {
     setSelectedSessionId(null)
-    setIsQuizSessionViewOpen(false)
-    setCurrentQuizIndex(0)
     setOptimisticAnswersByQuizId({})
-    setIsReviewMode(false)
-    // localStorage는 유지 (세션별로 저장되므로)
   }, [selectedMaterialId])
 
   useEffect(() => {
@@ -211,17 +182,7 @@ export function ExamPrepContainer() {
   }, [sessions, selectedSessionId])
   useEffect(() => {
     setOptimisticAnswersByQuizId({})
-    setCurrentQuizIndex(0)
-  }, [selectedSessionId, onlyWrong, isReviewMode])
-  useEffect(() => {
-    // 퀴즈가 새로 로드되면 인덱스가 범위를 벗어나지 않도록 보정
-    if (!isQuizSessionViewOpen) return
-    if (quizzes.length === 0) {
-      setCurrentQuizIndex(0)
-      return
-    }
-    setCurrentQuizIndex(prev => Math.min(Math.max(prev, 0), quizzes.length - 1))
-  }, [isQuizSessionViewOpen, quizzes.length])
+  }, [selectedSessionId, onlyWrong])
 
   useEffect(() => {
     if (!isResizing) return
@@ -324,89 +285,13 @@ export function ExamPrepContainer() {
     await refreshQuizzesSilently()
   }
 
-  const handleOpenSessionView = (sessionId: string) => {
-    setSelectedSessionId(sessionId)
-    setOnlyWrong(false)
-    setIsReviewMode(false)
-    setCurrentQuizIndex(0)
-    setIsQuizSessionViewOpen(true)
-  }
-
-  const handleCloseSessionView = () => {
-    setIsQuizSessionViewOpen(false)
-    setCurrentQuizIndex(0)
-    setIsReviewMode(false)
-  }
-
-  const handleStartReview = () => {
-    // 선택된 세션이 없으면 첫 번째 세션 사용
-    const targetSessionId = selectedSessionId || sessions[0]?.session_id
-    if (!targetSessionId) return
-    
-    // 오답만 필터링하여 확인
-    const wrongQuizzes = allQuizzes.filter(q => q.user_answer && !q.user_answer.is_correct)
-    if (wrongQuizzes.length === 0) {
-      alert('다시 풀 문제가 없습니다.')
-      return
-    }
-    
-    setSelectedSessionId(targetSessionId)
-    setIsReviewMode(true)
-    setOnlyWrong(false)
-    setCurrentQuizIndex(0)
-    setIsQuizSessionViewOpen(true)
-  }
-
-  const handlePrevQuiz = () => {
-    setCurrentQuizIndex(prev => Math.max(0, prev - 1))
-  }
-
-  const handleNextQuiz = () => {
-    setCurrentQuizIndex(prev => Math.min(quizzes.length - 1, prev + 1))
-  }
-
-  const handleGoToFirstQuiz = () => {
-    setCurrentQuizIndex(0)
-  }
-
   const handleSubmitAnswer = async (quizId: string, answerText: string | null, choiceOrder: number | null) => {
     if (!selectedSessionId) return
-    const quiz = allQuizzes.find(item => item.quiz_id === quizId) ?? null
+    const quiz = quizzes.find(item => item.quiz_id === quizId) ?? null
     if (quiz) {
-      // 객관식 문제에서 이미 선택된 답을 다시 클릭하면 선택 해제
-      if (choiceOrder !== null && quiz.choices) {
-        const currentAnswer = optimisticAnswersByQuizId[quizId]
-        if (currentAnswer?.choice_order === choiceOrder) {
-          // 선택 해제: 해당 답변을 삭제
-          setOptimisticAnswersByQuizId(prev => {
-            const updated = { ...prev }
-            delete updated[quizId]
-            // 즉시 localStorage에 저장
-            const storageKey = `exam_prep_answers_${selectedSessionId}`
-            try {
-              localStorage.setItem(storageKey, JSON.stringify(updated))
-            } catch (error) {
-              console.error('Failed to save answer:', error)
-            }
-            return updated
-          })
-          return
-        }
-      }
-      
       const graded = gradeQuizAnswer(quiz, answerText, choiceOrder)
       if (graded) {
-        setOptimisticAnswersByQuizId(prev => {
-          const updated = { ...prev, [quizId]: graded }
-          // 즉시 localStorage에 저장
-          const storageKey = `exam_prep_answers_${selectedSessionId}`
-          try {
-            localStorage.setItem(storageKey, JSON.stringify(updated))
-          } catch (error) {
-            console.error('Failed to save answer:', error)
-          }
-          return updated
-        })
+        setOptimisticAnswersByQuizId(prev => ({ ...prev, [quizId]: graded }))
       }
     }
 
@@ -490,43 +375,26 @@ export function ExamPrepContainer() {
     }
 
     if (activeTab === 'quiz') {
-      // 복습 모드일 때는 오답만 필터링, 아니면 전체 사용
-      const baseQuizzes = isReviewMode 
-        ? allQuizzes.filter(q => q.user_answer && !q.user_answer.is_correct)
-        : allQuizzes
-      
-      const displayQuizzes = baseQuizzes.map(quiz => {
+      const displayQuizzes = quizzes.map(quiz => {
         const optimistic = optimisticAnswersByQuizId[quiz.quiz_id]
         return optimistic ? { ...quiz, user_answer: optimistic } : quiz
       })
-      const totalQuizCount = displayQuizzes.length
-      const currentQuiz = totalQuizCount > 0 ? displayQuizzes[currentQuizIndex] ?? null : null
       return (
         <ExamPrepQuizPanel
           sessions={sessions}
           selectedSessionId={selectedSessionId}
-          onSelectSession={handleOpenSessionView}
+          onSelectSession={setSelectedSessionId}
           onRenameSession={handleRenameSession}
           onDeleteSession={handleDeleteSession}
           onCreateSession={handleCreateSession}
           isCreating={isCreatingQuiz}
           quizzes={displayQuizzes}
-          isSessionViewOpen={isQuizSessionViewOpen}
-          currentIndex={currentQuizIndex}
-          currentQuiz={currentQuiz}
-          totalCount={totalQuizCount}
-          onCloseSessionView={handleCloseSessionView}
-          onPrevQuiz={handlePrevQuiz}
-          onNextQuiz={handleNextQuiz}
-          onGoToFirstQuiz={handleGoToFirstQuiz}
           isLoading={sessionsLoading || quizzesLoading}
           onlyWrong={onlyWrong}
           onToggleWrong={() => setOnlyWrong(prev => !prev)}
           onSubmitAnswer={handleSubmitAnswer}
           loadingMessage="KUI가 퀴즈를 만들고 있어요..."
           emptyText="퀴즈를 생성하거나 세션을 선택해주세요."
-          isReviewMode={isReviewMode}
-          onStartReview={handleStartReview}
         />
       )
     }
