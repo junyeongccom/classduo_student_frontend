@@ -21,6 +21,7 @@ import {
   useExamPrepNotes,
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
+import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { gradeQuizAnswer } from '../../domain/gradeQuiz'
 
 const DEFAULT_LEFT_WIDTH = 620
@@ -47,9 +48,9 @@ export function ExamPrepContainer() {
     }
   }, [activeTab])
 
-  const { courses, isLoading: coursesLoading, error: coursesError } = useExamPrepCourses()
+  const { courses, isLoading: coursesLoading, error: coursesError, refresh: refreshCourses } = useExamPrepCourses()
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
-  const { materials: materialsList, isLoading: materialsLoading } = useExamPrepMaterials(selectedCourseId)
+  const { materials: materialsList, isLoading: materialsLoading, refresh: refreshMaterials } = useExamPrepMaterials(selectedCourseId)
   const materials = useMemo<ExamPrepMaterial[]>(() => materialsList, [materialsList])
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null)
   const selectedMaterial = useMemo(
@@ -86,43 +87,17 @@ export function ExamPrepContainer() {
     refresh: refreshSessions,
     refreshSilently: refreshSessionsSilently,
   } = useExamPrepQuizSessions(selectedMaterialId)
+  const hasPendingQuizSessions = useMemo(() => sessions.some(session => session.status === 'CREATING'), [sessions])
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
-  const [isQuizSessionViewOpen, setIsQuizSessionViewOpen] = useState(false)
-  const [currentQuizIndex, setCurrentQuizIndex] = useState(0)
   const [onlyWrong, setOnlyWrong] = useState(false)
-  const [isReviewMode, setIsReviewMode] = useState(false)
   const {
-    quizzes: allQuizzes,
+    quizzes,
     isLoading: quizzesLoading,
     refreshSilently: refreshQuizzesSilently,
-  } = useExamPrepQuizDetail(selectedSessionId, false)
-  
-  // 복습 모드일 때는 오답만 필터링
-  const quizzes = isReviewMode 
-    ? allQuizzes.filter(q => q.user_answer && !q.user_answer.is_correct)
-    : allQuizzes
+  } = useExamPrepQuizDetail(selectedSessionId, onlyWrong)
   const [optimisticAnswersByQuizId, setOptimisticAnswersByQuizId] = useState<Record<string, ExamPrepUserAnswer>>({})
-
-  // localStorage에서 답변 복원
-  useEffect(() => {
-    if (!selectedSessionId) {
-      setOptimisticAnswersByQuizId({})
-      return
-    }
-    const storageKey = `exam_prep_answers_${selectedSessionId}`
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) {
-        const parsed = JSON.parse(saved) as Record<string, ExamPrepUserAnswer>
-        setOptimisticAnswersByQuizId(parsed)
-      } else {
-        setOptimisticAnswersByQuizId({})
-      }
-    } catch (error) {
-      console.error('Failed to load saved answers:', error)
-      setOptimisticAnswersByQuizId({})
-    }
-  }, [selectedSessionId])
+  const [currentQuizIndex, setCurrentQuizIndex] = useState(0)
+  const [isSessionViewOpen, setIsSessionViewOpen] = useState(false)
   const {
     noteMode,
     notes,
@@ -156,6 +131,29 @@ export function ExamPrepContainer() {
     setSelectedMaterialId(null)
   }, [selectedCourseId])
 
+  // locale 변경 시 강좌와 학습자료 목록 다시 불러오기
+  useEffect(() => {
+    refreshCourses()
+    if (selectedCourseId) {
+      refreshMaterials()
+    }
+  }, [locale, refreshCourses, refreshMaterials, selectedCourseId])
+
+  // quiz 탭에서만: 퀴즈 생성(백그라운드) 완료 전까지 세션 목록을 폴링해서 즉시 활성화되게 한다.
+  useEffect(() => {
+    if (activeTab !== 'quiz') return
+    if (!selectedMaterialId) return
+    if (!hasPendingQuizSessions) return
+
+    const intervalId = window.setInterval(() => {
+      void refreshSessionsSilently()
+    }, 2000)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [activeTab, hasPendingQuizSessions, refreshSessionsSilently, selectedMaterialId])
+
   useLayoutEffect(() => {
     if (!containerRef.current) return
     const element = containerRef.current
@@ -184,11 +182,14 @@ export function ExamPrepContainer() {
 
   useEffect(() => {
     setSelectedSessionId(null)
-    setIsQuizSessionViewOpen(false)
-    setCurrentQuizIndex(0)
     setOptimisticAnswersByQuizId({})
-    setIsReviewMode(false)
-    // localStorage는 유지 (세션별로 저장되므로)
+    setCurrentQuizIndex(0)
+    setIsSessionViewOpen(false)
+    setOnlyWrong(false)
+    // 강의자료 변경 시 요약 탭으로 이동
+    if (selectedMaterialId) {
+      setActiveTab('summary')
+    }
   }, [selectedMaterialId])
 
   useEffect(() => {
@@ -205,23 +206,23 @@ export function ExamPrepContainer() {
   }, [pdfPageCount])
 
   useEffect(() => {
-    if (sessions.length > 0 && !selectedSessionId) {
+    // 강의자료가 선택되어 있고, 세션이 있고, 세션 뷰가 열려있지 않을 때만 첫 번째 세션 자동 선택
+    if (selectedMaterialId && sessions.length > 0 && !selectedSessionId && !isSessionViewOpen) {
       setSelectedSessionId(sessions[0]?.session_id ?? null)
     }
-  }, [sessions, selectedSessionId])
+  }, [sessions, selectedSessionId, selectedMaterialId, isSessionViewOpen])
   useEffect(() => {
     setOptimisticAnswersByQuizId({})
     setCurrentQuizIndex(0)
-  }, [selectedSessionId, onlyWrong, isReviewMode])
+  }, [selectedSessionId, onlyWrong])
+  
+  // selectedSessionId가 없으면 세션 뷰는 닫힌 상태로 유지한다.
+  // (세션 뷰를 여는 행위는 세션 클릭/세션 생성/다시 풀기 등 명시적 액션에서만 수행)
   useEffect(() => {
-    // 퀴즈가 새로 로드되면 인덱스가 범위를 벗어나지 않도록 보정
-    if (!isQuizSessionViewOpen) return
-    if (quizzes.length === 0) {
-      setCurrentQuizIndex(0)
-      return
+    if (!selectedSessionId) {
+      setIsSessionViewOpen(false)
     }
-    setCurrentQuizIndex(prev => Math.min(Math.max(prev, 0), quizzes.length - 1))
-  }, [isQuizSessionViewOpen, quizzes.length])
+  }, [selectedSessionId])
 
   useEffect(() => {
     if (!isResizing) return
@@ -302,6 +303,9 @@ export function ExamPrepContainer() {
     if (result.data?.session_id) {
       await refreshSessions()
       setSelectedSessionId(result.data.session_id)
+      setCurrentQuizIndex(0)
+      setOnlyWrong(false)
+      setIsSessionViewOpen(true)
     }
   }
 
@@ -319,42 +323,23 @@ export function ExamPrepContainer() {
     const remaining = sessions.filter(session => session.session_id !== sessionId)
     if (selectedSessionId === sessionId) {
       setSelectedSessionId(remaining[0]?.session_id ?? null)
+      setIsSessionViewOpen(false)
+      setCurrentQuizIndex(0)
     }
     await refreshSessionsSilently()
     await refreshQuizzesSilently()
   }
 
-  const handleOpenSessionView = (sessionId: string) => {
+  const handleSelectSession = (sessionId: string) => {
     setSelectedSessionId(sessionId)
-    setOnlyWrong(false)
-    setIsReviewMode(false)
     setCurrentQuizIndex(0)
-    setIsQuizSessionViewOpen(true)
+    setOnlyWrong(false)
+    setIsSessionViewOpen(true)
   }
 
   const handleCloseSessionView = () => {
-    setIsQuizSessionViewOpen(false)
+    setIsSessionViewOpen(false)
     setCurrentQuizIndex(0)
-    setIsReviewMode(false)
-  }
-
-  const handleStartReview = () => {
-    // 선택된 세션이 없으면 첫 번째 세션 사용
-    const targetSessionId = selectedSessionId || sessions[0]?.session_id
-    if (!targetSessionId) return
-    
-    // 오답만 필터링하여 확인
-    const wrongQuizzes = allQuizzes.filter(q => q.user_answer && !q.user_answer.is_correct)
-    if (wrongQuizzes.length === 0) {
-      alert('다시 풀 문제가 없습니다.')
-      return
-    }
-    
-    setSelectedSessionId(targetSessionId)
-    setIsReviewMode(true)
-    setOnlyWrong(false)
-    setCurrentQuizIndex(0)
-    setIsQuizSessionViewOpen(true)
   }
 
   const handlePrevQuiz = () => {
@@ -369,44 +354,44 @@ export function ExamPrepContainer() {
     setCurrentQuizIndex(0)
   }
 
+  const handleStartReview = () => {
+    if (sessions.length === 0) return
+    
+    // 현재 선택된 세션이 있으면 그 세션 사용, 없으면 첫 번째 세션 사용
+    const targetSessionId = selectedSessionId || sessions[0]?.session_id
+    if (!targetSessionId) return
+    
+    // onlyWrong을 true로 설정하여 틀린 문제만 보기
+    setOnlyWrong(true)
+    // 세션 선택 및 뷰 열기
+    setSelectedSessionId(targetSessionId)
+    setCurrentQuizIndex(0)
+    setIsSessionViewOpen(true)
+  }
+
+  const handleSelectMaterial = (materialId: string | null) => {
+    // 강의자료 변경 시 항상 요약 탭부터 노출
+    setActiveTab('summary')
+    setSelectedMaterialId(materialId)
+  }
+
+  const handleTabChange = (nextTab: ExamPrepTab) => {
+    setActiveTab(nextTab)
+    // 어떤 탭에서든 quiz 탭 클릭 시 항상 퀴즈 메인(세션 뷰 닫힘)으로 이동
+    if (nextTab === 'quiz') {
+      setIsSessionViewOpen(false)
+      setOnlyWrong(false)
+      setCurrentQuizIndex(0)
+    }
+  }
+
   const handleSubmitAnswer = async (quizId: string, answerText: string | null, choiceOrder: number | null) => {
     if (!selectedSessionId) return
-    const quiz = allQuizzes.find(item => item.quiz_id === quizId) ?? null
+    const quiz = quizzes.find(item => item.quiz_id === quizId) ?? null
     if (quiz) {
-      // 객관식 문제에서 이미 선택된 답을 다시 클릭하면 선택 해제
-      if (choiceOrder !== null && quiz.choices) {
-        const currentAnswer = optimisticAnswersByQuizId[quizId]
-        if (currentAnswer?.choice_order === choiceOrder) {
-          // 선택 해제: 해당 답변을 삭제
-          setOptimisticAnswersByQuizId(prev => {
-            const updated = { ...prev }
-            delete updated[quizId]
-            // 즉시 localStorage에 저장
-            const storageKey = `exam_prep_answers_${selectedSessionId}`
-            try {
-              localStorage.setItem(storageKey, JSON.stringify(updated))
-            } catch (error) {
-              console.error('Failed to save answer:', error)
-            }
-            return updated
-          })
-          return
-        }
-      }
-      
       const graded = gradeQuizAnswer(quiz, answerText, choiceOrder)
       if (graded) {
-        setOptimisticAnswersByQuizId(prev => {
-          const updated = { ...prev, [quizId]: graded }
-          // 즉시 localStorage에 저장
-          const storageKey = `exam_prep_answers_${selectedSessionId}`
-          try {
-            localStorage.setItem(storageKey, JSON.stringify(updated))
-          } catch (error) {
-            console.error('Failed to save answer:', error)
-          }
-          return updated
-        })
+        setOptimisticAnswersByQuizId(prev => ({ ...prev, [quizId]: graded }))
       }
     }
 
@@ -490,31 +475,27 @@ export function ExamPrepContainer() {
     }
 
     if (activeTab === 'quiz') {
-      // 복습 모드일 때는 오답만 필터링, 아니면 전체 사용
-      const baseQuizzes = isReviewMode 
-        ? allQuizzes.filter(q => q.user_answer && !q.user_answer.is_correct)
-        : allQuizzes
-      
-      const displayQuizzes = baseQuizzes.map(quiz => {
+      const displayQuizzes = quizzes.map(quiz => {
         const optimistic = optimisticAnswersByQuizId[quiz.quiz_id]
         return optimistic ? { ...quiz, user_answer: optimistic } : quiz
       })
-      const totalQuizCount = displayQuizzes.length
-      const currentQuiz = totalQuizCount > 0 ? displayQuizzes[currentQuizIndex] ?? null : null
+      const currentQuiz = displayQuizzes.length > 0 && currentQuizIndex >= 0 && currentQuizIndex < displayQuizzes.length
+        ? displayQuizzes[currentQuizIndex]
+        : null
       return (
         <ExamPrepQuizPanel
           sessions={sessions}
           selectedSessionId={selectedSessionId}
-          onSelectSession={handleOpenSessionView}
+          onSelectSession={handleSelectSession}
           onRenameSession={handleRenameSession}
           onDeleteSession={handleDeleteSession}
           onCreateSession={handleCreateSession}
           isCreating={isCreatingQuiz}
           quizzes={displayQuizzes}
-          isSessionViewOpen={isQuizSessionViewOpen}
+          isSessionViewOpen={isSessionViewOpen}
           currentIndex={currentQuizIndex}
+          totalCount={displayQuizzes.length}
           currentQuiz={currentQuiz}
-          totalCount={totalQuizCount}
           onCloseSessionView={handleCloseSessionView}
           onPrevQuiz={handlePrevQuiz}
           onNextQuiz={handleNextQuiz}
@@ -525,8 +506,8 @@ export function ExamPrepContainer() {
           onSubmitAnswer={handleSubmitAnswer}
           loadingMessage="KUI가 퀴즈를 만들고 있어요..."
           emptyText="퀴즈를 생성하거나 세션을 선택해주세요."
-          isReviewMode={isReviewMode}
           onStartReview={handleStartReview}
+          isReviewMode={onlyWrong}
         />
       )
     }
@@ -638,10 +619,10 @@ export function ExamPrepContainer() {
           aiTutor: t('tabs.aiTutor'),
         }}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         materials={materials}
         selectedMaterialId={selectedMaterialId}
-        onSelectMaterial={setSelectedMaterialId}
+        onSelectMaterial={handleSelectMaterial}
         isPdfAvailable={!!selectedMaterial?.signedUrl}
         pdfLoading={isPdfLoading}
         pdfLoadingContent={pdfLoadingContent}

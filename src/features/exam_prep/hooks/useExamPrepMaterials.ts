@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { examPrepService } from '../services/examPrepService'
 import type { ExamPrepMaterial } from '../types'
@@ -40,61 +40,28 @@ export function useExamPrepMaterials(courseId: string | null) {
     return `${MATERIALS_STORAGE_PREFIX}:${courseId}:${userId}`
   }, [courseId, userId])
 
-  useEffect(() => {
-    let isMounted = true
+  const fetchMaterials = useCallback(async () => {
+    if (!courseId) {
+      setMaterials([])
+      return
+    }
 
-    const fetchMaterials = async () => {
-      if (!courseId) {
-        setMaterials([])
-        return
+    const cached = cacheKey ? materialsCache.get(cacheKey) : null
+    if (cached?.items?.length) {
+      setMaterials(cached.items)
+    } else if (cacheKey) {
+      const localCached = readLocalJson<{ items: ExamPrepMaterial[]; updatedAt: number } | null>(cacheKey, null)
+      if (localCached?.items?.length) {
+        materialsCache.set(cacheKey, localCached)
+        setMaterials(localCached.items)
       }
+    }
 
-      const cached = cacheKey ? materialsCache.get(cacheKey) : null
-      if (cached?.items?.length) {
-        setMaterials(cached.items)
-      } else if (cacheKey) {
-        const localCached = readLocalJson<{ items: ExamPrepMaterial[]; updatedAt: number } | null>(cacheKey, null)
-        if (localCached?.items?.length) {
-          materialsCache.set(cacheKey, localCached)
-          setMaterials(localCached.items)
-        }
-      }
-
-      setIsLoading(!(materialsCache.get(cacheKey ?? '')?.items?.length))
-      setError(null)
-      const directResult = await examPrepService.getCourseMaterialsDirect(courseId)
-      if (!directResult.error && directResult.data) {
-        const mapped = directResult.data.materials.map(material => ({
-          id: material.material_id,
-          title: material.original_filename,
-          fileType: material.file_type,
-          signedUrl: material.signed_url,
-        }))
-
-        setMaterials(mapped)
-        if (cacheKey) {
-          const payload = { items: mapped, updatedAt: Date.now() }
-          materialsCache.set(cacheKey, payload)
-          writeLocalJson(cacheKey, payload)
-        }
-        setIsLoading(false)
-
-      }
-
-      const result = await examPrepService.getCourseMaterials(courseId)
-
-      if (!isMounted) return
-
-      if (result.error || !result.data) {
-        setError(result.error?.message ?? directResult.error?.message ?? '강의자료를 불러오지 못했습니다')
-        if (!materialsCache.get(cacheKey ?? '')?.items?.length) {
-          setMaterials([])
-        }
-        setIsLoading(false)
-        return
-      }
-
-      const mapped = result.data.materials.map(material => ({
+    setIsLoading(!(materialsCache.get(cacheKey ?? '')?.items?.length))
+    setError(null)
+    const directResult = await examPrepService.getCourseMaterialsDirect(courseId)
+    if (!directResult.error && directResult.data) {
+      const mapped = directResult.data.materials.map(material => ({
         id: material.material_id,
         title: material.original_filename,
         fileType: material.file_type,
@@ -108,19 +75,44 @@ export function useExamPrepMaterials(courseId: string | null) {
         writeLocalJson(cacheKey, payload)
       }
       setIsLoading(false)
+
     }
 
+    const result = await examPrepService.getCourseMaterials(courseId)
+
+    if (result.error || !result.data) {
+      setError(result.error?.message ?? directResult.error?.message ?? '강의자료를 불러오지 못했습니다')
+      if (!materialsCache.get(cacheKey ?? '')?.items?.length) {
+        setMaterials([])
+      }
+      setIsLoading(false)
+      return
+    }
+
+    const mapped = result.data.materials.map(material => ({
+      id: material.material_id,
+      title: material.original_filename,
+      fileType: material.file_type,
+      signedUrl: material.signed_url,
+    }))
+
+    setMaterials(mapped)
+    if (cacheKey) {
+      const payload = { items: mapped, updatedAt: Date.now() }
+      materialsCache.set(cacheKey, payload)
+      writeLocalJson(cacheKey, payload)
+    }
+    setIsLoading(false)
+  }, [courseId, cacheKey])
+
+  useEffect(() => {
     fetchMaterials()
-
-    return () => {
-      isMounted = false
-    }
-  }, [courseId])
+  }, [fetchMaterials])
 
   return {
     materials,
     isLoading,
     error,
+    refresh: fetchMaterials,
   }
 }
-

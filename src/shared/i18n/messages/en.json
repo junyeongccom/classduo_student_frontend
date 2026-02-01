@@ -249,6 +249,59 @@
     },
     "content": {
       "placeholder": "In progress"
+    },
+    "quiz": {
+      "create": {
+        "title": "Create Quiz",
+        "description": "Create a quiz set with your desired question types and difficulty levels",
+        "button": "Create",
+        "creating": "Creating"
+      },
+      "review": {
+        "title": "Review",
+        "description": "Review all the questions you got wrong so far",
+        "button": "Retry"
+      },
+      "myQuizzes": {
+        "title": "My Quizzes",
+        "sessionDate": "Date of each quiz session",
+        "empty": "No quiz sessions created yet.",
+        "preparing": "Preparing your quiz"
+      },
+      "sessionView": {
+        "backToList": "Back to List",
+        "submit": "Submit",
+        "correct": "Correct",
+        "incorrect": "Incorrect",
+        "answer": "Answer",
+        "explanation": "Explanation",
+        "prev": "Previous",
+        "next": "Next",
+        "viewResults": "View Results",
+        "resultTitle": "Quiz Results",
+        "resultDescription": "You have completed the quiz. Check your results below",
+        "resultScore": "Correct answers: {correctCount} / {totalQuizCount}",
+        "reviewAgain": "Review Again",
+        "answerPlaceholder": "Enter your answer",
+        "questionLabel": "Question {number}"
+      },
+      "sessionMenu": {
+        "rename": "Rename",
+        "delete": "Delete",
+        "renameModal": {
+          "title": "Rename",
+          "description": "Enter a new name for this quiz session.",
+          "placeholder": "e.g., First Review Quiz",
+          "cancel": "Cancel",
+          "confirm": "Confirm"
+        },
+        "deleteModal": {
+          "title": "Delete Quiz Session",
+          "description": "Are you sure you want to delete this quiz session?",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        }
+      }
     }
   },
   "aiTutorReference": {
