@@ -149,16 +149,32 @@ export function ExamPrepPdfViewer({
         } else if (typeof error === 'string') {
           message = error
         } else if (error && typeof error === 'object') {
-          message = JSON.stringify(error)
+          try {
+            message = JSON.stringify(error)
+          } catch {
+            message = String(error)
+          }
+        } else {
+          message = String(error)
         }
         setLoadError(`PDF를 불러오지 못했습니다. (${message})`)
-        console.error("PDF load failed:", {
+        const errorInfo: Record<string, unknown> = {
           url: url || 'undefined',
           errorMessage: message,
           errorType: error instanceof Error ? error.constructor.name : typeof error,
-          errorStack: error instanceof Error ? error.stack : undefined,
-          errorString: String(error),
-        })
+        }
+        if (error instanceof Error) {
+          errorInfo.errorStack = error.stack
+          errorInfo.errorName = error.name
+          errorInfo.errorMessage = error.message
+        }
+        errorInfo.errorString = String(error)
+        try {
+          errorInfo.errorJson = JSON.stringify(error, Object.getOwnPropertyNames(error))
+        } catch {
+          // JSON.stringify 실패 시 무시
+        }
+        console.error("PDF load failed:", errorInfo)
       } finally {
         if (isMounted) {
           setIsLoading(false)

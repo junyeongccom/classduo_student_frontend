@@ -185,6 +185,11 @@ export function ExamPrepContainer() {
     setOptimisticAnswersByQuizId({})
     setCurrentQuizIndex(0)
     setIsSessionViewOpen(false)
+    setOnlyWrong(false)
+    // 강의자료 변경 시 요약 탭으로 이동
+    if (selectedMaterialId) {
+      setActiveTab('summary')
+    }
   }, [selectedMaterialId])
 
   useEffect(() => {
@@ -201,16 +206,18 @@ export function ExamPrepContainer() {
   }, [pdfPageCount])
 
   useEffect(() => {
-    if (sessions.length > 0 && !selectedSessionId) {
+    // 강의자료가 선택되어 있고, 세션이 있고, 세션 뷰가 열려있지 않을 때만 첫 번째 세션 자동 선택
+    if (selectedMaterialId && sessions.length > 0 && !selectedSessionId && !isSessionViewOpen) {
       setSelectedSessionId(sessions[0]?.session_id ?? null)
     }
-  }, [sessions, selectedSessionId])
+  }, [sessions, selectedSessionId, selectedMaterialId, isSessionViewOpen])
   useEffect(() => {
     setOptimisticAnswersByQuizId({})
     setCurrentQuizIndex(0)
   }, [selectedSessionId, onlyWrong])
   
   // 세션 뷰 열림 상태 관리: selectedSessionId가 있고 quizzes가 있으면 열림
+  // 단, selectedMaterialId가 변경되면 세션 뷰를 닫음
   useEffect(() => {
     if (selectedSessionId && quizzes.length > 0) {
       setIsSessionViewOpen(true)
@@ -219,6 +226,13 @@ export function ExamPrepContainer() {
       setIsSessionViewOpen(false)
     }
   }, [selectedSessionId, quizzes.length])
+
+  // 퀴즈 탭으로 전환 시 메인 페이지로 이동 (세션 뷰 닫기)
+  useEffect(() => {
+    if (activeTab === 'quiz') {
+      setIsSessionViewOpen(false)
+    }
+  }, [activeTab])
 
   useEffect(() => {
     if (!isResizing) return
