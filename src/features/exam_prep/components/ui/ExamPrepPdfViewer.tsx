@@ -143,38 +143,65 @@ export function ExamPrepPdfViewer({
         setPdfDoc(null)
         setPageCount(0)
         onPageCountChange?.(0)
-        let message = '알 수 없는 오류'
-        if (error instanceof Error) {
-          message = error.message || error.name || '알 수 없는 오류'
-        } else if (typeof error === 'string') {
-          message = error
-        } else if (error && typeof error === 'object') {
-          try {
-            message = JSON.stringify(error)
-          } catch {
-            message = String(error)
+        const errObj = (error ?? null) as any
+        const errName = typeof errObj?.name === 'string' ? errObj.name : null
+        const errMessage = typeof errObj?.message === 'string' ? errObj.message : null
+        const errStatus =
+          typeof errObj?.status === 'number'
+            ? errObj.status
+            : typeof errObj?.status === 'string'
+              ? errObj.status
+              : typeof errObj?.response?.status === 'number'
+                ? errObj.response.status
+                : null
+
+        const derivedMessage = (() => {
+          if (error instanceof Error) return error.message || error.name || '알 수 없는 오류'
+          if (errMessage) return errName ? `${errName}: ${errMessage}` : errMessage
+          if (errName) return errName
+          if (typeof error === 'string') return error
+          if (error && typeof error === 'object') {
+            try {
+              // pdf.js 예외 객체는 own enumerable이 비어있는 경우가 있어, 가능한 속성을 넓게 직렬화 시도
+              return JSON.stringify(error, Object.getOwnPropertyNames(error))
+            } catch {
+              return String(error)
+            }
           }
-        } else {
-          message = String(error)
-        }
-        setLoadError(`PDF를 불러오지 못했습니다. (${message})`)
+          return String(error)
+        })()
+
+        const userFriendly = (() => {
+          if (errName === 'InvalidPDFException') return 'PDF 파일이 손상되었거나 지원되지 않는 형식입니다.'
+          if (errName === 'MissingPDFException') return 'PDF 파일을 찾을 수 없습니다.'
+          if (errName === 'PasswordException') return '비밀번호가 설정된 PDF는 현재 지원되지 않습니다.'
+          if (errName === 'UnexpectedResponseException' && errStatus) return `PDF 요청이 실패했습니다. (status: ${String(errStatus)})`
+          return `PDF를 불러오지 못했습니다. (${derivedMessage})`
+        })()
+
+        setLoadError(userFriendly)
+
         const errorInfo: Record<string, unknown> = {
           url: url || 'undefined',
-          errorMessage: message,
+          derivedMessage,
+          errName,
+          errMessage,
+          errStatus,
           errorType: error instanceof Error ? error.constructor.name : typeof error,
+          errorString: String(error),
         }
+
         if (error instanceof Error) {
           errorInfo.errorStack = error.stack
-          errorInfo.errorName = error.name
-          errorInfo.errorMessage = error.message
         }
-        errorInfo.errorString = String(error)
         try {
           errorInfo.errorJson = JSON.stringify(error, Object.getOwnPropertyNames(error))
         } catch {
-          // JSON.stringify 실패 시 무시
+          // ignore
         }
-        console.error("PDF load failed:", errorInfo)
+
+        // error 자체도 함께 넘겨 devtools에서 prototype/message 확인 가능하게 함
+        console.error('PDF load failed:', errorInfo, error)
       } finally {
         if (isMounted) {
           setIsLoading(false)

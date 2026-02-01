@@ -216,23 +216,13 @@ export function ExamPrepContainer() {
     setCurrentQuizIndex(0)
   }, [selectedSessionId, onlyWrong])
   
-  // 세션 뷰 열림 상태 관리: selectedSessionId가 있고 quizzes가 있으면 열림
-  // 단, selectedMaterialId가 변경되면 세션 뷰를 닫음
+  // selectedSessionId가 없으면 세션 뷰는 닫힌 상태로 유지한다.
+  // (세션 뷰를 여는 행위는 세션 클릭/세션 생성/다시 풀기 등 명시적 액션에서만 수행)
   useEffect(() => {
-    if (selectedSessionId && quizzes.length > 0) {
-      setIsSessionViewOpen(true)
-      setCurrentQuizIndex(0)
-    } else if (!selectedSessionId) {
+    if (!selectedSessionId) {
       setIsSessionViewOpen(false)
     }
-  }, [selectedSessionId, quizzes.length])
-
-  // 퀴즈 탭으로 전환 시 메인 페이지로 이동 (세션 뷰 닫기)
-  useEffect(() => {
-    if (activeTab === 'quiz') {
-      setIsSessionViewOpen(false)
-    }
-  }, [activeTab])
+  }, [selectedSessionId])
 
   useEffect(() => {
     if (!isResizing) return
@@ -314,7 +304,8 @@ export function ExamPrepContainer() {
       await refreshSessions()
       setSelectedSessionId(result.data.session_id)
       setCurrentQuizIndex(0)
-      // quizzes가 로드되면 useEffect에서 isSessionViewOpen이 true로 설정됨
+      setOnlyWrong(false)
+      setIsSessionViewOpen(true)
     }
   }
 
@@ -342,6 +333,7 @@ export function ExamPrepContainer() {
   const handleSelectSession = (sessionId: string) => {
     setSelectedSessionId(sessionId)
     setCurrentQuizIndex(0)
+    setOnlyWrong(false)
     setIsSessionViewOpen(true)
   }
 
@@ -374,7 +366,23 @@ export function ExamPrepContainer() {
     // 세션 선택 및 뷰 열기
     setSelectedSessionId(targetSessionId)
     setCurrentQuizIndex(0)
-    // quizzes가 로드되면 useEffect에서 isSessionViewOpen이 true로 설정됨
+    setIsSessionViewOpen(true)
+  }
+
+  const handleSelectMaterial = (materialId: string | null) => {
+    // 강의자료 변경 시 항상 요약 탭부터 노출
+    setActiveTab('summary')
+    setSelectedMaterialId(materialId)
+  }
+
+  const handleTabChange = (nextTab: ExamPrepTab) => {
+    setActiveTab(nextTab)
+    // 어떤 탭에서든 quiz 탭 클릭 시 항상 퀴즈 메인(세션 뷰 닫힘)으로 이동
+    if (nextTab === 'quiz') {
+      setIsSessionViewOpen(false)
+      setOnlyWrong(false)
+      setCurrentQuizIndex(0)
+    }
   }
 
   const handleSubmitAnswer = async (quizId: string, answerText: string | null, choiceOrder: number | null) => {
@@ -611,10 +619,10 @@ export function ExamPrepContainer() {
           aiTutor: t('tabs.aiTutor'),
         }}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         materials={materials}
         selectedMaterialId={selectedMaterialId}
-        onSelectMaterial={setSelectedMaterialId}
+        onSelectMaterial={handleSelectMaterial}
         isPdfAvailable={!!selectedMaterial?.signedUrl}
         pdfLoading={isPdfLoading}
         pdfLoadingContent={pdfLoadingContent}
