@@ -192,6 +192,12 @@ export const chatService = {
             try {
               const data = JSON.parse(line.slice(6))
               
+              if (data.type === 'error') {
+                const message = data.message || '답변 생성 중 오류가 발생했습니다.'
+                onError(new Error(message))
+                await reader.cancel()
+                return
+              }
               if (data.type === 'result') {
                 onComplete(data.data)
               } else {

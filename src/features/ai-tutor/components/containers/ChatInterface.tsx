@@ -672,6 +672,30 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }, [typingProgress, messages, typingComplete])
 
+  const appendErrorMessage = useCallback((errorMessage: string, retryQuestion?: string) => {
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: errorMessage,
+      isError: true,
+      retryQuestion: retryQuestion,
+    }
+    setMessages(prev => {
+      const updated = [...prev, assistantMessage]
+      const messageIndex = updated.length - 1
+      setTypingProgress(prevMap => {
+        const newMap = new Map(prevMap)
+        newMap.set(messageIndex, 0)
+        return newMap
+      })
+      setTypingComplete(prevMap => {
+        const newMap = new Map(prevMap)
+        newMap.set(messageIndex, false)
+        return newMap
+      })
+      return updated
+    })
+  }, [])
+
   // 메시지 전송 (SSE 스트리밍)
   const sendMessage = useCallback(async (
     question: string,
@@ -807,7 +831,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             }
           }
           
-          setMessages(prev => prev.slice(0, -1))
+          // 에러 메시지에 원본 질문 포함 (재시도용)
+          appendErrorMessage(errorMessage, question)
           setLoadingStatusItems([])
           setIsLoading(false)
         },
@@ -833,11 +858,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         }
       }
       
-      setMessages(prev => prev.slice(0, -1))
+      // 에러 메시지에 원본 질문 포함 (재시도용)
+      appendErrorMessage(errorMessage, question)
       setLoadingStatusItems([])
       setIsLoading(false)
     }
-  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate, chatMode])
+  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate, chatMode, appendErrorMessage])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -847,6 +873,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setInput('')
     await sendMessage(question)
   }
+
+  // 에러 발생 시 재시도 핸들러
+  const handleRetry = useCallback((retryQuestion: string, errorMessageIndex: number) => {
+    // 에러 메시지와 그 전의 사용자 메시지 제거
+    setMessages(prev => {
+      // 에러 메시지 바로 앞의 사용자 메시지도 함께 제거 (재시도 시 다시 추가됨)
+      const newMessages = prev.filter((_, idx) => idx !== errorMessageIndex && idx !== errorMessageIndex - 1)
+      return newMessages
+    })
+    // 재시도
+    sendMessage(retryQuestion)
+  }, [sendMessage])
 
   const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
@@ -1262,11 +1300,47 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               const typingLength = typingProgress.get(index) ?? message.content.length
               const isTypingComplete = typingComplete.get(index) ?? true
               const displayedText = message.content.slice(0, typingLength)
-              const assistantMessage = message as ChatMessage & { follow_up_question?: string | null }
+              const assistantMessage = message as ChatMessage & { follow_up_question?: string | null; isError?: boolean; retryQuestion?: string }
               const followUpQuestion = assistantMessage.follow_up_question
+              const isErrorMessage = assistantMessage.isError
+              const retryQuestion = assistantMessage.retryQuestion
               // 가장 마지막 assistant 메시지인지 확인
               const lastAssistantIndex = messages.map((m, i) => m.role === 'assistant' ? i : -1).filter(i => i >= 0).pop()
               const isLastAssistantMessage = index === lastAssistantIndex
+              
+              // 에러 메시지인 경우 별도 UI 표시
+              if (isErrorMessage) {
+                return (
+                  <div key={index} className="flex justify-start">
+                    <div className="w-full max-w-none">
+                      <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-0.5">
+                            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                              <span className="text-red-500 text-lg">⚠️</span>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm text-red-700 font-medium">{message.content}</p>
+                            {retryQuestion && (
+                              <button
+                                onClick={() => handleRetry(retryQuestion, index)}
+                                disabled={isLoading}
+                                className="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 shadow-sm transition-all duration-200 hover:bg-red-50 hover:border-red-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>{t('retryButton')}</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
               
               return (
                 <div key={index} className="flex justify-start">
