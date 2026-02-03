@@ -28,6 +28,7 @@
     "referenceHint": "Check recording and material sources to better understand the answer",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",
+    "retryButton": "Retry",
     "authExpired": "Authentication has expired. Please refresh the page.",
     "sessionCreateFailed": "Failed to create session",
     "sessionCreateError": "Failed to create session. Please try again.",

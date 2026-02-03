@@ -24,6 +24,8 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   summary_keywords?: string | null
+  isError?: boolean  // 에러 메시지 여부
+  retryQuestion?: string  // 재시도할 원본 질문
 }
 
 interface GameTriggerPosition {
