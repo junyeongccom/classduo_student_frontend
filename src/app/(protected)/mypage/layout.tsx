@@ -25,7 +25,7 @@ function MyPageLayoutShell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <div className="flex flex-1 overflow-hidden pt-14">
+          <div className="flex flex-1 overflow-hidden pt-14 pl-[88px]">
             <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white">
               <div className="flex h-full flex-col">{children}</div>
             </main>
