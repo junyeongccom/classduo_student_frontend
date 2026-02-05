@@ -421,7 +421,16 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               }
             })
             
+            // 현재 에러 메시지가 있는지 확인 (에러 메시지는 DB에 저장되지 않으므로 유지해야 함)
+            const currentErrorMessages = messages.filter(m => (m as any).isError)
+            
             // 메시지가 추가되었거나 변경되었으면 업데이트
+            // 단, 에러 메시지가 있으면 리로드하지 않음 (사용자가 재시도하거나 새 질문을 입력할 때까지 유지)
+            if (currentErrorMessages.length > 0) {
+              // 에러 메시지가 있으면 리로드 건너뛰기
+              return
+            }
+            
             if (loadedMessages.length !== messages.length || 
                 JSON.stringify(loadedMessages) !== JSON.stringify(messages)) {
               setMessages(loadedMessages)
