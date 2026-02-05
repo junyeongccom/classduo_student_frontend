@@ -477,13 +477,13 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                   >
                     <div className="flex w-full items-start gap-2">
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs ${isSelected ? 'text-blue-600' : 'text-gray-500'}`}>
-                          {lecture.lecture_date}
-                        </p>
-                        <p className={`text-sm font-medium mt-0.5 ${
+                        <p className={`text-sm font-medium ${
                           isSelected ? 'text-blue-900' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
                         }`}>
-                        {isAnalyzing ? '준비중' : lecture.essence_7words}
+                          {isAnalyzing ? '준비중' : (lecture.title || `${lecture.lecture_no}회차`)}
+                        </p>
+                        <p className={`text-xs mt-0.5 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`}>
+                          {`${lecture.lecture_no}회차`} · {lecture.lecture_date}
                         </p>
                       </div>
                       {isSelected && !isAnalyzing && (

@@ -94,3 +94,6 @@ dist/
 # Temporary folders
 tmp/
 temp/
+
+# AI Assistant
+CLAUDE.md

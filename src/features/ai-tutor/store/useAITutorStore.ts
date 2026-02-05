@@ -13,7 +13,9 @@ export interface AITutorCourse {
     lecture_id: string
     course_id: string
     lecture_no: number
+    title: string | null  // 회차 제목 (NULL이면 "{lecture_no}회차"로 표시)
     lecture_date: string
+    start_time: string | null
     status: string
     is_available?: boolean
   }>
