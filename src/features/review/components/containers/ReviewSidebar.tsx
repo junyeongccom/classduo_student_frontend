@@ -5,10 +5,17 @@
  */
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { ChevronDown, BookOpen, Calendar } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useLectureList } from '@/features/review/hooks/useReview'
+import { type LectureListItem } from '@/features/review/services/reviewService'
+import {
+  calculateWeekAndSession,
+  estimateTermStartDate,
+  formatWeekAndSession,
+  type LectureInfo,
+} from '@/features/ai-tutor'
 import { useReviewCourses } from '@/features/review/hooks/useReviewCourses'
 import { useGameStatus } from '@/features/review/hooks/useGameStatus'
 import { ReviewLoading } from '@/features/review'
@@ -75,6 +82,37 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   const treasureRefs = useRef<{ [lectureId: string]: HTMLImageElement | null }>({}) // 보물상자 위치 참조
 
   const { data: lectureList, isLoading: isLoadingLectures } = useLectureList(selectedCourseId)
+
+  // 학기 시작일 추정
+  const termStartDate = useMemo(() => {
+    if (!lectureList || lectureList.lectures.length === 0) return null
+    const lectureInfos: LectureInfo[] = lectureList.lectures.map(l => ({
+      lecture_id: l.lecture_id,
+      lecture_date: l.lecture_date,
+      start_time: l.start_time,
+    }))
+    return estimateTermStartDate(lectureInfos)
+  }, [lectureList])
+
+  // 주차-차시 계산 함수
+  const getWeekSession = useMemo(() => {
+    if (!lectureList || !termStartDate) return () => null
+    const lectureInfos: LectureInfo[] = lectureList.lectures.map(l => ({
+      lecture_id: l.lecture_id,
+      lecture_date: l.lecture_date,
+      start_time: l.start_time,
+    }))
+    return (lecture: LectureListItem) => {
+      const result = calculateWeekAndSession(
+        lecture.lecture_date,
+        lecture.start_time,
+        termStartDate,
+        lectureInfos,
+        lecture.lecture_id
+      )
+      return formatWeekAndSession(result.weekNo, result.sessionNo)
+    }
+  }, [lectureList, termStartDate])
 
   useEffect(() => {
     if (!isSharedHydrated) return
@@ -480,10 +518,10 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                         <p className={`text-sm font-medium ${
                           isSelected ? 'text-blue-900' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
                         }`}>
-                          {isAnalyzing ? '준비중' : (lecture.title || `${lecture.lecture_no}회차`)}
+                          {isAnalyzing ? '준비중' : (lecture.title || getWeekSession(lecture) || `${lecture.lecture_no}회차`)}
                         </p>
                         <p className={`text-xs mt-0.5 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`}>
-                          {`${lecture.lecture_no}회차`} · {lecture.lecture_date}
+                          {getWeekSession(lecture) || `${lecture.lecture_no}회차`} · {lecture.lecture_date}
                         </p>
                       </div>
                       {isSelected && !isAnalyzing && (

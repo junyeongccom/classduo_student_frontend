@@ -5,9 +5,15 @@
  */
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo } from 'react'
 import { ChevronDown, Loader2, BookOpen, Calendar, Gamepad2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import {
+  calculateWeekAndSession,
+  estimateTermStartDate,
+  formatWeekAndSession,
+  type LectureInfo,
+} from '../../domain/lectureUtils'
 
 // 타입 정의
 export interface Lecture {
@@ -116,6 +122,37 @@ export function LectureSidebarUI({
   const lectureButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [showFlameTooltip, setShowFlameTooltip] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number; arrowLeft: number } | null>(null)
+
+  // 선택된 코스의 학기 시작일 추정
+  const termStartDate = useMemo(() => {
+    if (!selectedCourse || selectedCourse.lectures.length === 0) return null
+    const lectureInfos: LectureInfo[] = selectedCourse.lectures.map(l => ({
+      lecture_id: l.lecture_id,
+      lecture_date: l.lecture_date,
+      start_time: l.start_time,
+    }))
+    return estimateTermStartDate(lectureInfos)
+  }, [selectedCourse])
+
+  // 주차-차시 계산 함수
+  const getWeekSession = useMemo(() => {
+    if (!selectedCourse || !termStartDate) return () => null
+    const lectureInfos: LectureInfo[] = selectedCourse.lectures.map(l => ({
+      lecture_id: l.lecture_id,
+      lecture_date: l.lecture_date,
+      start_time: l.start_time,
+    }))
+    return (lecture: Lecture) => {
+      const result = calculateWeekAndSession(
+        lecture.lecture_date,
+        lecture.start_time,
+        termStartDate,
+        lectureInfos,
+        lecture.lecture_id
+      )
+      return formatWeekAndSession(result.weekNo, result.sessionNo)
+    }
+  }, [selectedCourse, termStartDate])
 
   // 선택된 회차로 스크롤
   useEffect(() => {
@@ -327,10 +364,10 @@ export function LectureSidebarUI({
                           isSelected ? 'text-blue-900' : isDisabled ? 'text-gray-400' : 'text-gray-800'
                         }`}
                       >
-                        {lecture.title || t('lectureLabel', { no: String(lecture.lecture_no) })}
+                        {lecture.title || getWeekSession(lecture) || t('lectureLabel', { no: String(lecture.lecture_no) })}
                       </p>
                       <p className={`text-xs ${isSelected ? 'text-blue-600' : 'text-gray-400'}`}>
-                        {t('lectureLabel', { no: String(lecture.lecture_no) })} · {lecture.lecture_date}
+                        {getWeekSession(lecture) || t('lectureLabel', { no: String(lecture.lecture_no) })} · {lecture.lecture_date}
                       </p>
                     </div>
                     {isSelected && (
