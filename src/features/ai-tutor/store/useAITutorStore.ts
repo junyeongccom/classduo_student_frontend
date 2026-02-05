@@ -18,6 +18,7 @@ export interface AITutorCourse {
     start_time: string | null
     status: string
     is_available?: boolean
+    essence_7words?: string | null  // 강의 본질 7단어 요약
   }>
 }
 

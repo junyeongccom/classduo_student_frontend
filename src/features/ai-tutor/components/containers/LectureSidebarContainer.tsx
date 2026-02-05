@@ -178,6 +178,7 @@ export function LectureSidebarContainer({
             start_time: lec.start_time ?? null,
             status: lec.status,
             is_available: lec.is_available ?? false,
+            essence_7words: lec.essence_7words ?? null,
           })),
         }))
 
