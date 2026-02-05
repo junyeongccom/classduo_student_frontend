@@ -21,7 +21,10 @@ import type {
 // API 응답 타입
 export interface LectureListItem {
   lecture_id: string
+  lecture_no: number
+  title: string | null  // 회차 제목 (NULL이면 "{lecture_no}회차"로 표시)
   lecture_date: string
+  start_time: string | null
   essence_7words: string | null
 }
 

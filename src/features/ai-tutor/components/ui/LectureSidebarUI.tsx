@@ -14,7 +14,9 @@ export interface Lecture {
   lecture_id: string
   course_id: string
   lecture_no: number
+  title: string | null  // 회차 제목 (NULL이면 "{lecture_no}회차"로 표시)
   lecture_date: string
+  start_time: string | null
   status: string
   is_available?: boolean
 }
@@ -325,10 +327,10 @@ export function LectureSidebarUI({
                           isSelected ? 'text-blue-900' : isDisabled ? 'text-gray-400' : 'text-gray-800'
                         }`}
                       >
-                        {t('lectureLabel', { no: String(lecture.lecture_no) })}
+                        {lecture.title || t('lectureLabel', { no: String(lecture.lecture_no) })}
                       </p>
                       <p className={`text-xs ${isSelected ? 'text-blue-600' : 'text-gray-400'}`}>
-                        {lecture.lecture_date}
+                        {t('lectureLabel', { no: String(lecture.lecture_no) })} · {lecture.lecture_date}
                       </p>
                     </div>
                     {isSelected && (
