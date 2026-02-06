@@ -8,12 +8,27 @@ import { useTranslations } from 'next-intl'
 import { Button, Input } from '@/shared/components/ui'
 import { useSignup } from '../hooks/useSignup'
 import { useAuthStore } from '../store/authStore'
+import { VerificationCodeInput } from './ui/VerificationCodeInput'
 import { Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react'
 
 export function SignupForm() {
   const t = useTranslations('auth.signup')
   const tv = useTranslations('auth.validation')
-  const { handleSignup, handleResendVerification, goToLogin, isLoading, signupSuccess, registeredEmail } = useSignup()
+  const {
+    handleSendSignupCode,
+    handleVerifySignupCode,
+    handleVerificationCodeChange,
+    handleResendCode,
+    handleResendVerification,
+    goToLogin,
+    goToHome,
+    isLoading,
+    step,
+    maskedEmail,
+    expiresIn,
+    verificationCode,
+    registeredEmail,
+  } = useSignup()
   const { error, clearError } = useAuthStore()
 
   const signupSchema = z.object({
@@ -54,51 +69,114 @@ export function SignupForm() {
 
   const onSubmit = async (data: SignupFormData) => {
     clearError()
-    await handleSignup(data)
+    await handleSendSignupCode(data)
   }
 
-  // 회원가입 성공 시 이메일 인증 안내
-  if (signupSuccess && registeredEmail) {
+  const formatExpiresIn = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    return `${minutes}분`
+  }
+
+  const isCodeComplete = verificationCode.every(digit => digit !== '')
+
+  // Step 3: Success - show completion message
+  if (step === 'success') {
     return (
       <div className="w-full max-w-md text-center">
         <div className="mb-6 flex justify-center">
-          <div className="rounded-full bg-gray-100 p-4">
-            <CheckCircle className="h-12 w-12 text-gray-900" />
+          <div className="rounded-full bg-green-100 p-4">
+            <CheckCircle className="h-12 w-12 text-green-600" />
           </div>
         </div>
-        
-        <h2 className="mb-2 text-xl font-bold text-gray-900">{t('emailVerificationTitle')}</h2>
+
+        <h2 className="mb-2 text-xl font-bold text-gray-900">{t('signupCompleteTitle')}</h2>
         <p className="mb-6 text-sm text-gray-500">
-          <span className="font-medium text-gray-700">{registeredEmail}</span>으로<br />
-          {t('emailVerificationSent')}
+          {t('signupCompleteMessage')}
         </p>
 
-        <div className="space-y-3">
-          <Button
-            onClick={() => handleResendVerification(registeredEmail)}
-            variant="outline"
-            className="w-full"
-            isLoading={isLoading}
-          >
-            {t('resendVerification')}
-          </Button>
-          
-          <Button
-            onClick={goToLogin}
-            variant="secondary"
-            className="w-full"
-          >
-            {t('goToLogin')}
-          </Button>
-        </div>
-
-        <p className="mt-6 text-xs text-gray-400">
-          {t('checkSpam')}
-        </p>
+        <Button
+          onClick={goToHome}
+          className="w-full"
+          size="lg"
+        >
+          {t('goToHomeButton')}
+        </Button>
       </div>
     )
   }
 
+  // Step 2: Verification code input
+  if (step === 'verification') {
+    return (
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold text-gray-900">CLASSDUO</h1>
+          <p className="mt-2 text-sm text-gray-500">{t('verificationTitle')}</p>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 p-4 text-sm text-red-600">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <span>{error.message}</span>
+          </div>
+        )}
+
+        <div className="space-y-6">
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm text-center">
+            <strong>{maskedEmail}</strong>{t('codeSentToEmail')}
+            <br />
+            <span className="text-blue-600">{t('codeValidFor')}: {formatExpiresIn(expiresIn)}</span>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-3 text-center">
+              {t('enterCodeLabel')}
+            </label>
+            <VerificationCodeInput
+              value={verificationCode}
+              onChange={handleVerificationCodeChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              onClick={handleVerifySignupCode}
+              className="w-full"
+              size="lg"
+              isLoading={isLoading}
+              disabled={!isCodeComplete}
+            >
+              {t('verifyCodeButton')}
+            </Button>
+
+            <Button
+              onClick={handleResendCode}
+              variant="outline"
+              className="w-full"
+              isLoading={isLoading}
+            >
+              {t('resendCodeButton')}
+            </Button>
+          </div>
+
+          <p className="text-center text-xs text-gray-400">
+            {t('checkSpam')}
+          </p>
+        </div>
+
+        <div className="mt-6 text-center text-sm text-gray-500">
+          <span>{t('hasAccount')}</span>
+          <Link href="/login" className="font-medium text-gray-900 hover:underline">
+            {t('loginLink')}
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Step 1: Form - email, name, password
   return (
     <div className="w-full max-w-md">
       {/* 로고 */}

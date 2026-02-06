@@ -1,13 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import { useAuth } from '@/features/auth'
 import { useTranslations } from 'next-intl'
 import { UserProfileActions } from '../../components/ui/UserProfileActions'
 import { UserProfileCard } from '../../components/ui/UserProfileCard'
+import { PasswordChangeModalContainer } from './PasswordChangeModalContainer'
 
 export function MyPageContainer() {
   const t = useTranslations('profile')
   const { user, logout } = useAuth()
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
 
   if (!user) {
     return (
@@ -24,9 +27,18 @@ export function MyPageContainer() {
 
         <div className="max-w-md space-y-6">
           <UserProfileCard user={user} />
-          <UserProfileActions onLogout={logout} />
+          <UserProfileActions
+            onLogout={logout}
+            onChangePassword={() => setIsPasswordModalOpen(true)}
+          />
         </div>
       </div>
+
+      <PasswordChangeModalContainer
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        onLogout={logout}
+      />
     </div>
   )
 }
