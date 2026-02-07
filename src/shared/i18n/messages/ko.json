@@ -226,6 +226,16 @@
   "examPrep": {
     "title": "시험 준비",
     "subtitle": "강의자료 기반으로 요약·퀴즈·암기를 준비하는 공간입니다.",
+    "summary": {
+      "title": "요약",
+      "empty": "요약 데이터가 없습니다.",
+      "loading": "KUI가 요약을 정리하고 있어요...",
+      "sourceButton": "출처",
+      "sourceTooltip": "슬라이드 페이지 {pages}",
+      "sourceEmptyTooltip": "출처 정보가 없습니다",
+      "recentIssuesTitle": "최근 쟁점",
+      "examPointsTitle": "요점 정리(시험 대비)"
+    },
     "materials": {
       "title": "강의자료 선택",
       "description": "강의자료를 드래그해 선택하면 좌측에 원본 PDF가 표시됩니다.",
@@ -353,6 +363,37 @@
       "editProfile": "프로필 수정",
       "changePassword": "비밀번호 변경",
       "logout": "로그아웃"
+    },
+    "passwordChange": {
+      "title": "비밀번호 변경",
+      "verificationTitle": "인증 코드 입력",
+      "newPasswordTitle": "새 비밀번호 설정",
+      "successTitle": "변경 완료",
+      "description": "비밀번호를 변경하려면 아래 버튼을 클릭하세요.",
+      "formDescription": "비밀번호 변경을 위해 현재 비밀번호를 입력해주세요. 확인 후 등록된 이메일로 인증 코드가 전송됩니다.",
+      "currentPasswordLabel": "현재 비밀번호",
+      "currentPasswordPlaceholder": "현재 비밀번호를 입력하세요",
+      "newPasswordLabel": "새 비밀번호",
+      "newPasswordPlaceholder": "새 비밀번호를 입력하세요",
+      "confirmPasswordLabel": "새 비밀번호 확인",
+      "confirmPasswordPlaceholder": "새 비밀번호를 다시 입력하세요",
+      "passwordRequirements": "영문 대문자, 소문자, 숫자, 특수문자 중 3가지 이상 포함 (8-128자)",
+      "enterCodeLabel": "인증 코드 6자리를 입력하세요",
+      "codeSentTo": "로 인증 코드가 전송되었습니다.",
+      "validFor": "유효 시간",
+      "minutesUnit": "분",
+      "verifiedMessage": "인증이 완료되었습니다. 새 비밀번호를 설정해주세요.",
+      "successMessage": "비밀번호가 변경되었습니다",
+      "successDescription": "새 비밀번호로 다시 로그인해주세요.",
+      "startButton": "비밀번호 변경 시작",
+      "sendCodeButton": "인증 코드 전송",
+      "sendingCode": "전송 중...",
+      "nextButton": "다음",
+      "verifyingCode": "확인 중...",
+      "changePasswordButton": "비밀번호 변경",
+      "changingPassword": "변경 중...",
+      "cancelButton": "취소",
+      "confirmButton": "확인"
     }
   },
   "loadingMessages": {
@@ -427,7 +468,16 @@
       "resendVerification": "인증 메일 재전송",
       "goToLogin": "로그인 페이지로 이동",
       "goToLoginModal": "로그인하기",
-      "checkSpam": "메일이 도착하지 않았다면 스팸함을 확인해주세요."
+      "checkSpam": "메일이 도착하지 않았다면 스팸함을 확인해주세요.",
+      "verificationTitle": "이메일 인증",
+      "codeSentToEmail": "로 인증 코드가 전송되었습니다.",
+      "codeValidFor": "유효 시간",
+      "enterCodeLabel": "인증 코드 6자리를 입력하세요",
+      "verifyCodeButton": "인증 확인",
+      "resendCodeButton": "인증 코드 재전송",
+      "signupCompleteTitle": "회원가입이 완료되었습니다!",
+      "signupCompleteMessage": "CLASSDUO에 오신 것을 환영합니다. 이제 모든 기능을 사용하실 수 있습니다.",
+      "goToHomeButton": "시작하기"
     },
     "signupModal": {
       "title": "회원가입",

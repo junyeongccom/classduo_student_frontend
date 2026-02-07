@@ -18,29 +18,6 @@ const normalizeStoragePath = (path?: string | null) => {
   return normalized
 }
 
-const sanitizeFilename = (filename: string) => {
-  if (!filename) return 'unnamed.pdf'
-  if (filename.includes('.')) {
-    const lastIndex = filename.lastIndexOf('.')
-    const base = filename.slice(0, lastIndex)
-    const ext = filename.slice(lastIndex + 1)
-    let safeBase = base.replace(/[^A-Za-z0-9._-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '')
-    if (!safeBase) safeBase = 'unnamed'
-    const safeExt = ext.replace(/[^A-Za-z0-9]/g, '')
-    return safeExt ? `${safeBase}.${safeExt}` : safeBase
-  }
-  const safeName = filename.replace(/[^A-Za-z0-9._-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '')
-  return safeName || 'unnamed'
-}
-
-const buildOriginalPdfFilename = (originalFilename: string, fileType: string) => {
-  if (fileType === 'pdf') {
-    return sanitizeFilename(originalFilename)
-  }
-  const baseName = originalFilename.includes('.') ? originalFilename.slice(0, originalFilename.lastIndexOf('.')) : originalFilename
-  return sanitizeFilename(`${baseName}.pdf`)
-}
-
 const buildSignedUrlForMaterial = async (
   material: {
     material_id: string
@@ -57,21 +34,14 @@ const buildSignedUrlForMaterial = async (
     return null
   }
 
-  const fileType = (material.file_type ?? '').toLowerCase()
-  const originalFilename = material.original_filename || 'unnamed.pdf'
   const candidates: Array<{ bucket: string; path: string }> = []
 
   const normalizedPath = normalizeStoragePath(material.original_pdf_path)
   if (normalizedPath) {
-    candidates.push({ bucket: 'materials_pdf_originals', path: normalizedPath })
+    candidates.push({ bucket: 'materials', path: normalizedPath })
   }
-
-  const filename = buildOriginalPdfFilename(originalFilename, fileType)
-  if (filename) {
-    candidates.push({ bucket: 'materials_pdf_originals', path: `raw/${materialId}/${filename}` })
-  }
-
   candidates.push({ bucket: 'materials', path: `raw/${materialId}/source.pdf` })
+  // legacy 경로 fallback
   candidates.push({ bucket: 'materials', path: `source/${materialId}/source.pdf` })
 
   const supabase = getSupabaseClient()
@@ -120,6 +90,7 @@ export interface ExamPrepSummaryResponse {
     sections: Array<{
       title: string
       bullets: string[]
+      source_pages?: number[]
       tables?: Array<{
         title?: string | null
         headers: string[]

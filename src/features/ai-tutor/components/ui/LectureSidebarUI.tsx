@@ -25,6 +25,7 @@ export interface Lecture {
   start_time: string | null
   status: string
   is_available?: boolean
+  essence_7words?: string | null  // 강의 본질 7단어 요약
 }
 
 export interface Course {
@@ -364,7 +365,7 @@ export function LectureSidebarUI({
                           isSelected ? 'text-blue-900' : isDisabled ? 'text-gray-400' : 'text-gray-800'
                         }`}
                       >
-                        {lecture.title || getWeekSession(lecture) || t('lectureLabel', { no: String(lecture.lecture_no) })}
+                        {lecture.title || lecture.essence_7words || getWeekSession(lecture) || t('lectureLabel', { no: String(lecture.lecture_no) })}
                       </p>
                       <p className={`text-xs ${isSelected ? 'text-blue-600' : 'text-gray-400'}`}>
                         {getWeekSession(lecture) || t('lectureLabel', { no: String(lecture.lecture_no) })} · {lecture.lecture_date}

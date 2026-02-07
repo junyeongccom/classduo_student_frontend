@@ -513,8 +513,20 @@ export function ExamPrepContainer() {
         <ExamPrepSummaryPanel
           summary={summary}
           isLoading={summaryLoading}
-          emptyText="요약 데이터가 없습니다."
-          loadingMessage="KUI가 요약을 정리하고 있어요..."
+          emptyText={t('summary.empty')}
+          loadingMessage={t('summary.loading')}
+          summaryTitle={t('summary.title')}
+          recentIssuesTitle={t('summary.recentIssuesTitle')}
+          examPointsTitle={t('summary.examPointsTitle')}
+          sourceButtonLabel={t('summary.sourceButton')}
+          formatSourceTooltip={pages => t('summary.sourceTooltip', { pages: pages.join(', ') })}
+          sourceEmptyTooltip={t('summary.sourceEmptyTooltip')}
+          onJumpToSlide={pageNumber => {
+            setSelectedPdfPage(pageNumber)
+            if (noteMode === 'page') {
+              setSelectedNotePage(pageNumber)
+            }
+          }}
         />
       )
     }

@@ -13,6 +13,10 @@ import {
   UpdateProfileResponse,
   DeleteAccountRequest,
   DeleteAccountResponse,
+  SendSignupCodeRequest,
+  SendSignupCodeResponse,
+  VerifySignupCodeRequest,
+  VerifySignupCodeResponse,
 } from '../types'
 
 /**
@@ -101,6 +105,24 @@ export const authService = {
     apiRequest<AuthTokenResponse>(API_ENDPOINTS.AUTH.REFRESH, {
       method: 'POST',
       body: { refresh_token: refreshToken },
+    }),
+
+  /**
+   * 회원가입 인증 코드 전송
+   */
+  sendSignupCode: (data: SendSignupCodeRequest) =>
+    apiRequest<SendSignupCodeResponse>(API_ENDPOINTS.AUTH.SIGNUP_SEND_CODE, {
+      method: 'POST',
+      body: data,
+    }),
+
+  /**
+   * 회원가입 인증 코드 검증 및 계정 생성
+   */
+  verifySignupCode: (data: VerifySignupCodeRequest) =>
+    apiRequest<VerifySignupCodeResponse>(API_ENDPOINTS.AUTH.SIGNUP_VERIFY_CODE, {
+      method: 'POST',
+      body: data,
     }),
 }
 

@@ -24,6 +24,7 @@ export interface ExamPrepSummaryTable {
 export interface ExamPrepSummarySection {
   title: string
   bullets: string[]
+  source_pages?: number[]
   tables?: ExamPrepSummaryTable[]
 }
 

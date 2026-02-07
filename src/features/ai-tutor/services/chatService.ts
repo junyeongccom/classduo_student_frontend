@@ -222,12 +222,13 @@ export const chatService = {
     hooking: {
       question: string
       answer: string
+      follow_up_question?: string | null
       reference_data?: Reference[] | null
       summary_keywords?: string | null
       hooking_question_id?: string  // 원본 후킹질문 ID (source_question_id로 저장됨)
     }
-  ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {
-    return apiRequest<{ success: boolean; message: string }>(
+  ): Promise<{ data: { success: boolean; message: string; follow_up_question?: string | null } | null; error: any }> {
+    return apiRequest<{ success: boolean; message: string; follow_up_question?: string | null }>(
       `/ai-tutor/sessions/${sessionId}/hooking`,
       {
         method: 'POST',
@@ -245,12 +246,13 @@ export const chatService = {
     pqm: {
       question: string
       answer: string
+      follow_up_question?: string | null
       reference_data?: Reference[] | null
       summary_keywords?: string | null
       pqm_question_id?: string  // 원본 PQM 질문 ID (source_question_id로 저장됨)
     }
-  ): Promise<{ data: { success: boolean; message: string } | null; error: any }> {
-    return apiRequest<{ success: boolean; message: string }>(
+  ): Promise<{ data: { success: boolean; message: string; follow_up_question?: string | null } | null; error: any }> {
+    return apiRequest<{ success: boolean; message: string; follow_up_question?: string | null }>(
       `/ai-tutor/sessions/${sessionId}/pqm`,
       {
         method: 'POST',

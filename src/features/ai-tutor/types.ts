@@ -2,6 +2,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   summary_keywords?: string | null
+  follow_up_question?: string | null
   isError?: boolean  // 에러 메시지 여부
   retryQuestion?: string  // 재시도할 원본 질문
 }
@@ -62,6 +63,7 @@ export interface HookingResponse {
   topic: string
   question: string
   answer: string
+  follow_up_question?: string | null
   reference_data?: Reference[] | null  // 참고자료 (선택적)
   summary_keywords?: string | null  // 핵심 키워드 (한국어, 선택적)
   summary_keywords_eng?: string | null  // 핵심 키워드 (영어, 선택적)
@@ -71,6 +73,7 @@ export interface PQMQuestion {
   id: string
   question: string
   answer: string
+  follow_up_question?: string | null
   reference_data: {
     recording_chunks: Array<{
       recording_id: string

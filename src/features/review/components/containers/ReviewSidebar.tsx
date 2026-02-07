@@ -518,7 +518,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                         <p className={`text-sm font-medium ${
                           isSelected ? 'text-blue-900' : isAnalyzing ? 'text-gray-400' : 'text-gray-800'
                         }`}>
-                          {isAnalyzing ? '준비중' : (lecture.title || getWeekSession(lecture) || `${lecture.lecture_no}회차`)}
+                          {isAnalyzing ? '준비중' : (lecture.title || lecture.essence_7words || getWeekSession(lecture) || `${lecture.lecture_no}회차`)}
                         </p>
                         <p className={`text-xs mt-0.5 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`}>
                           {getWeekSession(lecture) || `${lecture.lecture_no}회차`} · {lecture.lecture_date}
