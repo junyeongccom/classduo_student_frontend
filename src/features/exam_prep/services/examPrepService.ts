@@ -90,6 +90,7 @@ export interface ExamPrepSummaryResponse {
     sections: Array<{
       title: string
       bullets: string[]
+      source_pages?: number[]
       tables?: Array<{
         title?: string | null
         headers: string[]

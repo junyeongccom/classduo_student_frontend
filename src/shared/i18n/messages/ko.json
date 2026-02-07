@@ -226,6 +226,16 @@
   "examPrep": {
     "title": "시험 준비",
     "subtitle": "강의자료 기반으로 요약·퀴즈·암기를 준비하는 공간입니다.",
+    "summary": {
+      "title": "요약",
+      "empty": "요약 데이터가 없습니다.",
+      "loading": "KUI가 요약을 정리하고 있어요...",
+      "sourceButton": "출처",
+      "sourceTooltip": "슬라이드 페이지 {pages}",
+      "sourceEmptyTooltip": "출처 정보가 없습니다",
+      "recentIssuesTitle": "최근 쟁점",
+      "examPointsTitle": "요점 정리(시험 대비)"
+    },
     "materials": {
       "title": "강의자료 선택",
       "description": "강의자료를 드래그해 선택하면 좌측에 원본 PDF가 표시됩니다.",

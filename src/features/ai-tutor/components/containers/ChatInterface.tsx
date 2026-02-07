@@ -81,8 +81,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>(
-    DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q }))
+  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>(
+    DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null }))
   )
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
@@ -252,12 +252,13 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         id: cachedHooking.id,
         question: cachedHooking.question,
         answer: cachedHooking.answer,
+        follow_up_question: cachedHooking.follow_up_question || null,
         reference_data: cachedHooking.reference_data || null,
         summary_keywords: cachedHooking.summary_keywords || null,
         summary_keywords_eng: cachedHooking.summary_keywords_eng || null
       }])
     } else if (cachedHooking === null) {
-      setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+      setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
     }
 
     if (cachedPqm) {
@@ -281,6 +282,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               id: data.id,
               question: data.question,
               answer: data.answer,
+              follow_up_question: data.follow_up_question || null,
               reference_data: data.reference_data || null,
               summary_keywords: data.summary_keywords || null,
               summary_keywords_eng: data.summary_keywords_eng || null
@@ -289,12 +291,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         } else {
           setHookingCache(targetLocale, lectureId, null)
           if (updateState) {
-            setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+            setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
           }
         }
       } else {
         if (updateState) {
-          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q })))
+          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
         }
       }
 
@@ -895,7 +897,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     sendMessage(retryQuestion)
   }, [sendMessage])
 
-  const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
+  const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
     if (hooking.answer) {
       // 현재 locale에 따라 summary_keywords 선택
@@ -911,10 +913,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       setMessages(prev => [...prev, userMessage])
       
       // AI 답변 추가
-      const assistantMessage: ChatMessage & { summary_keywords?: string | null } = {
+      const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: hooking.answer,
         summary_keywords: summaryKeywords,
+        follow_up_question: hooking.follow_up_question || null,
       }
       setMessages(prev => {
         const updated = [...prev, assistantMessage]
@@ -965,6 +968,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               await chatService.saveHookingMessage(newSessionId, {
                 question: hooking.question,
                 answer: hooking.answer,
+                follow_up_question: hooking.follow_up_question || null,
                 reference_data: hooking.reference_data,
                 summary_keywords: summaryKeywords,
                 hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
@@ -992,6 +996,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           await chatService.saveHookingMessage(currentSessionId, {
             question: hooking.question,
             answer: hooking.answer,
+            follow_up_question: hooking.follow_up_question || null,
             reference_data: hooking.reference_data,
             summary_keywords: summaryKeywords,
             hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
@@ -1064,10 +1069,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       ? (pqmQuestion.summary_keywords_eng || pqmQuestion.summary_keywords || null)
       : (pqmQuestion.summary_keywords || null)
     
-    const assistantMessage: ChatMessage & { summary_keywords?: string | null } = {
+    const assistantMessage: ChatMessage = {
       role: 'assistant',
       content: pqmQuestion.answer,
       summary_keywords: summaryKeywords,
+      follow_up_question: pqmQuestion.follow_up_question || null,
     }
     setMessages(prev => {
       const updated = [...prev, assistantMessage]
@@ -1123,6 +1129,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             await chatService.savePQMMessage(newSessionId, {
               question: pqmQuestion.question,
               answer: pqmQuestion.answer,
+              follow_up_question: pqmQuestion.follow_up_question || null,
               reference_data: references,
               summary_keywords: summaryKeywords,
               pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)
@@ -1150,6 +1157,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         await chatService.savePQMMessage(currentSessionId, {
           question: pqmQuestion.question,
           answer: pqmQuestion.answer,
+          follow_up_question: pqmQuestion.follow_up_question || null,
           reference_data: references,
           summary_keywords: summaryKeywords,
           pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)

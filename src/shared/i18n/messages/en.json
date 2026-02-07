@@ -226,6 +226,16 @@
   "examPrep": {
     "title": "Exam Prep",
     "subtitle": "Prepare summaries, quizzes, and memorization from your lecture materials.",
+    "summary": {
+      "title": "Summary",
+      "empty": "No summary available.",
+      "loading": "KUI is organizing your summary...",
+      "sourceButton": "Source",
+      "sourceTooltip": "Slide page {pages}",
+      "sourceEmptyTooltip": "No source information",
+      "recentIssuesTitle": "Recent issues",
+      "examPointsTitle": "Key points (Exam prep)"
+    },
     "materials": {
       "title": "Select Materials",
       "description": "Drag materials to preview the original PDF on the left.",

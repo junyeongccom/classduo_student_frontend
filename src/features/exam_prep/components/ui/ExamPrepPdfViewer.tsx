@@ -16,6 +16,8 @@ type PdfAnnotationText = {
   id: string
   x: number
   y: number
+  w?: number
+  h?: number
   text: string
   color: string
   fontSize: number
@@ -42,6 +44,10 @@ type ExamPrepPdfViewerProps = {
 const DEFAULT_COLOR = "#111827"
 const DEFAULT_WIDTH = 2
 const TEXT_WIDTH_FACTOR = 0.6
+const DEFAULT_TEXT_BOX_W = 0.22
+const DEFAULT_TEXT_BOX_H = 0.07
+const MIN_TEXT_BOX_W = 0.06
+const MIN_TEXT_BOX_H = 0.04
 
 const annotationClipboard: { paths: PdfAnnotationPath[]; texts: PdfAnnotationText[] } = {
   paths: [],
@@ -61,6 +67,7 @@ export function ExamPrepPdfViewer({
   const listRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const isProgrammaticScroll = useRef(false)
+  const ignoreExternalPageSync = useRef(false)
   const [containerWidth, setContainerWidth] = useState(0)
   const [pdfDoc, setPdfDoc] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null)
   const [pageCount, setPageCount] = useState(0)
@@ -233,6 +240,26 @@ export function ExamPrepPdfViewer({
   }, [pageCount])
 
   useEffect(() => {
+    // Sync external page changes (e.g., "출처" jump) with actual scroll position.
+    if (!currentPage) return
+    if (!pageCount) return
+    const bounded = Math.min(Math.max(currentPage, 1), pageCount || 1)
+    setInternalPage(bounded)
+    if (ignoreExternalPageSync.current) {
+      ignoreExternalPageSync.current = false
+      return
+    }
+    const target = pageRefs.current[bounded]
+    if (target) {
+      isProgrammaticScroll.current = true
+      target.scrollIntoView({ behavior: "smooth", block: "start" })
+      window.setTimeout(() => {
+        isProgrammaticScroll.current = false
+      }, 300)
+    }
+  }, [currentPage, pageCount, pageNumbers])
+
+  useEffect(() => {
     if (!pageCount) return
     if (activePage > pageCount) {
       const nextPage = pageCount
@@ -264,6 +291,8 @@ export function ExamPrepPdfViewer({
   const handlePageChange = (nextPage: number) => {
     const bounded = Math.min(Math.max(nextPage, 1), pageCount || 1)
     setInternalPage(bounded)
+    // We already scroll here; don't snap again when parent echoes `currentPage` back.
+    ignoreExternalPageSync.current = true
     onPageChange?.(bounded)
     const target = pageRefs.current[bounded]
     if (target) {
@@ -298,6 +327,8 @@ export function ExamPrepPdfViewer({
         })
         if (closestPage !== activePage) {
           setInternalPage(closestPage)
+          // This change originated from user scrolling; do NOT snap-scroll to page top.
+          ignoreExternalPageSync.current = true
           onPageChange?.(closestPage)
         }
       })
@@ -890,25 +921,6 @@ function PdfPage({
               texts,
             })
           }
-          onCreate={(point) => {
-            if (tool !== "text") return
-            const newText: PdfAnnotationText = {
-              id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-              x: point.x,
-              y: point.y,
-              text: "텍스트",
-              color: textStyle.color,
-              fontSize: textStyle.fontSize,
-              backgroundColor: textStyle.backgroundColor,
-            }
-            const next = {
-              paths: [...(annotation?.paths ?? [])],
-              texts: [...(annotation?.texts ?? []), newText],
-            }
-            onAnnotationChange(pageNumber, next)
-            setEditingTextId(newText.id)
-            setSelectedTextIds([newText.id])
-          }}
         />
         {tool === "erase" && eraserCursor && pageSize && (
           <div
@@ -959,6 +971,14 @@ const getPathBounds = (path: PdfAnnotationPath) => {
 }
 
 const getTextBounds = (text: PdfAnnotationText) => {
+  if (typeof text.w === "number" && typeof text.h === "number") {
+    return {
+      minX: text.x,
+      minY: text.y,
+      maxX: text.x + Math.max(0, text.w),
+      maxY: text.y + Math.max(0, text.h),
+    }
+  }
   const width = (text.text?.length ?? 1) * text.fontSize * TEXT_WIDTH_FACTOR
   const height = text.fontSize * 1.2
   return {
@@ -1130,7 +1150,6 @@ const TextLayer = ({
   textStyle,
   enableInteraction,
   onUpdate,
-  onCreate,
 }: {
   texts: PdfAnnotationText[]
   editingTextId: string | null
@@ -1140,10 +1159,117 @@ const TextLayer = ({
   textStyle: { color: string; fontSize: number; backgroundColor: string }
   enableInteraction: boolean
   onUpdate: (texts: PdfAnnotationText[]) => void
-  onCreate: (point: { x: number; y: number }) => void
 }) => {
   const layerRef = useRef<HTMLDivElement>(null)
+  const textsRef = useRef<PdfAnnotationText[]>(texts)
   const draggingId = useRef<string | null>(null)
+  const dragStartClient = useRef<{ x: number; y: number } | null>(null)
+  const dragOffset = useRef<{ dx: number; dy: number } | null>(null)
+  const didDrag = useRef(false)
+  const suppressNextClick = useRef(false)
+  const suppressCreateOnce = useRef(false)
+  const creatingId = useRef<string | null>(null)
+  const creatingStart = useRef<{ x: number; y: number } | null>(null)
+  const resizingId = useRef<string | null>(null)
+  const [expandedTextIds, setExpandedTextIds] = useState<Set<string>>(() => new Set())
+
+  const normalizePointFromLayer = (clientX: number, clientY: number) => {
+    const layer = layerRef.current
+    if (!layer) return null
+    const rect = layer.getBoundingClientRect()
+    if (!rect.width || !rect.height) return null
+    const x = (clientX - rect.left) / rect.width
+    const y = (clientY - rect.top) / rect.height
+    return { x: Math.min(Math.max(x, 0), 1), y: Math.min(Math.max(y, 0), 1) }
+  }
+
+  const clampBox = (box: { x: number; y: number; w: number; h: number }) => {
+    const w = Math.min(Math.max(box.w, MIN_TEXT_BOX_W), 1)
+    const h = Math.min(Math.max(box.h, MIN_TEXT_BOX_H), 1)
+    const x = Math.min(Math.max(box.x, 0), Math.max(0, 1 - w))
+    const y = Math.min(Math.max(box.y, 0), Math.max(0, 1 - h))
+    return { x, y, w: Math.min(w, 1 - x), h: Math.min(h, 1 - y) }
+  }
+
+  const getBoxSize = (text: PdfAnnotationText) => {
+    const w = typeof text.w === "number" ? text.w : DEFAULT_TEXT_BOX_W
+    const h = typeof text.h === "number" ? text.h : DEFAULT_TEXT_BOX_H
+    return clampBox({ x: text.x, y: text.y, w, h })
+  }
+
+  const getCollapsedPreview = (value: string) => {
+    const firstLine = (value ?? "").split("\n")[0] ?? ""
+    const hasMore = (value ?? "").includes("\n") || firstLine.length > 5 || (value ?? "").length > firstLine.length
+    if (!hasMore) return firstLine
+    const prefix = firstLine.length > 5 ? firstLine.slice(0, 5) : firstLine
+    return `${prefix}...`
+  }
+
+  const commitTextEdit = (id: string, value: string, options?: { collapseAfter?: boolean }) => {
+    const next = textsRef.current.map(item => (item.id === id ? { ...item, text: value } : item))
+    onUpdate(next)
+    onEdit(null)
+
+    if (options?.collapseAfter) {
+      setExpandedTextIds(prev => {
+        if (!prev.has(id)) return prev
+        const nextSet = new Set(prev)
+        nextSet.delete(id)
+        return nextSet
+      })
+    } else {
+      setExpandedTextIds(prev => {
+        if (prev.has(id)) return prev
+        const nextSet = new Set(prev)
+        nextSet.add(id)
+        return nextSet
+      })
+    }
+
+    if (options?.collapseAfter) {
+      // Prevent the click that caused blur from immediately toggling expand/collapse,
+      // or creating a new text box.
+      suppressNextClick.current = true
+      suppressCreateOnce.current = true
+      window.setTimeout(() => {
+        suppressNextClick.current = false
+        suppressCreateOnce.current = false
+      }, 0)
+    }
+  }
+
+  useEffect(() => {
+    textsRef.current = texts
+  }, [texts])
+
+  useEffect(() => {
+    // Keep expansion state consistent with the current text list.
+    setExpandedTextIds(prev => {
+      if (prev.size === 0) return prev
+      const ids = new Set(texts.map(item => item.id))
+      let hasChange = false
+      const next = new Set<string>()
+      prev.forEach(id => {
+        if (ids.has(id)) {
+          next.add(id)
+        } else {
+          hasChange = true
+        }
+      })
+      return hasChange ? next : prev
+    })
+  }, [texts])
+
+  useEffect(() => {
+    if (!editingTextId) return
+    // Ensure the full content is visible while editing (or right after creation).
+    setExpandedTextIds(prev => {
+      if (prev.has(editingTextId)) return prev
+      const next = new Set(prev)
+      next.add(editingTextId)
+      return next
+    })
+  }, [editingTextId])
 
   useEffect(() => {
     if (selectedTextIds.length === 0 || editingTextId) return
@@ -1161,76 +1287,321 @@ const TextLayer = ({
     <div
       ref={layerRef}
       className={`absolute inset-0 ${enableInteraction ? "pointer-events-auto" : "pointer-events-none"}`}
-      onDoubleClick={event => {
-        const layer = layerRef.current
-        if (!layer) return
-        const rect = layer.getBoundingClientRect()
-        const x = (event.clientX - rect.left) / rect.width
-        const y = (event.clientY - rect.top) / rect.height
-        onCreate({ x: Math.min(Math.max(x, 0), 1), y: Math.min(Math.max(y, 0), 1) })
+      onPointerDown={event => {
+        if (!enableInteraction) return
+        if (event.button !== 0) return
+        if (event.target !== event.currentTarget) return
+        if (suppressCreateOnce.current) return
+        if (editingTextId) return
+        if (resizingId.current) return
+
+        const point = normalizePointFromLayer(event.clientX, event.clientY)
+        if (!point) return
+
+        // Double-click + drag: create and resize while dragging, then enter edit on pointer up.
+        if (event.detail >= 2) {
+          const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+          creatingId.current = id
+          creatingStart.current = point
+          const initial = clampBox({ x: point.x, y: point.y, w: MIN_TEXT_BOX_W, h: MIN_TEXT_BOX_H })
+          const newText: PdfAnnotationText = {
+            id,
+            x: initial.x,
+            y: initial.y,
+            w: initial.w,
+            h: initial.h,
+            text: "",
+            color: textStyle.color,
+            fontSize: textStyle.fontSize,
+            backgroundColor: textStyle.backgroundColor,
+          }
+          onUpdate([...textsRef.current, newText])
+          onSelect([id])
+          setExpandedTextIds(prev => {
+            const next = new Set(prev)
+            next.add(id)
+            return next
+          })
+          event.currentTarget.setPointerCapture(event.pointerId)
+          return
+        }
+
+        // Single click: create a default-sized box and immediately enter edit.
+        const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+        const base = clampBox({ x: point.x, y: point.y, w: DEFAULT_TEXT_BOX_W, h: DEFAULT_TEXT_BOX_H })
+        const newText: PdfAnnotationText = {
+          id,
+          x: base.x,
+          y: base.y,
+          w: base.w,
+          h: base.h,
+          text: "",
+          color: textStyle.color,
+          fontSize: textStyle.fontSize,
+          backgroundColor: textStyle.backgroundColor,
+        }
+        onUpdate([...textsRef.current, newText])
+        onSelect([id])
+        setExpandedTextIds(prev => {
+          const next = new Set(prev)
+          next.add(id)
+          return next
+        })
+        onEdit(id)
+      }}
+      onPointerMove={event => {
+        if (!enableInteraction) return
+        const id = creatingId.current
+        const start = creatingStart.current
+        if (!id || !start) return
+        const point = normalizePointFromLayer(event.clientX, event.clientY)
+        if (!point) return
+
+        const x = Math.min(start.x, point.x)
+        const y = Math.min(start.y, point.y)
+        const w = Math.abs(point.x - start.x)
+        const h = Math.abs(point.y - start.y)
+        const nextBox = clampBox({ x, y, w, h })
+
+        const next = textsRef.current.map(item =>
+          item.id === id ? { ...item, x: nextBox.x, y: nextBox.y, w: nextBox.w, h: nextBox.h } : item
+        )
+        onUpdate(next)
+      }}
+      onPointerUp={event => {
+        const id = creatingId.current
+        if (!id) return
+        event.currentTarget.releasePointerCapture(event.pointerId)
+        creatingId.current = null
+        creatingStart.current = null
+        // Enter edit mode after finishing the drag-resize creation.
+        onEdit(id)
       }}
     >
-      {texts.map(text => (
-        <div
-          key={text.id}
-          className={`pointer-events-auto absolute rounded px-1 ${
-            selectedTextIds.includes(text.id)
-              ? "ring-1 ring-blue-400 ring-offset-2 ring-offset-white border border-dashed border-blue-300"
-              : ""
-          }`}
-          style={{
-            left: `${text.x * 100}%`,
-            top: `${text.y * 100}%`,
-            color: text.color,
-            fontSize: text.fontSize,
-            backgroundColor: text.backgroundColor ?? "transparent",
-            transform: "translate(-0%, -0%)",
-          }}
-          onPointerDown={event => {
-            if (event.button !== 0) return
-            if (editingTextId === text.id) return
-            draggingId.current = text.id
-            onSelect([text.id])
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={event => {
-            const layer = layerRef.current
-            if (!layer || draggingId.current !== text.id || event.buttons !== 1) return
-            const rect = layer.getBoundingClientRect()
-            const x = (event.clientX - rect.left) / rect.width
-            const y = (event.clientY - rect.top) / rect.height
-            const next = texts.map(item =>
-              item.id === text.id ? { ...item, x: Math.min(Math.max(x, 0), 1), y: Math.min(Math.max(y, 0), 1) } : item
-            )
-            onUpdate(next)
-          }}
-          onPointerUp={event => {
-            event.currentTarget.releasePointerCapture(event.pointerId)
-            draggingId.current = null
-          }}
-          onPointerLeave={() => {
-            draggingId.current = null
-          }}
-          onDoubleClick={() => onEdit(text.id)}
-        >
-          {editingTextId === text.id ? (
-            <input
-              className="rounded border border-gray-300 bg-white px-1 text-xs text-gray-900"
-              defaultValue={text.text}
-              autoFocus
-              onBlur={event => {
-                const next = texts.map(item =>
-                  item.id === text.id ? { ...item, text: event.target.value } : item
-                )
-                onUpdate(next)
-                onEdit(null)
-              }}
-            />
-          ) : (
-            <span>{text.text}</span>
-          )}
-        </div>
-      ))}
+      {texts.map(text => {
+        const isExpanded = expandedTextIds.has(text.id)
+        const box = getBoxSize(text)
+        const preview = getCollapsedPreview(text.text)
+        const displayText = isExpanded ? text.text : preview
+        const isEditing = editingTextId === text.id
+        return (
+          <div
+            key={text.id}
+            className={[
+              "pointer-events-auto absolute rounded px-1 border",
+              isEditing ? "border-dashed border-blue-400" : "border-solid border-gray-300",
+              selectedTextIds.includes(text.id) ? "ring-1 ring-blue-400 ring-offset-2 ring-offset-white" : "",
+            ].join(" ")}
+            style={{
+              left: `${box.x * 100}%`,
+              top: `${box.y * 100}%`,
+              width: `${box.w * 100}%`,
+              height: isExpanded ? `${box.h * 100}%` : `${Math.min(24, Math.max(18, text.fontSize * 1.4))}px`,
+              color: text.color,
+              fontSize: text.fontSize,
+              backgroundColor: text.backgroundColor ?? "transparent",
+              transform: "translate(-0%, -0%)",
+              overflow: "hidden",
+            }}
+            onClick={event => {
+              if (editingTextId === text.id) return
+              const canToggle = (text.text ?? "").includes("\n") || (text.text?.length ?? 0) > 5
+              if (!canToggle) return
+              // Prevent toggling from the 2nd click of a double-click.
+              if (event.detail !== 1) return
+              if (suppressNextClick.current) return
+              if (creatingId.current) return
+              if (resizingId.current) return
+              // If this pointer sequence was a drag, ignore the click.
+              if (didDrag.current) {
+                didDrag.current = false
+                return
+              }
+              setExpandedTextIds(prev => {
+                const next = new Set(prev)
+                if (next.has(text.id)) next.delete(text.id)
+                else next.add(text.id)
+                return next
+              })
+            }}
+            onPointerDown={event => {
+              if (event.button !== 0) return
+              if (editingTextId === text.id) return
+              if (creatingId.current) return
+              if (resizingId.current) return
+              draggingId.current = text.id
+              didDrag.current = false
+              dragStartClient.current = { x: event.clientX, y: event.clientY }
+              const point = normalizePointFromLayer(event.clientX, event.clientY)
+              if (point) {
+                dragOffset.current = { dx: point.x - box.x, dy: point.y - box.y }
+              } else {
+                dragOffset.current = { dx: 0, dy: 0 }
+              }
+              onSelect([text.id])
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={event => {
+              const layer = layerRef.current
+              if (!layer || draggingId.current !== text.id || event.buttons !== 1) return
+              if (resizingId.current) return
+              const start = dragStartClient.current
+              if (start && !didDrag.current) {
+                const dx = event.clientX - start.x
+                const dy = event.clientY - start.y
+                if (dx * dx + dy * dy >= 9) {
+                  didDrag.current = true
+                }
+              }
+              const point = normalizePointFromLayer(event.clientX, event.clientY)
+              if (!point) return
+              const offset = dragOffset.current ?? { dx: 0, dy: 0 }
+              const nextX = point.x - offset.dx
+              const nextY = point.y - offset.dy
+              const clamped = clampBox({ x: nextX, y: nextY, w: box.w, h: box.h })
+              const next = textsRef.current.map(item =>
+                item.id === text.id
+                  ? { ...item, x: clamped.x, y: clamped.y, w: clamped.w, h: clamped.h }
+                  : item
+              )
+              onUpdate(next)
+            }}
+            onPointerUp={event => {
+              event.currentTarget.releasePointerCapture(event.pointerId)
+              draggingId.current = null
+              dragStartClient.current = null
+              dragOffset.current = null
+            }}
+            onPointerLeave={() => {
+              draggingId.current = null
+              dragStartClient.current = null
+              dragOffset.current = null
+            }}
+            onDoubleClick={event => {
+              event.stopPropagation()
+              // Required flow: expand first, then double-click to edit.
+              if (editingTextId === text.id) return
+              const canToggle = (text.text ?? "").includes("\n") || (text.text?.length ?? 0) > 5
+              if (canToggle && !isExpanded) {
+                setExpandedTextIds(prev => {
+                  if (prev.has(text.id)) return prev
+                  const next = new Set(prev)
+                  next.add(text.id)
+                  return next
+                })
+                return
+              }
+              onEdit(text.id)
+            }}
+          >
+            {/* Delete button (reading mode, expanded only) */}
+            {isExpanded && !isEditing && (
+              <button
+                type="button"
+                className="absolute right-1 top-1 z-10 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-900/20 text-[12px] leading-none text-gray-900 hover:bg-gray-900/30"
+                onMouseDown={event => {
+                  // Prevent focusing/blur side-effects.
+                  event.preventDefault()
+                }}
+                onPointerDown={event => {
+                  event.stopPropagation()
+                  event.preventDefault()
+                }}
+                onClick={event => {
+                  event.stopPropagation()
+                  event.preventDefault()
+                  const next = textsRef.current.filter(item => item.id !== text.id)
+                  onUpdate(next)
+                  onSelect([])
+                  onEdit(null)
+                  setExpandedTextIds(prev => {
+                    if (!prev.has(text.id)) return prev
+                    const nextSet = new Set(prev)
+                    nextSet.delete(text.id)
+                    return nextSet
+                  })
+                }}
+                aria-label="삭제"
+              >
+                ×
+              </button>
+            )}
+            {editingTextId === text.id ? (
+              <textarea
+                className="w-full rounded border border-gray-300 bg-white px-1 text-xs text-gray-900 whitespace-pre-wrap break-words"
+                defaultValue={text.text}
+                autoFocus
+                style={{
+                  height: "100%",
+                  resize: "none",
+                  overflow: "hidden",
+                  fontSize: text.fontSize,
+                  lineHeight: 1.2,
+                }}
+                onKeyDown={event => {
+                  if (event.key !== "Enter") return
+                  if (event.shiftKey) return
+                  event.preventDefault()
+                  commitTextEdit(text.id, event.currentTarget.value, { collapseAfter: false })
+                }}
+                onInput={event => {
+                  const layer = layerRef.current
+                  if (!layer) return
+                  const rect = layer.getBoundingClientRect()
+                  if (!rect.height) return
+                  const scrollHeight = event.currentTarget.scrollHeight
+                  const nextH = Math.min(1 - box.y, Math.max(box.h, scrollHeight / rect.height))
+                  const clamped = clampBox({ x: box.x, y: box.y, w: box.w, h: nextH })
+                  const next = textsRef.current.map(item =>
+                    item.id === text.id ? { ...item, w: clamped.w, h: clamped.h } : item
+                  )
+                  onUpdate(next)
+                }}
+                onBlur={event => {
+                  commitTextEdit(text.id, event.currentTarget.value, { collapseAfter: true })
+                }}
+              />
+            ) : (
+              <span className="whitespace-pre-wrap break-words">{displayText}</span>
+            )}
+            {/* Resize handle (bottom-right) */}
+            {isExpanded && selectedTextIds.includes(text.id) && (
+              <div
+                className="absolute bottom-0 right-0 h-3 w-3 cursor-se-resize rounded-sm bg-gray-900/30"
+                onMouseDown={event => {
+                  // Prevent textarea blur when resizing while editing.
+                  event.preventDefault()
+                }}
+                onPointerDown={event => {
+                  event.stopPropagation()
+                  event.preventDefault()
+                  if (event.button !== 0) return
+                  resizingId.current = text.id
+                  didDrag.current = true
+                  event.currentTarget.setPointerCapture(event.pointerId)
+                }}
+                onPointerMove={event => {
+                  if (resizingId.current !== text.id) return
+                  const point = normalizePointFromLayer(event.clientX, event.clientY)
+                  if (!point) return
+                  const w = point.x - box.x
+                  const h = point.y - box.y
+                  const nextBox = clampBox({ x: box.x, y: box.y, w, h })
+                  const next = textsRef.current.map(item =>
+                    item.id === text.id ? { ...item, w: nextBox.w, h: nextBox.h } : item
+                  )
+                  onUpdate(next)
+                }}
+                onPointerUp={event => {
+                  if (resizingId.current !== text.id) return
+                  event.currentTarget.releasePointerCapture(event.pointerId)
+                  resizingId.current = null
+                }}
+              />
+            )}
+          </div>
+        )
+      })}
       {selectedTextIds.length > 0 && (
         <div className="pointer-events-none absolute right-3 top-3 rounded border border-transparent bg-transparent px-0 py-0 text-[10px] text-transparent" />
       )}
