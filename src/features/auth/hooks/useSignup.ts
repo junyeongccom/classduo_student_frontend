@@ -61,8 +61,12 @@ export function useSignup() {
       const result = await authService.sendSignupCode(data)
 
       if (result.error) {
-        setError(result.error as AuthError)
-        return { success: false, error: result.error }
+        const authError: AuthError = {
+          error_code: 'API_ERROR',
+          message: '오류가 발생했습니다.',
+        }
+        setError(authError)
+        return { success: false, error: authError }
       }
 
       if (result.data) {
@@ -74,11 +78,11 @@ export function useSignup() {
         return { success: true, data: result.data }
       }
 
-      return { success: false, error: { error_code: 'UNKNOWN', message: 'Unknown error' } }
+      return { success: false, error: { error_code: 'UNKNOWN', message: '오류가 발생했습니다.' } }
     } catch (error) {
       const authError: AuthError = {
         error_code: 'UNEXPECTED_ERROR',
-        message: '인증 코드 전송 중 오류가 발생했습니다.',
+        message: '오류가 발생했습니다.',
       }
       setError(authError)
       return { success: false, error: authError }
@@ -109,8 +113,12 @@ export function useSignup() {
       })
 
       if (result.error) {
-        setError(result.error as AuthError)
-        return { success: false, error: result.error }
+        const authError: AuthError = {
+          error_code: 'API_ERROR',
+          message: '오류가 발생했습니다.',
+        }
+        setError(authError)
+        return { success: false, error: authError }
       }
 
       if (result.data) {
@@ -133,11 +141,11 @@ export function useSignup() {
         return { success: true, data: result.data }
       }
 
-      return { success: false, error: { error_code: 'UNKNOWN', message: 'Unknown error' } }
+      return { success: false, error: { error_code: 'UNKNOWN', message: '오류가 발생했습니다.' } }
     } catch (error) {
       const authError: AuthError = {
         error_code: 'UNEXPECTED_ERROR',
-        message: '인증 코드 확인 중 오류가 발생했습니다.',
+        message: '오류가 발생했습니다.',
       }
       setError(authError)
       return { success: false, error: authError }

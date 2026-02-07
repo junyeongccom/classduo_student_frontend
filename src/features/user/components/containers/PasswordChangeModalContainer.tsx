@@ -54,7 +54,7 @@ export function PasswordChangeModalContainer({
       const response = await sendVerificationCode({ current_password: currentPassword })
 
       if (response.error) {
-        setError(response.error.message)
+        setError('오류가 발생했습니다.')
         return
       }
 
@@ -64,7 +64,7 @@ export function PasswordChangeModalContainer({
         setStep('verification')
       }
     } catch (err) {
-      setError('인증 코드 전송 중 오류가 발생했습니다. 다시 시도해주세요.')
+      setError('오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
@@ -93,7 +93,7 @@ export function PasswordChangeModalContainer({
       const response = await verifyCode({ code })
 
       if (response.error) {
-        setError(response.error.message)
+        setError('오류가 발생했습니다.')
         return
       }
 
@@ -101,7 +101,7 @@ export function PasswordChangeModalContainer({
         setStep('newPassword')
       }
     } catch (err) {
-      setError('인증 코드 확인 중 오류가 발생했습니다. 다시 시도해주세요.')
+      setError('오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
@@ -126,13 +126,13 @@ export function PasswordChangeModalContainer({
       })
 
       if (response.error) {
-        setError(response.error.message)
+        setError('오류가 발생했습니다.')
         return
       }
 
       setStep('success')
     } catch (err) {
-      setError('비밀번호 변경 중 오류가 발생했습니다. 다시 시도해주세요.')
+      setError('오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
