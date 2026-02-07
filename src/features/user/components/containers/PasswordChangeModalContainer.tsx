@@ -54,7 +54,13 @@ export function PasswordChangeModalContainer({
       const response = await sendVerificationCode({ current_password: currentPassword })
 
       if (response.error) {
-        setError('오류가 발생했습니다.')
+        // 4xx: 사용자 에러 (잘못된 비밀번호 등) → 실제 메시지 표시
+        // 5xx: 서버 에러 → 일반 메시지 표시
+        if (response.status >= 400 && response.status < 500) {
+          setError(response.error.message)
+        } else {
+          setError('오류가 발생했습니다.')
+        }
         return
       }
 
@@ -93,7 +99,11 @@ export function PasswordChangeModalContainer({
       const response = await verifyCode({ code })
 
       if (response.error) {
-        setError('오류가 발생했습니다.')
+        if (response.status >= 400 && response.status < 500) {
+          setError(response.error.message)
+        } else {
+          setError('오류가 발생했습니다.')
+        }
         return
       }
 
@@ -126,7 +136,11 @@ export function PasswordChangeModalContainer({
       })
 
       if (response.error) {
-        setError('오류가 발생했습니다.')
+        if (response.status >= 400 && response.status < 500) {
+          setError(response.error.message)
+        } else {
+          setError('오류가 발생했습니다.')
+        }
         return
       }
 

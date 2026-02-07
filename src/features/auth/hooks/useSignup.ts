@@ -61,10 +61,11 @@ export function useSignup() {
       const result = await authService.sendSignupCode(data)
 
       if (result.error) {
-        const authError: AuthError = {
-          error_code: 'API_ERROR',
-          message: '오류가 발생했습니다.',
-        }
+        // 4xx: 사용자 에러 (이미 가입된 이메일 등) → 실제 메시지 표시
+        // 5xx: 서버 에러 → 일반 메시지 표시
+        const authError: AuthError = result.status >= 400 && result.status < 500
+          ? { error_code: result.error.error_code, message: result.error.message }
+          : { error_code: 'API_ERROR', message: '오류가 발생했습니다.' }
         setError(authError)
         return { success: false, error: authError }
       }
@@ -113,10 +114,11 @@ export function useSignup() {
       })
 
       if (result.error) {
-        const authError: AuthError = {
-          error_code: 'API_ERROR',
-          message: '오류가 발생했습니다.',
-        }
+        // 4xx: 사용자 에러 (잘못된 인증 코드 등) → 실제 메시지 표시
+        // 5xx: 서버 에러 → 일반 메시지 표시
+        const authError: AuthError = result.status >= 400 && result.status < 500
+          ? { error_code: result.error.error_code, message: result.error.message }
+          : { error_code: 'API_ERROR', message: '오류가 발생했습니다.' }
         setError(authError)
         return { success: false, error: authError }
       }
