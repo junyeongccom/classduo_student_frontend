@@ -15,6 +15,13 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD: '/auth/reset-password',
     UPDATE_PASSWORD: '/auth/update-password',
     REFRESH: '/auth/refresh',
+    // Password change with verification code
+    PASSWORD_CHANGE_SEND_CODE: '/auth/password-change/send-code',
+    PASSWORD_CHANGE_VERIFY_CODE: '/auth/password-change/verify-code',
+    PASSWORD_CHANGE_VERIFY: '/auth/password-change/verify',
+    // Signup with verification code
+    SIGNUP_SEND_CODE: '/auth/signup/send-code',
+    SIGNUP_VERIFY_CODE: '/auth/signup/verify-code',
   },
   
   // Recording (추후 사용)

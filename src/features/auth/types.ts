@@ -108,4 +108,34 @@ export interface AuthActions {
   clearError: () => void
 }
 
+// ============ Signup with Verification Code ============
+
+export type SignupStep = 'form' | 'verification' | 'success'
+
+export interface SendSignupCodeRequest {
+  email: string
+  password: string
+  password_confirm: string
+  full_name: string
+}
+
+export interface SendSignupCodeResponse {
+  message: string
+  email_masked: string
+  expires_in: number
+}
+
+export interface VerifySignupCodeRequest {
+  email: string
+  code: string
+}
+
+export interface VerifySignupCodeResponse {
+  message: string
+  access_token: string
+  refresh_token: string | null
+  token_type: string
+  expires_in: number
+}
+
 
