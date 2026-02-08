@@ -37,8 +37,6 @@ export function useGameProgress() {
   // 현재 사용자 정보 가져오기
   const user = useAuthStore(state => state.user)
   
-  // 안전장치: 1초마다 재조회
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
   // 탭 포커스 복귀 시 재조회
   const isFocusedRef = useRef(true)
 
@@ -162,13 +160,6 @@ export function useGameProgress() {
       }
     })
 
-    // 안전장치: 1초마다 재조회
-    refreshIntervalRef.current = setInterval(() => {
-      if (isFocusedRef.current) {
-        refreshData()
-      }
-    }, 1000) // 1초
-
     // 탭 포커스 복귀 시 재조회
     const handleFocus = () => {
       isFocusedRef.current = true
@@ -184,9 +175,6 @@ export function useGameProgress() {
     return () => {
       unsubscribeProgress()
       unsubscribeReward()
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current)
-      }
       window.removeEventListener('focus', handleFocus)
       window.removeEventListener('blur', handleBlur)
     }
