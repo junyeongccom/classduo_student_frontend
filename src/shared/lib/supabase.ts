@@ -213,9 +213,29 @@ export function isJWTExpiredError(error: any): boolean {
 }
 
 /**
+ * 토큰 갱신 싱글턴 Promise
+ * 동시에 여러 호출이 와도 실제 /auth/refresh는 1회만 실행
+ */
+let refreshPromise: Promise<boolean> | null = null
+
+/**
  * Refresh token으로 새 access token 발급 및 Supabase 클라이언트 재생성
+ * 싱글턴 패턴: 동시 호출 시 기존 Promise를 공유
  */
 export async function refreshSupabaseToken(): Promise<boolean> {
+  if (refreshPromise) {
+    return refreshPromise
+  }
+
+  refreshPromise = _doRefreshToken()
+  try {
+    return await refreshPromise
+  } finally {
+    refreshPromise = null
+  }
+}
+
+async function _doRefreshToken(): Promise<boolean> {
   if (typeof window === 'undefined') {
     return false
   }
@@ -228,17 +248,17 @@ export async function refreshSupabaseToken(): Promise<boolean> {
 
   try {
     const refreshResult = await authService.refreshToken(refreshToken)
-    
+
     if (refreshResult.data && !refreshResult.error) {
       // 새 토큰 저장
       localStorage.setItem(TOKEN_KEY, refreshResult.data.access_token)
       if (refreshResult.data.refresh_token) {
         localStorage.setItem(REFRESH_TOKEN_KEY, refreshResult.data.refresh_token)
       }
-      
+
       // Supabase 클라이언트 재생성 (새 토큰으로 헤더 업데이트)
       resetSupabaseClient()
-      
+
       // 토큰 갱신 성공 시 이벤트 발생
       tokenRefreshListeners.forEach(listener => {
         try {
@@ -247,10 +267,10 @@ export async function refreshSupabaseToken(): Promise<boolean> {
           console.error('[supabase] 토큰 갱신 리스너 실행 중 오류:', error)
         }
       })
-      
+
       // 예방적 갱신 타이머 재설정
       startTokenRefreshTimer()
-      
+
       return true
     } else {
       console.error('[supabase] 토큰 갱신 실패:', refreshResult.error)
@@ -260,6 +280,22 @@ export async function refreshSupabaseToken(): Promise<boolean> {
     console.error('[supabase] 토큰 갱신 중 예외 발생:', error)
     return false
   }
+}
+
+/**
+ * 토큰 유효성 사전 확인
+ * 만료되었거나 60초 이내 만료 예정이면 갱신 시도 (Clock Skew 대응)
+ */
+export async function ensureValidToken(): Promise<boolean> {
+  const token = getAuthToken()
+  if (!token) return false
+
+  const timeUntilExpiration = getTimeUntilExpiration(token)
+  // 만료되었거나 60초 이내 만료 예정이면 갱신
+  if (timeUntilExpiration === null || timeUntilExpiration < 60_000) {
+    return await refreshSupabaseToken()
+  }
+  return true
 }
 
 /**
