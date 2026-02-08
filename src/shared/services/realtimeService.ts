@@ -153,8 +153,8 @@ class RealtimeSubscriptionManager {
    * user_progress_events 구독 초기화 (내부 비동기 메서드)
    */
   private async initializeProgressSubscription(): Promise<void> {
-    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성 -> 제거 (getSupabaseClient가 최신 토큰 사용)
     const supabase = getSupabaseClient()
+    console.log('[realtimeService] user_progress_events 구독 초기화 시작, Realtime 연결상태:', supabase.realtime.connectionState())
 
     this.progressChannel = supabase
       .channel('user_progress_events')
@@ -166,22 +166,22 @@ class RealtimeSubscriptionManager {
           table: 'user_progress_events',
         },
         (payload) => {
+          console.log('[realtimeService] ★ user_progress_events INSERT 이벤트 수신:', JSON.stringify(payload.new))
           const event = payload.new as ProgressEvent
-          // 모든 핸들러에 이벤트 전달
           this.progressHandlers.forEach((h) => h(event))
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
+        console.log('[realtimeService] user_progress_events 상태 변경:', status, err ? `에러: ${err.message}` : '')
         if (status === 'SUBSCRIBED') {
-          console.log('[realtimeService] user_progress_events 구독 성공')
+          console.log('[realtimeService] user_progress_events 구독 성공 ✓')
           this.progressRetryCount = 0
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[realtimeService] user_progress_events 구독 실패')
+          console.error('[realtimeService] user_progress_events CHANNEL_ERROR')
           if (this.progressRetryCount < RealtimeSubscriptionManager.MAX_RETRIES) {
             this.progressRetryCount++
             const delay = Math.min(1000 * 2 ** this.progressRetryCount, 30000)
             console.log(`[realtimeService] user_progress_events 재시도 ${this.progressRetryCount}/${RealtimeSubscriptionManager.MAX_RETRIES} (${delay}ms 후)`)
-            // 기존 채널 제거 (CHANNEL_ERROR 후 재사용 불가)
             if (this.progressChannel) {
               getSupabaseClient().removeChannel(this.progressChannel)
               this.progressChannel = null
@@ -230,8 +230,8 @@ class RealtimeSubscriptionManager {
    * user_lecture_rewards 구독 초기화 (내부 비동기 메서드)
    */
   private async initializeRewardSubscription(): Promise<void> {
-    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성 -> 제거
     const supabase = getSupabaseClient()
+    console.log('[realtimeService] user_lecture_rewards 구독 초기화 시작')
 
     this.rewardChannel = supabase
       .channel('user_lecture_rewards')
@@ -243,22 +243,22 @@ class RealtimeSubscriptionManager {
           table: 'user_lecture_rewards',
         },
         (payload) => {
+          console.log('[realtimeService] ★ user_lecture_rewards INSERT 이벤트 수신:', JSON.stringify(payload.new))
           const event = payload.new as RewardEvent
-          // 모든 핸들러에 이벤트 전달
           this.rewardHandlers.forEach((h) => h(event))
         }
       )
-      .subscribe((status) => {
+      .subscribe((status, err) => {
+        console.log('[realtimeService] user_lecture_rewards 상태 변경:', status, err ? `에러: ${err.message}` : '')
         if (status === 'SUBSCRIBED') {
-          console.log('[realtimeService] user_lecture_rewards 구독 성공')
+          console.log('[realtimeService] user_lecture_rewards 구독 성공 ✓')
           this.rewardRetryCount = 0
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[realtimeService] user_lecture_rewards 구독 실패')
+          console.error('[realtimeService] user_lecture_rewards CHANNEL_ERROR')
           if (this.rewardRetryCount < RealtimeSubscriptionManager.MAX_RETRIES) {
             this.rewardRetryCount++
             const delay = Math.min(1000 * 2 ** this.rewardRetryCount, 30000)
             console.log(`[realtimeService] user_lecture_rewards 재시도 ${this.rewardRetryCount}/${RealtimeSubscriptionManager.MAX_RETRIES} (${delay}ms 후)`)
-            // 기존 채널 제거 (CHANNEL_ERROR 후 재사용 불가)
             if (this.rewardChannel) {
               getSupabaseClient().removeChannel(this.rewardChannel)
               this.rewardChannel = null

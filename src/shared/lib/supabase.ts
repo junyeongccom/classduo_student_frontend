@@ -38,25 +38,41 @@ const setGlobalClient = (client: SupabaseClient) => {
 
 const applyRealtimeAuth = (client: SupabaseClient) => {
   const token = getAuthToken()
-  if (!token) return
+  if (!token) {
+    console.warn('[supabase] applyRealtimeAuth: 토큰 없음, setAuth 스킵')
+    return
+  }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    console.log('[supabase] applyRealtimeAuth: setAuth 호출, sub=', payload.sub, ', exp=', new Date(payload.exp * 1000).toISOString())
+  } catch { /* ignore */ }
   client.realtime.setAuth(token)
 }
 
 /**
  * Supabase SDK 내부 세션 등록 (Realtime RLS auth.uid() 동작에 필수)
  * 교수자 프론트엔드의 syncSupabaseSession과 동일한 역할
- * fire-and-forget: 비동기이나 결과를 기다리지 않음
  */
 const applyAuthSession = (client: SupabaseClient) => {
   const token = getAuthToken()
   const refreshToken = typeof window !== 'undefined' ? localStorage.getItem(REFRESH_TOKEN_KEY) : null
-  if (!token || !refreshToken) return
+  if (!token || !refreshToken) {
+    console.warn('[supabase] applyAuthSession: 토큰/리프레시 없음, 스킵')
+    return
+  }
 
+  console.log('[supabase] applyAuthSession: auth.setSession 호출 시작')
   client.auth.setSession({
     access_token: token,
     refresh_token: refreshToken,
+  }).then(({ data, error }) => {
+    if (error) {
+      console.error('[supabase] auth.setSession 실패:', error.message)
+    } else {
+      console.log('[supabase] auth.setSession 성공, user_id=', data.user?.id)
+    }
   }).catch((error) => {
-    console.warn('[supabase] auth.setSession 실패:', error)
+    console.error('[supabase] auth.setSession 예외:', error)
   })
 }
 
@@ -135,11 +151,10 @@ export function getSupabaseClient(): SupabaseClient {
     throw new Error('Supabase 환경 변수가 설정되지 않았습니다.')
   }
 
-  // 클라이언트가 이미 생성되어 있으면 재사용
+  // 클라이언트가 이미 생성되어 있으면 재사용 (세션은 건드리지 않음)
   if (supabaseClient) {
     applyRestHeaders(supabaseClient)
     applyRealtimeAuth(supabaseClient)
-    applyAuthSession(supabaseClient)
     return supabaseClient
   }
   const globalClient = getGlobalClient()
@@ -147,7 +162,6 @@ export function getSupabaseClient(): SupabaseClient {
     supabaseClient = globalClient
     applyRestHeaders(supabaseClient)
     applyRealtimeAuth(supabaseClient)
-    applyAuthSession(supabaseClient)
     return supabaseClient
   }
 

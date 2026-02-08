@@ -108,15 +108,25 @@ export function useGameProgress() {
       refreshData()
 
       // Realtime 구독 시작 (유효한 토큰 보장)
+      console.log('[useGameProgress] Realtime 구독 시작, user_id=', user?.user_id)
       unsubscribeProgress = subscribeProgressEvents((event: ProgressEvent) => {
+        console.log('[useGameProgress] ★ Progress 이벤트 도착:', {
+          event_user_id: event.user_id,
+          lecture_id: event.lecture_id,
+          event_type: event.event_type,
+          my_user_id: user?.user_id,
+        })
+
         // 현재 사용자 ID 가져오기
         const currentUserId = user?.user_id
 
         // user_id 필터링: 자신과 관련된 이벤트만 처리
         if (!currentUserId || event.user_id !== currentUserId) {
+          console.log('[useGameProgress] 필터링됨: currentUserId=', currentUserId, 'event.user_id=', event.user_id)
           return // 다른 사용자의 이벤트는 무시
         }
 
+        console.log('[useGameProgress] ✓ 이벤트 처리: lecture_id=', event.lecture_id)
         // 해당 lecture_id의 progress_count를 +1
         setGameProgress((prev) => {
           const current = prev[event.lecture_id] || 0
