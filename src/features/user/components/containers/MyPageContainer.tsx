@@ -6,11 +6,13 @@ import { useTranslations } from 'next-intl'
 import { UserProfileActions } from '../../components/ui/UserProfileActions'
 import { UserProfileCard } from '../../components/ui/UserProfileCard'
 import { PasswordChangeModalContainer } from './PasswordChangeModalContainer'
+import { ErrorReportModalContainer } from '@/features/error-report'
 
 export function MyPageContainer() {
   const t = useTranslations('profile')
   const { user, logout } = useAuth()
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [isErrorReportModalOpen, setIsErrorReportModalOpen] = useState(false)
 
   if (!user) {
     return (
@@ -30,6 +32,7 @@ export function MyPageContainer() {
           <UserProfileActions
             onLogout={logout}
             onChangePassword={() => setIsPasswordModalOpen(true)}
+            onErrorReport={() => setIsErrorReportModalOpen(true)}
           />
         </div>
       </div>
@@ -38,6 +41,12 @@ export function MyPageContainer() {
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
         onLogout={logout}
+      />
+
+      <ErrorReportModalContainer
+        isOpen={isErrorReportModalOpen}
+        onClose={() => setIsErrorReportModalOpen(false)}
+        onAuthError={logout}
       />
     </div>
   )
