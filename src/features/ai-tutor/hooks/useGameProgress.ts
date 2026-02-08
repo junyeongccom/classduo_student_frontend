@@ -169,14 +169,21 @@ export function useGameProgress() {
       isFocusedRef.current = false
     }
 
+    // 네트워크 복구 시 재조회
+    const handleOnline = () => {
+      refreshData()
+    }
+
     window.addEventListener('focus', handleFocus)
     window.addEventListener('blur', handleBlur)
+    window.addEventListener('online', handleOnline)
 
     return () => {
       unsubscribeProgress()
       unsubscribeReward()
       window.removeEventListener('focus', handleFocus)
       window.removeEventListener('blur', handleBlur)
+      window.removeEventListener('online', handleOnline)
     }
   }, [refreshData, user])
 
