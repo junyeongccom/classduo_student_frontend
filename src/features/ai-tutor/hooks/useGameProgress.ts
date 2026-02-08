@@ -12,7 +12,6 @@ import {
   type RewardEvent,
 } from '@/shared/services/realtimeService'
 import { ensureValidToken } from '@/shared/lib/supabase'
-import { useAuthStore } from '@/features/auth/store/authStore'
 
 // 기존 타입 유지 (하위 호환성)
 export interface GameProgress {
@@ -106,14 +105,7 @@ export function useGameProgress() {
 
       // Realtime 구독 시작 (유효한 토큰 보장)
       unsubscribeProgress = subscribeProgressEvents((event: ProgressEvent) => {
-        // 스토어에서 직접 읽기 (클로저 캡처 문제 방지)
-        const currentUserId = useAuthStore.getState().user?.user_id
-
-        // user_id 필터링: 자신과 관련된 이벤트만 처리
-        if (!currentUserId || event.user_id !== currentUserId) {
-          return // 다른 사용자의 이벤트는 무시
-        }
-
+        // RLS(user_id = auth.uid())가 서버에서 필터링하므로 클라이언트 필터 불필요
         // 해당 lecture_id의 progress_count를 +1
         setGameProgress((prev) => {
           const current = prev[event.lecture_id] || 0
@@ -126,13 +118,7 @@ export function useGameProgress() {
 
       // Realtime 구독: user_lecture_rewards INSERT 이벤트
       unsubscribeReward = subscribeRewardEvents((event: RewardEvent) => {
-        // 스토어에서 직접 읽기 (클로저 캡처 문제 방지)
-        const currentUserId = useAuthStore.getState().user?.user_id
-
-        // user_id 필터링: 자신과 관련된 이벤트만 처리
-        if (!currentUserId || event.user_id !== currentUserId) {
-          return // 다른 사용자의 이벤트는 무시
-        }
+        // RLS(user_id = auth.uid())가 서버에서 필터링하므로 클라이언트 필터 불필요
 
         console.log('[useGameProgress] Realtime 보상 이벤트 수신:', {
           lecture_id: event.lecture_id,
