@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { getSupabaseClient, resetSupabaseClient, onTokenRefresh, ensureValidToken } from '@/shared/lib/supabase'
+import { getSupabaseClient, onTokenRefresh, ensureValidToken } from '@/shared/lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface ProgressEvent {
