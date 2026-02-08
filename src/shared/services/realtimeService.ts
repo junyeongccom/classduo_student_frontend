@@ -8,7 +8,7 @@ import { getSupabaseClient, onTokenRefresh, ensureValidToken } from '@/shared/li
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface ProgressEvent {
-  event_type: 'ox_quiz' | 'review_blank'
+  event_type: 'ox_quiz' | 'review_blank' | 'card_match'
   user_id: string
   lecture_id: string
   ox_quiz_question_id?: string
@@ -164,7 +164,6 @@ class RealtimeSubscriptionManager {
           event: 'INSERT',
           schema: 'public',
           table: 'user_progress_events',
-          filter: 'user_id=eq.auth.uid()',
         },
         (payload) => {
           const event = payload.new as ProgressEvent
@@ -242,7 +241,6 @@ class RealtimeSubscriptionManager {
           event: 'INSERT',
           schema: 'public',
           table: 'user_lecture_rewards',
-          filter: 'user_id=eq.auth.uid()',
         },
         (payload) => {
           const event = payload.new as RewardEvent
