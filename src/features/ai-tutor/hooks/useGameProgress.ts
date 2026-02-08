@@ -35,14 +35,16 @@ export function useGameProgress() {
   
   // 현재 사용자 정보 가져오기
   const user = useAuthStore(state => state.user)
-  
-  // 탭 포커스 복귀 시 재조회
-  const isFocusedRef = useRef(true)
+
+  // 마지막 fetch 시점 추적 (탭 전환/네트워크 복구 시 throttle용)
+  const lastFetchAtRef = useRef(0)
+  const FETCH_THROTTLE_MS = 5000
 
   /**
    * Supabase에서 진척도 데이터 조회 및 상태 업데이트
    */
   const refreshData = useCallback(async () => {
+    lastFetchAtRef.current = Date.now()
     try {
       // 진척도 데이터와 보상 개수 데이터를 병렬로 조회
       const [progressResult, rewardCountResult] = await Promise.all([
@@ -159,29 +161,21 @@ export function useGameProgress() {
       }
     })
 
-    // 탭 포커스 복귀 시 재조회
-    const handleFocus = () => {
-      isFocusedRef.current = true
+    // 탭 포커스 복귀 / 네트워크 복구 시 재조회 (5초 이내 중복 호출 방지)
+    const throttledRefresh = () => {
+      if (Date.now() - lastFetchAtRef.current < FETCH_THROTTLE_MS) return
       refreshData()
     }
-    const handleBlur = () => {
-      isFocusedRef.current = false
-    }
-
-    // 네트워크 복구 시 재조회
-    const handleOnline = () => {
-      refreshData()
-    }
+    const handleFocus = throttledRefresh
+    const handleOnline = throttledRefresh
 
     window.addEventListener('focus', handleFocus)
-    window.addEventListener('blur', handleBlur)
     window.addEventListener('online', handleOnline)
 
     return () => {
       unsubscribeProgress()
       unsubscribeReward()
       window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('blur', handleBlur)
       window.removeEventListener('online', handleOnline)
     }
   }, [refreshData, user])
