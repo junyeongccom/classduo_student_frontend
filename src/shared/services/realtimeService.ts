@@ -154,8 +154,6 @@ class RealtimeSubscriptionManager {
    */
   private async initializeProgressSubscription(): Promise<void> {
     const supabase = getSupabaseClient()
-    console.log('[realtimeService] user_progress_events 구독 초기화 시작, Realtime 연결상태:', supabase.realtime.connectionState())
-
     this.progressChannel = supabase
       .channel('user_progress_events')
       .on(
@@ -166,18 +164,16 @@ class RealtimeSubscriptionManager {
           table: 'user_progress_events',
         },
         (payload) => {
-          console.log('[realtimeService] ★ user_progress_events INSERT 이벤트 수신:', JSON.stringify(payload.new))
           const event = payload.new as ProgressEvent
           this.progressHandlers.forEach((h) => h(event))
         }
       )
-      .subscribe((status, err) => {
-        console.log('[realtimeService] user_progress_events 상태 변경:', status, err ? `에러: ${err.message}` : '')
+      .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[realtimeService] user_progress_events 구독 성공 ✓')
+          console.log('[realtimeService] user_progress_events 구독 성공')
           this.progressRetryCount = 0
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[realtimeService] user_progress_events CHANNEL_ERROR')
+          console.error('[realtimeService] user_progress_events 구독 실패')
           if (this.progressRetryCount < RealtimeSubscriptionManager.MAX_RETRIES) {
             this.progressRetryCount++
             const delay = Math.min(1000 * 2 ** this.progressRetryCount, 30000)
@@ -231,8 +227,6 @@ class RealtimeSubscriptionManager {
    */
   private async initializeRewardSubscription(): Promise<void> {
     const supabase = getSupabaseClient()
-    console.log('[realtimeService] user_lecture_rewards 구독 초기화 시작')
-
     this.rewardChannel = supabase
       .channel('user_lecture_rewards')
       .on(
@@ -243,18 +237,16 @@ class RealtimeSubscriptionManager {
           table: 'user_lecture_rewards',
         },
         (payload) => {
-          console.log('[realtimeService] ★ user_lecture_rewards INSERT 이벤트 수신:', JSON.stringify(payload.new))
           const event = payload.new as RewardEvent
           this.rewardHandlers.forEach((h) => h(event))
         }
       )
-      .subscribe((status, err) => {
-        console.log('[realtimeService] user_lecture_rewards 상태 변경:', status, err ? `에러: ${err.message}` : '')
+      .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[realtimeService] user_lecture_rewards 구독 성공 ✓')
+          console.log('[realtimeService] user_lecture_rewards 구독 성공')
           this.rewardRetryCount = 0
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[realtimeService] user_lecture_rewards CHANNEL_ERROR')
+          console.error('[realtimeService] user_lecture_rewards 구독 실패')
           if (this.rewardRetryCount < RealtimeSubscriptionManager.MAX_RETRIES) {
             this.rewardRetryCount++
             const delay = Math.min(1000 * 2 ** this.rewardRetryCount, 30000)

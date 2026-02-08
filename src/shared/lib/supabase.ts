@@ -38,14 +38,7 @@ const setGlobalClient = (client: SupabaseClient) => {
 
 const applyRealtimeAuth = (client: SupabaseClient) => {
   const token = getAuthToken()
-  if (!token) {
-    console.warn('[supabase] applyRealtimeAuth: 토큰 없음, setAuth 스킵')
-    return
-  }
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    console.log('[supabase] applyRealtimeAuth: setAuth 호출, sub=', payload.sub, ', exp=', new Date(payload.exp * 1000).toISOString())
-  } catch { /* ignore */ }
+  if (!token) return
   client.realtime.setAuth(token)
 }
 
@@ -56,23 +49,13 @@ const applyRealtimeAuth = (client: SupabaseClient) => {
 const applyAuthSession = (client: SupabaseClient) => {
   const token = getAuthToken()
   const refreshToken = typeof window !== 'undefined' ? localStorage.getItem(REFRESH_TOKEN_KEY) : null
-  if (!token || !refreshToken) {
-    console.warn('[supabase] applyAuthSession: 토큰/리프레시 없음, 스킵')
-    return
-  }
+  if (!token || !refreshToken) return
 
-  console.log('[supabase] applyAuthSession: auth.setSession 호출 시작')
   client.auth.setSession({
     access_token: token,
     refresh_token: refreshToken,
-  }).then(({ data, error }) => {
-    if (error) {
-      console.error('[supabase] auth.setSession 실패:', error.message)
-    } else {
-      console.log('[supabase] auth.setSession 성공, user_id=', data.user?.id)
-    }
   }).catch((error) => {
-    console.error('[supabase] auth.setSession 예외:', error)
+    console.warn('[supabase] auth.setSession 실패:', error)
   })
 }
 
