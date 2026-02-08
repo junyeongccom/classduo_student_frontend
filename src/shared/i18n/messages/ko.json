@@ -365,6 +365,7 @@
     "actions": {
       "editProfile": "프로필 수정",
       "changePassword": "비밀번호 변경",
+      "errorReport": "오류 신고",
       "logout": "로그아웃"
     },
     "passwordChange": {

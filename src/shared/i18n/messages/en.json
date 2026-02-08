@@ -365,6 +365,7 @@
     "actions": {
       "editProfile": "Edit profile",
       "changePassword": "Change password",
+      "errorReport": "Report issue",
       "logout": "Log out"
     },
     "passwordChange": {
