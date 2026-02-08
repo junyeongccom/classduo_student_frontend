@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getLectureProgressStatusAll, getCourseRewardCounts, type LectureProgressStatus, claimReward as claimRewardAPI } from '@/shared/services/progressService'
+import { getLectureProgressStatusAll, getCourseRewardCounts, claimReward as claimRewardAPI } from '@/shared/services/progressService'
 import {
   subscribeProgressEvents,
   subscribeRewardEvents,
@@ -33,15 +33,15 @@ export function useGameStatus() {
   // 현재 사용자 정보 가져오기
   const user = useAuthStore(state => state.user)
   
-  // 안전장치: 1초마다 재조회
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  // 탭 포커스 복귀 시 재조회
-  const isFocusedRef = useRef(true)
+  // throttle: 마지막 fetch 시점 추적 (5초 이내 중복 방지)
+  const FETCH_THROTTLE_MS = 5000
+  const lastFetchAtRef = useRef(0)
 
   /**
    * Supabase에서 진척도 데이터 조회 및 상태 업데이트
    */
   const refreshData = useCallback(async () => {
+    lastFetchAtRef.current = Date.now()
     try {
       // 진척도 데이터와 보상 개수 데이터를 병렬로 조회
       const [progressResult, rewardCountResult] = await Promise.all([
@@ -164,33 +164,26 @@ export function useGameStatus() {
       }
     })
 
-    // 안전장치: 1초마다 재조회
-    refreshIntervalRef.current = setInterval(() => {
-      if (isFocusedRef.current) {
+    // throttle된 재조회 (5초 이내 중복 방지)
+    const throttledRefresh = () => {
+      if (Date.now() - lastFetchAtRef.current > FETCH_THROTTLE_MS) {
         refreshData()
       }
-    }, 1000) // 1초
+    }
 
     // 탭 포커스 복귀 시 재조회
-    const handleFocus = () => {
-      isFocusedRef.current = true
-      refreshData()
-    }
-    const handleBlur = () => {
-      isFocusedRef.current = false
-    }
+    const handleFocus = throttledRefresh
+    // 네트워크 복구 시 재조회
+    const handleOnline = throttledRefresh
 
     window.addEventListener('focus', handleFocus)
-    window.addEventListener('blur', handleBlur)
+    window.addEventListener('online', handleOnline)
 
     return () => {
       unsubscribeProgress()
       unsubscribeReward()
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current)
-      }
       window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('blur', handleBlur)
+      window.removeEventListener('online', handleOnline)
     }
   }, [refreshData, refreshStatus, user])
 
