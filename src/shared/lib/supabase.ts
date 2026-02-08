@@ -42,6 +42,24 @@ const applyRealtimeAuth = (client: SupabaseClient) => {
   client.realtime.setAuth(token)
 }
 
+/**
+ * Supabase SDK 내부 세션 등록 (Realtime RLS auth.uid() 동작에 필수)
+ * 교수자 프론트엔드의 syncSupabaseSession과 동일한 역할
+ * fire-and-forget: 비동기이나 결과를 기다리지 않음
+ */
+const applyAuthSession = (client: SupabaseClient) => {
+  const token = getAuthToken()
+  const refreshToken = typeof window !== 'undefined' ? localStorage.getItem(REFRESH_TOKEN_KEY) : null
+  if (!token || !refreshToken) return
+
+  client.auth.setSession({
+    access_token: token,
+    refresh_token: refreshToken,
+  }).catch((error) => {
+    console.warn('[supabase] auth.setSession 실패:', error)
+  })
+}
+
 const applyRestHeaders = (client: SupabaseClient) => {
   const headers = getSupabaseHeaders()
   if (Object.keys(headers).length === 0) return
@@ -121,6 +139,7 @@ export function getSupabaseClient(): SupabaseClient {
   if (supabaseClient) {
     applyRestHeaders(supabaseClient)
     applyRealtimeAuth(supabaseClient)
+    applyAuthSession(supabaseClient)
     return supabaseClient
   }
   const globalClient = getGlobalClient()
@@ -128,6 +147,7 @@ export function getSupabaseClient(): SupabaseClient {
     supabaseClient = globalClient
     applyRestHeaders(supabaseClient)
     applyRealtimeAuth(supabaseClient)
+    applyAuthSession(supabaseClient)
     return supabaseClient
   }
 
@@ -143,6 +163,7 @@ export function getSupabaseClient(): SupabaseClient {
     },
   })
   applyRealtimeAuth(supabaseClient)
+  applyAuthSession(supabaseClient)
   setGlobalClient(supabaseClient)
 
   return supabaseClient
@@ -179,9 +200,10 @@ export function getSupabaseHeaders(): Record<string, string> {
  */
 export function resetSupabaseClient(): void {
   if (supabaseClient) {
-    // 기존 클라이언트를 재생성하지 않고 헤더/Realtime 인증만 갱신
+    // 기존 클라이언트를 재생성하지 않고 헤더/Realtime 인증/SDK 세션 갱신
     applyRestHeaders(supabaseClient)
     applyRealtimeAuth(supabaseClient)
+    applyAuthSession(supabaseClient)
     return
   }
   supabaseClient = getSupabaseClient()
