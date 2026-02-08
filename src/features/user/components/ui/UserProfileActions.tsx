@@ -1,15 +1,16 @@
 'use client'
 
-import { LogOut, Key } from 'lucide-react'
+import { LogOut, Key, MessageSquareWarning } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/shared/components/ui'
 
 interface UserProfileActionsProps {
   onLogout: () => void
   onChangePassword?: () => void
+  onErrorReport?: () => void
 }
 
-export function UserProfileActions({ onLogout, onChangePassword }: UserProfileActionsProps) {
+export function UserProfileActions({ onLogout, onChangePassword, onErrorReport }: UserProfileActionsProps) {
   const t = useTranslations('profile')
   return (
     <div className="space-y-3">
@@ -23,6 +24,14 @@ export function UserProfileActions({ onLogout, onChangePassword }: UserProfileAc
       >
         <Key className="mr-2 h-4 w-4" />
         {t('actions.changePassword')}
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full justify-start"
+        onClick={onErrorReport}
+      >
+        <MessageSquareWarning className="mr-2 h-4 w-4" />
+        {t('actions.errorReport')}
       </Button>
       <Button
         variant="ghost"

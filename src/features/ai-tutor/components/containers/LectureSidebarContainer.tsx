@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { apiRequest } from '@/shared/lib/api'
+import { ensureValidToken } from '@/shared/lib/supabase'
 import { useGameProgress } from '../../hooks/useGameProgress'
 import { claimReward as claimRewardAPI } from '@/shared/services/progressService'
 import { useAuthStore } from '@/features/auth/store/authStore'
@@ -201,6 +202,9 @@ export function LectureSidebarContainer({
         setIsLoading(true)
         setError(null)
       }
+
+      // 토큰 유효성 사전 확인 (만료 시 갱신)
+      await ensureValidToken()
 
       // 토큰이 localStorage에 저장될 시간을 주기 위해 약간의 딜레이 추가
       await new Promise(resolve => setTimeout(resolve, 100))

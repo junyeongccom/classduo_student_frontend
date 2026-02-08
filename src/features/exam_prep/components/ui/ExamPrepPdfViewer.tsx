@@ -1,6 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
+import { X } from "lucide-react"
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist"
 
 type PdfAnnotationPath = {
@@ -1160,6 +1162,7 @@ const TextLayer = ({
   enableInteraction: boolean
   onUpdate: (texts: PdfAnnotationText[]) => void
 }) => {
+  const t = useTranslations("examPrep.pdf")
   const layerRef = useRef<HTMLDivElement>(null)
   const textsRef = useRef<PdfAnnotationText[]>(texts)
   const draggingId = useRef<string | null>(null)
@@ -1172,6 +1175,16 @@ const TextLayer = ({
   const creatingStart = useRef<{ x: number; y: number } | null>(null)
   const resizingId = useRef<string | null>(null)
   const [expandedTextIds, setExpandedTextIds] = useState<Set<string>>(() => new Set())
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const toggleTimerRef = useRef<number | null>(null)
+  const toggleTimerTextIdRef = useRef<string | null>(null)
+
+  const clearToggleTimer = () => {
+    if (!toggleTimerRef.current) return
+    window.clearTimeout(toggleTimerRef.current)
+    toggleTimerRef.current = null
+    toggleTimerTextIdRef.current = null
+  }
 
   const normalizePointFromLayer = (clientX: number, clientY: number) => {
     const layer = layerRef.current
@@ -1259,6 +1272,40 @@ const TextLayer = ({
       return hasChange ? next : prev
     })
   }, [texts])
+
+  useEffect(() => {
+    // Close delete confirm when leaving expanded/reading mode or when the target disappears.
+    if (!pendingDeleteId) return
+    const exists = texts.some(item => item.id === pendingDeleteId)
+    if (!exists) {
+      setPendingDeleteId(null)
+      return
+    }
+  }, [pendingDeleteId, texts])
+
+  useEffect(() => {
+    if (!pendingDeleteId) return
+    const handlePointerDown = (event: PointerEvent) => {
+      // Use composedPath to reliably detect clicks inside the confirm UI
+      // (event.target can be an SVG child, where closest() checks may fail in some browsers).
+      const path = typeof event.composedPath === "function" ? event.composedPath() : []
+      for (const node of path) {
+        if (!(node instanceof Element)) continue
+        if (node.getAttribute?.("data-text-delete-confirm") === "true") return
+      }
+      setPendingDeleteId(null)
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      setPendingDeleteId(null)
+    }
+    window.addEventListener("pointerdown", handlePointerDown, { capture: true })
+    window.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown, { capture: true } as AddEventListenerOptions)
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [pendingDeleteId])
 
   useEffect(() => {
     if (!editingTextId) return
@@ -1388,7 +1435,7 @@ const TextLayer = ({
           <div
             key={text.id}
             className={[
-              "pointer-events-auto absolute rounded px-1 border",
+              "pointer-events-auto absolute rounded border",
               isEditing ? "border-dashed border-blue-400" : "border-solid border-gray-300",
               selectedTextIds.includes(text.id) ? "ring-1 ring-blue-400 ring-offset-2 ring-offset-white" : "",
             ].join(" ")}
@@ -1417,12 +1464,18 @@ const TextLayer = ({
                 didDrag.current = false
                 return
               }
-              setExpandedTextIds(prev => {
-                const next = new Set(prev)
-                if (next.has(text.id)) next.delete(text.id)
-                else next.add(text.id)
-                return next
-              })
+              clearToggleTimer()
+              toggleTimerTextIdRef.current = text.id
+              toggleTimerRef.current = window.setTimeout(() => {
+                setExpandedTextIds(prev => {
+                  const next = new Set(prev)
+                  if (next.has(text.id)) next.delete(text.id)
+                  else next.add(text.id)
+                  return next
+                })
+                toggleTimerRef.current = null
+                toggleTimerTextIdRef.current = null
+              }, 220)
             }}
             onPointerDown={event => {
               if (event.button !== 0) return
@@ -1479,90 +1532,155 @@ const TextLayer = ({
             }}
             onDoubleClick={event => {
               event.stopPropagation()
-              // Required flow: expand first, then double-click to edit.
               if (editingTextId === text.id) return
-              const canToggle = (text.text ?? "").includes("\n") || (text.text?.length ?? 0) > 5
-              if (canToggle && !isExpanded) {
-                setExpandedTextIds(prev => {
-                  if (prev.has(text.id)) return prev
-                  const next = new Set(prev)
-                  next.add(text.id)
-                  return next
-                })
-                return
+              if (toggleTimerTextIdRef.current === text.id) {
+                clearToggleTimer()
               }
+              setExpandedTextIds(prev => {
+                if (prev.has(text.id)) return prev
+                const next = new Set(prev)
+                next.add(text.id)
+                return next
+              })
               onEdit(text.id)
             }}
           >
-            {/* Delete button (reading mode, expanded only) */}
-            {isExpanded && !isEditing && (
-              <button
-                type="button"
-                className="absolute right-1 top-1 z-10 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-900/20 text-[12px] leading-none text-gray-900 hover:bg-gray-900/30"
-                onMouseDown={event => {
-                  // Prevent focusing/blur side-effects.
-                  event.preventDefault()
-                }}
-                onPointerDown={event => {
-                  event.stopPropagation()
-                  event.preventDefault()
-                }}
-                onClick={event => {
-                  event.stopPropagation()
-                  event.preventDefault()
-                  const next = textsRef.current.filter(item => item.id !== text.id)
-                  onUpdate(next)
-                  onSelect([])
-                  onEdit(null)
-                  setExpandedTextIds(prev => {
-                    if (!prev.has(text.id)) return prev
-                    const nextSet = new Set(prev)
-                    nextSet.delete(text.id)
-                    return nextSet
-                  })
-                }}
-                aria-label="삭제"
-              >
-                ×
-              </button>
+            {/* Delete button (expanded, read/edit) */}
+            {isExpanded && (
+              <div className="absolute right-1 top-1 z-10" data-text-delete-confirm="true">
+                <button
+                  type="button"
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-black text-white shadow-sm hover:bg-black/90"
+                  onMouseDown={event => {
+                    // Prevent focusing/blur side-effects.
+                    event.preventDefault()
+                  }}
+                  onPointerDown={event => {
+                    event.stopPropagation()
+                    event.preventDefault()
+                  }}
+                  onClick={event => {
+                    event.stopPropagation()
+                    event.preventDefault()
+                    setPendingDeleteId(prev => (prev === text.id ? null : text.id))
+                  }}
+                  aria-label="삭제"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+
+                {pendingDeleteId === text.id && (
+                  <div className="absolute right-0 top-6 z-20 w-[180px] rounded-lg border border-gray-200 bg-white p-2 text-[11px] text-gray-900 shadow-lg">
+                    <div className="mb-2 leading-snug">{t("textDeleteConfirm")}</div>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        className="rounded border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-700 hover:bg-gray-50"
+                        onMouseDown={event => {
+                          event.preventDefault()
+                        }}
+                        onClick={event => {
+                          event.stopPropagation()
+                          event.preventDefault()
+                          setPendingDeleteId(null)
+                        }}
+                      >
+                        {t("no")}
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded bg-gray-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-gray-800"
+                        onMouseDown={event => {
+                          event.preventDefault()
+                        }}
+                        onClick={event => {
+                          event.stopPropagation()
+                          event.preventDefault()
+                          const next = textsRef.current.filter(item => item.id !== text.id)
+                          onUpdate(next)
+                          onSelect([])
+                          onEdit(null)
+                          setPendingDeleteId(null)
+                          setExpandedTextIds(prev => {
+                            if (!prev.has(text.id)) return prev
+                            const nextSet = new Set(prev)
+                            nextSet.delete(text.id)
+                            return nextSet
+                          })
+                        }}
+                      >
+                        {t("yes")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
             {editingTextId === text.id ? (
-              <textarea
-                className="w-full rounded border border-gray-300 bg-white px-1 text-xs text-gray-900 whitespace-pre-wrap break-words"
-                defaultValue={text.text}
-                autoFocus
+              <div
+                className={[
+                  "px-1 pb-1 leading-[1.2]",
+                  isExpanded ? "h-full" : "h-full",
+                ].join(" ")}
                 style={{
-                  height: "100%",
-                  resize: "none",
-                  overflow: "hidden",
-                  fontSize: text.fontSize,
-                  lineHeight: 1.2,
+                  overflowY: isExpanded ? "scroll" : "hidden",
+                  scrollbarGutter: isExpanded ? "stable" : undefined,
+                  paddingRight: "10px",
                 }}
-                onKeyDown={event => {
-                  if (event.key !== "Enter") return
-                  if (event.shiftKey) return
-                  event.preventDefault()
-                  commitTextEdit(text.id, event.currentTarget.value, { collapseAfter: false })
-                }}
-                onInput={event => {
-                  const layer = layerRef.current
-                  if (!layer) return
-                  const rect = layer.getBoundingClientRect()
-                  if (!rect.height) return
-                  const scrollHeight = event.currentTarget.scrollHeight
-                  const nextH = Math.min(1 - box.y, Math.max(box.h, scrollHeight / rect.height))
-                  const clamped = clampBox({ x: box.x, y: box.y, w: box.w, h: nextH })
-                  const next = textsRef.current.map(item =>
-                    item.id === text.id ? { ...item, w: clamped.w, h: clamped.h } : item
-                  )
-                  onUpdate(next)
-                }}
-                onBlur={event => {
-                  commitTextEdit(text.id, event.currentTarget.value, { collapseAfter: true })
-                }}
-              />
+              >
+                <textarea
+                  className="block w-full bg-transparent text-xs text-gray-900 whitespace-pre-wrap break-words outline-none"
+                  defaultValue={text.text}
+                  autoFocus
+                  style={{
+                    minHeight: "100%",
+                    resize: "none",
+                    overflow: "hidden",
+                    fontSize: text.fontSize,
+                    lineHeight: 1.2,
+                    padding: 0,
+                    border: "none",
+                    borderRadius: 0,
+                  }}
+                  onWheel={event => {
+                    // Ensure scrolling works the same when the pointer is over the textarea.
+                    const container = event.currentTarget.parentElement
+                    if (!container) return
+                    if (container.scrollHeight <= container.clientHeight) return
+                    container.scrollTop += event.deltaY
+                    event.preventDefault()
+                  }}
+                  onKeyDown={event => {
+                    if (event.key !== "Enter") return
+                    if (event.shiftKey) return
+                    event.preventDefault()
+                    commitTextEdit(text.id, event.currentTarget.value, { collapseAfter: false })
+                  }}
+                  onInput={event => {
+                    // Grow the textarea height to content so the *container* scrolls (not the textarea).
+                    const el = event.currentTarget
+                    el.style.height = "auto"
+                    el.style.height = `${el.scrollHeight}px`
+                  }}
+                  onBlur={event => {
+                    commitTextEdit(text.id, event.currentTarget.value, { collapseAfter: true })
+                  }}
+                />
+              </div>
             ) : (
-              <span className="whitespace-pre-wrap break-words">{displayText}</span>
+              <div
+                className={[
+                  "px-1 pb-1 leading-[1.2]",
+                  isExpanded ? "h-full" : "h-full",
+                ].join(" ")}
+                style={{
+                  overflowY: isExpanded ? "scroll" : "hidden",
+                  scrollbarGutter: isExpanded ? "stable" : undefined,
+                  paddingRight: "10px",
+                }}
+              >
+                <span className="whitespace-pre-wrap break-words">{displayText}</span>
+              </div>
             )}
             {/* Resize handle (bottom-right) */}
             {isExpanded && selectedTextIds.includes(text.id) && (

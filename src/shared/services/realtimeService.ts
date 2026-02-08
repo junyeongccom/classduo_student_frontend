@@ -4,11 +4,11 @@
  */
 'use client'
 
-import { getSupabaseClient, resetSupabaseClient, onTokenRefresh } from '@/shared/lib/supabase'
+import { getSupabaseClient, onTokenRefresh, ensureValidToken } from '@/shared/lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface ProgressEvent {
-  event_type: 'ox_quiz' | 'review_blank'
+  event_type: 'ox_quiz' | 'review_blank' | 'card_match'
   user_id: string
   lecture_id: string
   ox_quiz_question_id?: string
@@ -31,11 +31,18 @@ export type RewardEventHandler = (event: RewardEvent) => void
  * Realtime 구독 채널 관리
  */
 class RealtimeSubscriptionManager {
+  private static MAX_RETRIES = 5
+
   private progressChannel: RealtimeChannel | null = null
   private rewardChannel: RealtimeChannel | null = null
   private progressHandlers: Set<ProgressEventHandler> = new Set()
   private rewardHandlers: Set<RewardEventHandler> = new Set()
   private tokenRefreshUnsubscribe: (() => void) | null = null
+  private progressRetryCount = 0
+  private rewardRetryCount = 0
+  private progressRetryTimer: ReturnType<typeof setTimeout> | null = null
+  private rewardRetryTimer: ReturnType<typeof setTimeout> | null = null
+  private isReconnecting = false
 
   constructor() {
     // 토큰 갱신 이벤트 리스너 등록
@@ -48,38 +55,49 @@ class RealtimeSubscriptionManager {
    * 토큰 갱신 시 모든 채널 재구독
    */
   private async reconnectChannels(): Promise<void> {
-    console.log('[realtimeService] 토큰 갱신 감지, 채널 재구독 시작...')
-    
-    // 기존 채널 해제
-    if (this.progressChannel) {
-      const supabase = getSupabaseClient()
-      supabase.removeChannel(this.progressChannel)
-      this.progressChannel = null
-    }
-    
-    if (this.rewardChannel) {
-      const supabase = getSupabaseClient()
-      supabase.removeChannel(this.rewardChannel)
-      this.rewardChannel = null
-    }
+    if (this.isReconnecting) return
+    this.isReconnecting = true
 
-    // 핸들러가 있으면 재구독
-    if (this.progressHandlers.size > 0) {
-      try {
-        await this.initializeProgressSubscription()
-        console.log('[realtimeService] user_progress_events 재구독 완료')
-      } catch (error) {
-        console.error('[realtimeService] user_progress_events 재구독 실패:', error)
-      }
-    }
+    try {
+      console.log('[realtimeService] 토큰 갱신 감지, 채널 재구독 시작...')
 
-    if (this.rewardHandlers.size > 0) {
-      try {
-        await this.initializeRewardSubscription()
-        console.log('[realtimeService] user_lecture_rewards 재구독 완료')
-      } catch (error) {
-        console.error('[realtimeService] user_lecture_rewards 재구독 실패:', error)
+      // 기존 채널 해제
+      if (this.progressChannel) {
+        const supabase = getSupabaseClient()
+        supabase.removeChannel(this.progressChannel)
+        this.progressChannel = null
       }
+
+      if (this.rewardChannel) {
+        const supabase = getSupabaseClient()
+        supabase.removeChannel(this.rewardChannel)
+        this.rewardChannel = null
+      }
+
+      // 재시도 카운터 리셋 (토큰 갱신으로 인한 재구독은 새 시작)
+      this.progressRetryCount = 0
+      this.rewardRetryCount = 0
+
+      // 핸들러가 있으면 재구독
+      if (this.progressHandlers.size > 0) {
+        try {
+          await this.initializeProgressSubscription()
+          console.log('[realtimeService] user_progress_events 재구독 완료')
+        } catch (error) {
+          console.error('[realtimeService] user_progress_events 재구독 실패:', error)
+        }
+      }
+
+      if (this.rewardHandlers.size > 0) {
+        try {
+          await this.initializeRewardSubscription()
+          console.log('[realtimeService] user_lecture_rewards 재구독 완료')
+        } catch (error) {
+          console.error('[realtimeService] user_lecture_rewards 재구독 실패:', error)
+        }
+      }
+    } finally {
+      this.isReconnecting = false
     }
   }
 
@@ -87,6 +105,14 @@ class RealtimeSubscriptionManager {
    * 정리 작업
    */
   cleanup(): void {
+    if (this.progressRetryTimer) {
+      clearTimeout(this.progressRetryTimer)
+      this.progressRetryTimer = null
+    }
+    if (this.rewardRetryTimer) {
+      clearTimeout(this.rewardRetryTimer)
+      this.rewardRetryTimer = null
+    }
     if (this.tokenRefreshUnsubscribe) {
       this.tokenRefreshUnsubscribe()
       this.tokenRefreshUnsubscribe = null
@@ -127,9 +153,7 @@ class RealtimeSubscriptionManager {
    * user_progress_events 구독 초기화 (내부 비동기 메서드)
    */
   private async initializeProgressSubscription(): Promise<void> {
-    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성 -> 제거 (getSupabaseClient가 최신 토큰 사용)
     const supabase = getSupabaseClient()
-
     this.progressChannel = supabase
       .channel('user_progress_events')
       .on(
@@ -138,19 +162,33 @@ class RealtimeSubscriptionManager {
           event: 'INSERT',
           schema: 'public',
           table: 'user_progress_events',
-          filter: 'user_id=eq.auth.uid()',
         },
         (payload) => {
           const event = payload.new as ProgressEvent
-          // 모든 핸들러에 이벤트 전달
           this.progressHandlers.forEach((h) => h(event))
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('[realtimeService] user_progress_events 구독 성공')
+          this.progressRetryCount = 0
         } else if (status === 'CHANNEL_ERROR') {
           console.error('[realtimeService] user_progress_events 구독 실패')
+          if (this.progressRetryCount < RealtimeSubscriptionManager.MAX_RETRIES) {
+            this.progressRetryCount++
+            const delay = Math.min(1000 * 2 ** this.progressRetryCount, 30000)
+            console.log(`[realtimeService] user_progress_events 재시도 ${this.progressRetryCount}/${RealtimeSubscriptionManager.MAX_RETRIES} (${delay}ms 후)`)
+            if (this.progressChannel) {
+              getSupabaseClient().removeChannel(this.progressChannel)
+              this.progressChannel = null
+            }
+            this.progressRetryTimer = setTimeout(async () => {
+              await ensureValidToken()
+              this.initializeProgressSubscription()
+            }, delay)
+          } else {
+            console.warn('[realtimeService] user_progress_events 최대 재시도 초과')
+          }
         }
       })
   }
@@ -188,9 +226,7 @@ class RealtimeSubscriptionManager {
    * user_lecture_rewards 구독 초기화 (내부 비동기 메서드)
    */
   private async initializeRewardSubscription(): Promise<void> {
-    // 토큰이 변경되었을 수 있으므로 클라이언트 재생성 -> 제거
     const supabase = getSupabaseClient()
-
     this.rewardChannel = supabase
       .channel('user_lecture_rewards')
       .on(
@@ -199,19 +235,33 @@ class RealtimeSubscriptionManager {
           event: 'INSERT',
           schema: 'public',
           table: 'user_lecture_rewards',
-          filter: 'user_id=eq.auth.uid()',
         },
         (payload) => {
           const event = payload.new as RewardEvent
-          // 모든 핸들러에 이벤트 전달
           this.rewardHandlers.forEach((h) => h(event))
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('[realtimeService] user_lecture_rewards 구독 성공')
+          this.rewardRetryCount = 0
         } else if (status === 'CHANNEL_ERROR') {
           console.error('[realtimeService] user_lecture_rewards 구독 실패')
+          if (this.rewardRetryCount < RealtimeSubscriptionManager.MAX_RETRIES) {
+            this.rewardRetryCount++
+            const delay = Math.min(1000 * 2 ** this.rewardRetryCount, 30000)
+            console.log(`[realtimeService] user_lecture_rewards 재시도 ${this.rewardRetryCount}/${RealtimeSubscriptionManager.MAX_RETRIES} (${delay}ms 후)`)
+            if (this.rewardChannel) {
+              getSupabaseClient().removeChannel(this.rewardChannel)
+              this.rewardChannel = null
+            }
+            this.rewardRetryTimer = setTimeout(async () => {
+              await ensureValidToken()
+              this.initializeRewardSubscription()
+            }, delay)
+          } else {
+            console.warn('[realtimeService] user_lecture_rewards 최대 재시도 초과')
+          }
         }
       })
   }

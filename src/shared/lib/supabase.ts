@@ -42,6 +42,23 @@ const applyRealtimeAuth = (client: SupabaseClient) => {
   client.realtime.setAuth(token)
 }
 
+/**
+ * Supabase SDK 내부 세션 등록 (Realtime RLS auth.uid() 동작에 필수)
+ * 교수자 프론트엔드의 syncSupabaseSession과 동일한 역할
+ */
+const applyAuthSession = (client: SupabaseClient) => {
+  const token = getAuthToken()
+  const refreshToken = typeof window !== 'undefined' ? localStorage.getItem(REFRESH_TOKEN_KEY) : null
+  if (!token || !refreshToken) return
+
+  client.auth.setSession({
+    access_token: token,
+    refresh_token: refreshToken,
+  }).catch((error) => {
+    console.warn('[supabase] auth.setSession 실패:', error)
+  })
+}
+
 const applyRestHeaders = (client: SupabaseClient) => {
   const headers = getSupabaseHeaders()
   if (Object.keys(headers).length === 0) return
@@ -117,7 +134,7 @@ export function getSupabaseClient(): SupabaseClient {
     throw new Error('Supabase 환경 변수가 설정되지 않았습니다.')
   }
 
-  // 클라이언트가 이미 생성되어 있으면 재사용
+  // 클라이언트가 이미 생성되어 있으면 재사용 (세션은 건드리지 않음)
   if (supabaseClient) {
     applyRestHeaders(supabaseClient)
     applyRealtimeAuth(supabaseClient)
@@ -143,6 +160,7 @@ export function getSupabaseClient(): SupabaseClient {
     },
   })
   applyRealtimeAuth(supabaseClient)
+  applyAuthSession(supabaseClient)
   setGlobalClient(supabaseClient)
 
   return supabaseClient
@@ -179,9 +197,10 @@ export function getSupabaseHeaders(): Record<string, string> {
  */
 export function resetSupabaseClient(): void {
   if (supabaseClient) {
-    // 기존 클라이언트를 재생성하지 않고 헤더/Realtime 인증만 갱신
+    // 기존 클라이언트를 재생성하지 않고 헤더/Realtime 인증/SDK 세션 갱신
     applyRestHeaders(supabaseClient)
     applyRealtimeAuth(supabaseClient)
+    applyAuthSession(supabaseClient)
     return
   }
   supabaseClient = getSupabaseClient()
@@ -213,9 +232,29 @@ export function isJWTExpiredError(error: any): boolean {
 }
 
 /**
+ * 토큰 갱신 싱글턴 Promise
+ * 동시에 여러 호출이 와도 실제 /auth/refresh는 1회만 실행
+ */
+let refreshPromise: Promise<boolean> | null = null
+
+/**
  * Refresh token으로 새 access token 발급 및 Supabase 클라이언트 재생성
+ * 싱글턴 패턴: 동시 호출 시 기존 Promise를 공유
  */
 export async function refreshSupabaseToken(): Promise<boolean> {
+  if (refreshPromise) {
+    return refreshPromise
+  }
+
+  refreshPromise = _doRefreshToken()
+  try {
+    return await refreshPromise
+  } finally {
+    refreshPromise = null
+  }
+}
+
+async function _doRefreshToken(): Promise<boolean> {
   if (typeof window === 'undefined') {
     return false
   }
@@ -228,17 +267,17 @@ export async function refreshSupabaseToken(): Promise<boolean> {
 
   try {
     const refreshResult = await authService.refreshToken(refreshToken)
-    
+
     if (refreshResult.data && !refreshResult.error) {
       // 새 토큰 저장
       localStorage.setItem(TOKEN_KEY, refreshResult.data.access_token)
       if (refreshResult.data.refresh_token) {
         localStorage.setItem(REFRESH_TOKEN_KEY, refreshResult.data.refresh_token)
       }
-      
+
       // Supabase 클라이언트 재생성 (새 토큰으로 헤더 업데이트)
       resetSupabaseClient()
-      
+
       // 토큰 갱신 성공 시 이벤트 발생
       tokenRefreshListeners.forEach(listener => {
         try {
@@ -247,10 +286,10 @@ export async function refreshSupabaseToken(): Promise<boolean> {
           console.error('[supabase] 토큰 갱신 리스너 실행 중 오류:', error)
         }
       })
-      
+
       // 예방적 갱신 타이머 재설정
       startTokenRefreshTimer()
-      
+
       return true
     } else {
       console.error('[supabase] 토큰 갱신 실패:', refreshResult.error)
@@ -260,6 +299,22 @@ export async function refreshSupabaseToken(): Promise<boolean> {
     console.error('[supabase] 토큰 갱신 중 예외 발생:', error)
     return false
   }
+}
+
+/**
+ * 토큰 유효성 사전 확인
+ * 만료되었거나 60초 이내 만료 예정이면 갱신 시도 (Clock Skew 대응)
+ */
+export async function ensureValidToken(): Promise<boolean> {
+  const token = getAuthToken()
+  if (!token) return false
+
+  const timeUntilExpiration = getTimeUntilExpiration(token)
+  // 만료되었거나 60초 이내 만료 예정이면 갱신
+  if (timeUntilExpiration === null || timeUntilExpiration < 60_000) {
+    return await refreshSupabaseToken()
+  }
+  return true
 }
 
 /**

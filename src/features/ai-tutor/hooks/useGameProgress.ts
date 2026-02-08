@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { 
-  getLectureProgressStatusAll, 
+import {
+  getLectureProgressStatusAll,
   getCourseRewardCounts,
-  type LectureProgressStatus 
 } from '@/shared/services/progressService'
 import {
   subscribeProgressEvents,
@@ -12,7 +11,7 @@ import {
   type ProgressEvent,
   type RewardEvent,
 } from '@/shared/services/realtimeService'
-import { useAuthStore } from '@/features/auth/store/authStore'
+import { ensureValidToken } from '@/shared/lib/supabase'
 
 // 기존 타입 유지 (하위 호환성)
 export interface GameProgress {
@@ -33,19 +32,16 @@ export function useGameProgress() {
   const [flameCount, setFlameCount] = useState<FlameCount>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  
-  // 현재 사용자 정보 가져오기
-  const user = useAuthStore(state => state.user)
-  
-  // 안전장치: 1초마다 재조회
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  // 탭 포커스 복귀 시 재조회
-  const isFocusedRef = useRef(true)
+
+  // 마지막 fetch 시점 추적 (탭 전환/네트워크 복구 시 throttle용)
+  const lastFetchAtRef = useRef(0)
+  const FETCH_THROTTLE_MS = 5000
 
   /**
    * Supabase에서 진척도 데이터 조회 및 상태 업데이트
    */
   const refreshData = useCallback(async () => {
+    lastFetchAtRef.current = Date.now()
     try {
       // 진척도 데이터와 보상 개수 데이터를 병렬로 조회
       const [progressResult, rewardCountResult] = await Promise.all([
@@ -95,102 +91,91 @@ export function useGameProgress() {
 
   // 초기 로드 및 Realtime 구독 설정
   useEffect(() => {
-    // 초기 데이터 로드
-    refreshData()
+    let unsubscribeProgress: (() => void) | null = null
+    let unsubscribeReward: (() => void) | null = null
+    let isMounted = true
 
-    // Realtime 구독: user_progress_events INSERT 이벤트
-    const unsubscribeProgress = subscribeProgressEvents((event: ProgressEvent) => {
-      // 현재 사용자 ID 가져오기
-      const currentUserId = user?.user_id
-      
-      // user_id 필터링: 자신과 관련된 이벤트만 처리
-      if (!currentUserId || event.user_id !== currentUserId) {
-        return // 다른 사용자의 이벤트는 무시
-      }
-      
-      // 해당 lecture_id의 progress_count를 +1
-      setGameProgress((prev) => {
-        const current = prev[event.lecture_id] || 0
-        return {
-          ...prev,
-          [event.lecture_id]: Math.min(10, current + 1), // 최대 10
-        }
-      })
-    })
+    const initialize = async () => {
+      // 토큰 유효성 사전 확인 (만료 시 갱신)
+      const tokenValid = await ensureValidToken()
+      if (!tokenValid || !isMounted) return
 
-    // Realtime 구독: user_lecture_rewards INSERT 이벤트
-    const unsubscribeReward = subscribeRewardEvents((event: RewardEvent) => {
-      // 현재 사용자 ID 가져오기
-      const currentUserId = user?.user_id
-      
-      // user_id 필터링: 자신과 관련된 이벤트만 처리
-      if (!currentUserId || event.user_id !== currentUserId) {
-        return // 다른 사용자의 이벤트는 무시
-      }
-      
-      console.log('[useGameProgress] Realtime 보상 이벤트 수신:', {
-        lecture_id: event.lecture_id,
-        course_id: event.course_id,
-        amount: event.amount,
-      })
-      
-      // 해당 lecture_id의 is_claimed=true
-      setClaimedRewards((prev) => ({
-        ...prev,
-        [event.lecture_id]: true,
-      }))
+      // 초기 데이터 로드
+      refreshData()
 
-      // course_id가 있으면 즉시 flameCount 업데이트
-      if (event.course_id) {
-        const courseId = event.course_id // 타입 가드를 위해 로컬 변수에 저장
-        setFlameCount((prev) => {
-          const current = prev[courseId] || 0
-          const amount = event.amount || 1
-          console.log(`[useGameProgress] flameCount 업데이트: ${courseId} = ${current} + ${amount}`)
+      // Realtime 구독 시작 (유효한 토큰 보장)
+      unsubscribeProgress = subscribeProgressEvents((event: ProgressEvent) => {
+        // RLS(user_id = auth.uid())가 서버에서 필터링하므로 클라이언트 필터 불필요
+        // 해당 lecture_id의 progress_count를 +1
+        setGameProgress((prev) => {
+          const current = prev[event.lecture_id] || 0
           return {
             ...prev,
-            [courseId]: current + amount,
+            [event.lecture_id]: Math.min(10, current + 1), // 최대 10
           }
         })
-      } else {
-        // course_id가 없으면 refreshStatus 호출하여 최신 데이터 조회
-        // (트리거로 course_id가 채워졌을 수 있음)
-        console.log('[useGameProgress] course_id가 없어 refreshStatus 호출')
-        setTimeout(() => {
-          refreshStatus()
-        }, 500) // 트리거 실행 시간 고려
-      }
-    })
+      })
 
-    // 안전장치: 1초마다 재조회
-    refreshIntervalRef.current = setInterval(() => {
-      if (isFocusedRef.current) {
-        refreshData()
-      }
-    }, 1000) // 1초
+      // Realtime 구독: user_lecture_rewards INSERT 이벤트
+      unsubscribeReward = subscribeRewardEvents((event: RewardEvent) => {
+        // RLS(user_id = auth.uid())가 서버에서 필터링하므로 클라이언트 필터 불필요
 
-    // 탭 포커스 복귀 시 재조회
-    const handleFocus = () => {
-      isFocusedRef.current = true
+        console.log('[useGameProgress] Realtime 보상 이벤트 수신:', {
+          lecture_id: event.lecture_id,
+          course_id: event.course_id,
+          amount: event.amount,
+        })
+
+        // 해당 lecture_id의 is_claimed=true
+        setClaimedRewards((prev) => ({
+          ...prev,
+          [event.lecture_id]: true,
+        }))
+
+        // course_id가 있으면 즉시 flameCount 업데이트
+        if (event.course_id) {
+          const courseId = event.course_id // 타입 가드를 위해 로컬 변수에 저장
+          setFlameCount((prev) => {
+            const current = prev[courseId] || 0
+            const amount = event.amount || 1
+            console.log(`[useGameProgress] flameCount 업데이트: ${courseId} = ${current} + ${amount}`)
+            return {
+              ...prev,
+              [courseId]: current + amount,
+            }
+          })
+        } else {
+          // course_id가 없으면 refreshStatus 호출하여 최신 데이터 조회
+          // (트리거로 course_id가 채워졌을 수 있음)
+          console.log('[useGameProgress] course_id가 없어 refreshStatus 호출')
+          setTimeout(() => {
+            refreshStatus()
+          }, 500) // 트리거 실행 시간 고려
+        }
+      })
+    }
+
+    initialize()
+
+    // 탭 포커스 복귀 / 네트워크 복구 시 재조회 (5초 이내 중복 호출 방지)
+    const throttledRefresh = () => {
+      if (Date.now() - lastFetchAtRef.current < FETCH_THROTTLE_MS) return
       refreshData()
     }
-    const handleBlur = () => {
-      isFocusedRef.current = false
-    }
+    const handleFocus = throttledRefresh
+    const handleOnline = throttledRefresh
 
     window.addEventListener('focus', handleFocus)
-    window.addEventListener('blur', handleBlur)
+    window.addEventListener('online', handleOnline)
 
     return () => {
-      unsubscribeProgress()
-      unsubscribeReward()
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current)
-      }
+      isMounted = false
+      if (unsubscribeProgress) unsubscribeProgress()
+      if (unsubscribeReward) unsubscribeReward()
       window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('blur', handleBlur)
+      window.removeEventListener('online', handleOnline)
     }
-  }, [refreshData, user])
+  }, [refreshData])
 
   // 수동 재조회 함수 (외부에서 호출 가능)
   const refreshStatus = useCallback(() => {
