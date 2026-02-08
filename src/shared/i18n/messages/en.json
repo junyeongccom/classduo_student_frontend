@@ -249,7 +249,10 @@
     "pdf": {
       "title": "Lecture Material PDF",
       "placeholder": "Select a material to view the PDF",
-      "fullscreen": "View fullscreen"
+      "fullscreen": "View fullscreen",
+      "textDeleteConfirm": "Delete this text box?",
+      "yes": "Yes",
+      "no": "No"
     },
     "tabs": {
       "summary": "Summary",

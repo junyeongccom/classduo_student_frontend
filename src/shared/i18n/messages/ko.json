@@ -249,7 +249,10 @@
     "pdf": {
       "title": "강의자료 PDF",
       "placeholder": "자료를 선택하면 PDF가 표시됩니다",
-      "fullscreen": "전체화면으로 보기"
+      "fullscreen": "전체화면으로 보기",
+      "textDeleteConfirm": "삭제하시겠습니까?",
+      "yes": "예",
+      "no": "아니오"
     },
     "tabs": {
       "summary": "요약",
