@@ -4,7 +4,7 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
+import katex from 'katex'
 
 type MarkdownMessageProps = {
   markdown: string
@@ -16,8 +16,6 @@ export function MarkdownMessage({ markdown, className }: MarkdownMessageProps) {
     <div className={className}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        // Safer for AI output: don't crash the UI on invalid / partial LaTeX
-        rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: 'ignore' }]]}
         // NOTE: do not enable raw HTML rendering for safety
         components={{
           h1: ({ children }) => (
@@ -34,10 +32,41 @@ export function MarkdownMessage({ markdown, className }: MarkdownMessageProps) {
           ul: ({ children }) => <ul className="list-disc ml-5 mb-2 space-y-0.5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal ml-5 mb-2 space-y-0.5">{children}</ol>,
           li: ({ children }) => <li className="leading-snug text-sm">{children}</li>,
-          code: ({ children }) => <code className="text-xs text-gray-800 font-mono leading-snug">{children}</code>,
-          pre: ({ children }) => (
-            <pre className="bg-gray-100 rounded-lg p-3 my-2 overflow-x-auto border border-gray-200">{children}</pre>
-          ),
+          code: ({ children, className }) => {
+            // remark-math represents inline math as: <code class="language-math">...</code>
+            if (className?.includes('language-math')) {
+              const formula = String(children ?? '').replace(/\n$/, '')
+              const mathml = katex.renderToString(formula, {
+                throwOnError: false,
+                strict: 'ignore',
+                displayMode: false,
+                output: 'mathml',
+              })
+
+              return <span dangerouslySetInnerHTML={{ __html: mathml }} />
+            }
+
+            return <code className="text-xs text-gray-800 font-mono leading-snug">{children}</code>
+          },
+          pre: ({ children }) => {
+            // remark-math represents block math as: <pre><code class="language-math">...</code></pre>
+            const firstChild = React.Children.toArray(children)[0] as React.ReactElement | undefined
+            const codeClassName = (firstChild as any)?.props?.className as string | undefined
+            if (codeClassName?.includes('language-math')) {
+              const raw = (firstChild as any)?.props?.children
+              const formula = String(raw ?? '').replace(/\n$/, '')
+              const mathml = katex.renderToString(formula, {
+                throwOnError: false,
+                strict: 'ignore',
+                displayMode: true,
+                output: 'mathml',
+              })
+
+              return <div dangerouslySetInnerHTML={{ __html: mathml }} />
+            }
+
+            return <pre className="bg-gray-100 rounded-lg p-3 my-2 overflow-x-auto border border-gray-200">{children}</pre>
+          },
           // Keep current UX: do not render horizontal rules (---)
           hr: () => null,
           // Tables (GFM)

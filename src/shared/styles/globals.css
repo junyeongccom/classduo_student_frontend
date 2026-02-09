@@ -69,12 +69,6 @@
 }
 
 @layer utilities {
-  /* KaTeX math in chat markdown: prevent long equations from overflowing the chat area */
-  .markdown-content .katex-display {
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
   /* Gooey 효과 배경 */
   .game-gooey-bg {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

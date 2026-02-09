@@ -1533,3 +1533,4 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     </div>
   )
 }
+

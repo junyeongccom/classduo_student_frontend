@@ -459,15 +459,19 @@ export function AITutorContainer() {
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 overflow-hidden bg-transparent">
-        <div ref={containerRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="flex h-full min-h-0 overflow-hidden bg-transparent">
+        <div ref={containerRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <main
-            className="flex min-h-0 flex-1 overflow-hidden p-6"
+            className="flex flex-1 min-h-0 overflow-y-hidden overflow-x-hidden p-6"
             style={{ paddingRight: showInlineNotesPanel ? notesPanelWidth : 0 }}
           >
-            <div className="flex min-h-0 flex-1 w-full items-start justify-center -ml-3">
+            <div className="flex h-full w-full items-center justify-center -ml-3">
               <div
-                className="mx-auto flex min-h-0 flex-1 w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
+                className="mx-auto flex w-full max-w-6xl flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm overflow-hidden"
+                style={{
+                  height: '70vw',
+                  maxHeight: '94vh',
+                }}
               >
                <div className="flex items-center justify-between gap-4 border-b border-gray-200 pb-2 shrink-0 pt-0 -mt-3">
                 <div className="flex items-center gap-2">

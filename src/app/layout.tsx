@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import '@/shared/styles/globals.css'
-import 'katex/dist/katex.min.css'
 import { AuthProvider } from '@/features/auth'
 import { I18nRootProvider } from '@/shared/i18n/I18nRootProvider'
 
