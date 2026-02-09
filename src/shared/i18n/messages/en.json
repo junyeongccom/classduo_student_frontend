@@ -271,6 +271,41 @@
         "button": "Create",
         "creating": "Creating"
       },
+      "settings": {
+        "button": "Settings",
+        "title": "Quiz settings",
+        "closeAria": "Close settings",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "questionType": {
+          "title": "Question type",
+          "objective": "Multiple choice",
+          "subjective": "Short answer",
+          "options": {
+            "definitionToTerm": "Definition → Term quiz",
+            "termToDefinition": "Term → Definition quiz",
+            "misconceptionDetection": "Misconception detection quiz",
+            "contentRecall": "Content recall quiz",
+            "structureUnderstanding": "Structure understanding quiz"
+          }
+        },
+        "difficulty": {
+          "title": "Difficulty",
+          "options": {
+            "easy": "Easy",
+            "normal": "Normal",
+            "hard": "Hard"
+          }
+        },
+        "questionCount": {
+          "title": "Number of questions",
+          "input": "Enter question count"
+        },
+        "focus": {
+          "title": "What should the quiz focus on?",
+          "placeholder": "Please focus on the parts related to ~"
+        }
+      },
       "review": {
         "title": "Review",
         "description": "Review all the questions you got wrong so far",
@@ -296,6 +331,10 @@
         "resultDescription": "You have completed the quiz. Check your results below",
         "resultScore": "Correct answers: {correctCount} / {totalQuizCount}",
         "reviewAgain": "Review Again",
+        "correctQuestionsTitle": "Correct Questions",
+        "correctQuestionsEmpty": "No correct questions.",
+        "incorrectQuestionsTitle": "Incorrect Questions",
+        "incorrectQuestionsEmpty": "No incorrect questions.",
         "answerPlaceholder": "Enter your answer",
         "questionLabel": "Question {number}"
       },

@@ -271,6 +271,41 @@
         "button": "생성",
         "creating": "생성 중"
       },
+      "settings": {
+        "button": "설정",
+        "title": "퀴즈 설정",
+        "closeAria": "설정 닫기",
+        "cancel": "취소",
+        "confirm": "확인",
+        "questionType": {
+          "title": "문제 유형",
+          "objective": "객관식",
+          "subjective": "주관식",
+          "options": {
+            "definitionToTerm": "정의 → 용어 퀴즈",
+            "termToDefinition": "용어 → 정의 퀴즈",
+            "misconceptionDetection": "오개념 탐지 퀴즈",
+            "contentRecall": "내용 기억 퀴즈",
+            "structureUnderstanding": "구조 이해 퀴즈"
+          }
+        },
+        "difficulty": {
+          "title": "난이도",
+          "options": {
+            "easy": "쉬움",
+            "normal": "보통",
+            "hard": "어려움"
+          }
+        },
+        "questionCount": {
+          "title": "문항 수",
+          "input": "문항 수 입력"
+        },
+        "focus": {
+          "title": "퀴즈가 어떤 부분에 집중할까요?",
+          "placeholder": "~와 관련된 부분에 집중해서 만들어줘"
+        }
+      },
       "review": {
         "title": "복습하기",
         "description": "지금까지 틀린 모든 문제를 다시 풀어보세요",
@@ -296,6 +331,10 @@
         "resultDescription": "퀴즈를 완료하였습니다. 아래에서 결과를 확인하세요",
         "resultScore": "문제 정답: {correctCount} / {totalQuizCount}",
         "reviewAgain": "문제 다시보기",
+        "correctQuestionsTitle": "맞은 문제",
+        "correctQuestionsEmpty": "맞은 문제가 없습니다.",
+        "incorrectQuestionsTitle": "틀린 문제",
+        "incorrectQuestionsEmpty": "틀린 문제가 없습니다.",
         "answerPlaceholder": "답을 입력하세요",
         "questionLabel": "문항 {number}"
       },

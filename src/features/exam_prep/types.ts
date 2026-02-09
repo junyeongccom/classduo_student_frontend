@@ -90,7 +90,7 @@ export interface ExamPrepAnnotationUpsertRequest {
   data_json: Record<string, unknown>
 }
 
-export type ExamPrepQuizType = 'RECALL' | 'STRUCTURE' | 'MISCONCEPTION'
+export type ExamPrepQuizType = 'RECALL' | 'STRUCTURE' | 'MISCONCEPTION' | 'DEF_TO_TERM' | 'TERM_TO_DEF'
 
 export interface ExamPrepQuizChoice {
   choice_order: number
@@ -107,6 +107,7 @@ export interface ExamPrepUserAnswer {
 export interface ExamPrepQuizItem {
   quiz_id: string
   quiz_type: ExamPrepQuizType
+  quiz_keyword?: string | null
   question: string
   answer?: string | null
   explanation?: string | null

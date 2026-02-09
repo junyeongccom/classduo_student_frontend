@@ -2,12 +2,28 @@
 
 import type { ExamPrepQuizItem, ExamPrepQuizSession } from '../../types'
 import { ExamPrepLoadingState } from './ExamPrepLoadingState'
-import { MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, MoreVertical, Pencil, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
-interface ExamPrepQuizPanelProps {
+export type ExamPrepQuizSettingsQuestionTypeKey =
+  | 'definitionToTerm'
+  | 'termToDefinition'
+  | 'misconceptionDetection'
+  | 'contentRecall'
+  | 'structureUnderstanding'
+
+export type ExamPrepQuizSettingsDifficultyKey = 'easy' | 'normal' | 'hard'
+
+export interface ExamPrepQuizSettings {
+  questionTypes: ExamPrepQuizSettingsQuestionTypeKey[]
+  difficulty: ExamPrepQuizSettingsDifficultyKey | null
+  questionCount: number
+  focusHint: string
+}
+
+export interface ExamPrepQuizPanelProps {
   sessions: ExamPrepQuizSession[]
   selectedSessionId: string | null
   onSelectSession: (sessionId: string) => void
@@ -15,6 +31,9 @@ interface ExamPrepQuizPanelProps {
   onDeleteSession: (sessionId: string) => void
   onCreateSession: () => void
   isCreating: boolean
+  settings: ExamPrepQuizSettings
+  onChangeSettings: (settings: ExamPrepQuizSettings) => void
+  maxQuestionCount?: number
   quizzes: ExamPrepQuizItem[]
   isSessionViewOpen: boolean
   currentIndex: number
@@ -24,6 +43,7 @@ interface ExamPrepQuizPanelProps {
   onPrevQuiz: () => void
   onNextQuiz: () => void
   onGoToFirstQuiz: () => void
+  onGoToQuizIndex: (index: number) => void
   isLoading: boolean
   onlyWrong: boolean
   onToggleWrong: () => void
@@ -42,6 +62,9 @@ export function ExamPrepQuizPanel({
   onDeleteSession,
   onCreateSession,
   isCreating,
+  settings,
+  onChangeSettings,
+  maxQuestionCount,
   quizzes,
   isSessionViewOpen,
   currentIndex,
@@ -51,6 +74,7 @@ export function ExamPrepQuizPanel({
   onPrevQuiz,
   onNextQuiz,
   onGoToFirstQuiz,
+  onGoToQuizIndex,
   isLoading,
   onlyWrong,
   onToggleWrong,
@@ -67,8 +91,21 @@ export function ExamPrepQuizPanel({
   const [renameValue, setRenameValue] = useState('')
   const [deleteTargetSessionId, setDeleteTargetSessionId] = useState<string | null>(null)
   const [showResultView, setShowResultView] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  // settings draft (applied on confirm)
+  const [draftQuestionTypes, setDraftQuestionTypes] = useState<
+    ExamPrepQuizSettingsQuestionTypeKey[]
+  >([])
+  const [draftDifficulty, setDraftDifficulty] = useState<ExamPrepQuizSettingsDifficultyKey | null>(
+    null
+  )
+  const [draftQuestionCount, setDraftQuestionCount] = useState<number>(10)
+  const [draftFocusHint, setDraftFocusHint] = useState<string>('')
   // "결과 보기"를 한 번이라도 눌렀는지 (그때부터 '미답=오답' 표시/채점 적용)
   const [hasFinalizedResults, setHasFinalizedResults] = useState(false)
+  const [isCorrectBoxOpen, setIsCorrectBoxOpen] = useState(true)
+  const [isIncorrectBoxOpen, setIsIncorrectBoxOpen] = useState(true)
 
   useEffect(() => {
     if (!openMenuSessionId) return
@@ -107,8 +144,33 @@ export function ExamPrepQuizPanel({
     if (!isSessionViewOpen) {
       setShowResultView(false)
       setHasFinalizedResults(false)
+      setIsCorrectBoxOpen(true)
+      setIsIncorrectBoxOpen(true)
     }
   }, [isSessionViewOpen])
+
+  const handleOpenSettings = () => {
+    setDraftQuestionTypes(settings.questionTypes)
+    setDraftDifficulty(settings.difficulty)
+    setDraftQuestionCount(settings.questionCount)
+    setDraftFocusHint(settings.focusHint)
+    setIsSettingsOpen(true)
+  }
+
+  const handleCancelSettings = () => {
+    setIsSettingsOpen(false)
+  }
+
+  const handleConfirmSettings = () => {
+    const maxCount = typeof maxQuestionCount === 'number' ? maxQuestionCount : Number.POSITIVE_INFINITY
+    onChangeSettings({
+      questionTypes: draftQuestionTypes,
+      difficulty: draftDifficulty,
+      questionCount: Math.min(Math.max(1, Math.floor(draftQuestionCount)), maxCount),
+      focusHint: draftFocusHint,
+    })
+    setIsSettingsOpen(false)
+  }
 
   const handleConfirmRename = () => {
     if (!renameTargetSessionId) return
@@ -149,6 +211,42 @@ export function ExamPrepQuizPanel({
     if (showResultView) {
       // 결과 보기에서는 processedQuizzes 사용
       const score = totalQuizCount > 0 ? Math.round((correctCount / totalQuizCount) * 100) : 0
+      const correctItems = gradedQuizzes
+        .filter(q => q.user_answer?.is_correct)
+        .map(q => ({
+          quizId: q.quiz_id,
+          question: q.question,
+          index: quizzes.findIndex(item => item.quiz_id === q.quiz_id),
+        }))
+        .filter(item => item.index >= 0)
+      const incorrectItems = gradedQuizzes
+        .filter(q => q.user_answer && !q.user_answer.is_correct)
+        .map(q => ({
+          quizId: q.quiz_id,
+          question: q.question,
+          index: quizzes.findIndex(item => item.quiz_id === q.quiz_id),
+        }))
+        .filter(item => item.index >= 0)
+
+      const topicStats = (() => {
+        const map = new Map<string, { total: number; correct: number }>()
+        gradedQuizzes.forEach(q => {
+          const keyword = (q.quiz_keyword || '').trim() || '기타'
+          const prev = map.get(keyword) ?? { total: 0, correct: 0 }
+          map.set(keyword, {
+            total: prev.total + 1,
+            correct: prev.correct + (q.user_answer?.is_correct ? 1 : 0),
+          })
+        })
+        return Array.from(map.entries())
+          .map(([keyword, stat]) => ({
+            keyword,
+            total: stat.total,
+            correct: stat.correct,
+            ratio: stat.total > 0 ? stat.correct / stat.total : 0,
+          }))
+          .sort((a, b) => b.total - a.total || a.keyword.localeCompare(b.keyword))
+      })()
       return (
         <div className="flex h-full flex-col gap-4 overflow-hidden px-6 py-6">
           <div className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm">
@@ -173,7 +271,7 @@ export function ExamPrepQuizPanel({
           </div>
 
           <div className="flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white">
-            <div className="flex h-full flex-col items-center justify-center gap-6 px-4 py-6">
+            <div className="flex h-full flex-col items-center gap-6 overflow-y-auto px-4 py-8">
               <div className="text-center">
                 <h2 className="text-3xl font-bold text-gray-900">{t('sessionView.resultTitle')}</h2>
                 <p className="mt-2 text-sm text-gray-400">{t('sessionView.resultDescription')}</p>
@@ -186,6 +284,113 @@ export function ExamPrepQuizPanel({
                   {t('sessionView.resultScore', { correctCount, totalQuizCount })}
                 </p>
               </div>
+
+              <div className="w-full max-w-3xl space-y-4">
+                <section className="rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm">
+                  <button
+                    type="button"
+                    aria-expanded={isCorrectBoxOpen}
+                    onClick={() => setIsCorrectBoxOpen(prev => !prev)}
+                    className="flex w-full items-center justify-between text-left"
+                  >
+                    <h3 className="text-xl font-bold text-gray-900">{t('sessionView.correctQuestionsTitle')}</h3>
+                    <ChevronDown
+                      className={`h-5 w-5 text-gray-400 transition-transform ${isCorrectBoxOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {isCorrectBoxOpen ? (
+                    <>
+                      <div className="mt-3 border-t border-gray-100" />
+                      {correctItems.length > 0 ? (
+                        <div className="mt-4 space-y-2">
+                          {correctItems.map(item => (
+                            <button
+                              type="button"
+                              key={`correct-question-${item.quizId}`}
+                              onClick={() => {
+                                setShowResultView(false)
+                                onGoToQuizIndex(item.index)
+                              }}
+                              className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-left text-sm text-emerald-900 hover:bg-emerald-100/60"
+                            >
+                              {item.question}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-4 text-sm text-gray-500">{t('sessionView.correctQuestionsEmpty')}</p>
+                      )}
+                    </>
+                  ) : null}
+                </section>
+
+                <section className="rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm">
+                  <button
+                    type="button"
+                    aria-expanded={isIncorrectBoxOpen}
+                    onClick={() => setIsIncorrectBoxOpen(prev => !prev)}
+                    className="flex w-full items-center justify-between text-left"
+                  >
+                    <h3 className="text-xl font-bold text-gray-900">{t('sessionView.incorrectQuestionsTitle')}</h3>
+                    <ChevronDown
+                      className={`h-5 w-5 text-gray-400 transition-transform ${isIncorrectBoxOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  {isIncorrectBoxOpen ? (
+                    <>
+                      <div className="mt-3 border-t border-gray-100" />
+                      {incorrectItems.length > 0 ? (
+                        <div className="mt-4 space-y-2">
+                          {incorrectItems.map(item => (
+                            <button
+                              type="button"
+                              key={`incorrect-question-${item.quizId}`}
+                              onClick={() => {
+                                setShowResultView(false)
+                                onGoToQuizIndex(item.index)
+                              }}
+                              className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-left text-sm text-rose-900 hover:bg-rose-100/60"
+                            >
+                              {item.question}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-4 text-sm text-gray-500">{t('sessionView.incorrectQuestionsEmpty')}</p>
+                      )}
+                    </>
+                  ) : null}
+                </section>
+
+                <section className="rounded-2xl border border-gray-200 bg-white px-5 py-5 shadow-sm">
+                  <h3 className="text-xl font-bold text-gray-900">주제별 분석</h3>
+                  <div className="mt-4 space-y-3">
+                    {topicStats.map(topic => {
+                      const percent = Math.round(topic.ratio * 100)
+                      return (
+                        <div
+                          key={topic.keyword}
+                          className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="text-sm font-semibold text-gray-900">{topic.keyword}</div>
+                            <div className="text-xs font-semibold text-gray-700">
+                              {topic.correct}/{topic.total} ({percent}%)
+                            </div>
+                          </div>
+                          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                            <div
+                              className="h-full rounded-full bg-gray-900 transition-[width]"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+              </div>
+
               <button
                 type="button"
                 onClick={() => {
@@ -424,13 +629,22 @@ export function ExamPrepQuizPanel({
             <p className="text-base font-bold text-gray-900">{t('create.title')}</p>
             <p className="text-sm text-gray-500">{t('create.description')}</p>
           </div>
-          <button
-            onClick={onCreateSession}
-            disabled={isCreating}
-            className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
-          >
-            {isCreating ? t('create.creating') : t('create.button')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenSettings}
+              className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:border-gray-300"
+            >
+              {t('settings.button')}
+            </button>
+            <button
+              onClick={onCreateSession}
+              disabled={isCreating}
+              className="rounded-full bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-60"
+            >
+              {isCreating ? t('create.creating') : t('create.button')}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -623,6 +837,174 @@ export function ExamPrepQuizPanel({
               >
                 {t('sessionMenu.deleteModal.confirm')}
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isSettingsOpen ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 px-6"
+          onClick={handleCancelSettings}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="text-base font-semibold text-gray-900">{t('settings.title')}</div>
+              <button
+                type="button"
+                aria-label={t('settings.closeAria')}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:border-gray-300"
+                onClick={handleCancelSettings}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-5">
+              <section>
+                <div className="text-sm font-semibold text-gray-900">{t('settings.questionType.title')}</div>
+                <div className="mt-3 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="w-16 shrink-0 text-xs font-semibold text-gray-600">{t('settings.questionType.objective')}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { key: 'definitionToTerm', label: t('settings.questionType.options.definitionToTerm') },
+                        { key: 'termToDefinition', label: t('settings.questionType.options.termToDefinition') },
+                        { key: 'misconceptionDetection', label: t('settings.questionType.options.misconceptionDetection') },
+                      ] as const).map(item => {
+                        const selected = draftQuestionTypes.includes(item.key)
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() =>
+                              setDraftQuestionTypes(prev =>
+                                prev.includes(item.key) ? prev.filter(x => x !== item.key) : [...prev, item.key]
+                              )
+                            }
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                              selected
+                                ? 'border-gray-900 bg-gray-900 text-white'
+                                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="w-16 shrink-0 text-xs font-semibold text-gray-600">{t('settings.questionType.subjective')}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {([
+                        { key: 'contentRecall', label: t('settings.questionType.options.contentRecall') },
+                        { key: 'structureUnderstanding', label: t('settings.questionType.options.structureUnderstanding') },
+                      ] as const).map(item => {
+                        const selected = draftQuestionTypes.includes(item.key)
+                        return (
+                          <button
+                            key={item.key}
+                            type="button"
+                            onClick={() =>
+                              setDraftQuestionTypes(prev =>
+                                prev.includes(item.key) ? prev.filter(x => x !== item.key) : [...prev, item.key]
+                              )
+                            }
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                              selected
+                                ? 'border-gray-900 bg-gray-900 text-white'
+                                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section>
+                <div className="text-sm font-semibold text-gray-900">{t('settings.difficulty.title')}</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {([
+                    { key: 'easy', label: t('settings.difficulty.options.easy') },
+                    { key: 'normal', label: t('settings.difficulty.options.normal') },
+                    { key: 'hard', label: t('settings.difficulty.options.hard') },
+                  ] as const).map(item => {
+                    const selected = draftDifficulty === item.key
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => setDraftDifficulty(item.key)}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                          selected
+                            ? 'border-gray-900 bg-gray-900 text-white'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+
+              <section>
+                <div className="text-sm font-semibold text-gray-900">{t('settings.questionCount.title')}</div>
+                <div className="mt-3 flex items-center">
+                  <input
+                    type="number"
+                    min={1}
+                    max={maxQuestionCount}
+                    value={draftQuestionCount}
+                    onChange={event => {
+                      const raw = event.currentTarget.value
+                      const parsed = Number(raw)
+                      if (!Number.isFinite(parsed)) return
+                      setDraftQuestionCount(Math.max(1, Math.floor(parsed)))
+                    }}
+                    className="h-9 w-28 rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-gray-300"
+                    aria-label={t('settings.questionCount.input')}
+                  />
+                </div>
+              </section>
+
+              <section>
+                <div className="text-sm font-semibold text-gray-900">{t('settings.focus.title')}</div>
+                <input
+                  value={draftFocusHint}
+                  onChange={event => setDraftFocusHint(event.target.value)}
+                  className="mt-3 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-gray-300"
+                  placeholder={t('settings.focus.placeholder')}
+                />
+              </section>
+            </div>
+
+            <div className="mt-5 border-t border-gray-100 pt-4">
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:border-gray-300"
+                  onClick={handleCancelSettings}
+                >
+                  {t('settings.cancel')}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800"
+                  onClick={handleConfirmSettings}
+                >
+                  {t('settings.confirm')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

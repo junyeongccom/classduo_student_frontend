@@ -3,6 +3,8 @@
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 
 type MarkdownMessageProps = {
   markdown: string
@@ -13,7 +15,9 @@ export function MarkdownMessage({ markdown, className }: MarkdownMessageProps) {
   return (
     <div className={className}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        // Safer for AI output: don't crash the UI on invalid / partial LaTeX
+        rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: 'ignore' }]]}
         // NOTE: do not enable raw HTML rendering for safety
         components={{
           h1: ({ children }) => (
