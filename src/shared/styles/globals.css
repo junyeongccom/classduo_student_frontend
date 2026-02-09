@@ -17,10 +17,12 @@
     max-width: 100vw;
     overflow-x: hidden;
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    height: 100%;
   }
 
   body {
     @apply bg-white text-gray-900;
+    min-height: 100dvh;
   }
 
   a {

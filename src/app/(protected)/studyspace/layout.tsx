@@ -127,11 +127,11 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen bg-gray-50 text-gray-900">
       <Sidebar />
 
-      <div className="flex-1 transition-all duration-300">
+      <div className="flex min-h-0 flex-1 transition-all duration-300">
         <div 
-          className="flex h-full flex-col"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="flex flex-1 overflow-hidden pl-[88px]">
+          <div className="flex min-h-0 flex-1 overflow-hidden pl-[88px]">
             {!isExamPrep && showRightSidebar && (
               <button
                 onClick={() => setIsMobileRightbarOpen(true)}
@@ -152,7 +152,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
             {/* Main Content Area */}
             <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-gray-50">
-              <div className="flex h-full flex-col">
+              <div className="flex min-h-0 flex-1 flex-col">
                 {children}
               </div>
             </main>

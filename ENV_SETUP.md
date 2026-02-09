@@ -77,9 +77,17 @@ console.log(process.env.NEXT_PUBLIC_API_URL)
    ```
 
 3. 브라우저에서 확인:
-   ```
-   http://localhost:3000
-   ```
+   - 기본: `http://localhost:3000`
+   - 이미 사용 중이면 `next dev`가 3001/3002...로 자동 변경하므로 **터미널 로그에 출력된 URL**로 접속하세요.
+
+## 🧯 Troubleshooting
+
+### `Cannot find module './vendor-chunks/next.js'` (또는 유사한 `.next/server/vendor-chunks/*` 오류)
+
+```bash
+# 실행 중인 dev 서버를 종료한 뒤
+npm run dev:clean
+```
 
 ## 📝 참고
 

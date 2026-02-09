@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { X } from "lucide-react"
+import { createPortal } from "react-dom"
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist"
 
 type PdfAnnotationPath = {
@@ -1165,6 +1166,7 @@ const TextLayer = ({
   const t = useTranslations("examPrep.pdf")
   const layerRef = useRef<HTMLDivElement>(null)
   const textsRef = useRef<PdfAnnotationText[]>(texts)
+  const deleteButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const draggingId = useRef<string | null>(null)
   const dragStartClient = useRef<{ x: number; y: number } | null>(null)
   const dragOffset = useRef<{ dx: number; dy: number } | null>(null)
@@ -1176,8 +1178,17 @@ const TextLayer = ({
   const resizingId = useRef<string | null>(null)
   const [expandedTextIds, setExpandedTextIds] = useState<Set<string>>(() => new Set())
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [pendingDeleteAnchor, setPendingDeleteAnchor] = useState<DOMRect | null>(null)
   const toggleTimerRef = useRef<number | null>(null)
   const toggleTimerTextIdRef = useRef<string | null>(null)
+
+  const autosizeTextarea = (el: HTMLTextAreaElement | null) => {
+    if (!el) return
+    // This viewer uses the parent container's scroll. The textarea must expand to its content height
+    // even before the user types (otherwise scroll can be "randomly" unavailable).
+    el.style.height = "auto"
+    el.style.height = `${el.scrollHeight}px`
+  }
 
   const clearToggleTimer = () => {
     if (!toggleTimerRef.current) return
@@ -1279,6 +1290,7 @@ const TextLayer = ({
     const exists = texts.some(item => item.id === pendingDeleteId)
     if (!exists) {
       setPendingDeleteId(null)
+      setPendingDeleteAnchor(null)
       return
     }
   }, [pendingDeleteId, texts])
@@ -1294,10 +1306,12 @@ const TextLayer = ({
         if (node.getAttribute?.("data-text-delete-confirm") === "true") return
       }
       setPendingDeleteId(null)
+      setPendingDeleteAnchor(null)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return
       setPendingDeleteId(null)
+      setPendingDeleteAnchor(null)
     }
     window.addEventListener("pointerdown", handlePointerDown, { capture: true })
     window.addEventListener("keydown", handleKeyDown)
@@ -1306,6 +1320,120 @@ const TextLayer = ({
       window.removeEventListener("keydown", handleKeyDown)
     }
   }, [pendingDeleteId])
+
+  const DeleteConfirmPortal = ({
+    open,
+    anchor,
+    onYes,
+    onNo,
+  }: {
+    open: boolean
+    anchor: DOMRect | null
+    onYes: () => void
+    onNo: () => void
+  }) => {
+    const popoverRef = useRef<HTMLDivElement>(null)
+    const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+
+    const updatePos = useCallback(() => {
+      if (!anchor) return
+      const popover = popoverRef.current
+      const width = popover?.offsetWidth ?? 180
+      const height = popover?.offsetHeight ?? 74
+
+      const margin = 8
+      const gap = 6
+      const viewportW = window.innerWidth
+      const viewportH = window.innerHeight
+
+      // Prefer below the X button, right-aligned to it.
+      let left = anchor.right - width
+      left = Math.min(Math.max(left, margin), Math.max(margin, viewportW - width - margin))
+
+      const belowTop = anchor.bottom + gap
+      const aboveTop = anchor.top - gap - height
+      const canFitBelow = belowTop + height <= viewportH - margin
+      const top = canFitBelow ? belowTop : Math.max(margin, aboveTop)
+
+      setPos({ top, left })
+    }, [anchor])
+
+    useLayoutEffect(() => {
+      if (!open || !anchor) return
+      updatePos()
+
+      let raf = 0
+      const schedule = () => {
+        if (raf) return
+        raf = window.requestAnimationFrame(() => {
+          raf = 0
+          updatePos()
+        })
+      }
+
+      window.addEventListener("resize", schedule)
+      // Capture all scrolls (including nested containers) so the anchored portal follows the X button.
+      window.addEventListener("scroll", schedule, true)
+      return () => {
+        if (raf) window.cancelAnimationFrame(raf)
+        window.removeEventListener("resize", schedule)
+        window.removeEventListener("scroll", schedule, true)
+      }
+    }, [anchor, open, updatePos])
+
+    if (!open || !anchor) return null
+    if (typeof document === "undefined") return null
+
+    return createPortal(
+      <div
+        ref={popoverRef}
+        data-text-delete-confirm="true"
+        className="fixed z-[120] w-[180px] rounded-lg border border-gray-200 bg-white p-2 text-[11px] text-gray-900 shadow-lg"
+        style={{ top: `${pos.top}px`, left: `${pos.left}px` }}
+      >
+        <div className="mb-2 leading-snug">{t("textDeleteConfirm")}</div>
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            className="rounded border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-700 hover:bg-gray-50"
+            onMouseDown={event => {
+              event.preventDefault()
+            }}
+            onPointerDown={event => {
+              event.stopPropagation()
+              event.preventDefault()
+            }}
+            onClick={event => {
+              event.stopPropagation()
+              event.preventDefault()
+              onNo()
+            }}
+          >
+            {t("no")}
+          </button>
+          <button
+            type="button"
+            className="rounded bg-gray-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-gray-800"
+            onMouseDown={event => {
+              event.preventDefault()
+            }}
+            onPointerDown={event => {
+              event.stopPropagation()
+              event.preventDefault()
+            }}
+            onClick={event => {
+              event.stopPropagation()
+              event.preventDefault()
+              onYes()
+            }}
+          >
+            {t("yes")}
+          </button>
+        </div>
+      </div>,
+      document.body
+    )
+  }
 
   useEffect(() => {
     if (!editingTextId) return
@@ -1551,6 +1679,9 @@ const TextLayer = ({
                 <button
                   type="button"
                   className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-black text-white shadow-sm hover:bg-black/90"
+                  ref={node => {
+                    deleteButtonRefs.current[text.id] = node
+                  }}
                   onMouseDown={event => {
                     // Prevent focusing/blur side-effects.
                     event.preventDefault()
@@ -1562,60 +1693,45 @@ const TextLayer = ({
                   onClick={event => {
                     event.stopPropagation()
                     event.preventDefault()
-                    setPendingDeleteId(prev => (prev === text.id ? null : text.id))
+                    setPendingDeleteId(prev => {
+                      const next = prev === text.id ? null : text.id
+                      if (next) {
+                        const rect = deleteButtonRefs.current[text.id]?.getBoundingClientRect() ?? null
+                        setPendingDeleteAnchor(rect)
+                      } else {
+                        setPendingDeleteAnchor(null)
+                      }
+                      return next
+                    })
                   }}
                   aria-label="삭제"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
-
-                {pendingDeleteId === text.id && (
-                  <div className="absolute right-0 top-6 z-20 w-[180px] rounded-lg border border-gray-200 bg-white p-2 text-[11px] text-gray-900 shadow-lg">
-                    <div className="mb-2 leading-snug">{t("textDeleteConfirm")}</div>
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        className="rounded border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-700 hover:bg-gray-50"
-                        onMouseDown={event => {
-                          event.preventDefault()
-                        }}
-                        onClick={event => {
-                          event.stopPropagation()
-                          event.preventDefault()
-                          setPendingDeleteId(null)
-                        }}
-                      >
-                        {t("no")}
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded bg-gray-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-gray-800"
-                        onMouseDown={event => {
-                          event.preventDefault()
-                        }}
-                        onClick={event => {
-                          event.stopPropagation()
-                          event.preventDefault()
-                          const next = textsRef.current.filter(item => item.id !== text.id)
-                          onUpdate(next)
-                          onSelect([])
-                          onEdit(null)
-                          setPendingDeleteId(null)
-                          setExpandedTextIds(prev => {
-                            if (!prev.has(text.id)) return prev
-                            const nextSet = new Set(prev)
-                            nextSet.delete(text.id)
-                            return nextSet
-                          })
-                        }}
-                      >
-                        {t("yes")}
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
+            <DeleteConfirmPortal
+              open={pendingDeleteId === text.id}
+              anchor={pendingDeleteId === text.id ? pendingDeleteAnchor : null}
+              onNo={() => {
+                setPendingDeleteId(null)
+                setPendingDeleteAnchor(null)
+              }}
+              onYes={() => {
+                const next = textsRef.current.filter(item => item.id !== text.id)
+                onUpdate(next)
+                onSelect([])
+                onEdit(null)
+                setPendingDeleteId(null)
+                setPendingDeleteAnchor(null)
+                setExpandedTextIds(prev => {
+                  if (!prev.has(text.id)) return prev
+                  const nextSet = new Set(prev)
+                  nextSet.delete(text.id)
+                  return nextSet
+                })
+              }}
+            />
             {editingTextId === text.id ? (
               <div
                 className={[
@@ -1632,6 +1748,10 @@ const TextLayer = ({
                   className="block w-full bg-transparent text-xs text-gray-900 whitespace-pre-wrap break-words outline-none"
                   defaultValue={text.text}
                   autoFocus
+                  ref={node => {
+                    // Ensure scroll works immediately on entering edit mode (no typing required).
+                    requestAnimationFrame(() => autosizeTextarea(node))
+                  }}
                   style={{
                     minHeight: "100%",
                     resize: "none",
@@ -1641,6 +1761,13 @@ const TextLayer = ({
                     padding: 0,
                     border: "none",
                     borderRadius: 0,
+                  }}
+                  onFocus={event => {
+                    autosizeTextarea(event.currentTarget)
+                  }}
+                  onPointerDown={event => {
+                    // Don't let the box-level drag handler steal pointer capture while editing.
+                    event.stopPropagation()
                   }}
                   onWheel={event => {
                     // Ensure scrolling works the same when the pointer is over the textarea.
@@ -1657,10 +1784,7 @@ const TextLayer = ({
                     commitTextEdit(text.id, event.currentTarget.value, { collapseAfter: false })
                   }}
                   onInput={event => {
-                    // Grow the textarea height to content so the *container* scrolls (not the textarea).
-                    const el = event.currentTarget
-                    el.style.height = "auto"
-                    el.style.height = `${el.scrollHeight}px`
+                    autosizeTextarea(event.currentTarget)
                   }}
                   onBlur={event => {
                     commitTextEdit(text.id, event.currentTarget.value, { collapseAfter: true })

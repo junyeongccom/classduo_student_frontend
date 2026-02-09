@@ -6,7 +6,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { ExamPrepLayout } from '../ui/ExamPrepLayout'
 import { ExamPrepSummaryPanel } from '../ui/ExamPrepSummaryPanel'
 import { ExamPrepGlossaryPanel } from '../ui/ExamPrepGlossaryPanel'
-import { ExamPrepQuizPanel } from '../ui/ExamPrepQuizPanel'
+import { ExamPrepQuizPanelContainer } from './ExamPrepQuizPanelContainer'
 import { ExamPrepAiTutorPanel } from '../ui/ExamPrepAiTutorPanel'
 import { ExamPrepNotesPanel } from '../ui/ExamPrepNotesPanel'
 import { ExamPrepPdfViewer } from '../ui/ExamPrepPdfViewer'
@@ -154,7 +154,6 @@ export function ExamPrepContainer() {
     })
     return mapped
   }, [annotations])
-  const [isCreatingQuiz, setIsCreatingQuiz] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
   const [chatReferences, setChatReferences] = useState<Array<{
@@ -197,11 +196,11 @@ export function ExamPrepContainer() {
   }, [locale, refreshCourses, refreshMaterials, selectedCourseId])
 
   // quiz 탭에서만: 퀴즈 생성(백그라운드) 완료 전까지 세션 목록을 폴링해서 즉시 활성화되게 한다.
-  // isCreatingQuiz가 true이거나 hasPendingQuizSessions가 true일 때 폴링
+  // hasPendingQuizSessions가 true일 때 폴링
   useEffect(() => {
     if (activeTab !== 'quiz') return
     if (!selectedMaterialId) return
-    if (!hasPendingQuizSessions && !isCreatingQuiz) return
+    if (!hasPendingQuizSessions) return
 
     const intervalId = window.setInterval(() => {
       void refreshSessionsSilently()
@@ -210,7 +209,7 @@ export function ExamPrepContainer() {
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [activeTab, hasPendingQuizSessions, isCreatingQuiz, refreshSessionsSilently, selectedMaterialId])
+  }, [activeTab, hasPendingQuizSessions, refreshSessionsSilently, selectedMaterialId])
 
   useLayoutEffect(() => {
     if (!containerRef.current) return
@@ -351,20 +350,6 @@ export function ExamPrepContainer() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPdfFullscreen])
 
-  const handleCreateSession = async () => {
-    if (!selectedMaterialId) return
-    setIsCreatingQuiz(true)
-    const result = await examPrepService.createQuizSession(selectedMaterialId, {
-      language,
-    })
-    setIsCreatingQuiz(false)
-    if (result.data?.session_id) {
-      await refreshSessions()
-      // 퀴즈 목록에 남아있도록 세션 뷰를 열지 않음
-      // 사용자가 직접 세션을 클릭해서 들어가도록 함
-    }
-  }
-
   const handleRenameSession = async (sessionId: string, title: string) => {
     const result = await examPrepService.renameQuizSession(sessionId, { title })
     if (result.data && !result.error) {
@@ -408,6 +393,14 @@ export function ExamPrepContainer() {
 
   const handleGoToFirstQuiz = () => {
     setCurrentQuizIndex(0)
+  }
+
+  const handleGoToQuizIndex = (index: number) => {
+    setCurrentQuizIndex(() => {
+      const safeTotal = quizzes.length
+      if (safeTotal <= 0) return 0
+      return Math.min(Math.max(index, 0), safeTotal - 1)
+    })
   }
 
   const handleStartReview = () => {
@@ -551,14 +544,15 @@ export function ExamPrepContainer() {
         ? displayQuizzes[currentQuizIndex]
         : null
       return (
-        <ExamPrepQuizPanel
+        <ExamPrepQuizPanelContainer
+          selectedMaterialId={selectedMaterialId}
+          language={language}
+          refreshSessions={refreshSessions}
           sessions={sessions}
           selectedSessionId={selectedSessionId}
           onSelectSession={handleSelectSession}
           onRenameSession={handleRenameSession}
           onDeleteSession={handleDeleteSession}
-          onCreateSession={handleCreateSession}
-          isCreating={isCreatingQuiz}
           quizzes={displayQuizzes}
           isSessionViewOpen={isSessionViewOpen}
           currentIndex={currentQuizIndex}
@@ -568,6 +562,7 @@ export function ExamPrepContainer() {
           onPrevQuiz={handlePrevQuiz}
           onNextQuiz={handleNextQuiz}
           onGoToFirstQuiz={handleGoToFirstQuiz}
+          onGoToQuizIndex={handleGoToQuizIndex}
           isLoading={sessionsLoading || quizzesLoading}
           onlyWrong={onlyWrong}
           onToggleWrong={() => setOnlyWrong(prev => !prev)}

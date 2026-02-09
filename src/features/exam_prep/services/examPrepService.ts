@@ -5,6 +5,7 @@ import {
   handleJWTExpiration,
   isJWTExpiredError,
 } from '@/shared/lib/supabase'
+import type { ExamPrepQuizType } from '../types'
 
 const normalizeStoragePath = (path?: string | null) => {
   if (!path) return null
@@ -147,8 +148,11 @@ export interface ExamPrepAnnotationUpsertRequest {
 }
 
 export interface ExamPrepQuizSessionCreateRequest {
-  // 프론트에서는 유형/문항 수를 선택하지 않는다. (백엔드에서 정책적으로 결정)
   language: 'ko' | 'en'
+  quiz_types?: ExamPrepQuizType[]
+  count?: number
+  difficulty?: '상' | '중' | '하'
+  additional_requirement?: string
 }
 
 export interface ExamPrepQuizSessionResponse {
@@ -188,7 +192,8 @@ export interface ExamPrepQuizSessionDetailResponse {
   material_id: string
   quizzes: Array<{
     quiz_id: string
-    quiz_type: 'RECALL' | 'STRUCTURE' | 'MISCONCEPTION'
+    quiz_type: ExamPrepQuizType
+    quiz_keyword?: string | null
     question: string
     answer?: string | null
     explanation?: string | null

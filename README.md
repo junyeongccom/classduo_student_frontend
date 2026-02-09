@@ -5,7 +5,7 @@ ClassDuo 학습 플랫폼의 프론트엔드 애플리케이션입니다.
 ## 🛠 기술 스택
 
 ### Core
-- **Framework**: Next.js 15.1.0 (App Router)
+- **Framework**: Next.js 15.x (App Router)
 - **Language**: TypeScript 5.x
 - **React**: 18.3.1
 
@@ -106,7 +106,7 @@ docker-compose logs -f
 npm run dev
 ```
 
-브라우저에서 [http://localhost:3000](http://localhost:3000) 접속
+브라우저에서 `next dev` 로그에 출력되는 URL로 접속하세요 (기본은 `http://localhost:3000` 이지만, **이미 사용 중이면 3001/3002...로 자동 변경**됩니다).
 
 #### 6. 프로덕션 빌드
 ```bash
@@ -188,8 +188,14 @@ export function ComponentName({ ... }: Props) {
 # 개발 서버
 npm run dev
 
+# (권장) 깨끗하게 .next 캐시 삭제 후 개발 서버
+npm run dev:clean
+
 # 프로덕션 빌드
 npm run build
+
+# (권장) 깨끗하게 .next 캐시 삭제 후 빌드
+npm run build:clean
 
 # 프로덕션 실행
 npm start
@@ -197,6 +203,20 @@ npm start
 # Linting
 npm run lint
 ```
+
+## 🧯 Troubleshooting
+
+### `Cannot find module './vendor-chunks/next.js'` (또는 유사한 `.next/server/vendor-chunks/*` 오류)
+
+대부분 **깨진/불완전한 `.next` 산출물** 때문에 발생합니다.
+
+```bash
+# 1) 실행 중인 next dev를 종료한 뒤
+# 2) 캐시 삭제 + 재실행
+npm run dev:clean
+```
+
+추가로, 터미널에 `Port 3000 is in use...`가 보이면 **이미 떠있는 다른 Next/Node 프로세스**가 있을 수 있습니다. 이 경우 터미널 로그에 표시된 포트(예: `http://localhost:3002`)로 접속하거나, 기존 프로세스를 종료하고 다시 실행하세요.
 
 ## 🤝 협업 가이드
 
