@@ -56,18 +56,18 @@ export function Sidebar() {
 
   return (
     <>
-      <div className="fixed left-2 top-4 z-[60] flex w-[72px] items-center justify-center bg-transparent">
+      <div className="fixed left-0 top-4 z-[60] flex w-[88px] items-center justify-center bg-transparent">
         <div className="flex items-center justify-center">
           <img src="/Aplus_logo.png" alt="CLASSDUO" className="h-8 w-auto" />
         </div>
       </div>
-      <div className="fixed left-2 top-[72px] z-[60] flex w-[72px] items-center justify-center bg-transparent">
+      <div className="fixed left-0 top-[72px] z-[60] flex w-[88px] items-center justify-center bg-transparent">
         <LanguageToggle size="sm" />
         </div>
       <aside
         className={cn(
-          'fixed left-2 top-16 z-50 h-[calc(100vh-4rem)] overflow-visible bg-transparent transition-all duration-300',
-          isMenuOpen ? 'w-[72px]' : 'w-0'
+          'fixed left-0 top-16 z-50 h-[calc(100vh-4rem)] overflow-visible bg-transparent transition-all duration-300',
+          isMenuOpen ? 'w-[88px]' : 'w-0'
         )}
       >
         <div className="flex h-full flex-col items-center py-6">
@@ -97,7 +97,7 @@ export function Sidebar() {
               >
                 <span
                   className={cn(
-                    'flex h-12 w-12 flex-col items-center justify-center rounded-lg transition-all',
+                    'flex h-[72px] w-[72px] flex-col items-center justify-center rounded-lg transition-all',
                     isActive ? 'bg-gray-900 shadow-sm' : ''
                   )}
               >
@@ -128,7 +128,7 @@ export function Sidebar() {
         >
           <span
             className={cn(
-              'flex h-12 w-12 flex-col items-center justify-center rounded-lg transition-all',
+              'flex h-[72px] w-[72px] flex-col items-center justify-center rounded-lg transition-all',
               pathname === PROFILE_MENU.href ? 'bg-gray-900 shadow-sm' : ''
             )}
             >
