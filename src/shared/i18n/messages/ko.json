@@ -304,6 +304,12 @@
         "focus": {
           "title": "퀴즈가 어떤 부분에 집중할까요?",
           "placeholder": "~와 관련된 부분에 집중해서 만들어줘"
+        },
+        "discardWarning": {
+          "title": "설정을 닫으시겠습니까?",
+          "description": "설정한 내용이 저장되지 않습니다. 저장하려면 확인을 눌러주세요.",
+          "cancel": "계속 설정",
+          "confirm": "닫기"
         }
       },
       "review": {

@@ -100,8 +100,9 @@ export function ExamPrepQuizPanel({
   const [draftDifficulty, setDraftDifficulty] = useState<ExamPrepQuizSettingsDifficultyKey | null>(
     null
   )
-  const [draftQuestionCount, setDraftQuestionCount] = useState<number>(10)
+  const [draftQuestionCount, setDraftQuestionCount] = useState<string>('10')
   const [draftFocusHint, setDraftFocusHint] = useState<string>('')
+  const [showDiscardWarning, setShowDiscardWarning] = useState(false)
   // "결과 보기"를 한 번이라도 눌렀는지 (그때부터 '미답=오답' 표시/채점 적용)
   const [hasFinalizedResults, setHasFinalizedResults] = useState(false)
   const [isCorrectBoxOpen, setIsCorrectBoxOpen] = useState(true)
@@ -152,21 +153,35 @@ export function ExamPrepQuizPanel({
   const handleOpenSettings = () => {
     setDraftQuestionTypes(settings.questionTypes)
     setDraftDifficulty(settings.difficulty)
-    setDraftQuestionCount(settings.questionCount)
+    setDraftQuestionCount(String(settings.questionCount))
     setDraftFocusHint(settings.focusHint)
+    setShowDiscardWarning(false)
     setIsSettingsOpen(true)
   }
 
   const handleCancelSettings = () => {
+    setShowDiscardWarning(true)
+  }
+
+  const handleConfirmDiscard = () => {
+    setShowDiscardWarning(false)
     setIsSettingsOpen(false)
   }
 
+  const handleCancelDiscard = () => {
+    setShowDiscardWarning(false)
+  }
+
+  const parsedQuestionCount = draftQuestionCount.trim() === '' ? null : Math.floor(Number(draftQuestionCount))
+  const isQuestionCountValid = parsedQuestionCount !== null && Number.isFinite(parsedQuestionCount) && parsedQuestionCount >= 1
+
   const handleConfirmSettings = () => {
+    if (!isQuestionCountValid) return
     const maxCount = typeof maxQuestionCount === 'number' ? maxQuestionCount : Number.POSITIVE_INFINITY
     onChangeSettings({
       questionTypes: draftQuestionTypes,
       difficulty: draftDifficulty,
-      questionCount: Math.min(Math.max(1, Math.floor(draftQuestionCount)), maxCount),
+      questionCount: Math.min(parsedQuestionCount!, maxCount),
       focusHint: draftFocusHint,
     })
     setIsSettingsOpen(false)
@@ -845,7 +860,6 @@ export function ExamPrepQuizPanel({
       {isSettingsOpen ? (
         <div
           className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 px-6"
-          onClick={handleCancelSettings}
         >
           <div
             className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
@@ -966,10 +980,7 @@ export function ExamPrepQuizPanel({
                     max={maxQuestionCount}
                     value={draftQuestionCount}
                     onChange={event => {
-                      const raw = event.currentTarget.value
-                      const parsed = Number(raw)
-                      if (!Number.isFinite(parsed)) return
-                      setDraftQuestionCount(Math.max(1, Math.floor(parsed)))
+                      setDraftQuestionCount(event.currentTarget.value)
                     }}
                     className="h-9 w-28 rounded-xl border border-gray-200 px-3 text-sm text-gray-800 outline-none focus:border-gray-300"
                     aria-label={t('settings.questionCount.input')}
@@ -999,12 +1010,41 @@ export function ExamPrepQuizPanel({
                 </button>
                 <button
                   type="button"
-                  className="rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800"
+                  disabled={!isQuestionCountValid}
+                  className="rounded-xl bg-gray-900 px-4 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
                   onClick={handleConfirmSettings}
                 >
                   {t('settings.confirm')}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showDiscardWarning ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-6">
+          <div
+            className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="text-base font-semibold text-gray-900">{t('settings.discardWarning.title')}</div>
+            <div className="mt-1 text-sm text-gray-500">{t('settings.discardWarning.description')}</div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-300"
+                onClick={handleCancelDiscard}
+              >
+                {t('settings.discardWarning.cancel')}
+              </button>
+              <button
+                type="button"
+                className="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                onClick={handleConfirmDiscard}
+              >
+                {t('settings.discardWarning.confirm')}
+              </button>
             </div>
           </div>
         </div>

@@ -304,6 +304,12 @@
         "focus": {
           "title": "What should the quiz focus on?",
           "placeholder": "Please focus on the parts related to ~"
+        },
+        "discardWarning": {
+          "title": "Close settings?",
+          "description": "Your changes will not be saved. Press confirm in the settings to save.",
+          "cancel": "Keep editing",
+          "confirm": "Close"
         }
       },
       "review": {
