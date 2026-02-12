@@ -6,6 +6,7 @@ import { examPrepService, cacheSignedUrlFromApi } from '../services/examPrepServ
 import type { ExamPrepMaterial } from '../types'
 
 const MATERIALS_STORAGE_PREFIX = 'exam_prep_materials'
+const LOCAL_CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24시간 TTL
 const materialsCache = new Map<string, { items: ExamPrepMaterial[]; updatedAt: number }>()
 
 const readLocalJson = <T,>(key: string, fallback: T): T => {
@@ -52,8 +53,16 @@ export function useExamPrepMaterials(courseId: string | null) {
     } else if (cacheKey) {
       const localCached = readLocalJson<{ items: ExamPrepMaterial[]; updatedAt: number } | null>(cacheKey, null)
       if (localCached?.items?.length) {
-        materialsCache.set(cacheKey, localCached)
-        setMaterials(localCached.items)
+        // TTL 체크: 24시간 이상 경과한 캐시는 무시 (stale signed URL 방지)
+        if (Date.now() - localCached.updatedAt > LOCAL_CACHE_TTL_MS) {
+          localStorage.removeItem(cacheKey)
+        } else {
+          // signed URL은 만료되었을 수 있으므로 null로 초기화
+          const sanitized = localCached.items.map(item => ({ ...item, signedUrl: null }))
+          const sanitizedPayload = { items: sanitized, updatedAt: localCached.updatedAt }
+          materialsCache.set(cacheKey, sanitizedPayload)
+          setMaterials(sanitized)
+        }
       }
     }
 
