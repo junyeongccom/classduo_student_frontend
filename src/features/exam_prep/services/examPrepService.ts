@@ -19,6 +19,47 @@ const normalizeStoragePath = (path?: string | null) => {
   return normalized
 }
 
+const PDF_URL_CACHE_PREFIX = 'pdf_url_'
+const URL_EXPIRY_MARGIN_MS = 5 * 60 * 1000 // 만료 5분 전에 갱신
+
+const getCachedSignedUrl = (materialId: string): string | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(`${PDF_URL_CACHE_PREFIX}${materialId}`)
+    if (!raw) return null
+    const cached = JSON.parse(raw) as { url: string; expiresAt: number }
+    if (Date.now() < cached.expiresAt - URL_EXPIRY_MARGIN_MS) {
+      return cached.url
+    }
+    sessionStorage.removeItem(`${PDF_URL_CACHE_PREFIX}${materialId}`)
+  } catch {
+    // ignore parse errors
+  }
+  return null
+}
+
+/**
+ * 백엔드 API 응답에서 받은 signed URL을 세션 스토리지에 캐싱
+ * @param materialId 자료 ID
+ * @param url signed URL
+ * @param expiresInSec 만료 시간(초), 기본 24시간
+ */
+export const cacheSignedUrlFromApi = (materialId: string, url: string, expiresInSec = 86400) => {
+  setCachedSignedUrl(materialId, url, expiresInSec)
+}
+
+const setCachedSignedUrl = (materialId: string, url: string, expiresInSec: number) => {
+  if (typeof window === 'undefined') return
+  try {
+    sessionStorage.setItem(
+      `${PDF_URL_CACHE_PREFIX}${materialId}`,
+      JSON.stringify({ url, expiresAt: Date.now() + expiresInSec * 1000 }),
+    )
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
 const buildSignedUrlForMaterial = async (
   material: {
     material_id: string
@@ -34,6 +75,10 @@ const buildSignedUrlForMaterial = async (
   if (!materialId || ['FAILED', 'ERROR'].includes(status)) {
     return null
   }
+
+  // 세션 스토리지에서 캐시된 URL 확인
+  const cached = getCachedSignedUrl(materialId)
+  if (cached) return cached
 
   const candidates: Array<{ bucket: string; path: string }> = []
 
@@ -52,6 +97,7 @@ const buildSignedUrlForMaterial = async (
         .from(candidate.bucket)
         .createSignedUrl(candidate.path, expiresIn)
       if (data?.signedUrl && !error) {
+        setCachedSignedUrl(materialId, data.signedUrl, expiresIn)
         return data.signedUrl
       }
     } catch {
