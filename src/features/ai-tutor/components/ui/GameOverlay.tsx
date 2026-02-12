@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { X } from 'lucide-react'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 
 interface GameOverlayProps {
   isOpen: boolean
@@ -22,6 +23,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
   const keywordsRef = useRef<{ keyword: string; description: string }[]>([])
+  const { locale } = useI18n()
 
   // 16:9 비율 계산
   useEffect(() => {
@@ -59,16 +61,17 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
     let cancelled = false
     ;(async () => {
       const { chatService } = await import('../../services/chatService')
-      const { data } = await chatService.getLectureKeywords(lectureId)
+      const { data } = await chatService.getLectureKeywords(lectureId, locale)
       if (!cancelled && data?.keywords) {
+        const isEn = locale === 'en'
         keywordsRef.current = data.keywords.map((k) => ({
-          keyword: k.keyword,
-          description: k.description,
+          keyword: (isEn && k.keyword_eng) || k.keyword,
+          description: (isEn && k.description_eng) || k.description,
         }))
       }
     })()
     return () => { cancelled = true }
-  }, [isOpen, lectureId])
+  }, [isOpen, lectureId, locale])
 
   // Phaser 인스턴스 생성/소멸
   useEffect(() => {
@@ -86,6 +89,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
       const config = createGameConfig(containerRef.current)
       game = new Phaser.Game(config)
       game.registry.set('keywords', keywordsRef.current)
+      game.registry.set('locale', locale)
       gameRef.current = game
 
       // 게임 컨테이너로 포커스 이동 → 사이드바 버튼의 onKeyDown이 SPACE를 가로채지 않도록

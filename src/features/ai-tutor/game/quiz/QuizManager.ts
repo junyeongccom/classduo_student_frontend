@@ -70,7 +70,7 @@ function lighten(color: number, amount: number): number {
   return (r << 16) | (g << 8) | b;
 }
 
-const REWARD_CARDS: CardDef[] = [
+const REWARD_CARDS_KO: CardDef[] = [
   { type: "jump", title: "점프력 UP", desc: "점프력 15% 증가", color: 0x2ecc71 },
   { type: "jumpCount", title: "점프횟수 UP", desc: "점프 횟수 +1", color: 0x9b59b6 },
   { type: "speed", title: "속도 UP", desc: "이동속도 15% 증가", color: 0x3498db },
@@ -78,6 +78,36 @@ const REWARD_CARDS: CardDef[] = [
   { type: "hpRestore", title: "체력 회복", desc: `현재 체력 +${HP_RESTORE_AMOUNT / 1000}초`, color: 0xff6b81 },
   { type: "hpDecay", title: "감소 속도 DOWN", desc: "감소 속도 15% 감소", color: 0x1abc9c },
 ];
+
+const REWARD_CARDS_EN: CardDef[] = [
+  { type: "jump", title: "JUMP UP", desc: "Jump +15%", color: 0x2ecc71 },
+  { type: "jumpCount", title: "JUMP COUNT UP", desc: "Jump count +1", color: 0x9b59b6 },
+  { type: "speed", title: "SPEED UP", desc: "Speed +15%", color: 0x3498db },
+  { type: "score", title: `+${SCORE_BONUS}pts`, desc: "Instant score", color: 0xf1c40f },
+  { type: "hpRestore", title: "HP RESTORE", desc: `HP +${HP_RESTORE_AMOUNT / 1000}s`, color: 0xff6b81 },
+  { type: "hpDecay", title: "DECAY DOWN", desc: "Decay -15%", color: 0x1abc9c },
+];
+
+const T = {
+  ko: {
+    eat: (answer: string) => `먹으세요: ${answer}`,
+    timeout: "시간 초과!",
+    chooseReward: "보상을 선택하세요!",
+    correct: "정답! ",
+    wrong: "오답! ",
+    wrongNoEffect: "오답! 하지만 효과 없음!",
+    points: (n: number) => (n > 0 ? `+${n}점!` : `${n}점!`),
+  },
+  en: {
+    eat: (answer: string) => `Collect: ${answer}`,
+    timeout: "Time's up!",
+    chooseReward: "Choose a reward!",
+    correct: "Correct! ",
+    wrong: "Wrong! ",
+    wrongNoEffect: "Wrong! No effect!",
+    points: (n: number) => (n > 0 ? `+${n}pts!` : `${n}pts!`),
+  },
+} as const;
 
 interface KeywordEntry {
   keyword: string;
@@ -98,6 +128,9 @@ export class QuizManager {
 
   private keywords: KeywordEntry[] = [];
   private usedKeywordIndices: Set<number> = new Set();
+  private locale: "ko" | "en";
+  private get t() { return T[this.locale]; }
+  private get rewardCards() { return this.locale === "en" ? REWARD_CARDS_EN : REWARD_CARDS_KO; }
 
   constructor(
     scene: Phaser.Scene,
@@ -107,6 +140,9 @@ export class QuizManager {
     this.scene = scene;
     this.quizItems = quizItems;
     this.callbacks = callbacks;
+
+    const loc = scene.game.registry.get("locale") as string | undefined;
+    this.locale = loc === "en" ? "en" : "ko";
 
     const kw = scene.game.registry.get("keywords") as KeywordEntry[] | undefined;
     if (kw && kw.length >= 3) {
@@ -123,7 +159,7 @@ export class QuizManager {
 
     const bannerLabel = this.keywords.length >= 3
       ? question.text
-      : `먹으세요: ${question.correctAnswer}`;
+      : this.t.eat(question.correctAnswer);
     const bannerMaxW = GAME_WIDTH * 0.7;
     this.bannerText = this.scene.add
       .text(GAME_WIDTH / 2, -30 * S, bannerLabel, {
@@ -273,7 +309,7 @@ export class QuizManager {
 
   private handleTimeout(): void {
     this.clearQuizItems();
-    this.showResult("시간 초과!", "#e67e22");
+    this.showResult(this.t.timeout, "#e67e22");
   }
 
   // ---- Result display ----
@@ -310,7 +346,7 @@ export class QuizManager {
   // ---- Reward card UI ----
 
   private pickCards(): CardDef[] {
-    let pool = [...REWARD_CARDS];
+    let pool = [...this.rewardCards];
     if (this.callbacks.isJumpCountMaxed()) {
       pool = pool.filter((c) => c.type !== "jumpCount");
     }
@@ -338,7 +374,7 @@ export class QuizManager {
 
     // Title
     const title = this.scene.add
-      .text(GAME_WIDTH / 2, cardY - 30 * S, "보상을 선택하세요!", {
+      .text(GAME_WIDTH / 2, cardY - 30 * S, this.t.chooseReward, {
         fontFamily: "monospace",
         fontSize: `${20 * S}px`,
         color: "#ffffff",
@@ -444,7 +480,7 @@ export class QuizManager {
     this.clearRewardUI();
     this.scene.physics.resume();
 
-    const prefix = isCorrect ? "정답! " : "오답! ";
+    const prefix = isCorrect ? this.t.correct : this.t.wrong;
     const color = isCorrect ? "#2ecc71" : "#e74c3c";
 
     switch (type) {
@@ -471,7 +507,7 @@ export class QuizManager {
           this.callbacks.applyJumpCountUp();
           this.callbacks.showEffect(prefix + "JUMP COUNT UP!", color);
         } else if (this.callbacks.isJumpCountAtMin()) {
-          this.callbacks.showEffect("오답! 하지만 효과 없음!", "#e67e22");
+          this.callbacks.showEffect(this.t.wrongNoEffect, "#e67e22");
         } else {
           this.callbacks.applyJumpCountDown();
           this.callbacks.showEffect(prefix + "JUMP COUNT DOWN!", color);
@@ -480,8 +516,7 @@ export class QuizManager {
       case "score": {
         const amount = isCorrect ? SCORE_BONUS : -SCORE_BONUS;
         this.callbacks.addScore(amount);
-        const label = amount > 0 ? `+${amount}점!` : `${amount}점!`;
-        this.callbacks.showEffect(prefix + label, color);
+        this.callbacks.showEffect(prefix + this.t.points(amount), color);
         break;
       }
       case "hpRestore":
