@@ -30,6 +30,7 @@ export class UIManager {
 
   // Score
   private scoreText!: Phaser.GameObjects.Text;
+  private coinLabel!: Phaser.GameObjects.Text;
   private displayedScore = 0;
   private targetScore = 0;
 
@@ -65,7 +66,7 @@ export class UIManager {
       .setOrigin(1, 0)
       .setDepth(DEPTH_HUD);
 
-    this.scene.add
+    this.coinLabel = this.scene.add
       .text(GAME_WIDTH - 80 * S, 22 * S, "COIN", {
         fontFamily: "monospace",
         fontSize: `${14 * S}px`,
@@ -291,6 +292,9 @@ export class UIManager {
       }
       this.scoreText.setText(String(this.displayedScore));
     }
+
+    // Keep COIN label to the left of score number
+    this.coinLabel.setX(this.scoreText.x - this.scoreText.displayWidth - 14 * S);
 
     // Damage flash timer
     if (this.hpDamageFlashTimer > 0) {
