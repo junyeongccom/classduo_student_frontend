@@ -65,6 +65,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
       const config = createGameConfig(containerRef.current)
       game = new Phaser.Game(config)
       gameRef.current = game
+
+      // 게임 컨테이너로 포커스 이동 → 사이드바 버튼의 onKeyDown이 SPACE를 가로채지 않도록
+      containerRef.current?.focus()
     }
 
     initGame()
@@ -146,7 +149,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
         {/* Phaser 렌더 영역 */}
         <div
           ref={containerRef}
-          className="w-full h-full bg-[#e8f4f8]"
+          tabIndex={-1}
+          className="w-full h-full bg-[#e8f4f8] outline-none"
         />
       </div>
     </>

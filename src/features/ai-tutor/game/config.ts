@@ -23,6 +23,15 @@ export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameCon
         debug: false,
       },
     },
+    input: {
+      keyboard: {
+        capture: [
+          Phaser.Input.Keyboard.KeyCodes.SPACE,
+          Phaser.Input.Keyboard.KeyCodes.UP,
+          Phaser.Input.Keyboard.KeyCodes.DOWN,
+        ],
+      },
+    },
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
