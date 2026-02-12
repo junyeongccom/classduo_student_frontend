@@ -149,7 +149,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Ensure body size stays correct after texture swap
     if (this.ducking) {
       body.setSize(30 * S, 19 * S);
-      body.setOffset(5 * S, 11 * S);
+      body.setOffset(5 * S, 22 * S);
       // Tilt only when sliding on ground; flat in air
       this.setAngle(onGround ? -10 : 0);
     } else {
@@ -209,8 +209,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.squashTween?.stop();
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setSize(30 * S, 19 * S);
-    body.setOffset(5 * S, 11 * S);
-    this.y += 14 * S;
+    body.setOffset(5 * S, 22 * S);
+    this.y += 8.5 * S;
     this.setScale(1.3, 0.5);
   }
 
@@ -220,7 +220,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setSize(30 * S, 38 * S);
     body.setOffset(5 * S, 5 * S);
-    this.y -= 14 * S;
+    this.y -= 8.5 * S;
     this.setScale(1, 1);
     this.setAngle(0);
   }
