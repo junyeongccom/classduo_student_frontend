@@ -27,6 +27,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private justJumped = false;
   private spinning = false;
   private ducking = false;
+  private duckRequested = false;
   private isRunning = false;
   private wasInAir = false;
   private squashTween?: Phaser.Tweens.Tween;
@@ -107,6 +108,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (onGround && time - this.jumpBufferedAt < JUMP_BUFFER_MS) {
       this.executeJump();
+    }
+
+    // Buffered duck: pressed slide in air → execute on landing
+    if (onGround && this.duckRequested) {
+      this.duckRequested = false;
+      this.startDuck();
     }
 
     // Clamp left side only
@@ -205,9 +212,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   startDuck(): void {
     if (this.ducking) return;
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    if (!body.blocked.down) {
+      this.duckRequested = true;
+      return;
+    }
     this.ducking = true;
     this.squashTween?.stop();
-    const body = this.body as Phaser.Physics.Arcade.Body;
     body.setSize(30 * S, 19 * S);
     body.setOffset(5 * S, 22 * S);
     this.y += 8.5 * S;
@@ -215,6 +226,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   endDuck(): void {
+    this.duckRequested = false;
     if (!this.ducking) return;
     this.ducking = false;
     const body = this.body as Phaser.Physics.Arcade.Body;
@@ -235,6 +247,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.justJumped = false;
     this.spinning = false;
     this.ducking = false;
+    this.duckRequested = false;
     this.isRunning = false;
     this.wasInAir = false;
     this.trail.clear();
