@@ -607,6 +607,10 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xffaa00);
     g.fillCircle(size / 2, size / 2, size / 3);
 
+    // Outline stroke (dark burnt orange, like heart border approach)
+    g.lineStyle(2.5 * S, 0x8b3a00, 1);
+    g.strokeCircle(size / 2, size / 2, size / 3);
+
     g.fillStyle(0xffff99);
     g.fillCircle(size / 2, size / 2, size / 5);
 
