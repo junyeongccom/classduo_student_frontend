@@ -36,6 +36,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private prevPositions: { x: number; y: number }[] = [];
 
   jumpMultiplier = 1;
+  scrollSpeed = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "player_run0");
@@ -168,6 +169,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Spin ghost trail
     if (this.spinning) {
+      // Shift existing trail positions by scroll speed (world moves left)
+      const dt = delta / 1000;
+      for (const pos of this.prevPositions) {
+        pos.x += this.scrollSpeed * dt;
+      }
       this.prevPositions.push({ x: this.x, y: this.y });
       if (this.prevPositions.length > TRAIL_LENGTH) {
         this.prevPositions.shift();
@@ -244,6 +250,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.jumpHeld = false;
     this.maxJumps = MAX_JUMPS;
     this.jumpMultiplier = 1;
+    this.scrollSpeed = 0;
     this.justJumped = false;
     this.spinning = false;
     this.ducking = false;

@@ -512,6 +512,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    this.player.scrollSpeed = this.getEffectiveSpeed();
     this.player.update(time, delta);
 
     // Slide dust
