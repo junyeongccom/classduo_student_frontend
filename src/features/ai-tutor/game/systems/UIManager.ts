@@ -207,10 +207,6 @@ export class UIManager {
     g.fillStyle(HP_FRAME_BG, 1);
     g.fillRoundedRect(bx, by, barW, bh, br);
 
-    // Outline stroke
-    g.lineStyle(2 * S, HP_FRAME_OUTLINE, 1);
-    g.strokeRoundedRect(bx, by, barW, bh, br);
-
     // Segment lines at 25%, 50%, 75%
     g.lineStyle(1 * S, HP_SEGMENT_COLOR, 0.4);
     const innerW = barW - pad * 2;

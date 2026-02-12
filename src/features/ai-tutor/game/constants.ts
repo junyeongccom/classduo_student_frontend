@@ -77,21 +77,21 @@ export const HP_ICON_RADIUS = 14 * S;
 export const HP_BAR_X = 36 * S;
 export const HP_BAR_Y = 8 * S;
 export const HP_BAR_WIDTH = 600 * S;
-export const HP_BAR_HEIGHT = 26 * S;
-export const HP_BAR_RADIUS = 13 * S;
-export const HP_BAR_PADDING = 3 * S;
+export const HP_BAR_HEIGHT = 18 * S;
+export const HP_BAR_RADIUS = 9 * S;
+export const HP_BAR_PADDING = 2.5 * S;
 export const COLOR_HP_HEART = 0xe74c3c;
 export const COLOR_HP_HEART_SHINE = 0xf1948a;
 
 // HP gauge visual
-export const HP_FRAME_BG = 0x1a1a2e;
-export const HP_FRAME_OUTLINE = 0x3d3d5c;
+export const HP_FRAME_BG = 0x2a1215;
+export const HP_FRAME_OUTLINE = 0x922b21;
 export const HP_COLORS = {
   high: { fill: 0x2ecc71, dark: 0x1fa85a, outline: 0x1b8a4a, shine: 0x58d68d },
   mid:  { fill: 0xf39c12, dark: 0xd4850a, outline: 0xb37209, shine: 0xf5b041 },
   low:  { fill: 0xe74c3c, dark: 0xc0392b, outline: 0x922b21, shine: 0xec7063 },
 };
-export const HP_SEGMENT_COLOR = 0x3d3d5c;
+export const HP_SEGMENT_COLOR = 0x922b21;
 export const HP_MAX_BOOST = 5000;
 export const HP_RESTORE_AMOUNT = 8000;
 export const HP_DECAY_STACK_BASE = 1.15;
