@@ -27,7 +27,7 @@ const buildSignedUrlForMaterial = async (
     status: string | null
     original_pdf_path?: string | null
   },
-  expiresIn = 600
+  expiresIn = 86400
 ) => {
   const status = material.status ?? ''
   const materialId = material.material_id
