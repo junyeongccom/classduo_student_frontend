@@ -119,7 +119,7 @@ export class QuizManager {
   private callbacks: QuizCallbacks;
   private quizItems: Phaser.Physics.Arcade.Group;
   private bannerContainer: Phaser.GameObjects.Container | null = null;
-  private resultText: Phaser.GameObjects.Text | null = null;
+  private resultContainer: Phaser.GameObjects.Container | null = null;
   private usedQuestions: Set<number> = new Set();
   private timeoutTimer: Phaser.Time.TimerEvent | null = null;
   private rewardUI: Phaser.GameObjects.GameObject[] = [];
@@ -302,15 +302,7 @@ export class QuizManager {
 
     this.callbacks.setGameState("quiz_result");
 
-    this.resultText = this.scene.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40 * S, text, {
-        fontFamily: "monospace",
-        fontSize: `${36 * S}px`,
-        color: color,
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(10);
+    this.resultContainer = this.createResultPopup(text, color);
 
     this.scene.time.delayedCall(QUIZ_RESULT_MS, () => {
       this.clearResult();
@@ -461,64 +453,65 @@ export class QuizManager {
 
     const prefix = isCorrect ? this.t.correct : this.t.wrong;
     const color = isCorrect ? "#2ecc71" : "#e74c3c";
+    let effectLabel = "";
 
     switch (type) {
       case "speed":
         if (isCorrect) {
           this.callbacks.applySpeedUp();
-          this.callbacks.showEffect(prefix + "SPEED UP!", color);
+          effectLabel = prefix + "SPEED UP!";
         } else {
           this.callbacks.applySpeedDown();
-          this.callbacks.showEffect(prefix + "SPEED DOWN!", color);
+          effectLabel = prefix + "SPEED DOWN!";
         }
         break;
       case "jump":
         if (isCorrect) {
           this.callbacks.applyJumpUp();
-          this.callbacks.showEffect(prefix + "JUMP UP!", color);
+          effectLabel = prefix + "JUMP UP!";
         } else {
           this.callbacks.applyJumpDown();
-          this.callbacks.showEffect(prefix + "JUMP DOWN!", color);
+          effectLabel = prefix + "JUMP DOWN!";
         }
         break;
       case "jumpCount":
         if (isCorrect) {
           this.callbacks.applyJumpCountUp();
-          this.callbacks.showEffect(prefix + "JUMP COUNT UP!", color);
+          effectLabel = prefix + "JUMP COUNT UP!";
         } else if (this.callbacks.isJumpCountAtMin()) {
-          this.callbacks.showEffect(this.t.wrongNoEffect, "#e67e22");
+          effectLabel = this.t.wrongNoEffect;
         } else {
           this.callbacks.applyJumpCountDown();
-          this.callbacks.showEffect(prefix + "JUMP COUNT DOWN!", color);
+          effectLabel = prefix + "JUMP COUNT DOWN!";
         }
         break;
       case "score": {
         const amount = isCorrect ? SCORE_BONUS : -SCORE_BONUS;
         this.callbacks.addScore(amount);
-        this.callbacks.showEffect(prefix + this.t.points(amount), color);
+        effectLabel = prefix + this.t.points(amount);
         break;
       }
       case "hpRestore":
         if (isCorrect) {
           this.callbacks.applyHpRestore();
-          this.callbacks.showEffect(prefix + "HP RESTORE!", color);
+          effectLabel = prefix + "HP RESTORE!";
         } else {
           this.callbacks.applyHpDrain();
-          this.callbacks.showEffect(prefix + "HP DRAIN!", color);
+          effectLabel = prefix + "HP DRAIN!";
         }
         break;
       case "hpDecay":
         if (isCorrect) {
           this.callbacks.applyHpDecayDown();
-          this.callbacks.showEffect(prefix + "DECAY SLOW!", color);
+          effectLabel = prefix + "DECAY SLOW!";
         } else {
           this.callbacks.applyHpDecayUp();
-          this.callbacks.showEffect(prefix + "DECAY FAST!", color);
+          effectLabel = prefix + "DECAY FAST!";
         }
         break;
     }
 
-    this.callbacks.setGameState("playing");
+    this.showResult(effectLabel, color);
   }
 
   // ---- Banner UI ----
@@ -605,6 +598,37 @@ export class QuizManager {
       yoyo: true,
       repeat: -1,
       ease: "Sine.InOut",
+    });
+
+    return container;
+  }
+
+  private createResultPopup(label: string, color: string): Phaser.GameObjects.Container {
+    const text = this.scene.add
+      .text(0, 0, label, {
+        fontFamily: "monospace",
+        fontSize: `${30 * S}px`,
+        color: color,
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 4 * S,
+      })
+      .setOrigin(0.5);
+
+    const container = this.scene.add
+      .container(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40 * S, [text])
+      .setDepth(10)
+      .setScale(1.4)
+      .setAlpha(0);
+
+    // Punch in + fade
+    this.scene.tweens.add({
+      targets: container,
+      scaleX: 1,
+      scaleY: 1,
+      alpha: 1,
+      duration: 250,
+      ease: "Back.Out",
     });
 
     return container;
@@ -720,9 +744,9 @@ export class QuizManager {
   }
 
   private clearResult(): void {
-    if (this.resultText) {
-      this.resultText.destroy();
-      this.resultText = null;
+    if (this.resultContainer) {
+      this.resultContainer.destroy();
+      this.resultContainer = null;
     }
   }
 }
