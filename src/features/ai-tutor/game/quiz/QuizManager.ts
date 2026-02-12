@@ -79,6 +79,11 @@ const REWARD_CARDS: CardDef[] = [
   { type: "hpDecay", title: "감소 속도 DOWN", desc: "감소 속도 15% 감소", color: 0x1abc9c },
 ];
 
+interface KeywordEntry {
+  keyword: string;
+  description: string;
+}
+
 export class QuizManager {
   private scene: Phaser.Scene;
   private callbacks: QuizCallbacks;
@@ -91,6 +96,9 @@ export class QuizManager {
   private previewMarkers: Phaser.GameObjects.GameObject[] = [];
   private itemYPositions: number[] = [];
 
+  private keywords: KeywordEntry[] = [];
+  private usedKeywordIndices: Set<number> = new Set();
+
   constructor(
     scene: Phaser.Scene,
     quizItems: Phaser.Physics.Arcade.Group,
@@ -99,6 +107,11 @@ export class QuizManager {
     this.scene = scene;
     this.quizItems = quizItems;
     this.callbacks = callbacks;
+
+    const kw = scene.game.registry.get("keywords") as KeywordEntry[] | undefined;
+    if (kw && kw.length >= 3) {
+      this.keywords = kw;
+    }
   }
 
   startQuiz(): void {
@@ -108,14 +121,20 @@ export class QuizManager {
     this.callbacks.setGameState("quiz_announce");
     this.callbacks.onQuizAnnounce?.();
 
+    const bannerLabel = this.keywords.length >= 3
+      ? question.text
+      : `먹으세요: ${question.correctAnswer}`;
+    const bannerMaxW = GAME_WIDTH * 0.7;
     this.bannerText = this.scene.add
-      .text(GAME_WIDTH / 2, -30 * S, `먹으세요: ${question.correctAnswer}`, {
+      .text(GAME_WIDTH / 2, -30 * S, bannerLabel, {
         fontFamily: "monospace",
         fontSize: `${22 * S}px`,
         color: "#ffffff",
         backgroundColor: "#1a1a2e",
         padding: { x: 16 * S, y: 8 * S },
         shadow: { offsetX: 1 * S, offsetY: 1 * S, color: "#000000", blur: 4 * S, fill: true },
+        wordWrap: { width: bannerMaxW, useAdvancedWrap: true },
+        align: "center",
       })
       .setOrigin(0.5)
       .setDepth(10);
@@ -184,6 +203,12 @@ export class QuizManager {
   // ---- Quiz question ----
 
   private pickQuestion(): QuizQuestion | null {
+    // 실제 키워드 데이터가 있으면 사용
+    if (this.keywords.length >= 3) {
+      return this.pickFromKeywords();
+    }
+
+    // 폴백: 목 데이터
     if (this.usedQuestions.size >= QUIZ_QUESTIONS.length) {
       this.usedQuestions.clear();
     }
@@ -196,6 +221,39 @@ export class QuizManager {
     this.usedQuestions.add(originalIdx);
 
     return available[idx];
+  }
+
+  private pickFromKeywords(): QuizQuestion {
+    // 모든 키워드 소진 시 초기화
+    if (this.usedKeywordIndices.size >= this.keywords.length) {
+      this.usedKeywordIndices.clear();
+    }
+
+    // 미사용 키워드 중 랜덤 선택
+    const availableIndices = this.keywords
+      .map((_, i) => i)
+      .filter((i) => !this.usedKeywordIndices.has(i));
+    const correctIdx =
+      availableIndices[Phaser.Math.Between(0, availableIndices.length - 1)];
+    this.usedKeywordIndices.add(correctIdx);
+
+    const correct = this.keywords[correctIdx];
+
+    // 오답 2개: 정답 제외 나머지에서 랜덤
+    const otherIndices = this.keywords
+      .map((_, i) => i)
+      .filter((i) => i !== correctIdx);
+    const shuffled = Phaser.Utils.Array.Shuffle(otherIndices);
+    const wrongAnswers = [
+      this.keywords[shuffled[0]].keyword,
+      this.keywords[shuffled[1]].keyword,
+    ];
+
+    return {
+      text: correct.description,
+      correctAnswer: correct.keyword,
+      wrongAnswers,
+    };
   }
 
   private spawnQuizItems(words: string[], correctAnswer: string): void {

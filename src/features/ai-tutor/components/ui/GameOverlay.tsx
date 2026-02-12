@@ -16,11 +16,12 @@ interface GameOverlayProps {
   courseName?: string
 }
 
-export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayProps) {
+export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: GameOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<import('phaser').Game | null>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
+  const keywordsRef = useRef<{ keyword: string; description: string }[]>([])
 
   // 16:9 비율 계산
   useEffect(() => {
@@ -49,6 +50,26 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
     }
   }, [isOpen])
 
+  // 키워드 fetch (애니메이션과 병렬)
+  useEffect(() => {
+    if (!isOpen || !lectureId) {
+      keywordsRef.current = []
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const { chatService } = await import('../../services/chatService')
+      const { data } = await chatService.getLectureKeywords(lectureId)
+      if (!cancelled && data?.keywords) {
+        keywordsRef.current = data.keywords.map((k) => ({
+          keyword: k.keyword,
+          description: k.description,
+        }))
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isOpen, lectureId])
+
   // Phaser 인스턴스 생성/소멸
   useEffect(() => {
     if (!isOpen || animationState !== 'entered' || typeof window === 'undefined') return
@@ -64,6 +85,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition }: GameOverlayPro
 
       const config = createGameConfig(containerRef.current)
       game = new Phaser.Game(config)
+      game.registry.set('keywords', keywordsRef.current)
       gameRef.current = game
 
       // 게임 컨테이너로 포커스 이동 → 사이드바 버튼의 onKeyDown이 SPACE를 가로채지 않도록
