@@ -118,7 +118,7 @@ export class QuizManager {
   private scene: Phaser.Scene;
   private callbacks: QuizCallbacks;
   private quizItems: Phaser.Physics.Arcade.Group;
-  private bannerText: Phaser.GameObjects.Text | null = null;
+  private bannerContainer: Phaser.GameObjects.Container | null = null;
   private resultText: Phaser.GameObjects.Text | null = null;
   private usedQuestions: Set<number> = new Set();
   private timeoutTimer: Phaser.Time.TimerEvent | null = null;
@@ -160,28 +160,7 @@ export class QuizManager {
     const bannerLabel = this.keywords.length >= 3
       ? question.text
       : this.t.eat(question.correctAnswer);
-    const bannerMaxW = GAME_WIDTH * 0.7;
-    this.bannerText = this.scene.add
-      .text(GAME_WIDTH / 2, -30 * S, bannerLabel, {
-        fontFamily: "monospace",
-        fontSize: `${22 * S}px`,
-        color: "#ffffff",
-        backgroundColor: "#1a1a2e",
-        padding: { x: 16 * S, y: 8 * S },
-        shadow: { offsetX: 1 * S, offsetY: 1 * S, color: "#000000", blur: 4 * S, fill: true },
-        wordWrap: { width: bannerMaxW, useAdvancedWrap: true },
-        align: "center",
-      })
-      .setOrigin(0.5)
-      .setDepth(10);
-
-    // Slide-in from top
-    this.scene.tweens.add({
-      targets: this.bannerText,
-      y: 50 * S,
-      duration: 300,
-      ease: "Back.Out",
-    });
+    this.bannerContainer = this.createBanner(bannerLabel);
 
     const allWords = Phaser.Utils.Array.Shuffle([
       question.correctAnswer,
@@ -542,6 +521,95 @@ export class QuizManager {
     this.callbacks.setGameState("playing");
   }
 
+  // ---- Banner UI ----
+
+  private createBanner(label: string): Phaser.GameObjects.Container {
+    const maxTextW = GAME_WIDTH * 0.65;
+    const padX = 28 * S;
+    const padY = 16 * S;
+    const r = 16 * S;
+    const maxBoxH = 100 * S;
+    const baseFontSize = 20 * S;
+    const minFontSize = 12 * S;
+
+    // Create text, shrink font if it exceeds max box height
+    let fontSize = baseFontSize;
+    const text = this.scene.add
+      .text(0, 0, label, {
+        fontFamily: "monospace",
+        fontSize: `${fontSize}px`,
+        color: "#ffffff",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 2 * S,
+        wordWrap: { width: maxTextW, useAdvancedWrap: true },
+        align: "center",
+      })
+      .setOrigin(0.5);
+
+    while (text.height + padY * 2 > maxBoxH && fontSize > minFontSize) {
+      fontSize -= 1 * S;
+      text.setFontSize(fontSize);
+    }
+
+    const boxW = Math.max(text.width + padX * 2, 240 * S);
+    const boxH = Math.min(text.height + padY * 2, maxBoxH);
+    const hx = -boxW / 2;
+    const hy = -boxH / 2;
+
+    const bg = this.scene.add.graphics();
+
+    // Outer glow
+    bg.fillStyle(0x3498db, 0.12);
+    bg.fillRoundedRect(hx - 6 * S, hy - 6 * S, boxW + 12 * S, boxH + 12 * S, r + 6 * S);
+    bg.fillStyle(0x3498db, 0.06);
+    bg.fillRoundedRect(hx - 12 * S, hy - 12 * S, boxW + 24 * S, boxH + 24 * S, r + 12 * S);
+
+    // Dark base (bottom gradient)
+    bg.fillStyle(darken(0x1a2d42, 20), 1);
+    bg.fillRoundedRect(hx, hy, boxW, boxH, r);
+
+    // Main fill (top 70%)
+    bg.fillStyle(0x1a2d42, 1);
+    bg.fillRoundedRect(hx, hy, boxW, boxH * 0.7, { tl: r, tr: r, bl: 0, br: 0 });
+
+    // Shine highlight (top strip)
+    bg.fillStyle(0x2980b9, 0.2);
+    bg.fillRoundedRect(hx + 4 * S, hy + 3 * S, boxW - 8 * S, boxH * 0.18, { tl: r, tr: r, bl: 0, br: 0 });
+
+    // Border outline
+    bg.lineStyle(2.5 * S, 0x3498db, 0.8);
+    bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
+
+    // Inner border (subtle highlight)
+    bg.lineStyle(1 * S, 0x5dade2, 0.15);
+    bg.strokeRoundedRect(hx + 3 * S, hy + 3 * S, boxW - 6 * S, boxH - 6 * S, r - 3 * S);
+
+    const container = this.scene.add
+      .container(GAME_WIDTH / 2, -boxH, [bg, text])
+      .setDepth(10);
+
+    // Slide-in from top
+    this.scene.tweens.add({
+      targets: container,
+      y: 50 * S,
+      duration: 450,
+      ease: "Back.Out",
+    });
+
+    // Glow pulse (subtle border breathing)
+    this.scene.tweens.add({
+      targets: bg,
+      alpha: { from: 1, to: 0.8 },
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.InOut",
+    });
+
+    return container;
+  }
+
   // ---- Preview markers ----
 
   private drawWarningIcon(
@@ -645,9 +713,9 @@ export class QuizManager {
   }
 
   private clearBanner(): void {
-    if (this.bannerText) {
-      this.bannerText.destroy();
-      this.bannerText = null;
+    if (this.bannerContainer) {
+      this.bannerContainer.destroy();
+      this.bannerContainer = null;
     }
   }
 
