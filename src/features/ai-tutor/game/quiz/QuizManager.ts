@@ -604,13 +604,15 @@ export class QuizManager {
   }
 
   private createResultPopup(label: string, color: string): Phaser.GameObjects.Container {
+    const colorNum = parseInt(color.replace("#", ""), 16);
+    const strokeColor = `#${darken(colorNum, 80).toString(16).padStart(6, "0")}`;
     const text = this.scene.add
       .text(0, 0, label, {
         fontFamily: "monospace",
         fontSize: `${30 * S}px`,
         color: color,
         fontStyle: "bold",
-        stroke: "#000000",
+        stroke: strokeColor,
         strokeThickness: 4 * S,
       })
       .setOrigin(0.5);
