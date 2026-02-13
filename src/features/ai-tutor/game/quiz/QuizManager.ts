@@ -552,32 +552,15 @@ export class QuizManager {
 
     const bg = this.scene.add.graphics();
 
-    // Outer glow
-    bg.fillStyle(0x3498db, 0.12);
-    bg.fillRoundedRect(hx - 6 * S, hy - 6 * S, boxW + 12 * S, boxH + 12 * S, r + 6 * S);
-    bg.fillStyle(0x3498db, 0.06);
-    bg.fillRoundedRect(hx - 12 * S, hy - 12 * S, boxW + 24 * S, boxH + 24 * S, r + 12 * S);
-
-    // Dark base (bottom gradient)
-    bg.fillStyle(darken(0x1a2d42, 20), 1);
+    // Soft semi-transparent background
+    bg.fillStyle(0x000000, 0.35);
     bg.fillRoundedRect(hx, hy, boxW, boxH, r);
 
-    // Main fill (top 70%)
-    bg.fillStyle(0x1a2d42, 1);
-    bg.fillRoundedRect(hx, hy, boxW, boxH * 0.7, { tl: r, tr: r, bl: 0, br: 0 });
-
-    // Shine highlight (top strip)
-    bg.fillStyle(0x2980b9, 0.2);
-    bg.fillRoundedRect(hx + 4 * S, hy + 3 * S, boxW - 8 * S, boxH * 0.18, { tl: r, tr: r, bl: 0, br: 0 });
-
-    // Border outline
-    bg.lineStyle(2.5 * S, 0x3498db, 0.8);
+    // Subtle border
+    bg.lineStyle(1.5 * S, 0xffffff, 0.2);
     bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
 
-    // Inner border (subtle highlight)
-    bg.lineStyle(1 * S, 0x5dade2, 0.15);
-    bg.strokeRoundedRect(hx + 3 * S, hy + 3 * S, boxW - 6 * S, boxH - 6 * S, r - 3 * S);
-
+    const bannerY = 36 * S;
     const container = this.scene.add
       .container(GAME_WIDTH / 2, -boxH, [bg, text])
       .setDepth(10);
@@ -585,16 +568,16 @@ export class QuizManager {
     // Slide-in from top
     this.scene.tweens.add({
       targets: container,
-      y: 50 * S,
+      y: bannerY + boxH / 2,
       duration: 450,
       ease: "Back.Out",
     });
 
-    // Glow pulse (subtle border breathing)
+    // Gentle fade pulse
     this.scene.tweens.add({
-      targets: bg,
-      alpha: { from: 1, to: 0.8 },
-      duration: 1200,
+      targets: container,
+      alpha: { from: 1, to: 0.85 },
+      duration: 1500,
       yoyo: true,
       repeat: -1,
       ease: "Sine.InOut",
