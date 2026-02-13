@@ -76,7 +76,7 @@ const REWARD_CARDS_KO: CardDef[] = [
   { type: "speed", title: "속도 UP", desc: "이동속도 15% 증가", color: 0x3498db },
   { type: "score", title: `+${SCORE_BONUS}점`, desc: "즉시 점수 획득", color: 0xf1c40f },
   { type: "hpRestore", title: "체력 회복", desc: `현재 체력 +${HP_RESTORE_AMOUNT / 1000}초`, color: 0xff6b81 },
-  { type: "hpDecay", title: "감소 속도 DOWN", desc: "감소 속도 15% 감소", color: 0x1abc9c },
+  { type: "hpDecay", title: "체력 감소 DOWN", desc: "체력 감소 속도 15% 감소", color: 0x1abc9c },
 ];
 
 const REWARD_CARDS_EN: CardDef[] = [
