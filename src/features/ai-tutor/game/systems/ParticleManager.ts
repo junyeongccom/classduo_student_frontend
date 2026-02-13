@@ -112,6 +112,8 @@ export class ParticleManager {
       lifeMin?: number; lifeMax?: number;
       angle?: number; spread?: number;
       gravity?: number;
+      velScaleX?: number; velScaleY?: number;
+      alpha?: number;
     }
   ): void {
     const {
@@ -121,6 +123,8 @@ export class ParticleManager {
       lifeMin = 300, lifeMax = 500,
       angle, spread = Math.PI * 2,
       gravity = 0,
+      velScaleX = 1, velScaleY = 1,
+      alpha = 1,
     } = opts;
 
     for (let i = 0; i < count; i++) {
@@ -134,13 +138,13 @@ export class ParticleManager {
 
       p.x = x;
       p.y = y;
-      p.vx = Math.cos(a) * spd;
-      p.vy = Math.sin(a) * spd + (gravity ? 0 : 0);
+      p.vx = Math.cos(a) * spd * velScaleX;
+      p.vy = Math.sin(a) * spd * velScaleY;
       p.life = Phaser.Math.Between(lifeMin, lifeMax);
       p.maxLife = p.life;
       p.size = Phaser.Math.FloatBetween(sizeMin, sizeMax);
       p.color = color;
-      p.alpha = 1;
+      p.alpha = alpha;
       p.active = true;
     }
   }
@@ -150,11 +154,13 @@ export class ParticleManager {
   spawnDustEffect(x: number): void {
     const footY = GROUND_Y - GROUND_HEIGHT / 2;
     this.emit(x, footY, 6, {
-      color: COLOR_GROUND,
+      color: 0xd04435,
       sizeMin: 2 * S, sizeMax: 4 * S,
       speedMin: 20 * S, speedMax: 60 * S,
       lifeMin: 300, lifeMax: 500,
       angle: -Math.PI / 2, spread: Math.PI * 0.8,
+      velScaleX: 1.8, velScaleY: 0.6,
+      alpha: 0.35,
     });
   }
 
@@ -181,12 +187,14 @@ export class ParticleManager {
   spawnJumpBurst(x: number, y: number, jumpCount: number): void {
     if (jumpCount < 2) return;
     const footY = y + PLAYER_TEX_HEIGHT / 4;
-    this.emit(x, footY, 4, {
-      color: COLOR_PLAYER,
-      sizeMin: 1 * S, sizeMax: 3 * S,
-      speedMin: 20 * S, speedMax: 50 * S,
-      lifeMin: 250, lifeMax: 400,
-      angle: Math.PI / 2, spread: Math.PI * 0.6,
+    this.emit(x, footY, 10, {
+      color: 0xd04435,
+      sizeMin: 2 * S, sizeMax: 5 * S,
+      speedMin: 35 * S, speedMax: 80 * S,
+      lifeMin: 300, lifeMax: 500,
+      angle: Math.PI / 2, spread: Math.PI * 0.8,
+      velScaleX: 2.0, velScaleY: 0.5,
+      alpha: 0.35,
     });
   }
 
