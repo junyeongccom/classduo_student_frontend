@@ -49,12 +49,8 @@ export class UIManager {
   private heartIcon!: Phaser.GameObjects.Graphics;
   private isHeartbeating = false;
 
-  // HP bar effects
-  private hpDrainParticles: {
-    x: number; y: number; vx: number; vy: number;
-    alpha: number; color: number; size: number;
-    startX: number;
-  }[] = [];
+  // HP bar wave effect
+  private hpWavePhase = 0;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -141,11 +137,6 @@ export class UIManager {
 
   updateHpGauge(hp: number, hpMax: number): void {
     const ratio = hp / hpMax;
-
-    // Spawn drain particles on HP decrease
-    if (ratio < this.lastHpRatio) {
-      this.spawnDrainParticles();
-    }
 
     // Detect sudden damage for flash
     if (ratio < this.lastHpRatio - 0.05) {
@@ -263,42 +254,57 @@ export class UIManager {
     return (rr << 16) | (gg << 8) | bl;
   }
 
-  private spawnDrainParticles(): void {
-    const pad = HP_BAR_PADDING;
-    const innerW = HP_BAR_WIDTH - pad * 2;
-    const innerH = HP_BAR_HEIGHT - pad * 2;
-    const fx = HP_BAR_X + pad;
-    const fy = HP_BAR_Y + pad;
-    const fillW = innerW * this.displayedHpRatio;
-    if (fillW <= 0) return;
+  /** Draw HP fill shape with wavy right edge when not full */
+  private drawHpFillShape(
+    g: Phaser.GameObjects.Graphics,
+    fx: number,
+    fy: number,
+    fillW: number,
+    innerH: number,
+    innerR: number,
+    color: number,
+    alpha: number,
+    wavy: boolean,
+  ): void {
+    const r = Math.min(innerR, fillW / 2);
 
-    const color = this.getHpFillColor(this.displayedHpRatio);
-    const count = Phaser.Math.Between(1, 3);
-    for (let i = 0; i < count; i++) {
-      if (this.hpDrainParticles.length >= 30) break;
-      const spawnX = fx + fillW + Phaser.Math.Between(-2, 2) * S;
-      this.hpDrainParticles.push({
-        x: spawnX,
-        y: fy + Math.random() * innerH,
-        vx: (1 + Math.random()) * S,
-        vy: (Math.random() - 0.5) * 0.3 * S,
-        alpha: 0.8 + Math.random() * 0.2,
-        color,
-        size: (1 + Math.random()) * S,
-        startX: spawnX,
-      });
-    }
-  }
+    g.fillStyle(color, alpha);
+    g.beginPath();
 
-  private drawDrainParticles(g: Phaser.GameObjects.Graphics): void {
-    for (const p of this.hpDrainParticles) {
-      if (p.alpha > 0) {
-        const dist = Math.abs(p.x - p.startX);
-        const scaledSize = p.size * Math.max(0.3, 1 - dist / (20 * S));
-        g.fillStyle(p.color, p.alpha);
-        g.fillCircle(p.x, p.y, scaledSize);
+    // Top-left rounded corner
+    g.arc(fx + r, fy + r, r, Math.PI, Math.PI * 1.5, false);
+
+    // Top edge to right
+    g.lineTo(fx + fillW, fy);
+
+    if (wavy) {
+      // Wavy right edge — gentle sway, not visible ripple
+      const segments = 12;
+      const amp = 1 * S;
+      const freq = 0.7;
+      for (let i = 1; i <= segments; i++) {
+        const t = i / segments;
+        const py = fy + t * innerH;
+        const wave =
+          Math.sin(t * Math.PI * 2 * freq + this.hpWavePhase) * amp;
+        g.lineTo(fx + fillW + wave, py);
       }
+    } else {
+      // Straight right edge with rounded corners (full bar)
+      g.lineTo(fx + fillW, fy);
+      g.arc(fx + fillW - r, fy + r, r, Math.PI * 1.5, 0, false);
+      g.lineTo(fx + fillW, fy + innerH - r);
+      g.arc(fx + fillW - r, fy + innerH - r, r, 0, Math.PI * 0.5, false);
     }
+
+    // Bottom edge going left
+    g.lineTo(fx + r, fy + innerH);
+
+    // Bottom-left rounded corner
+    g.arc(fx + r, fy + innerH - r, r, Math.PI * 0.5, Math.PI, false);
+
+    g.closePath();
+    g.fillPath();
   }
 
   private drawHpFill(ratio: number): void {
@@ -316,46 +322,28 @@ export class UIManager {
     g.clear();
     if (fillW <= 0) {
       this.hpShineGfx.clear();
-      this.drawDrainParticles(g);
       return;
     }
 
     const fx = HP_BAR_X + pad;
     const fy = HP_BAR_Y + pad;
-    const trR = fillW >= innerW - innerR ? innerR : 0;
-    const brR = fillW >= innerW - innerR ? innerR : 0;
-    const corners = { tl: innerR, tr: trR, bl: innerR, br: brR };
+    const wavy = displayRatio < 1;
 
     if (this.hpDamageFlashTimer > 0) {
       // Damage flash (white)
-      g.fillStyle(0xffffff, 1);
-      g.fillRoundedRect(fx, fy, fillW, innerH, corners);
+      this.drawHpFillShape(g, fx, fy, fillW, innerH, innerR, 0xffffff, 1, wavy);
       this.hpShineGfx.clear();
-      this.drawDrainParticles(g);
       return;
     }
 
     const fillColor = this.getHpFillColor(displayRatio);
 
-    // Smooth color-interpolated fill
-    g.fillStyle(fillColor, 0.7);
-    g.fillRoundedRect(fx, fy, fillW, innerH, corners);
+    // Fill with wavy right edge
+    this.drawHpFillShape(g, fx, fy, fillW, innerH, innerR, fillColor, 0.7, wavy);
 
-    // ── Soft glow at bar edge ──
-    if (fillW >= 5 * S) {
-      g.fillStyle(fillColor, 0.25);
-      g.fillCircle(fx + fillW, fy + innerH / 2, innerH * 0.5);
-      g.fillStyle(fillColor, 0.12);
-      g.fillCircle(fx + fillW, fy + innerH / 2, innerH * 0.8);
-    }
-
-    // ── Drain particles ──
-    this.drawDrainParticles(g);
-
-    // Update geometry mask to match current fill shape
+    // Update geometry mask to match current fill shape (same wavy path)
     this.hpShineMaskGfx.clear();
-    this.hpShineMaskGfx.fillStyle(0xffffff);
-    this.hpShineMaskGfx.fillRoundedRect(fx, fy, fillW, innerH, corners);
+    this.drawHpFillShape(this.hpShineMaskGfx, fx, fy, fillW, innerH, innerR, 0xffffff, 1, wavy);
 
     // Diagonal shine sweep (active first 40% of cycle, paused 60%)
     this.hpShineGfx.clear();
@@ -419,17 +407,8 @@ export class UIManager {
     // Shine sweep phase (5-second cycle)
     this.hpShinePhase = (this.hpShinePhase + delta / 5000) % 1;
 
-    // Update drain particles (rightward drift + fade)
-    for (let i = this.hpDrainParticles.length - 1; i >= 0; i--) {
-      const p = this.hpDrainParticles[i];
-      const dt = delta / 16.67;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.alpha -= 0.025 * dt;
-      if (p.alpha <= 0) {
-        this.hpDrainParticles.splice(i, 1);
-      }
-    }
+    // Wave phase animation (continuous cycle)
+    this.hpWavePhase += delta / 300;
   }
 
   cleanup(): void {
