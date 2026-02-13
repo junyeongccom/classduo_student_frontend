@@ -611,7 +611,8 @@ export class QuizManager {
         wordWrap: { width: maxTextW, useAdvancedWrap: true },
         align: "center",
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setAlpha(0.8);
 
     while (text.height + padY * 2 > maxBoxH && fontSize > minFontSize) {
       fontSize -= 1 * S;
@@ -668,10 +669,10 @@ export class QuizManager {
       ease: "Back.Out",
     });
 
-    // Gentle fade pulse
+    // Gentle bg pulse (text stays at 0.8)
     this.scene.tweens.add({
-      targets: container,
-      alpha: { from: 1, to: 0.85 },
+      targets: bg,
+      alpha: { from: 1, to: 0.7 },
       duration: 1500,
       yoyo: true,
       repeat: -1,
@@ -692,7 +693,8 @@ export class QuizManager {
         fontStyle: "bold",
         shadow: { offsetX: 0, offsetY: 0, color: color, blur: 8 * S, stroke: true, fill: true },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setAlpha(0.7);
 
     // Glow pulse — radial gradient circle behind text
     const glowR = Math.max(text.width, text.height) * 0.8;
@@ -818,7 +820,8 @@ export class QuizManager {
           stroke: "#000000",
           strokeThickness: 3 * S,
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setAlpha(0.7);
       container.add(text);
 
       const halfTextW = text.width / 2;
