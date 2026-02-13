@@ -99,7 +99,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   const singleLectureId = selectedLectureIds.length === 1 ? selectedLectureIds[0] : null
   const { logAttempt } = useCardMatchAttemptLogger(singleLectureId)
-  const { data: cardMatchSet, isLoading: isCardMatchLoading } = useCardMatchSet(singleLectureId)
+  const { data: cardMatchSet, isLoading: isCardMatchLoading, error: cardMatchError } = useCardMatchSet(singleLectureId)
   const cardMatchPairs = useMemo(() => {
     const pairs = cardMatchSet?.pairs ?? []
     if (pairs.length === 0) return []
@@ -1237,6 +1237,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 pairs={cardMatchPairs}
                 status={cardMatchSet?.status}
                 isLoading={isCardMatchLoading}
+                error={cardMatchError}
                 onAttempt={logAttempt}
                 onComplete={() => {
                   setCardMatchState('completed')

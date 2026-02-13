@@ -12,6 +12,7 @@ type CardMatchGameProps = {
   pairs: CardMatchPair[]
   status?: string
   isLoading?: boolean
+  error?: string | null
   onComplete: () => void
   onAttempt?: (correct: boolean) => void
 }
@@ -25,7 +26,7 @@ const shuffleCards = (cards: CardMatchCard[]) => {
   return next
 }
 
-export function CardMatchGame({ pairs, status, isLoading, onComplete, onAttempt }: CardMatchGameProps) {
+export function CardMatchGame({ pairs, status, isLoading, error, onComplete, onAttempt }: CardMatchGameProps) {
   const cards = useMemo(() => {
     const base: CardMatchCard[] = pairs.flatMap(pair => [
       { id: `${pair.pair_id}-term`, pairId: pair.pair_id, type: 'term', content: pair.term },
@@ -90,6 +91,14 @@ export function CardMatchGame({ pairs, status, isLoading, onComplete, onAttempt 
             <div key={idx} className="card-match-skeleton" />
           ))}
         </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto w-full max-w-[820px] rounded-3xl border border-red-100 bg-red-50/60 p-6 text-center text-sm text-red-500">
+        {error}
       </div>
     )
   }
