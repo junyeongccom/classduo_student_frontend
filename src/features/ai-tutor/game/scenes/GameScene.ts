@@ -189,21 +189,28 @@ export class GameScene extends Phaser.Scene {
           this.startUI?.destroy();
           this.startUI = null;
 
-          // Begin intro sequence — ground stationary, player runs in via velocity
+          // Begin intro — spin drop from above
           this.gameState = "intro";
           this.physics.resume();
 
-          // Zero out ground velocity so it stays still during intro
+          // Keep ground still during intro
           this.grounds.getChildren().forEach((obj) => {
             (obj as GroundSegment).setScrollSpeed(0);
           });
 
-          // Player runs right at normal scroll speed
+          // Player drops from above with spin
           this.player.setVisible(true);
           this.player.setAlpha(1);
-          this.player.clampLeft = false;
-          const introSpeed = Math.abs(SCROLL_SPEED_INITIAL);
-          (this.player.body as Phaser.Physics.Arcade.Body).setVelocityX(introSpeed);
+          this.player.startSpin();
+
+          // On landing: impact effect → brief pause → playing
+          this.player.once("land", () => {
+            this.screenFX.shake({ intensity: 0.006, duration: 150 });
+            this.particles.spawnDustEffect(this.player.x);
+            this.time.delayedCall(400, () => {
+              this.gameState = "playing";
+            });
+          });
         },
       });
     }
@@ -252,8 +259,8 @@ export class GameScene extends Phaser.Scene {
     const bodyBottomFromCenter = -PLAYER_TEX_HEIGHT / 2 + (5 + 38) * S;
     const playerY = groundTop - bodyBottomFromCenter;
 
-    // Start offscreen, hidden until intro sequence
-    this.player = new Player(this, -150 * S, playerY);
+    // Hidden above screen until intro drop
+    this.player = new Player(this, PLAYER_X, -80 * S);
     this.player.setAlpha(0);
     this.player.setVisible(false);
 
@@ -359,8 +366,7 @@ export class GameScene extends Phaser.Scene {
   // ── Ground spawning ──
 
   private fillInitialGround(): void {
-    // Extend ground behind the camera for intro run-in
-    this.nextGroundX = -200 * S;
+    this.nextGroundX = 0;
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH) {
       const tileCount = Phaser.Math.Between(GROUND_SEGMENT_MIN, GROUND_SEGMENT_MAX);
       const width = tileCount * GROUND_TILE_WIDTH;
@@ -585,16 +591,7 @@ export class GameScene extends Phaser.Scene {
     )
       return;
 
-    let isIntro = this.gameState === "intro";
-
-    // Intro: player reached target → seamless transition (no return, continue as playing)
-    if (isIntro && this.player.x >= PLAYER_X) {
-      this.player.x = PLAYER_X;
-      this.player.clampLeft = true;
-      (this.player.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
-      this.gameState = "playing";
-      isIntro = false;
-    }
+    const isIntro = this.gameState === "intro";
 
     // Camera / parallax — stationary during intro
     if (!isIntro) {
