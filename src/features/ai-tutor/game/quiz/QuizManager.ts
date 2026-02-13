@@ -123,6 +123,7 @@ export class QuizManager {
   private usedQuestions: Set<number> = new Set();
   private timeoutTimer: Phaser.Time.TimerEvent | null = null;
   private rewardUI: Phaser.GameObjects.GameObject[] = [];
+  private rewardTimers: Phaser.Time.TimerEvent[] = [];
   private previewMarkers: Phaser.GameObjects.GameObject[] = [];
   private itemYPositions: number[] = [];
 
@@ -484,7 +485,7 @@ export class QuizManager {
           });
         },
       });
-      this.rewardUI.push(sparkleTimer as unknown as Phaser.GameObjects.GameObject);
+      this.rewardTimers.push(sparkleTimer);
 
       container.setSize(cardW, cardH);
       container.setInteractive({ useHandCursor: true });
@@ -788,13 +789,9 @@ export class QuizManager {
   // ---- Cleanup helpers ----
 
   private clearRewardUI(): void {
-    this.rewardUI.forEach((obj) => {
-      if ('remove' in obj && typeof (obj as unknown as { remove: unknown }).remove === 'function') {
-        (obj as unknown as Phaser.Time.TimerEvent).remove();
-      } else {
-        obj.destroy();
-      }
-    });
+    this.rewardTimers.forEach((t) => t.remove());
+    this.rewardTimers = [];
+    this.rewardUI.forEach((obj) => obj.destroy());
     this.rewardUI = [];
   }
 
