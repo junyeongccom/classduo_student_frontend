@@ -19,7 +19,6 @@ import {
   EFFECT_DISPLAY_MS,
   SCORE_BOUNCE_SCALE,
   SCORE_BOUNCE_DURATION,
-  HP_COLORS,
 } from "../constants";
 
 export class UIManager {
@@ -41,6 +40,9 @@ export class UIManager {
   private displayedHpRatio = 1;
   private lastHpRatio = 1;
   private hpDamageFlashTimer = 0;
+  private hpShinePhase = 0;
+  private hpShineMaskGfx!: Phaser.GameObjects.Graphics;
+  private hpShineGfx!: Phaser.GameObjects.Graphics;
 
   // Heartbeat
   private heartbeatTween?: Phaser.Tweens.Tween;
@@ -77,6 +79,10 @@ export class UIManager {
     this.hpGaugeFrame = this.scene.add.graphics().setDepth(DEPTH_HUD);
     this.hpGaugeFill = this.scene.add.graphics().setDepth(DEPTH_HUD + 0.1);
     this.heartIcon = this.scene.add.graphics().setDepth(DEPTH_HUD + 0.2);
+    this.hpShineMaskGfx = this.scene.add.graphics();
+    this.hpShineMaskGfx.setVisible(false);
+    this.hpShineGfx = this.scene.add.graphics().setDepth(DEPTH_HUD + 0.15);
+    this.hpShineGfx.setMask(this.hpShineMaskGfx.createGeometryMask());
     this.drawHpGaugeFrame();
 
     // Effect text
@@ -225,10 +231,24 @@ export class UIManager {
     this.heartIcon.setPosition(iconCx, iconCy);
   }
 
-  private getHpColors(displayRatio: number) {
-    if (displayRatio > 0.5) return HP_COLORS.high;
-    if (displayRatio > 0.25) return HP_COLORS.mid;
-    return HP_COLORS.low;
+  private getHpFillColor(displayRatio: number): number {
+    const r = Phaser.Math.Clamp(displayRatio, 0, 1);
+    // green(0x2ecc71) → orange(0xf39c12) → red(0xe74c3c)
+    if (r > 0.5) {
+      const t = (r - 0.5) / 0.5; // 1=green, 0=orange
+      return this.lerpColor(0xf39c12, 0x2ecc71, t);
+    }
+    const t = r / 0.5; // 1=orange, 0=red
+    return this.lerpColor(0xe74c3c, 0xf39c12, t);
+  }
+
+  private lerpColor(a: number, b: number, t: number): number {
+    const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
+    const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
+    const rr = Math.round(ar + (br - ar) * t);
+    const gg = Math.round(ag + (bg - ag) * t);
+    const bl = Math.round(ab + (bb - ab) * t);
+    return (rr << 16) | (gg << 8) | bl;
   }
 
   private drawHpFill(ratio: number): void {
@@ -244,7 +264,10 @@ export class UIManager {
 
     const g = this.hpGaugeFill;
     g.clear();
-    if (fillW <= 0) return;
+    if (fillW <= 0) {
+      this.hpShineGfx.clear();
+      return;
+    }
 
     const fx = HP_BAR_X + pad;
     const fy = HP_BAR_Y + pad;
@@ -256,14 +279,56 @@ export class UIManager {
       // Damage flash (white)
       g.fillStyle(0xffffff, 1);
       g.fillRoundedRect(fx, fy, fillW, innerH, corners);
+      this.hpShineGfx.clear();
       return;
     }
 
-    const colors = this.getHpColors(displayRatio);
+    const fillColor = this.getHpFillColor(displayRatio);
 
-    // Simple translucent fill
-    g.fillStyle(colors.fill, 0.7);
+    // Smooth color-interpolated fill
+    g.fillStyle(fillColor, 0.7);
     g.fillRoundedRect(fx, fy, fillW, innerH, corners);
+
+    // Update geometry mask to match current fill shape
+    this.hpShineMaskGfx.clear();
+    this.hpShineMaskGfx.fillStyle(0xffffff);
+    this.hpShineMaskGfx.fillRoundedRect(fx, fy, fillW, innerH, corners);
+
+    // Diagonal shine sweep (active first 40% of cycle, paused 60%)
+    this.hpShineGfx.clear();
+    const sweepT = this.hpShinePhase < 0.4 ? this.hpShinePhase / 0.4 : -1;
+    if (sweepT >= 0) {
+      // Ease-in-out for natural acceleration
+      const eased =
+        sweepT < 0.5
+          ? 2 * sweepT * sweepT
+          : 1 - Math.pow(-2 * sweepT + 2, 2) / 2;
+
+      const shineW = innerW * 0.3;
+      const skew = innerH * 0.5;
+      const startX = fx - shineW - skew;
+      const endX = fx + fillW;
+      const shineX = startX + (endX - startX) * eased;
+      const strips = 10;
+      const bandW = shineW + skew;
+      const stripW = bandW / strips;
+
+      for (let i = 0; i < strips; i++) {
+        const t = i / (strips - 1);
+        const d = (t - 0.5) * 2.8;
+        const alpha = 0.3 * Math.exp(-(d * d));
+        const x = shineX + stripW * i;
+
+        this.hpShineGfx.fillStyle(0xffffff, alpha);
+        this.hpShineGfx.beginPath();
+        this.hpShineGfx.moveTo(x + skew, fy);
+        this.hpShineGfx.lineTo(x + stripW + skew + 0.5, fy);
+        this.hpShineGfx.lineTo(x + stripW + 0.5, fy + innerH);
+        this.hpShineGfx.lineTo(x, fy + innerH);
+        this.hpShineGfx.closePath();
+        this.hpShineGfx.fillPath();
+      }
+    }
   }
 
   // ── Update ──
@@ -288,10 +353,14 @@ export class UIManager {
     if (this.hpDamageFlashTimer > 0) {
       this.hpDamageFlashTimer -= delta;
     }
+
+    // Shine sweep phase (5-second cycle)
+    this.hpShinePhase = (this.hpShinePhase + delta / 5000) % 1;
   }
 
   cleanup(): void {
     this.effectDisplayTimer?.remove();
     this.heartbeatTween?.stop();
+    this.hpShineGfx?.clearMask(true);
   }
 }
