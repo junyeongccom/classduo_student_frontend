@@ -362,37 +362,84 @@ export class QuizManager {
 
       const container = this.scene.add.container(cx, GAME_HEIGHT + cardH).setDepth(21);
 
-      // Entrance animation: slide up from bottom with stagger
+      // Entrance animation → idle float on complete
       this.scene.tweens.add({
         targets: container,
         y: cy,
         duration: 400,
         delay: i * 100,
         ease: "Back.Out",
+        onComplete: () => {
+          // 1) Idle floating
+          this.scene.tweens.add({
+            targets: container,
+            y: cy - 4 * S,
+            duration: 1200,
+            delay: i * 200,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.InOut",
+          });
+        },
       });
 
-      // Background (game style: gradient + outline + shine)
-      const bg = this.scene.add.graphics();
       const hx = -cardW / 2;
       const hy = -cardH / 2;
       const r = 12 * S;
 
-      // Dark base (bottom gradient)
-      bg.fillStyle(darken(card.color, 25), 1);
+      // 3) Hover glow (behind card bg)
+      const glow = this.scene.add.graphics();
+      const glowPad = 8 * S;
+      glow.fillStyle(card.color, 1);
+      glow.fillRoundedRect(
+        hx - glowPad, hy - glowPad,
+        cardW + glowPad * 2, cardH + glowPad * 2,
+        r + glowPad
+      );
+      glow.setAlpha(0);
+      container.add(glow);
+
+      // Background
+      const bg = this.scene.add.graphics();
+      bg.fillStyle(card.color, 0.25);
       bg.fillRoundedRect(hx, hy, cardW, cardH, r);
-
-      // Main fill (top 75%)
-      bg.fillStyle(card.color, 1);
-      bg.fillRoundedRect(hx, hy, cardW, cardH * 0.75, { tl: r, tr: r, bl: 0, br: 0 });
-
-      // Shine highlight (top strip)
-      bg.fillStyle(lighten(card.color, 30), 0.3);
-      bg.fillRoundedRect(hx + 3 * S, hy + 2 * S, cardW - 6 * S, cardH * 0.2, { tl: r, tr: r, bl: 0, br: 0 });
-
-      // Outline (darker shade, 2px like character/heart)
-      bg.lineStyle(2 * S, darken(card.color, 50), 1);
+      bg.lineStyle(1.5 * S, card.color, 0.45);
       bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
       container.add(bg);
+
+      // 4) Border shimmer dot
+      const shimmerDot = this.scene.add.graphics();
+      const shimmerColor = lighten(card.color, 60);
+      const shimmerR = 4 * S;
+      shimmerDot.fillStyle(shimmerColor, 0.8);
+      shimmerDot.fillCircle(0, 0, shimmerR);
+      shimmerDot.setAlpha(0.8);
+      container.add(shimmerDot);
+
+      const perimeter = (cardW + cardH) * 2;
+      const shimmerTarget = { progress: 0 };
+      this.scene.tweens.add({
+        targets: shimmerTarget,
+        progress: 1,
+        duration: 2500,
+        repeat: -1,
+        ease: "Linear",
+        onUpdate: () => {
+          const p = shimmerTarget.progress;
+          const dist = p * perimeter;
+          let sx: number, sy: number;
+          if (dist < cardW) {
+            sx = hx + dist; sy = hy;
+          } else if (dist < cardW + cardH) {
+            sx = hx + cardW; sy = hy + (dist - cardW);
+          } else if (dist < cardW * 2 + cardH) {
+            sx = hx + cardW - (dist - cardW - cardH); sy = hy + cardH;
+          } else {
+            sx = hx; sy = hy + cardH - (dist - cardW * 2 - cardH);
+          }
+          shimmerDot.setPosition(sx, sy);
+        },
+      });
 
       // Title
       const cardTitle = this.scene.add
@@ -401,8 +448,6 @@ export class QuizManager {
           fontSize: `${18 * S}px`,
           color: "#ffffff",
           fontStyle: "bold",
-          stroke: "#000000",
-          strokeThickness: 3 * S,
         })
         .setOrigin(0.5);
       container.add(cardTitle);
@@ -412,12 +457,34 @@ export class QuizManager {
         .text(0, 20 * S, card.desc, {
           fontFamily: "monospace",
           fontSize: `${12 * S}px`,
-          color: "#ffffff",
-          stroke: "#000000",
-          strokeThickness: 2 * S,
+          color: "#cccccc",
         })
         .setOrigin(0.5);
       container.add(cardDesc);
+
+      // 2) Sparkle particles
+      const sparkleTimer = this.scene.time.addEvent({
+        delay: 500,
+        loop: true,
+        callback: () => {
+          const px = Phaser.Math.Between(Math.round(hx + 6 * S), Math.round(hx + cardW - 6 * S));
+          const py = Phaser.Math.Between(Math.round(hy + 6 * S), Math.round(hy + cardH - 6 * S));
+          const dot = this.scene.add.graphics();
+          dot.fillStyle(card.color, 0.7);
+          dot.fillCircle(0, 0, Phaser.Math.Between(1, 3) * S);
+          dot.setPosition(px, py);
+          container.add(dot);
+          this.scene.tweens.add({
+            targets: dot,
+            y: py - Phaser.Math.Between(8, 16) * S,
+            alpha: 0,
+            duration: 800,
+            ease: "Quad.Out",
+            onComplete: () => { dot.destroy(); },
+          });
+        },
+      });
+      this.rewardUI.push(sparkleTimer as unknown as Phaser.GameObjects.GameObject);
 
       container.setSize(cardW, cardH);
       container.setInteractive({ useHandCursor: true });
@@ -429,6 +496,11 @@ export class QuizManager {
           scaleY: 1.08,
           duration: 100,
         });
+        this.scene.tweens.add({
+          targets: glow,
+          alpha: 0.25,
+          duration: 150,
+        });
       });
       container.on("pointerout", () => {
         this.scene.tweens.add({
@@ -436,6 +508,11 @@ export class QuizManager {
           scaleX: 1,
           scaleY: 1,
           duration: 100,
+        });
+        this.scene.tweens.add({
+          targets: glow,
+          alpha: 0,
+          duration: 150,
         });
       });
       container.on("pointerdown", () =>
@@ -711,7 +788,13 @@ export class QuizManager {
   // ---- Cleanup helpers ----
 
   private clearRewardUI(): void {
-    this.rewardUI.forEach((obj) => obj.destroy());
+    this.rewardUI.forEach((obj) => {
+      if ('remove' in obj && typeof (obj as unknown as { remove: unknown }).remove === 'function') {
+        (obj as unknown as Phaser.Time.TimerEvent).remove();
+      } else {
+        obj.destroy();
+      }
+    });
     this.rewardUI = [];
   }
 
