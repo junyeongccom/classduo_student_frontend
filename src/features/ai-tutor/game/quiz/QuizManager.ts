@@ -131,6 +131,10 @@ export class QuizManager {
   private correctCount = 0;
   private wrongCount = 0;
   private skippedCount = 0;
+
+  private pendingRewardTypes: ChoiceType[] = [];
+  private pendingRewardCorrect = false;
+  private rewardKeyHandler: ((e: KeyboardEvent) => void) | null = null;
   private get t() { return T[this.locale]; }
   private get rewardCards() { return this.locale === "en" ? REWARD_CARDS_EN : REWARD_CARDS_KO; }
 
@@ -537,6 +541,22 @@ export class QuizManager {
 
       this.rewardUI.push(container);
     });
+
+    // Keyboard shortcut: Left/Down/Right arrows to pick cards
+    this.pendingRewardTypes = selected.map((c) => c.type);
+    this.pendingRewardCorrect = isCorrect;
+    this.rewardKeyHandler = (e: KeyboardEvent) => {
+      const keyMap: Record<string, number> = {
+        ArrowLeft: 0,
+        ArrowDown: 1,
+        ArrowRight: 2,
+      };
+      const idx = keyMap[e.key];
+      if (idx !== undefined && this.pendingRewardTypes[idx]) {
+        this.selectReward(this.pendingRewardTypes[idx], this.pendingRewardCorrect);
+      }
+    };
+    this.scene.game.canvas.ownerDocument.addEventListener("keydown", this.rewardKeyHandler);
   }
 
   private selectReward(type: ChoiceType, isCorrect: boolean): void {
@@ -887,6 +907,11 @@ export class QuizManager {
   // ---- Cleanup helpers ----
 
   private clearRewardUI(): void {
+    if (this.rewardKeyHandler) {
+      this.scene.game.canvas.ownerDocument.removeEventListener("keydown", this.rewardKeyHandler);
+      this.rewardKeyHandler = null;
+    }
+    this.pendingRewardTypes = [];
     this.rewardTimers.forEach((t) => t.remove());
     this.rewardTimers = [];
     this.rewardUI.forEach((obj) => obj.destroy());
