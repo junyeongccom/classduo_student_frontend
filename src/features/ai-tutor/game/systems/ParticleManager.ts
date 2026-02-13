@@ -18,6 +18,7 @@ import {
   COLOR_PLAYER,
   SCORE_POPUP_DURATION,
   SCORE_POPUP_RISE,
+  FONT_FAMILY,
 } from "../constants";
 
 interface Particle {
@@ -252,7 +253,7 @@ export class ParticleManager {
 
   spawnScorePopup(x: number, y: number, text: string, color: string): void {
     const t = this.scene.add.text(x, y, text, {
-      fontFamily: "monospace",
+      fontFamily: FONT_FAMILY,
       fontSize: `${14 * S}px`,
       color: color,
       fontStyle: "bold",

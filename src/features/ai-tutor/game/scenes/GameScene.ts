@@ -60,6 +60,7 @@ import {
   FLASH_WRONG,
   ZOOM_PUNCH_QUIZ,
   ZOOM_PUNCH_REWARD,
+  FONT_FAMILY,
 } from "../constants";
 
 export class GameScene extends Phaser.Scene {
@@ -142,7 +143,7 @@ export class GameScene extends Phaser.Scene {
     // START text
     const startText = this.add
       .text(0, 0, "START", {
-        fontFamily: "Arial Black, Arial, sans-serif",
+        fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(64 * S)}px`,
         color: "#ffffff",
         stroke: "#000000",
@@ -153,7 +154,7 @@ export class GameScene extends Phaser.Scene {
     // Tap hint
     const hintText = this.add
       .text(0, 50 * S, "Tap to Start", {
-        fontFamily: "Arial, sans-serif",
+        fontFamily: FONT_FAMILY,
         fontSize: `${Math.round(20 * S)}px`,
         color: "#cccccc",
       })

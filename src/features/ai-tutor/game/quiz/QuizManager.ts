@@ -18,6 +18,7 @@ import {
   SCORE_BONUS,
   HP_RESTORE_AMOUNT,
   COLOR_QUIZ_WORD,
+  FONT_FAMILY,
 } from "../constants";
 
 export type GameState =
@@ -366,7 +367,7 @@ export class QuizManager {
     // Title
     const title = this.scene.add
       .text(GAME_WIDTH / 2, cardY - 30 * S, this.t.chooseReward, {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize: `${20 * S}px`,
         color: "#ffffff",
         fontStyle: "bold",
@@ -464,7 +465,7 @@ export class QuizManager {
       // Title
       const cardTitle = this.scene.add
         .text(0, -25 * S, card.title, {
-          fontFamily: "monospace",
+          fontFamily: FONT_FAMILY,
           fontSize: `${18 * S}px`,
           color: "#ffffff",
           fontStyle: "bold",
@@ -475,7 +476,7 @@ export class QuizManager {
       // Description
       const cardDesc = this.scene.add
         .text(0, 20 * S, card.desc, {
-          fontFamily: "monospace",
+          fontFamily: FONT_FAMILY,
           fontSize: `${12 * S}px`,
           color: "#cccccc",
         })
@@ -648,7 +649,7 @@ export class QuizManager {
     let fontSize = baseFontSize;
     const text = this.scene.add
       .text(0, 0, label, {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize: `${fontSize}px`,
         color: "#ffffff",
         fontStyle: "bold",
@@ -734,7 +735,7 @@ export class QuizManager {
 
     const text = this.scene.add
       .text(0, 0, label, {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize: `${26 * S}px`,
         color: "#ffffff",
         fontStyle: "bold",
@@ -861,7 +862,7 @@ export class QuizManager {
       // Word text
       const text = this.scene.add
         .text(0, 0, word, {
-          fontFamily: "monospace",
+          fontFamily: FONT_FAMILY,
           fontSize: `${14 * S}px`,
           color: "#ffffff",
           fontStyle: "bold",

@@ -19,6 +19,7 @@ import {
   EFFECT_DISPLAY_MS,
   SCORE_BOUNCE_SCALE,
   SCORE_BOUNCE_DURATION,
+  FONT_FAMILY,
 } from "../constants";
 
 export class UIManager {
@@ -60,7 +61,7 @@ export class UIManager {
     // Score
     this.scoreText = this.scene.add
       .text(GAME_WIDTH - 20 * S, 20 * S, "0", {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize: `${28 * S}px`,
         color: "#333333",
         fontStyle: "bold",
@@ -70,7 +71,7 @@ export class UIManager {
 
     this.coinLabel = this.scene.add
       .text(GAME_WIDTH - 80 * S, 22 * S, "COIN", {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize: `${14 * S}px`,
         color: "#d4a017",
         fontStyle: "bold",
@@ -91,7 +92,7 @@ export class UIManager {
     // Effect text
     this.effectText = this.scene.add
       .text(GAME_WIDTH / 2, 20 * S, "", {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize: `${16 * S}px`,
         color: "#ffffff",
         fontStyle: "bold",

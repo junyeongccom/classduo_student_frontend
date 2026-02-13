@@ -113,6 +113,9 @@ export const RESTART_DELAY = 500;
 // Speed increase per N coins
 export const SPEED_UP_COIN_INTERVAL = 10;
 
+// Font
+export const FONT_FAMILY = "'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+
 // Colors
 export const COLOR_SKY = 0xe8f4f8;
 export const COLOR_PLAYER = 0x4a90d9;

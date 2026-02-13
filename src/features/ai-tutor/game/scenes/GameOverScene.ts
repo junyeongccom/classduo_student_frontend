@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { S, GAME_WIDTH, GAME_HEIGHT, RESTART_DELAY } from "../constants";
+import { S, GAME_WIDTH, GAME_HEIGHT, RESTART_DELAY, FONT_FAMILY } from "../constants";
 
 export class GameOverScene extends Phaser.Scene {
   private score = 0;
@@ -35,7 +35,7 @@ export class GameOverScene extends Phaser.Scene {
     const fullText = "GAME OVER";
     const titleText = this.add
       .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.35, "", {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize: `${48 * S}px`,
         color: "#ffffff",
         fontStyle: "bold",
@@ -57,7 +57,7 @@ export class GameOverScene extends Phaser.Scene {
     // Score count-up
     const scoreText = this.add
       .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.52, "Score: 0", {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize: `${28 * S}px`,
         color: "#f0c040",
         shadow: { offsetX: 1 * S, offsetY: 1 * S, color: "#000000", blur: 4 * S, fill: true },
@@ -104,7 +104,7 @@ export class GameOverScene extends Phaser.Scene {
         GAME_HEIGHT * 0.7,
         "Press SPACE or Click to Restart",
         {
-          fontFamily: "monospace",
+          fontFamily: FONT_FAMILY,
           fontSize: `${18 * S}px`,
           color: "#cccccc",
         }
@@ -141,7 +141,7 @@ export class GameOverScene extends Phaser.Scene {
     const skippedStr = `− ${this.skipped}`;
 
     // Measure widths to center all three
-    const tempText = this.add.text(0, 0, correctStr, { fontFamily: "monospace", fontSize }).setVisible(false);
+    const tempText = this.add.text(0, 0, correctStr, { fontFamily: FONT_FAMILY, fontSize }).setVisible(false);
     const w1 = tempText.width;
     tempText.setText(wrongStr);
     const w2 = tempText.width;
@@ -154,7 +154,7 @@ export class GameOverScene extends Phaser.Scene {
 
     const t1 = this.add
       .text(startX + w1 / 2, y, correctStr, {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize,
         color: "#2ecc71",
         fontStyle: "bold",
@@ -164,7 +164,7 @@ export class GameOverScene extends Phaser.Scene {
 
     const t2 = this.add
       .text(startX + w1 + gap + w2 / 2, y, wrongStr, {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize,
         color: "#e74c3c",
         fontStyle: "bold",
@@ -174,7 +174,7 @@ export class GameOverScene extends Phaser.Scene {
 
     const t3 = this.add
       .text(startX + w1 + gap + w2 + gap + w3 / 2, y, skippedStr, {
-        fontFamily: "monospace",
+        fontFamily: FONT_FAMILY,
         fontSize,
         color: "#e67e22",
         fontStyle: "bold",
