@@ -595,7 +595,7 @@ export class GameScene extends Phaser.Scene {
 
     // Camera / parallax — stationary during intro
     if (!isIntro) {
-      this.cameraManager.update(this.getEffectiveSpeed(), delta, this.distanceTraveled);
+      this.cameraManager.update(this.getEffectiveSpeed(), delta, this.score);
     }
 
     // HP decay, quiz timer — only during active gameplay

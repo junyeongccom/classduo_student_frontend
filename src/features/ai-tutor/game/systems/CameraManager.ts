@@ -10,7 +10,8 @@ import {
   DEPTH_PARALLAX_FAR,
   DEPTH_PARALLAX_MID,
   DEPTH_PARALLAX_NEAR,
-  SKY_TINT_STAGES,
+  DAY_NIGHT_CYCLE_SCORE,
+  DAY_NIGHT_STAGES,
 } from "../constants";
 
 export class CameraManager {
@@ -59,7 +60,7 @@ export class CameraManager {
       .setDepth(DEPTH_PARALLAX_NEAR);
   }
 
-  update(effectiveSpeed: number, delta: number, distanceTraveled: number): void {
+  update(effectiveSpeed: number, delta: number, score: number): void {
     const dt = delta / 1000;
     const scrollAmount = Math.abs(effectiveSpeed) * dt;
 
@@ -68,43 +69,50 @@ export class CameraManager {
     this.mountainMid.tilePositionX += scrollAmount * 0.10;
     this.mountainNear.tilePositionX += scrollAmount * 0.20;
 
-    // Distance-based sky tinting
-    this.updateSkyTint(distanceTraveled);
+    // Score-based day/night cycle
+    this.updateDayNight(score);
   }
 
-  private updateSkyTint(distance: number): void {
-    const stages = SKY_TINT_STAGES;
+  private updateDayNight(score: number): void {
+    const progress = (score % DAY_NIGHT_CYCLE_SCORE) / DAY_NIGHT_CYCLE_SCORE;
+    const stages = DAY_NIGHT_STAGES;
 
     // Find which two stages we're between
     let fromIdx = 0;
     for (let i = stages.length - 1; i >= 0; i--) {
-      if (distance >= stages[i].dist) {
+      if (progress >= stages[i].at) {
         fromIdx = i;
         break;
       }
     }
-
     const toIdx = Math.min(fromIdx + 1, stages.length - 1);
 
-    if (fromIdx === toIdx) {
-      this.skyTint.setFillStyle(stages[fromIdx].color, 0.15);
-      return;
-    }
+    const fromStage = stages[fromIdx];
+    const toStage = stages[toIdx];
 
-    const fromDist = stages[fromIdx].dist;
-    const toDist = stages[toIdx].dist;
-    const t = Phaser.Math.Clamp((distance - fromDist) / (toDist - fromDist), 0, 1);
+    // Interpolation factor between the two stages
+    const range = toStage.at - fromStage.at;
+    const t = range > 0 ? (progress - fromStage.at) / range : 0;
 
-    const fromColor = Phaser.Display.Color.IntegerToColor(stages[fromIdx].color);
-    const toColor = Phaser.Display.Color.IntegerToColor(stages[toIdx].color);
+    // Interpolate sky overlay color + alpha
+    const r = Math.round(fromStage.sky.r + (toStage.sky.r - fromStage.sky.r) * t);
+    const g = Math.round(fromStage.sky.g + (toStage.sky.g - fromStage.sky.g) * t);
+    const b = Math.round(fromStage.sky.b + (toStage.sky.b - fromStage.sky.b) * t);
+    const a = fromStage.sky.a + (toStage.sky.a - fromStage.sky.a) * t;
 
-    const r = Math.round(fromColor.red + (toColor.red - fromColor.red) * t);
-    const g = Math.round(fromColor.green + (toColor.green - fromColor.green) * t);
-    const b = Math.round(fromColor.blue + (toColor.blue - fromColor.blue) * t);
+    this.skyTint.setFillStyle(Phaser.Display.Color.GetColor(r, g, b), a);
 
-    const blended = Phaser.Display.Color.GetColor(r, g, b);
-    const alpha = t * 0.2;
-    this.skyTint.setFillStyle(blended, alpha);
+    // Interpolate mountain tint
+    const fromMtn = Phaser.Display.Color.IntegerToColor(fromStage.mountain);
+    const toMtn = Phaser.Display.Color.IntegerToColor(toStage.mountain);
+    const mr = Math.round(fromMtn.red + (toMtn.red - fromMtn.red) * t);
+    const mg = Math.round(fromMtn.green + (toMtn.green - fromMtn.green) * t);
+    const mb = Math.round(fromMtn.blue + (toMtn.blue - fromMtn.blue) * t);
+    const mtnTint = Phaser.Display.Color.GetColor(mr, mg, mb);
+
+    this.mountainFar.setTint(mtnTint);
+    this.mountainMid.setTint(mtnTint);
+    this.mountainNear.setTint(mtnTint);
   }
 
   destroy(): void {

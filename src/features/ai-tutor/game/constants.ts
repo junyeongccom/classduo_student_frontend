@@ -172,12 +172,14 @@ export const SKY_TOP_COLOR = { r: 0x5b, g: 0x86, b: 0xc7 };
 export const SKY_MID_COLOR = { r: 0xa8, g: 0xce, b: 0xef };
 export const SKY_BOT_COLOR = { r: 0xf5, g: 0xe6, b: 0xca };
 
-// ── Distance-based sky tinting ──
-export const SKY_TINT_STAGES = [
-  { dist: 0, color: 0xffffff },
-  { dist: 2000 * S, color: 0xfff8e8 },
-  { dist: 5000 * S, color: 0xffe0b0 },
-  { dist: 10000 * S, color: 0xffb070 },
+// ── Day/Night cycle (score-based, loops every 500 points) ──
+export const DAY_NIGHT_CYCLE_SCORE = 500;
+export const DAY_NIGHT_STAGES = [
+  { at: 0.00, sky: { r: 255, g: 255, b: 255, a: 0    }, mountain: 0xffffff },  // Day — clear
+  { at: 0.25, sky: { r: 255, g: 140, b:  50, a: 0.25 }, mountain: 0xffd0a0 },  // Sunset — orange
+  { at: 0.50, sky: { r:  20, g:  24, b:  82, a: 0.55 }, mountain: 0x3a3f6e },  // Night — dark navy
+  { at: 0.75, sky: { r: 120, g:  60, b: 140, a: 0.35 }, mountain: 0x8a6090 },  // Dawn — purple/pink
+  { at: 1.00, sky: { r: 255, g: 255, b: 255, a: 0    }, mountain: 0xffffff },  // Day — loops
 ];
 
 // ── HP gauge animation ──
