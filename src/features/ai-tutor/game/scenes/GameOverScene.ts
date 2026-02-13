@@ -3,13 +3,19 @@ import { S, GAME_WIDTH, GAME_HEIGHT, RESTART_DELAY } from "../constants";
 
 export class GameOverScene extends Phaser.Scene {
   private score = 0;
+  private correct = 0;
+  private wrong = 0;
+  private skipped = 0;
 
   constructor() {
     super({ key: "GameOverScene" });
   }
 
-  init(data: { score: number }): void {
+  init(data: { score: number; correct: number; wrong: number; skipped: number }): void {
     this.score = data.score ?? 0;
+    this.correct = data.correct ?? 0;
+    this.wrong = data.wrong ?? 0;
+    this.skipped = data.skipped ?? 0;
   }
 
   create(): void {
@@ -82,6 +88,9 @@ export class GameOverScene extends Phaser.Scene {
               duration: 100,
               yoyo: true,
               ease: "Back.Out",
+              onComplete: () => {
+                this.showQuizStats();
+              },
             });
           }
         },
@@ -118,6 +127,63 @@ export class GameOverScene extends Phaser.Scene {
       this.input.keyboard?.on("keydown-UP", this.restart, this);
       this.input.on("pointerdown", this.restart, this);
     });
+  }
+
+  private showQuizStats(): void {
+    if (this.correct === 0 && this.wrong === 0 && this.skipped === 0) return;
+
+    const y = GAME_HEIGHT * 0.62;
+    const gap = 24 * S;
+    const fontSize = `${18 * S}px`;
+
+    const correctStr = `✓ ${this.correct}`;
+    const wrongStr = `✗ ${this.wrong}`;
+    const skippedStr = `− ${this.skipped}`;
+
+    // Measure widths to center all three
+    const tempText = this.add.text(0, 0, correctStr, { fontFamily: "monospace", fontSize }).setVisible(false);
+    const w1 = tempText.width;
+    tempText.setText(wrongStr);
+    const w2 = tempText.width;
+    tempText.setText(skippedStr);
+    const w3 = tempText.width;
+    tempText.destroy();
+
+    const totalW = w1 + w2 + w3 + gap * 2;
+    const startX = (GAME_WIDTH - totalW) / 2;
+
+    const t1 = this.add
+      .text(startX + w1 / 2, y, correctStr, {
+        fontFamily: "monospace",
+        fontSize,
+        color: "#2ecc71",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setAlpha(0);
+
+    const t2 = this.add
+      .text(startX + w1 + gap + w2 / 2, y, wrongStr, {
+        fontFamily: "monospace",
+        fontSize,
+        color: "#e74c3c",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setAlpha(0);
+
+    const t3 = this.add
+      .text(startX + w1 + gap + w2 + gap + w3 / 2, y, skippedStr, {
+        fontFamily: "monospace",
+        fontSize,
+        color: "#e67e22",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5)
+      .setAlpha(0);
+
+    // Fade in
+    this.tweens.add({ targets: [t1, t2, t3], alpha: 1, duration: 400, ease: "Power2" });
   }
 
   private restart(): void {

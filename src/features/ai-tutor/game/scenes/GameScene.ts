@@ -705,7 +705,8 @@ export class GameScene extends Phaser.Scene {
           this.cameras.main.zoomTo(1.1, 800);
           this.cameras.main.fadeOut(800, 0, 0, 0, (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
             if (progress === 1) {
-              this.scene.start("GameOverScene", { score: this.score });
+              const stats = this.quizManager.getStats();
+              this.scene.start("GameOverScene", { score: this.score, ...stats });
             }
           });
         },
@@ -715,7 +716,8 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.zoomTo(1.1, 600);
       this.cameras.main.fadeOut(600, 0, 0, 0, (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
         if (progress === 1) {
-          this.scene.start("GameOverScene", { score: this.score });
+          const stats = this.quizManager.getStats();
+          this.scene.start("GameOverScene", { score: this.score, ...stats });
         }
       });
     }

@@ -125,6 +125,10 @@ export class QuizManager {
   private keywords: KeywordEntry[] = [];
   private usedKeywordIndices: Set<number> = new Set();
   private locale: "ko" | "en";
+
+  private correctCount = 0;
+  private wrongCount = 0;
+  private skippedCount = 0;
   private get t() { return T[this.locale]; }
   private get rewardCards() { return this.locale === "en" ? REWARD_CARDS_EN : REWARD_CARDS_KO; }
 
@@ -211,6 +215,14 @@ export class QuizManager {
     }
   }
 
+  getStats(): { correct: number; wrong: number; skipped: number } {
+    return {
+      correct: this.correctCount,
+      wrong: this.wrongCount,
+      skipped: this.skippedCount,
+    };
+  }
+
   // ---- Quiz question ----
 
   private pickQuestion(): QuizQuestion | null {
@@ -283,6 +295,7 @@ export class QuizManager {
   }
 
   private handleTimeout(): void {
+    this.skippedCount++;
     this.clearQuizItems();
     this.showResult(this.t.timeout, "#e67e22");
   }
@@ -520,6 +533,12 @@ export class QuizManager {
   }
 
   private selectReward(type: ChoiceType, isCorrect: boolean): void {
+    if (isCorrect) {
+      this.correctCount++;
+    } else {
+      this.wrongCount++;
+    }
+
     this.callbacks.onRewardSelect?.(isCorrect);
     this.clearRewardUI();
     this.scene.physics.resume();
