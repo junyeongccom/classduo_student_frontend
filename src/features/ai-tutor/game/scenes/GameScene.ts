@@ -130,7 +130,7 @@ export class GameScene extends Phaser.Scene {
 
     // Opaque overlay — hides game background completely
     const overlay = this.add
-      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1a1a2e, 1)
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 1)
       .setOrigin(0.5);
 
     // START text
