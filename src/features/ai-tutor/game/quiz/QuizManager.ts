@@ -8,6 +8,7 @@ import {
   GAME_HEIGHT,
   GROUND_Y,
   GROUND_HEIGHT,
+  PLAYER_TEX_HEIGHT,
   QUIZ_ANNOUNCE_MS,
   QUIZ_WINDOW_MS,
   QUIZ_RESULT_MS,
@@ -168,11 +169,17 @@ export class QuizManager {
       ...question.wrongAnswers,
     ]);
 
-    // Generate random Y positions for each item
+    // Generate Y positions snapped to character-height levels
     const groundTop = GROUND_Y - GROUND_HEIGHT / 2;
-    const lowY = groundTop - QUIZ_ITEM_SIZE / 2 - 5 * S;
+    const baseY = groundTop - QUIZ_ITEM_SIZE / 2 - 5 * S;
+    const step = PLAYER_TEX_HEIGHT;
+    const levels: number[] = [];
+    for (let y = baseY; y >= QUIZ_ITEM_HIGH_Y; y -= step) {
+      levels.push(y);
+    }
+    if (levels.length === 0) levels.push(baseY);
     this.itemYPositions = allWords.map(
-      () => Phaser.Math.Between(QUIZ_ITEM_HIGH_Y, lowY)
+      () => levels[Phaser.Math.Between(0, levels.length - 1)]
     );
 
     this.spawnPreviewMarkers(allWords);
