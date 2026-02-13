@@ -16,6 +16,7 @@ import {
   QUIZ_ITEM_SPACING_X,
   SCORE_BONUS,
   HP_RESTORE_AMOUNT,
+  COLOR_QUIZ_WORD,
 } from "../constants";
 
 export type GameState =
@@ -622,12 +623,34 @@ export class QuizManager {
 
     const bg = this.scene.add.graphics();
 
-    // Soft semi-transparent background
-    bg.fillStyle(0x000000, 0.35);
+    // A) Glassmorphism background
+    // 1) Base dark layer
+    bg.fillStyle(0x0a0a1a, 0.55);
     bg.fillRoundedRect(hx, hy, boxW, boxH, r);
 
-    // Subtle border
-    bg.lineStyle(1.5 * S, 0xffffff, 0.2);
+    // 2) Top 1/3 highlight (glass reflection)
+    bg.fillStyle(0xffffff, 0.06);
+    bg.fillRoundedRect(hx, hy, boxW, boxH * 0.35, { tl: r, tr: r, bl: 0, br: 0 });
+
+    // 3) Top edge bright line
+    bg.lineStyle(1 * S, 0xffffff, 0.15);
+    bg.beginPath();
+    bg.arc(hx + r, hy + r, r, Math.PI, Math.PI * 1.5);
+    bg.lineTo(hx + boxW - r, hy);
+    bg.arc(hx + boxW - r, hy + r, r, Math.PI * 1.5, 0);
+    bg.strokePath();
+
+    // B) Neon glow border (3 layers)
+    // Outer glow (wide & transparent)
+    bg.lineStyle(6 * S, COLOR_QUIZ_WORD, 0.08);
+    bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
+
+    // Middle glow
+    bg.lineStyle(3 * S, COLOR_QUIZ_WORD, 0.15);
+    bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
+
+    // Inner sharp border
+    bg.lineStyle(1.5 * S, 0x5dade2, 0.4);
     bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
 
     const bannerY = 36 * S;
