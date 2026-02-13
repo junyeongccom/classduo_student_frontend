@@ -121,6 +121,7 @@ export class QuizManager {
   private rewardTimers: Phaser.Time.TimerEvent[] = [];
   private previewMarkers: Phaser.GameObjects.GameObject[] = [];
   private itemYPositions: number[] = [];
+  private bannerBottomY = 0;
 
   private keywords: KeywordEntry[] = [];
   private usedKeywordIndices: Set<number> = new Set();
@@ -177,7 +178,6 @@ export class QuizManager {
     this.spawnPreviewMarkers(allWords);
 
     this.scene.time.delayedCall(QUIZ_ANNOUNCE_MS, () => {
-      this.clearPreviewMarkers();
       this.callbacks.setGameState("quiz_active");
       this.spawnQuizItems(allWords, question.correctAnswer);
 
@@ -676,6 +676,7 @@ export class QuizManager {
     bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
 
     const bannerY = 36 * S;
+    this.bannerBottomY = bannerY + boxH;
     const container = this.scene.add
       .container(GAME_WIDTH / 2, -boxH, [bg, text])
       .setDepth(10);
@@ -783,83 +784,88 @@ export class QuizManager {
 
   // ---- Preview markers ----
 
-  private drawWarningIcon(
-    g: Phaser.GameObjects.Graphics,
-    cx: number,
-    cy: number,
-    size: number
-  ): void {
-    const top = cy - size * 0.6;
-    const bot = cy + size * 0.5;
-    const half = size * 0.55;
-
-    // Red triangle fill
-    g.fillStyle(0xe74c3c, 1);
-    g.beginPath();
-    g.moveTo(cx, top);
-    g.lineTo(cx + half, bot);
-    g.lineTo(cx - half, bot);
-    g.closePath();
-    g.fillPath();
-
-    // Dark outline
-    g.lineStyle(2 * S, 0x922b21, 1);
-    g.beginPath();
-    g.moveTo(cx, top);
-    g.lineTo(cx + half, bot);
-    g.lineTo(cx - half, bot);
-    g.closePath();
-    g.strokePath();
-
-    // White exclamation mark (line + dot)
-    const exTop = cy - size * 0.25;
-    const exBot = cy + size * 0.1;
-    g.lineStyle(3 * S, 0xffffff, 1);
-    g.lineBetween(cx, exTop, cx, exBot);
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(cx, cy + size * 0.28, 2 * S);
-  }
-
   private spawnPreviewMarkers(words: string[]): void {
-    const totalWidth = (words.length - 1) * QUIZ_ITEM_SPACING_X;
-    const startX = (GAME_WIDTH - totalWidth) / 2;
+    const cardW = 140 * S;
+    const cardH = 44 * S;
+    const gap = 16 * S;
+    const totalW = cardW * words.length + gap * (words.length - 1);
+    const startX = (GAME_WIDTH - totalW) / 2;
+    const baseY = this.bannerBottomY + 16 * S + cardH / 2;
+    const r = 10 * S;
 
     words.forEach((word, i) => {
-      const y = this.itemYPositions[i];
-      const x = startX + i * QUIZ_ITEM_SPACING_X;
+      const cx = startX + cardW / 2 + i * (cardW + gap);
 
-      const container = this.scene.add.container(x, y).setDepth(5);
+      const container = this.scene.add.container(cx, baseY).setDepth(5);
 
+      const bg = this.scene.add.graphics();
+      const hx = -cardW / 2;
+      const hy = -cardH / 2;
+
+      // A) Glassmorphism background
+      // 1) Base dark layer
+      bg.fillStyle(0x0a0a1a, 0.55);
+      bg.fillRoundedRect(hx, hy, cardW, cardH, r);
+
+      // 2) Top 1/3 highlight (glass reflection)
+      bg.fillStyle(0xffffff, 0.06);
+      bg.fillRoundedRect(hx, hy, cardW, cardH * 0.35, { tl: r, tr: r, bl: 0, br: 0 });
+
+      // 3) Top edge bright line
+      bg.lineStyle(1 * S, 0xffffff, 0.15);
+      bg.beginPath();
+      bg.arc(hx + r, hy + r, r, Math.PI, Math.PI * 1.5);
+      bg.lineTo(hx + cardW - r, hy);
+      bg.arc(hx + cardW - r, hy + r, r, Math.PI * 1.5, 0);
+      bg.strokePath();
+
+      // B) Neon glow border (3 layers)
+      bg.lineStyle(6 * S, COLOR_QUIZ_WORD, 0.08);
+      bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
+
+      bg.lineStyle(3 * S, COLOR_QUIZ_WORD, 0.15);
+      bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
+
+      bg.lineStyle(1.5 * S, 0x5dade2, 0.4);
+      bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
+
+      container.add(bg);
+
+      // Word text
       const text = this.scene.add
         .text(0, 0, word, {
           fontFamily: "monospace",
-          fontSize: `${15 * S}px`,
+          fontSize: `${14 * S}px`,
           color: "#ffffff",
           fontStyle: "bold",
           stroke: "#000000",
-          strokeThickness: 3 * S,
+          strokeThickness: 2 * S,
         })
         .setOrigin(0.5)
-        .setAlpha(0.7);
+        .setAlpha(0.8);
       container.add(text);
 
-      const halfTextW = text.width / 2;
-      const triS = 18 * S;
-      const triGap = 6 * S;
-
-      const icons = this.scene.add.graphics();
-      // Left warning triangle + exclamation
-      this.drawWarningIcon(icons, -(halfTextW + triGap + triS * 0.5), 0, triS);
-      // Right warning triangle + exclamation
-      this.drawWarningIcon(icons, halfTextW + triGap + triS * 0.5, 0, triS);
-      container.add(icons);
-
+      // Slide-in from top
+      container.setAlpha(0);
+      container.y = baseY - 20 * S;
       this.scene.tweens.add({
         targets: container,
-        alpha: { from: 1, to: 0.3 },
-        duration: 300,
+        y: baseY,
+        alpha: 1,
+        duration: 450,
+        delay: i * 80,
+        ease: "Back.Out",
+      });
+
+      // Gentle bg pulse
+      this.scene.tweens.add({
+        targets: bg,
+        alpha: { from: 1, to: 0.7 },
+        duration: 1500,
+        delay: i * 80,
         yoyo: true,
         repeat: -1,
+        ease: "Sine.InOut",
       });
 
       this.previewMarkers.push(container);
@@ -891,6 +897,7 @@ export class QuizManager {
       this.bannerContainer.destroy();
       this.bannerContainer = null;
     }
+    this.clearPreviewMarkers();
   }
 
   private clearResult(): void {
