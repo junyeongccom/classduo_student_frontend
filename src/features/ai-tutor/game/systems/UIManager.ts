@@ -167,36 +167,57 @@ export class UIManager {
     this.drawHpFill(ratio);
   }
 
+  /** Trace parametric heart path: x=16sin³t, y=13cos−5cos2t−2cos3t−cos4t */
+  private traceHeartPath(
+    g: Phaser.GameObjects.Graphics,
+    cx: number,
+    cy: number,
+    r: number,
+  ): void {
+    const sc = r / 15;
+    const yOff = -2.5;
+    const N = 32;
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * Math.PI * 2;
+      const st = Math.sin(t);
+      const hx = 16 * st * st * st;
+      const hy = -(
+        13 * Math.cos(t) -
+        5 * Math.cos(2 * t) -
+        2 * Math.cos(3 * t) -
+        Math.cos(4 * t)
+      );
+      const px = cx + hx * sc;
+      const py = cy + (hy + yOff) * sc;
+      if (i === 0) g.moveTo(px, py);
+      else g.lineTo(px, py);
+    }
+  }
+
   private drawHeartIcon(
     g: Phaser.GameObjects.Graphics,
     cx: number,
     cy: number,
-    r: number
+    r: number,
   ): void {
-    const topY = cy - r * 0.4;
-    const botY = cy + r;
-    const lx = cx - r * 0.55;
-    const rx = cx + r * 0.55;
-    const bulgeR = r * 0.55;
-
+    // Fill
     g.fillStyle(COLOR_HP_HEART, 1);
     g.beginPath();
-    g.arc(lx, topY, bulgeR, Math.PI, 0, false);
-    g.arc(rx, topY, bulgeR, Math.PI, 0, false);
-    g.lineTo(cx, botY);
+    this.traceHeartPath(g, cx, cy, r);
     g.closePath();
     g.fillPath();
 
+    // Outline
     g.lineStyle(2 * S, 0x922b21, 1);
     g.beginPath();
-    g.arc(lx, topY, bulgeR, Math.PI, 0, false);
-    g.arc(rx, topY, bulgeR, Math.PI, 0, false);
-    g.lineTo(cx, botY);
+    this.traceHeartPath(g, cx, cy, r);
     g.closePath();
     g.strokePath();
 
+    // Shine highlight on left bump
+    const sc = r / 15;
     g.fillStyle(COLOR_HP_HEART_SHINE, 0.6);
-    g.fillCircle(lx - bulgeR * 0.15, topY - bulgeR * 0.2, bulgeR * 0.3);
+    g.fillCircle(cx - 8 * sc, cy - 10 * sc, r * 0.18);
   }
 
   private drawHpGaugeFrame(): void {
