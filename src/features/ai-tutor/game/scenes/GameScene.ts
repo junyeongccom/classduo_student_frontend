@@ -30,6 +30,10 @@ import {
   COIN_ARC_COUNT,
   COIN_GROUND_Y_OFFSET,
   COIN_HIGH_Y,
+  COIN_MID_Y,
+  COIN_DIAGONAL_COUNT,
+  COIN_ZIGZAG_COUNT,
+  COIN_DIAMOND_COUNT,
   QUIZ_INTERVAL_MS,
   FALL_DEATH_Y,
   MAX_JUMPS,
@@ -81,6 +85,8 @@ export class GameScene extends Phaser.Scene {
   private hpMax = HP_MAX;
   private hpDecayStacks = 0;
   private hpDecayMultiplier = 1;
+
+  private lastCoinPattern = "";
 
   private quizManager!: QuizManager;
   private lastSlideDustTime = 0;
@@ -234,6 +240,7 @@ export class GameScene extends Phaser.Scene {
     this.hpDecayMultiplier = 1;
     this.lastSlideDustTime = 0;
     this.lastHpFlashTime = 0;
+    this.lastCoinPattern = "";
   }
 
   private createGroups(): void {
@@ -394,15 +401,48 @@ export class GameScene extends Phaser.Scene {
       const width = tileCount * GROUND_TILE_WIDTH;
       this.spawnGroundSegment(this.nextGroundX + width / 2, width);
 
-      const pattern = Math.random();
-      if (pattern < 0.5) {
-        this.spawnGroundCoins(this.nextGroundX, width);
-      } else if (pattern < 0.8) {
-        this.spawnHighCoins(this.nextGroundX, width);
-      } else {
-        this.spawnGroundCoins(this.nextGroundX, width);
-        this.spawnHighCoins(this.nextGroundX + COIN_LINE_SPACING * 2, width / 2);
+      const excludeSlots = new Set<number>();
+      const totalSlots = Math.floor(width / COIN_LINE_SPACING);
+
+      // 60% chance to spawn a bonus aerial formation
+      if (Math.random() < 0.6 && totalSlots > 0) {
+        const bonusPatterns = ["high", "diagonal", "zigzag", "diamond"];
+        const candidates = bonusPatterns.filter((p) => p !== this.lastCoinPattern);
+        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+        this.lastCoinPattern = chosen;
+
+        switch (chosen) {
+          case "high": {
+            const count = Math.min(5, totalSlots);
+            for (let i = 0; i < count; i++) excludeSlots.add(i);
+            this.spawnHighCoins(this.nextGroundX, width);
+            break;
+          }
+          case "diagonal": {
+            const count = Math.min(COIN_DIAGONAL_COUNT, totalSlots);
+            for (let i = 0; i < count; i++) excludeSlots.add(i);
+            this.spawnDiagonalCoins(this.nextGroundX, width);
+            break;
+          }
+          case "zigzag": {
+            const count = Math.min(COIN_ZIGZAG_COUNT, totalSlots);
+            for (let i = 0; i < count; i++) excludeSlots.add(i);
+            this.spawnZigzagCoins(this.nextGroundX, width);
+            break;
+          }
+          case "diamond": {
+            const centerSlot = Math.floor(totalSlots / 2);
+            for (let s = centerSlot - 1; s <= centerSlot + 1; s++) {
+              if (s >= 0 && s < totalSlots) excludeSlots.add(s);
+            }
+            this.spawnDiamondCoins(this.nextGroundX, width);
+            break;
+          }
+        }
       }
+
+      // Always spawn ground coins, skipping slots occupied by formations
+      this.spawnGroundCoins(this.nextGroundX, width, excludeSlots);
 
       this.nextGroundX += width;
     }
@@ -410,12 +450,13 @@ export class GameScene extends Phaser.Scene {
 
   // ── Coin spawning ──
 
-  private spawnGroundCoins(startX: number, segWidth: number): void {
+  private spawnGroundCoins(startX: number, segWidth: number, excludeSlots?: Set<number>): void {
     const groundTop = GROUND_Y - GROUND_HEIGHT / 2;
     const y = groundTop + COIN_GROUND_Y_OFFSET;
     const count = Math.floor(segWidth / COIN_LINE_SPACING);
     const speed = this.getEffectiveSpeed();
     for (let i = 0; i < count; i++) {
+      if (excludeSlots?.has(i)) continue;
       const x = startX + COIN_LINE_SPACING / 2 + i * COIN_LINE_SPACING;
       const coin = new Coin(this, x, y);
       this.coins.add(coin);
@@ -444,6 +485,64 @@ export class GameScene extends Phaser.Scene {
       const arcHeight = 120 * S;
       const y = groundTop - 30 * S - arcHeight * 4 * t * (1 - t);
       const coin = new Coin(this, x, y);
+      this.coins.add(coin);
+      coin.setScrollSpeed(speed);
+    }
+  }
+
+  private spawnDiagonalCoins(startX: number, segWidth: number): void {
+    const midY = COIN_MID_Y;
+    const highY = COIN_HIGH_Y;
+    const ascending = Math.random() < 0.5;
+    const speed = this.getEffectiveSpeed();
+
+    for (let i = 0; i < COIN_DIAGONAL_COUNT; i++) {
+      const t = i / (COIN_DIAGONAL_COUNT - 1);
+      const x = startX + COIN_LINE_SPACING / 2 + i * COIN_LINE_SPACING;
+      const y = ascending
+        ? midY + (highY - midY) * t
+        : highY + (midY - highY) * t;
+      const coin = new Coin(this, x, y);
+      this.coins.add(coin);
+      coin.setScrollSpeed(speed);
+    }
+  }
+
+  private spawnZigzagCoins(startX: number, segWidth: number): void {
+    const midY = COIN_MID_Y;
+    const highY = COIN_HIGH_Y;
+    const count = Math.min(COIN_ZIGZAG_COUNT, Math.floor(segWidth / COIN_LINE_SPACING));
+    const speed = this.getEffectiveSpeed();
+
+    for (let i = 0; i < count; i++) {
+      const x = startX + COIN_LINE_SPACING / 2 + i * COIN_LINE_SPACING;
+      const y = i % 2 === 0 ? midY : highY;
+      const coin = new Coin(this, x, y);
+      this.coins.add(coin);
+      coin.setScrollSpeed(speed);
+    }
+  }
+
+  private spawnDiamondCoins(startX: number, segWidth: number): void {
+    const highY = COIN_HIGH_Y;
+    const midY = COIN_MID_Y;
+    const totalSlots = Math.floor(segWidth / COIN_LINE_SPACING);
+    const centerSlot = Math.floor(totalSlots / 2);
+    const centerX = startX + COIN_LINE_SPACING / 2 + centerSlot * COIN_LINE_SPACING;
+    const centerY = (highY + midY) / 2;
+    const speed = this.getEffectiveSpeed();
+
+    // Diamond in mid~high range, snapped to coin grid
+    const points = [
+      { x: centerX, y: highY },                        // top
+      { x: centerX - COIN_LINE_SPACING, y: centerY },  // left
+      { x: centerX, y: centerY },                      // center
+      { x: centerX + COIN_LINE_SPACING, y: centerY },  // right
+      { x: centerX, y: midY },                         // bottom
+    ];
+
+    for (const pt of points) {
+      const coin = new Coin(this, pt.x, pt.y);
       this.coins.add(coin);
       coin.setScrollSpeed(speed);
     }

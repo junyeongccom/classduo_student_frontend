@@ -45,6 +45,10 @@ export const COIN_LINE_SPACING = 40 * S;
 export const COIN_ARC_COUNT = 5;
 export const COIN_GROUND_Y_OFFSET = -30 * S;
 export const COIN_HIGH_Y = 220 * S;
+export const COIN_MID_Y = (COIN_HIGH_Y + (GROUND_Y - GROUND_HEIGHT / 2 + COIN_GROUND_Y_OFFSET)) / 2;
+export const COIN_DIAGONAL_COUNT = 5;
+export const COIN_ZIGZAG_COUNT = 6;
+export const COIN_DIAMOND_COUNT = 5;
 export const COLOR_COIN = 0xf1c40f;
 
 // Quiz
