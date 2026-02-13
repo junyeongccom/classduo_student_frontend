@@ -859,11 +859,15 @@ export class QuizManager {
 
       container.add(bg);
 
-      // Word text
+      // Word text — shrink font if it overflows card
+      const maxFontSize = 14 * S;
+      const minFontSize = 8 * S;
+      const padX = 8 * S;
+      let fontSize = maxFontSize;
       const text = this.scene.add
         .text(0, 0, word, {
           fontFamily: FONT_FAMILY,
-          fontSize: `${14 * S}px`,
+          fontSize: `${fontSize}px`,
           color: "#ffffff",
           fontStyle: "bold",
           stroke: "#000000",
@@ -871,6 +875,11 @@ export class QuizManager {
         })
         .setOrigin(0.5)
         .setAlpha(0.8);
+
+      while (text.width > cardW - padX * 2 && fontSize > minFontSize) {
+        fontSize -= 1 * S;
+        text.setFontSize(fontSize);
+      }
       container.add(text);
 
       // Slide-in from top
