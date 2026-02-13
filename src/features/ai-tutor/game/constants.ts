@@ -49,8 +49,8 @@ export const COLOR_COIN = 0xf1c40f;
 
 // Quiz
 export const QUIZ_INTERVAL_MS = 8000;
-export const QUIZ_ANNOUNCE_MS = 3000;
-export const QUIZ_WINDOW_MS = 5000;
+export const QUIZ_ANNOUNCE_MS = 4500;
+export const QUIZ_WINDOW_MS = 7500;
 export const QUIZ_RESULT_MS = 1000;
 export const QUIZ_ITEM_SIZE = 44 * S;
 export const QUIZ_WORD_WIDTH = 90 * S;
