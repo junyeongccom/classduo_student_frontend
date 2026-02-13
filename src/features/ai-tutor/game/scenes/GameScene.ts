@@ -86,6 +86,8 @@ export class GameScene extends Phaser.Scene {
   private lastSlideDustTime = 0;
   private lastHpFlashTime = 0;
 
+  private startUI: Phaser.GameObjects.Container | null = null;
+
   // Managers
   private screenFX!: ScreenFXManager;
   private particles!: ParticleManager;
@@ -116,8 +118,95 @@ export class GameScene extends Phaser.Scene {
     this.createQuizManager();
     this.fillInitialGround();
 
-    // Fade in
+    // Fade in, then show START UI
     this.cameras.main.fadeIn(400);
+    this.physics.pause();
+    this.createStartUI();
+  }
+
+  private createStartUI(): void {
+    const cx = GAME_WIDTH / 2;
+    const cy = GAME_HEIGHT / 2;
+
+    // Opaque overlay — hides game background completely
+    const overlay = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x1a1a2e, 1)
+      .setOrigin(0.5);
+
+    // START text
+    const startText = this.add
+      .text(0, 0, "START", {
+        fontFamily: "Arial Black, Arial, sans-serif",
+        fontSize: `${Math.round(64 * S)}px`,
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 6 * S,
+      })
+      .setOrigin(0.5);
+
+    // Tap hint
+    const hintText = this.add
+      .text(0, 50 * S, "Tap to Start", {
+        fontFamily: "Arial, sans-serif",
+        fontSize: `${Math.round(20 * S)}px`,
+        color: "#cccccc",
+      })
+      .setOrigin(0.5);
+
+    const container = this.add.container(cx, cy, [overlay, startText, hintText]);
+    container.setDepth(1000);
+    container.setSize(GAME_WIDTH, GAME_HEIGHT);
+    container.setInteractive();
+
+    // Pulse animation
+    this.tweens.add({
+      targets: startText,
+      scaleX: 1.05,
+      scaleY: 1.05,
+      duration: 600,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+
+    container.on("pointerdown", () => {
+      this.startGame();
+    });
+
+    this.startUI = container;
+  }
+
+  private startGame(): void {
+    if (this.gameState !== "waiting_start") return;
+
+    if (this.startUI) {
+      this.tweens.add({
+        targets: this.startUI,
+        alpha: 0,
+        duration: 250,
+        ease: "Power2",
+        onComplete: () => {
+          this.startUI?.destroy();
+          this.startUI = null;
+
+          // Begin intro sequence — ground stationary, player runs in via velocity
+          this.gameState = "intro";
+          this.physics.resume();
+
+          // Zero out ground velocity so it stays still during intro
+          this.grounds.getChildren().forEach((obj) => {
+            (obj as GroundSegment).setScrollSpeed(0);
+          });
+
+          // Player runs right at normal scroll speed
+          this.player.setVisible(true);
+          this.player.setAlpha(1);
+          this.player.clampLeft = false;
+          const introSpeed = Math.abs(SCROLL_SPEED_INITIAL);
+          (this.player.body as Phaser.Physics.Arcade.Body).setVelocityX(introSpeed);
+        },
+      });
+    }
   }
 
   private resetState(): void {
@@ -127,7 +216,7 @@ export class GameScene extends Phaser.Scene {
     this.speedStacks = 0;
     this.jumpStacks = 0;
     this.jumpCountStacks = 0;
-    this.gameState = "playing";
+    this.gameState = "waiting_start";
     this.nextGroundX = 0;
     this.distanceTraveled = 0;
     this.totalCoinsCollected = 0;
@@ -163,14 +252,10 @@ export class GameScene extends Phaser.Scene {
     const bodyBottomFromCenter = -PLAYER_TEX_HEIGHT / 2 + (5 + 38) * S;
     const playerY = groundTop - bodyBottomFromCenter;
 
-    // Start offscreen for run-in effect
-    this.player = new Player(this, -50 * S, playerY);
-    this.tweens.add({
-      targets: this.player,
-      x: PLAYER_X,
-      duration: 400,
-      ease: "Power2",
-    });
+    // Start offscreen, hidden until intro sequence
+    this.player = new Player(this, -150 * S, playerY);
+    this.player.setAlpha(0);
+    this.player.setVisible(false);
 
     this.player.on("land", this.onPlayerLand, this);
     this.player.on("jump", this.onPlayerJump, this);
@@ -246,9 +331,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleJumpDown = (): void => {
-    if (this.gameState !== "game_over") {
-      this.player.requestJump(this.time.now);
+    if (this.gameState === "waiting_start") {
+      this.startGame();
+      return;
     }
+    if (this.gameState === "game_over" || this.gameState === "intro") return;
+    this.player.requestJump(this.time.now);
   };
 
   private handleJumpUp = (): void => {
@@ -256,9 +344,12 @@ export class GameScene extends Phaser.Scene {
   };
 
   private handleDuckDown = (): void => {
-    if (this.gameState !== "game_over") {
-      this.player.startDuck();
+    if (this.gameState === "waiting_start") {
+      this.startGame();
+      return;
     }
+    if (this.gameState === "game_over" || this.gameState === "intro") return;
+    this.player.startDuck();
   };
 
   private handleDuckUp = (): void => {
@@ -268,11 +359,13 @@ export class GameScene extends Phaser.Scene {
   // ── Ground spawning ──
 
   private fillInitialGround(): void {
+    // Extend ground behind the camera for intro run-in
+    this.nextGroundX = -200 * S;
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH) {
       const tileCount = Phaser.Math.Between(GROUND_SEGMENT_MIN, GROUND_SEGMENT_MAX);
       const width = tileCount * GROUND_TILE_WIDTH;
       this.spawnGroundSegment(this.nextGroundX + width / 2, width);
-      this.spawnGroundCoins(this.nextGroundX, width);
+      // No coins on initial ground — they appear naturally after intro
       this.nextGroundX += width;
     }
   }
@@ -485,63 +578,85 @@ export class GameScene extends Phaser.Scene {
   // ── Main update ──
 
   update(time: number, delta: number): void {
-    if (this.gameState === "game_over" || this.gameState === "choosing_reward")
+    if (
+      this.gameState === "game_over" ||
+      this.gameState === "choosing_reward" ||
+      this.gameState === "waiting_start"
+    )
       return;
 
-    // Camera / parallax
-    this.cameraManager.update(this.getEffectiveSpeed(), delta, this.distanceTraveled);
+    let isIntro = this.gameState === "intro";
 
-    // HP decay
-    this.hp -= delta * this.hpDecayMultiplier;
-    if (this.hp <= 0) {
-      this.hp = 0;
-      this.ui.updateHpGauge(this.hp, this.hpMax);
-      this.triggerGameOver("hp");
-      return;
+    // Intro: player reached target → seamless transition (no return, continue as playing)
+    if (isIntro && this.player.x >= PLAYER_X) {
+      this.player.x = PLAYER_X;
+      this.player.clampLeft = true;
+      (this.player.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
+      this.gameState = "playing";
+      isIntro = false;
     }
-    this.ui.updateHpGauge(this.hp, this.hpMax);
 
-    // (Low HP warning removed — no red flash)
+    // Camera / parallax — stationary during intro
+    if (!isIntro) {
+      this.cameraManager.update(this.getEffectiveSpeed(), delta, this.distanceTraveled);
+    }
 
-    // Quiz timer
-    if (this.gameState === "playing") {
-      this.quizTimer += delta;
-      if (this.quizTimer >= QUIZ_INTERVAL_MS) {
-        this.quizTimer = 0;
-        this.quizManager.startQuiz();
+    // HP decay, quiz timer — only during active gameplay
+    if (!isIntro) {
+      this.hp -= delta * this.hpDecayMultiplier;
+      if (this.hp <= 0) {
+        this.hp = 0;
+        this.ui.updateHpGauge(this.hp, this.hpMax);
+        this.triggerGameOver("hp");
+        return;
+      }
+      this.ui.updateHpGauge(this.hp, this.hpMax);
+
+      if (this.gameState === "playing") {
+        this.quizTimer += delta;
+        if (this.quizTimer >= QUIZ_INTERVAL_MS) {
+          this.quizTimer = 0;
+          this.quizManager.startQuiz();
+        }
       }
     }
 
-    this.player.scrollSpeed = this.getEffectiveSpeed();
+    // Player physics — runs during intro for ground collision
+    this.player.scrollSpeed = isIntro ? 0 : this.getEffectiveSpeed();
     this.player.update(time, delta);
 
     // Slide dust
-    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
-    if (this.player.isDucking && playerBody.blocked.down) {
-      if (time - this.lastSlideDustTime > 50) {
-        this.lastSlideDustTime = time;
-        this.particles.spawnSlideDust(this.player.x + 25 * S);
+    if (!isIntro) {
+      const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+      if (this.player.isDucking && playerBody.blocked.down) {
+        if (time - this.lastSlideDustTime > 50) {
+          this.lastSlideDustTime = time;
+          this.particles.spawnSlideDust(this.player.x + 25 * S);
+        }
+      }
+
+      // Speed lines when going fast
+      if (this.scrollSpeedMultiplier >= SPEED_LINE_THRESHOLD) {
+        this.particles.spawnSpeedLines();
       }
     }
 
-    // Speed lines when going fast
-    if (this.scrollSpeedMultiplier >= SPEED_LINE_THRESHOLD) {
-      this.particles.spawnSpeedLines();
+    // Ground scroll + spawn — stationary during intro
+    if (!isIntro) {
+      const scrollDelta = Math.abs(this.getEffectiveSpeed()) * (delta / 1000);
+      this.distanceTraveled += scrollDelta;
+      this.nextGroundX += this.getEffectiveSpeed() * (delta / 1000);
+
+      this.spawnNewGround();
+      this.syncScrollSpeed();
     }
-
-    const scrollDelta = Math.abs(this.getEffectiveSpeed()) * (delta / 1000);
-    this.distanceTraveled += scrollDelta;
-    this.nextGroundX += this.getEffectiveSpeed() * (delta / 1000);
-
-    this.spawnNewGround();
-    this.syncScrollSpeed();
 
     // Particle & UI update
     this.particles.update(delta);
     this.ui.update(delta);
 
-    // Fall death
-    if (this.player.y > FALL_DEATH_Y) {
+    // Fall death — not during intro
+    if (!isIntro && this.player.y > FALL_DEATH_Y) {
       this.triggerGameOver("fall");
     }
   }

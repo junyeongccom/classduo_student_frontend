@@ -37,6 +37,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   jumpMultiplier = 1;
   scrollSpeed = 0;
+  clampLeft = true;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "player_run0");
@@ -117,8 +118,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.startDuck();
     }
 
-    // Clamp left side only
-    if (this.x < PLAYER_SIZE / 2) {
+    // Clamp left side only (disabled during intro run-in)
+    if (this.clampLeft && this.x < PLAYER_SIZE / 2) {
       this.x = PLAYER_SIZE / 2;
       body.setVelocityX(0);
     }

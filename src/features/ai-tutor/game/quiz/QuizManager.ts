@@ -20,6 +20,8 @@ import {
 } from "../constants";
 
 export type GameState =
+  | "waiting_start"
+  | "intro"
   | "playing"
   | "quiz_announce"
   | "quiz_active"
