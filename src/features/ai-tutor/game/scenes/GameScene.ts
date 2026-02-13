@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import { Player } from "../entities/Player";
 import { GroundSegment } from "../entities/GroundSegment";
 import { Coin } from "../entities/Coin";

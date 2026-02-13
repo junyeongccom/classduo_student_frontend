@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import { S, QUIZ_ITEM_SIZE } from "../constants";
 
 interface MeteorParticle {

@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import { S, GAME_WIDTH, GAME_HEIGHT, RESTART_DELAY } from "../constants";
 
 export class GameOverScene extends Phaser.Scene {

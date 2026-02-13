@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import { QuizItem } from "../entities/QuizItem";
 import { QuizQuestion, ChoiceType } from "./quizTypes";
 import { QUIZ_QUESTIONS } from "./quizData";

@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import { S } from "../constants";
 
 export class Coin extends Phaser.Physics.Arcade.Sprite {

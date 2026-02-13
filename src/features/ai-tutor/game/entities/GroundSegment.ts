@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import { GROUND_HEIGHT } from "../constants";
 
 export class GroundSegment extends Phaser.Physics.Arcade.Sprite {
