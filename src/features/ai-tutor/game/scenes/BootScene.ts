@@ -520,23 +520,25 @@ export class BootScene extends Phaser.Scene {
     const w = GAME_WIDTH;
     const h = 160 * S;
 
-    // Far mountains — edges flat at 55*S for seamless tiling
+    // Far mountains
     {
       const g = this.add.graphics();
       g.fillStyle(COLOR_MOUNTAIN_FAR);
       g.beginPath();
       g.moveTo(0, h);
       g.lineTo(0, 55 * S);
-      g.lineTo(80 * S, 40 * S);
-      g.lineTo(140 * S, 65 * S);
-      g.lineTo(210 * S, 20 * S);
-      g.lineTo(290 * S, 58 * S);
-      g.lineTo(370 * S, 30 * S);
-      g.lineTo(450 * S, 55 * S);
-      g.lineTo(530 * S, 18 * S);
-      g.lineTo(610 * S, 48 * S);
-      g.lineTo(700 * S, 28 * S);
-      g.lineTo(750 * S, 55 * S);
+      g.lineTo(60 * S, 40 * S);
+      g.lineTo(120 * S, 70 * S);
+      g.lineTo(180 * S, 20 * S);
+      g.lineTo(250 * S, 60 * S);
+      g.lineTo(320 * S, 35 * S);
+      g.lineTo(400 * S, 55 * S);
+      g.lineTo(460 * S, 15 * S);
+      g.lineTo(530 * S, 50 * S);
+      g.lineTo(580 * S, 30 * S);
+      g.lineTo(650 * S, 65 * S);
+      g.lineTo(720 * S, 25 * S);
+      g.lineTo(770 * S, 55 * S);
       g.lineTo(w, 55 * S);
       g.lineTo(w, h);
       g.closePath();
@@ -545,22 +547,23 @@ export class BootScene extends Phaser.Scene {
       g.destroy();
     }
 
-    // Mid mountains — edges flat at 50*S for seamless tiling
+    // Mid mountains
     {
       const g = this.add.graphics();
       g.fillStyle(COLOR_MOUNTAIN_MID);
       g.beginPath();
       g.moveTo(0, h);
       g.lineTo(0, 50 * S);
-      g.lineTo(90 * S, 32 * S);
-      g.lineTo(170 * S, 60 * S);
-      g.lineTo(250 * S, 22 * S);
-      g.lineTo(340 * S, 52 * S);
-      g.lineTo(420 * S, 18 * S);
-      g.lineTo(510 * S, 48 * S);
-      g.lineTo(590 * S, 26 * S);
-      g.lineTo(680 * S, 55 * S);
-      g.lineTo(740 * S, 50 * S);
+      g.lineTo(80 * S, 35 * S);
+      g.lineTo(150 * S, 65 * S);
+      g.lineTo(220 * S, 25 * S);
+      g.lineTo(300 * S, 55 * S);
+      g.lineTo(380 * S, 20 * S);
+      g.lineTo(450 * S, 50 * S);
+      g.lineTo(520 * S, 30 * S);
+      g.lineTo(600 * S, 60 * S);
+      g.lineTo(680 * S, 28 * S);
+      g.lineTo(750 * S, 50 * S);
       g.lineTo(w, 50 * S);
       g.lineTo(w, h);
       g.closePath();
@@ -569,21 +572,22 @@ export class BootScene extends Phaser.Scene {
       g.destroy();
     }
 
-    // Near mountains — edges flat at 45*S for seamless tiling
+    // Near mountains
     {
       const g = this.add.graphics();
       g.fillStyle(COLOR_MOUNTAIN_NEAR);
       g.beginPath();
       g.moveTo(0, h);
       g.lineTo(0, 45 * S);
-      g.lineTo(100 * S, 28 * S);
-      g.lineTo(200 * S, 58 * S);
-      g.lineTo(300 * S, 15 * S);
-      g.lineTo(400 * S, 48 * S);
-      g.lineTo(500 * S, 22 * S);
-      g.lineTo(600 * S, 52 * S);
-      g.lineTo(690 * S, 30 * S);
-      g.lineTo(750 * S, 45 * S);
+      g.lineTo(100 * S, 30 * S);
+      g.lineTo(200 * S, 60 * S);
+      g.lineTo(280 * S, 15 * S);
+      g.lineTo(360 * S, 50 * S);
+      g.lineTo(440 * S, 25 * S);
+      g.lineTo(540 * S, 55 * S);
+      g.lineTo(620 * S, 20 * S);
+      g.lineTo(700 * S, 45 * S);
+      g.lineTo(780 * S, 30 * S);
       g.lineTo(w, 45 * S);
       g.lineTo(w, h);
       g.closePath();
