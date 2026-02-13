@@ -55,14 +55,6 @@ interface CardDef {
   color: number;
 }
 
-// Color helpers to derive gradient/outline/shine from base color
-function darken(color: number, amount: number): number {
-  const r = Math.max(0, ((color >> 16) & 0xff) - amount);
-  const g = Math.max(0, ((color >> 8) & 0xff) - amount);
-  const b = Math.max(0, (color & 0xff) - amount);
-  return (r << 16) | (g << 8) | b;
-}
-
 function lighten(color: number, amount: number): number {
   const r = Math.min(255, ((color >> 16) & 0xff) + amount);
   const g = Math.min(255, ((color >> 8) & 0xff) + amount);
@@ -666,25 +658,36 @@ export class QuizManager {
 
   private createResultPopup(label: string, color: string): Phaser.GameObjects.Container {
     const colorNum = parseInt(color.replace("#", ""), 16);
-    const strokeColor = `#${darken(colorNum, 80).toString(16).padStart(6, "0")}`;
+
     const text = this.scene.add
       .text(0, 0, label, {
         fontFamily: "monospace",
-        fontSize: `${30 * S}px`,
-        color: color,
+        fontSize: `${26 * S}px`,
+        color: "#ffffff",
         fontStyle: "bold",
-        stroke: strokeColor,
-        strokeThickness: 4 * S,
+        shadow: { offsetX: 0, offsetY: 0, color: color, blur: 8 * S, stroke: true, fill: true },
       })
       .setOrigin(0.5);
 
+    // Glow pulse — radial gradient circle behind text
+    const glowR = Math.max(text.width, text.height) * 0.8;
+    const glow = this.scene.add.graphics();
+    // Layered circles: large faint → small bright for soft radial falloff
+    glow.fillStyle(colorNum, 0.15);
+    glow.fillCircle(0, 0, glowR);
+    glow.fillStyle(colorNum, 0.3);
+    glow.fillCircle(0, 0, glowR * 0.6);
+    glow.fillStyle(colorNum, 0.5);
+    glow.fillCircle(0, 0, glowR * 0.3);
+    glow.setAlpha(0);
+
     const container = this.scene.add
-      .container(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40 * S, [text])
+      .container(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40 * S, [glow, text])
       .setDepth(10)
       .setScale(1.4)
       .setAlpha(0);
 
-    // Punch in + fade
+    // Punch in
     this.scene.tweens.add({
       targets: container,
       scaleX: 1,
@@ -693,6 +696,41 @@ export class QuizManager {
       duration: 250,
       ease: "Back.Out",
     });
+
+    // Glow expand + fade
+    this.scene.tweens.add({
+      targets: glow,
+      scaleX: { from: 0.5, to: 1.5 },
+      scaleY: { from: 0.5, to: 1.5 },
+      alpha: { from: 0.3, to: 0 },
+      duration: 400,
+      delay: 50,
+      ease: "Quad.Out",
+      onComplete: () => { glow.destroy(); },
+    });
+
+    // Burst sparkles
+    const sparkleCount = 8;
+    for (let i = 0; i < sparkleCount; i++) {
+      const angle = (Math.PI * 2 * i) / sparkleCount + Phaser.Math.FloatBetween(-0.3, 0.3);
+      const dist = Phaser.Math.Between(Math.round(40 * S), Math.round(80 * S));
+      const dot = this.scene.add.graphics();
+      dot.fillStyle(colorNum, 0.8);
+      dot.fillCircle(0, 0, Phaser.Math.Between(1, 5) * S);
+      dot.setAlpha(0);
+      container.add(dot);
+
+      this.scene.tweens.add({
+        targets: dot,
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        alpha: { from: 0.9, to: 0 },
+        duration: 500,
+        delay: 100,
+        ease: "Quad.Out",
+        onComplete: () => { dot.destroy(); },
+      });
+    }
 
     return container;
   }

@@ -19,10 +19,7 @@ import {
   EFFECT_DISPLAY_MS,
   SCORE_BOUNCE_SCALE,
   SCORE_BOUNCE_DURATION,
-  HP_FRAME_BG,
-  HP_FRAME_OUTLINE,
   HP_COLORS,
-  HP_SEGMENT_COLOR,
 } from "../constants";
 
 export class UIManager {
@@ -204,12 +201,16 @@ export class UIManager {
     const br = HP_BAR_RADIUS;
     const pad = HP_BAR_PADDING;
 
-    // Background fill
-    g.fillStyle(HP_FRAME_BG, 1);
+    // Background fill — translucent dark
+    g.fillStyle(0x000000, 0.3);
     g.fillRoundedRect(bx, by, barW, bh, br);
 
+    // Subtle white border
+    g.lineStyle(1 * S, 0xffffff, 0.2);
+    g.strokeRoundedRect(bx, by, barW, bh, br);
+
     // Segment lines at 25%, 50%, 75%
-    g.lineStyle(1 * S, HP_SEGMENT_COLOR, 0.4);
+    g.lineStyle(1 * S, 0xffffff, 0.15);
     const innerW = barW - pad * 2;
     for (const frac of [0.25, 0.5, 0.75]) {
       const lx = bx + pad + innerW * frac;
@@ -250,7 +251,6 @@ export class UIManager {
     const trR = fillW >= innerW - innerR ? innerR : 0;
     const brR = fillW >= innerW - innerR ? innerR : 0;
     const corners = { tl: innerR, tr: trR, bl: innerR, br: brR };
-    const cornersTop = { tl: innerR, tr: trR, bl: 0, br: 0 };
 
     if (this.hpDamageFlashTimer > 0) {
       // Damage flash (white)
@@ -261,21 +261,9 @@ export class UIManager {
 
     const colors = this.getHpColors(displayRatio);
 
-    // Dark base
-    g.fillStyle(colors.dark, 1);
+    // Simple translucent fill
+    g.fillStyle(colors.fill, 0.7);
     g.fillRoundedRect(fx, fy, fillW, innerH, corners);
-
-    // Main fill top half
-    g.fillStyle(colors.fill, 1);
-    g.fillRoundedRect(fx, fy, fillW, innerH * 0.6, cornersTop);
-
-    // Shine highlight
-    g.fillStyle(colors.shine, 0.5);
-    g.fillRoundedRect(fx + 2 * S, fy + 1 * S, Math.max(0, fillW - 4 * S), innerH * 0.3, cornersTop);
-
-    // Outline around fill
-    g.lineStyle(2 * S, colors.outline, 1);
-    g.strokeRoundedRect(fx, fy, fillW, innerH, corners);
   }
 
   // ── Update ──
