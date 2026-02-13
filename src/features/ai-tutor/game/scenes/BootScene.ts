@@ -514,83 +514,77 @@ export class BootScene extends Phaser.Scene {
     }
   }
 
-  // ── Mountain textures (3 layers) ──
+  // ── Mountain textures (3 layers, sin-curve based for perfect tiling) ──
 
   private createMountainTextures(): void {
     const w = GAME_WIDTH;
     const h = 160 * S;
+    const PI2 = Math.PI * 2;
 
-    // Far mountains — edges flat at 55*S for seamless tiling
-    {
-      const g = this.add.graphics();
-      g.fillStyle(COLOR_MOUNTAIN_FAR);
+    // Helper: draw a smooth mountain silhouette using summed sinusoids.
+    // All harmonics have period = w, so f(0) === f(w) → seamless tile.
+    const drawMountain = (
+      g: Phaser.GameObjects.Graphics,
+      color: number,
+      baseY: number,
+      harmonics: { amp: number; freq: number; phase: number }[],
+      texKey: string,
+    ) => {
+      g.fillStyle(color);
       g.beginPath();
       g.moveTo(0, h);
-      g.lineTo(0, 55 * S);
-      g.lineTo(80 * S, 40 * S);
-      g.lineTo(140 * S, 65 * S);
-      g.lineTo(210 * S, 20 * S);
-      g.lineTo(290 * S, 58 * S);
-      g.lineTo(370 * S, 30 * S);
-      g.lineTo(450 * S, 55 * S);
-      g.lineTo(530 * S, 18 * S);
-      g.lineTo(610 * S, 48 * S);
-      g.lineTo(700 * S, 28 * S);
-      g.lineTo(750 * S, 55 * S);
-      g.lineTo(w, 55 * S);
+      for (let x = 0; x <= w; x += 2 * S) {
+        let y = baseY;
+        for (const { amp, freq, phase } of harmonics) {
+          y -= amp * Math.sin((PI2 * freq * x) / w + phase);
+        }
+        g.lineTo(x, y);
+      }
       g.lineTo(w, h);
       g.closePath();
       g.fillPath();
-      g.generateTexture("mountains_far", w, h);
+      g.generateTexture(texKey, w, h);
       g.destroy();
-    }
+    };
 
-    // Mid mountains — edges flat at 50*S for seamless tiling
-    {
-      const g = this.add.graphics();
-      g.fillStyle(COLOR_MOUNTAIN_MID);
-      g.beginPath();
-      g.moveTo(0, h);
-      g.lineTo(0, 50 * S);
-      g.lineTo(90 * S, 32 * S);
-      g.lineTo(170 * S, 60 * S);
-      g.lineTo(250 * S, 22 * S);
-      g.lineTo(340 * S, 52 * S);
-      g.lineTo(420 * S, 18 * S);
-      g.lineTo(510 * S, 48 * S);
-      g.lineTo(590 * S, 26 * S);
-      g.lineTo(680 * S, 55 * S);
-      g.lineTo(740 * S, 50 * S);
-      g.lineTo(w, 50 * S);
-      g.lineTo(w, h);
-      g.closePath();
-      g.fillPath();
-      g.generateTexture("mountains_mid", w, h);
-      g.destroy();
-    }
+    // Far mountains — gentle, low amplitude
+    drawMountain(
+      this.add.graphics(),
+      COLOR_MOUNTAIN_FAR,
+      80 * S,
+      [
+        { amp: 25 * S, freq: 1, phase: 0 },
+        { amp: 15 * S, freq: 2, phase: 1.2 },
+        { amp: 8 * S, freq: 3, phase: 3.5 },
+      ],
+      "mountains_far",
+    );
 
-    // Near mountains — edges flat at 45*S for seamless tiling
-    {
-      const g = this.add.graphics();
-      g.fillStyle(COLOR_MOUNTAIN_NEAR);
-      g.beginPath();
-      g.moveTo(0, h);
-      g.lineTo(0, 45 * S);
-      g.lineTo(100 * S, 28 * S);
-      g.lineTo(200 * S, 58 * S);
-      g.lineTo(300 * S, 15 * S);
-      g.lineTo(400 * S, 48 * S);
-      g.lineTo(500 * S, 22 * S);
-      g.lineTo(600 * S, 52 * S);
-      g.lineTo(690 * S, 30 * S);
-      g.lineTo(750 * S, 45 * S);
-      g.lineTo(w, 45 * S);
-      g.lineTo(w, h);
-      g.closePath();
-      g.fillPath();
-      g.generateTexture("mountains_near", w, h);
-      g.destroy();
-    }
+    // Mid mountains — medium peaks
+    drawMountain(
+      this.add.graphics(),
+      COLOR_MOUNTAIN_MID,
+      75 * S,
+      [
+        { amp: 28 * S, freq: 1, phase: 0.8 },
+        { amp: 18 * S, freq: 2, phase: 2.4 },
+        { amp: 10 * S, freq: 4, phase: 4.1 },
+      ],
+      "mountains_mid",
+    );
+
+    // Near mountains — sharper, taller peaks
+    drawMountain(
+      this.add.graphics(),
+      COLOR_MOUNTAIN_NEAR,
+      70 * S,
+      [
+        { amp: 30 * S, freq: 1, phase: 1.5 },
+        { amp: 20 * S, freq: 3, phase: 3.0 },
+        { amp: 12 * S, freq: 5, phase: 5.2 },
+      ],
+      "mountains_near",
+    );
   }
 
   private createMeteorTexture(): void {
