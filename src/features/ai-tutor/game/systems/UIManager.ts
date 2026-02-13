@@ -49,6 +49,13 @@ export class UIManager {
   private heartIcon!: Phaser.GameObjects.Graphics;
   private isHeartbeating = false;
 
+  // HP bar effects
+  private hpDrainParticles: {
+    x: number; y: number; vx: number; vy: number;
+    alpha: number; color: number; size: number;
+    startX: number;
+  }[] = [];
+
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
   }
@@ -134,6 +141,11 @@ export class UIManager {
 
   updateHpGauge(hp: number, hpMax: number): void {
     const ratio = hp / hpMax;
+
+    // Spawn drain particles on HP decrease
+    if (ratio < this.lastHpRatio) {
+      this.spawnDrainParticles();
+    }
 
     // Detect sudden damage for flash
     if (ratio < this.lastHpRatio - 0.05) {
@@ -233,13 +245,13 @@ export class UIManager {
 
   private getHpFillColor(displayRatio: number): number {
     const r = Phaser.Math.Clamp(displayRatio, 0, 1);
-    // green(0x2ecc71) → orange(0xf39c12) → red(0xe74c3c)
+    // teal(0x00BFA5) → amber(0xFFA726) → red(0xEF5350)
     if (r > 0.5) {
-      const t = (r - 0.5) / 0.5; // 1=green, 0=orange
-      return this.lerpColor(0xf39c12, 0x2ecc71, t);
+      const t = (r - 0.5) / 0.5; // 1=teal, 0=amber
+      return this.lerpColor(0xffa726, 0x00bfa5, t);
     }
-    const t = r / 0.5; // 1=orange, 0=red
-    return this.lerpColor(0xe74c3c, 0xf39c12, t);
+    const t = r / 0.5; // 1=amber, 0=red
+    return this.lerpColor(0xef5350, 0xffa726, t);
   }
 
   private lerpColor(a: number, b: number, t: number): number {
@@ -249,6 +261,44 @@ export class UIManager {
     const gg = Math.round(ag + (bg - ag) * t);
     const bl = Math.round(ab + (bb - ab) * t);
     return (rr << 16) | (gg << 8) | bl;
+  }
+
+  private spawnDrainParticles(): void {
+    const pad = HP_BAR_PADDING;
+    const innerW = HP_BAR_WIDTH - pad * 2;
+    const innerH = HP_BAR_HEIGHT - pad * 2;
+    const fx = HP_BAR_X + pad;
+    const fy = HP_BAR_Y + pad;
+    const fillW = innerW * this.displayedHpRatio;
+    if (fillW <= 0) return;
+
+    const color = this.getHpFillColor(this.displayedHpRatio);
+    const count = Phaser.Math.Between(1, 3);
+    for (let i = 0; i < count; i++) {
+      if (this.hpDrainParticles.length >= 30) break;
+      const spawnX = fx + fillW + Phaser.Math.Between(-2, 2) * S;
+      this.hpDrainParticles.push({
+        x: spawnX,
+        y: fy + Math.random() * innerH,
+        vx: (1 + Math.random()) * S,
+        vy: (Math.random() - 0.5) * 0.3 * S,
+        alpha: 0.8 + Math.random() * 0.2,
+        color,
+        size: (1 + Math.random()) * S,
+        startX: spawnX,
+      });
+    }
+  }
+
+  private drawDrainParticles(g: Phaser.GameObjects.Graphics): void {
+    for (const p of this.hpDrainParticles) {
+      if (p.alpha > 0) {
+        const dist = Math.abs(p.x - p.startX);
+        const scaledSize = p.size * Math.max(0.3, 1 - dist / (20 * S));
+        g.fillStyle(p.color, p.alpha);
+        g.fillCircle(p.x, p.y, scaledSize);
+      }
+    }
   }
 
   private drawHpFill(ratio: number): void {
@@ -266,6 +316,7 @@ export class UIManager {
     g.clear();
     if (fillW <= 0) {
       this.hpShineGfx.clear();
+      this.drawDrainParticles(g);
       return;
     }
 
@@ -280,6 +331,7 @@ export class UIManager {
       g.fillStyle(0xffffff, 1);
       g.fillRoundedRect(fx, fy, fillW, innerH, corners);
       this.hpShineGfx.clear();
+      this.drawDrainParticles(g);
       return;
     }
 
@@ -288,6 +340,17 @@ export class UIManager {
     // Smooth color-interpolated fill
     g.fillStyle(fillColor, 0.7);
     g.fillRoundedRect(fx, fy, fillW, innerH, corners);
+
+    // ── Soft glow at bar edge ──
+    if (fillW >= 5 * S) {
+      g.fillStyle(fillColor, 0.25);
+      g.fillCircle(fx + fillW, fy + innerH / 2, innerH * 0.5);
+      g.fillStyle(fillColor, 0.12);
+      g.fillCircle(fx + fillW, fy + innerH / 2, innerH * 0.8);
+    }
+
+    // ── Drain particles ──
+    this.drawDrainParticles(g);
 
     // Update geometry mask to match current fill shape
     this.hpShineMaskGfx.clear();
@@ -298,7 +361,6 @@ export class UIManager {
     this.hpShineGfx.clear();
     const sweepT = this.hpShinePhase < 0.4 ? this.hpShinePhase / 0.4 : -1;
     if (sweepT >= 0) {
-      // Ease-in-out for natural acceleration
       const eased =
         sweepT < 0.5
           ? 2 * sweepT * sweepT
@@ -356,6 +418,18 @@ export class UIManager {
 
     // Shine sweep phase (5-second cycle)
     this.hpShinePhase = (this.hpShinePhase + delta / 5000) % 1;
+
+    // Update drain particles (rightward drift + fade)
+    for (let i = this.hpDrainParticles.length - 1; i >= 0; i--) {
+      const p = this.hpDrainParticles[i];
+      const dt = delta / 16.67;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.alpha -= 0.025 * dt;
+      if (p.alpha <= 0) {
+        this.hpDrainParticles.splice(i, 1);
+      }
+    }
   }
 
   cleanup(): void {
