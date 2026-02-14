@@ -60,7 +60,7 @@ export const QUIZ_ITEM_SIZE = 44 * S;
 export const QUIZ_WORD_WIDTH = 90 * S;
 export const QUIZ_WORD_HEIGHT = 40 * S;
 export const QUIZ_ITEM_HIGH_Y = 200 * S;
-export const QUIZ_ITEM_SPACING_X = 200 * S;
+export const QUIZ_ITEM_SPACING_X = 300 * S;
 export const COLOR_QUIZ_WORD = 0x3498db;
 
 // Buff / Debuff (stack-based: multiplier = base ^ stacks)
