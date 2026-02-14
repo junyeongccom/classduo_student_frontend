@@ -157,6 +157,41 @@ export class QuizManager {
   }
 
   startQuiz(): void {
+    if (this.keywords.length < 3) {
+      this.retryLoadKeywords();
+      return;
+    }
+    this.executeQuiz();
+  }
+
+  private async retryLoadKeywords(): Promise<void> {
+    try {
+      const lectureId = this.scene.game.registry.get("lectureId") as string | undefined;
+      if (lectureId) {
+        const { chatService } = await import("../../services/chatService");
+        const { data } = await chatService.getLectureKeywords(lectureId, this.locale);
+        if (data?.keywords && data.keywords.length >= 3) {
+          const isEn = this.locale === "en";
+          this.keywords = data.keywords.map((k: any) => ({
+            keyword: (isEn && k.keyword_eng) || k.keyword,
+            description: (isEn && k.description_eng) || k.description,
+          }));
+          this.scene.game.registry.set("keywords", this.keywords);
+          this.executeQuiz();
+          return;
+        }
+      }
+    } catch {
+      // API 실패 — 아래에서 에러 표시
+    }
+
+    const msg = this.locale === "en"
+      ? "No keywords loaded — quiz unavailable"
+      : "키워드 데이터 없음 — 퀴즈 불가";
+    this.callbacks.showEffect(msg, "#e74c3c");
+  }
+
+  private executeQuiz(): void {
     const question = this.pickQuestion();
     if (!question) return;
 

@@ -90,6 +90,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
       game = new Phaser.Game(config)
       game.registry.set('keywords', keywordsRef.current)
       game.registry.set('locale', locale)
+      if (lectureId) game.registry.set('lectureId', lectureId)
       gameRef.current = game
 
       // 게임 컨테이너로 포커스 이동 → 사이드바 버튼의 onKeyDown이 SPACE를 가로채지 않도록
