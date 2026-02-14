@@ -3,8 +3,6 @@ import {
   S,
   GAME_WIDTH,
   GAME_HEIGHT,
-  GROUND_Y,
-  GROUND_HEIGHT,
   FONT_FAMILY,
 } from "../constants";
 
@@ -38,7 +36,7 @@ const STRINGS: Record<"ko" | "en", MenuStrings> = {
     locked: "준비 중",
     howToPlayTitle: "게임 설명",
     controls: "조작법",
-    controlJump: "Space / 탭  →  점프 (더블 점프 가능)",
+    controlJump: "Space / 클릭  →  점프 (더블 점프 가능)",
     controlSlide: "↓ 키  →  슬라이드",
     rules: "규칙",
     ruleCoins: "코인을 모아 점수를 올리세요",
@@ -55,7 +53,7 @@ const STRINGS: Record<"ko" | "en", MenuStrings> = {
     locked: "Coming Soon",
     howToPlayTitle: "How to Play",
     controls: "Controls",
-    controlJump: "Space / Tap  →  Jump (double jump available)",
+    controlJump: "Space / Click  →  Jump (double jump available)",
     controlSlide: "↓ Key  →  Slide",
     rules: "Rules",
     ruleCoins: "Collect coins to increase your score",
@@ -82,70 +80,17 @@ export class MainMenuScene extends Phaser.Scene {
   create(): void {
     this.t = STRINGS[detectLanguage()];
 
-    this.createBackground();
-    this.createCharacter();
+    // Dark background
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x111118);
+
     this.createTitle();
     this.createMenuButtons();
-  }
-
-  // ── Background ──
-
-  private createBackground(): void {
-    // Sky gradient
-    this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "sky_gradient").setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
-
-    // Mountain layers (static, no parallax)
-    const mountainY = GROUND_Y - GROUND_HEIGHT / 2;
-    const mountainH = 160 * S;
-    this.add
-      .image(GAME_WIDTH / 2, mountainY - mountainH / 2 + 40 * S, "mountains_far")
-      .setDisplaySize(GAME_WIDTH, mountainH)
-      .setAlpha(0.7);
-    this.add
-      .image(GAME_WIDTH / 2, mountainY - mountainH / 2 + 60 * S, "mountains_mid")
-      .setDisplaySize(GAME_WIDTH, mountainH)
-      .setAlpha(0.8);
-    this.add
-      .image(GAME_WIDTH / 2, mountainY - mountainH / 2 + 80 * S, "mountains_near")
-      .setDisplaySize(GAME_WIDTH, mountainH)
-      .setAlpha(0.9);
-
-    // Ground strip
-    this.add
-      .rectangle(GAME_WIDTH / 2, GROUND_Y, GAME_WIDTH, GROUND_HEIGHT, 0x6b8e23)
-      .setOrigin(0.5);
-    this.add
-      .rectangle(GAME_WIDTH / 2, GROUND_Y + GROUND_HEIGHT / 2 - 3 * S, GAME_WIDTH, GROUND_HEIGHT - 6 * S, 0x8b7355)
-      .setOrigin(0.5);
-  }
-
-  // ── Character ──
-
-  private createCharacter(): void {
-    const charX = GAME_WIDTH * 0.18;
-    const groundTop = GROUND_Y - GROUND_HEIGHT / 2;
-    const charY = groundTop - 28 * S;
-
-    const character = this.add
-      .image(charX, charY, "player_run0")
-      .setOrigin(0.5, 1)
-      .setScale(2.5);
-
-    // Gentle bob animation
-    this.tweens.add({
-      targets: character,
-      y: charY - 6 * S,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
   }
 
   // ── Title ──
 
   private createTitle(): void {
-    const titleY = GAME_HEIGHT * 0.15;
+    const titleY = GAME_HEIGHT * 0.18;
 
     const title = this.add
       .text(GAME_WIDTH / 2, titleY, this.t.title, {
@@ -208,8 +153,9 @@ export class MainMenuScene extends Phaser.Scene {
     const btnW = 260 * S;
     const btnH = 44 * S;
     const gap = 12 * S;
-    const startY = GAME_HEIGHT * 0.38;
-    const centerX = GAME_WIDTH * 0.62;
+    const totalH = menuItems.length * btnH + (menuItems.length - 1) * gap;
+    const startY = GAME_HEIGHT * 0.38 + (GAME_HEIGHT * 0.62 - totalH) / 2;
+    const centerX = GAME_WIDTH / 2;
 
     menuItems.forEach((item, i) => {
       const y = startY + i * (btnH + gap);
