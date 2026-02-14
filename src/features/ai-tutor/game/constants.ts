@@ -69,7 +69,7 @@ export const METEOR_SPAWN_INTERVAL_MAX_MS = 9000;
 export const METEOR_SPEED_MULT = 1.25;
 export const METEOR_DAMAGE_HP = 5000;
 export const METEOR_SIZE = 44 * S;
-export const METEOR_SPAWN_Y_MIN = GAME_HEIGHT * 0.3;
+export const METEOR_SPAWN_Y_MIN = 191 * S;
 export const METEOR_SPAWN_Y_MAX = GROUND_Y - GROUND_HEIGHT / 2 - 44 * S;
 
 // Quiz scroll colors (3 colors)

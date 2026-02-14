@@ -604,11 +604,6 @@ export class GameScene extends Phaser.Scene {
     this.screenFX.flash(FLASH_WRONG);
     this.particles.spawnDeathExplosion(mx, my);
 
-    this.ui.showEffect(
-      this.game.registry.get("locale") === "en" ? "Speed Down!" : "속도 저하!",
-      "#ff4500"
-    );
-
     if (this.hp <= 0) {
       this.triggerGameOver("hp");
     }
