@@ -63,6 +63,22 @@ export const QUIZ_ITEM_HIGH_Y = 200 * S;
 export const QUIZ_ITEM_SPACING_X = 300 * S;
 export const COLOR_QUIZ_WORD = 0x3498db;
 
+// Meteor obstacle (non-quiz)
+export const METEOR_SPAWN_INTERVAL_MIN_MS = 3000;
+export const METEOR_SPAWN_INTERVAL_MAX_MS = 9000;
+export const METEOR_SPEED_MULT = 1.25;
+export const METEOR_DAMAGE_HP = 5000;
+export const METEOR_SIZE = 44 * S;
+export const METEOR_SPAWN_Y_MIN = GAME_HEIGHT * 0.3;
+export const METEOR_SPAWN_Y_MAX = GROUND_Y - GROUND_HEIGHT / 2 - 44 * S;
+
+// Quiz scroll colors (3 colors)
+export const SCROLL_COLORS = [
+  { main: 0x3498db, light: 0x85c1e9, dark: 0x2471a3 },  // blue
+  { main: 0x2ecc71, light: 0x82e0aa, dark: 0x1e8449 },  // green
+  { main: 0x9b59b6, light: 0xc39bd3, dark: 0x76448a },  // purple
+];
+
 // Heart item (field HP pickup)
 export const HEART_ITEM_SIZE = 30 * S;
 export const HEART_SPAWN_INTERVAL_MS = 12000;

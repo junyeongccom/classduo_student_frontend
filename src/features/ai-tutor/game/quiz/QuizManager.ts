@@ -17,6 +17,7 @@ import {
   SCORE_BONUS,
   HP_RESTORE_AMOUNT,
   COLOR_QUIZ_WORD,
+  SCROLL_COLORS,
   FONT_FAMILY,
 } from "../constants";
 
@@ -121,6 +122,7 @@ export class QuizManager {
   private rewardTimers: Phaser.Time.TimerEvent[] = [];
   private previewMarkers: Phaser.GameObjects.GameObject[] = [];
   private itemYPositions: number[] = [];
+  private itemColorIndices: number[] = [];
   private bannerBottomY = 0;
 
   private keywords: KeywordEntry[] = [];
@@ -222,6 +224,9 @@ export class QuizManager {
       () => levels[Phaser.Math.Between(0, levels.length - 1)]
     );
 
+    // Assign shuffled color indices (0, 1, 2)
+    this.itemColorIndices = Phaser.Utils.Array.Shuffle([0, 1, 2]);
+
     this.spawnPreviewMarkers(allWords);
 
     this.scene.time.delayedCall(QUIZ_ANNOUNCE_MS, () => {
@@ -320,8 +325,9 @@ export class QuizManager {
       const y = this.itemYPositions[i];
       const x = startX + i * QUIZ_ITEM_SPACING_X;
       const isCorrect = word === correctAnswer;
+      const colorIndex = this.itemColorIndices[i];
 
-      const item = new QuizItem(this.scene, x, y, word, isCorrect);
+      const item = new QuizItem(this.scene, x, y, word, isCorrect, colorIndex);
       this.quizItems.add(item);
       item.setScrollSpeed(speed);
     });
@@ -868,6 +874,7 @@ export class QuizManager {
 
     words.forEach((word, i) => {
       const cx = startX + cardW / 2 + i * (cardW + gap);
+      const scrollColor = SCROLL_COLORS[this.itemColorIndices[i]];
 
       const container = this.scene.add.container(cx, baseY).setDepth(5);
 
@@ -892,14 +899,14 @@ export class QuizManager {
       bg.arc(hx + cardW - r, hy + r, r, Math.PI * 1.5, 0);
       bg.strokePath();
 
-      // B) Neon glow border (3 layers)
-      bg.lineStyle(6 * S, COLOR_QUIZ_WORD, 0.08);
+      // B) Neon glow border — colored per scroll
+      bg.lineStyle(6 * S, scrollColor.main, 0.08);
       bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
 
-      bg.lineStyle(3 * S, COLOR_QUIZ_WORD, 0.15);
+      bg.lineStyle(3 * S, scrollColor.main, 0.15);
       bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
 
-      bg.lineStyle(1.5 * S, 0x5dade2, 0.4);
+      bg.lineStyle(1.5 * S, scrollColor.light, 0.4);
       bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
 
       container.add(bg);

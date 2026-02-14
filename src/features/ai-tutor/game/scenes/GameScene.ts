@@ -3,6 +3,7 @@ import { Player } from "../entities/Player";
 import { GroundSegment } from "../entities/GroundSegment";
 import { Coin } from "../entities/Coin";
 import { QuizItem } from "../entities/QuizItem";
+import { Meteor } from "../entities/Meteor";
 import { HeartItem } from "../entities/HeartItem";
 import { QuizManager, GameState } from "../quiz/QuizManager";
 import { ScreenFXManager } from "../systems/ScreenFXManager";
@@ -65,6 +66,13 @@ import {
   HEART_RESTORE_AMOUNT,
   HEART_SPAWN_Y,
   HEART_ITEM_SIZE,
+  METEOR_SPAWN_INTERVAL_MIN_MS,
+  METEOR_SPAWN_INTERVAL_MAX_MS,
+  METEOR_SPEED_MULT,
+  METEOR_DAMAGE_HP,
+  METEOR_SIZE,
+  METEOR_SPAWN_Y_MIN,
+  METEOR_SPAWN_Y_MAX,
 } from "../constants";
 
 export class GameScene extends Phaser.Scene {
@@ -73,6 +81,7 @@ export class GameScene extends Phaser.Scene {
   private coins!: Phaser.Physics.Arcade.Group;
   private quizItems!: Phaser.Physics.Arcade.Group;
   private heartItems!: Phaser.Physics.Arcade.Group;
+  private meteors!: Phaser.Physics.Arcade.Group;
 
   private score = 0;
   private baseScrollSpeed = SCROLL_SPEED_INITIAL;
@@ -83,6 +92,8 @@ export class GameScene extends Phaser.Scene {
   private totalCoinsCollected = 0;
   private quizTimer = 0;
   private heartTimer = 0;
+  private meteorTimer = 0;
+  private meteorNextSpawn = 0;
 
   private speedStacks = 0;
   private jumpStacks = 0;
@@ -167,6 +178,8 @@ export class GameScene extends Phaser.Scene {
     this.totalCoinsCollected = 0;
     this.quizTimer = 0;
     this.heartTimer = 0;
+    this.meteorTimer = 0;
+    this.meteorNextSpawn = Phaser.Math.Between(METEOR_SPAWN_INTERVAL_MIN_MS, METEOR_SPAWN_INTERVAL_MAX_MS);
     this.hp = HP_MAX;
     this.hpMax = HP_MAX;
     this.hpDecayStacks = 0;
@@ -193,6 +206,11 @@ export class GameScene extends Phaser.Scene {
       immovable: true,
     });
     this.heartItems = this.physics.add.group({
+      runChildUpdate: true,
+      allowGravity: false,
+      immovable: true,
+    });
+    this.meteors = this.physics.add.group({
       runChildUpdate: true,
       allowGravity: false,
       immovable: true,
@@ -226,6 +244,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.coins, this.onCollectCoin, undefined, this);
     this.physics.add.overlap(this.player, this.quizItems, this.onCollectQuizItem, undefined, this);
     this.physics.add.overlap(this.player, this.heartItems, this.onCollectHeart, undefined, this);
+    this.physics.add.overlap(this.player, this.meteors, this.onHitMeteor, undefined, this);
   }
 
   private setupInput(): void {
@@ -554,6 +573,47 @@ export class GameScene extends Phaser.Scene {
     this.particles.spawnCoinBurst(hx, hy);
   };
 
+  // ── Meteor obstacle ──
+
+  private spawnMeteor(): void {
+    const x = GAME_WIDTH + METEOR_SIZE;
+    const y = Phaser.Math.Between(METEOR_SPAWN_Y_MIN, METEOR_SPAWN_Y_MAX);
+    const meteor = new Meteor(this, x, y);
+    this.meteors.add(meteor);
+    meteor.setScrollSpeed(this.getEffectiveSpeed() * METEOR_SPEED_MULT);
+  }
+
+  private onHitMeteor: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (
+    _player,
+    meteorObj
+  ): void => {
+    const meteor = meteorObj as Meteor;
+    const mx = meteor.x;
+    const my = meteor.y;
+    meteor.destroyWithTrail();
+
+    // HP damage
+    this.hp = Math.max(0, this.hp - METEOR_DAMAGE_HP);
+    this.ui.updateHpGauge(this.hp, this.hpMax);
+
+    // Speed down
+    this.applySpeedDown();
+
+    // Screen effects
+    this.screenFX.shake(SHAKE_WRONG_COLLECT);
+    this.screenFX.flash(FLASH_WRONG);
+    this.particles.spawnDeathExplosion(mx, my);
+
+    this.ui.showEffect(
+      this.game.registry.get("locale") === "en" ? "Speed Down!" : "속도 저하!",
+      "#ff4500"
+    );
+
+    if (this.hp <= 0) {
+      this.triggerGameOver("hp");
+    }
+  };
+
   // ── Buff / Debuff ──
 
   private getEffectiveSpeed(): number {
@@ -648,6 +708,9 @@ export class GameScene extends Phaser.Scene {
     this.heartItems.getChildren().forEach((obj) => {
       (obj as HeartItem).setScrollSpeed(speed);
     });
+    this.meteors.getChildren().forEach((obj) => {
+      (obj as Meteor).setScrollSpeed(speed * METEOR_SPEED_MULT);
+    });
   }
 
   // ── Main update ──
@@ -688,6 +751,13 @@ export class GameScene extends Phaser.Scene {
         if (this.heartTimer >= HEART_SPAWN_INTERVAL_MS) {
           this.heartTimer = 0;
           this.spawnHeartItem();
+        }
+
+        this.meteorTimer += delta;
+        if (this.meteorTimer >= this.meteorNextSpawn) {
+          this.meteorTimer = 0;
+          this.meteorNextSpawn = Phaser.Math.Between(METEOR_SPAWN_INTERVAL_MIN_MS, METEOR_SPAWN_INTERVAL_MAX_MS);
+          this.spawnMeteor();
         }
       }
     }
@@ -760,6 +830,9 @@ export class GameScene extends Phaser.Scene {
     });
     this.heartItems.getChildren().forEach((obj) => {
       (obj as HeartItem).setVelocityX(0);
+    });
+    this.meteors.getChildren().forEach((obj) => {
+      (obj as Meteor).setVelocityX(0);
     });
 
     this.player.clearTrail();
