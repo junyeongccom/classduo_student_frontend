@@ -187,6 +187,6 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private restart(): void {
-    this.scene.start("GameScene");
+    this.scene.start("MainMenuScene");
   }
 }

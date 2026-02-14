@@ -31,7 +31,7 @@ export class BootScene extends Phaser.Scene {
     this.createCoinTexture();
     this.createMeteorTexture();
     this.createMountainTextures();
-    this.scene.start("GameScene");
+    this.scene.start("MainMenuScene");
   }
 
   // ── Sky gradient texture ──

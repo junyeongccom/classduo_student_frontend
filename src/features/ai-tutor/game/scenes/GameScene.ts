@@ -60,7 +60,6 @@ import {
   FLASH_WRONG,
   ZOOM_PUNCH_QUIZ,
   ZOOM_PUNCH_REWARD,
-  FONT_FAMILY,
 } from "../constants";
 
 export class GameScene extends Phaser.Scene {
@@ -93,8 +92,6 @@ export class GameScene extends Phaser.Scene {
   private lastSlideDustTime = 0;
   private lastHpFlashTime = 0;
 
-  private startUI: Phaser.GameObjects.Container | null = null;
-
   // Managers
   private screenFX!: ScreenFXManager;
   private particles!: ParticleManager;
@@ -125,102 +122,29 @@ export class GameScene extends Phaser.Scene {
     this.createQuizManager();
     this.fillInitialGround();
 
-    // Fade in, then show START UI
+    // Begin intro — spin drop from above
     this.cameras.main.fadeIn(400);
-    this.physics.pause();
-    this.createStartUI();
-  }
+    this.gameState = "intro";
+    this.physics.resume();
 
-  private createStartUI(): void {
-    const cx = GAME_WIDTH / 2;
-    const cy = GAME_HEIGHT / 2;
-
-    // Opaque overlay — hides game background completely
-    const overlay = this.add
-      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000, 1)
-      .setOrigin(0.5);
-
-    // START text
-    const startText = this.add
-      .text(0, 0, "START", {
-        fontFamily: FONT_FAMILY,
-        fontSize: `${Math.round(64 * S)}px`,
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 6 * S,
-      })
-      .setOrigin(0.5);
-
-    // Tap hint
-    const hintText = this.add
-      .text(0, 50 * S, "Tap to Start", {
-        fontFamily: FONT_FAMILY,
-        fontSize: `${Math.round(20 * S)}px`,
-        color: "#cccccc",
-      })
-      .setOrigin(0.5);
-
-    const container = this.add.container(cx, cy, [overlay, startText, hintText]);
-    container.setDepth(1000);
-    container.setSize(GAME_WIDTH, GAME_HEIGHT);
-    container.setInteractive();
-
-    // Pulse animation
-    this.tweens.add({
-      targets: startText,
-      scaleX: 1.05,
-      scaleY: 1.05,
-      duration: 600,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
+    // Keep ground still during intro
+    this.grounds.getChildren().forEach((obj) => {
+      (obj as GroundSegment).setScrollSpeed(0);
     });
 
-    container.on("pointerdown", () => {
-      this.startGame();
-    });
+    // Player drops from above with spin
+    this.player.setVisible(true);
+    this.player.setAlpha(1);
+    this.player.startSpin();
 
-    this.startUI = container;
-  }
-
-  private startGame(): void {
-    if (this.gameState !== "waiting_start") return;
-
-    if (this.startUI) {
-      this.tweens.add({
-        targets: this.startUI,
-        alpha: 0,
-        duration: 250,
-        ease: "Power2",
-        onComplete: () => {
-          this.startUI?.destroy();
-          this.startUI = null;
-
-          // Begin intro — spin drop from above
-          this.gameState = "intro";
-          this.physics.resume();
-
-          // Keep ground still during intro
-          this.grounds.getChildren().forEach((obj) => {
-            (obj as GroundSegment).setScrollSpeed(0);
-          });
-
-          // Player drops from above with spin
-          this.player.setVisible(true);
-          this.player.setAlpha(1);
-          this.player.startSpin();
-
-          // On landing: impact effect → brief pause → playing
-          this.player.once("land", () => {
-            this.screenFX.shake({ intensity: 0.006, duration: 150 });
-            this.particles.spawnDustEffect(this.player.x);
-            this.time.delayedCall(400, () => {
-              this.gameState = "playing";
-            });
-          });
-        },
+    // On landing: impact effect → brief pause → playing
+    this.player.once("land", () => {
+      this.screenFX.shake({ intensity: 0.006, duration: 150 });
+      this.particles.spawnDustEffect(this.player.x);
+      this.time.delayedCall(400, () => {
+        this.gameState = "playing";
       });
-    }
+    });
   }
 
   private resetState(): void {
@@ -230,7 +154,7 @@ export class GameScene extends Phaser.Scene {
     this.speedStacks = 0;
     this.jumpStacks = 0;
     this.jumpCountStacks = 0;
-    this.gameState = "waiting_start";
+    this.gameState = "intro";
     this.nextGroundX = 0;
     this.distanceTraveled = 0;
     this.totalCoinsCollected = 0;
@@ -346,10 +270,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleJumpDown = (): void => {
-    if (this.gameState === "waiting_start") {
-      this.startGame();
-      return;
-    }
     if (this.gameState === "game_over" || this.gameState === "intro") return;
     this.player.requestJump(this.time.now);
   };
@@ -359,10 +279,6 @@ export class GameScene extends Phaser.Scene {
   };
 
   private handleDuckDown = (): void => {
-    if (this.gameState === "waiting_start") {
-      this.startGame();
-      return;
-    }
     if (this.gameState === "game_over" || this.gameState === "intro") return;
     this.player.startDuck();
   };
@@ -695,8 +611,7 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     if (
       this.gameState === "game_over" ||
-      this.gameState === "choosing_reward" ||
-      this.gameState === "waiting_start"
+      this.gameState === "choosing_reward"
     )
       return;
 
