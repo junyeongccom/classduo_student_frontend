@@ -1190,7 +1190,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         {/* 중앙 컨텐츠 */}
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 max-w-full">
           {/* 중앙 입력창 */}
-          <div className="w-full max-w-[772px] mx-auto">
+          <div className="w-full max-w-[772px] 2xl:max-w-[960px] mx-auto">
             {cardMatchState === 'completed' && showSuccess && (
               <div className={`mb-6 -mt-3 flex items-center justify-center text-3xl font-bold text-gray-900 transition-opacity duration-500 ${successFading ? 'opacity-0' : 'opacity-100'}`}>
                 SUCCESS
@@ -1258,7 +1258,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
           {/* 입력창 포커스 시 나타나는 제안 질문 목록 (단일 선택 시에만 표시) */}
           {showSuggestions && (
-          <div className="mt-6 w-full max-w-[772px] space-y-2 animate-fade-in-up">
+          <div className="mt-6 w-full max-w-[772px] 2xl:max-w-[960px] space-y-2 animate-fade-in-up">
               {/* 후킹 질문 (1개) */}
               {hookingQuestions.length > 0 && (
                 <>
@@ -1514,7 +1514,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         className="border-t border-gray-200 px-4 pt-3 pb-0"
         style={{ transform: 'translateY(10px)' }}
       >
-        <div className="mx-auto max-w-[772px]">
+        <div className="mx-auto max-w-[772px] 2xl:max-w-[960px]">
           <ChatComposer
             value={input}
             onChange={setInput}

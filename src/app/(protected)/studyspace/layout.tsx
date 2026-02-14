@@ -55,16 +55,16 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     const handleMouseMove = (e: MouseEvent) => {
       // 레이아웃 상수
       const LEFT_MENU_WIDTH = 88      // 좌측 메뉴
-      const LECTURE_SIDEBAR_WIDTH = 320 // 수업선택바
       const MIN_CHAT_WIDTH = 280      // 채팅창 최소 너비
       const MIN_NOTES_WIDTH = 300     // 노트 패널 최소 너비
       const MIN_MATERIALS_WIDTH = 340 // 머티리얼 패널 최소 너비
-      
+
       const desiredMaterialsWidth = window.innerWidth - e.clientX
-      const totalFixedWidth = LEFT_MENU_WIDTH + LECTURE_SIDEBAR_WIDTH
+      // 패널이 열려있으면 강의 사이드바(320px)가 숨겨지므로 좌측 메뉴만 고정폭
+      const totalFixedWidth = LEFT_MENU_WIDTH
       
       if (isNotesPanelOpen) {
-        // 전체 가용 공간 = 화면 - 좌측메뉴 - 수업선택바
+        // 전체 가용 공간 = 화면 - 좌측메뉴 (사이드바는 패널 열릴 때 숨겨짐)
         const availableSpace = window.innerWidth - totalFixedWidth
         // 현재 채팅창 너비
         const currentChatWidth = availableSpace - notesPanelWidth - materialsPanelWidth
