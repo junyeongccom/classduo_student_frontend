@@ -133,6 +133,7 @@ export class QuizManager {
   private wrongCount = 0;
   private skippedCount = 0;
 
+  private currentCorrectAnswer = "";
   private pendingRewardTypes: ChoiceType[] = [];
   private pendingRewardCorrect = false;
   private rewardKeyHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -161,6 +162,7 @@ export class QuizManager {
     const question = this.pickQuestion();
     if (!question) return;
 
+    this.currentCorrectAnswer = question.correctAnswer;
     this.callbacks.setGameState("quiz_announce");
     this.callbacks.onQuizAnnounce?.();
 
@@ -309,7 +311,7 @@ export class QuizManager {
   private handleTimeout(): void {
     this.skippedCount++;
     this.clearQuizItems();
-    this.showResult(this.t.timeout, "#e67e22");
+    this.showResult(this.t.timeout, "#e67e22", undefined, this.currentCorrectAnswer);
   }
 
   // ---- Result display ----
@@ -317,13 +319,14 @@ export class QuizManager {
   private showResult(
     text: string,
     color: string,
-    onComplete?: () => void
+    onComplete?: () => void,
+    correctAnswer?: string
   ): void {
     this.clearBanner();
 
     this.callbacks.setGameState("quiz_result");
 
-    this.resultContainer = this.createResultPopup(text, color);
+    this.resultContainer = this.createResultPopup(text, color, correctAnswer);
 
     this.scene.time.delayedCall(QUIZ_RESULT_MS, () => {
       this.clearResult();
@@ -631,7 +634,8 @@ export class QuizManager {
         break;
     }
 
-    this.showResult(effectLabel, color);
+    const answer = isCorrect ? undefined : this.currentCorrectAnswer;
+    this.showResult(effectLabel, color, undefined, answer);
   }
 
   // ---- Banner UI ----
@@ -730,7 +734,7 @@ export class QuizManager {
     return container;
   }
 
-  private createResultPopup(label: string, color: string): Phaser.GameObjects.Container {
+  private createResultPopup(label: string, color: string, correctAnswer?: string): Phaser.GameObjects.Container {
     const colorNum = parseInt(color.replace("#", ""), 16);
 
     const text = this.scene.add
@@ -744,6 +748,8 @@ export class QuizManager {
       .setOrigin(0.5)
       .setAlpha(0.7);
 
+    const children: Phaser.GameObjects.GameObject[] = [];
+
     // Glow pulse — radial gradient circle behind text
     const glowR = Math.max(text.width, text.height) * 0.8;
     const glow = this.scene.add.graphics();
@@ -756,8 +762,28 @@ export class QuizManager {
     glow.fillCircle(0, 0, glowR * 0.3);
     glow.setAlpha(0);
 
+    children.push(glow, text);
+
+    // Show correct answer below the effect text when wrong
+    if (correctAnswer) {
+      const answerLabel = this.locale === "en"
+        ? `Answer: ${correctAnswer}`
+        : `정답: ${correctAnswer}`;
+      const answerText = this.scene.add
+        .text(0, 24 * S, answerLabel, {
+          fontFamily: FONT_FAMILY,
+          fontSize: `${18 * S}px`,
+          color: "#ffffff",
+          fontStyle: "bold",
+          shadow: { offsetX: 0, offsetY: 0, color: color, blur: 8 * S, stroke: true, fill: true },
+        })
+        .setOrigin(0.5)
+        .setAlpha(0.7);
+      children.push(answerText);
+    }
+
     const container = this.scene.add
-      .container(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40 * S, [glow, text])
+      .container(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40 * S, children)
       .setDepth(10)
       .setScale(1.4)
       .setAlpha(0);
