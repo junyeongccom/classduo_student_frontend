@@ -9,6 +9,7 @@ import {
   GROUND_HEIGHT,
   COIN_SIZE,
   QUIZ_ITEM_SIZE,
+  HEART_ITEM_SIZE,
   COLOR_GROUND_TOP,
   COLOR_COIN,
   COLOR_MOUNTAIN_FAR,
@@ -31,6 +32,7 @@ export class BootScene extends Phaser.Scene {
     this.createCoinTexture();
     this.createMeteorTexture();
     this.createMountainTextures();
+    this.createHeartTexture();
     this.scene.start("MainMenuScene");
   }
 
@@ -615,6 +617,75 @@ export class BootScene extends Phaser.Scene {
     g.fillCircle(size / 2, size / 2, size / 5);
 
     g.generateTexture("meteor", size, size);
+    g.destroy();
+  }
+
+  private createHeartTexture(): void {
+    const size = HEART_ITEM_SIZE;
+    const g = this.add.graphics();
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = size * 0.22;
+
+    // Red heart (two circles + triangle)
+    g.fillStyle(0xe74c3c);
+    g.fillCircle(cx - r * 0.7, cy - r * 0.3, r);
+    g.fillCircle(cx + r * 0.7, cy - r * 0.3, r);
+    g.beginPath();
+    g.moveTo(cx - r * 1.65, cy);
+    g.lineTo(cx, cy + r * 1.8);
+    g.lineTo(cx + r * 1.65, cy);
+    g.closePath();
+    g.fillPath();
+
+    // Highlight on left lobe
+    g.fillStyle(0xf1948a, 0.6);
+    g.fillCircle(cx - r * 0.9, cy - r * 0.5, r * 0.4);
+
+    // Dark outline
+    g.lineStyle(1.5 * S, 0x922b21);
+    g.strokeCircle(cx - r * 0.7, cy - r * 0.3, r);
+    g.strokeCircle(cx + r * 0.7, cy - r * 0.3, r);
+
+    // Wings (white arcs on each side)
+    const wingY = cy - r * 0.1;
+    const wingSpread = r * 1.8;
+    const wingH = r * 1.2;
+
+    // Left wing
+    g.fillStyle(0xffffff, 0.85);
+    g.beginPath();
+    g.moveTo(cx - r * 0.8, wingY);
+    g.lineTo(cx - r * 0.8 - wingSpread, wingY - wingH * 0.5);
+    g.lineTo(cx - r * 0.8 - wingSpread * 0.7, wingY + wingH * 0.3);
+    g.closePath();
+    g.fillPath();
+
+    // Right wing
+    g.beginPath();
+    g.moveTo(cx + r * 0.8, wingY);
+    g.lineTo(cx + r * 0.8 + wingSpread, wingY - wingH * 0.5);
+    g.lineTo(cx + r * 0.8 + wingSpread * 0.7, wingY + wingH * 0.3);
+    g.closePath();
+    g.fillPath();
+
+    // Wing outlines
+    g.lineStyle(1 * S, 0xcccccc, 0.6);
+    g.beginPath();
+    g.moveTo(cx - r * 0.8, wingY);
+    g.lineTo(cx - r * 0.8 - wingSpread, wingY - wingH * 0.5);
+    g.lineTo(cx - r * 0.8 - wingSpread * 0.7, wingY + wingH * 0.3);
+    g.closePath();
+    g.strokePath();
+
+    g.beginPath();
+    g.moveTo(cx + r * 0.8, wingY);
+    g.lineTo(cx + r * 0.8 + wingSpread, wingY - wingH * 0.5);
+    g.lineTo(cx + r * 0.8 + wingSpread * 0.7, wingY + wingH * 0.3);
+    g.closePath();
+    g.strokePath();
+
+    g.generateTexture("heart_item", size, size);
     g.destroy();
   }
 }

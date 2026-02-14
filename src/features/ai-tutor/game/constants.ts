@@ -63,6 +63,14 @@ export const QUIZ_ITEM_HIGH_Y = 200 * S;
 export const QUIZ_ITEM_SPACING_X = 300 * S;
 export const COLOR_QUIZ_WORD = 0x3498db;
 
+// Heart item (field HP pickup)
+export const HEART_ITEM_SIZE = 30 * S;
+export const HEART_SPAWN_INTERVAL_MS = 12000;
+export const HEART_RESTORE_AMOUNT = 4000;
+export const HEART_WAVE_AMPLITUDE = 40 * S;
+export const HEART_WAVE_SPEED = 0.004;
+export const HEART_SPAWN_Y = GAME_HEIGHT * 0.45;
+
 // Buff / Debuff (stack-based: multiplier = base ^ stacks)
 export const SPEED_STACK_BASE = 1.15;
 export const JUMP_STACK_BASE = 1.15;

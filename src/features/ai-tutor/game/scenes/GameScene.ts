@@ -3,6 +3,7 @@ import { Player } from "../entities/Player";
 import { GroundSegment } from "../entities/GroundSegment";
 import { Coin } from "../entities/Coin";
 import { QuizItem } from "../entities/QuizItem";
+import { HeartItem } from "../entities/HeartItem";
 import { QuizManager, GameState } from "../quiz/QuizManager";
 import { ScreenFXManager } from "../systems/ScreenFXManager";
 import { ParticleManager } from "../systems/ParticleManager";
@@ -60,6 +61,10 @@ import {
   FLASH_WRONG,
   ZOOM_PUNCH_QUIZ,
   ZOOM_PUNCH_REWARD,
+  HEART_SPAWN_INTERVAL_MS,
+  HEART_RESTORE_AMOUNT,
+  HEART_SPAWN_Y,
+  HEART_ITEM_SIZE,
 } from "../constants";
 
 export class GameScene extends Phaser.Scene {
@@ -67,6 +72,7 @@ export class GameScene extends Phaser.Scene {
   private grounds!: Phaser.Physics.Arcade.Group;
   private coins!: Phaser.Physics.Arcade.Group;
   private quizItems!: Phaser.Physics.Arcade.Group;
+  private heartItems!: Phaser.Physics.Arcade.Group;
 
   private score = 0;
   private baseScrollSpeed = SCROLL_SPEED_INITIAL;
@@ -76,6 +82,7 @@ export class GameScene extends Phaser.Scene {
   private distanceTraveled = 0;
   private totalCoinsCollected = 0;
   private quizTimer = 0;
+  private heartTimer = 0;
 
   private speedStacks = 0;
   private jumpStacks = 0;
@@ -159,6 +166,7 @@ export class GameScene extends Phaser.Scene {
     this.distanceTraveled = 0;
     this.totalCoinsCollected = 0;
     this.quizTimer = 0;
+    this.heartTimer = 0;
     this.hp = HP_MAX;
     this.hpMax = HP_MAX;
     this.hpDecayStacks = 0;
@@ -180,6 +188,11 @@ export class GameScene extends Phaser.Scene {
       immovable: true,
     });
     this.quizItems = this.physics.add.group({
+      runChildUpdate: true,
+      allowGravity: false,
+      immovable: true,
+    });
+    this.heartItems = this.physics.add.group({
       runChildUpdate: true,
       allowGravity: false,
       immovable: true,
@@ -212,6 +225,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.grounds);
     this.physics.add.overlap(this.player, this.coins, this.onCollectCoin, undefined, this);
     this.physics.add.overlap(this.player, this.quizItems, this.onCollectQuizItem, undefined, this);
+    this.physics.add.overlap(this.player, this.heartItems, this.onCollectHeart, undefined, this);
   }
 
   private setupInput(): void {
@@ -513,6 +527,33 @@ export class GameScene extends Phaser.Scene {
     this.quizManager.handleCollection(item);
   };
 
+  // ── Heart item spawn & collection ──
+
+  private spawnHeartItem(): void {
+    const x = GAME_WIDTH + HEART_ITEM_SIZE;
+    const yMin = HEART_SPAWN_Y;
+    const yMax = GROUND_Y - GROUND_HEIGHT / 2 - HEART_ITEM_SIZE;
+    const y = Phaser.Math.Between(yMin, yMax);
+    const heart = new HeartItem(this, x, y);
+    this.heartItems.add(heart);
+    heart.setScrollSpeed(this.getEffectiveSpeed());
+  }
+
+  private onCollectHeart: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (
+    _player,
+    heartObj
+  ): void => {
+    const heart = heartObj as HeartItem;
+    const hx = heart.x;
+    const hy = heart.y;
+    heart.destroy();
+
+    this.hp = Math.min(this.hp + HEART_RESTORE_AMOUNT, this.hpMax);
+    this.ui.updateHpGauge(this.hp, this.hpMax);
+
+    this.particles.spawnCoinBurst(hx, hy);
+  };
+
   // ── Buff / Debuff ──
 
   private getEffectiveSpeed(): number {
@@ -604,6 +645,9 @@ export class GameScene extends Phaser.Scene {
     this.quizItems.getChildren().forEach((obj) => {
       (obj as QuizItem).setScrollSpeed(speed);
     });
+    this.heartItems.getChildren().forEach((obj) => {
+      (obj as HeartItem).setScrollSpeed(speed);
+    });
   }
 
   // ── Main update ──
@@ -638,6 +682,12 @@ export class GameScene extends Phaser.Scene {
         if (this.quizTimer >= QUIZ_INTERVAL_MS) {
           this.quizTimer = 0;
           this.quizManager.startQuiz();
+        }
+
+        this.heartTimer += delta;
+        if (this.heartTimer >= HEART_SPAWN_INTERVAL_MS) {
+          this.heartTimer = 0;
+          this.spawnHeartItem();
         }
       }
     }
@@ -707,6 +757,9 @@ export class GameScene extends Phaser.Scene {
     });
     this.coins.getChildren().forEach((obj) => {
       (obj as Coin).setVelocityX(0);
+    });
+    this.heartItems.getChildren().forEach((obj) => {
+      (obj as HeartItem).setVelocityX(0);
     });
 
     this.player.clearTrail();
