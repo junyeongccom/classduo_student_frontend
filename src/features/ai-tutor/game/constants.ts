@@ -56,7 +56,7 @@ export const QUIZ_INTERVAL_MS = 8000;
 export const QUIZ_ANNOUNCE_MS = 4500;
 export const QUIZ_WINDOW_MS = 5000;
 export const QUIZ_RESULT_MS = 1000;
-export const QUIZ_ITEM_SIZE = 44 * S;
+export const QUIZ_ITEM_SIZE = 38 * S;
 export const QUIZ_WORD_WIDTH = 90 * S;
 export const QUIZ_WORD_HEIGHT = 40 * S;
 export const QUIZ_ITEM_HIGH_Y = 200 * S;
@@ -80,7 +80,7 @@ export const SCROLL_COLORS = [
 ];
 
 // Heart item (field HP pickup)
-export const HEART_ITEM_SIZE = 30 * S;
+export const HEART_ITEM_SIZE = 38 * S;
 export const HEART_SPAWN_INTERVAL_MS = 12000;
 export const HEART_RESTORE_AMOUNT = 4000;
 export const HEART_WAVE_AMPLITUDE = 40 * S;
