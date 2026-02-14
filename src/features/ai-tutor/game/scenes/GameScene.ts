@@ -390,9 +390,18 @@ export class GameScene extends Phaser.Scene {
     seg.setScrollSpeed(this.getEffectiveSpeed());
   }
 
+  private isQuizPhase(): boolean {
+    return (
+      this.gameState === "quiz_announce" ||
+      this.gameState === "quiz_active" ||
+      this.gameState === "quiz_result" ||
+      this.gameState === "choosing_reward"
+    );
+  }
+
   private spawnNewGround(): void {
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH * 2) {
-      if (this.distanceTraveled > 800 && Math.random() < GAP_PROBABILITY) {
+      if (this.distanceTraveled > 800 && !this.isQuizPhase() && Math.random() < GAP_PROBABILITY) {
         const gapWidth = Phaser.Math.Between(GAP_WIDTH_MIN, GAP_WIDTH_MAX);
         this.spawnArcCoins(this.nextGroundX, gapWidth);
         this.nextGroundX += gapWidth;
