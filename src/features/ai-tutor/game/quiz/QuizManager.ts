@@ -1,7 +1,6 @@
 import * as Phaser from "phaser";
 import { QuizItem } from "../entities/QuizItem";
 import { QuizQuestion, ChoiceType } from "./quizTypes";
-import { QUIZ_QUESTIONS } from "./quizData";
 import {
   S,
   GAME_WIDTH,
@@ -117,7 +116,6 @@ export class QuizManager {
   private quizItems: Phaser.Physics.Arcade.Group;
   private bannerContainer: Phaser.GameObjects.Container | null = null;
   private resultContainer: Phaser.GameObjects.Container | null = null;
-  private usedQuestions: Set<number> = new Set();
   private timeoutTimer: Phaser.Time.TimerEvent | null = null;
   private rewardUI: Phaser.GameObjects.GameObject[] = [];
   private rewardTimers: Phaser.Time.TimerEvent[] = [];
@@ -240,24 +238,10 @@ export class QuizManager {
   // ---- Quiz question ----
 
   private pickQuestion(): QuizQuestion | null {
-    // 실제 키워드 데이터가 있으면 사용
-    if (this.keywords.length >= 3) {
-      return this.pickFromKeywords();
+    if (this.keywords.length < 3) {
+      return null;
     }
-
-    // 폴백: 목 데이터
-    if (this.usedQuestions.size >= QUIZ_QUESTIONS.length) {
-      this.usedQuestions.clear();
-    }
-
-    const available = QUIZ_QUESTIONS.filter(
-      (_, i) => !this.usedQuestions.has(i)
-    );
-    const idx = Phaser.Math.Between(0, available.length - 1);
-    const originalIdx = QUIZ_QUESTIONS.indexOf(available[idx]);
-    this.usedQuestions.add(originalIdx);
-
-    return available[idx];
+    return this.pickFromKeywords();
   }
 
   private pickFromKeywords(): QuizQuestion {
