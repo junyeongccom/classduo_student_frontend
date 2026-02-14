@@ -224,8 +224,8 @@ export class QuizManager {
       () => levels[Phaser.Math.Between(0, levels.length - 1)]
     );
 
-    // Assign shuffled color indices (0, 1, 2)
-    this.itemColorIndices = Phaser.Utils.Array.Shuffle([0, 1, 2]);
+    // Fixed color order: pink(0), purple(2), blue(1)
+    this.itemColorIndices = [0, 2, 1];
 
     this.spawnPreviewMarkers(allWords);
 
@@ -719,17 +719,14 @@ export class QuizManager {
     bg.arc(hx + boxW - r, hy + r, r, Math.PI * 1.5, 0);
     bg.strokePath();
 
-    // B) Neon glow border (3 layers)
-    // Outer glow (wide & transparent)
-    bg.lineStyle(6 * S, COLOR_QUIZ_WORD, 0.08);
+    // B) White glow border (3 layers)
+    bg.lineStyle(6 * S, 0xffffff, 0.06);
     bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
 
-    // Middle glow
-    bg.lineStyle(3 * S, COLOR_QUIZ_WORD, 0.15);
+    bg.lineStyle(3 * S, 0xffffff, 0.15);
     bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
 
-    // Inner sharp border
-    bg.lineStyle(1.5 * S, 0x5dade2, 0.4);
+    bg.lineStyle(1.5 * S, 0xffffff, 0.35);
     bg.strokeRoundedRect(hx, hy, boxW, boxH, r);
 
     const bannerY = 36 * S;
@@ -899,14 +896,14 @@ export class QuizManager {
       bg.arc(hx + cardW - r, hy + r, r, Math.PI * 1.5, 0);
       bg.strokePath();
 
-      // B) Neon glow border — colored per scroll
-      bg.lineStyle(6 * S, scrollColor.main, 0.08);
+      // B) Glow border — colored per scroll (darker tone)
+      bg.lineStyle(6 * S, scrollColor.dark, 0.12);
       bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
 
-      bg.lineStyle(3 * S, scrollColor.main, 0.15);
+      bg.lineStyle(3 * S, scrollColor.dark, 0.25);
       bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
 
-      bg.lineStyle(1.5 * S, scrollColor.light, 0.4);
+      bg.lineStyle(1.5 * S, scrollColor.main, 0.5);
       bg.strokeRoundedRect(hx, hy, cardW, cardH, r);
 
       container.add(bg);
