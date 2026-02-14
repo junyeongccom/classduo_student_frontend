@@ -28,6 +28,12 @@ export class BootScene extends Phaser.Scene {
     super({ key: "BootScene" });
   }
 
+  preload(): void {
+    for (let i = 0; i < SCROLL_COLORS.length; i++) {
+      this.load.image(`scroll_${i}`, `/game/scroll_${i}.png`);
+    }
+  }
+
   create(): void {
     this.createSkyTexture();
     this.createPlayerTexture();
@@ -36,7 +42,6 @@ export class BootScene extends Phaser.Scene {
     this.createMeteorTexture();
     this.createMountainTextures();
     this.createHeartTexture();
-    this.createScrollTextures();
     this.scene.start("MainMenuScene");
   }
 
@@ -723,148 +728,4 @@ export class BootScene extends Phaser.Scene {
     g.destroy();
   }
 
-  private createScrollTextures(): void {
-    const size = QUIZ_ITEM_SIZE;
-
-    for (let i = 0; i < SCROLL_COLORS.length; i++) {
-      const colors = SCROLL_COLORS[i];
-      const g = this.add.graphics();
-      const cx = size / 2;
-      const cy = size / 2;
-
-      // Outer glow
-      g.fillStyle(colors.main, 0.12);
-      g.fillCircle(cx, cy, size * 0.48);
-
-      // ── S-shaped scroll icon ──
-      //   ○───────╮      ← top curl (circle) + rounded top-right
-      //   │       │
-      //   │       │      ← parchment body
-      //   │       │
-      // ╭─┘       └─╮
-      // │            │   ← bottom roll (wider, rounded bottom)
-      // ╰────────────╯
-
-      const bodyW = size * 0.5;
-      const bodyH = size * 0.5;
-      const bodyX = cx - bodyW / 2;
-      const bodyY = cy - bodyH / 2 - 2 * S;
-      const cornerR = 3 * S;
-
-      // Top-left curl
-      const curlR = 4 * S;
-      const curlCx = bodyX + curlR;
-      const curlCy = bodyY;
-
-      // Bottom roll (wider than body)
-      const rollExtra = 3 * S;
-      const rollH = 8 * S;
-      const rollX = bodyX - rollExtra;
-      const rollY = bodyY + bodyH;
-      const rollW = bodyW + rollExtra * 2;
-      const rollBR = rollH / 2;
-
-      // ── Fills (back → front) ──
-
-      // Drop shadow
-      g.fillStyle(0x000000, 0.06);
-      g.fillRect(bodyX + 1 * S, bodyY + 1 * S, bodyW, bodyH);
-      g.fillRoundedRect(rollX + 1 * S, rollY + 1 * S, rollW, rollH, {
-        tl: 0, tr: 0, bl: rollBR, br: rollBR,
-      });
-
-      // Bottom roll fill
-      g.fillStyle(0xecd8a8);
-      g.fillRoundedRect(rollX, rollY, rollW, rollH, {
-        tl: 0, tr: 0, bl: rollBR, br: rollBR,
-      });
-
-      // Parchment body fill
-      g.fillStyle(0xf5e6c8);
-      g.fillRoundedRect(bodyX, bodyY, bodyW, bodyH, {
-        tl: 0, tr: cornerR, bl: 0, br: 0,
-      });
-
-      // Top curl fill
-      g.fillStyle(0xecd8a8);
-      g.fillCircle(curlCx, curlCy, curlR);
-
-      // ── Shading ──
-
-      // Curl inner shadow
-      g.fillStyle(0xc4a86c, 0.3);
-      g.fillCircle(curlCx + 0.5 * S, curlCy + 1 * S, curlR * 0.5);
-      // Curl highlight
-      g.fillStyle(0xfff8e7, 0.5);
-      g.fillCircle(curlCx - 1 * S, curlCy - curlR * 0.3, curlR * 0.3);
-
-      // Body center highlight
-      g.fillStyle(0xfff8e7, 0.2);
-      g.fillRect(cx - bodyW * 0.08, bodyY + curlR, bodyW * 0.16, bodyH - curlR);
-      // Body edge shadow
-      g.fillStyle(0xdcc8a0, 0.2);
-      g.fillRect(bodyX, bodyY + curlR, 2 * S, bodyH - curlR);
-      g.fillRect(bodyX + bodyW - 2 * S, bodyY, 2 * S, bodyH);
-
-      // Roll top shadow line
-      g.fillStyle(0xc4a86c, 0.2);
-      g.fillRect(rollX + 2 * S, rollY, rollW - 4 * S, 2 * S);
-      // Roll center highlight
-      g.fillStyle(0xfff8e7, 0.3);
-      g.fillRoundedRect(
-        rollX + 3 * S, rollY + rollH * 0.35,
-        rollW - 6 * S, rollH * 0.2, 1 * S,
-      );
-
-      // ── Wax seal ──
-      const sealR = 5 * S;
-      const sealX = cx + bodyW * 0.15;
-      const sealY = cy + 3 * S;
-
-      // String
-      g.lineStyle(1 * S, 0x5a4530, 0.5);
-      g.lineBetween(sealX - 2 * S, sealY - sealR - 3 * S, sealX, sealY - sealR);
-      g.lineBetween(sealX + 3 * S, sealY - sealR - 4 * S, sealX, sealY - sealR);
-
-      // Seal
-      g.fillStyle(colors.main);
-      g.fillCircle(sealX, sealY, sealR);
-      g.fillStyle(colors.light, 0.5);
-      g.fillCircle(sealX - sealR * 0.25, sealY - sealR * 0.25, sealR * 0.4);
-      g.lineStyle(1.5 * S, colors.dark);
-      g.strokeCircle(sealX, sealY, sealR);
-
-      // ── Outlines ──
-      g.lineStyle(1.5 * S, 0xc4a86c);
-
-      // Curl circle outline
-      g.strokeCircle(curlCx, curlCy, curlR);
-
-      // Top edge (curl right → top-right corner)
-      g.lineBetween(curlCx + curlR, bodyY, bodyX + bodyW - cornerR, bodyY);
-
-      // Top-right rounded corner
-      g.beginPath();
-      g.arc(bodyX + bodyW - cornerR, bodyY + cornerR, cornerR, -Math.PI / 2, 0, false);
-      g.strokePath();
-
-      // Right edge
-      g.lineBetween(bodyX + bodyW, bodyY + cornerR, bodyX + bodyW, rollY);
-
-      // Left edge (from curl tangent point down)
-      g.lineBetween(bodyX, curlCy, bodyX, rollY);
-
-      // Bottom roll outline
-      g.strokeRoundedRect(rollX, rollY, rollW, rollH, {
-        tl: 0, tr: 0, bl: rollBR, br: rollBR,
-      });
-
-      // Outer glow ring
-      g.lineStyle(2 * S, colors.main, 0.25);
-      g.strokeCircle(cx, cy, size * 0.42);
-
-      g.generateTexture(`scroll_${i}`, size, size);
-      g.destroy();
-    }
-  }
 }

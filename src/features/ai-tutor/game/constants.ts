@@ -74,9 +74,9 @@ export const METEOR_SPAWN_Y_MAX = GROUND_Y - GROUND_HEIGHT / 2 - 44 * S;
 
 // Quiz scroll colors (3 colors)
 export const SCROLL_COLORS = [
-  { main: 0x3498db, light: 0x85c1e9, dark: 0x2471a3 },  // blue
-  { main: 0x2ecc71, light: 0x82e0aa, dark: 0x1e8449 },  // green
-  { main: 0x9b59b6, light: 0xc39bd3, dark: 0x76448a },  // purple
+  { main: 0xd4887c, light: 0xe8b0a0, dark: 0xb46860 },  // pink
+  { main: 0x7ca8c8, light: 0xa8c8dc, dark: 0x5c88a8 },  // blue
+  { main: 0x9b80b8, light: 0xbfa0d0, dark: 0x7b6098 },  // purple
 ];
 
 // Heart item (field HP pickup)
