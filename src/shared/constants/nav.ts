@@ -44,6 +44,18 @@ export const SIDEBAR_MENU = [
 ] as const
 
 /**
+ * 새 UI 사이드바 메뉴 (홈 + 마이페이지만)
+ */
+export const NEW_SIDEBAR_MENU = [
+  {
+    id: 'home',
+    labelKey: 'nav.home',
+    icon: Home,
+    href: '/studyspace/home',
+  },
+] as const
+
+/**
  * 프로필 메뉴 (사이드바 하단)
  */
 export const PROFILE_MENU = {

@@ -6,12 +6,13 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
-import { SIDEBAR_MENU, PROFILE_MENU } from '@/shared/constants/nav'
+import { SIDEBAR_MENU, NEW_SIDEBAR_MENU, PROFILE_MENU } from '@/shared/constants/nav'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
   AI_TUTOR_NEW_CHAT_FLAG,
   AI_TUTOR_NEW_CHAT_PARAM,
 } from '@/shared/constants/aiTutor'
+import { useNewStudyspace } from '@/shared/lib/featureFlags'
 
 export function Sidebar() {
   const t = useTranslations()
@@ -32,9 +33,13 @@ export function Sidebar() {
   const toggleMenu = useCallback(() => {
     setIsMenuOpen((prev) => !prev)
   }, [])
+  const isNewUI = useNewStudyspace()
   const menuItems = useMemo(() => {
+    if (isNewUI) {
+      return [...NEW_SIDEBAR_MENU]
+    }
     return SIDEBAR_MENU.filter(item => item.id !== 'home' && item.id !== 'repeat')
-  }, [])
+  }, [isNewUI])
 
   useEffect(() => {
     document.documentElement.style.setProperty('--sidebar-width', '0px')

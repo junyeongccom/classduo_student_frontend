@@ -9,6 +9,18 @@ import {
 } from '@/shared/components/layouts/studyspace'
 import { PanelRightOpen, X } from 'lucide-react'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
+import { useNewStudyspace } from '@/shared/lib/featureFlags'
+
+function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-screen bg-gray-50 text-gray-900">
+      <Sidebar />
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden pl-[88px]">
+        {children}
+      </main>
+    </div>
+  )
+}
 
 function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const { rightbar, overlay } = useStudyspaceLayoutSlots()
@@ -227,6 +239,16 @@ export default function StudyspaceLayout({
 }: {
   children: React.ReactNode
 }) {
+  const isNewUI = useNewStudyspace()
+
+  if (isNewUI) {
+    return (
+      <StudyspaceLayoutProvider>
+        <NewStudyspaceLayoutShell>{children}</NewStudyspaceLayoutShell>
+      </StudyspaceLayoutProvider>
+    )
+  }
+
   return (
     <StudyspaceLayoutProvider>
       <StudyspaceLayoutShell>{children}</StudyspaceLayoutShell>
