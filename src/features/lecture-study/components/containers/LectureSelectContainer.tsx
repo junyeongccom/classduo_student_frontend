@@ -1,6 +1,6 @@
 /**
  * @file LectureSelectContainer.tsx
- * @description 과목 내부 탭 + 회차 선택 컨테이너
+ * @description 과목 내부 탭 + 회차 선택 컨테이너 — 리디자인된 탭바 + 배경 구분
  * @module features/lecture-study/components/containers
  * @dependencies useLectures, Breadcrumb, LectureCard, Tabs, MaterialStudyContainer
  */
@@ -56,53 +56,68 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-5xl px-6 py-6">
+      <div className="mx-auto max-w-6xl px-6 py-6">
         <Breadcrumb items={breadcrumbItems} />
 
         <Tabs
           value={activeTab}
-          onValueChange={v => setActiveTab(v as CourseTab)}
+          onValueChange={(v) => setActiveTab(v as CourseTab)}
           className="mt-4"
         >
-          <TabsList>
-            <TabsTrigger value="lecture">
-              {t('lectureStudy.tabLecture')}
-            </TabsTrigger>
-            <TabsTrigger value="material">
-              {t('lectureStudy.tabMaterial')}
-            </TabsTrigger>
-          </TabsList>
+          <div className="sticky top-0 z-10 bg-gray-50 pb-2">
+            <TabsList className="inline-flex h-11 items-center gap-1 rounded-xl bg-gray-100/80 p-1">
+              <TabsTrigger
+                value="lecture"
+                className="rounded-lg px-5 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                {t('lectureStudy.tabLecture')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="material"
+                className="rounded-lg px-5 py-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                {t('lectureStudy.tabMaterial')}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="lecture" className="mt-6">
-            {lectures.length === 0 ? (
-              <div className="flex items-center justify-center py-20 text-sm text-gray-400">
-                {t('lectureStudy.lectureSelect.empty')}
-              </div>
-            ) : (
-              <>
-                {lectures.length > 0 && lectures.every(l => !l.has_content) && (
-                  <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
-                    {t('lectureStudy.lectureSelect.allInactive')}
-                  </div>
-                )}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {lectures.map((lecture, index) => (
-                    <LectureCard
-                      key={lecture.id}
-                      lecture={lecture}
-                      isLatest={index === 0}
-                      onClick={() =>
-                        router.push(`/studyspace/course/${courseId}/lecture/${lecture.id}`)
-                      }
-                    />
-                  ))}
+          <TabsContent value="lecture" className="mt-4">
+            <div className="rounded-2xl bg-gray-50/80 p-6">
+              {lectures.length === 0 ? (
+                <div className="flex items-center justify-center py-20 text-sm text-gray-400">
+                  {t('lectureStudy.lectureSelect.empty')}
                 </div>
-              </>
-            )}
+              ) : (
+                <>
+                  {lectures.every((l) => !l.has_content) && (
+                    <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                      {t('lectureStudy.lectureSelect.allInactive')}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {lectures.map((lecture, index) => (
+                      <LectureCard
+                        key={lecture.id}
+                        lecture={lecture}
+                        isLatest={index === 0}
+                        courseId={courseId}
+                        onClick={() =>
+                          router.push(
+                            `/studyspace/course/${courseId}/lecture/${lecture.id}`,
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </TabsContent>
 
-          <TabsContent value="material" className="mt-6">
-            <MaterialStudyContainer courseId={courseId} />
+          <TabsContent value="material" className="mt-4">
+            <div className="rounded-2xl bg-gray-50/80 p-6">
+              <MaterialStudyContainer courseId={courseId} />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
