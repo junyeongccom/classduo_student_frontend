@@ -565,7 +565,7 @@ export class GameScene extends Phaser.Scene {
     const heart = heartObj as HeartItem;
     const hx = heart.x;
     const hy = heart.y;
-    heart.destroy();
+    heart.destroyWithTrail();
 
     this.hp = Math.min(this.hp + HEART_RESTORE_AMOUNT, this.hpMax);
     this.ui.updateHpGauge(this.hp, this.hpMax);

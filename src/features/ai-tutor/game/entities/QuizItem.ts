@@ -97,9 +97,9 @@ export class QuizItem extends Phaser.Physics.Arcade.Sprite {
 
     // Outer glow in scroll color
     const glowX = this.x - QUIZ_ITEM_SIZE * 0.1;
-    this.trail.fillStyle(colors.main, 0.18);
+    this.trail.fillStyle(colors.main, 0.28);
     this.trail.fillCircle(glowX, this.y, QUIZ_ITEM_SIZE * 0.7);
-    this.trail.fillStyle(colors.light, 0.12);
+    this.trail.fillStyle(colors.light, 0.2);
     this.trail.fillCircle(glowX, this.y, QUIZ_ITEM_SIZE * 0.5);
 
     // Gentle sparkle trail (soft dots trailing behind)
