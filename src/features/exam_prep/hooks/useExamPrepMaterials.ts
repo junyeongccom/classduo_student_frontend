@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuthStore } from '@/features/auth/store/authStore'
-import { examPrepService } from '../services/examPrepService'
+import { examPrepService, cacheSignedUrlFromApi } from '../services/examPrepService'
 import type { ExamPrepMaterial } from '../types'
 
 const MATERIALS_STORAGE_PREFIX = 'exam_prep_materials'
+const LOCAL_CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24시간 TTL
 const materialsCache = new Map<string, { items: ExamPrepMaterial[]; updatedAt: number }>()
 
 const readLocalJson = <T,>(key: string, fallback: T): T => {
@@ -52,8 +53,16 @@ export function useExamPrepMaterials(courseId: string | null) {
     } else if (cacheKey) {
       const localCached = readLocalJson<{ items: ExamPrepMaterial[]; updatedAt: number } | null>(cacheKey, null)
       if (localCached?.items?.length) {
-        materialsCache.set(cacheKey, localCached)
-        setMaterials(localCached.items)
+        // TTL 체크: 24시간 이상 경과한 캐시는 무시 (stale signed URL 방지)
+        if (Date.now() - localCached.updatedAt > LOCAL_CACHE_TTL_MS) {
+          localStorage.removeItem(cacheKey)
+        } else {
+          // signed URL은 만료되었을 수 있으므로 null로 초기화
+          const sanitized = localCached.items.map(item => ({ ...item, signedUrl: null }))
+          const sanitizedPayload = { items: sanitized, updatedAt: localCached.updatedAt }
+          materialsCache.set(cacheKey, sanitizedPayload)
+          setMaterials(sanitized)
+        }
       }
     }
 
@@ -61,12 +70,17 @@ export function useExamPrepMaterials(courseId: string | null) {
     setError(null)
     const directResult = await examPrepService.getCourseMaterialsDirect(courseId)
     if (!directResult.error && directResult.data) {
-      const mapped = directResult.data.materials.map(material => ({
-        id: material.material_id,
-        title: material.original_filename,
-        fileType: material.file_type,
-        signedUrl: material.signed_url,
-      }))
+      const mapped = directResult.data.materials.map(material => {
+        if (material.signed_url) {
+          cacheSignedUrlFromApi(material.material_id, material.signed_url)
+        }
+        return {
+          id: material.material_id,
+          title: material.original_filename,
+          fileType: material.file_type,
+          signedUrl: material.signed_url,
+        }
+      })
 
       setMaterials(mapped)
       if (cacheKey) {
@@ -75,7 +89,6 @@ export function useExamPrepMaterials(courseId: string | null) {
         writeLocalJson(cacheKey, payload)
       }
       setIsLoading(false)
-
     }
 
     const result = await examPrepService.getCourseMaterials(courseId)
@@ -89,12 +102,17 @@ export function useExamPrepMaterials(courseId: string | null) {
       return
     }
 
-    const mapped = result.data.materials.map(material => ({
-      id: material.material_id,
-      title: material.original_filename,
-      fileType: material.file_type,
-      signedUrl: material.signed_url,
-    }))
+    const mapped = result.data.materials.map(material => {
+      if (material.signed_url) {
+        cacheSignedUrlFromApi(material.material_id, material.signed_url)
+      }
+      return {
+        id: material.material_id,
+        title: material.original_filename,
+        fileType: material.file_type,
+        signedUrl: material.signed_url,
+      }
+    })
 
     setMaterials(mapped)
     if (cacheKey) {
