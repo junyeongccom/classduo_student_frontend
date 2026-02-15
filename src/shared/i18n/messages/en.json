@@ -247,7 +247,10 @@
       "materialsPreparing": "Preparing materials",
       "recordingsEmpty": "No recordings available",
       "recordingSummaryNull": "Summary is not available yet",
-      "segmentFallback": "Segment {n}"
+      "segmentFallback": "Segment {n}",
+      "essenceTitle": "Key Points",
+      "statusCompleted": "Completed",
+      "statusProcessing": "Processing"
     },
     "rightPanel": {
       "summaryTab": "Summary",

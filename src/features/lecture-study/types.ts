@@ -19,6 +19,7 @@ export interface Lecture {
   has_recordings: boolean
   has_materials: boolean
   has_content: boolean
+  essence_7words: string | null
 }
 
 export interface LectureMaterial {

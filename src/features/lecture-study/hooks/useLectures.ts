@@ -56,6 +56,7 @@ export function useLectures(courseId: string): UseLecturesResult {
       has_recordings: true,
       has_materials: true,
       has_content: !!(l.essence_7words),
+      essence_7words: l.essence_7words ?? null,
     }))
 
     setLectures(mapped)

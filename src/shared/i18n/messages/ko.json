@@ -247,7 +247,10 @@
       "materialsPreparing": "자료 준비 중",
       "recordingsEmpty": "녹음본이 없습니다",
       "recordingSummaryNull": "요약이 아직 생성되지 않았습니다",
-      "segmentFallback": "구간 {n}"
+      "segmentFallback": "구간 {n}",
+      "essenceTitle": "핵심 내용",
+      "statusCompleted": "완료",
+      "statusProcessing": "처리 중"
     },
     "rightPanel": {
       "summaryTab": "요약",

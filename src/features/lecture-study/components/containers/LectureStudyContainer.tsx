@@ -253,7 +253,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               <LeftPanelMaterials />
             </TabsContent>
             <TabsContent value="recordings" className="flex-1 min-h-0 mt-0">
-              <LeftPanelRecordings recordings={recordings} />
+              <LeftPanelRecordings
+                recordings={recordings}
+                essence7Words={currentLecture?.essence_7words}
+              />
             </TabsContent>
           </Tabs>
         </section>
