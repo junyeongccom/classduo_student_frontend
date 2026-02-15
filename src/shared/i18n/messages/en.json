@@ -217,6 +217,52 @@
     "recordingContent": "Recording content",
     "recordingSourceDisabled": "Recording source display is disabled for this class"
   },
+  "home": {
+    "title": "My Courses",
+    "empty": "No courses are currently available",
+    "loadError": "Failed to load data",
+    "retry": "Retry",
+    "etcGroup": "Other"
+  },
+  "lectureStudy": {
+    "breadcrumbHome": "Home",
+    "tabLecture": "By Lecture",
+    "tabMaterial": "By Material",
+    "lectureSelect": {
+      "allInactive": "No study materials are available yet",
+      "noContent": "No content",
+      "hasRecording": "Recording",
+      "hasMaterial": "Material"
+    },
+    "leftPanel": {
+      "materialsTab": "Materials",
+      "recordingsTab": "Recordings",
+      "materialsEmpty": "No materials available",
+      "materialsPreparing": "Preparing materials",
+      "recordingsEmpty": "No recordings available",
+      "recordingSummaryNull": "Summary is not available yet",
+      "segmentFallback": "Segment {n}"
+    },
+    "rightPanel": {
+      "summaryTab": "Summary",
+      "quizTab": "Quiz",
+      "gameTab": "Games",
+      "aiTutorTab": "AI Tutor",
+      "placeholder": "Coming soon"
+    },
+    "game": {
+      "title": "Choose a Game",
+      "running": "Running Game",
+      "deck": "Deck (SRS)",
+      "cardMatch": "Card Match",
+      "definitionBuilder": "Definition Builder",
+      "guessTheTerm": "Guess the Term",
+      "minWords": "Requires at least {n} words",
+      "wordListTitle": "Word List",
+      "startGame": "Start Game",
+      "importKeywords": "Import Keywords"
+    }
+  },
   "studyspacePlaceholder": {
     "exam": {
       "title": "Exam Prep",

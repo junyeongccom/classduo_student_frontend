@@ -217,6 +217,52 @@
     "recordingContent": "녹음본 내용",
     "recordingSourceDisabled": "녹음 출처 표시가 비활성화된 수업입니다"
   },
+  "home": {
+    "title": "내 과목",
+    "empty": "현재 수강 가능한 과목이 개설되어 있지 않습니다",
+    "loadError": "데이터를 불러올 수 없습니다",
+    "retry": "다시 시도",
+    "etcGroup": "기타"
+  },
+  "lectureStudy": {
+    "breadcrumbHome": "홈",
+    "tabLecture": "회차별 학습",
+    "tabMaterial": "강의자료별 학습",
+    "lectureSelect": {
+      "allInactive": "아직 준비된 학습 자료가 없습니다",
+      "noContent": "컨텐츠 없음",
+      "hasRecording": "녹음",
+      "hasMaterial": "자료"
+    },
+    "leftPanel": {
+      "materialsTab": "강의자료",
+      "recordingsTab": "녹음본",
+      "materialsEmpty": "강의자료가 없습니다",
+      "materialsPreparing": "자료 준비 중",
+      "recordingsEmpty": "녹음본이 없습니다",
+      "recordingSummaryNull": "요약이 아직 생성되지 않았습니다",
+      "segmentFallback": "구간 {n}"
+    },
+    "rightPanel": {
+      "summaryTab": "요약",
+      "quizTab": "퀴즈",
+      "gameTab": "게임",
+      "aiTutorTab": "AI조교",
+      "placeholder": "준비 중입니다"
+    },
+    "game": {
+      "title": "게임 선택",
+      "running": "달리기 게임",
+      "deck": "덱 (SRS)",
+      "cardMatch": "카드매칭",
+      "definitionBuilder": "정의 조립",
+      "guessTheTerm": "용어 추측",
+      "minWords": "최소 {n}개의 단어가 필요합니다",
+      "wordListTitle": "단어 목록",
+      "startGame": "게임 시작",
+      "importKeywords": "키워드 가져오기"
+    }
+  },
   "studyspacePlaceholder": {
     "exam": {
       "title": "시험 준비",
