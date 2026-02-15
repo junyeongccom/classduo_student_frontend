@@ -1,29 +1,30 @@
 /**
  * @file AITutorTabContainer.tsx
- * @description AI 조교 탭 컨테이너 — 기존 ChatInterface 래핑
+ * @description AI 조교 탭 컨테이너 — ChatInterface를 래핑하여 단일 회차 채팅 제공
  * @module features/lecture-study/components/containers
- * @dependencies features/ai-tutor (ChatInterface 직접 import은 도메인 경계 위반이므로 placeholder)
+ * @dependencies features/ai-tutor (ChatInterface)
  */
 
 'use client'
 
-import { Bot } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useMemo, useState } from 'react'
+import { ChatInterface } from '@/features/ai-tutor'
 
 interface AITutorTabContainerProps {
   lectureId: string
 }
 
 export function AITutorTabContainer({ lectureId }: AITutorTabContainerProps) {
-  const t = useTranslations()
+  const selectedLectureIds = useMemo(() => [lectureId], [lectureId])
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined)
 
-  // TODO: Task 430에서 ai-tutor ChatInterface를 shared로 승격하거나
-  // lecture-study 전용 채팅 인터페이스를 구현
-  // 현재는 lectureId를 단일로 전달하는 래퍼 placeholder
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
-      <Bot className="h-10 w-10" />
-      <p className="text-sm">{t('lectureStudy.rightPanel.placeholder')}</p>
+    <div className="flex h-full flex-col">
+      <ChatInterface
+        selectedLectureIds={selectedLectureIds}
+        sessionId={sessionId}
+        onSessionCreated={setSessionId}
+      />
     </div>
   )
 }
