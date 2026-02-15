@@ -3,6 +3,7 @@
 // Components
 export { AITutorContainer } from './components/containers/AITutorContainer'
 export { AITutorLoading } from './components/ui/AITutorLoading'
+export { GameOverlay } from './components/ui/GameOverlay'
 
 // Domain utilities
 export {

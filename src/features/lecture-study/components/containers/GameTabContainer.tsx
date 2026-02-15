@@ -1,22 +1,49 @@
 /**
  * @file GameTabContainer.tsx
- * @description 게임 탭 컨테이너 — 게임 선택 + 단어 목록 모달 + 게임 실행 통합
+ * @description 게임 탭 컨테이너 — 게임 선택 + 단어 목록 모달 + 5종 게임 실행 통합
  * @module features/lecture-study/components/containers
- * @dependencies GameSelector, WordListModal, 기존 게임 컴포넌트 참조
+ * @dependencies GameSelector, WordListModal, review 게임 컴포넌트, ai-tutor GameOverlay
  */
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
-import { ArrowLeft } from 'lucide-react'
+import { useLocale } from 'next-intl'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { WordListModal } from '../ui/WordListModal'
+import { useLectureStudyStore } from '../../store/useLectureStudyStore'
+import {
+  reviewService,
+  ReviewMatchingGame,
+  DefinitionBuilderGame,
+  GuessTheTermGameContainer,
+  ReviewDeckView,
+  useReviewDeck,
+} from '@/features/review'
+import type { LectureReviewItem, DefinitionBuilderGameResponse } from '@/features/review/types'
+import type { AppLocale } from '@/shared/i18n/I18nProvider'
+
+const GameOverlay = dynamic(
+  () => import('@/features/ai-tutor').then(m => ({ default: m.GameOverlay })),
+  { ssr: false, loading: () => <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gray-400" /></div> },
+)
 
 interface WordItem {
   id: string
   keyword: string
   description: string
+}
+
+function wordItemsToReviewItems(words: WordItem[], lectureId: string): LectureReviewItem[] {
+  return words.map(w => ({
+    id: w.id,
+    lecture_id: lectureId,
+    keyword: w.keyword,
+    description: w.description,
+  }))
 }
 
 interface GameTabContainerProps {
@@ -25,13 +52,34 @@ interface GameTabContainerProps {
 
 export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const t = useTranslations()
+  const locale = useLocale() as AppLocale
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
-  const [words, setWords] = useState<WordItem[]>([])
   const [isImporting, setIsImporting] = useState(false)
 
+  // Store-backed words for tab persistence
+  const words = useLectureStudyStore(s => s.gameWords)
+  const setWords = useLectureStudyStore(s => s.setGameWords)
+
+  // DefinitionBuilder game state
+  const [defBuilderData, setDefBuilderData] = useState<DefinitionBuilderGameResponse | null>(null)
+  const [defBuilderLoading, setDefBuilderLoading] = useState(false)
+  const [defBuilderError, setDefBuilderError] = useState<string | null>(null)
+  const [defBuilderScore, setDefBuilderScore] = useState(0)
+
+  // Running game overlay state
+  const [showRunningOverlay, setShowRunningOverlay] = useState(false)
+
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
+
+  const reviewItems = useMemo(
+    () => wordItemsToReviewItems(words, lectureId),
+    [words, lectureId],
+  )
+
+  // Deck game hook
+  const deck = useReviewDeck(lectureId, reviewItems)
 
   const handleSelectGame = useCallback((gameId: string) => {
     setSelectedGame(gameId)
@@ -41,25 +89,96 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const handleImportKeywords = useCallback(async () => {
     setIsImporting(true)
     try {
-      // TODO: Task 430에서 실제 API 연동
-      // const result = await reviewService.importLectureKeywordsToReview(lectureId)
-      setIsImporting(false)
+      const result = await reviewService.getLectureKeywordsPreview(lectureId)
+      if (result.data?.keywords && result.data.keywords.length > 0) {
+        const existing = new Set(words.map(w => w.keyword.toLowerCase()))
+        const newWords: WordItem[] = result.data.keywords
+          .filter(kw => !existing.has(kw.keyword.toLowerCase()))
+          .map(kw => ({
+            id: crypto.randomUUID(),
+            keyword: kw.keyword,
+            description: kw.description,
+          }))
+        setWords([...words, ...newWords])
+      }
     } catch {
+      // silently fail — user can still add words manually
+    } finally {
       setIsImporting(false)
     }
-  }, [lectureId])
+  }, [lectureId, words, setWords])
 
-  const handleStartGame = useCallback(() => {
+  const handleStartGame = useCallback(async () => {
     setShowWordModal(false)
+
+    // Running game: open overlay immediately
+    if (selectedGame === 'running') {
+      setShowRunningOverlay(true)
+      return
+    }
+
+    // DefinitionBuilder: fetch game data from API
+    if (selectedGame === 'definitionBuilder') {
+      setDefBuilderLoading(true)
+      setDefBuilderError(null)
+      setDefBuilderScore(0)
+      try {
+        const result = await reviewService.getDefinitionBuilderGame(lectureId)
+        if (result.data) {
+          setDefBuilderData(result.data)
+        } else {
+          setDefBuilderError(result.error?.message ?? 'Failed to load game')
+        }
+      } catch {
+        setDefBuilderError('Failed to load game')
+      } finally {
+        setDefBuilderLoading(false)
+      }
+    }
+
     setIsPlaying(true)
-  }, [])
+  }, [selectedGame, lectureId])
 
   const handleExitGame = useCallback(() => {
     setIsPlaying(false)
     setSelectedGame(null)
+    setDefBuilderData(null)
+    setDefBuilderScore(0)
   }, [])
 
-  // 게임 실행 중: placeholder (기존 컴포넌트 연동은 Task 430에서)
+  const handleRetryDefBuilder = useCallback(async () => {
+    setDefBuilderLoading(true)
+    setDefBuilderError(null)
+    try {
+      const result = await reviewService.getDefinitionBuilderGame(lectureId)
+      if (result.data) {
+        setDefBuilderData(result.data)
+      } else {
+        setDefBuilderError(result.error?.message ?? 'Failed to load game')
+      }
+    } catch {
+      setDefBuilderError('Failed to load game')
+    } finally {
+      setDefBuilderLoading(false)
+    }
+  }, [lectureId])
+
+  // Running game overlay (renders on top, no "isPlaying" needed)
+  if (showRunningOverlay) {
+    return (
+      <GameOverlay
+        isOpen
+        onClose={() => {
+          setShowRunningOverlay(false)
+          setSelectedGame(null)
+        }}
+        triggerPosition={null}
+        lectureId={lectureId}
+      />
+    )
+  }
+
+  // Game playing mode
   if (isPlaying && selectedGame) {
     const gameName = currentGameInfo
       ? t(`lectureStudy.game.${selectedGame}` as Parameters<typeof t>[0])
@@ -77,9 +196,43 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
           </button>
           <span className="text-sm font-medium text-gray-900">{gameName}</span>
         </div>
-        <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
-          {/* TODO: 기존 게임 컴포넌트 통합 (Task 430) */}
-          {gameName} — {t('lectureStudy.rightPanel.placeholder')}
+        <div className="flex-1 min-h-0 overflow-auto">
+          {selectedGame === 'cardMatch' && (
+            <ReviewMatchingGame
+              reviewItems={reviewItems}
+              isEnabled
+              onExit={handleExitGame}
+            />
+          )}
+          {selectedGame === 'definitionBuilder' && (
+            <DefinitionBuilderGame
+              data={defBuilderData}
+              isLoading={defBuilderLoading}
+              error={defBuilderError}
+              onRetry={handleRetryDefBuilder}
+              isEnabled
+              currentScore={defBuilderScore}
+              onScoreDelta={(delta) => setDefBuilderScore(s => s + delta)}
+              onRestart={handleRetryDefBuilder}
+            />
+          )}
+          {selectedGame === 'guessTheTerm' && (
+            <GuessTheTermGameContainer
+              lectureId={lectureId}
+              locale={locale}
+              isEnabled
+              reviewItems={reviewItems}
+              onExitGame={handleExitGame}
+            />
+          )}
+          {selectedGame === 'deck' && (
+            <ReviewDeckView
+              hasSelectedLecture
+              isReviewItemsLoading={false}
+              reviewItemsError={null}
+              deck={deck}
+            />
+          )}
         </div>
       </div>
     )

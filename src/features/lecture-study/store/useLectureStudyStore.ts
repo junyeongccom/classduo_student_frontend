@@ -9,12 +9,19 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { LectureStudyTab, LeftPanelTab } from '../types'
 
+interface WordItem {
+  id: string
+  keyword: string
+  description: string
+}
+
 interface LectureStudyState {
   courseId: string | null
   lectureId: string | null
   leftTab: LeftPanelTab
   rightTab: LectureStudyTab
   leftPanelWidth: number | null
+  gameWords: WordItem[]
 }
 
 interface LectureStudyActions {
@@ -23,6 +30,7 @@ interface LectureStudyActions {
   setLeftTab: (tab: LeftPanelTab) => void
   setRightTab: (tab: LectureStudyTab) => void
   setLeftPanelWidth: (width: number) => void
+  setGameWords: (words: WordItem[]) => void
   reset: () => void
 }
 
@@ -32,6 +40,7 @@ const initialState: LectureStudyState = {
   leftTab: 'materials',
   rightTab: 'summary',
   leftPanelWidth: null,
+  gameWords: [],
 }
 
 export const useLectureStudyStore = create<LectureStudyState & LectureStudyActions>()(
@@ -43,13 +52,14 @@ export const useLectureStudyStore = create<LectureStudyState & LectureStudyActio
       setLeftTab: (leftTab) => set({ leftTab }),
       setRightTab: (rightTab) => set({ rightTab }),
       setLeftPanelWidth: (leftPanelWidth) => set({ leftPanelWidth }),
+      setGameWords: (gameWords) => set({ gameWords }),
       reset: () => set(initialState),
     }),
     {
       name: 'lecture-study-state',
-      version: 1,
+      version: 2,
       migrate: (persisted, version) => {
-        if (version === 0) {
+        if (version < 2) {
           return { ...initialState, ...(persisted as Record<string, unknown>) }
         }
         return persisted as LectureStudyState & LectureStudyActions
