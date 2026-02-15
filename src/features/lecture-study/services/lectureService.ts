@@ -40,6 +40,31 @@ export interface RecordingListApiResponse {
   total_count: number
 }
 
+export interface LectureMaterialMappingItem {
+  material_id: string
+  original_filename: string
+  source: string
+  created_at: string
+}
+
+export interface LectureMaterialMappingsResponse {
+  lecture_id: string
+  materials: LectureMaterialMappingItem[]
+}
+
+export interface MaterialPageItem {
+  id: string
+  page_number: number
+  image_url: string | null
+  text_content: string | null
+}
+
+export interface MaterialPagesResponse {
+  material_id: string
+  pages: MaterialPageItem[]
+  total_count: number
+}
+
 export const lectureService = {
   getLectures: (courseId: string) => {
     if (!isUUID(courseId)) {
@@ -56,6 +81,26 @@ export const lectureService = {
       return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
     }
     return apiRequest<RecordingListApiResponse>(`/recordings/audio/lectures/${lectureId}`, {
+      method: 'GET',
+      auth: true,
+    })
+  },
+
+  getLectureMaterials: (lectureId: string) => {
+    if (!isUUID(lectureId)) {
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+    }
+    return apiRequest<LectureMaterialMappingsResponse>(`/materials/mappings/${lectureId}`, {
+      method: 'GET',
+      auth: true,
+    })
+  },
+
+  getMaterialPages: (materialId: string) => {
+    if (!isUUID(materialId)) {
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid materialId format' } })
+    }
+    return apiRequest<MaterialPagesResponse>(`/materials/${materialId}/pages`, {
       method: 'GET',
       auth: true,
     })
