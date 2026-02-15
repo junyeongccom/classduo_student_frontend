@@ -2,7 +2,7 @@
  * @file LectureStudyContainer.tsx
  * @description 회차별 학습 메인 컨테이너 — 좌우 패널 + 리사이저 + 모바일 반응형
  * @module features/lecture-study/components/containers
- * @dependencies useLectureDetail, Tabs, Breadcrumb, LeftPanel*, RightPanelPlaceholder, useIsMobile
+ * @dependencies useLectureDetail, useLectureStudyStore, Tabs, Breadcrumb, LeftPanel*, RightPanelPlaceholder, useIsMobile
  */
 
 'use client'
@@ -13,6 +13,7 @@ import { Loader2, PanelRightOpen, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { Breadcrumb } from '../ui/Breadcrumb'
 import { LeftPanelMaterials } from '../ui/LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
@@ -25,19 +26,30 @@ const DEFAULT_LEFT_WIDTH = 500
 const MIN_LEFT_WIDTH = 320
 const MIN_RIGHT_WIDTH = 300
 
+const RIGHT_TAB_TITLE_KEYS: Record<LectureStudyTab, string> = {
+  summary: 'lectureStudy.rightPanel.summaryTab',
+  quiz: 'lectureStudy.rightPanel.quizTab',
+  game: 'lectureStudy.rightPanel.gameTab',
+  'ai-tutor': 'lectureStudy.rightPanel.aiTutorTab',
+}
+
 interface LectureStudyContainerProps {
   lectureId: string
   courseId?: string
   courseTitle?: string
+  lectureTitle?: string
 }
 
-export function LectureStudyContainer({ lectureId, courseId, courseTitle }: LectureStudyContainerProps) {
+export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectureTitle }: LectureStudyContainerProps) {
   const t = useTranslations()
   const isMobile = useIsMobile()
-  const { recordings, isLoading, error } = useLectureDetail(lectureId)
+  const { recordings, isLoading, error, refresh } = useLectureDetail(lectureId)
 
-  const [leftTab, setLeftTab] = useState<LeftPanelTab>('materials')
-  const [rightTab, setRightTab] = useState<LectureStudyTab>('summary')
+  const leftTab = useLectureStudyStore(s => s.leftTab)
+  const rightTab = useLectureStudyStore(s => s.rightTab)
+  const setLeftTab = useLectureStudyStore(s => s.setLeftTab)
+  const setRightTab = useLectureStudyStore(s => s.setRightTab)
+
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
   const [hasUserResized, setHasUserResized] = useState(false)
@@ -49,7 +61,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
     ...(courseId
       ? [{ label: courseTitle ?? '...', href: `/studyspace/course/${courseId}` }]
       : []),
-    { label: `${lectureId.slice(0, 8)}...` },
+    { label: lectureTitle ?? `${lectureId.slice(0, 8)}...` },
   ]
 
   // Auto-size on initial render (desktop only)
@@ -121,6 +133,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <p className="text-sm text-gray-500">{error}</p>
+        <button
+          onClick={refresh}
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-800"
+        >
+          {t('home.retry')}
+        </button>
       </div>
     )
   }
@@ -240,7 +258,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
           <div className="flex h-full w-[85vw] max-w-md flex-col bg-white shadow-xl animate-in slide-in-from-right">
             <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
               <span className="text-sm font-medium text-gray-900">
-                {t('lectureStudy.rightPanel.summaryTab')}
+                {t(RIGHT_TAB_TITLE_KEYS[rightTab])}
               </span>
               <button
                 onClick={() => setIsDrawerOpen(false)}

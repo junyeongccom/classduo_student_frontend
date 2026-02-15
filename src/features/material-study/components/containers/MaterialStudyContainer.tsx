@@ -11,11 +11,12 @@ import { ExamPrepContainer } from '@/features/exam_prep'
 
 interface MaterialStudyContainerProps {
   courseId?: string
+  materialId?: string
 }
 
-export function MaterialStudyContainer({ courseId }: MaterialStudyContainerProps) {
+export function MaterialStudyContainer({ courseId, materialId }: MaterialStudyContainerProps) {
   // ExamPrepContainer는 내부에서 과목 선택을 URL 파라미터 기반으로 관리
-  // courseId가 주어진 경우 URL의 courseId 파라미터로 전달하여 자동 선택
-  // TODO: ExamPrepContainer에 courseId prop을 추가하여 과목 선택 드롭다운을 숨기는 기능 구현
+  // courseId/materialId가 주어진 경우 향후 ExamPrepContainer에 전달하여 자동 선택
+  // TODO: ExamPrepContainer에 courseId/materialId props를 추가하여 과목 선택 드롭다운을 숨기는 기능 구현
   return <ExamPrepContainer />
 }

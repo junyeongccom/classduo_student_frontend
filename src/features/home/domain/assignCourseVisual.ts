@@ -73,6 +73,10 @@ export function assignCourseVisuals(courseIds: string[]): Map<string, CourseVisu
   const usedIndices = new Set<number>()
 
   for (const id of courseIds) {
+    if (usedIndices.size >= COURSE_PALETTE.length) {
+      usedIndices.clear()
+    }
+
     const hash = hashCourseId(id)
     let colorIndex = hash % COURSE_PALETTE.length
 

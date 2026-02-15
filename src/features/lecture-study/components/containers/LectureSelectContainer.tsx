@@ -77,18 +77,25 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                 {t('lectureStudy.lectureSelect.allInactive')}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {lectures.map((lecture, index) => (
-                  <LectureCard
-                    key={lecture.id}
-                    lecture={lecture}
-                    isLatest={index === 0}
-                    onClick={() =>
-                      router.push(`/studyspace/course/${courseId}/lecture/${lecture.id}`)
-                    }
-                  />
-                ))}
-              </div>
+              <>
+                {lectures.every(l => !l.has_content && !l.has_recordings && !l.has_materials) && (
+                  <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
+                    {t('lectureStudy.lectureSelect.allInactive')}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {lectures.map((lecture, index) => (
+                    <LectureCard
+                      key={lecture.id}
+                      lecture={lecture}
+                      isLatest={index === 0}
+                      onClick={() =>
+                        router.push(`/studyspace/course/${courseId}/lecture/${lecture.id}`)
+                      }
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </TabsContent>
 

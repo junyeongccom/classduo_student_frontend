@@ -51,8 +51,10 @@ export function useLectures(courseId: string): UseLecturesResult {
       date: l.lecture_date,
       week_number: null,
       session_number: null,
-      has_recordings: false,
-      has_materials: false,
+      // TODO: 백엔드 API에 recordings_count/materials_count 필드 추가 후 정확한 값 매핑
+      // 현재는 true 기본값으로 접근 차단 방지 (has_content만으로도 비활성 판단 가능)
+      has_recordings: true,
+      has_materials: true,
       has_content: !!(l.essence_7words),
     }))
 

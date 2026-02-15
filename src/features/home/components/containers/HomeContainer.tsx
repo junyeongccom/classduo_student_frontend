@@ -74,7 +74,7 @@ export function HomeContainer() {
                     name={course.name}
                     professorName={course.professor_name}
                     updatedAt={course.updated_at}
-                    visual={visuals.get(course.id)!}
+                    visual={visuals.get(course.id) ?? { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200', accent: '#6B7280', emoji: '📚' }}
                     onClick={() => router.push(`/studyspace/course/${course.id}`)}
                   />
                 ))}

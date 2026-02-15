@@ -15,6 +15,7 @@ interface UseLectureDetailResult {
   recordings: Recording[]
   isLoading: boolean
   error: string | null
+  refresh: () => void
 }
 
 export function useLectureDetail(lectureId: string): UseLectureDetailResult {
@@ -41,7 +42,8 @@ export function useLectureDetail(lectureId: string): UseLectureDetailResult {
     const mappedRecordings: Recording[] = (recResult.data?.recordings ?? []).map(r => ({
       id: r.recording_id,
       lecture_id: lectureId,
-      summary: null,
+      // TODO: 백엔드 API에 summary 필드 추가 후 r.summary ?? null 로 매핑
+      summary: (r as Record<string, unknown>).summary as string | null ?? null,
       status: r.status,
     }))
 
@@ -56,5 +58,5 @@ export function useLectureDetail(lectureId: string): UseLectureDetailResult {
     }
   }, [fetchDetail])
 
-  return { recordings, isLoading, error }
+  return { recordings, isLoading, error, refresh: fetchDetail }
 }

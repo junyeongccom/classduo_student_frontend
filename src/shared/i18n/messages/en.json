@@ -260,7 +260,8 @@
       "minWords": "Requires at least {n} words",
       "wordListTitle": "Word List",
       "startGame": "Start Game",
-      "importKeywords": "Import Keywords"
+      "importKeywords": "Import Keywords",
+      "runningGameNote": "This game uses OX quiz data. The word list will be utilized in future updates."
     }
   },
   "studyspacePlaceholder": {

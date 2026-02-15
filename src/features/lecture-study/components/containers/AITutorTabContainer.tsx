@@ -24,7 +24,6 @@ export function AITutorTabContainer({ lectureId }: AITutorTabContainerProps) {
     <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
       <Bot className="h-10 w-10" />
       <p className="text-sm">{t('lectureStudy.rightPanel.placeholder')}</p>
-      <p className="text-[11px] text-gray-300">lectureId: {lectureId.slice(0, 8)}...</p>
     </div>
   )
 }

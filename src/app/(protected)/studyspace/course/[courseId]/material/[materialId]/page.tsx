@@ -7,8 +7,14 @@
 
 'use client'
 
+import { use } from 'react'
 import { MaterialStudyContainer } from '@/features/material-study'
 
-export default function MaterialStudyPage() {
-  return <MaterialStudyContainer />
+export default function MaterialStudyPage({
+  params,
+}: {
+  params: Promise<{ courseId: string; materialId: string }>
+}) {
+  const { courseId, materialId } = use(params)
+  return <MaterialStudyContainer courseId={courseId} materialId={materialId} />
 }

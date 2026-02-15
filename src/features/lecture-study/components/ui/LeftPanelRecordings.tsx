@@ -7,6 +7,7 @@
 
 import { Mic } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/shared/components/ui'
 import type { Recording } from '../../types'
 
 interface LeftPanelRecordingsProps {
@@ -27,26 +28,30 @@ export function LeftPanelRecordings({ recordings }: LeftPanelRecordingsProps) {
 
   return (
     <div className="h-full overflow-y-auto p-4">
-      <div className="flex flex-col gap-3">
+      <Accordion type="multiple" defaultValue={recordings.map(r => r.id)}>
         {recordings.map((rec, idx) => (
-          <div key={rec.id} className="rounded-lg border border-gray-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Mic className="h-4 w-4 text-emerald-500" />
-              <span>{t('lectureStudy.leftPanel.segmentFallback', { n: idx + 1 })}</span>
-              <span className="ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">
-                {rec.status}
-              </span>
-            </div>
-            {rec.summary ? (
-              <p className="mt-2 text-xs text-gray-600 leading-relaxed">{rec.summary}</p>
-            ) : (
-              <p className="mt-2 text-xs text-gray-400 italic">
-                {t('lectureStudy.leftPanel.recordingSummaryNull')}
-              </p>
-            )}
-          </div>
+          <AccordionItem key={rec.id} value={rec.id} className="rounded-lg border border-gray-200 bg-white mb-3 last:mb-0">
+            <AccordionTrigger className="px-4 py-3 text-sm hover:no-underline">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <Mic className="h-4 w-4 text-emerald-500" />
+                <span>{t('lectureStudy.leftPanel.segmentFallback', { n: idx + 1 })}</span>
+                <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">
+                  {rec.status}
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4">
+              {rec.summary ? (
+                <p className="text-xs text-gray-600 leading-relaxed">{rec.summary}</p>
+              ) : (
+                <p className="text-xs text-gray-400 italic">
+                  {t('lectureStudy.leftPanel.recordingSummaryNull')}
+                </p>
+              )}
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useAuthStore } from '@/features/auth';
 import { createErrorReport } from '../../services/errorReportService';
 import { uploadErrorReportAttachment } from '../../services/uploadAttachment';
 import { ErrorReportModal, ErrorReportFormData, ErrorReportPrefillData } from '../ui/ErrorReportModal';
@@ -47,8 +48,7 @@ export function ErrorReportModalContainer({
       // 첨부파일이 있으면 먼저 업로드
       let attachmentUrl: string | undefined;
       if (attachmentFile) {
-        // 사용자 ID를 임시 ID 사용
-        const userId = 'student_' + Date.now();
+        const userId = useAuthStore.getState().user?.user_id ?? 'anonymous_' + Date.now();
         const uploadResult = await uploadErrorReportAttachment(attachmentFile, userId);
 
         if (!uploadResult.success) {

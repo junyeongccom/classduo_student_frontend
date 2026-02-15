@@ -6,6 +6,7 @@
  */
 
 import { apiRequest } from '@/shared/lib/api'
+import { isUUID } from '@/shared/lib/validation'
 
 export interface LectureApiItem {
   lecture_id: string
@@ -39,15 +40,23 @@ export interface RecordingListApiResponse {
 }
 
 export const lectureService = {
-  getLectures: (courseId: string) =>
-    apiRequest<LectureListApiResponse>(`/courses/${courseId}/lectures`, {
+  getLectures: (courseId: string) => {
+    if (!isUUID(courseId)) {
+      return Promise.resolve({ data: null, error: { message: 'Invalid courseId format' } })
+    }
+    return apiRequest<LectureListApiResponse>(`/courses/${courseId}/lectures`, {
       method: 'GET',
       auth: true,
-    }),
+    })
+  },
 
-  getRecordings: (lectureId: string) =>
-    apiRequest<RecordingListApiResponse>(`/recordings/audio/lectures/${lectureId}`, {
+  getRecordings: (lectureId: string) => {
+    if (!isUUID(lectureId)) {
+      return Promise.resolve({ data: null, error: { message: 'Invalid lectureId format' } })
+    }
+    return apiRequest<RecordingListApiResponse>(`/recordings/audio/lectures/${lectureId}`, {
       method: 'GET',
       auth: true,
-    }),
+    })
+  },
 }

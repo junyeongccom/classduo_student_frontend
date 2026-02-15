@@ -102,6 +102,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         }
         onStartGame={handleStartGame}
         isImporting={isImporting}
+        isRunningGame={selectedGame === 'running'}
       />
     </>
   )
