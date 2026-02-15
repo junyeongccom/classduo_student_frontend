@@ -93,7 +93,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
           </TabsContent>
 
           <TabsContent value="material" className="mt-6">
-            <MaterialStudyContainer />
+            <MaterialStudyContainer courseId={courseId} />
           </TabsContent>
         </Tabs>
       </div>
