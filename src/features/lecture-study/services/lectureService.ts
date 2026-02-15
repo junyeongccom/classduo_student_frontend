@@ -31,6 +31,7 @@ export interface RecordingApiItem {
   duration_seconds: number | null
   created_at: string | null
   updated_at: string | null
+  summary?: string | null
 }
 
 export interface RecordingListApiResponse {
@@ -42,7 +43,7 @@ export interface RecordingListApiResponse {
 export const lectureService = {
   getLectures: (courseId: string) => {
     if (!isUUID(courseId)) {
-      return Promise.resolve({ data: null, error: { message: 'Invalid courseId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid courseId format' } })
     }
     return apiRequest<LectureListApiResponse>(`/courses/${courseId}/lectures`, {
       method: 'GET',
@@ -52,7 +53,7 @@ export const lectureService = {
 
   getRecordings: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { message: 'Invalid lectureId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
     }
     return apiRequest<RecordingListApiResponse>(`/recordings/audio/lectures/${lectureId}`, {
       method: 'GET',

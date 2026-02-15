@@ -78,7 +78,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
               </div>
             ) : (
               <>
-                {lectures.every(l => !l.has_content && !l.has_recordings && !l.has_materials) && (
+                {lectures.every(l => !l.has_content) && (
                   <div className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
                     {t('lectureStudy.lectureSelect.allInactive')}
                   </div>

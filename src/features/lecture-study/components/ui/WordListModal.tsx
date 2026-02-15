@@ -76,6 +76,7 @@ export function WordListModal({
   }
 
   const handleRemove = (id: string) => {
+    if (editingId === id) setEditingId(null)
     onWordsChange(words.filter(w => w.id !== id))
   }
 

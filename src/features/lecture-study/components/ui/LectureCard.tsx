@@ -6,7 +6,7 @@
  */
 
 import { cn } from '@/shared/lib/utils'
-import { Mic, FileText, Calendar } from 'lucide-react'
+import { Calendar } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { Lecture } from '../../types'
 
@@ -18,7 +18,7 @@ interface LectureCardProps {
 
 export function LectureCard({ lecture, isLatest, onClick }: LectureCardProps) {
   const t = useTranslations()
-  const hasAnyContent = lecture.has_content || lecture.has_recordings || lecture.has_materials
+  const hasAnyContent = lecture.has_content
   const displayTitle = lecture.title ?? `${lecture.lecture_number}회차`
 
   const formattedDate = lecture.date
@@ -58,18 +58,7 @@ export function LectureCard({ lecture, isLatest, onClick }: LectureCardProps) {
             {formattedDate}
           </span>
         )}
-        {lecture.has_recordings && (
-          <span className="flex items-center gap-1 text-emerald-600">
-            <Mic className="h-3.5 w-3.5" />
-            {t('lectureStudy.lectureSelect.hasRecording')}
-          </span>
-        )}
-        {lecture.has_materials && (
-          <span className="flex items-center gap-1 text-blue-600">
-            <FileText className="h-3.5 w-3.5" />
-            {t('lectureStudy.lectureSelect.hasMaterial')}
-          </span>
-        )}
+        {/* TODO: 백엔드 API에 recordings_count/materials_count 필드 추가 후 배지 활성화 */}
       </div>
 
       {!hasAnyContent && (

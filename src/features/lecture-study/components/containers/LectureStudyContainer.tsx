@@ -49,6 +49,9 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const rightTab = useLectureStudyStore(s => s.rightTab)
   const setLeftTab = useLectureStudyStore(s => s.setLeftTab)
   const setRightTab = useLectureStudyStore(s => s.setRightTab)
+  const setStoreLectureId = useLectureStudyStore(s => s.setLectureId)
+
+  useEffect(() => { setStoreLectureId(lectureId) }, [lectureId, setStoreLectureId])
 
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)

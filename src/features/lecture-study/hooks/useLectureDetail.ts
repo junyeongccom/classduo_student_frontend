@@ -42,8 +42,7 @@ export function useLectureDetail(lectureId: string): UseLectureDetailResult {
     const mappedRecordings: Recording[] = (recResult.data?.recordings ?? []).map(r => ({
       id: r.recording_id,
       lecture_id: lectureId,
-      // TODO: 백엔드 API에 summary 필드 추가 후 r.summary ?? null 로 매핑
-      summary: (r as Record<string, unknown>).summary as string | null ?? null,
+      summary: r.summary ?? null,
       status: r.status,
     }))
 
