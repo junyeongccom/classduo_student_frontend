@@ -1,8 +1,8 @@
 /**
  * @file CourseCard.tsx
- * @description 과목 카드 UI — props 기반 순수 렌더링
+ * @description 과목 카드 UI — 컬러바 + 프로그레스바 + Duolingo 스타일
  * @module features/home/components/ui
- * @dependencies shared/components/ui, lucide-react
+ * @dependencies shared/lib/utils
  */
 
 import { cn } from '@/shared/lib/utils'
@@ -13,36 +13,84 @@ interface CourseCardProps {
   professorName: string | null
   updatedAt: string | null
   visual: CourseVisual
+  progress?: { completed: number; total: number } | null
+  progressLabel?: string
   onClick: () => void
 }
 
-export function CourseCard({ name, professorName, updatedAt, visual, onClick }: CourseCardProps) {
+export function CourseCard({
+  name,
+  professorName,
+  updatedAt,
+  visual,
+  progress,
+  progressLabel,
+  onClick,
+}: CourseCardProps) {
   const formattedDate = updatedAt
-    ? new Date(updatedAt).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
+    ? new Date(updatedAt).toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
     : null
+
+  const progressPercent =
+    progress && progress.total > 0
+      ? Math.round((progress.completed / progress.total) * 100)
+      : 0
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        'group flex w-full flex-col items-start gap-3 rounded-xl border p-5 text-left transition-all',
-        'hover:shadow-md hover:-translate-y-0.5',
-        visual.border,
-        'bg-white',
+        'group relative flex w-full min-h-[120px] overflow-hidden',
+        'rounded-2xl border border-gray-200/60 bg-white shadow-sm',
+        'text-left transition-all duration-200',
+        'hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5',
       )}
     >
-      <div className={cn('flex h-12 w-12 items-center justify-center rounded-lg text-2xl', visual.bg)}>
-        {visual.emoji}
+      {/* 좌측 컬러 바 */}
+      <div
+        className="w-1 shrink-0 rounded-l-2xl"
+        style={{ backgroundColor: visual.accent }}
+      />
+
+      <div className="flex flex-1 flex-col justify-between p-4">
+        <div className="flex flex-col gap-1.5">
+          <h3 className="text-base font-semibold text-gray-900 line-clamp-2 leading-snug">
+            {name}
+          </h3>
+          {professorName && (
+            <p className="text-sm text-gray-500">{professorName}</p>
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-col gap-2">
+          {formattedDate && (
+            <p className="text-xs text-gray-400">{formattedDate}</p>
+          )}
+
+          {progress && progress.total > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${progressPercent}%`,
+                    backgroundColor: visual.accent,
+                  }}
+                />
+              </div>
+              <span className="shrink-0 text-[11px] text-gray-400">
+                {progressLabel
+                  ? `${progressPercent}%`
+                  : `${progress.completed}/${progress.total}`}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">{name}</h3>
-        {professorName && (
-          <p className="text-xs text-gray-500">{professorName}</p>
-        )}
-      </div>
-      {formattedDate && (
-        <p className="mt-auto text-[11px] text-gray-400">{formattedDate}</p>
-      )}
     </button>
   )
 }

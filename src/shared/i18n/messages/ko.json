@@ -219,10 +219,14 @@
   },
   "home": {
     "title": "내 과목",
-    "empty": "현재 수강 가능한 과목이 개설되어 있지 않습니다",
+    "greeting": "안녕하세요, {name}님!",
+    "greetingDate": "{date}",
+    "empty": "학습 공간에 강의가 등록되면 여기에 표시됩니다",
+    "emptySubtext": "교수님이 강의를 개설하면 자동으로 나타나요",
     "loadError": "데이터를 불러올 수 없습니다",
     "retry": "다시 시도",
-    "etcGroup": "기타"
+    "etcGroup": "기타",
+    "progress": "진행률"
   },
   "lectureStudy": {
     "breadcrumbHome": "홈",

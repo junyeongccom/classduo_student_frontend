@@ -219,10 +219,14 @@
   },
   "home": {
     "title": "My Courses",
-    "empty": "No courses are currently available",
+    "greeting": "Hello, {name}!",
+    "greetingDate": "{date}",
+    "empty": "Your courses will appear here once registered",
+    "emptySubtext": "Courses will automatically show up when your professor creates them",
     "loadError": "Failed to load data",
     "retry": "Retry",
-    "etcGroup": "Other"
+    "etcGroup": "Other",
+    "progress": "Progress"
   },
   "lectureStudy": {
     "breadcrumbHome": "Home",

@@ -24,17 +24,11 @@ const COURSE_PALETTE = [
   { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', accent: '#EF4444' },
 ] as const
 
-const COURSE_EMOJIS = [
-  '📚', '🧪', '🔬', '📐', '🎨', '🌍', '💡', '🧠',
-  '📊', '🎵', '🏛️', '⚙️', '📝', '🌱', '🔢', '🎯',
-] as const
-
 export interface CourseVisual {
   bg: string
   text: string
   border: string
   accent: string
-  emoji: string
 }
 
 /**
@@ -56,11 +50,9 @@ function hashCourseId(courseId: string): number {
 export function assignCourseVisual(courseId: string): CourseVisual {
   const hash = hashCourseId(courseId)
   const colorIndex = hash % COURSE_PALETTE.length
-  const emojiIndex = (hash >>> 4) % COURSE_EMOJIS.length
 
   return {
     ...COURSE_PALETTE[colorIndex],
-    emoji: COURSE_EMOJIS[emojiIndex],
   }
 }
 
@@ -88,11 +80,8 @@ export function assignCourseVisuals(courseIds: string[]): Map<string, CourseVisu
     }
 
     usedIndices.add(colorIndex)
-    const emojiIndex = (hash >>> 4) % COURSE_EMOJIS.length
-
     result.set(id, {
       ...COURSE_PALETTE[colorIndex],
-      emoji: COURSE_EMOJIS[emojiIndex],
     })
   }
 
