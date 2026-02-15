@@ -173,7 +173,7 @@ export function WordListModal({
           <input
             value={newKeyword}
             onChange={e => setNewKeyword(e.target.value)}
-            placeholder="단어"
+            placeholder={t('lectureStudy.game.wordKeywordPlaceholder')}
             maxLength={MAX_KEYWORD_LENGTH}
             className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
@@ -181,7 +181,7 @@ export function WordListModal({
           <input
             value={newDescription}
             onChange={e => setNewDescription(e.target.value)}
-            placeholder="설명"
+            placeholder={t('lectureStudy.game.wordDescriptionPlaceholder')}
             maxLength={MAX_DESCRIPTION_LENGTH}
             className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
             onKeyDown={e => e.key === 'Enter' && handleAdd()}

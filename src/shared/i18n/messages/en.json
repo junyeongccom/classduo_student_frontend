@@ -230,9 +230,11 @@
     "tabMaterial": "By Material",
     "lectureSelect": {
       "allInactive": "No study materials are available yet",
+      "empty": "No lectures registered",
       "noContent": "No content",
       "hasRecording": "Recording",
-      "hasMaterial": "Material"
+      "hasMaterial": "Material",
+      "newBadge": "NEW"
     },
     "leftPanel": {
       "materialsTab": "Materials",
@@ -261,7 +263,12 @@
       "wordListTitle": "Word List",
       "startGame": "Start Game",
       "importKeywords": "Import Keywords",
-      "runningGameNote": "This game uses OX quiz data. The word list will be utilized in future updates."
+      "runningGameNote": "This game uses OX quiz data. The word list will be utilized in future updates.",
+      "wordKeywordPlaceholder": "Keyword",
+      "wordDescriptionPlaceholder": "Description"
+    },
+    "error": {
+      "loadLectures": "Failed to load lectures"
     }
   },
   "studyspacePlaceholder": {

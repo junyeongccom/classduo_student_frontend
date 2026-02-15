@@ -230,9 +230,11 @@
     "tabMaterial": "강의자료별 학습",
     "lectureSelect": {
       "allInactive": "아직 준비된 학습 자료가 없습니다",
+      "empty": "등록된 회차가 없습니다",
       "noContent": "컨텐츠 없음",
       "hasRecording": "녹음",
-      "hasMaterial": "자료"
+      "hasMaterial": "자료",
+      "newBadge": "NEW"
     },
     "leftPanel": {
       "materialsTab": "강의자료",
@@ -261,7 +263,12 @@
       "wordListTitle": "단어 목록",
       "startGame": "게임 시작",
       "importKeywords": "키워드 가져오기",
-      "runningGameNote": "이 게임은 OX퀴즈 데이터로 진행됩니다. 단어 목록은 향후 업데이트에서 활용됩니다."
+      "runningGameNote": "이 게임은 OX퀴즈 데이터로 진행됩니다. 단어 목록은 향후 업데이트에서 활용됩니다.",
+      "wordKeywordPlaceholder": "단어",
+      "wordDescriptionPlaceholder": "설명"
+    },
+    "error": {
+      "loadLectures": "회차 목록을 불러오지 못했습니다"
     }
   },
   "studyspacePlaceholder": {

@@ -36,7 +36,7 @@ export function useLectures(courseId: string): UseLecturesResult {
     if (!isMountedRef.current) return
 
     if (result.error || !result.data) {
-      setError(result.error?.message ?? '회차 목록을 불러오지 못했습니다')
+      setError(result.error?.message ?? 'LOAD_LECTURES_FAILED')
       setIsLoading(false)
       return
     }

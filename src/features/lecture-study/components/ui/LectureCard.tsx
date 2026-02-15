@@ -7,7 +7,7 @@
 
 import { cn } from '@/shared/lib/utils'
 import { Calendar } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import type { Lecture } from '../../types'
 
 interface LectureCardProps {
@@ -18,11 +18,13 @@ interface LectureCardProps {
 
 export function LectureCard({ lecture, isLatest, onClick }: LectureCardProps) {
   const t = useTranslations()
+  const locale = useLocale()
   const hasAnyContent = lecture.has_content
   const displayTitle = lecture.title ?? `${lecture.lecture_number}회차`
 
+  const dateLocale = locale === 'en' ? 'en-US' : 'ko-KR'
   const formattedDate = lecture.date
-    ? new Date(lecture.date).toLocaleDateString('ko-KR', {
+    ? new Date(lecture.date).toLocaleDateString(dateLocale, {
         month: 'short',
         day: 'numeric',
       })
@@ -46,7 +48,7 @@ export function LectureCard({ lecture, isLatest, onClick }: LectureCardProps) {
         </h3>
         {isLatest && hasAnyContent && (
           <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
-            NEW
+            {t('lectureStudy.lectureSelect.newBadge')}
           </span>
         )}
       </div>
