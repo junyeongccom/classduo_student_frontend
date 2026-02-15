@@ -15,7 +15,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900">
       <Sidebar />
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden pl-[88px]">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden pl-[64px]">
         {children}
       </main>
     </div>

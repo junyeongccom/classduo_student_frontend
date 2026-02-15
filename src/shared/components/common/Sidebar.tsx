@@ -13,6 +13,12 @@ import {
   AI_TUTOR_NEW_CHAT_PARAM,
 } from '@/shared/constants/aiTutor'
 import { useNewStudyspace } from '@/shared/lib/featureFlags'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/shared/components/ui/Tooltip'
 
 export function Sidebar() {
   const t = useTranslations()
@@ -34,6 +40,7 @@ export function Sidebar() {
     setIsMenuOpen((prev) => !prev)
   }, [])
   const isNewUI = useNewStudyspace()
+  const sidebarWidth = isNewUI ? 64 : 88
   const menuItems = useMemo(() => {
     if (isNewUI) {
       return [...NEW_SIDEBAR_MENU]
@@ -60,92 +67,148 @@ export function Sidebar() {
   }, [toggleMenu])
 
   return (
-    <>
-      <div className="fixed left-0 top-4 z-[60] flex w-[88px] items-center justify-center bg-transparent">
+    <TooltipProvider delayDuration={200}>
+      <div
+        className={cn(
+          'fixed left-0 top-4 z-[60] flex items-center justify-center bg-transparent',
+          isNewUI ? 'w-[64px]' : 'w-[88px]'
+        )}
+      >
         <div className="flex items-center justify-center">
           <img src="/Aplus_logo.png" alt="CLASSDUO" className="h-8 w-auto" />
         </div>
       </div>
-      <div className="fixed left-0 top-[72px] z-[60] flex w-[88px] items-center justify-center bg-transparent">
+      <div
+        className={cn(
+          'fixed left-0 top-[72px] z-[60] flex items-center justify-center bg-transparent',
+          isNewUI ? 'w-[64px]' : 'w-[88px]'
+        )}
+      >
         <LanguageToggle size="sm" />
-        </div>
+      </div>
       <aside
         className={cn(
           'fixed left-0 top-16 z-50 h-[calc(100vh-4rem)] overflow-visible bg-transparent transition-all duration-300',
-          isMenuOpen ? 'w-[88px]' : 'w-0'
+          isMenuOpen
+            ? (isNewUI ? 'w-[64px]' : 'w-[88px]')
+            : 'w-0'
         )}
       >
         <div className="flex h-full flex-col items-center py-6">
           <nav className="mt-8 flex flex-1 flex-col items-center justify-center gap-5">
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname.startsWith(item.href)
-            const label = t(item.labelKey)
+            {menuItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname.startsWith(item.href)
+              const label = t(item.labelKey)
 
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={(event) => {
-                  if (item.id === 'ai-tutor') {
-                    event.preventDefault()
-                    triggerAiTutorNewChat()
-                    navigateToAiTutorNewChat()
-                    return
-                  }
-                }}
-                className={cn(
-                  'flex flex-col items-center text-[11px] transition-colors',
-                  isActive ? 'text-white' : 'text-gray-600 hover:text-gray-900'
-                )}
-                title={label}
-              >
-                <span
+              const linkContent = (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={(event) => {
+                    if (item.id === 'ai-tutor') {
+                      event.preventDefault()
+                      triggerAiTutorNewChat()
+                      navigateToAiTutorNewChat()
+                      return
+                    }
+                  }}
                   className={cn(
-                    'flex h-[72px] w-[72px] flex-col items-center justify-center rounded-lg transition-all',
-                    isActive ? 'bg-gray-900 shadow-sm' : ''
+                    'flex flex-col items-center text-[11px] transition-colors',
+                    isActive ? 'text-white' : 'text-gray-600 hover:text-gray-900'
                   )}
-              >
-                <Icon className="h-5 w-5" />
+                  title={isNewUI ? undefined : label}
+                >
                   <span
                     className={cn(
-                      'mt-1 whitespace-nowrap text-[10px]',
-                      isActive ? 'text-white' : 'text-gray-700'
+                      'flex flex-col items-center justify-center rounded-lg transition-all',
+                      isNewUI ? 'h-10 w-10' : 'h-[72px] w-[72px]',
+                      isActive ? 'bg-gray-900 shadow-sm' : ''
                     )}
                   >
-                    {label}
+                    <Icon className="h-5 w-5" />
+                    {!isNewUI && (
+                      <span
+                        className={cn(
+                          'mt-1 whitespace-nowrap text-[10px]',
+                          isActive ? 'text-white' : 'text-gray-700'
+                        )}
+                      >
+                        {label}
+                      </span>
+                    )}
                   </span>
-                </span>
-              </Link>
-            )
-          })}
-        </nav>
+                </Link>
+              )
 
+              if (isNewUI) {
+                return (
+                  <Tooltip key={item.id}>
+                    <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={8}>
+                      {label}
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              }
+
+              return linkContent
+            })}
+          </nav>
+
+          {isNewUI ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={PROFILE_MENU.href}
+                  className={cn(
+                    'mb-2 flex flex-col items-center text-[11px] transition-colors',
+                    pathname === PROFILE_MENU.href
+                      ? 'text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'flex h-10 w-10 flex-col items-center justify-center rounded-lg transition-all',
+                      pathname === PROFILE_MENU.href ? 'bg-gray-900 shadow-sm' : ''
+                    )}
+                  >
+                    <PROFILE_MENU.icon className="h-5 w-5" />
+                  </span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                {profileLabel}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
             <Link
               href={PROFILE_MENU.href}
               className={cn(
-            'mb-2 flex flex-col items-center text-[11px] transition-colors',
+                'mb-2 flex flex-col items-center text-[11px] transition-colors',
                 pathname === PROFILE_MENU.href
-              ? 'text-white'
-              : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-white'
+                  : 'text-gray-600 hover:text-gray-900'
               )}
-          title={profileLabel}
-        >
-          <span
-            className={cn(
-              'flex h-[72px] w-[72px] flex-col items-center justify-center rounded-lg transition-all',
-              pathname === PROFILE_MENU.href ? 'bg-gray-900 shadow-sm' : ''
-            )}
+              title={profileLabel}
             >
-              <PROFILE_MENU.icon className="h-5 w-5" />
-            <span className={cn('mt-1 text-[10px]', pathname === PROFILE_MENU.href ? 'text-white' : 'text-gray-700')}>
-              {profileLabel}
-            </span>
-          </span>
+              <span
+                className={cn(
+                  'flex h-[72px] w-[72px] flex-col items-center justify-center rounded-lg transition-all',
+                  pathname === PROFILE_MENU.href ? 'bg-gray-900 shadow-sm' : ''
+                )}
+              >
+                <PROFILE_MENU.icon className="h-5 w-5" />
+                <span className={cn('mt-1 text-[10px]', pathname === PROFILE_MENU.href ? 'text-white' : 'text-gray-700')}>
+                  {profileLabel}
+                </span>
+              </span>
             </Link>
-      </div>
-    </aside>
-    </>
+          )}
+        </div>
+      </aside>
+    </TooltipProvider>
   )
 }
 
