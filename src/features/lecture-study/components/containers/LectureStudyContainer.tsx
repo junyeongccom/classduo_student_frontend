@@ -1,17 +1,18 @@
 /**
  * @file LectureStudyContainer.tsx
- * @description 회차별 학습 메인 컨테이너 — 좌우 패널 + 리사이저
+ * @description 회차별 학습 메인 컨테이너 — 좌우 패널 + 리사이저 + 모바일 반응형
  * @module features/lecture-study/components/containers
- * @dependencies useLectureDetail, Tabs, Breadcrumb, LeftPanel*, RightPanelPlaceholder
+ * @dependencies useLectureDetail, Tabs, Breadcrumb, LeftPanel*, RightPanelPlaceholder, useIsMobile
  */
 
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2 } from 'lucide-react'
+import { Loader2, PanelRightOpen, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
+import { useIsMobile } from '../../hooks/useMediaQuery'
 import { Breadcrumb } from '../ui/Breadcrumb'
 import { LeftPanelMaterials } from '../ui/LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
@@ -32,6 +33,7 @@ interface LectureStudyContainerProps {
 
 export function LectureStudyContainer({ lectureId, courseId, courseTitle }: LectureStudyContainerProps) {
   const t = useTranslations()
+  const isMobile = useIsMobile()
   const { recordings, isLoading, error } = useLectureDetail(lectureId)
 
   const [leftTab, setLeftTab] = useState<LeftPanelTab>('materials')
@@ -39,6 +41,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
   const [hasUserResized, setHasUserResized] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const breadcrumbItems = [
@@ -49,9 +52,9 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
     { label: `${lectureId.slice(0, 8)}...` },
   ]
 
-  // Auto-size on initial render
+  // Auto-size on initial render (desktop only)
   useLayoutEffect(() => {
-    if (!containerRef.current || hasUserResized) return
+    if (isMobile || !containerRef.current || hasUserResized) return
     const element = containerRef.current
     const updateWidth = () => {
       const rect = element.getBoundingClientRect()
@@ -64,11 +67,11 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
     const observer = new ResizeObserver(updateWidth)
     observer.observe(element)
     return () => observer.disconnect()
-  }, [hasUserResized])
+  }, [hasUserResized, isMobile])
 
-  // Resize mouse events
+  // Resize mouse events (desktop only)
   useEffect(() => {
-    if (!isResizing) return
+    if (!isResizing || isMobile) return
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!containerRef.current) return
@@ -85,10 +88,11 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isResizing])
+  }, [isResizing, isMobile])
 
-  // Window resize clamp
+  // Window resize clamp (desktop only)
   useEffect(() => {
+    if (isMobile) return
     const handleResize = () => {
       if (!containerRef.current) return
       const rect = containerRef.current.getBoundingClientRect()
@@ -97,7 +101,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [isMobile])
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -121,11 +125,56 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
     )
   }
 
+  const rightPanelContent = (
+    <Tabs
+      value={rightTab}
+      onValueChange={v => setRightTab(v as LectureStudyTab)}
+      className="flex h-full flex-col"
+    >
+      <div className="shrink-0 border-b border-gray-100 px-3 pt-2">
+        <TabsList className="h-9">
+          <TabsTrigger value="summary" className="text-xs">
+            {t('lectureStudy.rightPanel.summaryTab')}
+          </TabsTrigger>
+          <TabsTrigger value="quiz" className="text-xs">
+            {t('lectureStudy.rightPanel.quizTab')}
+          </TabsTrigger>
+          <TabsTrigger value="game" className="text-xs">
+            {t('lectureStudy.rightPanel.gameTab')}
+          </TabsTrigger>
+          <TabsTrigger value="ai-tutor" className="text-xs">
+            {t('lectureStudy.rightPanel.aiTutorTab')}
+          </TabsTrigger>
+        </TabsList>
+      </div>
+      <TabsContent value="summary" className="flex-1 min-h-0 mt-0">
+        <RightPanelPlaceholder tab="summary" />
+      </TabsContent>
+      <TabsContent value="quiz" className="flex-1 min-h-0 mt-0">
+        <RightPanelPlaceholder tab="quiz" />
+      </TabsContent>
+      <TabsContent value="game" className="flex-1 min-h-0 mt-0">
+        <GameTabContainer lectureId={lectureId} />
+      </TabsContent>
+      <TabsContent value="ai-tutor" className="flex-1 min-h-0 mt-0">
+        <AITutorTabContainer lectureId={lectureId} />
+      </TabsContent>
+    </Tabs>
+  )
+
   return (
     <div className="flex h-full flex-col">
       {/* Header: Breadcrumb */}
-      <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
+      <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3 flex items-center justify-between">
         <Breadcrumb items={breadcrumbItems} />
+        {isMobile && (
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="ml-2 rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
+          >
+            <PanelRightOpen className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Panels */}
@@ -134,7 +183,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
         className="flex flex-1 min-h-0"
       >
         {/* Left Panel */}
-        <section className="flex h-full min-h-0 flex-col border-r border-gray-200" style={{ width: leftWidth }}>
+        <section
+          className="flex h-full min-h-0 flex-col border-r border-gray-200"
+          style={isMobile ? { width: '100%' } : { width: leftWidth }}
+        >
           <Tabs
             value={leftTab}
             onValueChange={v => setLeftTab(v as LeftPanelTab)}
@@ -159,54 +211,50 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
           </Tabs>
         </section>
 
-        {/* Resizer */}
-        <div
-          className="relative flex w-px cursor-col-resize items-stretch justify-center bg-gray-300/80 hover:bg-blue-400 transition-colors"
-          onMouseDown={handleResizeStart}
-        >
-          {isResizing && (
-            <div className="fixed inset-0 z-50 cursor-col-resize" />
-          )}
-        </div>
-
-        {/* Right Panel */}
-        <section className="flex h-full min-h-0 flex-1 flex-col">
-          <Tabs
-            value={rightTab}
-            onValueChange={v => setRightTab(v as LectureStudyTab)}
-            className="flex h-full flex-col"
-          >
-            <div className="shrink-0 border-b border-gray-100 px-3 pt-2">
-              <TabsList className="h-9">
-                <TabsTrigger value="summary" className="text-xs">
-                  {t('lectureStudy.rightPanel.summaryTab')}
-                </TabsTrigger>
-                <TabsTrigger value="quiz" className="text-xs">
-                  {t('lectureStudy.rightPanel.quizTab')}
-                </TabsTrigger>
-                <TabsTrigger value="game" className="text-xs">
-                  {t('lectureStudy.rightPanel.gameTab')}
-                </TabsTrigger>
-                <TabsTrigger value="ai-tutor" className="text-xs">
-                  {t('lectureStudy.rightPanel.aiTutorTab')}
-                </TabsTrigger>
-              </TabsList>
+        {/* Desktop: Resizer + Right Panel */}
+        {!isMobile && (
+          <>
+            <div
+              className="relative flex w-px cursor-col-resize items-stretch justify-center bg-gray-300/80 hover:bg-blue-400 transition-colors"
+              onMouseDown={handleResizeStart}
+            >
+              {isResizing && (
+                <div className="fixed inset-0 z-50 cursor-col-resize" />
+              )}
             </div>
-            <TabsContent value="summary" className="flex-1 min-h-0 mt-0">
-              <RightPanelPlaceholder tab="summary" />
-            </TabsContent>
-            <TabsContent value="quiz" className="flex-1 min-h-0 mt-0">
-              <RightPanelPlaceholder tab="quiz" />
-            </TabsContent>
-            <TabsContent value="game" className="flex-1 min-h-0 mt-0">
-              <GameTabContainer lectureId={lectureId} />
-            </TabsContent>
-            <TabsContent value="ai-tutor" className="flex-1 min-h-0 mt-0">
-              <AITutorTabContainer lectureId={lectureId} />
-            </TabsContent>
-          </Tabs>
-        </section>
+
+            <section className="flex h-full min-h-0 flex-1 flex-col">
+              {rightPanelContent}
+            </section>
+          </>
+        )}
       </div>
+
+      {/* Mobile: Drawer for Right Panel */}
+      {isMobile && isDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/40"
+            onClick={() => setIsDrawerOpen(false)}
+          />
+          <div className="flex h-full w-[85vw] max-w-md flex-col bg-white shadow-xl animate-in slide-in-from-right">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+              <span className="text-sm font-medium text-gray-900">
+                {t('lectureStudy.rightPanel.summaryTab')}
+              </span>
+              <button
+                onClick={() => setIsDrawerOpen(false)}
+                className="rounded-lg p-1 text-gray-500 hover:bg-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {rightPanelContent}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
