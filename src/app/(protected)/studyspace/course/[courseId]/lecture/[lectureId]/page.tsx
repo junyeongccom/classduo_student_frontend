@@ -15,7 +15,7 @@ export default function LectureStudyPage({
 }: {
   params: Promise<{ courseId: string; lectureId: string }>
 }) {
-  const { lectureId } = use(params)
+  const { courseId, lectureId } = use(params)
 
-  return <LectureStudyContainer lectureId={lectureId} />
+  return <LectureStudyContainer lectureId={lectureId} courseId={courseId} />
 }
