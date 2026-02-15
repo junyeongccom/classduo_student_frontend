@@ -53,7 +53,7 @@ export function GameSelector({ onSelectGame }: GameSelectorProps) {
             key={game.id}
             onClick={() => onSelectGame(game.id)}
             className={cn(
-              'flex items-center gap-4 rounded-xl border bg-gradient-to-br p-4 text-left transition-all hover:shadow-md hover:-translate-y-0.5',
+              'flex items-center gap-4 rounded-2xl border bg-gradient-to-br p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
               GAME_COLORS[i],
             )}
           >
@@ -65,7 +65,7 @@ export function GameSelector({ onSelectGame }: GameSelectorProps) {
                 {gameNames[game.id]}
               </h4>
               {game.minWords > 0 && (
-                <p className="text-[11px] text-gray-500">
+                <p className="text-xs text-gray-500">
                   {t('lectureStudy.game.minWords', { n: game.minWords })}
                 </p>
               )}

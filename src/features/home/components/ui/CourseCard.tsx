@@ -45,7 +45,7 @@ export function CourseCard({
       onClick={onClick}
       className={cn(
         'group relative flex w-full min-h-[120px] overflow-hidden',
-        'rounded-2xl border border-gray-200/60 bg-white shadow-sm',
+        'rounded-2xl border border-gray-200 bg-white shadow-sm',
         'text-left transition-all duration-200',
         'hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5',
       )}

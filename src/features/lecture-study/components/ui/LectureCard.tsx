@@ -41,7 +41,7 @@ export function LectureCard({ lecture, isLatest, courseId, onClick }: LectureCar
       disabled={!hasAnyContent}
       className={cn(
         'group relative flex h-[220px] w-full flex-col overflow-hidden',
-        'rounded-2xl border border-gray-200/60 bg-white shadow-sm',
+        'rounded-2xl border border-gray-200 bg-white shadow-sm',
         'text-left transition-all duration-200',
         hasAnyContent
           ? 'cursor-pointer hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5'

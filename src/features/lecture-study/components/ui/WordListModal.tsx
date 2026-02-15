@@ -104,7 +104,7 @@ export function WordListModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t('lectureStudy.game.wordListTitle')}</DialogTitle>
           <DialogDescription>{gameName}</DialogDescription>
@@ -118,20 +118,20 @@ export function WordListModal({
 
         <div className="flex-1 min-h-0 overflow-y-auto space-y-2 py-2">
           {words.map(word => (
-            <div key={word.id} className="flex items-start gap-2 rounded-lg border border-gray-200 p-2">
+            <div key={word.id} className="flex items-start gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
               {editingId === word.id ? (
                 <div className="flex-1 min-w-0 space-y-1">
                   <input
                     value={editKeyword}
                     onChange={e => setEditKeyword(e.target.value)}
                     maxLength={MAX_KEYWORD_LENGTH}
-                    className="w-full rounded border border-gray-300 px-2 py-1 text-sm focus:border-blue-400 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
                   />
                   <input
                     value={editDescription}
                     onChange={e => setEditDescription(e.target.value)}
                     maxLength={MAX_DESCRIPTION_LENGTH}
-                    className="w-full rounded border border-gray-300 px-2 py-1 text-xs focus:border-blue-400 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-xs focus:border-blue-500 focus:outline-none"
                   />
                   <div className="flex gap-1">
                     <button onClick={handleSaveEdit} className="p-0.5 text-emerald-600 hover:text-emerald-800">
@@ -175,7 +175,7 @@ export function WordListModal({
             onChange={e => setNewKeyword(e.target.value)}
             placeholder={t('lectureStudy.game.wordKeywordPlaceholder')}
             maxLength={MAX_KEYWORD_LENGTH}
-            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
+            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
           />
           <input
@@ -183,7 +183,7 @@ export function WordListModal({
             onChange={e => setNewDescription(e.target.value)}
             placeholder={t('lectureStudy.game.wordDescriptionPlaceholder')}
             maxLength={MAX_DESCRIPTION_LENGTH}
-            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
+            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
           />
           <button
