@@ -16,6 +16,7 @@ import { Breadcrumb } from '../ui/Breadcrumb'
 import { LeftPanelMaterials } from '../ui/LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
 import { RightPanelPlaceholder } from '../ui/RightPanelPlaceholder'
+import { GameTabContainer } from './GameTabContainer'
 import type { LectureStudyTab, LeftPanelTab } from '../../types'
 
 const DEFAULT_LEFT_WIDTH = 500
@@ -197,7 +198,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle }: Lect
               <RightPanelPlaceholder tab="quiz" />
             </TabsContent>
             <TabsContent value="game" className="flex-1 min-h-0 mt-0">
-              <RightPanelPlaceholder tab="game" />
+              <GameTabContainer lectureId={lectureId} />
             </TabsContent>
             <TabsContent value="ai-tutor" className="flex-1 min-h-0 mt-0">
               <RightPanelPlaceholder tab="ai-tutor" />
