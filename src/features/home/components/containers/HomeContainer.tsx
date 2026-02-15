@@ -9,7 +9,7 @@
 
 import { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { useCourses } from '../../hooks/useCourses'
 import { groupCoursesByTerm } from '../../domain/groupCoursesByTerm'
@@ -21,6 +21,8 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 export function HomeContainer() {
   const t = useTranslations()
   const router = useRouter()
+  const locale = useLocale()
+  const dateLocale = locale === 'en' ? 'en-US' : 'ko-KR'
   const { courses, isLoading, error, refresh } = useCourses()
   const user = useAuthStore((s) => s.user)
 
@@ -31,13 +33,13 @@ export function HomeContainer() {
   )
 
   const today = useMemo(() => {
-    return new Date().toLocaleDateString('ko-KR', {
+    return new Date().toLocaleDateString(dateLocale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       weekday: 'long',
     })
-  }, [])
+  }, [dateLocale])
 
   if (isLoading) {
     return (
@@ -103,6 +105,7 @@ export function HomeContainer() {
                         accent: '#6B7280',
                       }
                     }
+                    locale={dateLocale}
                     onClick={() =>
                       router.push(`/studyspace/course/${course.id}`)
                     }

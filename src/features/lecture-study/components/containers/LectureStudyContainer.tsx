@@ -16,7 +16,7 @@ import { useLectures } from '../../hooks/useLectures'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { Breadcrumb } from '../ui/Breadcrumb'
-import { LeftPanelMaterials } from '../ui/LeftPanelMaterials'
+import { LeftPanelMaterials } from './LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
 import { RightPanelPlaceholder } from '../ui/RightPanelPlaceholder'
 import { GameTabContainer } from './GameTabContainer'
@@ -57,8 +57,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const setLeftTab = useLectureStudyStore(s => s.setLeftTab)
   const setRightTab = useLectureStudyStore(s => s.setRightTab)
   const setStoreLectureId = useLectureStudyStore(s => s.setLectureId)
+  const setGameWords = useLectureStudyStore(s => s.setGameWords)
 
-  useEffect(() => { setStoreLectureId(lectureId) }, [lectureId, setStoreLectureId])
+  useEffect(() => {
+    setStoreLectureId(lectureId)
+    setGameWords([])
+  }, [lectureId, setStoreLectureId, setGameWords])
 
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
@@ -73,16 +77,18 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       const sn = currentLecture.session_number
       const title = currentLecture.title
       if (wn != null && sn != null) {
-        return title ? `${wn}주차 ${sn}차시 - ${title}` : `${wn}주차 ${sn}차시`
+        return title
+          ? t('lectureStudy.breadcrumb.weekSessionTitle', { week: wn, session: sn, title })
+          : t('lectureStudy.breadcrumb.weekSession', { week: wn, session: sn })
       }
       if (currentLecture.lecture_number != null) {
         return title
-          ? `회차 ${currentLecture.lecture_number} - ${title}`
-          : `회차 ${currentLecture.lecture_number}`
+          ? t('lectureStudy.breadcrumb.lectureNumberTitle', { number: currentLecture.lecture_number, title })
+          : t('lectureStudy.breadcrumb.lectureNumber', { number: currentLecture.lecture_number })
       }
       if (title) return title
     }
-    return '회차'
+    return t('lectureStudy.breadcrumb.lectureFallback')
   }
 
   const breadcrumbItems = [
@@ -161,7 +167,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   if (error) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-sm text-gray-500">{error}</p>
+        <p className="text-sm text-gray-500">{t('lectureStudy.error.loadFailed')}</p>
         <button
           onClick={refresh}
           className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-800"

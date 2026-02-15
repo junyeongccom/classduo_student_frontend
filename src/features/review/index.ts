@@ -12,6 +12,9 @@ export { DefinitionBuilderGame } from './components/ui/DefinitionBuilderGame'
 export { GuessTheTermGameContainer } from './components/containers/GuessTheTermGameContainer'
 export { ReviewDeckView } from './components/ui/ReviewDeckView'
 
+// Types (public boundary)
+export type { LectureReviewItem, DefinitionBuilderGameResponse } from './types'
+
 // Services & Hooks
 export * from './services/reviewService'
 export * from './hooks/useReview'

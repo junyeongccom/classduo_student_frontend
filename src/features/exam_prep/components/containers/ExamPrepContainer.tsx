@@ -23,6 +23,7 @@ import {
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { isUUID } from '@/shared/lib/validation'
 import { gradeQuizAnswer } from '../../domain/gradeQuiz'
 
 const DEFAULT_LEFT_WIDTH = 620
@@ -38,7 +39,7 @@ interface ExamPrepContainerProps {
   materialId?: string
 }
 
-export function ExamPrepContainer({ courseId: propCourseId, materialId: propMaterialId }: ExamPrepContainerProps = {}) {
+export function ExamPrepContainer({ courseId: propCourseId, materialId: propMaterialId }: ExamPrepContainerProps) {
   const t = useTranslations('examPrep')
   const locale = useLocale()
   const language = locale === 'en' ? 'en' : 'ko'
@@ -65,9 +66,11 @@ export function ExamPrepContainer({ courseId: propCourseId, materialId: propMate
 
   const { courses, isLoading: coursesLoading, error: coursesError, refresh: refreshCourses } = useExamPrepCourses()
 
-  // prop 우선, 없으면 URL에서 초기값 읽기
-  const initialCourseId = propCourseId ?? searchParams.get('courseId')
-  const initialMaterialId = propMaterialId ?? searchParams.get('materialId')
+  // prop 우선, 없으면 URL에서 초기값 읽기 (UUID 형식 검증)
+  const rawCourseId = propCourseId ?? searchParams.get('courseId')
+  const rawMaterialId = propMaterialId ?? searchParams.get('materialId')
+  const initialCourseId = rawCourseId && isUUID(rawCourseId) ? rawCourseId : null
+  const initialMaterialId = rawMaterialId && isUUID(rawMaterialId) ? rawMaterialId : null
 
   const [selectedCourseId, setSelectedCourseIdState] = useState<string | null>(initialCourseId)
   const { materials: materialsList, isLoading: materialsLoading, refresh: refreshMaterials } = useExamPrepMaterials(selectedCourseId)

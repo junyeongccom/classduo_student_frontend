@@ -40,6 +40,7 @@ interface WordListModalProps {
   onStartGame: () => void
   isImporting?: boolean
   isRunningGame?: boolean
+  importError?: string | null
 }
 
 export function WordListModal({
@@ -53,6 +54,7 @@ export function WordListModal({
   onStartGame,
   isImporting = false,
   isRunningGame = false,
+  importError = null,
 }: WordListModalProps) {
   const t = useTranslations()
   const [newKeyword, setNewKeyword] = useState('')
@@ -199,6 +201,10 @@ export function WordListModal({
           <p className="text-xs text-amber-600">
             {t('lectureStudy.game.minWords', { n: minWords })}
           </p>
+        )}
+
+        {importError && (
+          <p className="text-xs text-red-500">{importError}</p>
         )}
 
         <DialogFooter className="gap-2">

@@ -272,10 +272,20 @@
       "importKeywords": "Import Keywords",
       "runningGameNote": "This game uses OX quiz data. The word list will be utilized in future updates.",
       "wordKeywordPlaceholder": "Keyword",
-      "wordDescriptionPlaceholder": "Description"
+      "wordDescriptionPlaceholder": "Description",
+      "importError": "Failed to import keywords. Please add words manually."
+    },
+    "breadcrumb": {
+      "weekSession": "Week {week}, Session {session}",
+      "weekSessionTitle": "Week {week}, Session {session} - {title}",
+      "lectureNumber": "Lecture {number}",
+      "lectureNumberTitle": "Lecture {number} - {title}",
+      "lectureFallback": "Lecture"
     },
     "error": {
-      "loadLectures": "Failed to load lectures"
+      "loadLectures": "Failed to load lectures",
+      "loadFailed": "Failed to load data. Please try again.",
+      "materialsLoadError": "Failed to load materials"
     }
   },
   "studyspacePlaceholder": {

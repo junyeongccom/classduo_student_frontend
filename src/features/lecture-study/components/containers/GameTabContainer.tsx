@@ -23,7 +23,7 @@ import {
   ReviewDeckView,
   useReviewDeck,
 } from '@/features/review'
-import type { LectureReviewItem, DefinitionBuilderGameResponse } from '@/features/review/types'
+import type { LectureReviewItem, DefinitionBuilderGameResponse } from '@/features/review'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
 const GameOverlay = dynamic(
@@ -57,6 +57,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
 
   // Store-backed words for tab persistence
   const words = useLectureStudyStore(s => s.gameWords)
@@ -88,6 +89,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
 
   const handleImportKeywords = useCallback(async () => {
     setIsImporting(true)
+    setImportError(null)
     try {
       const result = await reviewService.getLectureKeywordsPreview(lectureId)
       if (result.data?.keywords && result.data.keywords.length > 0) {
@@ -102,51 +104,13 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         setWords([...words, ...newWords])
       }
     } catch {
-      // silently fail — user can still add words manually
+      setImportError(t('lectureStudy.game.importError'))
     } finally {
       setIsImporting(false)
     }
-  }, [lectureId, words, setWords])
+  }, [lectureId, words, setWords, t])
 
-  const handleStartGame = useCallback(async () => {
-    setShowWordModal(false)
-
-    // Running game: open overlay immediately
-    if (selectedGame === 'running') {
-      setShowRunningOverlay(true)
-      return
-    }
-
-    // DefinitionBuilder: fetch game data from API
-    if (selectedGame === 'definitionBuilder') {
-      setDefBuilderLoading(true)
-      setDefBuilderError(null)
-      setDefBuilderScore(0)
-      try {
-        const result = await reviewService.getDefinitionBuilderGame(lectureId)
-        if (result.data) {
-          setDefBuilderData(result.data)
-        } else {
-          setDefBuilderError(result.error?.message ?? 'Failed to load game')
-        }
-      } catch {
-        setDefBuilderError('Failed to load game')
-      } finally {
-        setDefBuilderLoading(false)
-      }
-    }
-
-    setIsPlaying(true)
-  }, [selectedGame, lectureId])
-
-  const handleExitGame = useCallback(() => {
-    setIsPlaying(false)
-    setSelectedGame(null)
-    setDefBuilderData(null)
-    setDefBuilderScore(0)
-  }, [])
-
-  const handleRetryDefBuilder = useCallback(async () => {
+  const loadDefBuilderData = useCallback(async () => {
     setDefBuilderLoading(true)
     setDefBuilderError(null)
     try {
@@ -162,6 +126,31 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
       setDefBuilderLoading(false)
     }
   }, [lectureId])
+
+  const handleStartGame = useCallback(async () => {
+    setShowWordModal(false)
+
+    // Running game: open overlay immediately
+    if (selectedGame === 'running') {
+      setShowRunningOverlay(true)
+      return
+    }
+
+    // DefinitionBuilder: fetch game data from API
+    if (selectedGame === 'definitionBuilder') {
+      setDefBuilderScore(0)
+      await loadDefBuilderData()
+    }
+
+    setIsPlaying(true)
+  }, [selectedGame, loadDefBuilderData])
+
+  const handleExitGame = useCallback(() => {
+    setIsPlaying(false)
+    setSelectedGame(null)
+    setDefBuilderData(null)
+    setDefBuilderScore(0)
+  }, [])
 
   // Running game overlay (renders on top, no "isPlaying" needed)
   if (showRunningOverlay) {
@@ -209,11 +198,11 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
               data={defBuilderData}
               isLoading={defBuilderLoading}
               error={defBuilderError}
-              onRetry={handleRetryDefBuilder}
+              onRetry={loadDefBuilderData}
               isEnabled
               currentScore={defBuilderScore}
               onScoreDelta={(delta) => setDefBuilderScore(s => s + delta)}
-              onRestart={handleRetryDefBuilder}
+              onRestart={loadDefBuilderData}
             />
           )}
           {selectedGame === 'guessTheTerm' && (
@@ -256,6 +245,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         onStartGame={handleStartGame}
         isImporting={isImporting}
         isRunningGame={selectedGame === 'running'}
+        importError={importError}
       />
     </>
   )

@@ -40,7 +40,6 @@ export function Sidebar() {
     setIsMenuOpen((prev) => !prev)
   }, [])
   const isNewUI = useNewStudyspace()
-  const sidebarWidth = isNewUI ? 64 : 88
   const menuItems = useMemo(() => {
     if (isNewUI) {
       return [...NEW_SIDEBAR_MENU]

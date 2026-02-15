@@ -1,7 +1,7 @@
 /**
  * @file LeftPanelMaterials.tsx
  * @description 좌측 패널 - 이미지 기반 PDF 뷰어 (materials/{materialId}/page_NNNN.jpg)
- * @module features/lecture-study/components/ui
+ * @module features/lecture-study/components/containers
  * @dependencies lectureService, useLectureStudyStore
  */
 
@@ -16,6 +16,10 @@ import type { MaterialPageItem } from '../../services/lectureService'
 
 interface PageCache {
   [pageNumber: number]: string | null
+}
+
+function isValidImageUrl(url: string): boolean {
+  return url.startsWith('https://') || url.startsWith('http://localhost')
 }
 
 export function LeftPanelMaterials() {
@@ -42,38 +46,46 @@ export function LeftPanelMaterials() {
       setMaterialId(null)
       setPages([])
 
-      const mappingResult = await lectureService.getLectureMaterials(lectureId!)
-      if (cancelled) return
+      try {
+        const mappingResult = await lectureService.getLectureMaterials(lectureId!)
+        if (cancelled) return
 
-      const materials = mappingResult.data?.materials ?? []
-      if (materials.length === 0) {
+        const materials = mappingResult.data?.materials ?? []
+        if (materials.length === 0) {
+          setIsLoading(false)
+          return
+        }
+
+        const firstMaterialId = materials[0].material_id
+        setMaterialId(firstMaterialId)
+
+        const pagesResult = await lectureService.getMaterialPages(firstMaterialId)
+        if (cancelled) return
+
+        if (pagesResult.error || !pagesResult.data) {
+          console.error('[LeftPanelMaterials] Failed to load pages:', pagesResult.error)
+          setError('MATERIALS_LOAD_ERROR')
+          setIsLoading(false)
+          return
+        }
+
+        const sortedPages = [...(pagesResult.data.pages ?? [])].sort(
+          (a, b) => a.page_number - b.page_number,
+        )
+        setPages(sortedPages)
+        setTotalPages(pagesResult.data.total_count || sortedPages.length)
+        setCurrentPage(1)
         setIsLoading(false)
-        return
-      }
 
-      const firstMaterialId = materials[0].material_id
-      setMaterialId(firstMaterialId)
-
-      const pagesResult = await lectureService.getMaterialPages(firstMaterialId)
-      if (cancelled) return
-
-      if (pagesResult.error || !pagesResult.data) {
-        setError(pagesResult.error?.message ?? 'Failed to load pages')
+        // cache first page URL
+        if (sortedPages.length > 0 && sortedPages[0].image_url) {
+          imageCache.current[sortedPages[0].page_number] = sortedPages[0].image_url
+        }
+      } catch (err) {
+        if (cancelled) return
+        console.error('[LeftPanelMaterials] fetchMaterial error:', err)
+        setError('MATERIALS_LOAD_ERROR')
         setIsLoading(false)
-        return
-      }
-
-      const sortedPages = [...(pagesResult.data.pages ?? [])].sort(
-        (a, b) => a.page_number - b.page_number,
-      )
-      setPages(sortedPages)
-      setTotalPages(pagesResult.data.total_count || sortedPages.length)
-      setCurrentPage(1)
-      setIsLoading(false)
-
-      // cache first page URL
-      if (sortedPages.length > 0 && sortedPages[0].image_url) {
-        imageCache.current[sortedPages[0].page_number] = sortedPages[0].image_url
       }
     }
 
@@ -87,7 +99,11 @@ export function LeftPanelMaterials() {
     [pages, currentPage],
   )
 
-  const currentImageUrl = currentPageData?.image_url ?? null
+  const currentImageUrl = useMemo(() => {
+    const url = currentPageData?.image_url ?? null
+    if (url && !isValidImageUrl(url)) return null
+    return url
+  }, [currentPageData])
 
   // Preload adjacent pages
   useEffect(() => {
@@ -97,7 +113,7 @@ export function LeftPanelMaterials() {
     for (const pn of pagesToPreload) {
       if (pn < 1 || pn > totalPages) continue
       const page = pages.find((p) => p.page_number === pn)
-      if (page?.image_url && !imageCache.current[pn]) {
+      if (page?.image_url && isValidImageUrl(page.image_url) && !imageCache.current[pn]) {
         imageCache.current[pn] = page.image_url
         const img = new Image()
         img.src = page.image_url
@@ -123,19 +139,19 @@ export function LeftPanelMaterials() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
+        <p className="text-sm">{t('lectureStudy.error.materialsLoadError')}</p>
+      </div>
+    )
+  }
+
   if (!materialId || pages.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
         <FileText className="h-10 w-10" />
         <p className="text-sm">{t('lectureStudy.leftPanel.materialsEmpty')}</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
-        <p className="text-sm">{error}</p>
       </div>
     )
   }

@@ -15,6 +15,7 @@ interface CourseCardProps {
   visual: CourseVisual
   progress?: { completed: number; total: number } | null
   progressLabel?: string
+  locale?: string
   onClick: () => void
 }
 
@@ -25,10 +26,11 @@ export function CourseCard({
   visual,
   progress,
   progressLabel,
+  locale = 'ko-KR',
   onClick,
 }: CourseCardProps) {
   const formattedDate = updatedAt
-    ? new Date(updatedAt).toLocaleDateString('ko-KR', {
+    ? new Date(updatedAt).toLocaleDateString(locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',

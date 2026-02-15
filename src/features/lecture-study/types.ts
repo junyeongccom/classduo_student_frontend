@@ -16,8 +16,8 @@ export interface Lecture {
   date: string | null
   week_number: number | null
   session_number: number | null
-  has_recordings: boolean
-  has_materials: boolean
+  has_recordings: boolean | null
+  has_materials: boolean | null
   has_content: boolean
   essence_7words: string | null
 }
