@@ -7,11 +7,12 @@
 
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Loader2, PanelRightOpen, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
+import { useLectures } from '../../hooks/useLectures'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { Breadcrumb } from '../ui/Breadcrumb'
@@ -44,6 +45,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const t = useTranslations()
   const isMobile = useIsMobile()
   const { recordings, isLoading, error, refresh } = useLectureDetail(lectureId)
+  const { lectures, courseTitle: fetchedCourseTitle } = useLectures(courseId ?? '')
+
+  const currentLecture = useMemo(
+    () => lectures.find((l) => l.id === lectureId),
+    [lectures, lectureId],
+  )
 
   const leftTab = useLectureStudyStore(s => s.leftTab)
   const rightTab = useLectureStudyStore(s => s.rightTab)
@@ -59,12 +66,31 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  const resolveLectureLabel = (): string => {
+    if (lectureTitle) return lectureTitle
+    if (currentLecture) {
+      const wn = currentLecture.week_number
+      const sn = currentLecture.session_number
+      const title = currentLecture.title
+      if (wn != null && sn != null) {
+        return title ? `${wn}주차 ${sn}차시 - ${title}` : `${wn}주차 ${sn}차시`
+      }
+      if (currentLecture.lecture_number != null) {
+        return title
+          ? `회차 ${currentLecture.lecture_number} - ${title}`
+          : `회차 ${currentLecture.lecture_number}`
+      }
+      if (title) return title
+    }
+    return '회차'
+  }
+
   const breadcrumbItems = [
     { label: t('lectureStudy.breadcrumbHome'), href: '/studyspace/home' },
     ...(courseId
-      ? [{ label: courseTitle ?? '...', href: `/studyspace/course/${courseId}` }]
+      ? [{ label: courseTitle ?? fetchedCourseTitle ?? '...', href: `/studyspace/course/${courseId}` }]
       : []),
-    { label: lectureTitle ?? `${lectureId.slice(0, 8)}...` },
+    { label: resolveLectureLabel() },
   ]
 
   // Auto-size on initial render (desktop only)
