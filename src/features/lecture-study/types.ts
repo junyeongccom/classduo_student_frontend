@@ -30,20 +30,19 @@ export interface LectureMaterial {
   signed_url?: string | null
 }
 
-export interface Recording {
-  id: string
-  lecture_id: string
-  summary: string | null
-  status: string
-}
-
-export interface RecordingChunk {
-  id: string
-  recording_id: string
+export interface RecordingChunkSummary {
   chunk_index: number
   start_time: number | null
   end_time: number | null
-  text: string | null
+  title: string | null
+  content: string | null
+}
+
+export interface Recording {
+  id: string
+  lecture_id: string
+  status: string
+  chunk_summaries: RecordingChunkSummary[]
 }
 
 export interface GameInfo {

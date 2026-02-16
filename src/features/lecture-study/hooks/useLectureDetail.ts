@@ -42,8 +42,14 @@ export function useLectureDetail(lectureId: string): UseLectureDetailResult {
     const mappedRecordings: Recording[] = (recResult.data?.recordings ?? []).map(r => ({
       id: r.recording_id,
       lecture_id: lectureId,
-      summary: r.summary ?? null,
       status: r.status,
+      chunk_summaries: (r.chunk_summaries ?? []).map(cs => ({
+        chunk_index: cs.chunk_index,
+        start_time: cs.start_time ?? null,
+        end_time: cs.end_time ?? null,
+        title: cs.title ?? null,
+        content: cs.content ?? null,
+      })),
     }))
 
     setRecordings(mappedRecordings)

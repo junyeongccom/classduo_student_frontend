@@ -1,19 +1,26 @@
 /**
  * @file LeftPanelRecordings.tsx
- * @description 좌측 패널 - 녹음본 탭 (핵심 내용 + Accordion 기반 녹음 목록)
+ * @description 좌측 패널 - 녹음본 탭 (핵심 내용 + 청크별 요약 Accordion)
  * @module features/lecture-study/components/ui
  * @dependencies lucide-react, shared/components/ui/Accordion
  */
 
-import { Mic, Sparkles } from 'lucide-react'
+import { Mic, Sparkles, Clock } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/shared/components/ui'
-import type { Recording } from '../../types'
+import type { Recording, RecordingChunkSummary } from '../../types'
 
 interface LeftPanelRecordingsProps {
   recordings: Recording[]
   essenceOneLine?: string | null
   essence7Words?: string | null
+}
+
+function formatTime(seconds: number | null): string {
+  if (seconds == null) return '--:--'
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 function StatusBadge({ status, t }: { status: string; t: ReturnType<typeof useTranslations> }) {
@@ -30,6 +37,27 @@ function StatusBadge({ status, t }: { status: string; t: ReturnType<typeof useTr
         ? t('lectureStudy.leftPanel.statusCompleted')
         : t('lectureStudy.leftPanel.statusProcessing')}
     </span>
+  )
+}
+
+function ChunkSummaryItem({ chunk }: { chunk: RecordingChunkSummary }) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-3">
+      <div className="mb-1.5 flex items-center gap-2">
+        {(chunk.start_time != null || chunk.end_time != null) && (
+          <span className="flex items-center gap-1 text-[10px] font-medium text-gray-400">
+            <Clock className="h-3 w-3" />
+            {formatTime(chunk.start_time)} – {formatTime(chunk.end_time)}
+          </span>
+        )}
+      </div>
+      {chunk.title && (
+        <p className="mb-1 text-xs font-semibold text-gray-800">{chunk.title}</p>
+      )}
+      {chunk.content && (
+        <p className="text-xs leading-relaxed text-gray-600">{chunk.content}</p>
+      )}
+    </div>
   )
 }
 
@@ -73,9 +101,13 @@ export function LeftPanelRecordings({ recordings, essenceOneLine, essence7Words 
                 <StatusBadge status={rec.status} t={t} />
               </div>
             </AccordionTrigger>
-            <AccordionContent className="px-4">
-              {rec.summary ? (
-                <p className="text-xs text-gray-600 leading-relaxed">{rec.summary}</p>
+            <AccordionContent className="px-4 pb-3">
+              {rec.chunk_summaries.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {rec.chunk_summaries.map((chunk) => (
+                    <ChunkSummaryItem key={chunk.chunk_index} chunk={chunk} />
+                  ))}
+                </div>
               ) : (
                 <p className="text-xs text-gray-400 italic">
                   {t('lectureStudy.leftPanel.recordingSummaryNull')}

@@ -24,6 +24,14 @@ export interface LectureListApiResponse {
   lectures: LectureApiItem[]
 }
 
+export interface RecordingChunkSummaryApi {
+  chunk_index: number
+  start_time: number | null
+  end_time: number | null
+  title: string | null
+  content: string | null
+}
+
 export interface RecordingApiItem {
   recording_id: string
   job_id: string | null
@@ -31,7 +39,7 @@ export interface RecordingApiItem {
   duration_seconds: number | null
   created_at: string | null
   updated_at: string | null
-  summary?: string | null
+  chunk_summaries?: RecordingChunkSummaryApi[]
 }
 
 export interface RecordingListApiResponse {
