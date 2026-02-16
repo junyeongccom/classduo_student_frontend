@@ -49,13 +49,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
   }))
   
-  // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
-  const DEFAULT_HOOKING_QUESTIONS = [
-    t('defaultHookingQuestions.importantConcept'),
-    t('defaultHookingQuestions.realLifeApplication'),
-    t('defaultHookingQuestions.latestResearch'),
-    t('defaultHookingQuestions.easierUnderstanding'),
-  ]
   const [input, setInput] = useState('')
   const [chatMode, setChatMode] = useState<ChatMode>('simple')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -78,9 +71,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>(
-    DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null }))
-  )
+  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>([])
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -175,7 +166,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         summary_keywords_eng: cachedHooking.summary_keywords_eng || null
       }])
     } else if (cachedHooking === null) {
-      setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
+      setHookingQuestions([])
     }
 
     if (cachedPqm) {
@@ -208,12 +199,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         } else {
           setHookingCache(targetLocale, lectureId, null)
           if (updateState) {
-            setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
+            setHookingQuestions([])
           }
         }
       } else {
         if (updateState) {
-          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
+          setHookingQuestions([])
         }
       }
 
