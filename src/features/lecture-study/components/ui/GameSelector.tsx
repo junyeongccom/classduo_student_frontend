@@ -1,6 +1,6 @@
 /**
  * @file GameSelector.tsx
- * @description 5개 게임 선택 카드 UI
+ * @description 4개 게임 선택 카드 UI
  * @module features/lecture-study/components/ui
  * @dependencies lucide-react
  */
@@ -14,7 +14,6 @@ import type { GameInfo } from '../../types'
 const GAME_LIST: GameInfo[] = [
   { id: 'running', name: '', description: '', minWords: 0, icon: '🏃' },
   { id: 'deck', name: '', description: '', minWords: 1, icon: '🃏' },
-  { id: 'cardMatch', name: '', description: '', minWords: 6, icon: '🎴' },
   { id: 'definitionBuilder', name: '', description: '', minWords: 1, icon: '🧩' },
   { id: 'guessTheTerm', name: '', description: '', minWords: 1, icon: '🔮' },
 ]
@@ -22,7 +21,6 @@ const GAME_LIST: GameInfo[] = [
 const GAME_COLORS = [
   'from-orange-50 to-orange-100 border-orange-200 hover:border-orange-400',
   'from-blue-50 to-blue-100 border-blue-200 hover:border-blue-400',
-  'from-violet-50 to-violet-100 border-violet-200 hover:border-violet-400',
   'from-emerald-50 to-emerald-100 border-emerald-200 hover:border-emerald-400',
   'from-pink-50 to-pink-100 border-pink-200 hover:border-pink-400',
 ]
@@ -37,7 +35,6 @@ export function GameSelector({ onSelectGame }: GameSelectorProps) {
   const gameNames: Record<string, string> = {
     running: t('lectureStudy.game.running'),
     deck: t('lectureStudy.game.deck'),
-    cardMatch: t('lectureStudy.game.cardMatch'),
     definitionBuilder: t('lectureStudy.game.definitionBuilder'),
     guessTheTerm: t('lectureStudy.game.guessTheTerm'),
   }
