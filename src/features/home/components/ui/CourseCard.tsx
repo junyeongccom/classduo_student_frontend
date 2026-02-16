@@ -1,10 +1,11 @@
 /**
  * @file CourseCard.tsx
- * @description 과목 카드 UI — 컬러바 + 프로그레스바 + Duolingo 스타일
+ * @description 과목 카드 UI — 상단 컬러 배너 + 과목명 + 메타정보 + 프로그레스바
  * @module features/home/components/ui
- * @dependencies shared/lib/utils
+ * @dependencies shared/lib/utils, assignCourseVisual
  */
 
+import { BookOpen, User, GraduationCap } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import type { CourseVisual } from '../../domain/assignCourseVisual'
 
@@ -13,6 +14,7 @@ interface CourseCardProps {
   professorName: string | null
   section: string | null
   updatedAt: string | null
+  totalLectures?: number
   visual: CourseVisual
   progress?: { completed: number; total: number } | null
   progressLabel?: string
@@ -25,20 +27,12 @@ export function CourseCard({
   professorName,
   section,
   updatedAt,
+  totalLectures,
   visual,
   progress,
-  progressLabel,
   locale = 'ko-KR',
   onClick,
 }: CourseCardProps) {
-  const formattedDate = updatedAt
-    ? new Date(updatedAt).toLocaleDateString(locale, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null
-
   const progressPercent =
     progress && progress.total > 0
       ? Math.round((progress.completed / progress.total) * 100)
@@ -48,54 +42,69 @@ export function CourseCard({
     <button
       onClick={onClick}
       className={cn(
-        'group relative flex w-full min-h-[120px] overflow-hidden',
-        'rounded-2xl border border-gray-200 bg-white shadow-sm',
+        'group flex w-full flex-col overflow-hidden',
+        'rounded-3xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm',
         'text-left transition-all duration-200',
-        'hover:shadow-md hover:border-gray-300 hover:-translate-y-0.5',
+        'hover:shadow-md hover:-translate-y-1',
       )}
     >
-      {/* 좌측 컬러 바 */}
+      {/* 상단 컬러 배너 */}
       <div
-        className="w-1 shrink-0 rounded-l-2xl"
+        className="relative h-48 w-full"
         style={{ backgroundColor: visual.accent }}
-      />
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+        <div className="absolute bottom-4 left-4">
+          <BookOpen className="h-8 w-8 text-white/60" />
+        </div>
+      </div>
 
-      <div className="flex flex-1 flex-col justify-between p-4">
-        <div className="flex flex-col gap-1.5">
-          <h3 className="text-base font-semibold text-gray-900 line-clamp-2 leading-snug">
+      {/* 카드 내용 */}
+      <div className="flex flex-1 flex-col p-5">
+        <div className="flex items-baseline gap-2">
+          <h3 className="text-base font-bold text-gray-900 dark:text-gray-50 line-clamp-2 leading-snug group-hover:text-[#6366F1] transition-colors">
             {name}
           </h3>
-          {(professorName || section) && (
-            <p className="text-sm text-gray-500">
-              {[professorName, section ? `${section}분반` : null].filter(Boolean).join(' · ')}
-            </p>
+          {section && (
+            <span className="shrink-0 text-xs text-gray-400">{section}분반</span>
           )}
         </div>
 
-        <div className="mt-3 flex flex-col gap-2">
-          {formattedDate && (
-            <p className="text-xs text-gray-400">{formattedDate}</p>
+        <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
+          {professorName && (
+            <span className="flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5" />
+              {professorName}
+            </span>
           )}
+          {professorName && totalLectures != null && totalLectures > 0 && (
+            <span>·</span>
+          )}
+          {totalLectures != null && totalLectures > 0 && (
+            <span className="flex items-center gap-1.5">
+              <GraduationCap className="h-3.5 w-3.5" />
+              {totalLectures}회차
+            </span>
+          )}
+        </div>
 
-          {progress && progress.total > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${progressPercent}%`,
-                    backgroundColor: visual.accent,
-                  }}
-                />
-              </div>
-              <span className="shrink-0 text-[11px] text-gray-400">
-                {progressLabel
-                  ? `${progressPercent}%`
-                  : `${progress.completed}/${progress.total}`}
-              </span>
+        {/* 프로그레스바 */}
+        {progress && progress.total > 0 && (
+          <div className="mt-4 flex items-center gap-3 border-t border-gray-50 dark:border-gray-800 pt-4">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${progressPercent}%`,
+                  backgroundColor: visual.accent,
+                }}
+              />
             </div>
-          )}
-        </div>
+            <span className="shrink-0 text-xs font-bold" style={{ color: visual.accent }}>
+              {progressPercent}%
+            </span>
+          </div>
+        )}
       </div>
     </button>
   )

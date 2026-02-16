@@ -7,6 +7,12 @@
     "repeat": "Repetition",
     "profile": "Profile"
   },
+  "newNav": {
+    "classes": "Classes",
+    "myQuizzes": "My Quizzes",
+    "games": "Games",
+    "feedback": "Feedback"
+  },
   "aiTutorTopbar": {
     "newChat": "New chat",
     "chatHistory": "Chat history",
@@ -220,6 +226,7 @@
   "home": {
     "title": "My Courses",
     "greeting": "Hello, {name}!",
+    "greetingSubtitle": "Ready to conquer your lessons today?",
     "greetingDate": "{date}",
     "empty": "Your courses will appear here once registered",
     "emptySubtext": "Courses will automatically show up when your professor creates them",
@@ -239,6 +246,12 @@
       "hasRecording": "Recording",
       "hasMaterial": "Material",
       "newBadge": "NEW"
+    },
+    "weeklyLessons": "Weekly Lessons",
+    "gameCta": {
+      "title": "Master key concepts through games!",
+      "description": "Learn core concepts from each lesson through fun games. Try it now!",
+      "button": "Start Game"
     },
     "materialSelect": {
       "empty": "No materials registered"

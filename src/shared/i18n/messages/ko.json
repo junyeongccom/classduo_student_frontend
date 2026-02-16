@@ -7,6 +7,12 @@
     "repeat": "간격반복학습",
     "profile": "프로필"
   },
+  "newNav": {
+    "classes": "수업",
+    "myQuizzes": "내 퀴즈",
+    "games": "게임",
+    "feedback": "피드백"
+  },
   "aiTutorTopbar": {
     "newChat": "새 채팅",
     "chatHistory": "채팅 기록",
@@ -220,6 +226,7 @@
   "home": {
     "title": "내 과목",
     "greeting": "안녕하세요, {name}님!",
+    "greetingSubtitle": "오늘도 학습을 시작해볼까요?",
     "greetingDate": "{date}",
     "empty": "학습 공간에 강의가 등록되면 여기에 표시됩니다",
     "emptySubtext": "교수님이 강의를 개설하면 자동으로 나타나요",
@@ -239,6 +246,12 @@
       "hasRecording": "녹음",
       "hasMaterial": "자료",
       "newBadge": "NEW"
+    },
+    "weeklyLessons": "주간 수업",
+    "gameCta": {
+      "title": "핵심 개념을 게임으로 마스터하세요!",
+      "description": "각 회차의 핵심 개념을 재미있는 게임으로 쉽고 빠르게 배울 수 있습니다. 지금 도전해 보세요!",
+      "button": "게임 시작하기"
     },
     "materialSelect": {
       "empty": "등록된 강의자료가 없습니다"

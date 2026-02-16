@@ -1,6 +1,6 @@
 /**
  * @file HomeContainer.tsx
- * @description 홈 화면 컨테이너 — 인사 헤더 + 학기별 그룹핑 과목 목록
+ * @description 홈 화면 컨테이너 — 인사 헤더 + 학기별 그룹핑 과목 카드 그리드
  * @module features/home
  * @dependencies useCourses, groupCoursesByTerm, assignCourseVisuals, CourseCard, EmptyState, useAuthStore
  */
@@ -33,15 +33,6 @@ export function HomeContainer() {
     [courses],
   )
 
-  const today = useMemo(() => {
-    return new Date().toLocaleDateString(dateLocale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long',
-    })
-  }, [dateLocale])
-
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -67,8 +58,8 @@ export function HomeContainer() {
   if (courses.length === 0) {
     return (
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-6 py-8">
-          <GreetingHeader name={user?.full_name} date={today} t={t} />
+        <div className="mx-auto max-w-6xl px-8 py-10">
+          <GreetingHeader name={user?.full_name} t={t} locale={locale} />
           <EmptyState
             message={t('home.empty')}
             subtext={t('home.emptySubtext')}
@@ -80,20 +71,20 @@ export function HomeContainer() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        <GreetingHeader name={user?.full_name} date={today} t={t} />
+      <div className="mx-auto max-w-6xl px-8 py-10">
+        <GreetingHeader name={user?.full_name} t={t} locale={locale} />
 
-        <div className="flex flex-col gap-10">
+        <div className="flex flex-col gap-12">
           {groups.map((group, gi) => (
             <section key={group.term?.key ?? `etc-${gi}`}>
-              <div className="mb-4 border-b border-gray-200 pb-2">
-                <h2 className="text-lg font-semibold text-gray-800">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
                   {group.term
                     ? formatTermLabel(group.term, locale)
                     : t('home.etcGroup')}
                 </h2>
               </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {group.courses.map((course) => (
                   <CourseCard
                     key={course.id}
@@ -101,6 +92,7 @@ export function HomeContainer() {
                     professorName={course.professor_name}
                     section={course.section}
                     updatedAt={course.updated_at}
+                    totalLectures={course.totalLectures}
                     visual={
                       visuals.get(course.id) ?? {
                         bg: 'bg-gray-100',
@@ -108,6 +100,10 @@ export function HomeContainer() {
                         border: 'border-gray-200',
                         accent: '#6B7280',
                       }
+                    }
+                    progress={course.totalLectures > 0
+                      ? { completed: course.activeLectures, total: course.totalLectures }
+                      : null
                     }
                     locale={dateLocale}
                     onClick={() =>
@@ -126,20 +122,24 @@ export function HomeContainer() {
 
 function GreetingHeader({
   name,
-  date,
   t,
+  locale,
 }: {
   name?: string | null
-  date: string
   t: ReturnType<typeof useTranslations>
+  locale: string
 }) {
   return (
-    <div className="mb-8">
-      <h1 className="text-2xl font-bold text-gray-900">
-        {name ? t('home.greeting', { name }) : t('home.title')}
+    <div className="mb-10">
+      <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-gray-50">
+        {name
+          ? (locale === 'ko'
+              ? `안녕하세요, ${name}님! 👋`
+              : `Hello, ${name}! 👋`)
+          : t('home.title')}
       </h1>
-      <p className="mt-1 text-sm text-gray-500">
-        {t('home.greetingDate', { date })}
+      <p className="mt-2 text-lg text-gray-500 dark:text-gray-400">
+        {t('home.greetingSubtitle')}
       </p>
     </div>
   )

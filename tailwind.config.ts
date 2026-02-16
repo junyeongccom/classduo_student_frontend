@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/features/**/*.{js,ts,jsx,tsx,mdx}',
@@ -62,7 +63,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: ['Space Grotesk', 'Noto Sans KR', 'Apple SD Gothic Neo', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
         serif: ['Georgia', 'Times New Roman', 'serif'],
       },
       keyframes: {

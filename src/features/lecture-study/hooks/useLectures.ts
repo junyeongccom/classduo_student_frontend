@@ -19,6 +19,8 @@ import type { Lecture } from '../types'
 interface UseLecturesResult {
   lectures: Lecture[]
   courseTitle: string | null
+  section: string | null
+  professorName: string | null
   isLoading: boolean
   error: string | null
   refresh: () => void
@@ -27,6 +29,8 @@ interface UseLecturesResult {
 export function useLectures(courseId: string): UseLecturesResult {
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [courseTitle, setCourseTitle] = useState<string | null>(null)
+  const [section, setSection] = useState<string | null>(null)
+  const [professorName, setProfessorName] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isMountedRef = useRef(true)
@@ -47,6 +51,8 @@ export function useLectures(courseId: string): UseLecturesResult {
     }
 
     setCourseTitle(result.data.course_title)
+    setSection(result.data.section ?? null)
+    setProfessorName(result.data.professor_name ?? null)
 
     const rawLectures = result.data.lectures ?? []
 
@@ -93,5 +99,5 @@ export function useLectures(courseId: string): UseLecturesResult {
     }
   }, [fetchLectures])
 
-  return { lectures, courseTitle, isLoading, error, refresh: fetchLectures }
+  return { lectures, courseTitle, section, professorName, isLoading, error, refresh: fetchLectures }
 }

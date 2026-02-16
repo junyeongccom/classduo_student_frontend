@@ -21,6 +21,7 @@ export interface LectureListApiResponse {
   course_id: string
   course_title: string
   section: string | null
+  professor_name: string | null
   lectures: LectureApiItem[]
 }
 
@@ -37,6 +38,7 @@ export interface RecordingApiItem {
   job_id: string | null
   status: string
   duration_seconds: number | null
+  original_filename: string | null
   created_at: string | null
   updated_at: string | null
   chunk_summaries?: RecordingChunkSummaryApi[]

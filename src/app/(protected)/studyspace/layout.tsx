@@ -7,17 +7,214 @@ import {
   StudyspaceLayoutProvider,
   useStudyspaceLayoutSlots,
 } from '@/shared/components/layouts/studyspace'
-import { PanelRightOpen, X } from 'lucide-react'
+import { PanelRightOpen, X, Flame, Settings, MessageSquare, LogOut, Moon, KeyRound } from 'lucide-react'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 import { useNewStudyspace } from '@/shared/lib/featureFlags'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import { useAuthStore } from '@/features/auth/store/authStore'
+import { useI18n, type AppLocale } from '@/shared/i18n/I18nProvider'
+import { getCourseRewardCounts } from '@/shared/services/progressService'
+import { useSidebarStore, SIDEBAR_WIDTH_EXPANDED, SIDEBAR_WIDTH_COLLAPSED } from '@/shared/store/useSidebarStore'
+import { useThemeStore } from '@/shared/store/useThemeStore'
+import { FeedbackModalContainer, useFeedbackStore } from '@/features/error-report'
+import { PasswordChangeModalContainer } from '@/features/user'
+
+function NewLanguageToggle() {
+  const { locale, setLocale } = useI18n()
+  const handle = (next: AppLocale) => setLocale(next)
+
+  return (
+    <div className="inline-flex items-center rounded-xl bg-white dark:bg-gray-800 p-1 shadow-sm">
+      <button
+        onClick={() => handle('en')}
+        className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
+          locale === 'en'
+            ? 'bg-[#6366F1] text-white'
+            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+        }`}
+      >
+        EN
+      </button>
+      <button
+        onClick={() => handle('ko')}
+        className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
+          locale === 'ko'
+            ? 'bg-[#6366F1] text-white'
+            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+        }`}
+      >
+        KO
+      </button>
+    </div>
+  )
+}
 
 function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user)
+  const { logout } = useAuth()
+  const { locale } = useI18n()
+  const { topbar } = useStudyspaceLayoutSlots()
+  const pathname = usePathname()
+  const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
+  const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
+  const isFeedbackOpen = useFeedbackStore((s) => s.isOpen)
+  const closeFeedback = useFeedbackStore((s) => s.close)
+  const openFeedback = useFeedbackStore((s) => s.open)
+  const theme = useThemeStore((s) => s.theme)
+  const toggleTheme = useThemeStore((s) => s.toggle)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  // 프로필 드롭다운 외부 클릭 닫기
+  useEffect(() => {
+    if (!isProfileOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [isProfileOpen])
+
+  // 현재 과목 ID 추출 + 불꽃 카운트 조회
+  const courseIdMatch = pathname.match(/\/studyspace\/course\/([^/]+)/)
+  const currentCourseId = courseIdMatch ? courseIdMatch[1] : null
+  const [flameCount, setFlameCount] = useState(0)
+
+  useEffect(() => {
+    getCourseRewardCounts().then(({ data }) => {
+      if (!data) { setFlameCount(0); return }
+      if (currentCourseId) {
+        const match = data.find(r => r.course_id === currentCourseId)
+        setFlameCount(match?.total_amount ?? 0)
+      } else {
+        const total = data.reduce((sum, r) => sum + r.total_amount, 0)
+        setFlameCount(total)
+      }
+    })
+  }, [currentCourseId])
+
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900">
+    <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
       <Sidebar />
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden pl-[64px]">
-        {children}
-      </main>
+      <div
+        className="flex min-h-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out"
+        style={{ paddingLeft: sidebarWidth }}
+      >
+        {/* Top Header Bar */}
+        <header className="relative z-[40] flex shrink-0 items-center justify-between border-b border-gray-200/60 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 py-3 pl-8 pr-4 backdrop-blur-md">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <NewLanguageToggle />
+            {topbar && (
+              <div className="min-w-0 flex-1">{topbar}</div>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-3 pl-6">
+            <div className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3 py-2 text-[#6366F1]">
+              <Flame className="h-5 w-5 fill-current" />
+              <span className="text-sm font-bold">{flameCount}</span>
+            </div>
+            <div ref={profileRef} className="relative flex items-center gap-3 border-l border-gray-200 dark:border-gray-700 pl-3">
+              <img src="/KU_logo.png" alt="" className="h-9 shrink-0 object-contain" />
+              <div>
+                <p className="text-sm font-bold leading-tight text-gray-900 dark:text-gray-50">{user?.full_name ?? ''}</p>
+                <p className="truncate text-xs text-gray-400 dark:text-gray-500" style={{ maxWidth: 160 }}>{user?.email ?? ''}</p>
+              </div>
+              <button
+                onClick={() => setIsProfileOpen((v) => !v)}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                  isProfileOpen ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300'
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+
+              {/* Profile Dropdown */}
+              {isProfileOpen && (
+                <div className="absolute right-0 top-[calc(100%+1px)] z-[100] w-full overflow-hidden rounded-b-xl border border-t-0 border-gray-200/60 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl">
+                  <div className="flex flex-col py-1">
+                    {/* 개선 요청 */}
+                    <button
+                      onClick={() => { setIsProfileOpen(false); openFeedback() }}
+                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6366F1]/10 text-[#6366F1] transition-colors group-hover:bg-[#6366F1] group-hover:text-white">
+                        <MessageSquare className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {locale === 'ko' ? '개선 요청' : 'Send Feedback'}
+                      </span>
+                    </button>
+
+                    {/* 비밀번호 변경 */}
+                    <button
+                      onClick={() => { setIsProfileOpen(false); setIsPasswordModalOpen(true) }}
+                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-500 group-hover:text-white">
+                        <KeyRound className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {locale === 'ko' ? '비밀번호 변경' : 'Change Password'}
+                      </span>
+                    </button>
+
+                    {/* 다크 모드 */}
+                    <button
+                      onClick={toggleTheme}
+                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors group-hover:bg-gray-700 group-hover:text-white">
+                        <Moon className="h-4 w-4" />
+                      </div>
+                      <span className="flex-1 text-sm font-medium text-gray-900">
+                        {locale === 'ko' ? '다크 모드' : 'Dark Mode'}
+                      </span>
+                      <div
+                        className={`relative flex h-[22px] w-[40px] items-center rounded-full p-0.5 transition-colors ${
+                          theme === 'dark' ? 'justify-end bg-[#6366F1]' : 'bg-gray-200'
+                        }`}
+                      >
+                        <div className="h-full aspect-square rounded-full bg-white shadow-md" />
+                      </div>
+                    </button>
+
+                    <div className="mx-4 my-1 border-t border-gray-100 dark:border-gray-700" />
+
+                    {/* 로그아웃 */}
+                    <button
+                      onClick={() => { setIsProfileOpen(false); logout() }}
+                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-red-50"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-500 transition-colors group-hover:bg-red-500 group-hover:text-white">
+                        <LogOut className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium text-red-500">
+                        {locale === 'ko' ? '로그아웃' : 'Log Out'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden dark:bg-gray-950">
+          {children}
+        </main>
+      </div>
+
+      {/* Feedback Modal */}
+      <FeedbackModalContainer isOpen={isFeedbackOpen} onClose={closeFeedback} />
+
+      {/* Password Change Modal */}
+      <PasswordChangeModalContainer
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        onLogout={logout}
+      />
     </div>
   )
 }

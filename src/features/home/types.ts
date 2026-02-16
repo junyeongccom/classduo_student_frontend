@@ -22,6 +22,8 @@ export interface Course {
   academic_term: AcademicTerm | null
   updated_at: string | null
   created_at: string | null
+  totalLectures: number
+  activeLectures: number
 }
 
 export interface CourseGroup {

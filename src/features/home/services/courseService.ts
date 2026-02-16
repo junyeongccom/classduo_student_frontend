@@ -7,6 +7,13 @@
 
 import { apiRequest } from '@/shared/lib/api'
 
+export interface LectureApiItem {
+  lecture_id: string
+  lecture_no: number
+  title: string | null
+  is_available: boolean
+}
+
 export interface CourseApiItem {
   course_id: string
   title: string
@@ -15,6 +22,7 @@ export interface CourseApiItem {
   term_code: string
   section?: string | null
   updated_at?: string | null
+  lectures?: LectureApiItem[]
 }
 
 interface CourseApiResponse {

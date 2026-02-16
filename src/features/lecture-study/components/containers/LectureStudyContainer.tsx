@@ -9,13 +9,14 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, PanelRightOpen, X } from 'lucide-react'
+import { Loader2, PanelRightOpen, X, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
+import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
-import { Breadcrumb } from '../ui/Breadcrumb'
 import { LeftPanelMaterials } from './LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
 import { RightPanelPlaceholder } from '../ui/RightPanelPlaceholder'
@@ -89,14 +90,6 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     }
     return t('lectureStudy.breadcrumb.lectureFallback')
   }
-
-  const breadcrumbItems = [
-    { label: t('lectureStudy.breadcrumbHome'), href: '/studyspace/home' },
-    ...(courseId
-      ? [{ label: courseTitle ?? fetchedCourseTitle ?? t('lectureStudy.breadcrumb.courseLoading'), href: `/studyspace/course/${courseId}` }]
-      : []),
-    { label: resolveLectureLabel() },
-  ]
 
   // Auto-size: 정중앙 50/50 분할 (desktop only)
   useLayoutEffect(() => {
@@ -187,7 +180,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       onValueChange={v => setRightTab(v as LectureStudyTab)}
       className="flex h-full flex-col"
     >
-      <div className="shrink-0 border-b border-gray-100 px-3 pt-2">
+      <div className="shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 pt-2">
         <TabsList className="h-9">
           <TabsTrigger value="summary" className="text-xs">
             {t('lectureStudy.rightPanel.summaryTab')}
@@ -218,20 +211,42 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     </Tabs>
   )
 
+  const resolvedCourseTitle = courseTitle ?? fetchedCourseTitle ?? '...'
+
   return (
     <div className="flex h-full flex-col">
-      {/* Header: Breadcrumb */}
-      <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3 flex items-center justify-between">
-        <Breadcrumb items={breadcrumbItems} />
-        {isMobile && (
+      {/* Breadcrumb → Header topbar slot */}
+      <StudyspaceTopbarSlot>
+        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
+          <Link href="/studyspace/home" className="transition-colors hover:text-[#6366F1]">
+            {t('lectureStudy.breadcrumbHome')}
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5" />
+          {courseId ? (
+            <Link href={`/studyspace/course/${courseId}`} className="transition-colors hover:text-[#6366F1]">
+              {resolvedCourseTitle}
+            </Link>
+          ) : (
+            <span>{resolvedCourseTitle}</span>
+          )}
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span className="truncate font-semibold text-gray-900 dark:text-gray-50">
+            {resolveLectureLabel()}
+          </span>
+        </nav>
+      </StudyspaceTopbarSlot>
+
+      {/* Mobile: drawer toggle */}
+      {isMobile && (
+        <div className="shrink-0 flex justify-end border-b border-gray-200 bg-white px-4 py-2">
           <button
             onClick={() => setIsDrawerOpen(true)}
-            className="ml-2 rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
           >
             <PanelRightOpen className="h-4 w-4" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Panels */}
       <div
@@ -240,7 +255,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       >
         {/* Left Panel */}
         <section
-          className="flex h-full min-h-0 flex-col border-r border-gray-200"
+          className="flex h-full min-h-0 flex-col border-r border-gray-200 dark:border-gray-700"
           style={isMobile ? { width: '100%' } : { width: leftWidth ?? '50%' }}
         >
           <Tabs
@@ -248,7 +263,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
             onValueChange={v => setLeftTab(v as LeftPanelTab)}
             className="flex h-full flex-col"
           >
-            <div className="shrink-0 border-b border-gray-100 px-3 pt-2">
+            <div className="shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 pt-2">
               <TabsList className="h-9">
                 <TabsTrigger value="materials" className="text-xs">
                   {t('lectureStudy.leftPanel.materialsTab')}
@@ -274,10 +289,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         {!isMobile && (
           <>
             <div
-              className="group relative flex w-1 cursor-col-resize items-center justify-center bg-gray-200 hover:bg-blue-400 transition-colors"
+              className="group relative flex w-1 cursor-col-resize items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-blue-400 transition-colors"
               onMouseDown={handleResizeStart}
             >
-              <div className="h-8 w-1 rounded-full bg-gray-400 group-hover:bg-white transition-colors" />
+              <div className="h-8 w-1 rounded-full bg-gray-400 dark:bg-gray-500 group-hover:bg-white transition-colors" />
               {isResizing && (
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
               )}
@@ -297,9 +312,9 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
             className="flex-1 bg-black/40"
             onClick={() => setIsDrawerOpen(false)}
           />
-          <div className="flex h-full w-[85vw] max-w-md flex-col bg-white shadow-xl animate-in slide-in-from-right">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <span className="text-sm font-medium text-gray-900">
+          <div className="flex h-full w-[85vw] max-w-md flex-col bg-white dark:bg-gray-900 shadow-xl animate-in slide-in-from-right">
+            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-50">
                 {t(RIGHT_TAB_TITLE_KEYS[rightTab])}
               </span>
               <button

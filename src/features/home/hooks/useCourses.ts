@@ -41,6 +41,7 @@ export function useCourses() {
     const mapped: Course[] = (result.data.courses ?? []).map(c => {
       const year = typeof c.academic_year === 'number' ? c.academic_year : 0
       const termCode = c.term_code && isValidTermCode(c.term_code) ? c.term_code : null
+      const lectures = c.lectures ?? []
 
       return {
         id: c.course_id,
@@ -52,6 +53,8 @@ export function useCourses() {
           : null,
         updated_at: c.updated_at ?? null,
         created_at: null,
+        totalLectures: lectures.length,
+        activeLectures: lectures.filter(l => l.is_available).length,
       }
     })
 

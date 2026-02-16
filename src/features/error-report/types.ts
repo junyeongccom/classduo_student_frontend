@@ -1,6 +1,6 @@
 // 오류 신고 관련 타입 정의
 
-// 발생시점 (UI 기능) 선택지 - 학생용
+// 발생시점 (UI 기능) 선택지 - 학생용 (레거시 오류 신고)
 export type OccurrenceContext =
   | 'AI_TUTOR'       // AI 튜터
   | 'REVIEW'         // 복습
@@ -18,13 +18,29 @@ export const OCCURRENCE_CONTEXT_LABELS: Record<OccurrenceContext, string> = {
   OTHER: '기타',
 };
 
+// 피드백 모달 발생항목 카테고리 (새 UI)
+export type FeedbackCategory =
+  | 'COURSE'         // 수업
+  | 'LECTURE'        // 회차
+  | 'MATERIAL'       // 강의자료
+  | 'QUIZ'           // 퀴즈
+  | 'GAME';          // 게임
+
+export const FEEDBACK_CATEGORY_LABELS: Record<FeedbackCategory, string> = {
+  COURSE: '수업',
+  LECTURE: '회차',
+  MATERIAL: '강의자료',
+  QUIZ: '퀴즈',
+  GAME: '게임',
+};
+
 export interface CreateErrorReportRequest {
   // 필수 입력
   content: string;
 
   // 선택 입력
   occurrence_time?: string;           // ISO 8601 형식
-  occurrence_context?: OccurrenceContext;
+  occurrence_context?: string;        // OccurrenceContext | FeedbackCategory
   related_filename?: string;
   contact?: string;
   attachment_url?: string;

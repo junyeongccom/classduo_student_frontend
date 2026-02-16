@@ -28,12 +28,12 @@ function ChunkAccordionItem({ chunk, valueKey }: { chunk: RecordingChunkSummary;
   const title = chunk.title || `구간 ${chunk.chunk_index + 1}`
 
   return (
-    <AccordionItem value={valueKey} className="rounded-lg border border-emerald-200 bg-white mb-2 last:mb-0">
+    <AccordionItem value={valueKey} className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-gray-900 mb-2 last:mb-0">
       <AccordionTrigger className="px-4 py-3 text-sm hover:no-underline">
         <div className="flex items-start gap-2.5 text-left">
           <Mic className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
           <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-gray-800 line-clamp-1">{title}</span>
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-1">{title}</span>
             {hasTime && (
               <span className="flex items-center gap-1 text-[10px] text-gray-400">
                 <Clock className="h-3 w-3" />
@@ -45,9 +45,9 @@ function ChunkAccordionItem({ chunk, valueKey }: { chunk: RecordingChunkSummary;
       </AccordionTrigger>
       <AccordionContent className="px-4 pb-3">
         {chunk.content ? (
-          <p className="text-xs leading-relaxed text-gray-600">{chunk.content}</p>
+          <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">{chunk.content}</p>
         ) : (
-          <p className="text-xs text-gray-400 italic">요약 내용 없음</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 italic">요약 내용 없음</p>
         )}
       </AccordionContent>
     </AccordionItem>
@@ -79,16 +79,16 @@ export function LeftPanelRecordings({ recordings, essenceOneLine, essence7Words 
       <div className="h-full overflow-y-auto p-4">
         {/* Essence section */}
         {(essenceOneLine || essence7Words) && (
-          <div className="mb-4 rounded-xl border border-violet-100 bg-violet-50/50 p-4">
+          <div className="mb-4 rounded-xl border border-violet-100 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/30 p-4">
             <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-violet-700">
               <Sparkles className="h-3.5 w-3.5" />
               {t('lectureStudy.leftPanel.essenceTitle')}
             </div>
             {essence7Words && (
-              <p className="mb-1 text-sm font-medium text-gray-800">{essence7Words}</p>
+              <p className="mb-1 text-sm font-medium text-gray-800 dark:text-gray-200">{essence7Words}</p>
             )}
             {essenceOneLine && (
-              <p className="text-xs leading-relaxed text-gray-600">{essenceOneLine}</p>
+              <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">{essenceOneLine}</p>
             )}
           </div>
         )}
@@ -131,10 +131,10 @@ export function LeftPanelRecordings({ recordings, essenceOneLine, essence7Words 
               <span className="text-xs font-semibold text-gray-500">
                 {t('lectureStudy.leftPanel.segmentFallback', { n: recIdx + 1 })}
               </span>
-              <div className="flex-1 border-t border-gray-200" />
+              <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
             </div>
             {rec.chunk_summaries.length > 0 ? (
-              <Accordion type="multiple" defaultValue={rec.chunk_summaries.map((_, i) => `${rec.id}-${i}`)}>
+              <Accordion type="multiple" defaultValue={[]}>
                 {rec.chunk_summaries.map((chunk, i) => (
                   <ChunkAccordionItem key={i} chunk={chunk} valueKey={`${rec.id}-${i}`} />
                 ))}
@@ -148,7 +148,7 @@ export function LeftPanelRecordings({ recordings, essenceOneLine, essence7Words 
         ))
       ) : (
         // 녹음본 1개: 청크만 나열
-        <Accordion type="multiple" defaultValue={allChunks.map((_, i) => `chunk-${i}`)}>
+        <Accordion type="multiple" defaultValue={[]}>
           {allChunks.map((chunk, i) => (
             <ChunkAccordionItem key={i} chunk={chunk} valueKey={`chunk-${i}`} />
           ))}

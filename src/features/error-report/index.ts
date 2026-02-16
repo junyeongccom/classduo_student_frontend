@@ -7,6 +7,11 @@ export type {
   CreateErrorReportRequest,
   CreateErrorReportResponse,
   OccurrenceContext,
+  FeedbackCategory,
 } from './types';
-export { OCCURRENCE_CONTEXT_LABELS } from './types';
+export { OCCURRENCE_CONTEXT_LABELS, FEEDBACK_CATEGORY_LABELS } from './types';
 export { createErrorReport } from './services/errorReportService';
+
+// Feedback Modal (새 UI)
+export { FeedbackModalContainer } from './components/containers/FeedbackModalContainer';
+export { useFeedbackStore } from './store/useFeedbackStore';

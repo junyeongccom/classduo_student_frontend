@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronDown, FileText, Loader2, Type, Image as ImageIcon } from 'lucide-react'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { lectureService } from '../../services/lectureService'
 import type { MaterialPageItem } from '../../services/lectureService'
@@ -20,6 +20,44 @@ interface PageCache {
 
 function isValidImageUrl(url: string): boolean {
   return url.startsWith('https://') || url.startsWith('http://localhost')
+}
+
+function parseMaterialContent(content: string | null | undefined): { text: string; visualDescription: string } {
+  if (!content) return { text: '', visualDescription: '' }
+
+  const textMarkers = ['[강의자료 텍스트]', '---텍스트---']
+  const visualMarkers = ['[시각자료 설명]', '---시각자료 설명---']
+
+  let textMarker = ''
+  let visualMarker = ''
+  let textIndex = -1
+  let visualIndex = -1
+
+  for (const marker of textMarkers) {
+    const index = content.indexOf(marker)
+    if (index !== -1) { textMarker = marker; textIndex = index; break }
+  }
+  for (const marker of visualMarkers) {
+    const index = content.indexOf(marker)
+    if (index !== -1) { visualMarker = marker; visualIndex = index; break }
+  }
+
+  let text = ''
+  let visualDescription = ''
+
+  if (textIndex !== -1 || visualIndex !== -1) {
+    if (textIndex !== -1) {
+      const textEnd = visualIndex !== -1 ? visualIndex : content.length
+      text = content.substring(textIndex + textMarker.length, textEnd).trim()
+    }
+    if (visualIndex !== -1) {
+      visualDescription = content.substring(visualIndex + visualMarker.length).trim()
+    }
+  } else {
+    text = content.trim()
+  }
+
+  return { text, visualDescription }
 }
 
 export function LeftPanelMaterials() {
@@ -131,6 +169,11 @@ export function LeftPanelMaterials() {
     [totalPages],
   )
 
+  const parsed = useMemo(
+    () => parseMaterialContent(currentPageData?.text_content),
+    [currentPageData?.text_content],
+  )
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -158,27 +201,60 @@ export function LeftPanelMaterials() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Page image */}
-      <div className="relative flex flex-1 items-center justify-center overflow-auto bg-gray-100 p-2">
-        {currentImageUrl ? (
-          <>
-            {!imageLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-full w-full animate-pulse rounded-lg bg-gray-200" />
-              </div>
+      {/* Scrollable content: image + text/visual summary */}
+      <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100">
+        {/* Page image */}
+        <div className="relative flex items-center justify-center p-2" style={{ minHeight: 200 }}>
+          {currentImageUrl ? (
+            <>
+              {!imageLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-full w-full animate-pulse rounded-lg bg-gray-200" />
+                </div>
+              )}
+              <img
+                key={currentPage}
+                src={currentImageUrl}
+                alt={`Page ${currentPage}`}
+                className="max-w-full object-contain"
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageLoaded(true)}
+              />
+            </>
+          ) : (
+            <div className="flex items-center justify-center text-sm text-gray-400">
+              {t('lectureStudy.leftPanel.materialsPreparing')}
+            </div>
+          )}
+        </div>
+
+        {/* Text / Visual description (toggleable) */}
+        {(parsed.text || parsed.visualDescription) && (
+          <div className="space-y-2 px-4 py-3">
+            {parsed.text && (
+              <details className="group rounded-lg border border-blue-300 bg-blue-50/50">
+                <summary className="flex cursor-pointer items-center gap-1.5 px-3 py-2 text-xs font-semibold text-blue-700 select-none [&::-webkit-details-marker]:hidden">
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" />
+                  <Type className="h-3.5 w-3.5 shrink-0" />
+                  강의자료 텍스트
+                </summary>
+                <div className="border-t border-blue-300 px-3 pb-3 pt-2">
+                  <p className="text-xs leading-relaxed text-gray-700 whitespace-pre-line">{parsed.text}</p>
+                </div>
+              </details>
             )}
-            <img
-              key={currentPage}
-              src={currentImageUrl}
-              alt={`Page ${currentPage}`}
-              className="max-h-full max-w-full object-contain"
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageLoaded(true)}
-            />
-          </>
-        ) : (
-          <div className="flex items-center justify-center text-sm text-gray-400">
-            {t('lectureStudy.leftPanel.materialsPreparing')}
+            {parsed.visualDescription && (
+              <details className="group rounded-lg border border-amber-400 bg-amber-50/50">
+                <summary className="flex cursor-pointer items-center gap-1.5 px-3 py-2 text-xs font-semibold text-amber-700 select-none [&::-webkit-details-marker]:hidden">
+                  <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" />
+                  <ImageIcon className="h-3.5 w-3.5 shrink-0" />
+                  시각자료 설명
+                </summary>
+                <div className="border-t border-amber-400 px-3 pb-3 pt-2">
+                  <p className="text-xs leading-relaxed text-gray-700 whitespace-pre-line">{parsed.visualDescription}</p>
+                </div>
+              </details>
+            )}
           </div>
         )}
       </div>
