@@ -86,7 +86,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
-  const prevLectureIdsRef = useRef<string[]>([]) // 이전 강의회차 선택 상태
 
   // 로딩 중 복습 정답 조회 (locale 캐시 스위치)
   useEffect(() => {
