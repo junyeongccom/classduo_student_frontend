@@ -7,6 +7,7 @@
 
 export { LectureStudyContainer } from './components/containers/LectureStudyContainer'
 export { LectureSelectContainer } from './components/containers/LectureSelectContainer'
+export { DialogueLearningContainer } from './components/containers/DialogueLearningContainer'
 export { Breadcrumb } from './components/ui/Breadcrumb'
 export { useLectureStudyStore } from './store/useLectureStudyStore'
 export type * from './types'

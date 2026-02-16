@@ -8,6 +8,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useLocale } from 'next-intl'
 import { courseService } from '../services/courseService'
 import type { Course, TermCode } from '../types'
 
@@ -18,6 +19,7 @@ function isValidTermCode(code: string): code is TermCode {
 }
 
 export function useCourses() {
+  const locale = useLocale()
   const [courses, setCourses] = useState<Course[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -60,7 +62,8 @@ export function useCourses() {
 
     setCourses(mapped)
     setIsLoading(false)
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale])
 
   useEffect(() => {
     fetchCourses()

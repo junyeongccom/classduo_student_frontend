@@ -16,6 +16,7 @@ interface LectureRowProps {
   status: LectureStatus
   hasReward?: boolean
   onClick: () => void
+  onDialogueClick: () => void
   onMicClick: () => void
   onPdfClick: () => void
 }
@@ -38,7 +39,7 @@ const STATUS_CONFIG = {
   },
 } as const
 
-export function LectureRow({ lecture, status, hasReward = false, onClick, onMicClick, onPdfClick }: LectureRowProps) {
+export function LectureRow({ lecture, status, hasReward = false, onClick, onDialogueClick, onMicClick, onPdfClick }: LectureRowProps) {
   const locale = useLocale()
   const t = useTranslations()
   const isAvailable = status !== 'upcoming'
@@ -147,12 +148,20 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onMicC
             >
               <FileText className="h-5 w-5" />
             </button>
-            <button
-              onClick={onClick}
-              className="ml-4 rounded-xl bg-[#6366F1] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105 active:scale-95"
-            >
-              {locale === 'ko' ? '학습하기' : 'Study'}
-            </button>
+            <div className="ml-4 flex flex-col gap-2">
+              <button
+                onClick={onClick}
+                className="rounded-xl bg-[#6366F1] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105 active:scale-95"
+              >
+                {locale === 'ko' ? '콘텐츠형 학습' : 'Content'}
+              </button>
+              <button
+                onClick={onDialogueClick}
+                className="rounded-xl bg-[#D1FAE5] px-6 py-2.5 text-sm font-bold text-[#065F46] shadow-lg shadow-[#D1FAE5]/40 transition-all hover:scale-105 active:scale-95"
+              >
+                {locale === 'ko' ? '대화형 학습' : 'Dialogue'}
+              </button>
+            </div>
           </>
         ) : (
           <>

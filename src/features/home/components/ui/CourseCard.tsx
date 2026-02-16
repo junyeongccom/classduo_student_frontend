@@ -66,7 +66,9 @@ export function CourseCard({
             {name}
           </h3>
           {section && (
-            <span className="shrink-0 text-xs text-gray-400">{section}분반</span>
+            <span className="shrink-0 text-xs text-gray-400">
+              {locale === 'ko-KR' ? `${section}분반` : `Sec. ${section}`}
+            </span>
           )}
         </div>
 
@@ -83,7 +85,7 @@ export function CourseCard({
           {totalLectures != null && totalLectures > 0 && (
             <span className="flex items-center gap-1.5">
               <GraduationCap className="h-3.5 w-3.5" />
-              {totalLectures}회차
+              {locale === 'ko-KR' ? `${totalLectures}회차` : `${totalLectures} Lectures`}
             </span>
           )}
         </div>

@@ -1376,7 +1376,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       {/* 하단 입력 영역 */}
       <div
         className="border-t border-gray-200 px-8 pt-3 pb-0"
-        style={{ transform: 'translateY(10px)' }}
+        style={{ transform: 'translateY(0px)' }}
       >
         <div className="mx-auto max-w-[680px] 2xl:max-w-[820px]">
           <ChatComposer

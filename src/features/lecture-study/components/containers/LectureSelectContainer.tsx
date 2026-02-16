@@ -151,7 +151,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
               <div>
                 {section && (
                   <span className="mb-2 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-widest backdrop-blur-md">
-                    {section}{locale === 'ko' ? '분반' : ''}
+                    {locale === 'ko' ? `${section}분반` : `Section ${section}`}
                   </span>
                 )}
                 <h2 className="mb-1 text-3xl font-black tracking-tight">{courseTitle}</h2>
@@ -242,6 +242,9 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                           hasReward={rewardedLectureIds.has(lecture.id)}
                           onClick={() =>
                             router.push(`/studyspace/course/${courseId}/lecture/${lecture.id}`)
+                          }
+                          onDialogueClick={() =>
+                            router.push(`/studyspace/course/${courseId}/lecture/${lecture.id}/dialogue`)
                           }
                           onMicClick={() => handleMicClick(lecture)}
                           onPdfClick={() => handlePdfClick(lecture)}

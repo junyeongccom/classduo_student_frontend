@@ -8,6 +8,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useLocale } from 'next-intl'
 import { lectureService } from '../services/lectureService'
 import {
   calculateWeekAndSession,
@@ -27,6 +28,7 @@ interface UseLecturesResult {
 }
 
 export function useLectures(courseId: string): UseLecturesResult {
+  const locale = useLocale()
   const [lectures, setLectures] = useState<Lecture[]>([])
   const [courseTitle, setCourseTitle] = useState<string | null>(null)
   const [section, setSection] = useState<string | null>(null)
@@ -90,7 +92,8 @@ export function useLectures(courseId: string): UseLecturesResult {
 
     setLectures(mapped)
     setIsLoading(false)
-  }, [courseId])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, locale])
 
   useEffect(() => {
     fetchLectures()
