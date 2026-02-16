@@ -23,7 +23,24 @@ export function LectureCard({ lecture, isLatest, courseId, onClick }: LectureCar
   const t = useTranslations()
   const locale = useLocale()
   const hasAnyContent = lecture.has_content
-  const displayTitle = lecture.title ?? `${lecture.lecture_number ?? '?'}${locale === 'ko' ? '회차' : ''}`
+
+  // 주차/차시 라벨: "1주 2차시" or "W1 S2"
+  const weekSessionLabel = lecture.week_number != null && lecture.session_number != null
+    ? locale === 'ko'
+      ? `${lecture.week_number}주 ${lecture.session_number}차시`
+      : `W${lecture.week_number} S${lecture.session_number}`
+    : null
+
+  // 제목: 회차제목 → 강의본질7단어 → N회차 폴백
+  const subtitle = lecture.title
+    ?? lecture.essence_7words
+    ?? null
+
+  // 카드 표시: "N회차 - 제목" 형식
+  const lectureNoLabel = `${lecture.lecture_number ?? '?'}${locale === 'ko' ? '회차' : ''}`
+  const displayTitle = subtitle
+    ? `${lectureNoLabel} - ${subtitle}`
+    : lectureNoLabel
 
   const dateLocale = locale === 'en' ? 'en-US' : 'ko-KR'
   const formattedDate = lecture.date
@@ -72,9 +89,16 @@ export function LectureCard({ lecture, isLatest, courseId, onClick }: LectureCar
 
       {/* 하단 40%: 텍스트 정보 */}
       <div className="flex flex-1 flex-col justify-between p-3">
-        <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
-          {displayTitle}
-        </h3>
+        <div>
+          {weekSessionLabel && (
+            <p className="text-[11px] font-medium text-gray-400 mb-0.5">
+              {weekSessionLabel}
+            </p>
+          )}
+          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+            {displayTitle}
+          </h3>
+        </div>
 
         <div className="flex items-center gap-3 text-xs text-gray-400">
           {formattedDate && (

@@ -1,14 +1,19 @@
 /**
  * @file useLectures.ts
- * @description 회차 목록 데이터 페칭 훅
+ * @description 회차 목록 데이터 페칭 훅 — 주차/차시 계산 포함
  * @module features/lecture-study/hooks
- * @dependencies lectureService
+ * @dependencies lectureService, ai-tutor/lectureUtils
  */
 
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { lectureService } from '../services/lectureService'
+import {
+  calculateWeekAndSession,
+  estimateTermStartDate,
+  type LectureInfo,
+} from '@/features/ai-tutor'
 import type { Lecture } from '../types'
 
 interface UseLecturesResult {
@@ -43,21 +48,39 @@ export function useLectures(courseId: string): UseLecturesResult {
 
     setCourseTitle(result.data.course_title)
 
-    const mapped: Lecture[] = (result.data.lectures ?? []).map(l => ({
-      id: l.lecture_id,
-      course_id: courseId,
-      title: l.title,
-      lecture_number: l.lecture_no,
-      date: l.lecture_date,
-      week_number: null,
-      session_number: null,
-      // TODO: 백엔드 API에 recordings_count/materials_count 필드 추가 후 정확한 값 매핑
-      // 현재는 null로 설정하여 정확하지 않은 아이콘 표시 방지 (has_content만으로도 비활성 판단 가능)
-      has_recordings: null,
-      has_materials: null,
-      has_content: !!(l.essence_7words),
-      essence_7words: l.essence_7words ?? null,
+    const rawLectures = result.data.lectures ?? []
+
+    // 주차/차시 계산용 LectureInfo 배열
+    const lectureInfos: LectureInfo[] = rawLectures.map(l => ({
+      lecture_id: l.lecture_id,
+      lecture_date: l.lecture_date,
+      start_time: l.start_time ?? null,
     }))
+    const termStartDate = estimateTermStartDate(lectureInfos)
+
+    const mapped: Lecture[] = rawLectures.map(l => {
+      const ws = calculateWeekAndSession(
+        l.lecture_date,
+        l.start_time ?? null,
+        termStartDate,
+        lectureInfos,
+        l.lecture_id,
+      )
+
+      return {
+        id: l.lecture_id,
+        course_id: courseId,
+        title: l.title,
+        lecture_number: l.lecture_no,
+        date: l.lecture_date,
+        week_number: ws.weekNo,
+        session_number: ws.sessionNo,
+        has_recordings: null,
+        has_materials: null,
+        has_content: !!(l.essence_7words),
+        essence_7words: l.essence_7words ?? null,
+      }
+    })
 
     setLectures(mapped)
     setIsLoading(false)
