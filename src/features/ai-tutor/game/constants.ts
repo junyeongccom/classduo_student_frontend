@@ -99,6 +99,16 @@ export const JUMP_COUNT_MAX = 4;
 export const SCORE_BONUS = 30;
 export const EFFECT_DISPLAY_MS = 1500;
 
+// Heart restore stack-based (multiplier = base ^ stacks)
+export const HEART_RESTORE_STACK_BASE = 1.15;
+export const HEART_RESTORE_MULT_MIN = 0.4;
+export const HEART_RESTORE_MULT_MAX = 2.5;
+export const HEART_RESTORE_COLOR_CAP = 5;
+
+// Heart glow colors (default yellow)
+export const COLOR_HEART_GLOW = 0xf1c40f;
+export const COLOR_HEART_GLOW_SHINE = 0xf9e547;
+
 // HP gauge (Cookie Run style)
 export const HP_MAX = 90000;
 export const HP_ICON_RADIUS = 14 * S;
@@ -121,7 +131,6 @@ export const HP_COLORS = {
 };
 export const HP_SEGMENT_COLOR = 0x922b21;
 export const HP_MAX_BOOST = 5000;
-export const HP_RESTORE_AMOUNT = 8000;
 export const HP_DECAY_STACK_BASE = 1.15;
 export const HP_DECAY_MULT_MIN = 0.4;
 export const HP_DECAY_MULT_MAX = 2.5;

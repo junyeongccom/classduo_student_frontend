@@ -4,4 +4,4 @@ export interface QuizQuestion {
   wrongAnswers: string[];
 }
 
-export type ChoiceType = "speed" | "jump" | "jumpCount" | "score" | "hpRestore" | "hpDecay";
+export type ChoiceType = "speed" | "jump" | "jumpCount" | "score" | "heartBoost" | "hpDecay";

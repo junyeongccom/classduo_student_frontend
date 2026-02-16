@@ -6,6 +6,9 @@ import {
   HEART_WAVE_SPEED,
   COLOR_HP_HEART,
   COLOR_HP_HEART_SHINE,
+  COLOR_HEART_GLOW,
+  COLOR_HEART_GLOW_SHINE,
+  HEART_RESTORE_COLOR_CAP,
 } from "../constants";
 
 interface HeartParticle {
@@ -24,6 +27,7 @@ export class HeartItem extends Phaser.Physics.Arcade.Sprite {
   private trail: Phaser.GameObjects.Graphics;
   private particles: HeartParticle[] = [];
   private elapsed = 0;
+  private restoreStacks = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, "heart_item");
@@ -42,6 +46,18 @@ export class HeartItem extends Phaser.Physics.Arcade.Sprite {
 
   setScrollSpeed(speed: number): void {
     this.setVelocityX(speed);
+  }
+
+  setRestoreStacks(stacks: number): void {
+    this.restoreStacks = stacks;
+  }
+
+  private lerpColor(from: number, to: number, t: number): number {
+    const fr = (from >> 16) & 0xff, fg = (from >> 8) & 0xff, fb = from & 0xff;
+    const tr = (to >> 16) & 0xff, tg = (to >> 8) & 0xff, tb = to & 0xff;
+    return (Math.round(fr + (tr - fr) * t) << 16)
+         | (Math.round(fg + (tg - fg) * t) << 8)
+         | Math.round(fb + (tb - fb) * t);
   }
 
   preUpdate(time: number, delta: number): void {
@@ -65,10 +81,15 @@ export class HeartItem extends Phaser.Physics.Arcade.Sprite {
     const drawX = this.x + (arcadeBody ? arcadeBody.velocity.x * (delta / 1000) : 0);
     const drawY = this.y;
 
+    // Color interpolation based on stacks (yellow → red)
+    const colorT = Phaser.Math.Clamp(Math.abs(this.restoreStacks) / HEART_RESTORE_COLOR_CAP, 0, 1);
+    const outerColor = this.lerpColor(COLOR_HEART_GLOW, COLOR_HP_HEART, colorT);
+    const innerColor = this.lerpColor(COLOR_HEART_GLOW_SHINE, COLOR_HP_HEART_SHINE, colorT);
+
     // Spawn sparkle particles (0~1 per frame, max 15)
     if (this.particles.length < 15 && Math.random() < 0.5) {
       const bodyR = HEART_ITEM_SIZE / 3;
-      const sparkleColors = [COLOR_HP_HEART, COLOR_HP_HEART_SHINE, 0xffffff];
+      const sparkleColors = [outerColor, innerColor, 0xffffff];
       this.particles.push({
         x: drawX + (Math.random() - 0.5) * bodyR,
         y: drawY + (Math.random() - 0.5) * bodyR,
@@ -102,14 +123,14 @@ export class HeartItem extends Phaser.Physics.Arcade.Sprite {
     const outerAlpha = 0.15 + glowPulse * 0.15; // 0.15~0.30
     const outerRadius =
       HEART_ITEM_SIZE * (0.65 + glowPulse * 0.15); // 0.65~0.80
-    this.trail.fillStyle(COLOR_HP_HEART, outerAlpha);
+    this.trail.fillStyle(outerColor, outerAlpha);
     this.trail.fillCircle(drawX, drawY, outerRadius);
 
     // Inner glow
     const innerAlpha = 0.1 + glowPulse * 0.12; // 0.10~0.22
     const innerRadius =
       HEART_ITEM_SIZE * (0.45 + glowPulse * 0.1); // 0.45~0.55
-    this.trail.fillStyle(COLOR_HP_HEART_SHINE, innerAlpha);
+    this.trail.fillStyle(innerColor, innerAlpha);
     this.trail.fillCircle(drawX, drawY, innerRadius);
 
     // Sparkle particles

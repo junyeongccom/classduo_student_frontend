@@ -15,7 +15,6 @@ import {
   QUIZ_ITEM_SIZE,
   QUIZ_ITEM_SPACING_X,
   SCORE_BONUS,
-  HP_RESTORE_AMOUNT,
   COLOR_QUIZ_WORD,
   SCROLL_COLORS,
   FONT_FAMILY,
@@ -41,8 +40,8 @@ export interface QuizCallbacks {
   applyJumpCountDown: () => void;
   isJumpCountMaxed: () => boolean;
   isJumpCountAtMin: () => boolean;
-  applyHpRestore: () => void;
-  applyHpDrain: () => void;
+  applyHeartBoostUp: () => void;
+  applyHeartBoostDown: () => void;
   applyHpDecayDown: () => void;
   applyHpDecayUp: () => void;
   setGameState: (state: GameState) => void;
@@ -72,7 +71,7 @@ const REWARD_CARDS_KO: CardDef[] = [
   { type: "jumpCount", title: "점프횟수 UP", desc: "점프 횟수 +1", color: 0x9b59b6 },
   { type: "speed", title: "속도 UP", desc: "이동속도 15% 증가", color: 0x3498db },
   { type: "score", title: `+${SCORE_BONUS}점`, desc: "즉시 점수 획득", color: 0xf1c40f },
-  { type: "hpRestore", title: "체력 회복", desc: `현재 체력 +${HP_RESTORE_AMOUNT / 1000}초`, color: 0xff6b81 },
+  { type: "heartBoost", title: "회복 강화", desc: "하트 회복량 15% 증가", color: 0xff6b81 },
   { type: "hpDecay", title: "체력 감소 DOWN", desc: "체력 감소 속도 15% 감소", color: 0x1abc9c },
 ];
 
@@ -81,7 +80,7 @@ const REWARD_CARDS_EN: CardDef[] = [
   { type: "jumpCount", title: "JUMP COUNT UP", desc: "Jump count +1", color: 0x9b59b6 },
   { type: "speed", title: "SPEED UP", desc: "Speed +15%", color: 0x3498db },
   { type: "score", title: `+${SCORE_BONUS}pts`, desc: "Instant score", color: 0xf1c40f },
-  { type: "hpRestore", title: "HP RESTORE", desc: `HP +${HP_RESTORE_AMOUNT / 1000}s`, color: 0xff6b81 },
+  { type: "heartBoost", title: "HEART BOOST", desc: "Heart restore +15%", color: 0xff6b81 },
   { type: "hpDecay", title: "DECAY DOWN", desc: "Decay -15%", color: 0x1abc9c },
 ];
 
@@ -639,13 +638,13 @@ export class QuizManager {
         effectLabel = prefix + this.t.points(amount);
         break;
       }
-      case "hpRestore":
+      case "heartBoost":
         if (isCorrect) {
-          this.callbacks.applyHpRestore();
-          effectLabel = prefix + "HP RESTORE!";
+          this.callbacks.applyHeartBoostUp();
+          effectLabel = prefix + "HEART UP!";
         } else {
-          this.callbacks.applyHpDrain();
-          effectLabel = prefix + "HP DRAIN!";
+          this.callbacks.applyHeartBoostDown();
+          effectLabel = prefix + "HEART DOWN!";
         }
         break;
       case "hpDecay":
