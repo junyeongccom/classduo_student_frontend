@@ -28,16 +28,19 @@ function ChunkAccordionItem({ chunk, valueKey }: { chunk: RecordingChunkSummary;
   const title = chunk.title || `구간 ${chunk.chunk_index + 1}`
 
   return (
-    <AccordionItem value={valueKey} className="rounded-lg border border-gray-200 bg-white mb-2 last:mb-0">
+    <AccordionItem value={valueKey} className="rounded-lg border border-emerald-200 bg-white mb-2 last:mb-0">
       <AccordionTrigger className="px-4 py-3 text-sm hover:no-underline">
-        <div className="flex flex-col items-start gap-0.5 text-left">
-          <span className="text-sm font-medium text-gray-800 line-clamp-1">{title}</span>
-          {hasTime && (
-            <span className="flex items-center gap-1 text-[10px] text-gray-400">
-              <Clock className="h-3 w-3" />
-              {formatTime(chunk.start_time)} – {formatTime(chunk.end_time)}
-            </span>
-          )}
+        <div className="flex items-start gap-2.5 text-left">
+          <Mic className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-gray-800 line-clamp-1">{title}</span>
+            {hasTime && (
+              <span className="flex items-center gap-1 text-[10px] text-gray-400">
+                <Clock className="h-3 w-3" />
+                {formatTime(chunk.start_time)} – {formatTime(chunk.end_time)}
+              </span>
+            )}
+          </div>
         </div>
       </AccordionTrigger>
       <AccordionContent className="px-4 pb-3">
