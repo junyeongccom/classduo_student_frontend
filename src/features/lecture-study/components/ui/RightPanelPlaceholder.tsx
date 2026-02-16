@@ -5,7 +5,7 @@
  * @dependencies lucide-react
  */
 
-import { BookOpen, HelpCircle, Gamepad2, Bot } from 'lucide-react'
+import { BookOpen, HelpCircle, Gamepad2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import type { LectureStudyTab } from '../../types'
 
@@ -13,7 +13,6 @@ const TAB_ICONS: Record<LectureStudyTab, typeof BookOpen> = {
   summary: BookOpen,
   quiz: HelpCircle,
   game: Gamepad2,
-  'ai-tutor': Bot,
 }
 
 interface RightPanelPlaceholderProps {

@@ -21,7 +21,6 @@ import { LeftPanelMaterials } from './LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
 import { RightPanelPlaceholder } from '../ui/RightPanelPlaceholder'
 import { GameTabContainer } from './GameTabContainer'
-import { AITutorTabContainer } from './AITutorTabContainer'
 import type { LectureStudyTab, LeftPanelTab } from '../../types'
 
 const MIN_LEFT_WIDTH = 320
@@ -31,7 +30,6 @@ const RIGHT_TAB_TITLE_KEYS: Record<LectureStudyTab, string> = {
   summary: 'lectureStudy.rightPanel.summaryTab',
   quiz: 'lectureStudy.rightPanel.quizTab',
   game: 'lectureStudy.rightPanel.gameTab',
-  'ai-tutor': 'lectureStudy.rightPanel.aiTutorTab',
 }
 
 interface LectureStudyContainerProps {
@@ -191,9 +189,6 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           <TabsTrigger value="game" className="text-xs">
             {t('lectureStudy.rightPanel.gameTab')}
           </TabsTrigger>
-          <TabsTrigger value="ai-tutor" className="text-xs">
-            {t('lectureStudy.rightPanel.aiTutorTab')}
-          </TabsTrigger>
         </TabsList>
       </div>
       <TabsContent value="summary" className="flex-1 min-h-0 mt-0">
@@ -204,9 +199,6 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       </TabsContent>
       <TabsContent value="game" className="flex-1 min-h-0 mt-0">
         <GameTabContainer lectureId={lectureId} />
-      </TabsContent>
-      <TabsContent value="ai-tutor" className="flex-1 min-h-0 mt-0">
-        <AITutorTabContainer lectureId={lectureId} />
       </TabsContent>
     </Tabs>
   )

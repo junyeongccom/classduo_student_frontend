@@ -5,7 +5,7 @@
  * @dependencies 없음
  */
 
-export type LectureStudyTab = 'summary' | 'quiz' | 'game' | 'ai-tutor'
+export type LectureStudyTab = 'summary' | 'quiz' | 'game'
 export type LeftPanelTab = 'materials' | 'recordings'
 
 export interface Lecture {
