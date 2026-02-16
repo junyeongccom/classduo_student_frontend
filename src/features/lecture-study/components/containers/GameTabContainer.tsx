@@ -1,6 +1,6 @@
 /**
  * @file GameTabContainer.tsx
- * @description 게임 탭 컨테이너 — 게임 선택 + 단어 목록 모달 + 4종 게임 실행 통합
+ * @description 게임 탭 컨테이너 — 게임 선택 + 단어 목록 모달 + 5종 게임 실행 통합
  * @module features/lecture-study/components/containers
  * @dependencies GameSelector, WordListModal, review 게임 컴포넌트, ai-tutor GameOverlay
  */
@@ -17,6 +17,7 @@ import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
   reviewService,
+  ReviewMatchingGame,
   DefinitionBuilderGame,
   GuessTheTermGameContainer,
   ReviewDeckView,
@@ -185,6 +186,13 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
           <span className="text-sm font-medium text-gray-900">{gameName}</span>
         </div>
         <div className="flex-1 min-h-0 overflow-auto">
+          {selectedGame === 'cardMatch' && (
+            <ReviewMatchingGame
+              reviewItems={reviewItems}
+              isEnabled
+              onExit={handleExitGame}
+            />
+          )}
           {selectedGame === 'definitionBuilder' && (
             <DefinitionBuilderGame
               data={defBuilderData}
