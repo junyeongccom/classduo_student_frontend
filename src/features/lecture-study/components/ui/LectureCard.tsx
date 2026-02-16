@@ -24,10 +24,10 @@ export function LectureCard({ lecture, isLatest, courseId, onClick }: LectureCar
   const locale = useLocale()
   const hasAnyContent = lecture.has_content
 
-  // 주차/차시 라벨: "1주 2차시" or "W1 S2"
+  // 주차/차시 라벨: "1주차 2차시" or "W1 S2"
   const weekSessionLabel = lecture.week_number != null && lecture.session_number != null
     ? locale === 'ko'
-      ? `${lecture.week_number}주 ${lecture.session_number}차시`
+      ? `${lecture.week_number}주차 ${lecture.session_number}차시`
       : `W${lecture.week_number} S${lecture.session_number}`
     : null
 
@@ -36,11 +36,9 @@ export function LectureCard({ lecture, isLatest, courseId, onClick }: LectureCar
     ?? lecture.essence_7words
     ?? null
 
-  // 카드 표시: "N회차 - 제목" 형식
-  const lectureNoLabel = `${lecture.lecture_number ?? '?'}${locale === 'ko' ? '회차' : ''}`
+  // 카드 표시: 제목 있으면 제목만, 없으면 "N회차"
   const displayTitle = subtitle
-    ? `${lectureNoLabel} - ${subtitle}`
-    : lectureNoLabel
+    ?? `${lecture.lecture_number ?? '?'}${locale === 'ko' ? '회차' : ''}`
 
   const dateLocale = locale === 'en' ? 'en-US' : 'ko-KR'
   const formattedDate = lecture.date
