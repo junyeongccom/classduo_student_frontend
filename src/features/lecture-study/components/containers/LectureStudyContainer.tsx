@@ -23,7 +23,6 @@ import { GameTabContainer } from './GameTabContainer'
 import { AITutorTabContainer } from './AITutorTabContainer'
 import type { LectureStudyTab, LeftPanelTab } from '../../types'
 
-const DEFAULT_LEFT_WIDTH = 500
 const MIN_LEFT_WIDTH = 320
 const MIN_RIGHT_WIDTH = 300
 
@@ -64,7 +63,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     setGameWords([])
   }, [lectureId, setStoreLectureId, setGameWords])
 
-  const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
+  const [leftWidth, setLeftWidth] = useState<number | null>(null)
   const [isResizing, setIsResizing] = useState(false)
   const [hasUserResized, setHasUserResized] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -99,11 +98,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     { label: resolveLectureLabel() },
   ]
 
-  // Auto-size on initial render (desktop only)
+  // Auto-size: 정중앙 50/50 분할 (desktop only)
   useLayoutEffect(() => {
-    if (isMobile || !containerRef.current || hasUserResized) return
+    if (isMobile || !containerRef.current) return
     const element = containerRef.current
     const updateWidth = () => {
+      if (hasUserResized) return
       const rect = element.getBoundingClientRect()
       if (!rect.width) return
       const target = Math.floor(rect.width / 2)
@@ -144,7 +144,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       if (!containerRef.current) return
       const rect = containerRef.current.getBoundingClientRect()
       const max = rect.width - MIN_RIGHT_WIDTH
-      setLeftWidth(prev => Math.min(Math.max(prev, MIN_LEFT_WIDTH), max))
+      setLeftWidth(prev => {
+        if (prev == null) return Math.floor(rect.width / 2)
+        return Math.min(Math.max(prev, MIN_LEFT_WIDTH), max)
+      })
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
@@ -238,7 +241,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         {/* Left Panel */}
         <section
           className="flex h-full min-h-0 flex-col border-r border-gray-200"
-          style={isMobile ? { width: '100%' } : { width: leftWidth }}
+          style={isMobile ? { width: '100%' } : { width: leftWidth ?? '50%' }}
         >
           <Tabs
             value={leftTab}
@@ -271,9 +274,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         {!isMobile && (
           <>
             <div
-              className="relative flex w-px cursor-col-resize items-stretch justify-center bg-gray-300/80 hover:bg-blue-400 transition-colors"
+              className="group relative flex w-1 cursor-col-resize items-center justify-center bg-gray-200 hover:bg-blue-400 transition-colors"
               onMouseDown={handleResizeStart}
             >
+              <div className="h-8 w-1 rounded-full bg-gray-400 group-hover:bg-white transition-colors" />
               {isResizing && (
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
               )}
