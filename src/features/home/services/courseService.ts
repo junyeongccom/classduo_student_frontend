@@ -7,16 +7,14 @@
 
 import { apiRequest } from '@/shared/lib/api'
 
-interface CourseApiItem {
+export interface CourseApiItem {
   course_id: string
   title: string
   professor_name?: string | null
-  academic_year?: string | number
-  term_code?: string
-  section?: string
+  academic_year: number
+  term_code: string
+  section?: string | null
   updated_at?: string | null
-  academic_term_id?: string | null
-  academic_term_name?: string | null
 }
 
 interface CourseApiResponse {

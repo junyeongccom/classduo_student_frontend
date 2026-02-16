@@ -1,8 +1,8 @@
 /**
  * @file LectureSelectContainer.tsx
- * @description 과목 내부 탭 + 회차 선택 컨테이너 — 리디자인된 탭바 + 배경 구분
+ * @description 과목 내부 탭 + 회차/자료 선택 컨테이너 — 카드 그리드 + 탭바
  * @module features/lecture-study/components/containers
- * @dependencies useLectures, Breadcrumb, LectureCard, Tabs, MaterialStudyContainer
+ * @dependencies useLectures, Breadcrumb, LectureCard, MaterialCard, Tabs
  */
 
 'use client'
@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
-import { MaterialStudyContainer } from '@/features/material-study'
+import { MaterialCard, useMaterialList } from '@/features/material-study'
 import { useLectures } from '../../hooks/useLectures'
 import { Breadcrumb } from '../ui/Breadcrumb'
 import { LectureCard } from '../ui/LectureCard'
@@ -23,6 +23,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const t = useTranslations()
   const router = useRouter()
   const { lectures, courseTitle, isLoading, error, refresh } = useLectures(courseId)
+  const { materials, isLoading: materialsLoading } = useMaterialList(courseId)
   const [activeTab, setActiveTab] = useState<CourseTab>('lecture')
 
   const breadcrumbItems = [
@@ -116,7 +117,30 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
 
           <TabsContent value="material" className="mt-4">
             <div className="rounded-2xl bg-gray-50/80 p-6">
-              <MaterialStudyContainer courseId={courseId} />
+              {materialsLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                </div>
+              ) : materials.length === 0 ? (
+                <div className="flex items-center justify-center py-20 text-sm text-gray-400">
+                  {t('lectureStudy.materialSelect.empty')}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {materials.map((material) => (
+                    <MaterialCard
+                      key={material.id}
+                      material={material}
+                      courseId={courseId}
+                      onClick={() =>
+                        router.push(
+                          `/studyspace/course/${courseId}/material/${material.id}`,
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

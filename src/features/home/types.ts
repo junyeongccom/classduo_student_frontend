@@ -5,19 +5,21 @@
  * @dependencies 없음
  */
 
+export type TermCode = 'SPRING' | 'SUMMER' | 'FALL' | 'WINTER'
+
 export interface AcademicTerm {
-  id: string
-  name: string
+  /** 그룹 키: "2026-SPRING" */
+  key: string
   year: number
-  semester: number
+  termCode: TermCode
 }
 
 export interface Course {
   id: string
   name: string
   professor_name: string | null
-  academic_term_id: string | null
-  academic_term?: AcademicTerm | null
+  section: string | null
+  academic_term: AcademicTerm | null
   updated_at: string | null
   created_at: string | null
 }

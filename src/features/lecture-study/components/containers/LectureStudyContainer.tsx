@@ -94,7 +94,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const breadcrumbItems = [
     { label: t('lectureStudy.breadcrumbHome'), href: '/studyspace/home' },
     ...(courseId
-      ? [{ label: courseTitle ?? fetchedCourseTitle ?? '...', href: `/studyspace/course/${courseId}` }]
+      ? [{ label: courseTitle ?? fetchedCourseTitle ?? t('lectureStudy.breadcrumb.courseLoading'), href: `/studyspace/course/${courseId}` }]
       : []),
     { label: resolveLectureLabel() },
   ]

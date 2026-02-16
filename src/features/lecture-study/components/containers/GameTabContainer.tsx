@@ -118,14 +118,14 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
       if (result.data) {
         setDefBuilderData(result.data)
       } else {
-        setDefBuilderError(result.error?.message ?? 'Failed to load game')
+        setDefBuilderError(result.error?.message ?? t('lectureStudy.game.loadGameError'))
       }
     } catch {
-      setDefBuilderError('Failed to load game')
+      setDefBuilderError(t('lectureStudy.game.loadGameError'))
     } finally {
       setDefBuilderLoading(false)
     }
-  }, [lectureId])
+  }, [lectureId, t])
 
   const handleStartGame = useCallback(async () => {
     setShowWordModal(false)

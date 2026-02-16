@@ -240,6 +240,9 @@
       "hasMaterial": "Material",
       "newBadge": "NEW"
     },
+    "materialSelect": {
+      "empty": "No materials registered"
+    },
     "leftPanel": {
       "materialsTab": "Materials",
       "recordingsTab": "Recordings",
@@ -273,9 +276,11 @@
       "runningGameNote": "This game uses OX quiz data. The word list will be utilized in future updates.",
       "wordKeywordPlaceholder": "Keyword",
       "wordDescriptionPlaceholder": "Description",
-      "importError": "Failed to import keywords. Please add words manually."
+      "importError": "Failed to import keywords. Please add words manually.",
+      "loadGameError": "Failed to load game"
     },
     "breadcrumb": {
+      "courseLoading": "Loading…",
       "weekSession": "Week {week}, Session {session}",
       "weekSessionTitle": "Week {week}, Session {session} - {title}",
       "lectureNumber": "Lecture {number}",

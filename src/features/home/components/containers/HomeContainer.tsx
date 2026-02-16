@@ -13,6 +13,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { useCourses } from '../../hooks/useCourses'
 import { groupCoursesByTerm } from '../../domain/groupCoursesByTerm'
+import { formatTermLabel } from '../../domain/formatTermLabel'
 import { assignCourseVisuals } from '../../domain/assignCourseVisual'
 import { CourseCard } from '../ui/CourseCard'
 import { EmptyState } from '../ui/EmptyState'
@@ -84,10 +85,12 @@ export function HomeContainer() {
 
         <div className="flex flex-col gap-10">
           {groups.map((group, gi) => (
-            <section key={group.term?.id ?? `etc-${gi}`}>
+            <section key={group.term?.key ?? `etc-${gi}`}>
               <div className="mb-4 border-b border-gray-200 pb-2">
                 <h2 className="text-lg font-semibold text-gray-800">
-                  {group.term?.name ?? t('home.etcGroup')}
+                  {group.term
+                    ? formatTermLabel(group.term, locale)
+                    : t('home.etcGroup')}
                 </h2>
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -96,6 +99,7 @@ export function HomeContainer() {
                     key={course.id}
                     name={course.name}
                     professorName={course.professor_name}
+                    section={course.section}
                     updatedAt={course.updated_at}
                     visual={
                       visuals.get(course.id) ?? {

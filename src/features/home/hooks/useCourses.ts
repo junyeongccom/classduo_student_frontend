@@ -9,7 +9,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { courseService } from '../services/courseService'
-import type { Course } from '../types'
+import type { Course, TermCode } from '../types'
+
+const VALID_TERM_CODES: TermCode[] = ['SPRING', 'SUMMER', 'FALL', 'WINTER']
+
+function isValidTermCode(code: string): code is TermCode {
+  return VALID_TERM_CODES.includes(code as TermCode)
+}
 
 export function useCourses() {
   const [courses, setCourses] = useState<Course[]>([])
@@ -32,22 +38,22 @@ export function useCourses() {
       return
     }
 
-    const mapped: Course[] = (result.data.courses ?? []).map(c => ({
-      id: c.course_id,
-      name: c.title,
-      professor_name: c.professor_name ?? null,
-      academic_term_id: c.academic_term_id ?? null,
-      academic_term: c.academic_term_name
-        ? {
-            id: c.academic_term_id ?? '',
-            name: c.academic_term_name,
-            year: typeof c.academic_year === 'number' ? c.academic_year : parseInt(String(c.academic_year ?? '0'), 10),
-            semester: c.term_code === '2' ? 2 : 1,
-          }
-        : null,
-      updated_at: c.updated_at ?? null,
-      created_at: null,
-    }))
+    const mapped: Course[] = (result.data.courses ?? []).map(c => {
+      const year = typeof c.academic_year === 'number' ? c.academic_year : 0
+      const termCode = c.term_code && isValidTermCode(c.term_code) ? c.term_code : null
+
+      return {
+        id: c.course_id,
+        name: c.title,
+        professor_name: c.professor_name ?? null,
+        section: c.section ?? null,
+        academic_term: year > 0 && termCode
+          ? { key: `${year}-${termCode}`, year, termCode }
+          : null,
+        updated_at: c.updated_at ?? null,
+        created_at: null,
+      }
+    })
 
     setCourses(mapped)
     setIsLoading(false)

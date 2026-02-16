@@ -11,6 +11,7 @@ import type { CourseVisual } from '../../domain/assignCourseVisual'
 interface CourseCardProps {
   name: string
   professorName: string | null
+  section: string | null
   updatedAt: string | null
   visual: CourseVisual
   progress?: { completed: number; total: number } | null
@@ -22,6 +23,7 @@ interface CourseCardProps {
 export function CourseCard({
   name,
   professorName,
+  section,
   updatedAt,
   visual,
   progress,
@@ -63,8 +65,10 @@ export function CourseCard({
           <h3 className="text-base font-semibold text-gray-900 line-clamp-2 leading-snug">
             {name}
           </h3>
-          {professorName && (
-            <p className="text-sm text-gray-500">{professorName}</p>
+          {(professorName || section) && (
+            <p className="text-sm text-gray-500">
+              {[professorName, section ? `${section}분반` : null].filter(Boolean).join(' · ')}
+            </p>
           )}
         </div>
 

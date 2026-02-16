@@ -6,3 +6,6 @@
  */
 
 export { MaterialStudyContainer } from './components/containers/MaterialStudyContainer'
+export { MaterialCard } from './components/ui/MaterialCard'
+export { useExamPrepMaterials as useMaterialList } from '@/features/exam_prep'
+export type { ExamPrepMaterial as MaterialItem } from '@/features/exam_prep'

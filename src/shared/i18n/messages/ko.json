@@ -240,6 +240,9 @@
       "hasMaterial": "자료",
       "newBadge": "NEW"
     },
+    "materialSelect": {
+      "empty": "등록된 강의자료가 없습니다"
+    },
     "leftPanel": {
       "materialsTab": "강의자료",
       "recordingsTab": "녹음본",
@@ -273,9 +276,11 @@
       "runningGameNote": "이 게임은 OX퀴즈 데이터로 진행됩니다. 단어 목록은 향후 업데이트에서 활용됩니다.",
       "wordKeywordPlaceholder": "단어",
       "wordDescriptionPlaceholder": "설명",
-      "importError": "키워드를 가져오지 못했습니다. 수동으로 단어를 추가해주세요."
+      "importError": "키워드를 가져오지 못했습니다. 수동으로 단어를 추가해주세요.",
+      "loadGameError": "게임을 불러오지 못했습니다"
     },
     "breadcrumb": {
+      "courseLoading": "불러오는 중…",
       "weekSession": "{week}주차 {session}차시",
       "weekSessionTitle": "{week}주차 {session}차시 - {title}",
       "lectureNumber": "회차 {number}",
