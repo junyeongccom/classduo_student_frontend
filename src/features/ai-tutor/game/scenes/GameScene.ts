@@ -48,7 +48,6 @@ import {
   JUMP_COUNT_MIN,
   JUMP_COUNT_MAX,
   HP_MAX,
-  HP_RESTORE_AMOUNT,
   HP_DECAY_STACK_BASE,
   HP_DECAY_MULT_MIN,
   HP_DECAY_MULT_MAX,
@@ -64,6 +63,9 @@ import {
   ZOOM_PUNCH_REWARD,
   HEART_SPAWN_INTERVAL_MS,
   HEART_RESTORE_AMOUNT,
+  HEART_RESTORE_STACK_BASE,
+  HEART_RESTORE_MULT_MIN,
+  HEART_RESTORE_MULT_MAX,
   HEART_SPAWN_Y,
   HEART_ITEM_SIZE,
   METEOR_SPAWN_INTERVAL_MIN_MS,
@@ -103,6 +105,8 @@ export class GameScene extends Phaser.Scene {
   private hpMax = HP_MAX;
   private hpDecayStacks = 0;
   private hpDecayMultiplier = 1;
+  private heartRestoreStacks = 0;
+  private heartRestoreMultiplier = 1;
 
   private lastCoinPattern = "";
 
@@ -184,6 +188,8 @@ export class GameScene extends Phaser.Scene {
     this.hpMax = HP_MAX;
     this.hpDecayStacks = 0;
     this.hpDecayMultiplier = 1;
+    this.heartRestoreStacks = 0;
+    this.heartRestoreMultiplier = 1;
     this.lastSlideDustTime = 0;
     this.lastHpFlashTime = 0;
     this.lastCoinPattern = "";
@@ -269,8 +275,8 @@ export class GameScene extends Phaser.Scene {
       applyJumpCountDown: () => this.applyJumpCountDown(),
       isJumpCountMaxed: () => this.player.maxJumps >= JUMP_COUNT_MAX,
       isJumpCountAtMin: () => this.player.maxJumps <= JUMP_COUNT_MIN,
-      applyHpRestore: () => this.applyHpRestore(),
-      applyHpDrain: () => this.applyHpDrain(),
+      applyHeartBoostUp: () => this.applyHeartBoostUp(),
+      applyHeartBoostDown: () => this.applyHeartBoostDown(),
       applyHpDecayDown: () => this.applyHpDecayDown(),
       applyHpDecayUp: () => this.applyHpDecayUp(),
       setGameState: (state: GameState) => {
@@ -556,6 +562,7 @@ export class GameScene extends Phaser.Scene {
     const heart = new HeartItem(this, x, y);
     this.heartItems.add(heart);
     heart.setScrollSpeed(this.getEffectiveSpeed());
+    heart.setRestoreStacks(this.heartRestoreStacks);
   }
 
   private onCollectHeart: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (
@@ -567,7 +574,7 @@ export class GameScene extends Phaser.Scene {
     const hy = heart.y;
     heart.destroyWithTrail();
 
-    this.hp = Math.min(this.hp + HEART_RESTORE_AMOUNT, this.hpMax);
+    this.hp = Math.min(this.hp + HEART_RESTORE_AMOUNT * this.heartRestoreMultiplier, this.hpMax);
     this.ui.updateHpGauge(this.hp, this.hpMax);
 
     this.particles.spawnCoinBurst(hx, hy);
@@ -663,12 +670,28 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  private applyHpRestore(): void {
-    this.hp = Math.min(this.hp + HP_RESTORE_AMOUNT, this.hpMax);
+  private applyHeartBoostUp(): void {
+    this.heartRestoreStacks++;
+    this.heartRestoreMultiplier = Phaser.Math.Clamp(
+      Math.pow(HEART_RESTORE_STACK_BASE, this.heartRestoreStacks),
+      HEART_RESTORE_MULT_MIN, HEART_RESTORE_MULT_MAX
+    );
+    this.syncHeartRestoreStacks();
   }
 
-  private applyHpDrain(): void {
-    this.hp = Math.max(1, this.hp - HP_RESTORE_AMOUNT);
+  private applyHeartBoostDown(): void {
+    this.heartRestoreStacks--;
+    this.heartRestoreMultiplier = Phaser.Math.Clamp(
+      Math.pow(HEART_RESTORE_STACK_BASE, this.heartRestoreStacks),
+      HEART_RESTORE_MULT_MIN, HEART_RESTORE_MULT_MAX
+    );
+    this.syncHeartRestoreStacks();
+  }
+
+  private syncHeartRestoreStacks(): void {
+    this.heartItems.getChildren().forEach((obj) => {
+      (obj as HeartItem).setRestoreStacks(this.heartRestoreStacks);
+    });
   }
 
   private applyHpDecayDown(): void {
