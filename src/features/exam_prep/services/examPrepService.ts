@@ -6,6 +6,14 @@ import {
   isJWTExpiredError,
 } from '@/shared/lib/supabase'
 import type { ExamPrepQuizType } from '../types'
+import {
+  getCachedSignedUrl,
+  setCachedSignedUrl,
+  cacheSignedUrlFromApi,
+  SIGNED_URL_EXPIRES_SEC,
+} from '../domain/signedUrlCache'
+
+export { cacheSignedUrlFromApi }
 
 const normalizeStoragePath = (path?: string | null) => {
   if (!path) return null
@@ -27,13 +35,17 @@ const buildSignedUrlForMaterial = async (
     status: string | null
     original_pdf_path?: string | null
   },
-  expiresIn = 600
+  expiresIn = SIGNED_URL_EXPIRES_SEC,
 ) => {
   const status = material.status ?? ''
   const materialId = material.material_id
   if (!materialId || ['FAILED', 'ERROR'].includes(status)) {
     return null
   }
+
+  // 세션 스토리지에서 캐시된 URL 확인
+  const cached = getCachedSignedUrl(materialId)
+  if (cached) return cached
 
   const candidates: Array<{ bucket: string; path: string }> = []
 
@@ -52,6 +64,7 @@ const buildSignedUrlForMaterial = async (
         .from(candidate.bucket)
         .createSignedUrl(candidate.path, expiresIn)
       if (data?.signedUrl && !error) {
+        setCachedSignedUrl(materialId, data.signedUrl, expiresIn)
         return data.signedUrl
       }
     } catch {

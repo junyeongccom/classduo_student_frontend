@@ -1,0 +1,502 @@
+/**
+ * @file LectureStudyContainer.tsx
+ * @description 회차별 학습 메인 컨테이너 — 접이식 강의자료(좌) + 요약/퀴즈/게임(중앙) + 접이식 채팅(우)
+ * @module features/lecture-study/components/containers
+ * @dependencies useLectureDetail, useLectureStudyStore, Tabs, LeftPanelMaterials, RightPanelPlaceholder, useIsMobile
+ */
+
+'use client'
+
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { Loader2, PanelRightOpen, X, ChevronRight, FileText, Bot, ClipboardPen, Share2 } from 'lucide-react'
+import Link from 'next/link'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
+import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { useLectureDetail } from '../../hooks/useLectureDetail'
+import { useLectures } from '../../hooks/useLectures'
+import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useLectureStudyStore } from '../../store/useLectureStudyStore'
+import { LeftPanelMaterials } from './LeftPanelMaterials'
+import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
+import { RightPanelPlaceholder } from '../ui/RightPanelPlaceholder'
+import { GameTabContainer } from './GameTabContainer'
+import type { LeftPanelTab, LectureStudyTab } from '../../types'
+
+const MIN_LEFT_WIDTH = 320
+const MIN_CENTER_WIDTH = 280
+const MIN_CHAT_WIDTH = 300
+
+const RIGHT_TAB_TITLE_KEYS: Record<LectureStudyTab, string> = {
+  summary: 'lectureStudy.rightPanel.summaryTab',
+  quiz: 'lectureStudy.rightPanel.quizTab',
+  game: 'lectureStudy.rightPanel.gameTab',
+}
+
+interface LectureStudyContainerProps {
+  lectureId: string
+  courseId?: string
+  courseTitle?: string
+  lectureTitle?: string
+}
+
+export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectureTitle }: LectureStudyContainerProps) {
+  const t = useTranslations()
+  const isMobile = useIsMobile()
+  const { recordings, isLoading, error, refresh } = useLectureDetail(lectureId)
+  const { lectures, courseTitle: fetchedCourseTitle } = useLectures(courseId ?? '')
+
+  const currentLecture = useMemo(
+    () => lectures.find((l) => l.id === lectureId),
+    [lectures, lectureId],
+  )
+
+  // Store
+  const isLeftPanelOpen = useLectureStudyStore(s => s.isLeftPanelOpen)
+  const isChatPanelOpen = useLectureStudyStore(s => s.isChatPanelOpen)
+  const leftTab = useLectureStudyStore(s => s.leftTab)
+  const rightTab = useLectureStudyStore(s => s.rightTab)
+  const toggleLeftPanel = useLectureStudyStore(s => s.toggleLeftPanel)
+  const toggleChatPanel = useLectureStudyStore(s => s.toggleChatPanel)
+  const setLeftTab = useLectureStudyStore(s => s.setLeftTab)
+  const setRightTab = useLectureStudyStore(s => s.setRightTab)
+  const setStoreLectureId = useLectureStudyStore(s => s.setLectureId)
+  const setGameWords = useLectureStudyStore(s => s.setGameWords)
+
+  useEffect(() => {
+    setStoreLectureId(lectureId)
+    setGameWords([])
+    // 페이지 진입 시 강의자료/챗봇 패널 닫힌 상태로 강제 초기화 (persist 하이드레이션 이후에도 동작)
+    useLectureStudyStore.setState({ isLeftPanelOpen: false, isChatPanelOpen: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lectureId])
+
+  // Local state
+  const [leftWidth, setLeftWidth] = useState<number | null>(null)
+  const [chatWidth, setChatWidth] = useState<number | null>(null)
+  const [isResizingLeft, setIsResizingLeft] = useState(false)
+  const [isResizingChat, setIsResizingChat] = useState(false)
+  const [hasUserResizedLeft, setHasUserResizedLeft] = useState(false)
+  const [hasUserResizedChat, setHasUserResizedChat] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const resolveLectureLabel = (): string => {
+    if (lectureTitle) return lectureTitle
+    if (currentLecture) {
+      const wn = currentLecture.week_number
+      const sn = currentLecture.session_number
+      const title = currentLecture.title
+      if (wn != null && sn != null) {
+        return title
+          ? t('lectureStudy.breadcrumb.weekSessionTitle', { week: wn, session: sn, title })
+          : t('lectureStudy.breadcrumb.weekSession', { week: wn, session: sn })
+      }
+      if (currentLecture.lecture_number != null) {
+        return title
+          ? t('lectureStudy.breadcrumb.lectureNumberTitle', { number: currentLecture.lecture_number, title })
+          : t('lectureStudy.breadcrumb.lectureNumber', { number: currentLecture.lecture_number })
+      }
+      if (title) return title
+    }
+    return t('lectureStudy.breadcrumb.lectureFallback')
+  }
+
+  // 사용 가능한 컨테이너 너비에서 고정 패널 크기를 빼고 남은 공간 계산 헬퍼
+  const getContainerWidth = useCallback(() => {
+    return containerRef.current?.getBoundingClientRect().width ?? 0
+  }, [])
+
+  // Left panel auto-size
+  useLayoutEffect(() => {
+    if (isMobile || !containerRef.current || !isLeftPanelOpen) return
+    const element = containerRef.current
+    const updateWidth = () => {
+      if (hasUserResizedLeft) return
+      const total = element.getBoundingClientRect().width
+      if (!total) return
+      const chatOffset = isChatPanelOpen && chatWidth ? chatWidth : 0
+      const available = total - chatOffset - MIN_CENTER_WIDTH
+      const target = Math.floor((total - chatOffset) / 2)
+      setLeftWidth(Math.min(Math.max(target, MIN_LEFT_WIDTH), Math.max(available, MIN_LEFT_WIDTH)))
+    }
+    updateWidth()
+    const observer = new ResizeObserver(updateWidth)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [hasUserResizedLeft, isMobile, isLeftPanelOpen, isChatPanelOpen, chatWidth])
+
+  // Chat panel auto-size
+  useLayoutEffect(() => {
+    if (isMobile || !containerRef.current || !isChatPanelOpen) return
+    const element = containerRef.current
+    const updateWidth = () => {
+      if (hasUserResizedChat) return
+      const total = element.getBoundingClientRect().width
+      if (!total) return
+      const leftOffset = isLeftPanelOpen && leftWidth ? leftWidth : 0
+      const available = total - leftOffset - MIN_CENTER_WIDTH
+      const target = Math.floor((total - leftOffset) / 3)
+      setChatWidth(Math.min(Math.max(target, MIN_CHAT_WIDTH), Math.max(available, MIN_CHAT_WIDTH)))
+    }
+    updateWidth()
+    const observer = new ResizeObserver(updateWidth)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [hasUserResizedChat, isMobile, isChatPanelOpen, isLeftPanelOpen, leftWidth])
+
+  // Left resizer drag
+  useEffect(() => {
+    if (!isResizingLeft || isMobile) return
+    const handleMouseMove = (e: MouseEvent) => {
+      const total = getContainerWidth()
+      if (!total) return
+      const rect = containerRef.current!.getBoundingClientRect()
+      const next = e.clientX - rect.left
+      const chatOffset = isChatPanelOpen && chatWidth ? chatWidth : 0
+      const max = total - chatOffset - MIN_CENTER_WIDTH
+      setLeftWidth(Math.min(Math.max(next, MIN_LEFT_WIDTH), max))
+    }
+    const handleMouseUp = () => setIsResizingLeft(false)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizingLeft, isMobile, isChatPanelOpen, chatWidth, getContainerWidth])
+
+  // Chat resizer drag (오른쪽에서 왼쪽으로 드래그)
+  useEffect(() => {
+    if (!isResizingChat || isMobile) return
+    const handleMouseMove = (e: MouseEvent) => {
+      const total = getContainerWidth()
+      if (!total) return
+      const rect = containerRef.current!.getBoundingClientRect()
+      const next = rect.right - e.clientX
+      const leftOffset = isLeftPanelOpen && leftWidth ? leftWidth : 0
+      const max = total - leftOffset - MIN_CENTER_WIDTH
+      setChatWidth(Math.min(Math.max(next, MIN_CHAT_WIDTH), max))
+    }
+    const handleMouseUp = () => setIsResizingChat(false)
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizingChat, isMobile, isLeftPanelOpen, leftWidth, getContainerWidth])
+
+  // Window resize clamp
+  useEffect(() => {
+    if (isMobile) return
+    const handleResize = () => {
+      const total = getContainerWidth()
+      if (!total) return
+      if (isLeftPanelOpen) {
+        const chatOffset = isChatPanelOpen && chatWidth ? chatWidth : 0
+        const maxLeft = total - chatOffset - MIN_CENTER_WIDTH
+        setLeftWidth(prev => {
+          if (prev == null) return Math.floor((total - chatOffset) / 2)
+          return Math.min(Math.max(prev, MIN_LEFT_WIDTH), maxLeft)
+        })
+      }
+      if (isChatPanelOpen) {
+        const leftOffset = isLeftPanelOpen && leftWidth ? leftWidth : 0
+        const maxChat = total - leftOffset - MIN_CENTER_WIDTH
+        setChatWidth(prev => {
+          if (prev == null) return Math.floor((total - leftOffset) / 3)
+          return Math.min(Math.max(prev, MIN_CHAT_WIDTH), maxChat)
+        })
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [isMobile, isLeftPanelOpen, isChatPanelOpen, leftWidth, chatWidth, getContainerWidth])
+
+  const handleLeftResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setHasUserResizedLeft(true)
+    setIsResizingLeft(true)
+  }, [])
+
+  const handleChatResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setHasUserResizedChat(true)
+    setIsResizingChat(true)
+  }, [])
+
+  // 양쪽 패널 모두 닫혀있을 때만 중앙 배치
+  const isCenterOnly = !isLeftPanelOpen && !isChatPanelOpen
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4">
+        <p className="text-sm text-gray-500">{t('lectureStudy.error.loadFailed')}</p>
+        <button
+          onClick={refresh}
+          className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-800"
+        >
+          {t('home.retry')}
+        </button>
+      </div>
+    )
+  }
+
+  const rightPanelContent = (
+    <Tabs
+      value={rightTab}
+      onValueChange={v => setRightTab(v as LectureStudyTab)}
+      className="flex h-full flex-col"
+    >
+      <div className="shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 pt-2">
+        <TabsList className="h-9 w-full">
+          <TabsTrigger value="summary" className="flex-1 text-xs">
+            {t('lectureStudy.rightPanel.summaryTab')}
+          </TabsTrigger>
+          <TabsTrigger value="quiz" className="flex-1 text-xs">
+            {t('lectureStudy.rightPanel.quizTab')}
+          </TabsTrigger>
+          <TabsTrigger value="game" className="flex-1 text-xs">
+            {t('lectureStudy.rightPanel.gameTab')}
+          </TabsTrigger>
+        </TabsList>
+      </div>
+      <TabsContent value="summary" className="flex-1 min-h-0 mt-0">
+        <RightPanelPlaceholder tab="summary" />
+      </TabsContent>
+      <TabsContent value="quiz" className="flex-1 min-h-0 mt-0">
+        <RightPanelPlaceholder tab="quiz" />
+      </TabsContent>
+      <TabsContent value="game" className="flex-1 min-h-0 mt-0">
+        <GameTabContainer lectureId={lectureId} />
+      </TabsContent>
+    </Tabs>
+  )
+
+  const resolvedCourseTitle = courseTitle ?? fetchedCourseTitle ?? '...'
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Breadcrumb + Action buttons → Header topbar slot */}
+      <StudyspaceTopbarSlot>
+        <div className="flex items-center">
+          <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
+            <Link href="/studyspace/home" className="transition-colors hover:text-[#6366F1]">
+              {t('lectureStudy.breadcrumbHome')}
+            </Link>
+            <ChevronRight className="h-3.5 w-3.5" />
+            {courseId ? (
+              <Link href={`/studyspace/course/${courseId}`} className="transition-colors hover:text-[#6366F1]">
+                {resolvedCourseTitle}
+              </Link>
+            ) : (
+              <span>{resolvedCourseTitle}</span>
+            )}
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span className="truncate font-semibold text-gray-900 dark:text-gray-50">
+              {resolveLectureLabel()}
+            </span>
+          </nav>
+          <div className="flex flex-1 items-center justify-center gap-3">
+            <button
+              onClick={() => {}}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#818CF8] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:brightness-110 active:scale-[0.97]"
+            >
+              <ClipboardPen className="h-4 w-4" />
+              테스트하기
+            </button>
+            <button
+              onClick={() => {}}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#FBBF24] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:brightness-110 active:scale-[0.97]"
+            >
+              <Share2 className="h-4 w-4" />
+              공유하기
+            </button>
+          </div>
+        </div>
+      </StudyspaceTopbarSlot>
+
+      {/* Mobile: drawer toggle */}
+      {isMobile && (
+        <div className="shrink-0 flex justify-end border-b border-gray-200 bg-white px-4 py-2">
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
+          >
+            <PanelRightOpen className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Panels */}
+      <div
+        ref={containerRef}
+        className="relative flex flex-1 min-h-0"
+      >
+        {/* Mobile: 강의자료 전체 너비 */}
+        {isMobile && (
+          <section className="flex h-full min-h-0 flex-col" style={{ width: '100%' }}>
+            <LeftPanelMaterials />
+          </section>
+        )}
+
+        {/* Desktop: 강의자료 아이콘 (패널 닫힌 상태) */}
+        {!isMobile && !isLeftPanelOpen && (
+          <button
+            onClick={toggleLeftPanel}
+            className="absolute bottom-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-md text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            title={t('lectureStudy.leftPanel.materialsTab')}
+          >
+            <FileText className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Desktop: 챗봇 아이콘 (패널 닫힌 상태) */}
+        {!isMobile && !isChatPanelOpen && (
+          <button
+            onClick={toggleChatPanel}
+            className="absolute bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-md text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            title="AI Chat"
+          >
+            <Bot className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Desktop: 강의자료/녹음본 패널 (열린 상태) */}
+        {!isMobile && isLeftPanelOpen && (
+          <section
+            className="flex h-full min-h-0 flex-col border-r border-gray-200 dark:border-gray-700"
+            style={{ width: leftWidth ?? '33%' }}
+          >
+            <Tabs
+              value={leftTab}
+              onValueChange={v => setLeftTab(v as LeftPanelTab)}
+              className="flex h-full flex-col"
+            >
+              <div className="flex items-center shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 pt-2">
+                <TabsList className="h-9 flex-1">
+                  <TabsTrigger value="materials" className="flex-1 text-xs">
+                    {t('lectureStudy.leftPanel.materialsTab')}
+                  </TabsTrigger>
+                  <TabsTrigger value="recordings" className="flex-1 text-xs">
+                    {t('lectureStudy.leftPanel.recordingsTab')}
+                  </TabsTrigger>
+                </TabsList>
+                <button
+                  onClick={toggleLeftPanel}
+                  className="ml-2 mb-2 rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <TabsContent value="materials" className="flex-1 min-h-0 mt-0">
+                <LeftPanelMaterials />
+              </TabsContent>
+              <TabsContent value="recordings" className="flex-1 min-h-0 mt-0">
+                <LeftPanelRecordings
+                  recordings={recordings}
+                  essence7Words={currentLecture?.essence_7words}
+                />
+              </TabsContent>
+            </Tabs>
+          </section>
+        )}
+
+        {/* Desktop: 좌측 리사이저 */}
+        {!isMobile && isLeftPanelOpen && (
+          <div
+            className="group relative flex w-1 cursor-col-resize items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-blue-400 transition-colors"
+            onMouseDown={handleLeftResizeStart}
+          >
+            <div className="h-8 w-1 rounded-full bg-gray-400 dark:bg-gray-500 group-hover:bg-white transition-colors" />
+            {isResizingLeft && (
+              <div className="fixed inset-0 z-50 cursor-col-resize" />
+            )}
+          </div>
+        )}
+
+        {/* Desktop: 중앙 패널 (요약/퀴즈/게임) */}
+        {!isMobile && (
+          <section className={`flex h-full min-h-0 flex-1 flex-col ${isCenterOnly ? 'max-w-4xl mx-auto' : ''}`}>
+            {rightPanelContent}
+          </section>
+        )}
+
+        {/* Desktop: 우측 리사이저 */}
+        {!isMobile && isChatPanelOpen && (
+          <div
+            className="group relative flex w-1 cursor-col-resize items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-blue-400 transition-colors"
+            onMouseDown={handleChatResizeStart}
+          >
+            <div className="h-8 w-1 rounded-full bg-gray-400 dark:bg-gray-500 group-hover:bg-white transition-colors" />
+            {isResizingChat && (
+              <div className="fixed inset-0 z-50 cursor-col-resize" />
+            )}
+          </div>
+        )}
+
+        {/* Desktop: 채팅 패널 (열린 상태) */}
+        {!isMobile && isChatPanelOpen && (
+          <section
+            className="flex h-full min-h-0 flex-col border-l border-gray-200 dark:border-gray-700"
+            style={{ width: chatWidth ?? '33%' }}
+          >
+            <div className="flex items-center justify-between shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 py-2">
+              <div className="flex items-center gap-1.5">
+                <Bot className="h-3.5 w-3.5 text-gray-500" />
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">AI Chat</span>
+              </div>
+              <button
+                onClick={toggleChatPanel}
+                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <Bot className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm">{t('lectureStudy.rightPanel.placeholder')}</p>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* Mobile: Drawer for Right Panel */}
+      {isMobile && isDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/40"
+            onClick={() => setIsDrawerOpen(false)}
+          />
+          <div className="flex h-full w-[85vw] max-w-md flex-col bg-white dark:bg-gray-900 shadow-xl animate-in slide-in-from-right">
+            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-50">
+                {t(RIGHT_TAB_TITLE_KEYS[rightTab])}
+              </span>
+              <button
+                onClick={() => setIsDrawerOpen(false)}
+                className="rounded-lg p-1 text-gray-500 hover:bg-gray-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {rightPanelContent}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

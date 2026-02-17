@@ -63,7 +63,7 @@ export async function uploadErrorReportAttachment(
       });
 
     if (uploadError) {
-      console.error('File upload error:', uploadError);
+      if (process.env.NODE_ENV === 'development') console.error('File upload error:', uploadError);
       return {
         success: false,
         error: '파일 업로드에 실패했습니다. 다시 시도해주세요.',
@@ -80,7 +80,7 @@ export async function uploadErrorReportAttachment(
       url: urlData.publicUrl,
     };
   } catch (error) {
-    console.error('Upload error:', error);
+    if (process.env.NODE_ENV === 'development') console.error('Upload error:', error);
     return {
       success: false,
       error: '파일 업로드 중 오류가 발생했습니다.',

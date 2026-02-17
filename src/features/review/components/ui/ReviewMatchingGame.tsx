@@ -70,7 +70,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMat
 
   const boardWidth = useMemo(() => {
     if (!selectedSize) return undefined
-    return selectedSize.rows === 3 ? 'min(70vw, 840px)' : 'min(75vw, 960px)'
+    return selectedSize.rows === 3 ? 'min(calc(100vw - 480px), 840px)' : 'min(calc(100vw - 480px), 960px)'
   }, [selectedSize])
 
   const boardHeight = useMemo(() => {

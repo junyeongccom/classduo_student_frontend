@@ -1,952 +1,49 @@
 /**
- * 게임 UI 오버레이 컴포넌트 (gooey 효과)
+ * 게임 UI 오버레이 컴포넌트 (Phaser 점프 액션 게임)
  */
 'use client'
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
-import { X, RotateCcw, LogOut } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { getOXQuizQuestions, submitOXQuiz, type OXQuizQuestion } from '../../services/oxQuizService'
-
-// 게임 페이즈 상태
-type GamePhase = 'idle' | 'playing' | 'quiz' | 'walking_to_door' | 'passing_through' | 'stumbling' | 'returning_to_center' | 'cleared'
-
-// 퀴즈 질문 데이터 타입 (하위 호환성 유지)
-interface QuizQuestion {
-  question: string
-  correctAnswer: 'O' | 'X'
-  explanation: string
-}
-
-// 과목별 퀴즈 질문 데이터 (각 20개, 회차별 5개씩 사용)
-
-// 생명과학의 세계 퀴즈 (20개)
-const BIOLOGY_QUIZ_QUESTIONS: QuizQuestion[] = [
-  // 1회차 질문 (0-4)
-  {
-    question: '동물 세포는 식물 세포와 마찬가지로 세포벽이 있어 형태가 단단하게 유지된다.',
-    correctAnswer: 'X',
-    explanation: '동물 세포는 세포벽이 없고 세포막만 있습니다.'
-  },
-  {
-    question: '우리 몸의 적혈구는 산소를 운반하는 역할을 담당한다.',
-    correctAnswer: 'O',
-    explanation: '헤모글로빈을 통해 온몸에 산소를 공급합니다.'
-  },
-  {
-    question: '식물이 광합성을 할 때 기공을 통해 흡수하는 기체는 산소이다.',
-    correctAnswer: 'X',
-    explanation: '광합성 시에는 이산화탄소를 흡수하고 산소를 내뱉습니다.'
-  },
-  {
-    question: '유전 정보를 담고 있는 DNA는 이중 나선 구조로 되어 있다.',
-    correctAnswer: 'O',
-    explanation: '두 가닥의 사슬이 꼬여 있는 형태입니다.'
-  },
-  {
-    question: '사람의 심장은 2심방 2심실 구조로 이루어져 있다.',
-    correctAnswer: 'O',
-    explanation: '포유류와 조류는 효율적인 순환을 위해 2심방 2심실 구조를 가집니다.'
-  },
-  // 2회차 질문 (5-9)
-  {
-    question: '미토콘드리아는 세포 호흡을 통해 ATP를 생성하는 세포 소기관이다.',
-    correctAnswer: 'O',
-    explanation: '미토콘드리아는 세포의 발전소로 불리며 에너지를 생산합니다.'
-  },
-  {
-    question: '단백질은 아미노산이 아닌 포도당이 연결되어 만들어진다.',
-    correctAnswer: 'X',
-    explanation: '단백질은 아미노산이 펩타이드 결합으로 연결된 고분자입니다.'
-  },
-  {
-    question: '뉴런(신경세포)은 축삭돌기를 통해 신호를 전달한다.',
-    correctAnswer: 'O',
-    explanation: '축삭돌기는 신경 자극을 다른 세포로 전달하는 역할을 합니다.'
-  },
-  {
-    question: '리보솜은 유전 정보를 저장하는 역할을 담당한다.',
-    correctAnswer: 'X',
-    explanation: '리보솜은 단백질 합성을 담당하며, 유전 정보는 핵(DNA)에 저장됩니다.'
-  },
-  {
-    question: '효소는 화학 반응의 속도를 높이는 생체 촉매이다.',
-    correctAnswer: 'O',
-    explanation: '효소는 활성화 에너지를 낮춰 반응 속도를 크게 증가시킵니다.'
-  },
-  // 3회차 질문 (10-14)
-  {
-    question: '멘델의 분리의 법칙에 따르면 대립유전자는 감수분열 시 분리된다.',
-    correctAnswer: 'O',
-    explanation: '감수분열 과정에서 대립유전자 쌍이 분리되어 각각 다른 생식세포로 들어갑니다.'
-  },
-  {
-    question: '세포 분열 시 염색체 수가 절반으로 줄어드는 것은 체세포 분열이다.',
-    correctAnswer: 'X',
-    explanation: '염색체 수가 절반으로 줄어드는 것은 감수분열이며, 체세포 분열은 염색체 수가 유지됩니다.'
-  },
-  {
-    question: '소장의 융털은 표면적을 넓혀 영양소 흡수 효율을 높인다.',
-    correctAnswer: 'O',
-    explanation: '융털 구조는 소장의 표면적을 약 600배까지 증가시켜 흡수 효율을 높입니다.'
-  },
-  {
-    question: '백혈구는 산소를 운반하고 적혈구는 면역 기능을 담당한다.',
-    correctAnswer: 'X',
-    explanation: '적혈구가 산소를 운반하고, 백혈구가 면역 기능을 담당합니다.'
-  },
-  {
-    question: '호르몬은 내분비선에서 분비되어 혈액을 통해 표적 기관으로 이동한다.',
-    correctAnswer: 'O',
-    explanation: '호르몬은 혈류를 타고 이동하여 특정 수용체가 있는 표적 기관에서 작용합니다.'
-  },
-  // 4회차 이상 질문 (15-19)
-  {
-    question: 'RNA는 DNA와 달리 단일 가닥 구조이며 우라실(U)을 포함한다.',
-    correctAnswer: 'O',
-    explanation: 'RNA는 단일 가닥이며, DNA의 티민(T) 대신 우라실(U)을 가집니다.'
-  },
-  {
-    question: '광합성의 명반응은 엽록체의 스트로마에서 일어난다.',
-    correctAnswer: 'X',
-    explanation: '명반응은 틸라코이드 막에서 일어나며, 스트로마에서는 암반응(캘빈 회로)이 일어납니다.'
-  },
-  {
-    question: '해당과정은 미토콘드리아에서 일어나는 세포 호흡의 첫 단계이다.',
-    correctAnswer: 'X',
-    explanation: '해당과정은 세포질에서 일어나며, 미토콘드리아에서는 TCA 회로와 전자전달계가 진행됩니다.'
-  },
-  {
-    question: '생태계에서 분해자는 죽은 생물의 유기물을 무기물로 분해한다.',
-    correctAnswer: 'O',
-    explanation: '분해자(세균, 곰팡이 등)는 유기물을 무기물로 분해하여 물질 순환에 기여합니다.'
-  },
-  {
-    question: '항체는 B림프구가 아닌 T림프구에서 생성된다.',
-    correctAnswer: 'X',
-    explanation: '항체는 B림프구가 분화한 형질세포에서 생성됩니다. T림프구는 세포성 면역을 담당합니다.'
-  }
-]
-
-// SW프로그래밍의기초 퀴즈 (20개)
-const SW_PROGRAMMING_QUIZ_QUESTIONS: QuizQuestion[] = [
-  // 1회차 질문 (0-4)
-  {
-    question: 'Python에서 리스트는 대괄호 []를 사용하여 생성한다.',
-    correctAnswer: 'O',
-    explanation: 'Python에서 리스트는 []로 생성하며, 튜플은 ()를 사용합니다.'
-  },
-  {
-    question: '변수 이름은 숫자로 시작할 수 있다.',
-    correctAnswer: 'X',
-    explanation: '대부분의 프로그래밍 언어에서 변수 이름은 문자나 밑줄(_)로 시작해야 합니다.'
-  },
-  {
-    question: 'for 반복문은 정해진 횟수만큼 코드를 반복 실행할 때 사용한다.',
-    correctAnswer: 'O',
-    explanation: 'for 문은 반복 횟수가 정해져 있을 때, while 문은 조건에 따라 반복할 때 주로 사용합니다.'
-  },
-  {
-    question: 'Python에서 == 연산자는 값을 대입하는 연산자이다.',
-    correctAnswer: 'X',
-    explanation: '== 는 비교 연산자이고, = 가 대입 연산자입니다.'
-  },
-  {
-    question: '함수는 코드의 재사용성을 높이고 프로그램을 모듈화하는 데 도움이 된다.',
-    correctAnswer: 'O',
-    explanation: '함수를 사용하면 반복되는 코드를 줄이고 유지보수가 쉬워집니다.'
-  },
-  // 2회차 질문 (5-9)
-  {
-    question: 'Python에서 문자열을 연결할 때 + 연산자를 사용할 수 있다.',
-    correctAnswer: 'O',
-    explanation: '"Hello" + " World" 는 "Hello World"가 됩니다.'
-  },
-  {
-    question: 'if-else 문에서 else 블록은 반드시 작성해야 한다.',
-    correctAnswer: 'X',
-    explanation: 'else 블록은 선택 사항이며, 필요한 경우에만 작성합니다.'
-  },
-  {
-    question: 'Python에서 인덱스는 0부터 시작한다.',
-    correctAnswer: 'O',
-    explanation: 'Python을 포함한 대부분의 프로그래밍 언어에서 인덱스는 0부터 시작합니다.'
-  },
-  {
-    question: '주석(comment)은 프로그램 실행 시 컴퓨터가 처리하는 코드이다.',
-    correctAnswer: 'X',
-    explanation: '주석은 프로그램 실행 시 무시되며, 코드 설명을 위해 사용됩니다.'
-  },
-  {
-    question: 'print() 함수는 괄호 안의 내용을 화면에 출력한다.',
-    correctAnswer: 'O',
-    explanation: 'print()는 기본 출력 함수로, 콘솔에 내용을 표시합니다.'
-  },
-  // 3회차 질문 (10-14)
-  {
-    question: 'Python 딕셔너리는 key-value 쌍으로 데이터를 저장한다.',
-    correctAnswer: 'O',
-    explanation: '딕셔너리는 {}로 생성하며 key:value 형태로 데이터를 관리합니다.'
-  },
-  {
-    question: 'while True: 는 무한 루프를 생성한다.',
-    correctAnswer: 'O',
-    explanation: '조건이 항상 True이므로 break 문이 없으면 무한히 반복됩니다.'
-  },
-  {
-    question: 'Python에서 len() 함수는 리스트를 정렬하는 함수이다.',
-    correctAnswer: 'X',
-    explanation: 'len()은 길이를 반환하는 함수이고, 정렬은 sort() 또는 sorted()를 사용합니다.'
-  },
-  {
-    question: '논리 연산자 and는 두 조건이 모두 참일 때만 참을 반환한다.',
-    correctAnswer: 'O',
-    explanation: 'and는 모두 참이어야 참, or는 하나만 참이어도 참을 반환합니다.'
-  },
-  {
-    question: 'Python에서 문자열은 변경 가능(mutable)한 자료형이다.',
-    correctAnswer: 'X',
-    explanation: '문자열은 불변(immutable)이며, 변경하려면 새 문자열을 생성해야 합니다.'
-  },
-  // 4회차 이상 질문 (15-19)
-  {
-    question: 'try-except 문은 예외 처리를 위해 사용된다.',
-    correctAnswer: 'O',
-    explanation: '프로그램 실행 중 발생할 수 있는 오류를 처리하여 프로그램 중단을 방지합니다.'
-  },
-  {
-    question: 'import 문은 외부 모듈을 불러오는 데 사용된다.',
-    correctAnswer: 'O',
-    explanation: 'import를 통해 다른 파일이나 라이브러리의 기능을 사용할 수 있습니다.'
-  },
-  {
-    question: 'Python에서 // 연산자는 나머지를 구하는 연산자이다.',
-    correctAnswer: 'X',
-    explanation: '// 는 몫을 구하는 정수 나눗셈 연산자이고, % 가 나머지 연산자입니다.'
-  },
-  {
-    question: 'return 문이 없는 함수는 None을 반환한다.',
-    correctAnswer: 'O',
-    explanation: 'Python 함수에서 return이 없으면 기본적으로 None이 반환됩니다.'
-  },
-  {
-    question: 'Python의 range(5)는 0, 1, 2, 3, 4를 생성한다.',
-    correctAnswer: 'O',
-    explanation: 'range(n)은 0부터 n-1까지의 정수 시퀀스를 생성합니다.'
-  }
-]
-
-// 운영체제 퀴즈 (20개) - 기본값으로 사용
-const OS_QUIZ_QUESTIONS: QuizQuestion[] = [
-  // 1회차 질문 (0-4)
-  {
-    question: '운영체제는 하드웨어와 사용자 사이의 중간 역할을 하는 시스템 소프트웨어이다.',
-    correctAnswer: 'O',
-    explanation: '운영체제는 하드웨어를 관리하고 응용 프로그램에 인터페이스를 제공합니다.'
-  },
-  {
-    question: '프로세스는 실행 중인 프로그램을 의미한다.',
-    correctAnswer: 'O',
-    explanation: '프로그램이 메모리에 적재되어 CPU를 할당받아 실행되면 프로세스가 됩니다.'
-  },
-  {
-    question: 'CPU는 한 번에 여러 프로세스를 동시에 실행할 수 있다.',
-    correctAnswer: 'X',
-    explanation: '단일 코어 CPU는 한 번에 하나의 프로세스만 실행하며, 빠른 전환으로 동시 실행처럼 보입니다.'
-  },
-  {
-    question: '커널은 운영체제의 핵심 부분으로 메모리에 항상 상주한다.',
-    correctAnswer: 'O',
-    explanation: '커널은 프로세스 관리, 메모리 관리 등 핵심 기능을 수행합니다.'
-  },
-  {
-    question: '인터럽트는 CPU가 현재 작업을 중단하고 다른 작업을 처리하게 하는 신호이다.',
-    correctAnswer: 'O',
-    explanation: '인터럽트를 통해 CPU는 I/O 완료, 타이머 등의 이벤트에 빠르게 반응합니다.'
-  },
-  // 2회차 질문 (5-9)
-  {
-    question: '가상 메모리는 물리적 메모리보다 더 큰 프로그램을 실행할 수 있게 해준다.',
-    correctAnswer: 'O',
-    explanation: '디스크의 일부를 메모리처럼 사용하여 더 큰 주소 공간을 제공합니다.'
-  },
-  {
-    question: '스레드는 프로세스 내에서 실행되는 독립적인 실행 흐름이다.',
-    correctAnswer: 'O',
-    explanation: '스레드는 프로세스의 자원을 공유하면서 독립적으로 실행됩니다.'
-  },
-  {
-    question: 'Round Robin 스케줄링은 각 프로세스에 동일한 시간 할당량을 부여한다.',
-    correctAnswer: 'O',
-    explanation: '시간 할당량(Time Quantum)이 끝나면 다음 프로세스로 전환됩니다.'
-  },
-  {
-    question: '교착상태(Deadlock)는 두 개 이상의 프로세스가 서로의 자원을 기다리며 무한 대기하는 상태이다.',
-    correctAnswer: 'O',
-    explanation: '상호배제, 점유대기, 비선점, 순환대기 조건이 모두 만족되면 발생합니다.'
-  },
-  {
-    question: '페이징 기법에서 페이지와 프레임의 크기는 항상 다르다.',
-    correctAnswer: 'X',
-    explanation: '페이지(논리적)와 프레임(물리적)의 크기는 같습니다.'
-  },
-  // 3회차 질문 (10-14)
-  {
-    question: 'FIFO 페이지 교체 알고리즘은 가장 먼저 들어온 페이지를 먼저 교체한다.',
-    correctAnswer: 'O',
-    explanation: 'First-In-First-Out 방식으로 가장 오래된 페이지를 교체합니다.'
-  },
-  {
-    question: '컨텍스트 스위칭은 CPU가 다른 프로세스로 전환할 때 발생하는 오버헤드이다.',
-    correctAnswer: 'O',
-    explanation: '현재 프로세스 상태를 저장하고 다음 프로세스 상태를 복원하는 과정입니다.'
-  },
-  {
-    question: '세마포어는 공유 자원의 접근을 제어하는 동기화 도구이다.',
-    correctAnswer: 'O',
-    explanation: 'P(wait)와 V(signal) 연산으로 임계 영역 접근을 제어합니다.'
-  },
-  {
-    question: 'SJF(Shortest Job First) 스케줄링은 평균 대기 시간이 가장 짧다.',
-    correctAnswer: 'O',
-    explanation: '실행 시간이 짧은 작업을 먼저 처리하여 평균 대기 시간을 최소화합니다.'
-  },
-  {
-    question: '운영체제의 파일 시스템은 데이터를 효율적으로 저장하고 관리하는 역할을 한다.',
-    correctAnswer: 'O',
-    explanation: '파일 시스템은 디렉토리 구조, 파일 할당, 접근 권한 등을 관리합니다.'
-  },
-  // 4회차 이상 질문 (15-19)
-  {
-    question: 'LRU 페이지 교체 알고리즘은 가장 오래 사용되지 않은 페이지를 교체한다.',
-    correctAnswer: 'O',
-    explanation: 'Least Recently Used는 최근에 사용되지 않은 페이지를 교체 대상으로 선택합니다.'
-  },
-  {
-    question: '뮤텍스는 여러 스레드가 동시에 임계 영역에 진입할 수 있게 해준다.',
-    correctAnswer: 'X',
-    explanation: '뮤텍스는 한 번에 하나의 스레드만 임계 영역에 진입하도록 합니다.'
-  },
-  {
-    question: '시스템 콜은 사용자 프로그램이 커널 기능을 요청하는 인터페이스이다.',
-    correctAnswer: 'O',
-    explanation: '파일 읽기, 프로세스 생성 등의 커널 서비스를 요청할 때 사용됩니다.'
-  },
-  {
-    question: '스와핑은 메모리에 있는 프로세스를 디스크로 이동시키는 기법이다.',
-    correctAnswer: 'O',
-    explanation: '메모리가 부족할 때 일부 프로세스를 디스크로 내보내 공간을 확보합니다.'
-  },
-  {
-    question: '선점형 스케줄링에서 실행 중인 프로세스는 강제로 CPU를 빼앗길 수 없다.',
-    correctAnswer: 'X',
-    explanation: '선점형 스케줄링은 우선순위가 높은 프로세스가 CPU를 빼앗을 수 있습니다.'
-  }
-]
-
-// 과목명에 따른 퀴즈 질문 선택 함수
-const getQuizQuestionsForCourse = (courseName?: string): QuizQuestion[] => {
-  if (courseName === '생명과학의 세계') {
-    return BIOLOGY_QUIZ_QUESTIONS
-  } else if (courseName === 'SW프로그래밍의기초') {
-    return SW_PROGRAMMING_QUIZ_QUESTIONS
-  } else {
-    // 그 외의 경우 운영체제 퀴즈 사용
-    return OS_QUIZ_QUESTIONS
-  }
-}
-
-// 회차별로 퀴즈 질문을 가져오는 함수 (과목명에 따라 다른 퀴즈 세트 선택)
-const getQuizQuestionsForRound = (lectureNo?: number, courseName?: string): QuizQuestion[] => {
-  const roundNumber = lectureNo ?? 1
-  const allQuestions = getQuizQuestionsForCourse(courseName)
-  
-  // 1회차: 0-4, 2회차: 5-9, 3회차: 10-14, 4회차 이상: 15-19
-  let startIndex: number
-  if (roundNumber <= 1) {
-    startIndex = 0
-  } else if (roundNumber === 2) {
-    startIndex = 5
-  } else if (roundNumber === 3) {
-    startIndex = 10
-  } else {
-    // 4회차 이상은 모두 마지막 5개 (15-19)
-    startIndex = 15
-  }
-  
-  return allQuestions.slice(startIndex, startIndex + 5)
-}
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { X } from 'lucide-react'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 
 interface GameOverlayProps {
   isOpen: boolean
   onClose: () => void
   triggerPosition: { top: number; left: number; width: number; height: number } | null
-  lectureId?: string // 게임 진행도를 저장할 회차 ID
-  courseId?: string // 불꽃 개수를 저장할 강의 ID
-  lectureNo?: number // 회차 번호 (퀴즈 질문 선택용)
-  courseName?: string // 과목명 (퀴즈 질문 세트 선택용)
+  lectureId?: string
+  courseId?: string
+  lectureNo?: number
+  courseName?: string
 }
 
-export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId, lectureNo, courseName }: GameOverlayProps) {
-  const t = useTranslations('aiTutorChat')
-  const overlayRef = useRef<HTMLDivElement>(null)
+export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: GameOverlayProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const gameRef = useRef<import('phaser').Game | null>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
-  const [frameIndex, setFrameIndex] = useState(0) // 프레임 시퀀스 인덱스
-  const [backgroundOffset, setBackgroundOffset] = useState(0) // 배경 스크롤 오프셋
-  const [doors, setDoors] = useState<Array<{ id: number; top: number; triggered: boolean }>>([]) // 문 목록 (triggered: 퀴즈 트리거 여부)
-  const doorIdRef = useRef(0) // 문 ID 생성용
-  const frameSequence = [1, 2, 3, 2, 1, 2, 3, 2] // 1->2->3->2->1->2->3->2 반복
-  const currentFrame = frameSequence[frameIndex]
-  
-  // OX 퀴즈 질문 조회 상태
-  const [oxQuizQuestions, setOxQuizQuestions] = useState<OXQuizQuestion[]>([])
-  const [isLoadingQuiz, setIsLoadingQuiz] = useState(false)
-  const [quizError, setQuizError] = useState<Error | null>(null)
+  const keywordsRef = useRef<{ keyword: string; description: string }[]>([])
+  const { locale } = useI18n()
 
-  // OX 퀴즈 질문 조회 (lectureId 기준)
-  useEffect(() => {
-    if (!isOpen || !lectureId) return
-
-    const loadQuizQuestions = async () => {
-      setIsLoadingQuiz(true)
-      setQuizError(null)
-      
-      const result = await getOXQuizQuestions(lectureId)
-      
-      if (result.error) {
-        setQuizError(result.error)
-        setIsLoadingQuiz(false)
-        return
-      }
-
-      if (result.data) {
-        // OXQuizQuestion을 QuizQuestion 형식으로 변환
-        const converted: QuizQuestion[] = result.data.map((q) => ({
-          question: q.question_text,
-          correctAnswer: q.correct_answer ? 'O' : 'X',
-          explanation: q.explanation ?? '', // 수파베이스에서 가져온 해설 사용
-        }))
-        setOxQuizQuestions(result.data)
-        setIsLoadingQuiz(false)
-      }
-    }
-
-    loadQuizQuestions()
-  }, [isOpen, lectureId])
-
-  // 회차별 퀴즈 질문 가져오기 (하위 호환성: oxQuizQuestions가 없으면 기존 로직 사용)
-  const quizQuestions = useMemo(() => {
-    if (oxQuizQuestions.length > 0) {
-      // OX 퀴즈 질문을 QuizQuestion 형식으로 변환
-      return oxQuizQuestions.map((q) => ({
-        question: q.question_text,
-        correctAnswer: q.correct_answer ? 'O' : 'X',
-        explanation: q.explanation ?? '', // 수파베이스에서 가져온 해설 사용
-      }))
-    }
-    // 폴백: 기존 하드코딩된 질문 사용 (OX 퀴즈가 없는 경우)
-    return getQuizQuestionsForRound(lectureNo, courseName)
-  }, [oxQuizQuestions, lectureNo, courseName])
-  
-  // ref로도 관리 (클로저 문제 해결)
-  const quizQuestionsRef = useRef(quizQuestions)
-  quizQuestionsRef.current = quizQuestions
-  
-  // 퀴즈 상태
-  const [isPaused, setIsPaused] = useState(false) // 게임 일시정지 상태
-  const [currentQuestion, setCurrentQuestion] = useState<string | null>(null) // 현재 질문
-  const [activeDoorId, setActiveDoorId] = useState<number | null>(null) // 현재 퀴즈 문 ID
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0) // 현재 질문 인덱스 (0~4)
-  
-  // 해설 표시 상태
-  const [showExplanation, setShowExplanation] = useState(false)
-  const [explanationText, setExplanationText] = useState<string | null>(null)
-  const explanationTimerRef = useRef<NodeJS.Timeout | null>(null)
-  
-  // currentQuestionIndex를 ref로도 관리 (클로저 문제 해결)
-  const currentQuestionIndexRef = useRef(currentQuestionIndex)
-  currentQuestionIndexRef.current = currentQuestionIndex
-  
-  // 게임 페이즈 상태 (문 통과 연출용)
-  const [gamePhase, setGamePhase] = useState<GamePhase>('idle') // 초기 상태는 idle
-  const [selectedAnswer, setSelectedAnswer] = useState<'O' | 'X' | null>(null) // 선택한 답
-  const [horizontalOffset, setHorizontalOffset] = useState(0) // 수평 이동 오프셋 (배경/길/문이 이동)
-  const [stumbleStepCount, setStumbleStepCount] = useState(0) // stumbling 단계에서 걸음 수 카운트
-  const [hasStumbled, setHasStumbled] = useState(false) // stumbling 완료 여부
-  const [stumbleVerticalOffset, setStumbleVerticalOffset] = useState(0) // stumbling 중 수직 오프셋 (뒤로 튕김 효과)
-  const [hasReversedDirection, setHasReversedDirection] = useState(false) // 반대쪽 문으로 전환 여부
-  const [quizAnswerCount, setQuizAnswerCount] = useState(0) // 이번 게임에서 선택한 횟수
-  const [isJumping, setIsJumping] = useState(false) // 점프 중 여부
-  const [jumpOffset, setJumpOffset] = useState(0) // 점프 높이 오프셋
-  
-  // 기준 해상도 (모든 크기는 이 해상도 기준으로 설계)
-  const REFERENCE_WIDTH = 1200
-  const REFERENCE_HEIGHT = 675
-  
-  // 스케일 팩터 계산 (화면 크기에 따라 모든 요소를 동일한 비율로 확대/축소)
-  const scaleFactor = dimensions.width / REFERENCE_WIDTH
-  
-  // 문 위치까지의 수평 이동 거리 (화면 너비의 10%)
-  const DOOR_OFFSET_TARGET = dimensions.width * 0.10
-
+  // 16:9 비율 계산
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // 16:9 비율 계산 (최대 너비 80vw, 높이는 자동 계산)
-      const maxWidth = window.innerWidth * 0.8
-      const width = Math.min(maxWidth, 1200)
-      const height = (width * 9) / 16
+      const maxWidth = window.innerWidth * 0.9
+      const maxHeight = window.innerHeight * 0.9
+      let width = Math.min(maxWidth, 1600)
+      let height = width / 2 // game is 2:1 ratio (1600x800)
+      if (height > maxHeight) {
+        height = maxHeight
+        width = height * 2
+      }
       setDimensions({ width, height })
     }
   }, [])
 
-  // 게임 초기화 함수
-  const resetGameState = useCallback(() => {
-    setQuizAnswerCount(0)
-    setCurrentQuestionIndex(0)
-    setBackgroundOffset(0)
-    setDoors([])
-    doorIdRef.current = 0
-    setGamePhase('idle')
-    setIsPaused(false)
-    setCurrentQuestion(null)
-    setActiveDoorId(null)
-    setSelectedAnswer(null)
-    setHorizontalOffset(0)
-    setHasStumbled(false)
-    setHasReversedDirection(false)
-    setStumbleVerticalOffset(0)
-    setShowExplanation(false)
-    setExplanationText(null)
-    if (explanationTimerRef.current) {
-      clearTimeout(explanationTimerRef.current)
-    }
-  }, [])
-
-  // 게임 열릴 때 항상 초기화
-  useEffect(() => {
-    if (isOpen) {
-      resetGameState()
-    }
-  }, [isOpen, resetGameState])
-
-  // 닫기 핸들러
-  const handleClose = useCallback(() => {
-    onClose()
-  }, [onClose])
-
-  // 게임 시작 (START 화면에서 클릭)
-  const handleStartGame = useCallback(() => {
-    if (gamePhase === 'idle') {
-      setGamePhase('playing')
-    }
-  }, [gamePhase])
-
-  // 게임 다시하기
-  const handleRestart = useCallback(() => {
-    setQuizAnswerCount(0)
-    setCurrentQuestionIndex(0)
-    setBackgroundOffset(0)
-    setDoors([])
-    doorIdRef.current = 0
-    setGamePhase('playing') // 다시하기는 바로 playing 상태로
-    setIsPaused(false)
-    setCurrentQuestion(null)
-    setActiveDoorId(null)
-    setSelectedAnswer(null)
-    setHorizontalOffset(0)
-    setHasStumbled(false)
-    setHasReversedDirection(false)
-    setStumbleVerticalOffset(0)
-    setShowExplanation(false)
-    setExplanationText(null)
-    if (explanationTimerRef.current) {
-      clearTimeout(explanationTimerRef.current)
-    }
-  }, [])
-
-  // 스페이스바 점프 이벤트 리스너
-  useEffect(() => {
-    if (!isOpen || animationState !== 'entered') return
-    // 퀴즈 중이거나 idle, cleared 상태에서는 점프 비활성화
-    if (gamePhase === 'quiz' || gamePhase === 'idle' || gamePhase === 'cleared') return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !isJumping) {
-        e.preventDefault()
-        setIsJumping(true)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, animationState, gamePhase, isJumping])
-
-  // 점프 애니메이션
-  useEffect(() => {
-    if (!isJumping) return
-
-    let animationFrameId: number
-    let startTime: number | null = null
-    const JUMP_HEIGHT = 80 * scaleFactor // 점프 최대 높이
-    const JUMP_DURATION = 400 // 점프 총 시간 (ms)
-
-    function animate(currentTime: number) {
-      if (startTime === null) {
-        startTime = currentTime
-      }
-
-      const elapsed = currentTime - startTime
-      const progress = Math.min(elapsed / JUMP_DURATION, 1)
-
-      // 포물선 운동: sin 함수로 부드러운 점프 곡선
-      const jumpProgress = Math.sin(progress * Math.PI)
-      setJumpOffset(JUMP_HEIGHT * jumpProgress)
-
-      if (progress < 1) {
-        animationFrameId = requestAnimationFrame(animate)
-      } else {
-        // 점프 완료
-        setJumpOffset(0)
-        setIsJumping(false)
-      }
-    }
-
-    animationFrameId = requestAnimationFrame(animate)
-
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
-    }
-  }, [isJumping, scaleFactor])
-
-  // 스프라이트 애니메이션 (1->2->3->2->1->2->3->2 반복)
-  // idle, quiz, cleared 상태에서는 정지, 나머지 페이즈에서는 계속 애니메이션
-  useEffect(() => {
-    if (!isOpen || animationState !== 'entered') return
-    if (gamePhase === 'quiz' || gamePhase === 'idle' || gamePhase === 'cleared') return
-
-    const interval = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % frameSequence.length)
-    }, 120) // 120ms마다 프레임 변경 (1.25배속)
-
-    return () => clearInterval(interval)
-  }, [isOpen, animationState, gamePhase])
-
-  // 배경 스크롤 애니메이션 (위에서 아래로 내려오는 느낌)
-  // playing, passing_through 페이즈에서만 수직 스크롤
-  useEffect(() => {
-    if (!isOpen || animationState !== 'entered') return
-    if (gamePhase !== 'playing' && gamePhase !== 'passing_through') return
-
-    let animationFrameId: number
-    let lastTime = 0
-    const BASE_SPEED = 8 // 기준 스크롤 속도 (1.25배속)
-    const speed = BASE_SPEED * scaleFactor // 스케일에 비례한 스크롤 속도
-    const doorHeight = 250 * scaleFactor
-    const screenMiddle = dimensions.height / 2
-
-    function animate(currentTime: number) {
-      if (lastTime === 0) {
-        lastTime = currentTime
-      }
-      
-      const deltaTime = currentTime - lastTime
-      lastTime = currentTime
-
-      setBackgroundOffset((prev) => prev + speed)
-
-      // 문들도 함께 아래로 이동
-      setDoors((prevDoors) => {
-        let shouldPause = false
-        let pauseDoorId: number | null = null
-
-        const updatedDoors = prevDoors
-          .map((door) => {
-            const newTop = door.top + speed
-            const doorMiddle = newTop + doorHeight / 2
-
-            // playing 페이즈에서만 퀴즈 트리거
-            if (gamePhase === 'playing' && !door.triggered && doorMiddle >= screenMiddle && doorMiddle < screenMiddle + speed * 2) {
-              shouldPause = true
-              pauseDoorId = door.id
-              return { ...door, top: newTop, triggered: true }
-            }
-            return { ...door, top: newTop }
-          })
-          .filter((door) => door.top < dimensions.height + doorHeight) // 화면 밖으로 나간 문 제거 (스케일 적용)
-
-        // 퀴즈 트리거
-        if (shouldPause && pauseDoorId !== null) {
-          setTimeout(() => {
-            // 현재 질문 인덱스에 해당하는 질문 표시 (ref 사용으로 최신 값 보장)
-            const questionData = quizQuestionsRef.current[currentQuestionIndexRef.current]
-            if (questionData) {
-              setIsPaused(true)
-              setGamePhase('quiz')
-              setCurrentQuestion(questionData.question)
-              setActiveDoorId(pauseDoorId)
-            } else if (isLoadingQuiz) {
-              // 퀴즈 로딩 중이면 잠시 대기
-              console.warn('[GameOverlay] 퀴즈 질문 로딩 중...')
-            } else if (quizError) {
-              // 퀴즈 로드 실패 시 기존 하드코딩된 질문 사용
-              console.warn('[GameOverlay] OX 퀴즈 로드 실패, 기존 질문 사용:', quizError)
-            }
-          }, 0)
-        }
-
-        // passing_through 페이즈에서 문이 캐릭터에 도달하면 처리
-        if (gamePhase === 'passing_through' && activeDoorId !== null) {
-          const activeDoor = updatedDoors.find(d => d.id === activeDoorId)
-          const characterCenterY = dimensions.height - 20 * scaleFactor - 75 * scaleFactor
-          
-          if (activeDoor) {
-            const doorCenterY = activeDoor.top + doorHeight / 2
-            
-            // 정답을 맞췄거나 반대쪽 문으로 전환한 경우: 문이 화면 밖으로 나가면 returning_to_center
-            // 현재 질문의 정답과 비교 (ref 사용으로 최신 값 보장)
-            const correctAnswer = quizQuestionsRef.current[currentQuestionIndexRef.current]?.correctAnswer || 'O'
-            if (selectedAnswer === correctAnswer || hasReversedDirection) {
-              if (activeDoor.top > dimensions.height - 50 * scaleFactor) {
-                setTimeout(() => {
-                  setGamePhase('returning_to_center')
-                }, 0)
-              }
-            } else {
-              // 오답인 경우: 문이 캐릭터 위치에 도달하기 전 (z-index 변경 전) stumbling 페이즈로 전환
-              // hasStumbled 체크로 중복 트리거 방지
-              if (!hasStumbled && doorCenterY >= characterCenterY - speed * 30 && doorCenterY < characterCenterY - speed * 20) {
-                setTimeout(() => {
-                  setGamePhase('stumbling')
-                  setStumbleStepCount(0)
-                  setHasStumbled(true)
-                }, 0)
-              }
-            }
-          }
-        }
-
-        return updatedDoors
-      })
-
-      animationFrameId = requestAnimationFrame(animate)
-    }
-
-    animationFrameId = requestAnimationFrame(animate)
-
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
-    }
-  }, [isOpen, animationState, dimensions.height, scaleFactor, gamePhase, activeDoorId, selectedAnswer, hasStumbled, hasReversedDirection, currentQuestionIndex])
-
-  // stumbling 페이즈 처리 (오답시 뒤로 튕겨나가는 애니메이션)
-  useEffect(() => {
-    if (!isOpen || animationState !== 'entered' || gamePhase !== 'stumbling') return
-
-    let animationFrameId: number
-    let startTime: number | null = null
-    
-    const BOUNCE_BACK_DISTANCE = 80 * scaleFactor // 뒤로 밀려나는 거리
-    const BOUNCE_DURATION = 400 // 튕겨나가는 시간 (ms)
-    const PAUSE_DURATION = 200 // 튕긴 후 잠시 멈춤 (ms)
-    const TOTAL_DURATION = BOUNCE_DURATION + PAUSE_DURATION
-
-    function animate(currentTime: number) {
-      if (startTime === null) {
-        startTime = currentTime
-      }
-      
-      const elapsed = currentTime - startTime
-      
-      if (elapsed < BOUNCE_DURATION) {
-        // 뒤로 튕겨나가는 애니메이션 (easeOut)
-        const progress = elapsed / BOUNCE_DURATION
-        const eased = 1 - Math.pow(1 - progress, 3) // easeOutCubic
-        const offset = -BOUNCE_BACK_DISTANCE * eased // 음수 = 문이 위로 (캐릭터가 뒤로 밀려남)
-        setStumbleVerticalOffset(offset)
-      } else if (elapsed < TOTAL_DURATION) {
-        // 튕긴 위치에서 잠시 멈춤
-        setStumbleVerticalOffset(-BOUNCE_BACK_DISTANCE)
-      } else {
-        // stumbling 완료 → 문의 실제 위치와 배경 오프셋을 튕겨난 위치로 업데이트
-        setDoors((prevDoors) => prevDoors.map((door) => {
-          if (door.id === activeDoorId) {
-            return { ...door, top: door.top + (-BOUNCE_BACK_DISTANCE) }
-          }
-          return door
-        }))
-        // 배경도 튕겨난 위치로 업데이트 (순간이동 방지)
-        setBackgroundOffset((prev) => prev + (-BOUNCE_BACK_DISTANCE))
-        setStumbleVerticalOffset(0)
-        setGamePhase('returning_to_center')
-        return
-      }
-      
-      animationFrameId = requestAnimationFrame(animate)
-    }
-
-    animationFrameId = requestAnimationFrame(animate)
-
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
-    }
-  }, [isOpen, animationState, gamePhase, scaleFactor, activeDoorId])
-
-  // 수평 이동 애니메이션 (walking_to_door, returning_to_center 페이즈)
-  useEffect(() => {
-    if (!isOpen || animationState !== 'entered') return
-    if (gamePhase !== 'walking_to_door' && gamePhase !== 'returning_to_center') return
-
-    let animationFrameId: number
-    const HORIZONTAL_SPEED = 7.5 * scaleFactor // 수평 이동 속도 (1.25배속)
-
-    function animate() {
-      if (gamePhase === 'walking_to_door') {
-        // 문쪽으로 이동 (O: 오른쪽으로 이동해서 왼쪽 문에 도달, X: 왼쪽으로 이동해서 오른쪽 문에 도달)
-        const targetOffset = selectedAnswer === 'O' ? DOOR_OFFSET_TARGET : -DOOR_OFFSET_TARGET
-        
-        setHorizontalOffset((prev) => {
-          const diff = targetOffset - prev
-          if (Math.abs(diff) < HORIZONTAL_SPEED) {
-            // 목표 도달 → passing_through 페이즈로 전환
-            setTimeout(() => setGamePhase('passing_through'), 0)
-            return targetOffset
-          }
-          return prev + (diff > 0 ? HORIZONTAL_SPEED : -HORIZONTAL_SPEED)
-        })
-        // 배경은 멈춤 (문과 함께 정지)
-      } else if (gamePhase === 'returning_to_center') {
-        // 중앙으로 복귀
-        setHorizontalOffset((prev) => {
-          if (Math.abs(prev) < HORIZONTAL_SPEED) {
-            // 중앙 도달
-            setTimeout(() => {
-              // 오답으로 stumbling 했고 아직 반대 방향으로 안 갔으면 → 반대쪽 문으로
-              if (hasStumbled && !hasReversedDirection) {
-                const oppositeAnswer = selectedAnswer === 'O' ? 'X' : 'O'
-                setSelectedAnswer(oppositeAnswer)
-                setHasReversedDirection(true)
-                setGamePhase('walking_to_door')
-              } else {
-                // 정상 완료 → 해설 표시 및 5번 문제 완료 체크 (ref 사용으로 최신 값 보장)
-                const currentIdx = currentQuestionIndexRef.current
-                const questionData = quizQuestionsRef.current[currentIdx]
-                
-                // 질문 인덱스 증가
-                const nextQuestionIndex = currentIdx + 1
-                setCurrentQuestionIndex(nextQuestionIndex)
-                
-                if (questionData) {
-                  setExplanationText(questionData.explanation)
-                  setShowExplanation(true)
-                  // 3.5초 후 해설 숨김 및 게임 페이즈 처리
-                  if (explanationTimerRef.current) {
-                    clearTimeout(explanationTimerRef.current)
-                  }
-                  explanationTimerRef.current = setTimeout(() => {
-                    setShowExplanation(false)
-                    setExplanationText(null)
-                    // 5번째 문제(인덱스 4)를 풀었으면 cleared (다음 인덱스가 5가 됨)
-                    // 해설이 끝난 후에 CLEAR 표시
-                    if (nextQuestionIndex >= 5) {
-                      setGamePhase('cleared')
-                    }
-                  }, 3500)
-                }
-                
-                // 5번째 문제가 아닌 경우는 즉시 playing 상태로 전환
-                if (nextQuestionIndex < 5) {
-                  setGamePhase('playing')
-                }
-                // 5번째 문제인 경우는 해설 타이머에서 cleared로 전환하므로 여기서는 상태 변경하지 않음
-                
-                setSelectedAnswer(null)
-                setActiveDoorId(null)
-                setHasStumbled(false)
-                setHasReversedDirection(false)
-              }
-            }, 0)
-            return 0
-          }
-          return prev > 0 ? prev - HORIZONTAL_SPEED : prev + HORIZONTAL_SPEED
-        })
-        // 배경은 멈춤 (문과 함께 정지)
-      }
-
-      animationFrameId = requestAnimationFrame(animate)
-    }
-
-    animationFrameId = requestAnimationFrame(animate)
-
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
-    }
-  }, [isOpen, animationState, gamePhase, selectedAnswer, scaleFactor, DOOR_OFFSET_TARGET, hasStumbled, hasReversedDirection])
-
-  // 3초마다 문 생성 (0.75배속)
-  useEffect(() => {
-    if (!isOpen || animationState !== 'entered' || gamePhase !== 'playing') return
-
-    const interval = setInterval(() => {
-      const newDoorId = doorIdRef.current++
-      setDoors((prevDoors) => [
-        ...prevDoors,
-        { id: newDoorId, top: -250 * scaleFactor, triggered: false }, // 화면 위에서 시작 (스케일 적용)
-      ])
-    }, 3000) // 3초마다 (0.75배속)
-
-    return () => clearInterval(interval)
-  }, [isOpen, animationState, scaleFactor, gamePhase])
-
-  // 퀴즈 응답 핸들러
-  const handleQuizAnswer = (answer: 'O' | 'X') => {
-    // 현재 문제 인덱스
-    const currentIdx = currentQuestionIndexRef.current
-    
-    // 게임은 즉시 진행 (블로킹 없음)
-    setIsPaused(false)
-    setCurrentQuestion(null)
-    setSelectedAnswer(answer)
-    setGamePhase('walking_to_door')
-    // activeDoorId는 유지 (문 통과 후 제거)
-    
-    // OX 퀴즈 제출 API 호출은 백그라운드에서 조용히 처리 (fire-and-forget)
-    if (lectureId && oxQuizQuestions.length > 0 && oxQuizQuestions[currentIdx]) {
-      const question = oxQuizQuestions[currentIdx]
-      const submittedAnswer = answer === 'O'
-      
-      // await 없이 백그라운드에서 실행
-      submitOXQuiz(lectureId, {
-        ox_quiz_question_id: question.id, // id를 ox_quiz_question_id로 매핑
-        submitted_answer: submittedAnswer,
-      })
-        .then((result) => {
-          if (result.error) {
-            console.error('[GameOverlay] OX 퀴즈 제출 실패:', result.error)
-          } else if (result.data && !result.data.is_already_completed) {
-            // 성공 시 카운트 증가 (이미 완료된 경우는 제외)
-            setQuizAnswerCount(prev => prev + 1)
-          }
-        })
-        .catch((error) => {
-          console.error('[GameOverlay] OX 퀴즈 제출 예외:', error)
-          // 에러는 조용히 로그만 남김
-        })
-    }
-  }
-
+  // 애니메이션 상태 관리
   useEffect(() => {
     if (isOpen) {
       setAnimationState('entering')
-      // gooey 효과를 위한 애니메이션 시작
       setTimeout(() => {
         setAnimationState('entered')
       }, 100)
@@ -955,20 +52,78 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     }
   }, [isOpen])
 
-  // 컴포넌트 언마운트 시 타이머 정리
+  // 키워드 fetch (애니메이션과 병렬)
   useEffect(() => {
-    return () => {
-      if (explanationTimerRef.current) {
-        clearTimeout(explanationTimerRef.current)
-      }
+    if (!isOpen || !lectureId) {
+      keywordsRef.current = []
+      return
     }
-  }, [])
+    let cancelled = false
+    ;(async () => {
+      const { chatService } = await import('../../services/chatService')
+      const { data } = await chatService.getLectureKeywords(lectureId, locale)
+      if (!cancelled && data?.keywords) {
+        const isEn = locale === 'en'
+        keywordsRef.current = data.keywords.map((k) => ({
+          keyword: (isEn && k.keyword_eng) || k.keyword,
+          description: (isEn && k.description_eng) || k.description,
+        }))
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isOpen, lectureId, locale])
+
+  // Phaser 인스턴스 생성/소멸
+  useEffect(() => {
+    if (!isOpen || animationState !== 'entered' || typeof window === 'undefined') return
+    if (!containerRef.current || gameRef.current) return
+
+    let game: import('phaser').Game | null = null
+
+    const initGame = async () => {
+      const Phaser = (await import('phaser')).default
+      const { createGameConfig } = await import('../../game/config')
+
+      if (!containerRef.current) return
+
+      const config = createGameConfig(containerRef.current)
+      game = new Phaser.Game(config)
+      game.registry.set('keywords', keywordsRef.current)
+      game.registry.set('locale', locale)
+      if (lectureId) game.registry.set('lectureId', lectureId)
+      gameRef.current = game
+
+      // 게임 컨테이너로 포커스 이동 → 사이드바 버튼의 onKeyDown이 SPACE를 가로채지 않도록
+      containerRef.current?.focus()
+    }
+
+    initGame()
+
+    return () => {
+      if (gameRef.current) {
+        gameRef.current.destroy(true)
+        gameRef.current = null
+      }
+      game = null
+    }
+  }, [isOpen, animationState])
+
+  // isOpen이 false로 바뀌면 Phaser 인스턴스 소멸
+  useEffect(() => {
+    if (!isOpen && gameRef.current) {
+      gameRef.current.destroy(true)
+      gameRef.current = null
+    }
+  }, [isOpen])
+
+  const handleClose = useCallback(() => {
+    onClose()
+  }, [onClose])
 
   if (!isOpen && animationState === 'exiting') {
     return null
   }
 
-  // 초기 위치 계산 (트리거 위치에서 시작)
   const getInitialTransform = () => {
     if (!triggerPosition || typeof window === 'undefined') {
       return 'translate(-50%, -50%) scale(0)'
@@ -976,7 +131,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     const scale = triggerPosition.width / dimensions.width
     const x = triggerPosition.left + triggerPosition.width / 2 - window.innerWidth / 2
     const y = triggerPosition.top + triggerPosition.height / 2 - window.innerHeight / 2
-    return `translate(${x}px, ${y}px) scale(${scale})`
+    return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`
   }
 
   const getFinalTransform = () => {
@@ -985,16 +140,6 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
   return (
     <>
-      {/* 해설 페이드 애니메이션 스타일 */}
-      <style jsx>{`
-        @keyframes fadeInOut {
-          0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
-          5% { opacity: 1; transform: translateX(-50%) translateY(0); }
-          90% { opacity: 1; transform: translateX(-50%) translateY(0); }
-          100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-        }
-      `}</style>
-
       {/* 배경 오버레이 */}
       <div
         className={`fixed inset-0 bg-black/50 z-[80] transition-opacity duration-500 ${
@@ -1003,10 +148,9 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         onClick={handleClose}
       />
 
-      {/* 게임 UI 컨테이너 */}
+      {/* 게임 컨테이너 */}
       <div
-        ref={overlayRef}
-        className="fixed z-[80] rounded-2xl bg-white shadow-2xl overflow-hidden game-overlay-container"
+        className="fixed z-[80] rounded-2xl shadow-2xl overflow-hidden"
         style={{
           width: `${dimensions.width}px`,
           height: `${dimensions.height}px`,
@@ -1016,351 +160,26 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
           transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease-out',
           opacity: animationState === 'entered' ? 1 : 0,
         }}
-        onClick={(e) => {
-          e.stopPropagation()
-          // idle 상태에서 클릭하면 게임 시작
-          if (gamePhase === 'idle') {
-            handleStartGame()
-          }
-          // 퀴즈 중이 아니고, idle/cleared 상태가 아니면 점프
-          else if (gamePhase !== 'quiz' && gamePhase !== 'cleared' && !isJumping) {
-            setIsJumping(true)
-          }
-        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Gooey 효과 배경 */}
-        <div className="absolute inset-0 game-gooey-bg" />
-
         {/* 닫기 버튼 */}
         <button
           onClick={(e) => {
             e.stopPropagation()
             handleClose()
           }}
-          className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-white/90 backdrop-blur-sm hover:bg-white transition-colors shadow-lg"
+          className="absolute top-3 right-3 z-20 p-2 rounded-lg bg-white/90 backdrop-blur-sm hover:bg-white transition-colors shadow-lg"
         >
           <X className="h-5 w-5 text-gray-600" />
         </button>
 
-        {/* 게임 화면 */}
-        <div className="relative z-10 h-full overflow-hidden bg-gradient-to-b from-gray-900 via-gray-800 to-gray-700">
-          
-          {/* 레이어 1: 배경 (road.png 이미지 - 길 + 풀밭, 위에서 아래로 스크롤) */}
-          <div 
-            className="absolute"
-            style={{
-              top: 0,
-              left: '-50%',
-              width: '200%',
-              height: '100%',
-              transform: `translateX(${horizontalOffset}px)`,
-              transition: gamePhase === 'stumbling' ? 'none' : (gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out'),
-              zIndex: 1,
-              backgroundImage: 'url(/road.png)',
-              backgroundRepeat: 'repeat',
-              backgroundSize: `${dimensions.width * 1.5}px auto`,
-              backgroundPosition: `center ${backgroundOffset + stumbleVerticalOffset}px`,
-              imageRendering: 'pixelated',
-            }}
-          />
-
-          {/* 레이어 2: 캐릭터 (항상 배경 위에, 중앙 고정) */}
-          <div 
-            className="absolute bottom-0 left-1/2 -translate-x-1/2" 
-            style={{ 
-              marginBottom: `${20 * scaleFactor + jumpOffset}px`,
-              zIndex: 5,
-              transition: isJumping ? 'none' : 'margin-bottom 0.1s ease-out',
-            }}
-          >
-            <img
-              src={`/run_${currentFrame}.png`}
-              alt={`Run frame ${currentFrame}`}
-              className="w-auto object-contain"
-              style={{
-                height: `${150 * scaleFactor}px`, // 기준 캐릭터 높이 150px
-                imageRendering: 'pixelated', // 픽셀 아트 스타일 유지
-              }}
-            />
-          </div>
-
-          {/* 레이어 3: 문들 (각 문의 Y 위치에 따라 캐릭터 위/아래 결정) */}
-          {/* 캐릭터 중앙 Y = dimensions.height - marginBottom - characterHeight/2 */}
-          {(() => {
-            const characterCenterY = dimensions.height - 20 * scaleFactor - 75 * scaleFactor
-            const doorHeight = 250 * scaleFactor
-            
-            return doors.map((door) => {
-              // 문의 중앙 Y 위치
-              const doorCenterY = door.top + doorHeight / 2
-              // 문의 중앙이 캐릭터 중앙보다 아래에 있으면 문이 캐릭터 앞에 (더 가까움)
-              const isDoorInFront = doorCenterY >= characterCenterY
-              
-              // stumbling 중일 때 활성 문에만 수직 오프셋 적용 (뒤로 튕김 효과)
-              const isActiveDoor = door.id === activeDoorId
-              const verticalBounce = (gamePhase === 'stumbling' && isActiveDoor) ? stumbleVerticalOffset : 0
-              
-              // 퀴즈 중일 때만 클릭 가능
-              const isClickable = isPaused && isActiveDoor && currentQuestion
-              
-              return (
-                <div 
-                  key={door.id} 
-                  className="absolute"
-                  style={{ 
-                    top: `${door.top + verticalBounce}px`, 
-                    left: '0',
-                    width: '100%', 
-                    height: `${doorHeight}px`,
-                    transform: `translateX(${horizontalOffset}px)`,
-                    transition: gamePhase === 'stumbling' ? 'none' : (gamePhase === 'walking_to_door' || gamePhase === 'returning_to_center' ? 'none' : 'transform 0.1s ease-out'),
-                    zIndex: isClickable ? 35 : (isDoorInFront ? 10 : 3),
-                    pointerEvents: isClickable ? 'auto' : 'none',
-                  }}
-                >
-                  {/* 좌측 O 문 - 길의 왼쪽 절반 (30% ~ 50%) */}
-                  <div 
-                    className="absolute"
-                    style={{ 
-                      left: '30%', 
-                      width: '20%', 
-                      height: '100%', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      cursor: isClickable ? 'pointer' : 'default',
-                    }}
-                    onClick={() => {
-                      if (isClickable) {
-                        handleQuizAnswer('O')
-                      }
-                    }}
-                  >
-                    <img
-                      src="/o_door.png"
-                      alt="O Door"
-                      className="w-auto object-contain"
-                      style={{
-                        height: `${doorHeight}px`,
-                        imageRendering: 'pixelated',
-                        maxWidth: '100%',
-                      }}
-                    />
-                  </div>
-                  {/* 우측 X 문 - 길의 오른쪽 절반 (50% ~ 70%) */}
-                  <div 
-                    className="absolute"
-                    style={{ 
-                      left: '50%', 
-                      width: '20%', 
-                      height: '100%', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      cursor: isClickable ? 'pointer' : 'default',
-                    }}
-                    onClick={() => {
-                      if (isClickable) {
-                        handleQuizAnswer('X')
-                      }
-                    }}
-                  >
-                    <img
-                      src="/x_door.png"
-                      alt="X Door"
-                      className="w-auto object-contain"
-                      style={{
-                        height: `${doorHeight}px`,
-                        imageRendering: 'pixelated',
-                        maxWidth: '100%',
-                      }}
-                    />
-                  </div>
-                </div>
-              )
-            })
-          })()}
-
-          {/* 퀴즈 오버레이 */}
-          {isPaused && currentQuestion && (
-            <>
-              {/* 어두운 배경 - 전체 */}
-              <div 
-                className="absolute inset-0 bg-black/60 transition-opacity duration-300"
-                style={{ zIndex: 30 }}
-              />
-              
-              {/* 질문 텍스트 (흰색, 팝업 상자 없이) */}
-              <div 
-                className="absolute z-40 flex items-center justify-center"
-                style={{
-                  top: `${dimensions.height * 0.15}px`,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  pointerEvents: 'none',
-                }}
-              >
-                <div 
-                  className="text-center font-bold text-white drop-shadow-lg"
-                  style={{
-                    fontSize: `${28 * scaleFactor}px`,
-                    lineHeight: 1.4,
-                    textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-                  }}
-                >
-                  {currentQuestion}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* 해설 표시 오버레이 (달리면서 표시) */}
-          {showExplanation && explanationText && (
-            <div 
-              className="absolute flex items-center justify-center pointer-events-none"
-              style={{
-                top: `${dimensions.height * 0.2}px`,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 40,
-                animation: 'fadeInOut 3.5s ease-in-out forwards',
-              }}
-            >
-              <div 
-                className="text-center font-bold text-white"
-                style={{
-                  fontSize: `${32 * scaleFactor}px`,
-                  lineHeight: 1.6,
-                  padding: `${16 * scaleFactor}px ${32 * scaleFactor}px`,
-                  maxWidth: `${dimensions.width * 0.85}px`,
-                  WebkitTextStroke: `${1.5 * scaleFactor}px rgba(0, 0, 0, 0.9)`,
-                  paintOrder: 'stroke fill',
-                  textShadow: `
-                    0 0 ${8 * scaleFactor}px rgba(0, 0, 0, 0.7),
-                    0 0 ${16 * scaleFactor}px rgba(0, 0, 0, 0.5),
-                    0 0 ${24 * scaleFactor}px rgba(0, 0, 0, 0.3)
-                  `,
-                }}
-              >
-                {explanationText}
-              </div>
-            </div>
-          )}
-
-          {/* START 오버레이 (idle 상태) */}
-          {gamePhase === 'idle' && (
-            <div 
-              className="absolute inset-0 bg-black/70 flex items-center justify-center cursor-pointer transition-opacity duration-300"
-              style={{ zIndex: 50 }}
-            >
-              <div className="text-center">
-                <div 
-                  className="text-white font-bold tracking-widest animate-pulse"
-                  style={{
-                    fontSize: `${72 * scaleFactor}px`,
-                    textShadow: '0 0 20px rgba(255,255,255,0.5), 0 0 40px rgba(255,255,255,0.3)',
-                  }}
-                >
-                  START
-                </div>
-                <div 
-                  className="text-white/70 mt-4"
-                  style={{
-                    fontSize: `${18 * scaleFactor}px`,
-                  }}
-                >
-                  {t('clickToStart')}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* CLEAR 오버레이 (5번 완료) */}
-          {gamePhase === 'cleared' && (
-            <div 
-              className="absolute inset-0 bg-black/70 flex items-center justify-center transition-opacity duration-300"
-              style={{ zIndex: 50 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="text-center">
-                <div 
-                  className="text-white font-bold tracking-widest"
-                  style={{
-                    fontSize: `${72 * scaleFactor}px`,
-                    textShadow: '0 0 20px rgba(255,215,0,0.8), 0 0 40px rgba(255,215,0,0.5)',
-                    color: '#FFD700',
-                  }}
-                >
-                  CLEAR!
-                </div>
-                <div 
-                  className="text-white/80 mt-2"
-                  style={{
-                    fontSize: `${20 * scaleFactor}px`,
-                  }}
-                >
-                  모든 퀴즈를 완료했습니다!
-                </div>
-                
-                {/* 버튼 영역 */}
-                <div 
-                  className="flex items-center justify-center gap-8 mt-8"
-                >
-                  {/* 다시하기 버튼 */}
-                  <button
-                    onClick={handleRestart}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
-                    style={{
-                      minWidth: `${100 * scaleFactor}px`,
-                    }}
-                  >
-                    <RotateCcw 
-                      className="text-white" 
-                      style={{ 
-                        width: `${36 * scaleFactor}px`, 
-                        height: `${36 * scaleFactor}px` 
-                      }} 
-                    />
-                    <span 
-                      className="text-white font-medium"
-                      style={{ fontSize: `${14 * scaleFactor}px` }}
-                    >
-                      다시하기
-                    </span>
-                  </button>
-
-                  {/* 나가기 버튼 */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleClose()
-                    }}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
-                    style={{
-                      minWidth: `${100 * scaleFactor}px`,
-                    }}
-                  >
-                    <LogOut 
-                      className="text-white" 
-                      style={{ 
-                        width: `${36 * scaleFactor}px`, 
-                        height: `${36 * scaleFactor}px` 
-                      }} 
-                    />
-                    <span 
-                      className="text-white font-medium"
-                      style={{ fontSize: `${14 * scaleFactor}px` }}
-                    >
-                      나가기
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Phaser 렌더 영역 */}
+        <div
+          ref={containerRef}
+          tabIndex={-1}
+          className="w-full h-full bg-[#e8f4f8] outline-none"
+        />
       </div>
     </>
   )
 }
-

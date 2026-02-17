@@ -7,6 +7,12 @@
     "repeat": "Repetition",
     "profile": "Profile"
   },
+  "newNav": {
+    "classes": "Classes",
+    "myQuizzes": "My Quizzes",
+    "games": "Games",
+    "feedback": "Feedback"
+  },
   "aiTutorTopbar": {
     "newChat": "New chat",
     "chatHistory": "Chat history",
@@ -216,6 +222,90 @@
     "page": "Page",
     "recordingContent": "Recording content",
     "recordingSourceDisabled": "Recording source display is disabled for this class"
+  },
+  "home": {
+    "title": "My Courses",
+    "greeting": "Hello, {name}!",
+    "greetingSubtitle": "Ready to conquer your lessons today?",
+    "greetingDate": "{date}",
+    "empty": "Your courses will appear here once registered",
+    "emptySubtext": "Courses will automatically show up when your professor creates them",
+    "loadError": "Failed to load data",
+    "retry": "Retry",
+    "etcGroup": "Other",
+    "progress": "Progress"
+  },
+  "lectureStudy": {
+    "breadcrumbHome": "Home",
+    "tabLecture": "By Lecture",
+    "tabMaterial": "By Material",
+    "lectureSelect": {
+      "allInactive": "No study materials are available yet",
+      "empty": "No lectures registered",
+      "noContent": "No content",
+      "hasRecording": "Recording",
+      "hasMaterial": "Material",
+      "newBadge": "NEW"
+    },
+    "dialogueLearning": "Dialogue Learning",
+    "weeklyLessons": "Weekly Lessons",
+    "gameCta": {
+      "title": "Master key concepts through games!",
+      "description": "Learn core concepts from each lesson through fun games. Try it now!",
+      "button": "Start Game"
+    },
+    "materialSelect": {
+      "empty": "No materials registered"
+    },
+    "leftPanel": {
+      "materialsTab": "Materials",
+      "recordingsTab": "Recordings",
+      "materialsEmpty": "No materials available",
+      "materialsPreparing": "Preparing materials",
+      "recordingsEmpty": "No recordings available",
+      "recordingSummaryNull": "Summary is not available yet",
+      "segmentFallback": "Segment {n}",
+      "essenceTitle": "Key Points",
+      "statusCompleted": "Completed",
+      "statusProcessing": "Processing"
+    },
+    "rightPanel": {
+      "summaryTab": "Summary",
+      "quizTab": "Quiz",
+      "gameTab": "Games",
+      "aiTutorTab": "AI Tutor",
+      "placeholder": "Coming soon"
+    },
+    "game": {
+      "title": "Choose a Game",
+      "running": "Running Game",
+      "deck": "Deck (SRS)",
+      "cardMatch": "Card Match",
+      "definitionBuilder": "Definition Builder",
+      "guessTheTerm": "Guess the Term",
+      "minWords": "Requires at least {n} words",
+      "wordListTitle": "Word List",
+      "startGame": "Start Game",
+      "importKeywords": "Import Keywords",
+      "runningGameNote": "This game uses OX quiz data. The word list will be utilized in future updates.",
+      "wordKeywordPlaceholder": "Keyword",
+      "wordDescriptionPlaceholder": "Description",
+      "importError": "Failed to import keywords. Please add words manually.",
+      "loadGameError": "Failed to load game"
+    },
+    "breadcrumb": {
+      "courseLoading": "Loading…",
+      "weekSession": "Week {week}, Session {session}",
+      "weekSessionTitle": "Week {week}, Session {session} - {title}",
+      "lectureNumber": "Lecture {number}",
+      "lectureNumberTitle": "Lecture {number} - {title}",
+      "lectureFallback": "Lecture"
+    },
+    "error": {
+      "loadLectures": "Failed to load lectures",
+      "loadFailed": "Failed to load data. Please try again.",
+      "materialsLoadError": "Failed to load materials"
+    }
   },
   "studyspacePlaceholder": {
     "exam": {
