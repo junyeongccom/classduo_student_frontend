@@ -26,6 +26,8 @@ export interface LectureListItem {
   lecture_date: string
   start_time: string | null
   essence_7words: string | null
+  is_available: boolean  // AI 튜터/스마트복습 사용 가능 여부 (content_pipeline_status == pipeline_completed)
+  content_pipeline_status: string  // 컨텐츠 파이프라인 상태
 }
 
 export interface LectureListResponse {

@@ -180,6 +180,7 @@ export function LectureSidebarContainer({
             status: lec.status,
             is_available: lec.is_available ?? false,
             essence_7words: lec.essence_7words ?? null,
+            content_pipeline_status: lec.content_pipeline_status ?? 'idle',
           })),
         }))
 
