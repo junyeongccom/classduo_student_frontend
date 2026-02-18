@@ -84,6 +84,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const [flameCount, setFlameCount] = useState(0)
 
   useEffect(() => {
+    if (!user) return
     getCourseRewardCounts().then(({ data }) => {
       if (!data) { setFlameCount(0); return }
       if (currentCourseId) {
@@ -94,7 +95,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
         setFlameCount(total)
       }
     })
-  }, [currentCourseId])
+  }, [currentCourseId, user])
 
   return (
     <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
