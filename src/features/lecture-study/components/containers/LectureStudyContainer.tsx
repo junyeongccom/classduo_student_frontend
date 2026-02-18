@@ -20,8 +20,8 @@ import { useSidebarStore } from '@/shared/store/useSidebarStore'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { LeftPanelMaterials } from './LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
-import { RightPanelPlaceholder } from '../ui/RightPanelPlaceholder'
 import { SummaryTabContainer } from './SummaryTabContainer'
+import { QuizTabContainer } from './QuizTabContainer'
 import { GameTabContainer } from './GameTabContainer'
 import { ContentsChatPanel } from '../ui/ContentsChatPanel'
 import type { LeftPanelTab, LectureStudyTab } from '../../types'
@@ -272,7 +272,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     <Tabs
       value={rightTab}
       onValueChange={v => setRightTab(v as LectureStudyTab)}
-      className="flex h-full flex-col"
+      className="flex flex-1 min-h-0 flex-col"
     >
       <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
         <TabsList className="h-auto w-full gap-4 rounded-none bg-transparent p-0">
@@ -291,7 +291,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         <SummaryTabContainer lectureId={lectureId} />
       </TabsContent>
       <TabsContent value="quiz" className="flex-1 min-h-0 mt-0">
-        <RightPanelPlaceholder tab="quiz" />
+        <QuizTabContainer lectureId={lectureId} />
       </TabsContent>
       <TabsContent value="game" className="flex-1 min-h-0 mt-0">
         <GameTabContainer lectureId={lectureId} />

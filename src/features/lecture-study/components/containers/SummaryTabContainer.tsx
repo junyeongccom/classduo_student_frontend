@@ -112,7 +112,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
   }
 
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 py-6 text-sm text-gray-700 dark:text-gray-300">
+    <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24 text-sm text-gray-700 dark:text-gray-300">
       {/* 요약 타이틀 + overview(s) */}
       <section>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
