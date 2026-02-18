@@ -4,7 +4,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { X } from 'lucide-react'
+import { X, Loader2 } from 'lucide-react'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 interface GameOverlayProps {
@@ -21,6 +21,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<import('phaser').Game | null>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
+  const [isGameReady, setIsGameReady] = useState(false)
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
   const keywordsRef = useRef<{ keyword: string; description: string }[]>([])
   const { locale } = useI18n()
@@ -80,6 +81,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
 
     let game: import('phaser').Game | null = null
 
+    setIsGameReady(false)
+
     const initGame = async () => {
       const Phaser = (await import('phaser')).default
       const { createGameConfig } = await import('../../game/config')
@@ -92,6 +95,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
       game.registry.set('locale', locale)
       if (lectureId) game.registry.set('lectureId', lectureId)
       gameRef.current = game
+      setIsGameReady(true)
 
       // 게임 컨테이너로 포커스 이동 → 사이드바 버튼의 onKeyDown이 SPACE를 가로채지 않도록
       containerRef.current?.focus()
@@ -113,6 +117,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
     if (!isOpen && gameRef.current) {
       gameRef.current.destroy(true)
       gameRef.current = null
+      setIsGameReady(false)
     }
   }, [isOpen])
 
@@ -172,6 +177,14 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
         >
           <X className="h-5 w-5 text-gray-600" />
         </button>
+
+        {/* 로딩 표시 */}
+        {!isGameReady && animationState === 'entered' && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-950">
+            <Loader2 className="h-10 w-10 animate-spin text-white" />
+            <p className="mt-3 text-sm text-gray-400">Loading game...</p>
+          </div>
+        )}
 
         {/* Phaser 렌더 영역 */}
         <div
