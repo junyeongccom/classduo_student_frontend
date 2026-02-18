@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, PanelRightOpen, X, ChevronRight, FileText, Bot, ClipboardPen, Share2 } from 'lucide-react'
+import { Loader2, X, ChevronRight, FileText, Bot, ClipboardPen, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
@@ -29,12 +29,6 @@ import type { LeftPanelTab, LectureStudyTab } from '../../types'
 const MIN_LEFT_WIDTH = 320
 const MIN_CENTER_WIDTH = 280
 const MIN_CHAT_WIDTH = 300
-
-const RIGHT_TAB_TITLE_KEYS: Record<LectureStudyTab, string> = {
-  summary: 'lectureStudy.rightPanel.summaryTab',
-  quiz: 'lectureStudy.rightPanel.quizTab',
-  game: 'lectureStudy.rightPanel.gameTab',
-}
 
 interface LectureStudyContainerProps {
   lectureId: string
@@ -82,7 +76,6 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const [isResizingChat, setIsResizingChat] = useState(false)
   const [hasUserResizedLeft, setHasUserResizedLeft] = useState(false)
   const [hasUserResizedChat, setHasUserResizedChat] = useState(false)
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const resolveLectureLabel = (): string => {
@@ -324,32 +317,15 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         </nav>
       </StudyspaceTopbarSlot>
 
-      {/* Mobile: drawer toggle */}
-      {isMobile && (
-        <div className="shrink-0 flex justify-end border-b border-gray-200 bg-white px-4 py-2">
-          <button
-            onClick={() => setIsDrawerOpen(true)}
-            className="rounded-lg border border-gray-200 p-1.5 text-gray-500 hover:bg-gray-50"
-          >
-            <PanelRightOpen className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {/* Mobile: removed old drawer toggle — center panel is now primary */}
 
       {/* Panels */}
       <div
         ref={containerRef}
         className="relative flex flex-1 min-h-0"
       >
-        {/* Mobile: 강의자료 전체 너비 */}
-        {isMobile && (
-          <section className="flex h-full min-h-0 flex-col" style={{ width: '100%' }}>
-            <LeftPanelMaterials />
-          </section>
-        )}
-
-        {/* Desktop: 강의자료 아이콘 (패널 닫힌 상태) */}
-        {!isMobile && !isLeftPanelOpen && (
+        {/* 강의자료 아이콘 (패널 닫힌 상태) — 모바일+데스크톱 공통 */}
+        {!isLeftPanelOpen && (
           <button
             onClick={toggleLeftPanel}
             className="absolute bottom-4 left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
@@ -359,8 +335,8 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </button>
         )}
 
-        {/* Desktop: 챗봇 아이콘 (패널 닫힌 상태) */}
-        {!isMobile && !isChatPanelOpen && (
+        {/* 챗봇 아이콘 (패널 닫힌 상태) — 모바일+데스크톱 공통 */}
+        {!isChatPanelOpen && (
           <button
             onClick={toggleChatPanel}
             className="absolute bottom-4 right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
@@ -426,8 +402,8 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </div>
         )}
 
-        {/* Desktop: 중앙 패널 (회차제목 + 버튼 + 요약/퀴즈/게임) */}
-        {!isMobile && (
+        {/* 중앙 패널 (회차제목 + 버튼 + 요약/퀴즈/게임) — 모바일+데스크톱 공통 */}
+        {(!isMobile || (!isLeftPanelOpen && !isChatPanelOpen)) && (
           <section className={`flex h-full min-h-0 flex-1 flex-col ${isCenterOnly ? 'max-w-2xl mx-auto' : ''}`}>
             {/* 회차 제목 (항상 표시) */}
             <div className="shrink-0 px-4 pt-4 pb-1">
@@ -492,31 +468,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         )}
       </div>
 
-      {/* Mobile: Drawer for Right Panel */}
-      {isMobile && isDrawerOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            className="flex-1 bg-black/40"
-            onClick={() => setIsDrawerOpen(false)}
-          />
-          <div className="flex h-full w-[85vw] max-w-md flex-col bg-white dark:bg-gray-900 shadow-xl animate-in slide-in-from-right">
-            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-50">
-                {t(RIGHT_TAB_TITLE_KEYS[rightTab])}
-              </span>
-              <button
-                onClick={() => setIsDrawerOpen(false)}
-                className="rounded-lg p-1 text-gray-500 hover:bg-gray-100"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              {rightPanelContent}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mobile drawer removed — center panel is now primary on mobile */}
     </div>
   )
 }
