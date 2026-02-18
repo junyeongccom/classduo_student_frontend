@@ -18,6 +18,7 @@ import { useLectures } from '../../hooks/useLectures'
 import { LectureRow } from '../ui/LectureRow'
 import { RecordingChunksModal } from '../ui/RecordingChunksModal'
 import { MaterialsModal } from '../ui/MaterialsModal'
+import { GameSelectionModal } from '@/shared/components/common/GameSelectionModal'
 import { useSidebarStore, SIDEBAR_WIDTH_EXPANDED, SIDEBAR_WIDTH_COLLAPSED } from '@/shared/store/useSidebarStore'
 import Link from 'next/link'
 import { getSupabaseClient } from '@/shared/lib/supabase'
@@ -44,6 +45,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const { materials, isLoading: materialsLoading } = useMaterialList(courseId)
   const [activeTab, setActiveTab] = useState<CourseTab>('lecture')
   const [isCtaDismissed, setIsCtaDismissed] = useState(false)
+  const [isGameModalOpen, setIsGameModalOpen] = useState(false)
 
   const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
@@ -304,7 +306,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                     <p className="mt-1 text-sm text-gray-400">{t('lectureStudy.gameCta.description')}</p>
                   </div>
                   <button
-                    onClick={() => router.push('/studyspace/review')}
+                    onClick={() => setIsGameModalOpen(true)}
                     className="shrink-0 rounded-2xl bg-white px-8 py-3 font-black text-gray-900 shadow-xl transition-all hover:bg-[#6366F1] hover:text-white"
                   >
                     {t('lectureStudy.gameCta.button')}
@@ -330,6 +332,12 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
         open={materialsModalLecture !== null}
         onClose={() => setMaterialsModalLecture(null)}
         lectureId={materialsModalLecture?.id ?? ''}
+      />
+
+      {/* Game Selection Modal */}
+      <GameSelectionModal
+        open={isGameModalOpen}
+        onClose={() => setIsGameModalOpen(false)}
       />
     </>
   )
