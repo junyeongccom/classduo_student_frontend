@@ -71,7 +71,7 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onDial
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-6 rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 transition-all',
+        'flex flex-wrap items-center gap-6 rounded-2xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 p-5 transition-all',
         status === 'in-progress' && 'border-l-4 border-l-[#6366F1] shadow-sm',
         status === 'upcoming' && 'opacity-70',
         isAvailable && 'hover:-translate-y-0.5 hover:shadow-md',

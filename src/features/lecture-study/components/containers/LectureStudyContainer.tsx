@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 import { Loader2, X, ChevronRight, FileText, Bot, ClipboardPen, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
@@ -40,6 +41,7 @@ interface LectureStudyContainerProps {
 export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectureTitle }: LectureStudyContainerProps) {
   const t = useTranslations()
   const isMobile = useIsMobile()
+  const searchParams = useSearchParams()
   const { recordings, isLoading, error, refresh } = useLectureDetail(lectureId)
   const { lectures, courseTitle: fetchedCourseTitle } = useLectures(courseId ?? '')
 
@@ -63,8 +65,14 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   useEffect(() => {
     setStoreLectureId(lectureId)
     setGameWords([])
-    // 페이지 진입 시 강의자료/챗봇 패널 닫힌 상태 + 요약 탭 + 사이드바 접기
-    useLectureStudyStore.setState({ isLeftPanelOpen: false, isChatPanelOpen: false, rightTab: 'summary' })
+    // 쿼리 파라미터로 초기 탭 지정 (예: ?tab=game)
+    const tabParam = searchParams.get('tab')
+    const validTabs: LectureStudyTab[] = ['summary', 'quiz', 'game']
+    const initialTab: LectureStudyTab = tabParam && validTabs.includes(tabParam as LectureStudyTab)
+      ? (tabParam as LectureStudyTab)
+      : 'summary'
+    // 페이지 진입 시 강의자료/챗봇 패널 닫힌 상태 + 탭 설정 + 사이드바 접기
+    useLectureStudyStore.setState({ isLeftPanelOpen: false, isChatPanelOpen: false, rightTab: initialTab })
     useSidebarStore.setState({ isCollapsed: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lectureId])

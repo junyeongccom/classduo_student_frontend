@@ -22,6 +22,7 @@ import {
 import { useSidebarStore } from '@/shared/store/useSidebarStore'
 import { useFeedbackStore } from '@/features/error-report'
 import { ChevronsLeft, Menu } from 'lucide-react'
+import { GameSelectionModal } from './GameSelectionModal'
 
 export function Sidebar() {
   const isNewUI = useNewStudyspace()
@@ -40,6 +41,7 @@ function NewSidebar() {
   const pathname = usePathname()
   const { isCollapsed, toggle } = useSidebarStore()
   const openFeedback = useFeedbackStore((s) => s.open)
+  const [isGameModalOpen, setIsGameModalOpen] = useState(false)
 
   const menuItems = useMemo(() => [...NEW_SIDEBAR_MENU], [])
 
@@ -47,7 +49,7 @@ function NewSidebar() {
     <TooltipProvider delayDuration={300}>
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden',
+          'fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden',
           'transition-[width,padding] duration-300 ease-in-out',
           isCollapsed ? 'w-[72px] px-3 py-4 gap-4' : 'w-[240px] px-6 py-6 gap-8',
         )}
@@ -104,6 +106,10 @@ function NewSidebar() {
                     event.preventDefault()
                     openFeedback()
                   }
+                  if (item.id === 'games') {
+                    event.preventDefault()
+                    setIsGameModalOpen(true)
+                  }
                 }}
                 className={cn(
                   'flex items-center rounded-xl font-medium transition-all duration-300',
@@ -145,6 +151,11 @@ function NewSidebar() {
           })}
         </nav>
       </aside>
+
+      <GameSelectionModal
+        open={isGameModalOpen}
+        onClose={() => setIsGameModalOpen(false)}
+      />
     </TooltipProvider>
   )
 }

@@ -105,7 +105,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
         style={{ paddingLeft: sidebarWidth }}
       >
         {/* Top Header Bar */}
-        <header className="relative z-[40] flex shrink-0 items-center justify-between border-b border-gray-200/60 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 py-3 pl-8 pr-4 backdrop-blur-md">
+        <header className="relative z-[40] flex shrink-0 items-center justify-between border-b border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-900/80 py-3 pl-8 pr-4 backdrop-blur-md">
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <NewLanguageToggle />
             {topbar && (
@@ -202,7 +202,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden dark:bg-gray-950">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-900">
           {children}
         </main>
       </div>
