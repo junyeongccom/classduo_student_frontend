@@ -16,11 +16,13 @@ import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
 import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useSidebarStore } from '@/shared/store/useSidebarStore'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { LeftPanelMaterials } from './LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
 import { RightPanelPlaceholder } from '../ui/RightPanelPlaceholder'
 import { GameTabContainer } from './GameTabContainer'
+import { ContentsChatPanel } from '../ui/ContentsChatPanel'
 import type { LeftPanelTab, LectureStudyTab } from '../../types'
 
 const MIN_LEFT_WIDTH = 320
@@ -66,8 +68,9 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   useEffect(() => {
     setStoreLectureId(lectureId)
     setGameWords([])
-    // 페이지 진입 시 강의자료/챗봇 패널 닫힌 상태로 강제 초기화 (persist 하이드레이션 이후에도 동작)
-    useLectureStudyStore.setState({ isLeftPanelOpen: false, isChatPanelOpen: false })
+    // 페이지 진입 시 강의자료/챗봇 패널 닫힌 상태 + 요약 탭 + 사이드바 접기
+    useLectureStudyStore.setState({ isLeftPanelOpen: false, isChatPanelOpen: false, rightTab: 'summary' })
+    useSidebarStore.setState({ isCollapsed: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lectureId])
 
@@ -115,9 +118,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       if (hasUserResizedLeft) return
       const total = element.getBoundingClientRect().width
       if (!total) return
+      // 양쪽 패널 모두 열림 → 균등 3분할, 한쪽만 열림 → 나머지의 절반
+      const target = isChatPanelOpen
+        ? Math.floor(total / 3)
+        : Math.floor(total / 2)
       const chatOffset = isChatPanelOpen && chatWidth ? chatWidth : 0
       const available = total - chatOffset - MIN_CENTER_WIDTH
-      const target = Math.floor((total - chatOffset) / 2)
       setLeftWidth(Math.min(Math.max(target, MIN_LEFT_WIDTH), Math.max(available, MIN_LEFT_WIDTH)))
     }
     updateWidth()
@@ -134,9 +140,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       if (hasUserResizedChat) return
       const total = element.getBoundingClientRect().width
       if (!total) return
+      // 양쪽 패널 모두 열림 → 균등 3분할, 한쪽만 열림 → 1/3
+      const target = Math.floor(total / 3)
       const leftOffset = isLeftPanelOpen && leftWidth ? leftWidth : 0
       const available = total - leftOffset - MIN_CENTER_WIDTH
-      const target = Math.floor((total - leftOffset) / 3)
       setChatWidth(Math.min(Math.max(target, MIN_CHAT_WIDTH), Math.max(available, MIN_CHAT_WIDTH)))
     }
     updateWidth()
@@ -226,6 +233,15 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     setIsResizingChat(true)
   }, [])
 
+  // 패널 열릴 때 수동 리사이즈 플래그 리셋 → 균등 분할 재적용
+  useEffect(() => {
+    if (isLeftPanelOpen) setHasUserResizedLeft(false)
+  }, [isLeftPanelOpen])
+
+  useEffect(() => {
+    if (isChatPanelOpen) setHasUserResizedChat(false)
+  }, [isChatPanelOpen])
+
   // 양쪽 패널 모두 닫혀있을 때만 중앙 배치
   const isCenterOnly = !isLeftPanelOpen && !isChatPanelOpen
 
@@ -257,17 +273,17 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       onValueChange={v => setRightTab(v as LectureStudyTab)}
       className="flex h-full flex-col"
     >
-      <div className="shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 pt-2">
-        <TabsList className="h-9 w-full">
-          <TabsTrigger value="summary" className="flex-1 text-xs">
-            {t('lectureStudy.rightPanel.summaryTab')}
-          </TabsTrigger>
-          <TabsTrigger value="quiz" className="flex-1 text-xs">
-            {t('lectureStudy.rightPanel.quizTab')}
-          </TabsTrigger>
-          <TabsTrigger value="game" className="flex-1 text-xs">
-            {t('lectureStudy.rightPanel.gameTab')}
-          </TabsTrigger>
+      <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
+        <TabsList className="h-auto w-full gap-4 rounded-none bg-transparent p-0">
+          {(['summary', 'quiz', 'game'] as const).map(tab => (
+            <TabsTrigger
+              key={tab}
+              value={tab}
+              className="flex-1 rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              {t(`lectureStudy.rightPanel.${tab}Tab`)}
+            </TabsTrigger>
+          ))}
         </TabsList>
       </div>
       <TabsContent value="summary" className="flex-1 min-h-0 mt-0">
@@ -288,41 +304,23 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     <div className="flex h-full flex-col">
       {/* Breadcrumb + Action buttons → Header topbar slot */}
       <StudyspaceTopbarSlot>
-        <div className="flex items-center">
-          <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
-            <Link href="/studyspace/home" className="transition-colors hover:text-[#6366F1]">
-              {t('lectureStudy.breadcrumbHome')}
+        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
+          <Link href="/studyspace/home" className="transition-colors hover:text-[#6366F1]">
+            {t('lectureStudy.breadcrumbHome')}
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5" />
+          {courseId ? (
+            <Link href={`/studyspace/course/${courseId}`} className="transition-colors hover:text-[#6366F1]">
+              {resolvedCourseTitle}
             </Link>
-            <ChevronRight className="h-3.5 w-3.5" />
-            {courseId ? (
-              <Link href={`/studyspace/course/${courseId}`} className="transition-colors hover:text-[#6366F1]">
-                {resolvedCourseTitle}
-              </Link>
-            ) : (
-              <span>{resolvedCourseTitle}</span>
-            )}
-            <ChevronRight className="h-3.5 w-3.5" />
-            <span className="truncate font-semibold text-gray-900 dark:text-gray-50">
-              {resolveLectureLabel()}
-            </span>
-          </nav>
-          <div className="flex flex-1 items-center justify-center gap-3">
-            <button
-              onClick={() => {}}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#818CF8] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:brightness-110 active:scale-[0.97]"
-            >
-              <ClipboardPen className="h-4 w-4" />
-              테스트하기
-            </button>
-            <button
-              onClick={() => {}}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F59E0B] to-[#FBBF24] px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:brightness-110 active:scale-[0.97]"
-            >
-              <Share2 className="h-4 w-4" />
-              공유하기
-            </button>
-          </div>
-        </div>
+          ) : (
+            <span>{resolvedCourseTitle}</span>
+          )}
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span className="truncate font-semibold text-gray-900 dark:text-gray-50">
+            {resolveLectureLabel()}
+          </span>
+        </nav>
       </StudyspaceTopbarSlot>
 
       {/* Mobile: drawer toggle */}
@@ -353,10 +351,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         {!isMobile && !isLeftPanelOpen && (
           <button
             onClick={toggleLeftPanel}
-            className="absolute bottom-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-md text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            className="absolute bottom-4 left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
             title={t('lectureStudy.leftPanel.materialsTab')}
           >
-            <FileText className="h-5 w-5" />
+            <FileText className="h-6 w-6" />
           </button>
         )}
 
@@ -364,10 +362,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         {!isMobile && !isChatPanelOpen && (
           <button
             onClick={toggleChatPanel}
-            className="absolute bottom-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-md text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            className="absolute bottom-4 right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
             title="AI Chat"
           >
-            <Bot className="h-5 w-5" />
+            <Bot className="h-6 w-6" />
           </button>
         )}
 
@@ -382,14 +380,17 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               onValueChange={v => setLeftTab(v as LeftPanelTab)}
               className="flex h-full flex-col"
             >
-              <div className="flex items-center shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 pt-2">
-                <TabsList className="h-9 flex-1">
-                  <TabsTrigger value="materials" className="flex-1 text-xs">
-                    {t('lectureStudy.leftPanel.materialsTab')}
-                  </TabsTrigger>
-                  <TabsTrigger value="recordings" className="flex-1 text-xs">
-                    {t('lectureStudy.leftPanel.recordingsTab')}
-                  </TabsTrigger>
+              <div className="flex items-center shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
+                <TabsList className="h-auto flex-1 gap-4 rounded-none bg-transparent p-0">
+                  {(['materials', 'recordings'] as const).map(tab => (
+                    <TabsTrigger
+                      key={tab}
+                      value={tab}
+                      className="flex-1 rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {t(`lectureStudy.leftPanel.${tab}Tab`)}
+                    </TabsTrigger>
+                  ))}
                 </TabsList>
                 <button
                   onClick={toggleLeftPanel}
@@ -424,9 +425,30 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </div>
         )}
 
-        {/* Desktop: 중앙 패널 (요약/퀴즈/게임) */}
+        {/* Desktop: 중앙 패널 (회차제목 + 버튼 + 요약/퀴즈/게임) */}
         {!isMobile && (
-          <section className={`flex h-full min-h-0 flex-1 flex-col ${isCenterOnly ? 'max-w-4xl mx-auto' : ''}`}>
+          <section className={`flex h-full min-h-0 flex-1 flex-col ${isCenterOnly ? 'max-w-2xl mx-auto' : ''}`}>
+            {/* 회차 제목 (항상 표시) */}
+            <div className="shrink-0 px-4 pt-4 pb-1">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50 truncate">
+                {resolveLectureLabel()}
+              </h2>
+            </div>
+
+            {/* 테스트/공유 버튼 — 양쪽 패널 닫혀 있을 때만 */}
+            {isCenterOnly && (
+              <div className="shrink-0 flex items-center gap-3 px-4 pb-3 pt-1">
+                <button className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#6366F1] py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#4F46E5]">
+                  <ClipboardPen className="h-4 w-4" />
+                  테스트 시작하기
+                </button>
+                <button className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-[#6366F1]/30 py-1.5 text-sm font-medium text-[#6366F1] transition-colors hover:bg-[#6366F1]/5">
+                  <Share2 className="h-4 w-4" />
+                  공유하기
+                </button>
+              </div>
+            )}
+
             {rightPanelContent}
           </section>
         )}
@@ -462,11 +484,8 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex-1 min-h-0 flex items-center justify-center text-gray-400">
-              <div className="text-center">
-                <Bot className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-                <p className="text-sm">{t('lectureStudy.rightPanel.placeholder')}</p>
-              </div>
+            <div className="flex-1 min-h-0">
+              <ContentsChatPanel lectureId={lectureId} />
             </div>
           </section>
         )}

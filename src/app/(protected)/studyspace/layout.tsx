@@ -24,7 +24,7 @@ function NewLanguageToggle() {
   const handle = (next: AppLocale) => setLocale(next)
 
   return (
-    <div className="inline-flex items-center rounded-xl bg-white dark:bg-gray-800 p-1 shadow-sm">
+    <div className="inline-flex items-center rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 p-1 shadow-sm">
       <button
         onClick={() => handle('en')}
         className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${

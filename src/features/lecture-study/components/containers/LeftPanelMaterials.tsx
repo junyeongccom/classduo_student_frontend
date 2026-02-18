@@ -159,9 +159,9 @@ export function LeftPanelMaterials() {
   return (
     <div className="flex h-full flex-col">
       {/* Scrollable content: image + text/visual summary */}
-      <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100">
+      <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100 flex flex-col">
         {/* Page image */}
-        <div className="relative flex items-center justify-center p-2" style={{ minHeight: 200 }}>
+        <div className="relative flex flex-1 items-center justify-center p-2" style={{ minHeight: 200 }}>
           {currentImageUrl ? (
             <>
               {!imageLoaded && (

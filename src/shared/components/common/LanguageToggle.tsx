@@ -21,7 +21,7 @@ export function LanguageToggle({ className, size = 'md' }: LanguageToggleProps) 
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-lg bg-gray-100 p-1',
+        'inline-flex items-center rounded-lg bg-gray-100 border border-gray-500 p-1',
         className
       )}
       role="group"

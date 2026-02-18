@@ -75,6 +75,10 @@ export interface MaterialPagesResponse {
   total_count: number
 }
 
+export interface ContentsStudyChatResponse {
+  answer: string
+}
+
 export const lectureService = {
   getLectures: (courseId: string) => {
     if (!isUUID(courseId)) {
@@ -113,6 +117,14 @@ export const lectureService = {
     return apiRequest<MaterialPagesResponse>(`/materials/${materialId}/pages`, {
       method: 'GET',
       auth: true,
+    })
+  },
+
+  contentsStudyChat: (question: string, lectureId: string) => {
+    return apiRequest<ContentsStudyChatResponse>('/contents-study/chat', {
+      method: 'POST',
+      auth: true,
+      body: { question, lecture_id: lectureId },
     })
   },
 }
