@@ -75,6 +75,10 @@ export interface MaterialPagesResponse {
   total_count: number
 }
 
+export interface ContentsStudyChatResponse {
+  answer: string
+}
+
 /** input_snapshot_id 기반 강의자료 항목 */
 export interface SnapshotMaterialItem {
   material_id: string
