@@ -159,6 +159,14 @@ export const lectureService = {
     })
   },
 
+  contentsStudyChat: (question: string, lectureId: string) => {
+    return apiRequest<ContentsStudyChatResponse>('/contents-study/chat', {
+      method: 'POST',
+      auth: true,
+      body: { question, lecture_id: lectureId },
+    })
+  },
+
   /**
    * input_snapshot_id 기반으로 회차에 연결된 강의자료 + 녹음본 목록 조회.
    * lecture_material_mappings / recordings.lecture_id FK 대신
