@@ -89,7 +89,7 @@ export function MaterialsModal({
       onClick={onClose}
     >
       <div
-        className="relative flex w-full max-w-[560px] flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-2xl"
+        className="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-2xl"
         style={{ maxHeight: '90vh' }}
         onClick={e => e.stopPropagation()}
       >

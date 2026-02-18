@@ -119,7 +119,7 @@ export function RecordingChunksModal({
       onClick={onClose}
     >
       <div
-        className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        className="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
         style={{ maxHeight: '90vh' }}
         onClick={e => e.stopPropagation()}
       >
