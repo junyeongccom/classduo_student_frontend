@@ -12,7 +12,7 @@ import { useLocale } from 'next-intl'
 import { X, FileText, Download, Loader2 } from 'lucide-react'
 import {
   lectureService,
-  type LectureMaterialMappingItem,
+  type SnapshotMaterialItem,
 } from '../../services/lectureService'
 import { getSupabaseClient } from '@/shared/lib/supabase'
 
@@ -22,7 +22,7 @@ interface MaterialsModalProps {
   lectureId: string
 }
 
-async function downloadMaterial(material: LectureMaterialMappingItem) {
+async function downloadMaterial(material: SnapshotMaterialItem) {
   const supabase = getSupabaseClient()
 
   // materials 버킷에서 signed URL 생성
@@ -55,13 +55,13 @@ export function MaterialsModal({
   lectureId,
 }: MaterialsModalProps) {
   const locale = useLocale()
-  const [materials, setMaterials] = useState<LectureMaterialMappingItem[]>([])
+  const [materials, setMaterials] = useState<SnapshotMaterialItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
-    const result = await lectureService.getLectureMaterials(lectureId)
+    const result = await lectureService.getSnapshotSelections(lectureId)
     if (result.data) {
       setMaterials(result.data.materials)
     }
@@ -72,7 +72,7 @@ export function MaterialsModal({
     if (open) fetchData()
   }, [open, fetchData])
 
-  const handleDownload = async (material: LectureMaterialMappingItem) => {
+  const handleDownload = async (material: SnapshotMaterialItem) => {
     setDownloadingId(material.material_id)
     try {
       await downloadMaterial(material)

@@ -1,6 +1,6 @@
 /**
  * @file RecordingChunksModal.tsx
- * @description 강의 녹음본 청크 목록 모달 — 청크별 제목/구간 표시 + 텍스트 파일 다운로드
+ * @description 강의 녹음본 청크 목록 모달 — input_snapshot_id 기반 녹음본 조회 + 청크별 표시/다운로드
  * @module features/lecture-study/components/ui
  * @dependencies lectureService, lucide-react
  */
@@ -12,8 +12,8 @@ import { useLocale } from 'next-intl'
 import { X, Mic, Play, Clock, Download, Loader2 } from 'lucide-react'
 import {
   lectureService,
-  type RecordingApiItem,
-  type RecordingChunkSummaryApi,
+  type SnapshotRecordingItem,
+  type SnapshotChunkSummary,
 } from '../../services/lectureService'
 
 interface RecordingChunksModalProps {
@@ -23,8 +23,8 @@ interface RecordingChunksModalProps {
   lectureLabel: string
 }
 
-interface FlatChunk extends RecordingChunkSummaryApi {
-  recording: RecordingApiItem
+interface FlatChunk extends SnapshotChunkSummary {
+  recording: SnapshotRecordingItem
 }
 
 /** 초 → MM:SS */
@@ -70,14 +70,18 @@ export function RecordingChunksModal({
   lectureLabel,
 }: RecordingChunksModalProps) {
   const locale = useLocale()
-  const [recordings, setRecordings] = useState<RecordingApiItem[]>([])
+  const [recordings, setRecordings] = useState<SnapshotRecordingItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
-    const result = await lectureService.getRecordings(lectureId)
+    const result = await lectureService.getSnapshotSelections(lectureId)
     if (result.data) {
-      setRecordings(result.data.recordings.filter(r => r.status === 'COMPLETED'))
+      setRecordings(
+        result.data.recordings.filter(
+          r => r.status === 'COMPLETED' || r.status === 'DONE' || r.step === 'INDEXED',
+        ),
+      )
     }
     setIsLoading(false)
   }, [lectureId])

@@ -21,6 +21,7 @@ import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { LeftPanelMaterials } from './LeftPanelMaterials'
 import { LeftPanelRecordings } from '../ui/LeftPanelRecordings'
 import { RightPanelPlaceholder } from '../ui/RightPanelPlaceholder'
+import { SummaryTabContainer } from './SummaryTabContainer'
 import { GameTabContainer } from './GameTabContainer'
 import { ContentsChatPanel } from '../ui/ContentsChatPanel'
 import type { LeftPanelTab, LectureStudyTab } from '../../types'
@@ -287,7 +288,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         </TabsList>
       </div>
       <TabsContent value="summary" className="flex-1 min-h-0 mt-0">
-        <RightPanelPlaceholder tab="summary" />
+        <SummaryTabContainer lectureId={lectureId} />
       </TabsContent>
       <TabsContent value="quiz" className="flex-1 min-h-0 mt-0">
         <RightPanelPlaceholder tab="quiz" />

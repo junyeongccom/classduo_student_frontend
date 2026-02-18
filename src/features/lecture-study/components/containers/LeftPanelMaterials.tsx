@@ -35,7 +35,7 @@ export function LeftPanelMaterials() {
   const [imageLoaded, setImageLoaded] = useState(false)
   const imageCache = useRef<PageCache>({})
 
-  // 1) lecture → material mapping
+  // 1) lecture → material (input_snapshot_id 기반)
   useEffect(() => {
     if (!lectureId) return
     let cancelled = false
@@ -47,10 +47,10 @@ export function LeftPanelMaterials() {
       setPages([])
 
       try {
-        const mappingResult = await lectureService.getLectureMaterials(lectureId!)
+        const snapshotResult = await lectureService.getSnapshotSelections(lectureId!)
         if (cancelled) return
 
-        const materials = mappingResult.data?.materials ?? []
+        const materials = snapshotResult.data?.materials ?? []
         if (materials.length === 0) {
           setIsLoading(false)
           return

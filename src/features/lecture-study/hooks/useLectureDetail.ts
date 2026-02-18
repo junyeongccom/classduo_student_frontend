@@ -1,6 +1,6 @@
 /**
  * @file useLectureDetail.ts
- * @description 회차 상세 데이터 (녹음 목록) 페칭 훅
+ * @description 회차 상세 데이터 (input_snapshot_id 기반 녹음본 목록) 페칭 훅
  * @module features/lecture-study/hooks
  * @dependencies lectureService
  */
@@ -29,17 +29,17 @@ export function useLectureDetail(lectureId: string): UseLectureDetailResult {
     setIsLoading(true)
     setError(null)
 
-    const recResult = await lectureService.getRecordings(lectureId)
+    const snapshotResult = await lectureService.getSnapshotSelections(lectureId)
 
     if (!isMountedRef.current) return
 
-    if (recResult.error) {
-      setError(recResult.error.message ?? '데이터를 불러오지 못했습니다')
+    if (snapshotResult.error) {
+      setError(snapshotResult.error.message ?? '데이터를 불러오지 못했습니다')
       setIsLoading(false)
       return
     }
 
-    const mappedRecordings: Recording[] = (recResult.data?.recordings ?? []).map(r => ({
+    const mappedRecordings: Recording[] = (snapshotResult.data?.recordings ?? []).map(r => ({
       id: r.recording_id,
       lecture_id: lectureId,
       status: r.status,
