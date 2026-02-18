@@ -75,10 +75,10 @@ function NewSidebar() {
               isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100',
             )}
           >
-            <div className="flex items-center gap-3">
+            <Link href="/studyspace/home" className="flex items-center gap-3">
               <img src="/Aplus_logo.png" alt="Aplus" className="h-9 w-auto shrink-0" />
               <h2 className="whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Aplus</h2>
-            </div>
+            </Link>
             <button
               onClick={toggle}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300"
