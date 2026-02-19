@@ -75,6 +75,21 @@ import {
   METEOR_SIZE,
   METEOR_SPAWN_Y_MIN,
   METEOR_SPAWN_Y_MAX,
+  HP_DECAY_BASE_RATE,
+  QUIZ_CORRECT_HP_RESTORE,
+  DIFFICULTY_RAMP_SECONDS,
+  DIFF_METEOR_MIN_MS,
+  DIFF_METEOR_MAX_MS,
+  DIFF_METEOR_SPEED_MULT,
+  DIFF_SCROLL_SPEED_BONUS,
+  DIFF_GAP_PROBABILITY,
+  DIFF_GAP_MAX_WIDTH,
+  DIFF_DOUBLE_METEOR_THRESHOLD,
+  DIFF_DOUBLE_METEOR_CHANCE,
+  DIFF_TRIPLE_METEOR_THRESHOLD,
+  DIFF_TRIPLE_METEOR_CHANCE,
+  DIFF_METEOR_DAMAGE,
+  DIFFICULTY_MAX,
 } from "../constants";
 
 export class GameScene extends Phaser.Scene {
@@ -96,6 +111,7 @@ export class GameScene extends Phaser.Scene {
   private heartTimer = 0;
   private meteorTimer = 0;
   private meteorNextSpawn = 0;
+  private elapsedPlayTime = 0;
 
   private speedStacks = 0;
   private jumpStacks = 0;
@@ -184,6 +200,7 @@ export class GameScene extends Phaser.Scene {
     this.heartTimer = 0;
     this.meteorTimer = 0;
     this.meteorNextSpawn = Phaser.Math.Between(METEOR_SPAWN_INTERVAL_MIN_MS, METEOR_SPAWN_INTERVAL_MAX_MS);
+    this.elapsedPlayTime = 0;
     this.hp = HP_MAX;
     this.hpMax = HP_MAX;
     this.hpDecayStacks = 0;
@@ -298,9 +315,10 @@ export class GameScene extends Phaser.Scene {
       },
       onRewardSelect: (isCorrect: boolean) => {
         if (isCorrect) {
+          this.hp = Math.min(this.hp + QUIZ_CORRECT_HP_RESTORE, this.hpMax);
+          this.ui.updateHpGauge(this.hp, this.hpMax);
           this.screenFX.zoomPunch(ZOOM_PUNCH_REWARD);
         } else {
-          // Wrong answer revealed — impact effect
           this.screenFX.shake(SHAKE_WRONG_COLLECT);
           this.screenFX.flash(FLASH_WRONG);
         }
@@ -356,8 +374,8 @@ export class GameScene extends Phaser.Scene {
 
   private spawnNewGround(): void {
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH * 2) {
-      if (this.distanceTraveled > 800 && !this.isQuizPhase() && Math.random() < GAP_PROBABILITY) {
-        const gapWidth = Phaser.Math.Between(GAP_WIDTH_MIN, GAP_WIDTH_MAX);
+      if (this.distanceTraveled > 800 && !this.isQuizPhase() && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
+        const gapWidth = Phaser.Math.Between(GAP_WIDTH_MIN, Math.round(this.lerpDiff(DIFF_GAP_MAX_WIDTH)));
         this.spawnArcCoins(this.nextGroundX, gapWidth);
         this.nextGroundX += gapWidth;
       }
@@ -587,7 +605,7 @@ export class GameScene extends Phaser.Scene {
     const y = Phaser.Math.Between(METEOR_SPAWN_Y_MIN, METEOR_SPAWN_Y_MAX);
     const meteor = new Meteor(this, x, y);
     this.meteors.add(meteor);
-    meteor.setScrollSpeed(this.getEffectiveSpeed() * METEOR_SPEED_MULT);
+    meteor.setScrollSpeed(this.getEffectiveSpeed() * this.lerpDiff(DIFF_METEOR_SPEED_MULT));
   }
 
   private onHitMeteor: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (
@@ -600,10 +618,12 @@ export class GameScene extends Phaser.Scene {
     meteor.destroyWithTrail();
 
     // HP damage
-    this.hp = Math.max(0, this.hp - METEOR_DAMAGE_HP);
+    this.hp = Math.max(0, this.hp - this.lerpDiff(DIFF_METEOR_DAMAGE));
     this.ui.updateHpGauge(this.hp, this.hpMax);
 
-    // Speed down
+    // Speed down (heavy penalty)
+    this.applySpeedDown();
+    this.applySpeedDown();
     this.applySpeedDown();
 
     // Screen effects
@@ -616,10 +636,23 @@ export class GameScene extends Phaser.Scene {
     }
   };
 
+  // ── Difficulty ──
+
+  private getDifficulty(): number {
+    return Math.min(DIFFICULTY_MAX, this.elapsedPlayTime / 1000 / DIFFICULTY_RAMP_SECONDS);
+  }
+
+  private lerpDiff(keys: [number, number, number, number]): number {
+    const d = this.getDifficulty();
+    const seg = Math.min(Math.floor(d), 2);
+    const t = d - seg;
+    return keys[seg] + (keys[seg + 1] - keys[seg]) * t;
+  }
+
   // ── Buff / Debuff ──
 
   private getEffectiveSpeed(): number {
-    return this.baseScrollSpeed * this.scrollSpeedMultiplier;
+    return this.baseScrollSpeed * this.scrollSpeedMultiplier + this.lerpDiff(DIFF_SCROLL_SPEED_BONUS);
   }
 
   private applySpeedUp(): void {
@@ -727,7 +760,7 @@ export class GameScene extends Phaser.Scene {
       (obj as HeartItem).setScrollSpeed(speed);
     });
     this.meteors.getChildren().forEach((obj) => {
-      (obj as Meteor).setScrollSpeed(speed * METEOR_SPEED_MULT);
+      (obj as Meteor).setScrollSpeed(speed * this.lerpDiff(DIFF_METEOR_SPEED_MULT));
     });
   }
 
@@ -747,9 +780,14 @@ export class GameScene extends Phaser.Scene {
       this.cameraManager.update(this.getEffectiveSpeed(), delta, this.score);
     }
 
+    // Accumulate play time for difficulty ramp
+    if (!isIntro) {
+      this.elapsedPlayTime += delta;
+    }
+
     // HP decay, quiz timer — only during active gameplay
     if (!isIntro) {
-      this.hp -= delta * this.hpDecayMultiplier;
+      this.hp -= delta * HP_DECAY_BASE_RATE * this.hpDecayMultiplier;
       if (this.hp <= 0) {
         this.hp = 0;
         this.ui.updateHpGauge(this.hp, this.hpMax);
@@ -774,8 +812,19 @@ export class GameScene extends Phaser.Scene {
         this.meteorTimer += delta;
         if (this.meteorTimer >= this.meteorNextSpawn) {
           this.meteorTimer = 0;
-          this.meteorNextSpawn = Phaser.Math.Between(METEOR_SPAWN_INTERVAL_MIN_MS, METEOR_SPAWN_INTERVAL_MAX_MS);
+          this.meteorNextSpawn = Phaser.Math.Between(
+            Math.round(this.lerpDiff(DIFF_METEOR_MIN_MS)),
+            Math.round(this.lerpDiff(DIFF_METEOR_MAX_MS)),
+          );
           this.spawnMeteor();
+          // Extra meteors in late game
+          const d = this.getDifficulty();
+          if (d > DIFF_DOUBLE_METEOR_THRESHOLD && Math.random() < DIFF_DOUBLE_METEOR_CHANCE) {
+            this.spawnMeteor();
+          }
+          if (d > DIFF_TRIPLE_METEOR_THRESHOLD && Math.random() < DIFF_TRIPLE_METEOR_CHANCE) {
+            this.spawnMeteor();
+          }
         }
       }
     }
