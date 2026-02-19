@@ -684,7 +684,8 @@ export class GameScene extends Phaser.Scene {
         this.ui.setScore(this.score);
         this.particles.spawnScorePopup(mx, my - 10 * S, `+${meteorScore}`, "#e67e22");
       }
-      this.particles.spawnCoinBurst(mx, my);
+      this.particles.spawnMeteorSmash(mx, my);
+      this.screenFX.shake({ intensity: 0.008, duration: 150 });
       return;
     }
 

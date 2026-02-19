@@ -26,6 +26,7 @@ interface Particle {
   y: number;
   vx: number;
   vy: number;
+  gravity: number;
   life: number;
   maxLife: number;
   size: number;
@@ -69,7 +70,7 @@ export class ParticleManager {
     this.pool = [];
     for (let i = 0; i < PARTICLE_POOL_SIZE; i++) {
       this.pool.push({
-        x: 0, y: 0, vx: 0, vy: 0,
+        x: 0, y: 0, vx: 0, vy: 0, gravity: 0,
         life: 0, maxLife: 1, size: 2 * S, color: 0xffffff, alpha: 1, active: false,
       });
     }
@@ -144,6 +145,7 @@ export class ParticleManager {
       p.life = Phaser.Math.Between(lifeMin, lifeMax);
       p.maxLife = p.life;
       p.size = Phaser.Math.FloatBetween(sizeMin, sizeMax);
+      p.gravity = gravity;
       p.color = color;
       p.alpha = alpha;
       p.active = true;
@@ -228,6 +230,34 @@ export class ParticleManager {
     this.spawnExpandRing(x, y, 0xffffff, 10 * S, 80 * S, 300);
   }
 
+  spawnMeteorSmash(x: number, y: number): void {
+    // Bright orange/yellow debris flying outward
+    this.emit(x, y, 12, {
+      color: 0xffaa00,
+      sizeMin: 3 * S, sizeMax: 6 * S,
+      speedMin: 80 * S, speedMax: 200 * S,
+      lifeMin: 300, lifeMax: 600,
+      gravity: 200 * S,
+    });
+    // Hot core sparks
+    this.emit(x, y, 6, {
+      color: 0xffff99,
+      sizeMin: 1.5 * S, sizeMax: 3 * S,
+      speedMin: 50 * S, speedMax: 150 * S,
+      lifeMin: 150, lifeMax: 350,
+    });
+    // Dark burnt chunks
+    this.emit(x, y, 5, {
+      color: 0x8b3a00,
+      sizeMin: 2 * S, sizeMax: 5 * S,
+      speedMin: 40 * S, speedMax: 120 * S,
+      lifeMin: 400, lifeMax: 700,
+      gravity: 300 * S,
+    });
+    // Expanding shockwave ring
+    this.spawnExpandRing(x, y, 0xff6b35, 8 * S, 50 * S, 250);
+  }
+
   spawnWrongCollect(x: number, y: number): void {
     this.emit(x, y, 6, {
       color: 0xe74c3c,
@@ -295,6 +325,7 @@ export class ParticleManager {
         p.active = false;
         continue;
       }
+      p.vy += p.gravity * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       const t = p.life / p.maxLife;
