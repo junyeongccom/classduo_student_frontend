@@ -36,6 +36,7 @@ import {
   COIN_DIAGONAL_COUNT,
   COIN_ZIGZAG_COUNT,
   COIN_DIAMOND_COUNT,
+  QUIZ_SAFE_ZONE_MS,
   QUIZ_INTERVAL_MS,
   FALL_DEATH_Y,
   MAX_JUMPS,
@@ -312,6 +313,8 @@ export class GameScene extends Phaser.Scene {
       },
       onQuizAnnounce: () => {
         this.screenFX.zoomPunch(ZOOM_PUNCH_QUIZ);
+        // Clear all hazards so the player can focus on the quiz
+        this.meteors.getChildren().forEach((obj) => (obj as Meteor).destroyWithTrail());
       },
       onRewardSelect: (isCorrect: boolean) => {
         if (isCorrect) {
@@ -372,9 +375,14 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
+  /** True when the quiz is about to start — stop spawning hazards early */
+  private isQuizApproaching(): boolean {
+    return this.quizTimer >= QUIZ_INTERVAL_MS - QUIZ_SAFE_ZONE_MS;
+  }
+
   private spawnNewGround(): void {
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH * 2) {
-      if (this.distanceTraveled > 800 && !this.isQuizPhase() && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
+      if (this.distanceTraveled > 800 && !this.isQuizPhase() && !this.isQuizApproaching() && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
         const gapWidth = Phaser.Math.Between(GAP_WIDTH_MIN, Math.round(this.lerpDiff(DIFF_GAP_MAX_WIDTH)));
         this.spawnArcCoins(this.nextGroundX, gapWidth);
         this.nextGroundX += gapWidth;
@@ -809,7 +817,7 @@ export class GameScene extends Phaser.Scene {
           this.spawnHeartItem();
         }
 
-        this.meteorTimer += delta;
+        if (!this.isQuizApproaching()) this.meteorTimer += delta;
         if (this.meteorTimer >= this.meteorNextSpawn) {
           this.meteorTimer = 0;
           this.meteorNextSpawn = Phaser.Math.Between(
