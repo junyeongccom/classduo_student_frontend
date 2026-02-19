@@ -57,7 +57,6 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMat
   const [isRunning, setIsRunning] = useState(false)
   const [gameCompleted, setGameCompleted] = useState(false)
 
-  const totalPairs = selectedSize?.pairs ?? 0
   const availableCount = reviewItems.length
 
   const gridStyle = useMemo(() => {
@@ -70,12 +69,12 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMat
 
   const boardWidth = useMemo(() => {
     if (!selectedSize) return undefined
-    return selectedSize.rows === 3 ? 'min(calc(100vw - 480px), 840px)' : 'min(calc(100vw - 480px), 960px)'
+    return selectedSize.cols === 5 ? 'min(90vw, 1100px)' : 'min(85vw, 920px)'
   }, [selectedSize])
 
   const boardHeight = useMemo(() => {
     if (!selectedSize) return undefined
-    return selectedSize.rows === 3 ? 'min(52vh, 520px)' : 'min(58vh, 640px)'
+    return selectedSize.rows === 3 ? 'min(55vh, 520px)' : 'min(65vh, 640px)'
   }, [selectedSize])
 
   const buildGame = (size?: SizeOption | null) => {

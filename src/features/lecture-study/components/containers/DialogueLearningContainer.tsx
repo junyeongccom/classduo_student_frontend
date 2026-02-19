@@ -17,6 +17,7 @@ import { ChatInterface } from '@/features/ai-tutor/components/containers/ChatInt
 import ChatSidebar from '@/features/ai-tutor/components/ui/ChatSidebar'
 import { ReferencePanel } from '@/features/ai-tutor/components/ui/ReferencePanel'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { useSidebarStore } from '@/shared/store/useSidebarStore'
 import { DialogueLectureSidebar } from '../ui/DialogueLectureSidebar'
 import { useLectures } from '../../hooks/useLectures'
 
@@ -78,6 +79,16 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     handleSelectSession,
     handleNewChat,
   } = useAITutorSession()
+
+  // 대화형학습 진입 시 좌측 사이드바 자동 접기, 이탈 시 복원
+  const setCollapsed = useSidebarStore((s) => s.setCollapsed)
+  useEffect(() => {
+    const prev = useSidebarStore.getState().isCollapsed
+    if (!prev) setCollapsed(true)
+    return () => {
+      if (!prev) setCollapsed(false)
+    }
+  }, [setCollapsed])
 
   // URL 파라미터로 초기 선택 설정
   const initializedRef = useRef(false)

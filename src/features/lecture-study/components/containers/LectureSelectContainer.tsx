@@ -81,19 +81,8 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
 
   const lectureStatuses = useMemo(() => {
     const statuses = new Map<string, LectureStatus>()
-    const activeLectures = lectures.filter(l => l.has_content)
-    const lastActiveId = activeLectures.length > 0
-      ? activeLectures[activeLectures.length - 1].id
-      : null
-
     lectures.forEach(l => {
-      if (!l.has_content) {
-        statuses.set(l.id, 'upcoming')
-      } else if (l.id === lastActiveId) {
-        statuses.set(l.id, 'in-progress')
-      } else {
-        statuses.set(l.id, 'completed')
-      }
+      statuses.set(l.id, l.has_content ? 'completed' : 'upcoming')
     })
     return statuses
   }, [lectures])

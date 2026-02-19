@@ -11,7 +11,7 @@ import { useState, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { useLocale } from 'next-intl'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
@@ -23,7 +23,7 @@ import {
   ReviewDeckView,
   useReviewDeck,
 } from '@/features/review'
-import type { LectureReviewItem, DefinitionBuilderGameResponse } from '@/features/review'
+import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
 const GameOverlay = dynamic(
@@ -46,6 +46,64 @@ function wordItemsToReviewItems(words: WordItem[], lectureId: string): LectureRe
   }))
 }
 
+/** 로컬 단어로 정의조립 게임 데이터 생성 (백엔드 로직 미러링) */
+function buildDefBuilderFromLocal(
+  items: LectureReviewItem[],
+  lectureId: string,
+): DefinitionBuilderGameResponse {
+  const tokenize = (text: string) => text.split(/\s+/).filter(Boolean)
+  const shuffle = <T,>(arr: T[]): T[] => {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[a[i], a[j]] = [a[j], a[i]]
+    }
+    return a
+  }
+
+  const eligible = items
+    .map(it => ({ ...it, tokens: tokenize(it.description) }))
+    .filter(it => it.tokens.length >= 6)
+
+  const selected = shuffle(eligible).slice(0, 6)
+
+  const questions: DefinitionBuilderQuestion[] = selected.map(item => {
+    const { tokens } = item
+    const blankCount = Math.min(6, tokens.length)
+    const allIndices = tokens.map((_, i) => i)
+    const blankIndices = shuffle(allIndices).slice(0, blankCount).sort((a, b) => a - b)
+    const blanks: DefinitionBuilderBlank[] = blankIndices.map(idx => ({ index: idx, token: tokens[idx] }))
+    const correctTokens = blankIndices.map(idx => tokens[idx])
+
+    const distractorPool: string[] = []
+    const seen = new Set(correctTokens)
+    for (const other of selected) {
+      if (other.id === item.id) continue
+      for (const t of other.tokens) {
+        if (!seen.has(t)) { seen.add(t); distractorPool.push(t) }
+      }
+    }
+    const distractors = shuffle(distractorPool).slice(0, 6)
+    while (distractors.length < 6) {
+      distractors.push(distractorPool.length > 0
+        ? distractorPool[Math.floor(Math.random() * distractorPool.length)]
+        : correctTokens[Math.floor(Math.random() * correctTokens.length)])
+    }
+
+    return {
+      review_item_id: item.id,
+      keyword: item.keyword,
+      definition: item.description,
+      tokens,
+      blank_indices: blankIndices,
+      blanks,
+      choices: shuffle([...correctTokens, ...distractors]),
+    }
+  })
+
+  return { lecture_id: lectureId, questions, total_count: questions.length }
+}
+
 interface GameTabContainerProps {
   lectureId: string
 }
@@ -54,7 +112,6 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const t = useTranslations()
   const locale = useLocale() as AppLocale
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
@@ -65,12 +122,17 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
 
   // DefinitionBuilder game state
   const [defBuilderData, setDefBuilderData] = useState<DefinitionBuilderGameResponse | null>(null)
-  const [defBuilderLoading, setDefBuilderLoading] = useState(false)
   const [defBuilderError, setDefBuilderError] = useState<string | null>(null)
   const [defBuilderScore, setDefBuilderScore] = useState(0)
+  const [scoreDelta, setScoreDelta] = useState(0)
+  const [scoreTone, setScoreTone] = useState<'positive' | 'negative' | null>(null)
 
-  // Running game overlay state
+  // Overlay states (full-screen modal)
   const [showRunningOverlay, setShowRunningOverlay] = useState(false)
+  const [showMatchingOverlay, setShowMatchingOverlay] = useState(false)
+  const [showDefBuilderOverlay, setShowDefBuilderOverlay] = useState(false)
+  const [showDeckOverlay, setShowDeckOverlay] = useState(false)
+  const [showGuessTermOverlay, setShowGuessTermOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -110,24 +172,18 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     }
   }, [lectureId, words, setWords, t])
 
-  const loadDefBuilderData = useCallback(async () => {
-    setDefBuilderLoading(true)
+  const loadDefBuilderData = useCallback(() => {
     setDefBuilderError(null)
-    try {
-      const result = await reviewService.getDefinitionBuilderGame(lectureId)
-      if (result.data) {
-        setDefBuilderData(result.data)
-      } else {
-        setDefBuilderError(result.error?.message ?? t('lectureStudy.game.loadGameError'))
-      }
-    } catch {
+    const data = buildDefBuilderFromLocal(reviewItems, lectureId)
+    if (data.total_count === 0) {
       setDefBuilderError(t('lectureStudy.game.loadGameError'))
-    } finally {
-      setDefBuilderLoading(false)
+      setDefBuilderData(null)
+    } else {
+      setDefBuilderData(data)
     }
-  }, [lectureId, t])
+  }, [reviewItems, lectureId, t])
 
-  const handleStartGame = useCallback(async () => {
+  const handleStartGame = useCallback(() => {
     setShowWordModal(false)
 
     // Running game: open overlay immediately
@@ -136,21 +192,33 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
       return
     }
 
-    // DefinitionBuilder: fetch game data from API
-    if (selectedGame === 'definitionBuilder') {
-      setDefBuilderScore(0)
-      await loadDefBuilderData()
+    // Card match: open overlay
+    if (selectedGame === 'cardMatch') {
+      setShowMatchingOverlay(true)
+      return
     }
 
-    setIsPlaying(true)
-  }, [selectedGame, loadDefBuilderData])
+    // DefinitionBuilder: generate game data from local words, open overlay
+    if (selectedGame === 'definitionBuilder') {
+      setDefBuilderScore(0)
+      loadDefBuilderData()
+      setShowDefBuilderOverlay(true)
+      return
+    }
 
-  const handleExitGame = useCallback(() => {
-    setIsPlaying(false)
-    setSelectedGame(null)
-    setDefBuilderData(null)
-    setDefBuilderScore(0)
-  }, [])
+    // Deck: open overlay
+    if (selectedGame === 'deck') {
+      deck.resetDeck()
+      setShowDeckOverlay(true)
+      return
+    }
+
+    // GuessTheTerm: open overlay
+    if (selectedGame === 'guessTheTerm') {
+      setShowGuessTermOverlay(true)
+      return
+    }
+  }, [selectedGame, loadDefBuilderData, deck])
 
   // Running game overlay (renders on top, no "isPlaying" needed)
   if (showRunningOverlay) {
@@ -167,63 +235,232 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     )
   }
 
-  // Game playing mode
-  if (isPlaying && selectedGame) {
-    const gameName = currentGameInfo
-      ? t(`lectureStudy.game.${selectedGame}` as Parameters<typeof t>[0])
-      : selectedGame
-
+  // Card matching overlay
+  if (showMatchingOverlay) {
+    const handleCloseMatching = () => {
+      setShowMatchingOverlay(false)
+      setSelectedGame(null)
+    }
     return (
-      <div className="flex h-full flex-col">
-        <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-2">
-          <button
-            onClick={handleExitGame}
-            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900"
+      <>
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
+          onClick={handleCloseMatching}
+        />
+        {/* Modal */}
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-6"
+          onClick={handleCloseMatching}
+        >
+          <div
+            className="relative flex max-h-[92vh] w-full max-w-[1200px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
           >
-            <ArrowLeft className="h-4 w-4" />
-            {t('lectureStudy.game.title')}
-          </button>
-          <span className="text-sm font-medium text-gray-900">{gameName}</span>
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
+                {t('lectureStudy.game.cardMatch')}
+              </h3>
+              <button
+                onClick={handleCloseMatching}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {/* Game area */}
+            <div className="flex-1 overflow-auto p-6">
+              <ReviewMatchingGame
+                reviewItems={reviewItems}
+                isEnabled
+                onExit={handleCloseMatching}
+              />
+            </div>
+          </div>
         </div>
-        <div className="flex-1 min-h-0 overflow-auto">
-          {selectedGame === 'cardMatch' && (
-            <ReviewMatchingGame
-              reviewItems={reviewItems}
-              isEnabled
-              onExit={handleExitGame}
-            />
-          )}
-          {selectedGame === 'definitionBuilder' && (
-            <DefinitionBuilderGame
-              data={defBuilderData}
-              isLoading={defBuilderLoading}
-              error={defBuilderError}
-              onRetry={loadDefBuilderData}
-              isEnabled
-              currentScore={defBuilderScore}
-              onScoreDelta={(delta) => setDefBuilderScore(s => s + delta)}
-              onRestart={loadDefBuilderData}
-            />
-          )}
-          {selectedGame === 'guessTheTerm' && (
-            <GuessTheTermGameContainer
-              lectureId={lectureId}
-              locale={locale}
-              isEnabled
-              reviewItems={reviewItems}
-              onExitGame={handleExitGame}
-            />
-          )}
-          {selectedGame === 'deck' && (
-            <ReviewDeckView
-              hasSelectedLecture
-              isReviewItemsLoading={false}
-              reviewItemsError={null}
-              deck={deck}
-            />
-          )}
+      </>
+    )
+  }
+
+  // DefinitionBuilder overlay
+  if (showDefBuilderOverlay) {
+    const handleCloseDefBuilder = () => {
+      setShowDefBuilderOverlay(false)
+      setSelectedGame(null)
+      setDefBuilderData(null)
+      setDefBuilderScore(0)
+      setScoreDelta(0)
+      setScoreTone(null)
+    }
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
+          onClick={handleCloseDefBuilder}
+        />
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-6"
+          onClick={handleCloseDefBuilder}
+        >
+          <div
+            className="relative flex max-h-[92vh] w-full max-w-[800px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with score */}
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
+                {t('lectureStudy.game.definitionBuilder')}
+              </h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 rounded-full bg-blue-50 px-5 py-2 dark:bg-blue-900/30">
+                  <span className={`text-2xl font-bold transition-colors duration-300 ${
+                    scoreTone === 'positive' ? 'text-emerald-600'
+                      : scoreTone === 'negative' ? 'text-rose-600'
+                      : 'text-blue-600 dark:text-blue-300'
+                  }`}>
+                    {defBuilderScore}
+                  </span>
+                  <span className={`text-sm font-medium ${
+                    scoreTone === 'positive' ? 'text-emerald-500'
+                      : scoreTone === 'negative' ? 'text-rose-500'
+                      : 'text-blue-400 dark:text-blue-400'
+                  }`}>pt</span>
+                  {scoreDelta !== 0 && (
+                    <span className={`ml-1 text-base font-bold animate-bounce ${
+                      scoreDelta > 0 ? 'text-emerald-500' : 'text-rose-500'
+                    }`}>
+                      {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={handleCloseDefBuilder}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            {/* Game area */}
+            <div className="flex-1 overflow-auto p-6">
+              <DefinitionBuilderGame
+                data={defBuilderData}
+                isLoading={false}
+                error={defBuilderError}
+                onRetry={loadDefBuilderData}
+                isEnabled
+                currentScore={defBuilderScore}
+                onScoreDelta={(delta) => {
+                  setDefBuilderScore(s => s + delta)
+                  setScoreDelta(delta)
+                  setScoreTone(delta > 0 ? 'positive' : 'negative')
+                  window.setTimeout(() => {
+                    setScoreDelta(0)
+                    setScoreTone(null)
+                  }, 800)
+                }}
+                onRestart={loadDefBuilderData}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      </>
+    )
+  }
+
+  // Deck overlay
+  if (showDeckOverlay) {
+    const handleCloseDeck = () => {
+      setShowDeckOverlay(false)
+      setSelectedGame(null)
+    }
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
+          onClick={handleCloseDeck}
+        />
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-6"
+          onClick={handleCloseDeck}
+        >
+          <div
+            className="relative flex max-h-[92vh] w-full max-w-[900px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
+                {t('lectureStudy.game.deck')}
+              </h3>
+              <button
+                onClick={handleCloseDeck}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {/* Game area */}
+            <div className="flex-1 overflow-auto p-6">
+              <ReviewDeckView
+                hasSelectedLecture
+                isReviewItemsLoading={false}
+                reviewItemsError={null}
+                deck={deck}
+              />
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  // GuessTheTerm overlay
+  if (showGuessTermOverlay) {
+    const handleCloseGuessTerm = () => {
+      setShowGuessTermOverlay(false)
+      setSelectedGame(null)
+    }
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
+          onClick={handleCloseGuessTerm}
+        />
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center p-6"
+          onClick={handleCloseGuessTerm}
+        >
+          <div
+            className="relative flex max-h-[92vh] w-full max-w-[800px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
+                {t('lectureStudy.game.guessTheTerm')}
+              </h3>
+              <button
+                onClick={handleCloseGuessTerm}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {/* Game area */}
+            <div className="flex-1 overflow-auto p-6">
+              <GuessTheTermGameContainer
+                lectureId={lectureId}
+                locale={locale}
+                isEnabled
+                reviewItems={reviewItems}
+                onExitGame={handleCloseGuessTerm}
+              />
+            </div>
+          </div>
+        </div>
+      </>
     )
   }
 

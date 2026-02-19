@@ -13,7 +13,7 @@ export { GuessTheTermGameContainer } from './components/containers/GuessTheTermG
 export { ReviewDeckView } from './components/ui/ReviewDeckView'
 
 // Types (public boundary)
-export type { LectureReviewItem, DefinitionBuilderGameResponse } from './types'
+export type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from './types'
 
 // Services & Hooks
 export * from './services/reviewService'
