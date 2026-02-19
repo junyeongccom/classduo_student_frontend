@@ -20,6 +20,7 @@ import {
   SCORE_BOUNCE_SCALE,
   SCORE_BOUNCE_DURATION,
   FONT_FAMILY,
+  ACTIVE_MAX_LEVEL,
 } from "../constants";
 
 export class UIManager {
@@ -52,6 +53,16 @@ export class UIManager {
 
   // HP bar wave effect
   private hpWavePhase = 0;
+
+  // Active ability HUD
+  private abilityIcons: Record<string, {
+    container: Phaser.GameObjects.Container;
+    bgCircle: Phaser.GameObjects.Graphics;
+    progressRing: Phaser.GameObjects.Graphics;
+    label: Phaser.GameObjects.Text;
+    levelText: Phaser.GameObjects.Text;
+  }> = {};
+  private abilityActivePulse: Record<string, Phaser.Tweens.Tween> = {};
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -107,6 +118,8 @@ export class UIManager {
     this.targetScore = 0;
     this.displayedHpRatio = 1;
     this.lastHpRatio = 1;
+
+    this.createActiveAbilityIcons();
   }
 
   // ── Score ──
@@ -403,6 +416,131 @@ export class UIManager {
     }
   }
 
+  // ── Active ability HUD ──
+
+  private createActiveAbilityIcons(): void {
+    const types = ["magnet", "giant", "coinRain"] as const;
+    const labels: Record<string, string> = { magnet: "M", giant: "G", coinRain: "C" };
+    const colors: Record<string, number> = { magnet: 0xe74c3c, giant: 0xe67e22, coinRain: 0xf1c40f };
+
+    const startX = HP_BAR_X;
+    const startY = HP_BAR_Y + HP_BAR_HEIGHT + 8 * S;
+    const iconR = 10 * S;
+    const spacing = 28 * S;
+
+    for (let i = 0; i < types.length; i++) {
+      const type = types[i];
+      const cx = startX + iconR + i * spacing;
+      const cy = startY + iconR;
+
+      const container = this.scene.add.container(cx, cy).setDepth(DEPTH_HUD + 0.3);
+      container.setVisible(false);
+
+      // Background circle
+      const bgCircle = this.scene.add.graphics();
+      bgCircle.fillStyle(colors[type], 0.3);
+      bgCircle.fillCircle(0, 0, iconR);
+      container.add(bgCircle);
+
+      // Progress ring (drawn each frame)
+      const progressRing = this.scene.add.graphics();
+      container.add(progressRing);
+
+      // Ability letter
+      const label = this.scene.add
+        .text(0, -1 * S, labels[type], {
+          fontFamily: FONT_FAMILY,
+          fontSize: `${10 * S}px`,
+          color: "#ffffff",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5);
+      container.add(label);
+
+      // Level text below icon
+      const levelText = this.scene.add
+        .text(0, iconR + 4 * S, "", {
+          fontFamily: FONT_FAMILY,
+          fontSize: `${7 * S}px`,
+          color: "#ffffff",
+        })
+        .setOrigin(0.5);
+      container.add(levelText);
+
+      this.abilityIcons[type] = { container, bgCircle, progressRing, label, levelText };
+    }
+  }
+
+  updateActiveAbilityHUD(
+    type: string,
+    stacks: number,
+    progress: number,
+    isActive: boolean,
+  ): void {
+    const icon = this.abilityIcons[type];
+    if (!icon) return;
+
+    if (stacks === 0) {
+      icon.container.setVisible(false);
+      // Stop pulse if any
+      if (this.abilityActivePulse[type]) {
+        this.abilityActivePulse[type].stop();
+        delete this.abilityActivePulse[type];
+        icon.bgCircle.setAlpha(1);
+      }
+      return;
+    }
+
+    icon.container.setVisible(true);
+    const level = Math.min(Math.abs(stacks), ACTIVE_MAX_LEVEL);
+    const isBuff = stacks > 0;
+    const iconR = 10 * S;
+
+    // Update level text
+    icon.levelText.setText(`Lv${level}`);
+    icon.levelText.setColor(isBuff ? "#2ecc71" : "#e74c3c");
+
+    // Border / ring colors
+    const borderColor = isBuff ? 0x2ecc71 : 0xe74c3c;
+
+    // Draw progress ring
+    const g = icon.progressRing;
+    g.clear();
+
+    // Base border circle
+    g.lineStyle(1.5 * S, borderColor, 0.4);
+    g.strokeCircle(0, 0, iconR);
+
+    // Progress arc
+    const startAngle = -Math.PI / 2;
+    const endAngle = startAngle + Phaser.Math.Clamp(progress, 0, 1) * Math.PI * 2;
+    if (progress > 0.001) {
+      g.lineStyle(2.5 * S, isActive ? 0xf1c40f : borderColor, 0.9);
+      g.beginPath();
+      g.arc(0, 0, iconR + 1 * S, startAngle, endAngle, false);
+      g.strokePath();
+    }
+
+    // Brightness based on state
+    icon.label.setAlpha(isActive ? 1 : 0.6);
+
+    // Pulse during active
+    if (isActive && !this.abilityActivePulse[type]) {
+      this.abilityActivePulse[type] = this.scene.tweens.add({
+        targets: icon.bgCircle,
+        alpha: { from: 1, to: 0.4 },
+        duration: 500,
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.InOut",
+      });
+    } else if (!isActive && this.abilityActivePulse[type]) {
+      this.abilityActivePulse[type].stop();
+      delete this.abilityActivePulse[type];
+      icon.bgCircle.setAlpha(1);
+    }
+  }
+
   // ── Update ──
 
   update(delta: number): void {
@@ -437,5 +575,15 @@ export class UIManager {
     this.effectDisplayTimer?.remove();
     this.heartbeatTween?.stop();
     this.hpShineGfx?.clearMask(true);
+
+    // Active ability icons
+    for (const key in this.abilityActivePulse) {
+      this.abilityActivePulse[key].stop();
+    }
+    this.abilityActivePulse = {};
+    for (const key in this.abilityIcons) {
+      this.abilityIcons[key].container.destroy();
+    }
+    this.abilityIcons = {};
   }
 }

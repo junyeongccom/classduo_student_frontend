@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 import { QuizItem } from "../entities/QuizItem";
-import { QuizQuestion, ChoiceType } from "./quizTypes";
+import { QuizQuestion, ChoiceType, ActiveAbilityType } from "./quizTypes";
 import {
   S,
   GAME_WIDTH,
@@ -44,6 +44,13 @@ export interface QuizCallbacks {
   applyHeartBoostDown: () => void;
   applyHpDecayDown: () => void;
   applyHpDecayUp: () => void;
+  isActiveUnlocked: (type: ActiveAbilityType) => boolean;
+  applyMagnetUp: () => void;
+  applyMagnetDown: () => void;
+  applyGiantUp: () => void;
+  applyGiantDown: () => void;
+  applyCoinRainUp: () => void;
+  applyCoinRainDown: () => void;
   setGameState: (state: GameState) => void;
   addScore: (amount: number) => void;
   showEffect: (text: string, color: string) => void;
@@ -82,6 +89,18 @@ const REWARD_CARDS_EN: CardDef[] = [
   { type: "score", title: `+${SCORE_BONUS}pts`, desc: "Instant score", color: 0xf1c40f },
   { type: "heartBoost", title: "HEART BOOST", desc: "Heart restore +15%", color: 0xff6b81 },
   { type: "hpDecay", title: "DECAY DOWN", desc: "Decay -15%", color: 0x1abc9c },
+];
+
+const ACTIVE_CARDS_KO: CardDef[] = [
+  { type: "magnet", title: "자석", desc: "코인을 끌어당기는 힘!", color: 0xe74c3c },
+  { type: "giant", title: "거인화", desc: "거대해져서 운석 파괴!", color: 0xe67e22 },
+  { type: "coinRain", title: "코인 비", desc: "하늘에서 코인이 내린다!", color: 0xf1c40f },
+];
+
+const ACTIVE_CARDS_EN: CardDef[] = [
+  { type: "magnet", title: "MAGNET", desc: "Attract coins!", color: 0xe74c3c },
+  { type: "giant", title: "GIANT", desc: "Grow big & smash meteors!", color: 0xe67e22 },
+  { type: "coinRain", title: "COIN RAIN", desc: "Coins from the sky!", color: 0xf1c40f },
 ];
 
 const T = {
@@ -138,6 +157,7 @@ export class QuizManager {
   private rewardKeyHandler: ((e: KeyboardEvent) => void) | null = null;
   private get t() { return T[this.locale]; }
   private get rewardCards() { return this.locale === "en" ? REWARD_CARDS_EN : REWARD_CARDS_KO; }
+  private get activeCards() { return this.locale === "en" ? ACTIVE_CARDS_EN : ACTIVE_CARDS_KO; }
 
   constructor(
     scene: Phaser.Scene,
@@ -369,6 +389,22 @@ export class QuizManager {
     if (this.callbacks.isJumpCountMaxed()) {
       pool = pool.filter((c) => c.type !== "jumpCount");
     }
+
+    // Check for unlocked active abilities
+    const activeTypes: ActiveAbilityType[] = ["magnet", "giant", "coinRain"];
+    const unlocked = activeTypes.filter((t) => this.callbacks.isActiveUnlocked(t));
+
+    if (unlocked.length > 0) {
+      // Pick one random unlocked active ability
+      const chosenType = unlocked[Phaser.Math.Between(0, unlocked.length - 1)];
+      const activeCard = this.activeCards.find((c) => c.type === chosenType)!;
+      // 2 passive cards + 1 active card at random position
+      const passives = Phaser.Utils.Array.Shuffle(pool).slice(0, 2);
+      const insertIdx = Phaser.Math.Between(0, 2);
+      passives.splice(insertIdx, 0, activeCard);
+      return passives;
+    }
+
     return Phaser.Utils.Array.Shuffle(pool).slice(0, 3);
   }
 
@@ -654,6 +690,33 @@ export class QuizManager {
         } else {
           this.callbacks.applyHpDecayUp();
           effectLabel = prefix + "DECAY FAST!";
+        }
+        break;
+      case "magnet":
+        if (isCorrect) {
+          this.callbacks.applyMagnetUp();
+          effectLabel = prefix + "MAGNET!";
+        } else {
+          this.callbacks.applyMagnetDown();
+          effectLabel = prefix + "REPEL!";
+        }
+        break;
+      case "giant":
+        if (isCorrect) {
+          this.callbacks.applyGiantUp();
+          effectLabel = prefix + "GIANT!";
+        } else {
+          this.callbacks.applyGiantDown();
+          effectLabel = prefix + "SHRINK!";
+        }
+        break;
+      case "coinRain":
+        if (isCorrect) {
+          this.callbacks.applyCoinRainUp();
+          effectLabel = prefix + "COIN RAIN!";
+        } else {
+          this.callbacks.applyCoinRainDown();
+          effectLabel = prefix + "METEOR STORM!";
         }
         break;
     }

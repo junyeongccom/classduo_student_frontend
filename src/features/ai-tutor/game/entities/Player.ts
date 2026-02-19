@@ -38,6 +38,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   jumpMultiplier = 1;
   scrollSpeed = 0;
   clampLeft = true;
+  private _giantScale = 1;
+
+  setGiantScale(scale: number): void {
+    this._giantScale = scale;
+  }
+
+  getGiantScale(): number {
+    return this._giantScale;
+  }
 
   startSpin(): void {
     this.spinning = true;
@@ -159,15 +168,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // Ensure body size stays correct after texture swap
+    // Ensure body size stays correct after texture swap (giant scale affects hitbox)
+    const gs = this._giantScale;
     if (this.ducking) {
-      body.setSize(30 * S, 19 * S);
+      body.setSize(30 * S * gs, 19 * S * gs);
       body.setOffset(5 * S, 22 * S);
       // Tilt only when sliding on ground; flat in air
       this.setAngle(onGround ? -10 : 0);
     } else {
-      body.setSize(30 * S, 38 * S);
+      body.setSize(30 * S * gs, 38 * S * gs);
       body.setOffset(5 * S, 5 * S);
+    }
+
+    // Apply giant visual scale when no squash/stretch tween is playing
+    if (gs !== 1 && (!this.squashTween || !this.squashTween.isPlaying())) {
+      this.setScale(gs);
     }
 
     this.applyVariableGravity(body);
@@ -256,6 +271,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.maxJumps = MAX_JUMPS;
     this.jumpMultiplier = 1;
     this.scrollSpeed = 0;
+    this._giantScale = 1;
     this.justJumped = false;
     this.spinning = false;
     this.ducking = false;

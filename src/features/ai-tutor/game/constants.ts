@@ -257,3 +257,31 @@ export const SCORE_POPUP_RISE = 30 * S;
 export const SCORE_BOUNCE_SCALE = 1.3;
 export const SCORE_BOUNCE_DURATION = 200;
 export const SCORE_LERP_SPEED = 200;
+
+// ── Active abilities ──
+
+// Magnet — attracts / repels coins
+export const MAGNET_COOLDOWN_MS = 18000;
+export const MAGNET_DURATION_MS = 5000;
+//                                                            Lv0    Lv1       Lv2       Lv3
+export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 200 * S, 350 * S, 550 * S];
+export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 200 * S, 350 * S, 550 * S];
+export const MAGNET_RANGE = GAME_WIDTH * 0.6;
+
+// Giant — player scale change + meteor destroy
+export const GIANT_COOLDOWN_MS = 22000;
+export const GIANT_DURATION_MS = 4000;
+export const GIANT_BUFF_SCALE:   [number, number, number, number] = [1, 1.5, 1.8, 2.0];
+export const GIANT_DEBUFF_SCALE: [number, number, number, number] = [1, 0.7, 0.5, 0.4];
+export const GIANT_METEOR_SCORE: [number, number, number, number] = [0, 0, 0, 5];
+
+// Coin Rain — spawns coins (buff) or extra meteors (debuff)
+export const COIN_RAIN_COOLDOWN_MS = 18000;
+export const COIN_RAIN_DURATION_MS = 5000;
+export const COIN_RAIN_SPAWN_MS:   [number, number, number, number] = [0, 250, 170, 100];
+export const METEOR_RAIN_SPAWN_MS: [number, number, number, number] = [0, 500, 300, 180];
+
+// Active unlock thresholds
+export const ACTIVE_UNLOCK_SCORE = 30;
+export const ACTIVE_UNLOCK_STACKS = 3;
+export const ACTIVE_MAX_LEVEL = 3;
