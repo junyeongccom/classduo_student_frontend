@@ -9,8 +9,8 @@
   },
   "newNav": {
     "classes": "Classes",
-    "myQuizzes": "My Quizzes",
-    "games": "Games",
+    "myQuizzes": "My Quiz",
+    "games": "Game",
     "feedback": "Feedback"
   },
   "aiTutorTopbar": {
@@ -250,8 +250,8 @@
     "dialogueLearning": "Dialogue Learning",
     "weeklyLessons": "Weekly Lessons",
     "gameCta": {
-      "title": "Master key concepts through games!",
-      "description": "Learn core concepts from each lesson through fun games. Try it now!",
+      "title": "Master key concepts through game!",
+      "description": "Learn core concepts from each lesson through fun game. Try it now!",
       "button": "Start Game"
     },
     "materialSelect": {
@@ -272,7 +272,7 @@
     "rightPanel": {
       "summaryTab": "Summary",
       "quizTab": "Quiz",
-      "gameTab": "Games",
+      "gameTab": "Game",
       "aiTutorTab": "AI Tutor",
       "placeholder": "Coming soon"
     },
