@@ -396,6 +396,10 @@
       "emptyHint": "Ask anything about\nthe lecture content",
       "generating": "Generating response...",
       "inputPlaceholder": "Type your question..."
+    },
+    "buttons": {
+      "startTest": "Start Test",
+      "share": "Share"
     }
   },
   "studyspacePlaceholder": {
@@ -845,12 +849,6 @@
       "passwordChanged": "Password has been changed.",
       "accountDeleted": "Account has been deleted.",
       "emailResent": "Verification email has been resent."
-    }
-  },
-  "lectureStudy": {
-    "buttons": {
-      "startTest": "Start Test",
-      "share": "Share"
     }
   },
   "resetPassword": {

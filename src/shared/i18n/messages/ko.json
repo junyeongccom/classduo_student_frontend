@@ -396,6 +396,10 @@
       "emptyHint": "강의 내용에 대해\n궁금한 점을 물어보세요",
       "generating": "답변 생성 중...",
       "inputPlaceholder": "질문을 입력하세요..."
+    },
+    "buttons": {
+      "startTest": "테스트 시작하기",
+      "share": "공유하기"
     }
   },
   "studyspacePlaceholder": {
@@ -845,12 +849,6 @@
       "passwordChanged": "비밀번호가 변경되었습니다.",
       "accountDeleted": "회원 탈퇴가 완료되었습니다.",
       "emailResent": "인증 이메일이 재전송되었습니다."
-    }
-  },
-  "lectureStudy": {
-    "buttons": {
-      "startTest": "테스트 시작하기",
-      "share": "공유하기"
     }
   },
   "resetPassword": {
