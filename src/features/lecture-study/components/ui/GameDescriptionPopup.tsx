@@ -130,87 +130,49 @@ function getControls(gameId: string): ControlItem[] {
   }
 }
 
-/* ─── Running Game: Object Guide ─── */
+/* ─── No SVG icons needed — using actual game texture PNGs ─── */
+
+/* ─── Running Game: Actual game scene screenshot + extracted PNG textures ─── */
 function RunningGamePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   return (
     <div className="space-y-2">
-      {/* Scene preview */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#5b86c7] via-[#a8ceef] to-[#f5e6ca] p-3">
-        {/* Ground */}
-        <div className="absolute bottom-0 left-0 right-0 h-5 bg-gradient-to-b from-[#6b8e23] to-[#9b8365]" />
-        {/* Player character */}
-        <div className="absolute bottom-5 left-8 flex flex-col items-center">
-          <div className="relative h-10 w-6">
-            {/* Body */}
-            <div className="absolute inset-x-0 top-0 h-7 rounded-t-full bg-gradient-to-b from-[#d04435] to-[#a0281e]" />
-            {/* Face */}
-            <div className="absolute left-1 top-1.5 h-3.5 w-4 rounded-full bg-white">
-              <div className="absolute left-0.5 top-1 h-1 w-1 rounded-full bg-gray-800" />
-              <div className="absolute right-0.5 top-1 h-1 w-1 rounded-full bg-gray-800" />
-            </div>
-            {/* Legs */}
-            <div className="absolute bottom-0 left-0.5 h-3 w-2 rounded-b bg-[#c0392b]" />
-            <div className="absolute bottom-0 right-0.5 h-3 w-2 rounded-b bg-[#c0392b]" />
-          </div>
-        </div>
-        {/* Floating objects label area */}
-        <div className="relative ml-16 flex items-end gap-4 pb-6">
-          {/* Coin */}
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-sm">
-              <span className="text-[10px] font-bold text-yellow-800">&#9733;</span>
-            </div>
-          </div>
-          {/* Scroll */}
-          <div className="flex flex-col items-center gap-0.5">
-            <Image src="/game/scroll_0.png" alt="scroll" width={28} height={28} className="drop-shadow-sm" />
-          </div>
-          {/* Heart */}
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="text-xl leading-none drop-shadow-sm">&#10084;&#65039;</div>
-          </div>
-          {/* Meteor */}
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600 shadow-sm">
-              <span className="text-xs">&#9728;</span>
-            </div>
-          </div>
-        </div>
+      {/* Actual game scene screenshot */}
+      <div className="overflow-hidden rounded-xl">
+        <Image
+          src="/game/scene.png"
+          alt="Running game scene"
+          width={800}
+          height={400}
+          className="w-full"
+          style={{ display: 'block' }}
+        />
       </div>
 
-      {/* Object legend */}
+      {/* Object legend with actual extracted game textures */}
       <div className="grid grid-cols-2 gap-1.5">
-        {/* Coin */}
         <div className="flex items-center gap-2 rounded-lg bg-yellow-50 px-2.5 py-1.5 dark:bg-yellow-950/20">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500">
-            <span className="text-[8px] font-bold text-yellow-800">&#9733;</span>
-          </div>
+          <Image src="/game/coin.png" alt="coin" width={22} height={22} className="shrink-0" />
           <div>
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objCoin')}</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objCoinDesc')}</p>
           </div>
         </div>
-        {/* Scroll / Quiz */}
         <div className="flex items-center gap-2 rounded-lg bg-pink-50 px-2.5 py-1.5 dark:bg-pink-950/20">
-          <Image src="/game/scroll_0.png" alt="quiz scroll" width={24} height={24} className="shrink-0" />
+          <Image src="/game/scroll_0.png" alt="quiz scroll" width={22} height={22} className="shrink-0" />
           <div>
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objScroll')}</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objScrollDesc')}</p>
           </div>
         </div>
-        {/* Heart */}
         <div className="flex items-center gap-2 rounded-lg bg-red-50 px-2.5 py-1.5 dark:bg-red-950/20">
-          <span className="shrink-0 text-base leading-none">&#10084;&#65039;</span>
+          <Image src="/game/heart_item.png" alt="heart item" width={22} height={22} className="shrink-0" />
           <div>
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objHeart')}</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objHeartDesc')}</p>
           </div>
         </div>
-        {/* Meteor */}
         <div className="flex items-center gap-2 rounded-lg bg-orange-50 px-2.5 py-1.5 dark:bg-orange-950/20">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600">
-            <span className="text-[10px]">&#9728;</span>
-          </div>
+          <Image src="/game/meteor.png" alt="meteor" width={22} height={22} className="shrink-0" />
           <div>
             <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objMeteor')}</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objMeteorDesc')}</p>
