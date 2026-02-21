@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { OccurrenceContext, OCCURRENCE_CONTEXT_LABELS } from '../../types';
 
 export interface ErrorReportFormData {
@@ -42,6 +43,8 @@ export function ErrorReportModal({
   prefill = null,
   onPrefillApplied
 }: ErrorReportModalProps) {
+  const t = useTranslations('errorReport');
+
   // 필수 입력
   const [content, setContent] = useState('');
 
@@ -65,13 +68,13 @@ export function ErrorReportModal({
       const parts: string[] = [];
 
       if (prefill.courseName) {
-        parts.push(`[과목] ${prefill.courseName}`);
+        parts.push(`${t('prefixCourse')} ${prefill.courseName}`);
       }
       if (prefill.lectureDate) {
-        parts.push(`[회차] ${prefill.lectureDate}`);
+        parts.push(`${t('prefixLecture')} ${prefill.lectureDate}`);
       }
       if (prefill.errorMessage) {
-        parts.push(`[에러 내용] ${prefill.errorMessage}`);
+        parts.push(`${t('prefixError')} ${prefill.errorMessage}`);
       }
       if (prefill.content) {
         parts.push(prefill.content);
@@ -100,7 +103,7 @@ export function ErrorReportModal({
       // prefill 적용 완료 콜백
       onPrefillApplied?.();
     }
-  }, [isOpen, prefill, onPrefillApplied]);
+  }, [isOpen, prefill, onPrefillApplied, t]);
 
   const resetForm = () => {
     setContent('');
@@ -122,7 +125,7 @@ export function ErrorReportModal({
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setFileError('파일 크기는 10MB 이하여야 합니다.');
+      setFileError(t('fileError.tooLarge'));
       setAttachmentFile(null);
       return;
     }
@@ -139,7 +142,7 @@ export function ErrorReportModal({
     ];
 
     if (!allowedTypes.includes(file.type)) {
-      setFileError('지원하지 않는 파일 형식입니다. (이미지, PDF, 문서 파일만 가능)');
+      setFileError(t('fileError.unsupportedType'));
       setAttachmentFile(null);
       return;
     }
@@ -220,9 +223,9 @@ export function ErrorReportModal({
         <div className="px-8 pt-6 pb-4 border-b border-gray-200">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">의견 보내기</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{t('title')}</h2>
               <p className="mt-2 text-sm text-gray-500">
-                불편하셨던 점이나 개선 아이디어를 알려주시면 적극 반영하겠습니다.
+                {t('subtitle')}
               </p>
             </div>
             <button
@@ -248,7 +251,7 @@ export function ErrorReportModal({
           {/* 발생시점 (기능) + 발생시각 */}
           <div className="flex gap-4">
             <div className="flex-1">
-              {sharedLabel('발생시점')}
+              {sharedLabel(t('occurrenceContext'))}
               <div className="relative">
                 <select
                   value={occurrenceContext}
@@ -256,10 +259,10 @@ export function ErrorReportModal({
                   disabled={isSubmitting}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 appearance-none bg-white disabled:bg-gray-50 disabled:cursor-not-allowed text-sm text-gray-900"
                 >
-                  <option value="">선택해주세요</option>
+                  <option value="">{t('selectPlaceholder')}</option>
                   {(Object.keys(OCCURRENCE_CONTEXT_LABELS) as OccurrenceContext[]).map((key) => (
                     <option key={key} value={key}>
-                      {OCCURRENCE_CONTEXT_LABELS[key]}
+                      {t(`context.${key}`)}
                     </option>
                   ))}
                 </select>
@@ -269,7 +272,7 @@ export function ErrorReportModal({
               </div>
             </div>
             <div className="flex-1">
-              {sharedLabel('발생시각')}
+              {sharedLabel(t('occurrenceTime'))}
               <input
                 type="datetime-local"
                 value={occurrenceTime}
@@ -283,12 +286,12 @@ export function ErrorReportModal({
 
           {/* 관련파일명 */}
           <div>
-            {sharedLabel('관련파일')}
+            {sharedLabel(t('relatedFile'))}
             <input
               type="text"
               value={relatedFilename}
               onChange={(e) => setRelatedFilename(e.target.value)}
-              placeholder="예: 강의자료.pdf"
+              placeholder={t('placeholder.filename')}
               disabled={isSubmitting}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm text-gray-900 placeholder:text-gray-400"
             />
@@ -296,39 +299,39 @@ export function ErrorReportModal({
 
           {/* 문의사항 (필수) */}
           <div>
-            {sharedLabel('내용', true)}
+            {sharedLabel(t('content'), true)}
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="겪으신 문제나 개선 아이디어를 알려주세요..."
+              placeholder={t('placeholder.content')}
               rows={4}
               disabled={isSubmitting}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 resize-none disabled:bg-gray-50 disabled:cursor-not-allowed text-sm text-gray-900 placeholder:text-gray-400"
             />
             <p className="mt-2 text-xs text-gray-500">
-              상황을 파악할 수 있도록 최대한 자세히 적어주시면 감사하겠습니다.
+              {t('hint.content')}
             </p>
           </div>
 
           {/* 연락처 정보 */}
           <div>
-            {sharedLabel('연락처 정보')}
+            {sharedLabel(t('contactInfo'))}
             <input
               type="text"
               value={contact}
               onChange={(e) => setContact(e.target.value)}
-              placeholder="이메일, 카카오톡 ID 등 회신받으실 연락처"
+              placeholder={t('placeholder.contact')}
               disabled={isSubmitting}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:cursor-not-allowed text-sm text-gray-900 placeholder:text-gray-400"
             />
             <p className="mt-2 text-xs text-gray-500">
-              필요시 연락드리기 위해 사용됩니다. 문의량에 따라 개별 답변이 어려울 수 있습니다.
+              {t('hint.contact')}
             </p>
           </div>
 
           {/* 첨부파일 */}
           <div>
-            {sharedLabel('첨부 파일')}
+            {sharedLabel(t('attachment'))}
 
             {!attachmentFile ? (
               <label
@@ -339,8 +342,8 @@ export function ErrorReportModal({
                 <div className="w-12 h-12 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center mb-3">
                   <Upload className="w-6 h-6 text-gray-400" />
                 </div>
-                <span className="text-sm font-semibold text-gray-700">파일을 드래그하거나 클릭해서 선택하세요</span>
-                <span className="text-xs text-gray-500 mt-1">스크린샷, 영상 등 참고 자료를 첨부할 수 있습니다.</span>
+                <span className="text-sm font-semibold text-gray-700">{t('dragOrClick')}</span>
+                <span className="text-xs text-gray-500 mt-1">{t('attachmentTypes')}</span>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -377,7 +380,7 @@ export function ErrorReportModal({
             )}
 
             <p className="mt-2 text-xs text-gray-500">
-              파일당 최대 10MB까지 첨부 가능합니다.
+              {t('hint.fileSize')}
             </p>
           </div>
         </div>
@@ -389,7 +392,7 @@ export function ErrorReportModal({
             disabled={isSubmitting}
             className="px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            취소
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -400,7 +403,7 @@ export function ErrorReportModal({
                 : 'bg-gray-900 text-white hover:bg-gray-800'
             }`}
           >
-            {isSubmitting ? '전송 중...' : '의견 보내기'}
+            {isSubmitting ? t('submitting') : t('submit')}
           </button>
         </div>
       </div>

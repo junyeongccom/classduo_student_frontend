@@ -9,6 +9,7 @@
 
 import { useState, useRef } from 'react'
 import { X, MessageSquareText, Upload, FileText, Trash2, Loader2, ChevronDown, Mail } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type { FeedbackCategory } from '../../types'
 import { FEEDBACK_CATEGORY_LABELS } from '../../types'
 
@@ -37,6 +38,7 @@ export function FeedbackModal({
   isSubmitting = false,
   error = null,
 }: FeedbackModalProps) {
+  const t = useTranslations('feedbackModal')
   const [category, setCategory] = useState<FeedbackCategory | ''>('')
   const [occurrenceTime, setOccurrenceTime] = useState('')
   const [contact, setContact] = useState('')
@@ -59,7 +61,7 @@ export function FeedbackModal({
   const validateFile = (file: File): boolean => {
     setFileError(null)
     if (file.size > MAX_FILE_SIZE) {
-      setFileError('파일 크기는 20MB 이하여야 합니다.')
+      setFileError(t('fileError.tooLarge'))
       return false
     }
     const allowedTypes = [
@@ -69,7 +71,7 @@ export function FeedbackModal({
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ]
     if (!allowedTypes.includes(file.type)) {
-      setFileError('지원하지 않는 파일 형식입니다. (이미지, PDF, 문서 파일만 가능)')
+      setFileError(t('fileError.unsupportedType'))
       return false
     }
     return true
@@ -152,7 +154,7 @@ export function FeedbackModal({
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#6366F1]/10 text-[#6366F1]">
               <MessageSquareText className="h-6 w-6" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50">의견 보내기</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50">{t('title')}</h2>
           </div>
           <button
             onClick={handleClose}
@@ -175,7 +177,7 @@ export function FeedbackModal({
           <div className="grid grid-cols-2 gap-4">
             {/* 발생 항목 */}
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">발생 항목</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('category')}</label>
               <div className="relative">
                 <select
                   value={category}
@@ -183,10 +185,10 @@ export function FeedbackModal({
                   disabled={isSubmitting}
                   className="h-12 w-full appearance-none rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 pl-4 pr-10 text-sm text-gray-900 dark:text-gray-100 outline-none transition-all focus:border-[#6366F1] focus:ring-2 focus:ring-[#6366F1]/20 disabled:cursor-not-allowed disabled:bg-gray-100"
                 >
-                  <option value="">항목을 선택해주세요</option>
+                  <option value="">{t('categoryPlaceholder')}</option>
                   {(Object.keys(FEEDBACK_CATEGORY_LABELS) as FeedbackCategory[]).map((key) => (
                     <option key={key} value={key}>
-                      {FEEDBACK_CATEGORY_LABELS[key]}
+                      {t(`categoryLabel.${key}`)}
                     </option>
                   ))}
                 </select>
@@ -196,7 +198,7 @@ export function FeedbackModal({
 
             {/* 발생시각 */}
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">발생시각</label>
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('occurrenceTime')}</label>
               <input
                 type="datetime-local"
                 value={occurrenceTime}
@@ -210,13 +212,13 @@ export function FeedbackModal({
 
           {/* 연락처 정보 */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700">연락처 정보</label>
+            <label className="text-sm font-semibold text-gray-700">{t('contactInfo')}</label>
             <div className="relative">
               <input
                 type="text"
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
-                placeholder="이메일 또는 아이디를 입력하세요"
+                placeholder={t('contactPlaceholder')}
                 disabled={isSubmitting}
                 className="h-12 w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 pl-11 pr-4 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none transition-all focus:border-[#6366F1] focus:ring-2 focus:ring-[#6366F1]/20 disabled:cursor-not-allowed disabled:bg-gray-100"
               />
@@ -228,7 +230,7 @@ export function FeedbackModal({
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                내용 <span className="text-red-500">*</span>
+                {t('content')} <span className="text-red-500">*</span>
               </label>
               <span className="text-xs text-gray-400">
                 {content.length} / {MAX_CONTENT_LENGTH}
@@ -241,7 +243,7 @@ export function FeedbackModal({
                   setContent(e.target.value)
                 }
               }}
-              placeholder="내용을 상세히 입력해주세요 (필수)"
+              placeholder={t('contentPlaceholder')}
               rows={5}
               disabled={isSubmitting}
               className="w-full resize-none rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 p-4 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none transition-all focus:border-[#6366F1] focus:ring-2 focus:ring-[#6366F1]/20 disabled:cursor-not-allowed disabled:bg-gray-100"
@@ -250,7 +252,7 @@ export function FeedbackModal({
 
           {/* 첨부 파일 */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">첨부 파일</label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('attachment')}</label>
 
             {!attachmentFile ? (
               <label
@@ -270,10 +272,10 @@ export function FeedbackModal({
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-medium text-gray-700">
-                    파일을 드래그하여 업로드하거나 클릭하세요
+                    {t('dragOrClick')}
                   </p>
                   <p className="mt-1 text-xs text-gray-400">
-                    최대 20MB 이하의 JPG, PNG, PDF 파일
+                    {t('fileLimit')}
                   </p>
                 </div>
                 <input
@@ -318,7 +320,7 @@ export function FeedbackModal({
             disabled={isSubmitting}
             className="h-12 rounded-lg px-6 font-bold text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
           >
-            취소
+            {t('cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -328,10 +330,10 @@ export function FeedbackModal({
             {isSubmitting ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                전송 중...
+                {t('submitting')}
               </span>
             ) : (
-              '의견 보내기'
+              t('submit')
             )}
           </button>
         </footer>

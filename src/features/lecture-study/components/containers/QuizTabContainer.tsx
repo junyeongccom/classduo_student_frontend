@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, HelpCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import {
   getInstructorQuizzes,
   type InstructorQuizItem,
@@ -30,19 +31,11 @@ const TYPE_ORDER: InstructorQuizType[] = [
   'STRUCTURE',
 ]
 
-const TYPE_SECTION_LABELS: Record<InstructorQuizType, string> = {
-  DEF_TO_TERM: '정의 → 용어 퀴즈',
-  TERM_TO_DEF: '용어 → 정의 퀴즈',
-  STRUCTURE_OBJ: '구조 이해 퀴즈 (객관식)',
-  MISCONCEPTION: '오개념 탐지 퀴즈',
-  RECALL: '내용 기억 퀴즈 (단답형)',
-  STRUCTURE: '구조 이해 퀴즈 (서술형)',
-}
-
 export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
   const [quizzes, setQuizzes] = useState<InstructorQuizItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const t = useTranslations('lectureStudy.quiz')
 
   useEffect(() => {
     let cancelled = false
@@ -73,12 +66,12 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
 
   // 유형별로 그룹화 (정의된 순서대로)
   const groupedQuizzes = useMemo(() => {
-    const groups: { type: InstructorQuizType; label: string; items: InstructorQuizItem[] }[] = []
+    const groups: { type: InstructorQuizType; items: InstructorQuizItem[] }[] = []
 
     for (const type of TYPE_ORDER) {
       const items = quizzes.filter((q) => q.quiz_type === type)
       if (items.length > 0) {
-        groups.push({ type, label: TYPE_SECTION_LABELS[type], items })
+        groups.push({ type, items })
       }
     }
 
@@ -89,7 +82,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-gray-400">
         <Loader2 className="h-6 w-6 animate-spin" />
-        <p>퀴즈를 불러오는 중입니다...</p>
+        <p>{t('loading')}</p>
       </div>
     )
   }
@@ -106,7 +99,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-500">
         <HelpCircle className="h-10 w-10" />
-        <p className="text-sm">아직 생성된 퀴즈가 없습니다.</p>
+        <p className="text-sm">{t('empty')}</p>
       </div>
     )
   }
@@ -121,10 +114,10 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
           {/* 유형 섹션 헤더 */}
           <div className="mb-3 flex items-center gap-2">
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-50">
-              {group.label}
+              {t(`sectionLabel.${group.type}`)}
             </h3>
             <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
-              {group.items.length}문항
+              {t('itemCount', { count: group.items.length })}
             </span>
           </div>
 
@@ -142,4 +135,3 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
     </div>
   )
 }
-

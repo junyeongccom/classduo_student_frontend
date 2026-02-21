@@ -8,7 +8,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { X, Mic, Play, Clock, Download, Loader2 } from 'lucide-react'
 import {
   lectureService,
@@ -49,13 +49,13 @@ function downloadTextFile(filename: string, text: string) {
 }
 
 /** 청크 하나를 텍스트 파일로 변환 */
-function buildChunkText(chunk: FlatChunk, label: string): string {
+function buildChunkText(chunk: FlatChunk, label: string, segmentLabel: string): string {
   const lines: string[] = []
   const title = chunk.title ?? label
   lines.push(title)
   lines.push('='.repeat(title.length))
   lines.push('')
-  lines.push(`구간: ${formatTime(chunk.start_time)} - ${formatTime(chunk.end_time)}`)
+  lines.push(`${segmentLabel}: ${formatTime(chunk.start_time)} - ${formatTime(chunk.end_time)}`)
   lines.push('')
   if (chunk.content) {
     lines.push(chunk.content)
@@ -70,6 +70,7 @@ export function RecordingChunksModal({
   lectureLabel,
 }: RecordingChunksModalProps) {
   const locale = useLocale()
+  const tChunks = useTranslations('recordingChunks')
   const [recordings, setRecordings] = useState<SnapshotRecordingItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -104,7 +105,7 @@ export function RecordingChunksModal({
 
   const handleDownloadOne = (chunk: FlatChunk) => {
     const label = getChunkLabel(chunk)
-    const text = buildChunkText(chunk, label)
+    const text = buildChunkText(chunk, label, tChunks('segment'))
     const safeFilename = label.replace(/[/\\?%*:|"<>]/g, '_')
     downloadTextFile(`${safeFilename}.txt`, text)
   }

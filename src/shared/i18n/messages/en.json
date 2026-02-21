@@ -16,10 +16,13 @@
   "aiTutorTopbar": {
     "newChat": "New chat",
     "chatHistory": "Chat history",
+    "chatHistorySearch": "Chat history & search",
     "tab": {
       "answer": "Answer",
       "notesSources": "Recording sources",
-      "materialsSources": "Material sources"
+      "materialsSources": "Material sources",
+      "notes": "Recordings",
+      "materials": "Materials"
     }
   },
   "aiTutorChat": {
@@ -355,6 +358,44 @@
       "loadLectures": "Failed to load lectures",
       "loadFailed": "Failed to load data. Please try again.",
       "materialsLoadError": "Failed to load materials"
+    },
+    "quiz": {
+      "typeLabel": {
+        "RECALL": "Content Recall",
+        "STRUCTURE": "Structure Understanding",
+        "STRUCTURE_OBJ": "Structure Understanding",
+        "MISCONCEPTION": "Misconception Detection",
+        "DEF_TO_TERM": "Definition→Term",
+        "TERM_TO_DEF": "Term→Definition"
+      },
+      "format": {
+        "multipleChoice": "Multiple Choice",
+        "shortAnswer": "Short Answer",
+        "essay": "Essay"
+      },
+      "sectionLabel": {
+        "DEF_TO_TERM": "Definition → Term Quiz",
+        "TERM_TO_DEF": "Term → Definition Quiz",
+        "STRUCTURE_OBJ": "Structure Understanding Quiz (Multiple Choice)",
+        "MISCONCEPTION": "Misconception Detection Quiz",
+        "RECALL": "Content Recall Quiz (Short Answer)",
+        "STRUCTURE": "Structure Understanding Quiz (Essay)"
+      },
+      "loading": "Loading quizzes...",
+      "empty": "No quizzes available yet.",
+      "itemCount": "{count} questions",
+      "showAnswer": "Show answer & explanation",
+      "hideAnswer": "Hide answer & explanation",
+      "answer": "Answer",
+      "explanation": "Explanation",
+      "choiceAnalysis": "Choice analysis"
+    },
+    "contentsChat": {
+      "errorGenerate": "Failed to generate a response. Please try again.",
+      "errorGeneral": "An error occurred. Please try again.",
+      "emptyHint": "Ask anything about\nthe lecture content",
+      "generating": "Generating response...",
+      "inputPlaceholder": "Type your question..."
     }
   },
   "studyspacePlaceholder": {
@@ -531,6 +572,19 @@
           "confirm": "Delete"
         }
       }
+    },
+    "notes": {
+      "placeholder": "Type your notes here.",
+      "singleNote": "Single Note",
+      "pageNote": "Page Notes",
+      "pageLabel": "Page {page}",
+      "template": {
+        "h1": { "label": "Heading 1", "content": "Heading" },
+        "h2": { "label": "Heading 2", "content": "Subheading" },
+        "bullet": { "label": "Bullet", "content": "Item" },
+        "check": { "label": "Checklist", "content": "To do" },
+        "table": { "label": "Table", "content": "Table template is coming soon." }
+      }
     }
   },
   "aiTutorReference": {
@@ -550,7 +604,10 @@
     "recordingSegmentLabel": "Recording segment #",
     "relevance": "Relevance",
     "materialFallback": "Material",
-    "page": "Page"
+    "page": "Page",
+    "materialAlt": "Material {index}",
+    "materialText": "Material Text",
+    "visualDescription": "Visual Description"
   },
   "aiTutorFlameTooltip": {
     "intro": "For each class session, solve OX quiz and card match game, then open the box to collect flames!",
@@ -560,6 +617,74 @@
   },
   "aiTutorSession": {
     "lockedHint": "Start a new chat to select different sessions"
+  },
+  "errorReport": {
+    "title": "Send Feedback",
+    "subtitle": "Please share any issues or improvement ideas and we'll actively work on them.",
+    "occurrenceContext": "Context",
+    "occurrenceTime": "Time of occurrence",
+    "relatedFile": "Related file",
+    "content": "Details",
+    "contactInfo": "Contact info",
+    "attachment": "Attachment",
+    "selectPlaceholder": "Select",
+    "placeholder": {
+      "filename": "e.g., lecture_material.pdf",
+      "content": "Tell us about any issues or improvement ideas...",
+      "contact": "Email, KakaoTalk ID, or other contact info for reply"
+    },
+    "hint": {
+      "content": "Please provide as much detail as possible so we can understand the situation.",
+      "contact": "Used to contact you if needed. Individual responses may not be possible depending on volume.",
+      "fileSize": "Maximum 10MB per file."
+    },
+    "cancel": "Cancel",
+    "submit": "Send Feedback",
+    "submitting": "Sending...",
+    "fileError": {
+      "tooLarge": "File size must be 10MB or less.",
+      "unsupportedType": "Unsupported file type. (Images, PDF, and documents only)"
+    },
+    "dragOrClick": "Drag and drop or click to select a file",
+    "attachmentTypes": "You can attach screenshots, videos, and other reference materials.",
+    "prefixCourse": "[Course]",
+    "prefixLecture": "[Session]",
+    "prefixError": "[Error details]",
+    "context": {
+      "AI_TUTOR": "AI Tutor",
+      "REVIEW": "Review",
+      "EXAM_PREP": "Exam Prep",
+      "QUIZ": "Quiz",
+      "LOGIN": "Login",
+      "OTHER": "Other"
+    }
+  },
+  "feedbackModal": {
+    "title": "Send Feedback",
+    "category": "Category",
+    "categoryPlaceholder": "Select a category",
+    "occurrenceTime": "Occurrence Time",
+    "contactInfo": "Contact Info",
+    "contactPlaceholder": "Enter your email or ID",
+    "content": "Content",
+    "contentPlaceholder": "Please enter details (required)",
+    "attachment": "Attachment",
+    "dragOrClick": "Drag & drop a file or click to upload",
+    "fileLimit": "JPG, PNG, PDF up to 20MB",
+    "cancel": "Cancel",
+    "submit": "Send Feedback",
+    "submitting": "Submitting...",
+    "fileError": {
+      "tooLarge": "File size must be 20MB or less.",
+      "unsupportedType": "Unsupported file type. (Images, PDF, documents only)"
+    },
+    "categoryLabel": {
+      "COURSE": "Course",
+      "LECTURE": "Session",
+      "MATERIAL": "Materials",
+      "QUIZ": "Quiz",
+      "GAME": "Game"
+    }
   },
   "loginModal": {
     "loginTitle": "Log in",
@@ -714,14 +839,64 @@
       "passwordNumber": "Must include numbers",
       "passwordConfirmRequired": "Please confirm your password",
       "passwordMismatch": "Passwords do not match"
+    },
+    "messages": {
+      "profileUpdated": "Profile has been updated.",
+      "passwordChanged": "Password has been changed.",
+      "accountDeleted": "Account has been deleted.",
+      "emailResent": "Verification email has been resent."
     }
+  },
+  "lectureStudy": {
+    "buttons": {
+      "startTest": "Start Test",
+      "share": "Share"
+    }
+  },
+  "resetPassword": {
+    "invalidLink": "Invalid Link",
+    "linkExpired": "The password reset link has expired or is invalid.",
+    "goToMain": "Go to Main Page",
+    "completed": "Password Changed",
+    "successMessage": "Your password has been changed successfully.",
+    "redirecting": "Redirecting to login page shortly...",
+    "title": "Set New Password",
+    "subtitle": "Enter your new password",
+    "newPassword": "New password",
+    "passwordHint": "Must include at least 3 of: uppercase, lowercase, numbers, special characters (min. 8 chars)",
+    "confirmPassword": "Confirm new password",
+    "submit": "Change Password",
+    "loading": "Loading...",
+    "validation": {
+      "minLength": "Password must be at least 8 characters",
+      "complexity": "Must include at least 3 of: uppercase, lowercase, numbers, special characters",
+      "confirmRequired": "Please confirm your password",
+      "mismatch": "Passwords do not match"
+    },
+    "fallback": {
+      "emailSent": "Password reset email has been sent.",
+      "passwordChanged": "Password has been changed.",
+      "error": "An error occurred"
+    }
+  },
+  "recordingChunks": {
+    "segment": "Segment"
   },
   "errors": {
     "unknown": "An unknown error occurred",
     "cors": "CORS error: Cannot access backend server. Please check if the server is running.",
     "network": "Network error occurred. Please check your internet connection.",
     "sessionExpired": "Session has expired. Please log in again.",
-    "sessionExpiredRenewed": "Session expired and has been renewed. Please try again."
+    "sessionExpiredRenewed": "Session expired and has been renewed. Please try again.",
+    "signup": "An error occurred during sign up.",
+    "login": "An error occurred during login.",
+    "general": "An error occurred.",
+    "emailNotFound": "Email information not found.",
+    "codeInvalid": "Please enter the 6-digit verification code.",
+    "emailResendError": "An error occurred while resending the email.",
+    "profileUpdate": "An error occurred while updating profile.",
+    "passwordChange": "An error occurred while changing password.",
+    "deleteAccount": "An error occurred while deleting account."
   }
 }
 

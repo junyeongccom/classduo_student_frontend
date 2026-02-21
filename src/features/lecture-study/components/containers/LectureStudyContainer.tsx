@@ -425,11 +425,11 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               <div className="shrink-0 flex items-center gap-3 px-4 pb-3 pt-1">
                 <button className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#6366F1] py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#4F46E5]">
                   <ClipboardPen className="h-4 w-4" />
-                  테스트 시작하기
+                  {t('lectureStudy.buttons.startTest')}
                 </button>
                 <button className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-[#6366F1]/30 py-1.5 text-sm font-medium text-[#6366F1] transition-colors hover:bg-[#6366F1]/5">
                   <Share2 className="h-4 w-4" />
-                  공유하기
+                  {t('lectureStudy.buttons.share')}
                 </button>
               </div>
             )}

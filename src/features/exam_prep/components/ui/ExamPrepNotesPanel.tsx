@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react"
 import { BlockNoteViewRaw, useCreateBlockNote } from "@blocknote/react"
 import type { PartialBlock } from "@blocknote/core"
 import "@blocknote/react/style.css"
+import { useTranslations } from "next-intl"
 import type { ExamPrepNoteScope } from "../../types"
 import { cn } from "@/shared/lib/utils"
 
@@ -17,13 +18,6 @@ type ExamPrepNotesPanelProps = {
   onChange: (content: PartialBlock[]) => void
 }
 
-const DEFAULT_CONTENT: PartialBlock[] = [
-  {
-    type: "paragraph",
-    content: "노트를 입력하세요.",
-  },
-]
-
 export function ExamPrepNotesPanel({
   mode,
   onModeChange,
@@ -33,8 +27,14 @@ export function ExamPrepNotesPanel({
   noteContent,
   onChange,
 }: ExamPrepNotesPanelProps) {
+  const t = useTranslations('examPrep.notes')
+
+  const defaultContent = useMemo<PartialBlock[]>(() => [
+    { type: "paragraph", content: t('placeholder') },
+  ], [t])
+
   const editor = useCreateBlockNote({
-    initialContent: noteContent ?? DEFAULT_CONTENT,
+    initialContent: noteContent ?? defaultContent,
   })
   const lastApplied = useRef<string>("")
 
@@ -43,11 +43,11 @@ export function ExamPrepNotesPanel({
   }, [pageCount])
 
   useEffect(() => {
-    const serialized = JSON.stringify(noteContent ?? DEFAULT_CONTENT)
+    const serialized = JSON.stringify(noteContent ?? defaultContent)
     if (serialized === lastApplied.current) return
     lastApplied.current = serialized
-    editor.replaceBlocks(editor.document, noteContent ?? DEFAULT_CONTENT)
-  }, [editor, noteContent])
+    editor.replaceBlocks(editor.document, noteContent ?? defaultContent)
+  }, [editor, noteContent, defaultContent])
 
   const insertTemplate = (block: PartialBlock) => {
     const cursor = editor.getTextCursorPosition()
@@ -55,12 +55,11 @@ export function ExamPrepNotesPanel({
   }
 
   const templates: Array<{ id: string; label: string; block: PartialBlock }> = [
-    { id: "h1", label: "제목1", block: { type: "heading", props: { level: 1 }, content: "제목" } },
-    { id: "h2", label: "제목2", block: { type: "heading", props: { level: 2 }, content: "소제목" } },
-    { id: "bullets", label: "글머리", block: { type: "bulletListItem", content: "항목" } },
-    { id: "check", label: "체크리스트", block: { type: "checkListItem", content: "할 일" } },
-    // NOTE: BlockNote table block schema is not a simple string[][], so keep the template as a safe placeholder.
-    { id: "table", label: "표", block: { type: "paragraph", content: "표(테이블) 템플릿은 준비 중입니다." } },
+    { id: "h1", label: t('template.h1.label'), block: { type: "heading", props: { level: 1 }, content: t('template.h1.content') } },
+    { id: "h2", label: t('template.h2.label'), block: { type: "heading", props: { level: 2 }, content: t('template.h2.content') } },
+    { id: "bullets", label: t('template.bullet.label'), block: { type: "bulletListItem", content: t('template.bullet.content') } },
+    { id: "check", label: t('template.check.label'), block: { type: "checkListItem", content: t('template.check.content') } },
+    { id: "table", label: t('template.table.label'), block: { type: "paragraph", content: t('template.table.content') } },
   ]
 
   return (
@@ -74,7 +73,7 @@ export function ExamPrepNotesPanel({
             mode === "single" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-600"
           )}
         >
-          단일 노트
+          {t('singleNote')}
         </button>
         <button
           type="button"
@@ -84,7 +83,7 @@ export function ExamPrepNotesPanel({
             mode === "page" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white text-gray-600"
           )}
         >
-          페이지별 노트
+          {t('pageNote')}
         </button>
         {mode === "page" && (
           <select
@@ -94,7 +93,7 @@ export function ExamPrepNotesPanel({
           >
             {pages.map(page => (
               <option key={page} value={page}>
-                {page} 페이지
+                {t('pageLabel', { page })}
               </option>
             ))}
           </select>
@@ -131,4 +130,3 @@ export function ExamPrepNotesPanel({
     </div>
   )
 }
-

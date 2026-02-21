@@ -2,6 +2,7 @@
 
 import { cn } from '@/shared/lib/utils'
 import { Edit, Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 export type TabType = 'answer' | 'notes' | 'materials'
 
@@ -13,19 +14,16 @@ interface TopTabsProps {
   hasReferences?: boolean
 }
 
-const TABS: { id: TabType; label: string }[] = [
-  { id: 'answer', label: '답변' },
-  { id: 'notes', label: '수업녹음본' },
-  { id: 'materials', label: '강의자료' },
-]
+const TAB_IDS: TabType[] = ['answer', 'notes', 'materials']
 
-export function TopTabs({ 
-  onNewChat, 
+export function TopTabs({
+  onNewChat,
   onOpenChatHistory,
   activeTab = 'answer',
   onTabChange,
   hasReferences = false
 }: TopTabsProps) {
+  const t = useTranslations('aiTutorTopbar')
 
   const handleTabClick = (tabId: TabType) => {
     onTabChange?.(tabId)
@@ -36,17 +34,17 @@ export function TopTabs({
       {/* 좌측: 아이콘 버튼들 + 탭 메뉴 */}
       <div className="flex items-center gap-24">
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={onNewChat}
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-            title="새 채팅"
+            title={t('newChat')}
           >
             <Edit className="h-4 w-4" />
           </button>
-          <button 
+          <button
             onClick={onOpenChatHistory}
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-            title="채팅 기록 및 검색"
+            title={t('chatHistorySearch')}
           >
             <Search className="h-4 w-4" />
           </button>
@@ -54,15 +52,14 @@ export function TopTabs({
 
         {/* 탭 메뉴 */}
         <nav className="flex items-center gap-6">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id
-            // 수업녹음본/강의자료 탭은 참고자료가 있을 때만 활성화
-            const isDisabled = (tab.id === 'notes' || tab.id === 'materials') && !hasReferences
+          {TAB_IDS.map((tabId) => {
+            const isActive = activeTab === tabId
+            const isDisabled = (tabId === 'notes' || tabId === 'materials') && !hasReferences
 
             return (
               <button
-                key={tab.id}
-                onClick={() => handleTabClick(tab.id)}
+                key={tabId}
+                onClick={() => handleTabClick(tabId)}
                 disabled={isDisabled}
                 className={cn(
                   'text-sm transition-colors',
@@ -73,7 +70,7 @@ export function TopTabs({
                     : 'text-gray-500 hover:text-gray-700'
                 )}
               >
-                {tab.label}
+                {t(`tab.${tabId}`)}
               </button>
             )
           })}
@@ -85,5 +82,3 @@ export function TopTabs({
     </header>
   )
 }
-
-

@@ -10,6 +10,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { Loader2, Send } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import { useTranslations } from 'next-intl'
 import { lectureService } from '../../services/lectureService'
 
 interface ChatMessage {
@@ -27,6 +28,7 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
   const [isLoading, setIsLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const t = useTranslations('lectureStudy.contentsChat')
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -48,15 +50,15 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
       if (result.data?.answer) {
         setMessages(prev => [...prev, { role: 'assistant', content: result.data!.answer }])
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: '답변을 생성하지 못했습니다. 다시 시도해주세요.' }])
+        setMessages(prev => [...prev, { role: 'assistant', content: t('errorGenerate') }])
       }
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: '오류가 발생했습니다. 다시 시도해주세요.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: t('errorGeneral') }])
     } finally {
       setIsLoading(false)
       scrollToBottom()
     }
-  }, [input, isLoading, lectureId, scrollToBottom])
+  }, [input, isLoading, lectureId, scrollToBottom, t])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -71,7 +73,7 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
         {messages.length === 0 && (
           <div className="flex h-full items-center justify-center text-gray-400">
-            <p className="text-sm text-center">강의 내용에 대해<br />궁금한 점을 물어보세요</p>
+            <p className="text-sm text-center whitespace-pre-line">{t('emptyHint')}</p>
           </div>
         )}
         {messages.map((msg, i) => (
@@ -97,7 +99,7 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
           <div className="flex justify-start">
             <div className="flex items-center gap-2 rounded-2xl rounded-bl-md bg-gray-100 dark:bg-gray-800 px-4 py-3">
               <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              <span className="text-sm text-gray-400">답변 생성 중...</span>
+              <span className="text-sm text-gray-400">{t('generating')}</span>
             </div>
           </div>
         )}
@@ -111,7 +113,7 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="질문을 입력하세요..."
+            placeholder={t('inputPlaceholder')}
             rows={1}
             className="flex-1 resize-none bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 outline-none max-h-24 overflow-y-auto"
             style={{ minHeight: '1.5rem' }}

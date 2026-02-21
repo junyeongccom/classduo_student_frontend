@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { apiRequest } from '@/shared/lib/api'
 import { API_ENDPOINTS } from '@/shared/constants/api'
 
@@ -15,6 +16,7 @@ interface UpdatePasswordData {
 }
 
 export function useResetPassword() {
+  const t = useTranslations('resetPassword.fallback')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -39,10 +41,10 @@ export function useResetPassword() {
         return { success: false }
       }
 
-      setSuccessMessage(response.data?.message || '비밀번호 재설정 이메일이 발송되었습니다.')
+      setSuccessMessage(response.data?.message || t('emailSent'))
       return { success: true, message: response.data?.message }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '오류가 발생했습니다'
+      const errorMessage = err instanceof Error ? err.message : t('error')
       setError(errorMessage)
       return { success: false }
     } finally {
@@ -70,10 +72,10 @@ export function useResetPassword() {
         return { success: false }
       }
 
-      setSuccessMessage(response.data?.message || '비밀번호가 변경되었습니다.')
+      setSuccessMessage(response.data?.message || t('passwordChanged'))
       return { success: true, message: response.data?.message }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '오류가 발생했습니다'
+      const errorMessage = err instanceof Error ? err.message : t('error')
       setError(errorMessage)
       return { success: false }
     } finally {

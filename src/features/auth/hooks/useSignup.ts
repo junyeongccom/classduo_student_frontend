@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { SignUpRequest, AuthError, SignupStep, SendSignupCodeRequest } from '../types'
@@ -10,6 +11,8 @@ import { TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/shared/lib/utils'
 export function useSignup() {
   const router = useRouter()
   const { setError, login } = useAuthStore()
+  const t = useTranslations('errors')
+  const tMsg = useTranslations('auth.messages')
   const [isLoading, setIsLoading] = useState(false)
   const [signupSuccess, setSignupSuccess] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
@@ -43,7 +46,7 @@ export function useSignup() {
     } catch (error) {
       const authError: AuthError = {
         error_code: 'UNEXPECTED_ERROR',
-        message: '회원가입 중 오류가 발생했습니다.',
+        message: t('signup'),
       }
       setError(authError)
       return { success: false, error: authError }
@@ -65,7 +68,7 @@ export function useSignup() {
         // 5xx: 서버 에러 → 일반 메시지 표시
         const authError: AuthError = result.status >= 400 && result.status < 500
           ? { error_code: result.error.error_code, message: result.error.message }
-          : { error_code: 'API_ERROR', message: '오류가 발생했습니다.' }
+          : { error_code: 'API_ERROR', message: t('general') }
         setError(authError)
         return { success: false, error: authError }
       }
@@ -79,28 +82,28 @@ export function useSignup() {
         return { success: true, data: result.data }
       }
 
-      return { success: false, error: { error_code: 'UNKNOWN', message: '오류가 발생했습니다.' } }
+      return { success: false, error: { error_code: 'UNKNOWN', message: t('general') } }
     } catch (error) {
       const authError: AuthError = {
         error_code: 'UNEXPECTED_ERROR',
-        message: '오류가 발생했습니다.',
+        message: t('general'),
       }
       setError(authError)
       return { success: false, error: authError }
     } finally {
       setIsLoading(false)
     }
-  }, [setError])
+  }, [setError, t])
 
   const handleVerifySignupCode = useCallback(async () => {
     if (!registeredEmail) {
-      setError({ error_code: 'NO_EMAIL', message: '이메일 정보가 없습니다.' })
+      setError({ error_code: 'NO_EMAIL', message: t('emailNotFound') })
       return { success: false }
     }
 
     const code = verificationCode.join('')
     if (code.length !== 6) {
-      setError({ error_code: 'INVALID_CODE', message: '6자리 인증 코드를 입력해주세요.' })
+      setError({ error_code: 'INVALID_CODE', message: t('codeInvalid') })
       return { success: false }
     }
 
@@ -118,7 +121,7 @@ export function useSignup() {
         // 5xx: 서버 에러 → 일반 메시지 표시
         const authError: AuthError = result.status >= 400 && result.status < 500
           ? { error_code: result.error.error_code, message: result.error.message }
-          : { error_code: 'API_ERROR', message: '오류가 발생했습니다.' }
+          : { error_code: 'API_ERROR', message: t('general') }
         setError(authError)
         return { success: false, error: authError }
       }
@@ -143,18 +146,18 @@ export function useSignup() {
         return { success: true, data: result.data }
       }
 
-      return { success: false, error: { error_code: 'UNKNOWN', message: '오류가 발생했습니다.' } }
+      return { success: false, error: { error_code: 'UNKNOWN', message: t('general') } }
     } catch (error) {
       const authError: AuthError = {
         error_code: 'UNEXPECTED_ERROR',
-        message: '오류가 발생했습니다.',
+        message: t('general'),
       }
       setError(authError)
       return { success: false, error: authError }
     } finally {
       setIsLoading(false)
     }
-  }, [registeredEmail, verificationCode, setError, login])
+  }, [registeredEmail, verificationCode, setError, login, t])
 
   const handleVerificationCodeChange = useCallback((index: number, value: string) => {
     setVerificationCode(prev => {
@@ -190,11 +193,11 @@ export function useSignup() {
         return { success: false, error: result.error }
       }
 
-      return { success: true, message: '인증 이메일이 재전송되었습니다.' }
+      return { success: true, message: tMsg('emailResent') }
     } catch (error) {
       return {
         success: false,
-        error: { error_code: 'UNEXPECTED_ERROR', message: '이메일 재전송 중 오류가 발생했습니다.' }
+        error: { error_code: 'UNEXPECTED_ERROR', message: t('emailResendError') }
       }
     } finally {
       setIsLoading(false)
@@ -231,5 +234,3 @@ export function useSignup() {
     goToHome,
   }
 }
-
-

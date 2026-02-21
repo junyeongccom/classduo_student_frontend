@@ -8,6 +8,7 @@
 
 import { useState, useCallback } from 'react'
 import { ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import type {
   InstructorQuizItem,
   InstructorQuizChoice,
@@ -16,16 +17,13 @@ import type {
 
 const CHOICE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
 
-const QUIZ_TYPE_META: Record<
-  InstructorQuizType,
-  { label: string; badge: string }
-> = {
-  RECALL: { label: '내용 기억', badge: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-  STRUCTURE: { label: '구조 이해', badge: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' },
-  STRUCTURE_OBJ: { label: '구조 이해', badge: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' },
-  MISCONCEPTION: { label: '오개념 탐지', badge: 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
-  DEF_TO_TERM: { label: '정의→용어', badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
-  TERM_TO_DEF: { label: '용어→정의', badge: 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' },
+const QUIZ_TYPE_BADGE: Record<InstructorQuizType, string> = {
+  RECALL: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  STRUCTURE: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+  STRUCTURE_OBJ: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+  MISCONCEPTION: 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  DEF_TO_TERM: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  TERM_TO_DEF: 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
 }
 
 interface InstructorQuizCardProps {
@@ -36,8 +34,9 @@ interface InstructorQuizCardProps {
 export function InstructorQuizCard({ quiz, index }: InstructorQuizCardProps) {
   const [selectedChoiceIdx, setSelectedChoiceIdx] = useState<number | null>(null)
   const [showAnswer, setShowAnswer] = useState(false)
+  const t = useTranslations('lectureStudy.quiz')
 
-  const meta = QUIZ_TYPE_META[quiz.quiz_type]
+  const badge = QUIZ_TYPE_BADGE[quiz.quiz_type]
   const isMultipleChoice =
     quiz.quiz_type === 'MISCONCEPTION' ||
     quiz.quiz_type === 'DEF_TO_TERM' ||
@@ -98,22 +97,22 @@ export function InstructorQuizCard({ quiz, index }: InstructorQuizCardProps) {
       {/* 헤더: 번호 + 유형 뱃지 */}
       <div className="flex items-center gap-2 mb-3">
         <span className="text-xs font-bold text-[#6366F1]">Q{index + 1}</span>
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
-          {meta.label}
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge}`}>
+          {t(`typeLabel.${quiz.quiz_type}`)}
         </span>
         {isMultipleChoice && (
           <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-            5지선다
+            {t('format.multipleChoice')}
           </span>
         )}
         {quiz.quiz_type === 'RECALL' && (
           <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-            단답형
+            {t('format.shortAnswer')}
           </span>
         )}
         {quiz.quiz_type === 'STRUCTURE' && (
           <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-            서술형
+            {t('format.essay')}
           </span>
         )}
       </div>
@@ -156,7 +155,7 @@ export function InstructorQuizCard({ quiz, index }: InstructorQuizCardProps) {
           className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           {showAnswer ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          {showAnswer ? '정답 및 해설 접기' : '정답 및 해설 보기'}
+          {showAnswer ? t('hideAnswer') : t('showAnswer')}
         </button>
 
         {showAnswer && (
@@ -164,7 +163,7 @@ export function InstructorQuizCard({ quiz, index }: InstructorQuizCardProps) {
             {/* 정답 (주관식) */}
             {!isMultipleChoice && quiz.answer && (
               <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
-                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">정답</p>
+                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">{t('answer')}</p>
                 <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">{quiz.answer}</p>
               </div>
             )}
@@ -172,7 +171,7 @@ export function InstructorQuizCard({ quiz, index }: InstructorQuizCardProps) {
             {/* 해설 */}
             {quiz.explanation && (
               <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
-                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">해설</p>
+                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">{t('explanation')}</p>
                 <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line leading-relaxed">
                   {quiz.explanation}
                 </p>
@@ -182,7 +181,7 @@ export function InstructorQuizCard({ quiz, index }: InstructorQuizCardProps) {
             {/* 선지별 분석 (객관식) */}
             {isMultipleChoice && quiz.choices.length > 0 && quiz.choices.some((c) => c.choice_explanation) && (
               <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
-                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-2">선지별 분석</p>
+                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-2">{t('choiceAnalysis')}</p>
                 <div className="space-y-1.5">
                   {quiz.choices.map((choice, idx) => (
                     <div key={choice.choice_id} className="text-xs leading-relaxed">
@@ -203,4 +202,3 @@ export function InstructorQuizCard({ quiz, index }: InstructorQuizCardProps) {
     </article>
   )
 }
-
