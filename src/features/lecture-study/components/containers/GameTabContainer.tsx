@@ -14,6 +14,7 @@ import { useLocale } from 'next-intl'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { WordListModal } from '../ui/WordListModal'
+import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
   reviewService,
@@ -55,6 +56,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const locale = useLocale() as AppLocale
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [showDescriptionPopup, setShowDescriptionPopup] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
@@ -84,8 +86,17 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
 
   const handleSelectGame = useCallback((gameId: string) => {
     setSelectedGame(gameId)
-    setShowWordModal(true)
+    setShowDescriptionPopup(true)
   }, [])
+
+  const handleDescriptionStart = useCallback(() => {
+    setShowDescriptionPopup(false)
+    if (selectedGame === 'running') {
+      setShowRunningOverlay(true)
+      return
+    }
+    setShowWordModal(true)
+  }, [selectedGame])
 
   const handleImportKeywords = useCallback(async () => {
     setIsImporting(true)
@@ -129,12 +140,6 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
 
   const handleStartGame = useCallback(async () => {
     setShowWordModal(false)
-
-    // Running game: open overlay immediately
-    if (selectedGame === 'running') {
-      setShowRunningOverlay(true)
-      return
-    }
 
     // DefinitionBuilder: fetch game data from API
     if (selectedGame === 'definitionBuilder') {
@@ -230,6 +235,18 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   return (
     <>
       <GameSelector onSelectGame={handleSelectGame} />
+      <GameDescriptionPopup
+        open={showDescriptionPopup}
+        onOpenChange={setShowDescriptionPopup}
+        gameId={selectedGame}
+        gameName={
+          currentGameInfo
+            ? t(`lectureStudy.game.${selectedGame}` as Parameters<typeof t>[0])
+            : ''
+        }
+        gameIcon={currentGameInfo?.icon ?? ''}
+        onStartGame={handleDescriptionStart}
+      />
       <WordListModal
         open={showWordModal}
         onOpenChange={setShowWordModal}

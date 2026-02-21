@@ -291,7 +291,34 @@
       "wordKeywordPlaceholder": "Keyword",
       "wordDescriptionPlaceholder": "Description",
       "importError": "Failed to import keywords. Please add words manually.",
-      "loadGameError": "Failed to load game"
+      "loadGameError": "Failed to load game",
+      "description": {
+        "goalLabel": "Goal",
+        "controlsLabel": "Controls",
+        "startButton": "Start Game",
+        "running": {
+          "goal": "Run, dodge obstacles, and answer OX quizzes",
+          "control1": "Jump to dodge obstacles",
+          "control2": "Slide to dodge obstacles"
+        },
+        "deck": {
+          "goal": "Flip through flashcards and rate your understanding",
+          "control1": "Click the card to flip"
+        },
+        "cardMatch": {
+          "goal": "Quickly match terms with their definitions",
+          "control1": "Click cards to find matching pairs"
+        },
+        "definitionBuilder": {
+          "goal": "Select word fragments to complete the definition",
+          "control1": "Click fragments to build the sentence"
+        },
+        "guessTheTerm": {
+          "goal": "Ask yes/no questions to guess the secret term",
+          "control1": "Type questions in the chat",
+          "control2": "Click the select answer button"
+        }
+      }
     },
     "breadcrumb": {
       "courseLoading": "Loading…",

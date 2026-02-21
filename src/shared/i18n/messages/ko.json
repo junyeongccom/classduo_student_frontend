@@ -291,7 +291,34 @@
       "wordKeywordPlaceholder": "단어",
       "wordDescriptionPlaceholder": "설명",
       "importError": "키워드를 가져오지 못했습니다. 수동으로 단어를 추가해주세요.",
-      "loadGameError": "게임을 불러오지 못했습니다"
+      "loadGameError": "게임을 불러오지 못했습니다",
+      "description": {
+        "goalLabel": "목표",
+        "controlsLabel": "조작법",
+        "startButton": "게임 시작",
+        "running": {
+          "goal": "달리면서 장애물을 피하고 OX 퀴즈에 답하세요",
+          "control1": "점프하여 장애물 피하기",
+          "control2": "슬라이드하여 장애물 피하기"
+        },
+        "deck": {
+          "goal": "플래시카드를 넘기며 단어의 이해도를 평가하세요",
+          "control1": "카드를 클릭하여 뒤집기"
+        },
+        "cardMatch": {
+          "goal": "단어와 정의를 빠르게 매칭하세요",
+          "control1": "카드를 클릭하여 짝 맞추기"
+        },
+        "definitionBuilder": {
+          "goal": "어절을 선택하여 정의 문장을 완성하세요",
+          "control1": "어절을 클릭하여 문장 조립"
+        },
+        "guessTheTerm": {
+          "goal": "예/아니오 질문으로 비밀 용어를 추측하세요",
+          "control1": "채팅으로 질문 입력",
+          "control2": "답변 선택 버튼 클릭"
+        }
+      }
     },
     "breadcrumb": {
       "courseLoading": "불러오는 중…",
