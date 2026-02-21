@@ -38,6 +38,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   jumpMultiplier = 1;
   scrollSpeed = 0;
   clampLeft = true;
+  private _giantScale = 1;
+
+  setGiantScale(scale: number): void {
+    const old = this._giantScale;
+    if (scale === old) return;
+    this._giantScale = scale;
+    if (scale > old) {
+      // Growing: shift up so feet stay on ground (larger sprite pushes feet down)
+      this.y -= (PLAYER_TEX_HEIGHT / 2) * (scale - old);
+    }
+    // Shrinking: don't adjust Y — moving down risks pushing body inside ground.
+    // Player floats briefly; gravity brings them back down naturally.
+  }
+
+  getGiantScale(): number {
+    return this._giantScale;
+  }
 
   startSpin(): void {
     this.spinning = true;
@@ -84,14 +101,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.lastLandTime = time;
       this.emit('land', this.x, this.y);
       this.squashTween?.stop();
+      const gs = this._giantScale;
       if (this.ducking) {
-        this.setScale(1.3, 0.5);
+        this.setScale(1.3 * gs, 0.5 * gs);
       } else {
-        this.setScale(1.4, 0.6);
+        this.setScale(1.4 * gs, 0.6 * gs);
         this.squashTween = this.scene.tweens.add({
           targets: this,
-          scaleX: 1,
-          scaleY: 1,
+          scaleX: gs,
+          scaleY: gs,
           duration: 300,
           ease: 'Back.Out',
         });
@@ -160,6 +178,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // Ensure body size stays correct after texture swap
+    // NOTE: setSize sets SOURCE dimensions; updateBounds multiplies by sprite scale.
+    // So do NOT multiply by gs here — setScale(gs) already handles body scaling.
     if (this.ducking) {
       body.setSize(30 * S, 19 * S);
       body.setOffset(5 * S, 22 * S);
@@ -168,6 +188,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       body.setSize(30 * S, 38 * S);
       body.setOffset(5 * S, 5 * S);
+    }
+
+    // Apply giant visual scale when no squash/stretch tween is playing
+    const gs2 = this._giantScale;
+    if (gs2 !== 1 && (!this.squashTween || !this.squashTween.isPlaying())) {
+      this.setScale(gs2);
     }
 
     this.applyVariableGravity(body);
@@ -223,6 +249,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   startDuck(): void {
     if (this.ducking) return;
+    if (this._giantScale !== 1) return;
     const body = this.body as Phaser.Physics.Arcade.Body;
     if (!body.blocked.down) {
       this.duckRequested = true;
@@ -233,7 +260,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setSize(30 * S, 19 * S);
     body.setOffset(5 * S, 22 * S);
     this.y += 8.5 * S;
-    this.setScale(1.3, 0.5);
+    this.setScale(1.3 * this._giantScale, 0.5 * this._giantScale);
   }
 
   endDuck(): void {
@@ -244,7 +271,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setSize(30 * S, 38 * S);
     body.setOffset(5 * S, 5 * S);
     this.y -= 8.5 * S;
-    this.setScale(1, 1);
+    this.setScale(this._giantScale, this._giantScale);
     this.setAngle(0);
   }
 
@@ -256,6 +283,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.maxJumps = MAX_JUMPS;
     this.jumpMultiplier = 1;
     this.scrollSpeed = 0;
+    this._giantScale = 1;
     this.justJumped = false;
     this.spinning = false;
     this.ducking = false;
@@ -298,13 +326,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.justJumped = true;
     this.emit('jump', this.x, this.y, this.jumpCount);
 
-    // Squash & Stretch: stretch on jump
+    // Squash & Stretch: stretch on jump (account for giant scale)
+    const gs = this._giantScale;
     this.squashTween?.stop();
-    this.setScale(0.75, 1.35);
+    this.setScale(0.75 * gs, 1.35 * gs);
     this.squashTween = this.scene.tweens.add({
       targets: this,
-      scaleX: 1,
-      scaleY: 1,
+      scaleX: gs,
+      scaleY: gs,
       duration: 250,
       ease: 'Back.Out',
     });

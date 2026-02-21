@@ -5,6 +5,7 @@ import {
   GAME_HEIGHT,
   FONT_FAMILY,
 } from "../constants";
+import { HowToPlayModal } from "./HowToPlayModal";
 
 // ── i18n ──
 
@@ -28,7 +29,7 @@ interface MenuStrings {
 
 const STRINGS: Record<"ko" | "en", MenuStrings> = {
   ko: {
-    title: "JUMP ACTION",
+    title: "Quiz Runner",
     startGame: "게임 시작",
     howToPlay: "게임 설명",
     dashboard: "대시보드",
@@ -45,7 +46,7 @@ const STRINGS: Record<"ko" | "en", MenuStrings> = {
     close: "닫기",
   },
   en: {
-    title: "JUMP ACTION",
+    title: "Quiz Runner",
     startGame: "Start Game",
     howToPlay: "How to Play",
     dashboard: "Dashboard",
@@ -80,11 +81,59 @@ export class MainMenuScene extends Phaser.Scene {
   create(): void {
     this.t = STRINGS[detectLanguage()];
 
-    // Dark background
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x111118);
-
+    this.createBackground();
     this.createTitle();
     this.createMenuButtons();
+  }
+
+  // ── Background ──
+
+  private createBackground(): void {
+    // Gradient: top 0x0d1117 → bottom 0x0a0a0a
+    const gfx = this.add.graphics();
+    const steps = 64;
+    const sliceH = GAME_HEIGHT / steps;
+    for (let i = 0; i < steps; i++) {
+      const t = i / (steps - 1);
+      const r = Phaser.Math.Linear(0x0d, 0x0a, t);
+      const g = Phaser.Math.Linear(0x11, 0x0a, t);
+      const b = Phaser.Math.Linear(0x17, 0x0a, t);
+      const color = (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
+      gfx.fillStyle(color, 1);
+      gfx.fillRect(0, i * sliceH, GAME_WIDTH, sliceH + 1);
+    }
+
+    // Bottom indigo glow
+    const glow = this.add.graphics();
+    glow.fillStyle(0x6366f1, 0.07);
+    glow.fillEllipse(GAME_WIDTH / 2, GAME_HEIGHT + 40 * S, GAME_WIDTH * 1.2, 260 * S);
+
+    // Floating indigo particles
+    this.createParticles();
+  }
+
+  private createParticles(): void {
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const px = Phaser.Math.Between(40, GAME_WIDTH - 40);
+      const py = Phaser.Math.Between(40, GAME_HEIGHT - 40);
+      const size = Phaser.Math.FloatBetween(2, 5) * S;
+      const alpha = Phaser.Math.FloatBetween(0.08, 0.22);
+
+      const dot = this.add.circle(px, py, size, 0x818cf8, alpha);
+
+      this.tweens.add({
+        targets: dot,
+        x: dot.x + Phaser.Math.Between(-60, 60),
+        y: dot.y + Phaser.Math.Between(-40, 40),
+        alpha: { from: alpha, to: alpha * 0.4 },
+        duration: Phaser.Math.Between(4000, 7000),
+        yoyo: true,
+        repeat: -1,
+        ease: "Sine.easeInOut",
+        delay: Phaser.Math.Between(0, 2000),
+      });
+    }
   }
 
   // ── Title ──
@@ -98,17 +147,18 @@ export class MainMenuScene extends Phaser.Scene {
         fontSize: `${Math.round(52 * S)}px`,
         color: "#ffffff",
         fontStyle: "bold",
-        stroke: "#2c3e50",
+        stroke: "#312E81",
         strokeThickness: 6 * S,
         shadow: {
           offsetX: 3 * S,
           offsetY: 3 * S,
-          color: "rgba(0,0,0,0.3)",
-          blur: 8 * S,
+          color: "rgba(0,0,0,0.4)",
+          blur: 10 * S,
           fill: true,
         },
       })
       .setOrigin(0.5);
+
 
     // Subtle pulse
     this.tweens.add({
@@ -159,7 +209,9 @@ export class MainMenuScene extends Phaser.Scene {
 
     menuItems.forEach((item, i) => {
       const y = startY + i * (btnH + gap);
-      this.createButton(centerX, y, btnW, btnH, item.label, item.enabled, item.action);
+      const variant: "primary" | "secondary" | "disabled" =
+        !item.enabled ? "disabled" : i === 0 ? "primary" : "secondary";
+      this.createButton(centerX, y, btnW, btnH, item.label, item.enabled, variant, item.action);
     });
   }
 
@@ -170,21 +222,35 @@ export class MainMenuScene extends Phaser.Scene {
     h: number,
     label: string,
     enabled: boolean,
+    variant: "primary" | "secondary" | "disabled",
     action?: () => void
   ): Phaser.GameObjects.Container {
     const radius = 12 * S;
 
-    // Button background — glassmorphism style
     const bg = this.add.graphics();
-    if (enabled) {
-      // Fill with semi-transparent white
-      bg.fillStyle(0xffffff, 0.2);
+    const hoverBg = this.add.graphics();
+    hoverBg.setAlpha(0);
+
+    if (variant === "primary") {
+      // Solid indigo background
+      bg.fillStyle(0x6366f1, 1);
       bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
-      // Border
-      bg.lineStyle(2 * S, 0xffffff, 0.5);
+      // Hover: brighter indigo + glow
+      hoverBg.fillStyle(0x818cf8, 1);
+      hoverBg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
+    } else if (variant === "secondary") {
+      // Dark background + indigo border
+      bg.fillStyle(0x1a1a2e, 0.8);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
+      bg.lineStyle(2 * S, 0x6366f1, 0.5);
       bg.strokeRoundedRect(-w / 2, -h / 2, w, h, radius);
+      // Hover: brighter border
+      hoverBg.fillStyle(0x1a1a2e, 0.9);
+      hoverBg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
+      hoverBg.lineStyle(2 * S, 0x818cf8, 1);
+      hoverBg.strokeRoundedRect(-w / 2, -h / 2, w, h, radius);
     } else {
-      // Disabled — darker, more transparent
+      // Disabled — dark + grey border
       bg.fillStyle(0x000000, 0.3);
       bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
       bg.lineStyle(2 * S, 0xffffff, 0.15);
@@ -202,7 +268,7 @@ export class MainMenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const children: Phaser.GameObjects.GameObject[] = [bg, text];
+    const children: Phaser.GameObjects.GameObject[] = [bg, hoverBg, text];
 
     // Lock icon for disabled buttons
     if (!enabled) {
@@ -232,6 +298,12 @@ export class MainMenuScene extends Phaser.Scene {
 
       container.on("pointerover", () => {
         this.tweens.add({
+          targets: hoverBg,
+          alpha: 1,
+          duration: 150,
+          ease: "Power2",
+        });
+        this.tweens.add({
           targets: container,
           scaleX: 1.05,
           scaleY: 1.05,
@@ -241,6 +313,12 @@ export class MainMenuScene extends Phaser.Scene {
       });
 
       container.on("pointerout", () => {
+        this.tweens.add({
+          targets: hoverBg,
+          alpha: 0,
+          duration: 150,
+          ease: "Power2",
+        });
         this.tweens.add({
           targets: container,
           scaleX: 1,
@@ -271,164 +349,6 @@ export class MainMenuScene extends Phaser.Scene {
   // ── How to Play overlay ──
 
   private showHowToPlay(): void {
-    const overlay = this.add.container(0, 0).setDepth(100);
-
-    // Dim backdrop
-    const backdrop = this.add
-      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.7)
-      .setInteractive();
-    overlay.add(backdrop);
-
-    // Panel
-    const panelW = 560 * S;
-    const panelH = 340 * S;
-    const panelX = GAME_WIDTH / 2;
-    const panelY = GAME_HEIGHT / 2;
-    const panelR = 16 * S;
-
-    const panelBg = this.add.graphics();
-    panelBg.fillStyle(0x1a1a2e, 0.95);
-    panelBg.fillRoundedRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH, panelR);
-    panelBg.lineStyle(2 * S, 0xffffff, 0.3);
-    panelBg.strokeRoundedRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH, panelR);
-    overlay.add(panelBg);
-
-    // Title
-    const titleFontSize = Math.round(28 * S);
-    overlay.add(
-      this.add
-        .text(panelX, panelY - panelH / 2 + 30 * S, this.t.howToPlayTitle, {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${titleFontSize}px`,
-          color: "#ffffff",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5)
-    );
-
-    // Divider
-    const divider = this.add.graphics();
-    divider.lineStyle(1 * S, 0xffffff, 0.2);
-    divider.lineBetween(
-      panelX - panelW / 2 + 30 * S,
-      panelY - panelH / 2 + 55 * S,
-      panelX + panelW / 2 - 30 * S,
-      panelY - panelH / 2 + 55 * S
-    );
-    overlay.add(divider);
-
-    // Content
-    const contentX = panelX - panelW / 2 + 40 * S;
-    const bodyFontSize = Math.round(15 * S);
-    const headFontSize = Math.round(18 * S);
-    let cy = panelY - panelH / 2 + 80 * S;
-    const lineGap = 24 * S;
-
-    // Controls section
-    overlay.add(
-      this.add
-        .text(contentX, cy, `▸ ${this.t.controls}`, {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${headFontSize}px`,
-          color: "#f0c040",
-          fontStyle: "bold",
-        })
-        .setOrigin(0)
-    );
-    cy += lineGap + 4 * S;
-
-    overlay.add(
-      this.add
-        .text(contentX + 12 * S, cy, this.t.controlJump, {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${bodyFontSize}px`,
-          color: "#dddddd",
-        })
-        .setOrigin(0)
-    );
-    cy += lineGap;
-
-    overlay.add(
-      this.add
-        .text(contentX + 12 * S, cy, this.t.controlSlide, {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${bodyFontSize}px`,
-          color: "#dddddd",
-        })
-        .setOrigin(0)
-    );
-    cy += lineGap + 12 * S;
-
-    // Rules section
-    overlay.add(
-      this.add
-        .text(contentX, cy, `▸ ${this.t.rules}`, {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${headFontSize}px`,
-          color: "#f0c040",
-          fontStyle: "bold",
-        })
-        .setOrigin(0)
-    );
-    cy += lineGap + 4 * S;
-
-    const rules = [this.t.ruleCoins, this.t.ruleQuiz, this.t.ruleHp];
-    rules.forEach((rule) => {
-      overlay.add(
-        this.add
-          .text(contentX + 12 * S, cy, `• ${rule}`, {
-            fontFamily: FONT_FAMILY,
-            fontSize: `${bodyFontSize}px`,
-            color: "#dddddd",
-          })
-          .setOrigin(0)
-      );
-      cy += lineGap;
-    });
-
-    // Close button
-    const closeBtnW = 120 * S;
-    const closeBtnH = 36 * S;
-    const closeBtnY = panelY + panelH / 2 - 30 * S;
-
-    const closeBg = this.add.graphics();
-    closeBg.fillStyle(0xffffff, 0.15);
-    closeBg.fillRoundedRect(panelX - closeBtnW / 2, closeBtnY - closeBtnH / 2, closeBtnW, closeBtnH, 8 * S);
-    closeBg.lineStyle(2 * S, 0xffffff, 0.3);
-    closeBg.strokeRoundedRect(panelX - closeBtnW / 2, closeBtnY - closeBtnH / 2, closeBtnW, closeBtnH, 8 * S);
-    overlay.add(closeBg);
-
-    const closeText = this.add
-      .text(panelX, closeBtnY, this.t.close, {
-        fontFamily: FONT_FAMILY,
-        fontSize: `${Math.round(16 * S)}px`,
-        color: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
-    overlay.add(closeText);
-
-    const closeHitArea = this.add
-      .rectangle(panelX, closeBtnY, closeBtnW, closeBtnH, 0x000000, 0)
-      .setInteractive({ useHandCursor: true });
-    overlay.add(closeHitArea);
-
-    closeHitArea.on("pointerdown", () => {
-      overlay.destroy();
-    });
-
-    // Also close on backdrop click
-    backdrop.on("pointerdown", () => {
-      overlay.destroy();
-    });
-
-    // Fade in
-    overlay.setAlpha(0);
-    this.tweens.add({
-      targets: overlay,
-      alpha: 1,
-      duration: 200,
-      ease: "Power2",
-    });
+    new HowToPlayModal(this, this.t).show();
   }
 }

@@ -52,7 +52,8 @@ export const COIN_DIAMOND_COUNT = 5;
 export const COLOR_COIN = 0xf1c40f;
 
 // Quiz
-export const QUIZ_INTERVAL_MS = 8000;
+export const QUIZ_SAFE_ZONE_MS = 3000;
+export const QUIZ_INTERVAL_MS = 12000;
 export const QUIZ_ANNOUNCE_MS = 4500;
 export const QUIZ_WINDOW_MS = 5000;
 export const QUIZ_RESULT_MS = 1000;
@@ -67,10 +68,26 @@ export const COLOR_QUIZ_WORD = 0x3498db;
 export const METEOR_SPAWN_INTERVAL_MIN_MS = 3000;
 export const METEOR_SPAWN_INTERVAL_MAX_MS = 9000;
 export const METEOR_SPEED_MULT = 1.25;
-export const METEOR_DAMAGE_HP = 5000;
+export const METEOR_DAMAGE_HP = 4000;
 export const METEOR_SIZE = 44 * S;
 export const METEOR_SPAWN_Y_MIN = 191 * S;
 export const METEOR_SPAWN_Y_MAX = GROUND_Y - GROUND_HEIGHT / 2 - 44 * S;
+
+// Difficulty ramp (time-based, 0→1 over DIFFICULTY_RAMP_SECONDS)
+export const DIFFICULTY_RAMP_SECONDS = 180;
+export const DIFFICULTY_MAX = 3;
+//                                           d=0     d=1     d=2     d=3
+export const DIFF_METEOR_MIN_MS:       [number, number, number, number] = [3000,   1500,    800,    500];
+export const DIFF_METEOR_MAX_MS:       [number, number, number, number] = [9000,   4000,   2000,   1200];
+export const DIFF_METEOR_SPEED_MULT:   [number, number, number, number] = [1.25,    1.8,    2.5,    3.2];
+export const DIFF_SCROLL_SPEED_BONUS:  [number, number, number, number] = [0, -100*S, -160*S, -200*S];
+export const DIFF_GAP_PROBABILITY:     [number, number, number, number] = [0.30,   0.50,   0.65,   0.75];
+export const DIFF_GAP_MAX_WIDTH:       [number, number, number, number] = [150*S,  200*S,  250*S,  300*S];
+export const DIFF_METEOR_DAMAGE:       [number, number, number, number] = [4000,   8000,  14000,  22000];
+export const DIFF_DOUBLE_METEOR_THRESHOLD = 0.6;
+export const DIFF_DOUBLE_METEOR_CHANCE = 0.25;
+export const DIFF_TRIPLE_METEOR_THRESHOLD = 2.0;
+export const DIFF_TRIPLE_METEOR_CHANCE = 0.20;
 
 // Quiz scroll colors (3 colors)
 export const SCROLL_COLORS = [
@@ -81,8 +98,8 @@ export const SCROLL_COLORS = [
 
 // Heart item (field HP pickup)
 export const HEART_ITEM_SIZE = 38 * S;
-export const HEART_SPAWN_INTERVAL_MS = 12000;
-export const HEART_RESTORE_AMOUNT = 4000;
+export const HEART_SPAWN_INTERVAL_MS = 9000;
+export const HEART_RESTORE_AMOUNT = 12000;
 export const HEART_WAVE_AMPLITUDE = 40 * S;
 export const HEART_WAVE_SPEED = 0.004;
 export const HEART_SPAWN_Y = GAME_HEIGHT * 0.45;
@@ -90,7 +107,7 @@ export const HEART_SPAWN_Y = GAME_HEIGHT * 0.45;
 // Buff / Debuff (stack-based: multiplier = base ^ stacks)
 export const SPEED_STACK_BASE = 1.15;
 export const JUMP_STACK_BASE = 1.15;
-export const SPEED_MULT_MIN = 0.4;
+export const SPEED_MULT_MIN = 1.0;
 export const SPEED_MULT_MAX = 2.5;
 export const JUMP_MULT_MIN = 0.4;
 export const JUMP_MULT_MAX = 2.5;
@@ -100,7 +117,7 @@ export const SCORE_BONUS = 30;
 export const EFFECT_DISPLAY_MS = 1500;
 
 // Heart restore stack-based (multiplier = base ^ stacks)
-export const HEART_RESTORE_STACK_BASE = 1.15;
+export const HEART_RESTORE_STACK_BASE = 1.20;
 export const HEART_RESTORE_MULT_MIN = 0.4;
 export const HEART_RESTORE_MULT_MAX = 2.5;
 export const HEART_RESTORE_COLOR_CAP = 5;
@@ -108,6 +125,12 @@ export const HEART_RESTORE_COLOR_CAP = 5;
 // Heart glow colors (default yellow)
 export const COLOR_HEART_GLOW = 0xf1c40f;
 export const COLOR_HEART_GLOW_SHINE = 0xf9e547;
+
+// HP passive decay
+export const HP_DECAY_BASE_RATE = 1.5;
+
+// Quiz correct answer HP restore
+export const QUIZ_CORRECT_HP_RESTORE = 5000;
 
 // HP gauge (Cookie Run style)
 export const HP_MAX = 90000;
@@ -131,7 +154,7 @@ export const HP_COLORS = {
 };
 export const HP_SEGMENT_COLOR = 0x922b21;
 export const HP_MAX_BOOST = 5000;
-export const HP_DECAY_STACK_BASE = 1.15;
+export const HP_DECAY_STACK_BASE = 1.20;
 export const HP_DECAY_MULT_MIN = 0.4;
 export const HP_DECAY_MULT_MAX = 2.5;
 export const HP_MAX_MIN = 15000;
@@ -234,3 +257,31 @@ export const SCORE_POPUP_RISE = 30 * S;
 export const SCORE_BOUNCE_SCALE = 1.3;
 export const SCORE_BOUNCE_DURATION = 200;
 export const SCORE_LERP_SPEED = 200;
+
+// ── Active abilities ──
+
+// Magnet — attracts / repels coins
+export const MAGNET_COOLDOWN_MS = 18000;
+export const MAGNET_DURATION_MS = 5000;
+//                                                            Lv0    Lv1       Lv2       Lv3
+export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 200 * S, 350 * S, 550 * S];
+export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 200 * S, 350 * S, 550 * S];
+export const MAGNET_RANGE = GAME_WIDTH * 0.6;
+
+// Giant — player scale change + meteor destroy
+export const GIANT_COOLDOWN_MS = 22000;
+export const GIANT_DURATION_MS = 4000;
+export const GIANT_BUFF_SCALE:   [number, number, number, number] = [1, 1.5, 1.8, 2.0];
+export const GIANT_DEBUFF_SCALE: [number, number, number, number] = [1, 0.7, 0.5, 0.4];
+export const GIANT_METEOR_SCORE: [number, number, number, number] = [0, 0, 0, 5];
+
+// Coin Rain — spawns coins (buff) or extra meteors (debuff)
+export const COIN_RAIN_COOLDOWN_MS = 18000;
+export const COIN_RAIN_DURATION_MS = 5000;
+export const COIN_RAIN_SPAWN_MS:   [number, number, number, number] = [0, 250, 170, 100];
+export const METEOR_RAIN_SPAWN_MS: [number, number, number, number] = [0, 500, 300, 180];
+
+// Active unlock thresholds
+export const ACTIVE_UNLOCK_SCORE = 30;
+export const ACTIVE_UNLOCK_STACKS = 3;
+export const ACTIVE_MAX_LEVEL = 3;
