@@ -87,13 +87,8 @@ function getControls(gameId: string): ControlItem[] {
           labelKey: 'controlJump',
         },
         {
-          icon: (
-            <span className="flex items-center gap-1">
-              <Kbd>&larr;</Kbd>
-              <Kbd>&rarr;</Kbd>
-            </span>
-          ),
-          labelKey: 'controlMove',
+          icon: <Kbd>&darr;</Kbd>,
+          labelKey: 'controlDuck',
         },
       ]
     case 'deck':
@@ -102,9 +97,9 @@ function getControls(gameId: string): ControlItem[] {
         {
           icon: (
             <span className="flex items-center gap-1">
-              <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">Easy</span>
-              <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300">Good</span>
-              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">Hard</span>
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">Bad</span>
+              <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300">Okay</span>
+              <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">Good</span>
             </span>
           ),
           labelKey: 'controlRate',

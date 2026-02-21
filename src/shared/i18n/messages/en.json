@@ -300,7 +300,7 @@
           "subtitle": "A side-scrolling runner — jump obstacles and answer OX quizzes",
           "goal": "Your character runs automatically. Jump over obstacles and answer OX quizzes that appear. Survive as long as you can!",
           "controlJump": "Jump",
-          "controlMove": "Move",
+          "controlDuck": "Duck (slide)",
           "objCoin": "Coin",
           "objCoinDesc": "Earn points",
           "objScroll": "Quiz Scroll",
@@ -314,7 +314,7 @@
           "subtitle": "Flashcards with spaced repetition for effective memorization",
           "goal": "See a keyword on the front of the card. Try to recall its meaning, then flip to check. Rate how well you knew it.",
           "controlFlip": "Flip card",
-          "controlRate": "Rate difficulty (Easy / Good / Hard)",
+          "controlRate": "Rate recall (Bad / Okay / Good)",
           "previewHint": "Click to reveal description"
         },
         "cardMatch": {
@@ -327,13 +327,13 @@
         "definitionBuilder": {
           "subtitle": "Fill in the blanks with correct tokens to complete definitions",
           "goal": "Given a keyword, its definition has missing tokens. Select the correct tokens from the choices below to complete it.",
-          "controlSelect": "Click to select a token",
-          "controlPlace": "Place into blanks",
+          "controlSelect": "Click a choice to auto-fill the blank",
+          "controlPlace": "Correct +10 pts, wrong −10 pts",
           "previewHint": "Select the correct token from the choices"
         },
         "guessTheTerm": {
           "subtitle": "Deduce the AI's secret term by asking yes/no questions",
-          "goal": "The AI picks a secret term from your word list. Ask up to 5 yes/no questions, then guess which term it is.",
+          "goal": "The AI picks a secret term from your word list. You have up to 5 questions and 4 guess attempts. Narrow it down with questions, then pick the answer.",
           "controlType": "Type your questions",
           "controlGuess": "Click a term to guess",
           "previewAI": "I picked a secret term!",
