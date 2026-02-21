@@ -291,7 +291,57 @@
       "wordKeywordPlaceholder": "단어",
       "wordDescriptionPlaceholder": "설명",
       "importError": "키워드를 가져오지 못했습니다. 수동으로 단어를 추가해주세요.",
-      "loadGameError": "게임을 불러오지 못했습니다"
+      "loadGameError": "게임을 불러오지 못했습니다",
+      "desc": {
+        "goalLabel": "목표",
+        "controlsLabel": "조작 방법",
+        "playButton": "게임 시작",
+        "running": {
+          "subtitle": "장애물을 뛰어넘고 OX 퀴즈에 답하는 횡스크롤 러닝 게임",
+          "goal": "캐릭터가 자동으로 달립니다. 장애물을 뛰어넘고, 나타나는 OX 퀴즈에 정답을 맞혀 최대한 오래 살아남으세요.",
+          "controlJump": "점프",
+          "controlMove": "이동",
+          "objCoin": "코인",
+          "objCoinDesc": "점수 획득",
+          "objScroll": "퀴즈 두루마리",
+          "objScrollDesc": "OX 퀴즈 출제",
+          "objHeart": "하트",
+          "objHeartDesc": "HP 회복",
+          "objMeteor": "유성",
+          "objMeteorDesc": "장애물 — 피하세요!"
+        },
+        "deck": {
+          "subtitle": "간격 반복으로 효과적으로 암기하는 플래시카드",
+          "goal": "카드 앞면에 키워드가 표시됩니다. 뜻을 떠올린 후 카드를 뒤집어 확인하고, 난이도를 평가하세요.",
+          "controlFlip": "카드 뒤집기",
+          "controlRate": "난이도 평가 (쉬움/보통/어려움)",
+          "previewHint": "클릭하여 설명 확인"
+        },
+        "cardMatch": {
+          "subtitle": "키워드와 설명을 짝짓는 메모리 매칭 게임",
+          "goal": "격자에 뒤집힌 카드들이 있습니다. 두 장씩 뒤집어 키워드-설명 짝을 찾으세요. 빠를수록 좋습니다!",
+          "controlFlip": "카드를 클릭하여 뒤집기",
+          "controlTimer": "타이머가 경과 시간을 측정합니다",
+          "previewHint": "두 장씩 뒤집어 짝을 맞추세요"
+        },
+        "definitionBuilder": {
+          "subtitle": "빈칸에 올바른 토큰을 넣어 정의를 완성하세요",
+          "goal": "키워드가 주어지면 정의에 빈칸이 있습니다. 아래 보기에서 올바른 토큰을 선택하여 정의를 완성하세요.",
+          "controlSelect": "토큰을 클릭하여 선택",
+          "controlPlace": "빈칸에 배치",
+          "previewHint": "보기에서 올바른 토큰을 선택하세요"
+        },
+        "guessTheTerm": {
+          "subtitle": "AI가 고른 비밀 용어를 추리하는 질문 게임",
+          "goal": "AI가 단어 목록에서 비밀 용어를 하나 고릅니다. 최대 5번의 예/아니오 질문을 하고, 어떤 용어인지 맞혀보세요.",
+          "controlType": "질문 입력",
+          "controlGuess": "용어를 클릭하여 추측",
+          "previewAI": "비밀 용어를 골랐어요!",
+          "previewUser": "생물학 관련인가요?",
+          "previewReply": "네, 맞습니다!",
+          "previewHint": "질문으로 비밀 용어를 추리하세요"
+        }
+      }
     },
     "breadcrumb": {
       "courseLoading": "불러오는 중…",

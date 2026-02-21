@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl'
 import { useLocale } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
+import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
@@ -112,6 +113,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const t = useTranslations()
   const locale = useLocale() as AppLocale
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
+  const [showDescriptionPopup, setShowDescriptionPopup] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
@@ -146,6 +148,11 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
 
   const handleSelectGame = useCallback((gameId: string) => {
     setSelectedGame(gameId)
+    setShowDescriptionPopup(true)
+  }, [])
+
+  const handlePlayFromDescription = useCallback(() => {
+    setShowDescriptionPopup(false)
     setShowWordModal(true)
   }, [])
 
@@ -467,6 +474,12 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   return (
     <>
       <GameSelector onSelectGame={handleSelectGame} />
+      <GameDescriptionPopup
+        open={showDescriptionPopup}
+        onOpenChange={setShowDescriptionPopup}
+        gameId={selectedGame}
+        onPlay={handlePlayFromDescription}
+      />
       <WordListModal
         open={showWordModal}
         onOpenChange={setShowWordModal}

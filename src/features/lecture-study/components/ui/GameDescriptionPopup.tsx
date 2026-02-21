@@ -1,0 +1,478 @@
+/**
+ * @file GameDescriptionPopup.tsx
+ * @description 게임 설명 팝업 — 게임 목표, 시각적 가이드, 조작 방법을 보여주고 "게임 시작" 버튼으로 진행
+ * @module features/lecture-study/components/ui
+ * @dependencies shared/components/ui/Dialog, lucide-react
+ */
+
+'use client'
+
+import { useTranslations } from 'next-intl'
+import Image from 'next/image'
+import { Target, Gamepad2, Mouse, Keyboard, Timer, ArrowUpDown, Eye, MessageSquare } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/shared/components/ui'
+import { cn } from '@/shared/lib/utils'
+import { GAME_LIST } from './GameSelector'
+
+interface GameDescriptionPopupProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  gameId: string | null
+  onPlay: () => void
+}
+
+type GameTheme = {
+  goalBg: string
+  button: string
+  previewBg: string
+}
+
+const GAME_THEMES: Record<string, GameTheme> = {
+  running: {
+    goalBg: 'bg-orange-50 dark:bg-orange-950/30',
+    button: 'bg-orange-500 hover:bg-orange-600',
+    previewBg: 'bg-gradient-to-b from-sky-200 via-sky-100 to-amber-100',
+  },
+  deck: {
+    goalBg: 'bg-blue-50 dark:bg-blue-950/30',
+    button: 'bg-blue-500 hover:bg-blue-600',
+    previewBg: 'bg-slate-50',
+  },
+  cardMatch: {
+    goalBg: 'bg-violet-50 dark:bg-violet-950/30',
+    button: 'bg-violet-500 hover:bg-violet-600',
+    previewBg: 'bg-slate-50',
+  },
+  definitionBuilder: {
+    goalBg: 'bg-emerald-50 dark:bg-emerald-950/30',
+    button: 'bg-emerald-500 hover:bg-emerald-600',
+    previewBg: 'bg-slate-50',
+  },
+  guessTheTerm: {
+    goalBg: 'bg-pink-50 dark:bg-pink-950/30',
+    button: 'bg-pink-500 hover:bg-pink-600',
+    previewBg: 'bg-slate-50',
+  },
+}
+
+type ControlItem = {
+  icon: React.ReactNode
+  labelKey: string
+}
+
+const KBD_CLASSES = 'inline-flex items-center justify-center rounded border border-gray-300 bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return <kbd className={KBD_CLASSES}>{children}</kbd>
+}
+
+function getControls(gameId: string): ControlItem[] {
+  switch (gameId) {
+    case 'running':
+      return [
+        {
+          icon: (
+            <span className="flex items-center gap-1">
+              <Kbd>&uarr;</Kbd>
+              <Kbd>Space</Kbd>
+            </span>
+          ),
+          labelKey: 'controlJump',
+        },
+        {
+          icon: (
+            <span className="flex items-center gap-1">
+              <Kbd>&larr;</Kbd>
+              <Kbd>&rarr;</Kbd>
+            </span>
+          ),
+          labelKey: 'controlMove',
+        },
+      ]
+    case 'deck':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlFlip' },
+        {
+          icon: (
+            <span className="flex items-center gap-1">
+              <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">Easy</span>
+              <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300">Good</span>
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">Hard</span>
+            </span>
+          ),
+          labelKey: 'controlRate',
+        },
+      ]
+    case 'cardMatch':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlFlip' },
+        { icon: <Timer className="h-4 w-4 text-gray-500" />, labelKey: 'controlTimer' },
+      ]
+    case 'definitionBuilder':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlSelect' },
+        { icon: <ArrowUpDown className="h-4 w-4 text-gray-500" />, labelKey: 'controlPlace' },
+      ]
+    case 'guessTheTerm':
+      return [
+        { icon: <Keyboard className="h-4 w-4 text-gray-500" />, labelKey: 'controlType' },
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlGuess' },
+      ]
+    default:
+      return []
+  }
+}
+
+/* ─── Running Game: Object Guide ─── */
+function RunningGamePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      {/* Scene preview */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-b from-[#5b86c7] via-[#a8ceef] to-[#f5e6ca] p-3">
+        {/* Ground */}
+        <div className="absolute bottom-0 left-0 right-0 h-5 bg-gradient-to-b from-[#6b8e23] to-[#9b8365]" />
+        {/* Player character */}
+        <div className="absolute bottom-5 left-8 flex flex-col items-center">
+          <div className="relative h-10 w-6">
+            {/* Body */}
+            <div className="absolute inset-x-0 top-0 h-7 rounded-t-full bg-gradient-to-b from-[#d04435] to-[#a0281e]" />
+            {/* Face */}
+            <div className="absolute left-1 top-1.5 h-3.5 w-4 rounded-full bg-white">
+              <div className="absolute left-0.5 top-1 h-1 w-1 rounded-full bg-gray-800" />
+              <div className="absolute right-0.5 top-1 h-1 w-1 rounded-full bg-gray-800" />
+            </div>
+            {/* Legs */}
+            <div className="absolute bottom-0 left-0.5 h-3 w-2 rounded-b bg-[#c0392b]" />
+            <div className="absolute bottom-0 right-0.5 h-3 w-2 rounded-b bg-[#c0392b]" />
+          </div>
+        </div>
+        {/* Floating objects label area */}
+        <div className="relative ml-16 flex items-end gap-4 pb-6">
+          {/* Coin */}
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-sm">
+              <span className="text-[10px] font-bold text-yellow-800">&#9733;</span>
+            </div>
+          </div>
+          {/* Scroll */}
+          <div className="flex flex-col items-center gap-0.5">
+            <Image src="/game/scroll_0.png" alt="scroll" width={28} height={28} className="drop-shadow-sm" />
+          </div>
+          {/* Heart */}
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="text-xl leading-none drop-shadow-sm">&#10084;&#65039;</div>
+          </div>
+          {/* Meteor */}
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600 shadow-sm">
+              <span className="text-xs">&#9728;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Object legend */}
+      <div className="grid grid-cols-2 gap-1.5">
+        {/* Coin */}
+        <div className="flex items-center gap-2 rounded-lg bg-yellow-50 px-2.5 py-1.5 dark:bg-yellow-950/20">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500">
+            <span className="text-[8px] font-bold text-yellow-800">&#9733;</span>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objCoin')}</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objCoinDesc')}</p>
+          </div>
+        </div>
+        {/* Scroll / Quiz */}
+        <div className="flex items-center gap-2 rounded-lg bg-pink-50 px-2.5 py-1.5 dark:bg-pink-950/20">
+          <Image src="/game/scroll_0.png" alt="quiz scroll" width={24} height={24} className="shrink-0" />
+          <div>
+            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objScroll')}</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objScrollDesc')}</p>
+          </div>
+        </div>
+        {/* Heart */}
+        <div className="flex items-center gap-2 rounded-lg bg-red-50 px-2.5 py-1.5 dark:bg-red-950/20">
+          <span className="shrink-0 text-base leading-none">&#10084;&#65039;</span>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objHeart')}</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objHeartDesc')}</p>
+          </div>
+        </div>
+        {/* Meteor */}
+        <div className="flex items-center gap-2 rounded-lg bg-orange-50 px-2.5 py-1.5 dark:bg-orange-950/20">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-600">
+            <span className="text-[10px]">&#9728;</span>
+          </div>
+          <div>
+            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objMeteor')}</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objMeteorDesc')}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Deck Game: Flashcard Preview ─── */
+function DeckGamePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
+      {/* Card */}
+      <div className="relative h-24 w-full max-w-[200px] rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div className="flex h-full flex-col items-center justify-center p-3">
+          <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Keyword</span>
+          <span className="mt-1 text-[10px] text-slate-400">{t('lectureStudy.game.desc.deck.previewHint')}</span>
+        </div>
+        {/* Flip arrow indicator */}
+        <div className="absolute -right-6 top-1/2 -translate-y-1/2 text-slate-300">&#8644;</div>
+      </div>
+      {/* Rating buttons */}
+      <div className="flex gap-2">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700">Bad</div>
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700">Okay</div>
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">Good</div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Card Match: Grid Preview ─── */
+function CardMatchPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
+      {/* Timer */}
+      <div className="mb-2 text-center text-sm font-semibold text-slate-500">0:00.00</div>
+      {/* Card grid */}
+      <div className="grid grid-cols-4 gap-1.5">
+        {Array.from({ length: 12 }).map((_, i) => {
+          const isFlipped = i === 2
+          const isMatched = i === 5 || i === 8
+          return (
+            <div
+              key={i}
+              className={cn(
+                'flex h-9 items-center justify-center rounded-lg border text-[10px] font-semibold transition-all',
+                isMatched
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-600 opacity-50'
+                  : isFlipped
+                    ? 'border-blue-300 bg-white text-blue-600 shadow-sm'
+                    : 'border-slate-200 bg-gradient-to-br from-slate-100 to-slate-200 text-slate-400',
+              )}
+            >
+              {isMatched ? '\u2713' : isFlipped ? 'ABC' : '?'}
+            </div>
+          )
+        })}
+      </div>
+      <p className="mt-2 text-center text-[10px] text-slate-400">{t('lectureStudy.game.desc.cardMatch.previewHint')}</p>
+    </div>
+  )
+}
+
+/* ─── Definition Builder: Fill-blank Preview ─── */
+function DefBuilderPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
+      {/* Keyword */}
+      <div className="mb-2 text-center text-base font-semibold text-blue-600">Keyword</div>
+      {/* Definition with blanks */}
+      <div className="mb-3 flex flex-wrap items-center justify-center gap-1 text-sm text-slate-700 dark:text-slate-300">
+        <span>The</span>
+        <span className="inline-flex min-w-[48px] items-center justify-center rounded-md border border-slate-300 bg-white px-2 py-0.5 text-xs font-semibold text-slate-900 dark:border-slate-600 dark:bg-slate-800">____</span>
+        <span>is</span>
+        <span>a</span>
+        <span className="inline-flex min-w-[48px] items-center justify-center rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600">cell</span>
+        <span>that</span>
+        <span className="inline-flex min-w-[48px] items-center justify-center rounded-md border border-slate-300 bg-white px-2 py-0.5 text-xs font-semibold text-slate-900 dark:border-slate-600 dark:bg-slate-800">____</span>
+      </div>
+      {/* Token choices */}
+      <div className="flex flex-wrap justify-center gap-1.5">
+        {['process', 'cell', 'energy', 'divide'].map((token, i) => (
+          <span
+            key={token}
+            className={cn(
+              'rounded-full px-3 py-1 text-[11px] font-semibold',
+              i === 1
+                ? 'border border-emerald-200 bg-emerald-50 text-emerald-600'
+                : 'border border-blue-200 bg-blue-50 text-blue-600',
+            )}
+          >
+            {token}
+          </span>
+        ))}
+      </div>
+      <p className="mt-2 text-center text-[10px] text-slate-400">{t('lectureStudy.game.desc.definitionBuilder.previewHint')}</p>
+    </div>
+  )
+}
+
+/* ─── Guess The Term: Chat + Grid Preview ─── */
+function GuessTermPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900">
+      <div className="grid grid-cols-5 gap-2">
+        {/* Chat area (left 2 cols) */}
+        <div className="col-span-2 flex flex-col gap-1.5 rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-800">
+          {/* System message */}
+          <div className="self-start rounded-xl bg-slate-100 px-2 py-1 text-[9px] text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+            {t('lectureStudy.game.desc.guessTheTerm.previewAI')}
+          </div>
+          {/* User message */}
+          <div className="self-end rounded-xl bg-slate-900 px-2 py-1 text-[9px] text-white">
+            {t('lectureStudy.game.desc.guessTheTerm.previewUser')}
+          </div>
+          {/* System reply */}
+          <div className="self-start rounded-xl bg-slate-100 px-2 py-1 text-[9px] text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+            {t('lectureStudy.game.desc.guessTheTerm.previewReply')}
+          </div>
+          {/* Input */}
+          <div className="mt-auto flex gap-1">
+            <div className="flex-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[8px] text-slate-400">...</div>
+            <div className="rounded-md bg-slate-900 px-1.5 py-0.5 text-[8px] text-white">&#9654;</div>
+          </div>
+        </div>
+        {/* Term grid (right 3 cols) */}
+        <div className="col-span-3 grid grid-cols-3 gap-1">
+          {[
+            { state: 'normal' },
+            { state: 'eliminated' },
+            { state: 'normal' },
+            { state: 'normal' },
+            { state: 'wrong' },
+            { state: 'normal' },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className={cn(
+                'flex h-8 items-center justify-center rounded-lg border text-[8px] font-semibold',
+                item.state === 'eliminated'
+                  ? 'border-slate-200 bg-slate-100 text-slate-300 line-through'
+                  : item.state === 'wrong'
+                    ? 'border-rose-200 bg-rose-50 text-rose-500'
+                    : 'border-slate-200 bg-white text-slate-600',
+              )}
+            >
+              {item.state === 'eliminated' ? 'term' : item.state === 'wrong' ? 'term' : 'term'}
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="mt-2 text-center text-[10px] text-slate-400">{t('lectureStudy.game.desc.guessTheTerm.previewHint')}</p>
+    </div>
+  )
+}
+
+/* ─── Preview Router ─── */
+function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTranslations> }) {
+  switch (gameId) {
+    case 'running':
+      return <RunningGamePreview t={t} />
+    case 'deck':
+      return <DeckGamePreview t={t} />
+    case 'cardMatch':
+      return <CardMatchPreview t={t} />
+    case 'definitionBuilder':
+      return <DefBuilderPreview t={t} />
+    case 'guessTheTerm':
+      return <GuessTermPreview t={t} />
+    default:
+      return null
+  }
+}
+
+export function GameDescriptionPopup({
+  open,
+  onOpenChange,
+  gameId,
+  onPlay,
+}: GameDescriptionPopupProps) {
+  const t = useTranslations()
+
+  if (!gameId) return null
+
+  const gameInfo = GAME_LIST.find(g => g.id === gameId)
+  const theme = GAME_THEMES[gameId]
+  const controls = getControls(gameId)
+
+  if (!gameInfo || !theme) return null
+
+  const gameName = t(`lectureStudy.game.${gameId}` as Parameters<typeof t>[0])
+  const subtitle = t(`lectureStudy.game.desc.${gameId}.subtitle` as Parameters<typeof t>[0])
+  const goal = t(`lectureStudy.game.desc.${gameId}.goal` as Parameters<typeof t>[0])
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-md gap-0 overflow-y-auto p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">{gameInfo.icon}</span>
+            <div>
+              <DialogTitle className="text-lg font-bold">{gameName}</DialogTitle>
+              <DialogDescription className="text-sm text-gray-500">
+                {subtitle}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-3 px-6 py-3">
+          {/* Visual preview */}
+          <GamePreview gameId={gameId} t={t} />
+
+          {/* Goal section */}
+          <div className={cn('rounded-xl p-4', theme.goalBg)}>
+            <div className="mb-2 flex items-center gap-2">
+              <Target className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                {t('lectureStudy.game.desc.goalLabel')}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+              {goal}
+            </p>
+          </div>
+
+          {/* Controls section */}
+          <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+            <div className="mb-3 flex items-center gap-2">
+              <Gamepad2 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                {t('lectureStudy.game.desc.controlsLabel')}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {controls.map((ctrl) => (
+                <div key={ctrl.labelKey} className="flex items-center gap-3">
+                  <div className="flex w-24 shrink-0 justify-end">{ctrl.icon}</div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {t(`lectureStudy.game.desc.${gameId}.${ctrl.labelKey}` as Parameters<typeof t>[0])}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="px-6 pb-6 pt-2">
+          <button
+            onClick={onPlay}
+            className={cn(
+              'w-full rounded-xl py-3 text-sm font-semibold text-white shadow-sm transition-colors',
+              theme.button,
+            )}
+          >
+            {t('lectureStudy.game.desc.playButton')}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -291,7 +291,57 @@
       "wordKeywordPlaceholder": "Keyword",
       "wordDescriptionPlaceholder": "Description",
       "importError": "Failed to import keywords. Please add words manually.",
-      "loadGameError": "Failed to load game"
+      "loadGameError": "Failed to load game",
+      "desc": {
+        "goalLabel": "Goal",
+        "controlsLabel": "Controls",
+        "playButton": "Start Game",
+        "running": {
+          "subtitle": "A side-scrolling runner — jump obstacles and answer OX quizzes",
+          "goal": "Your character runs automatically. Jump over obstacles and answer OX quizzes that appear. Survive as long as you can!",
+          "controlJump": "Jump",
+          "controlMove": "Move",
+          "objCoin": "Coin",
+          "objCoinDesc": "Earn points",
+          "objScroll": "Quiz Scroll",
+          "objScrollDesc": "Triggers OX quiz",
+          "objHeart": "Heart",
+          "objHeartDesc": "Restores HP",
+          "objMeteor": "Meteor",
+          "objMeteorDesc": "Obstacle — dodge it!"
+        },
+        "deck": {
+          "subtitle": "Flashcards with spaced repetition for effective memorization",
+          "goal": "See a keyword on the front of the card. Try to recall its meaning, then flip to check. Rate how well you knew it.",
+          "controlFlip": "Flip card",
+          "controlRate": "Rate difficulty (Easy / Good / Hard)",
+          "previewHint": "Click to reveal description"
+        },
+        "cardMatch": {
+          "subtitle": "Memory matching game pairing keywords with descriptions",
+          "goal": "Cards are face-down in a grid. Flip two at a time to find matching keyword-description pairs. The faster, the better!",
+          "controlFlip": "Click a card to flip",
+          "controlTimer": "Timer tracks elapsed time",
+          "previewHint": "Flip two cards at a time to find pairs"
+        },
+        "definitionBuilder": {
+          "subtitle": "Fill in the blanks with correct tokens to complete definitions",
+          "goal": "Given a keyword, its definition has missing tokens. Select the correct tokens from the choices below to complete it.",
+          "controlSelect": "Click to select a token",
+          "controlPlace": "Place into blanks",
+          "previewHint": "Select the correct token from the choices"
+        },
+        "guessTheTerm": {
+          "subtitle": "Deduce the AI's secret term by asking yes/no questions",
+          "goal": "The AI picks a secret term from your word list. Ask up to 5 yes/no questions, then guess which term it is.",
+          "controlType": "Type your questions",
+          "controlGuess": "Click a term to guess",
+          "previewAI": "I picked a secret term!",
+          "previewUser": "Is it biology-related?",
+          "previewReply": "Yes, it is!",
+          "previewHint": "Ask questions to deduce the secret term"
+        }
+      }
     },
     "breadcrumb": {
       "courseLoading": "Loading…",
