@@ -308,9 +308,9 @@ export class QuizAnswerUI {
 
     // 3-layer glow (same style as glassPanel border)
     const glowLayers = [
-      { width: 6 * S, alpha: 0.12 },
-      { width: 3 * S, alpha: 0.25 },
-      { width: 1.5 * S, alpha: 0.5 },
+      { width: 10 * S, alpha: 0.15 },
+      { width: 5 * S, alpha: 0.35 },
+      { width: 2.5 * S, alpha: 0.65 },
     ];
 
     const drawRoundedBorderProgress = (
@@ -376,6 +376,23 @@ export class QuizAnswerUI {
     // Draw initial full border
     drawRoundedBorderProgress(timerBorder, 1, 0xf1c40f);
 
+    // Countdown text (shows last 5 seconds)
+    const countdownText = this.scene.add
+      .text(0, -boxH / 2 - 24 * S, "", {
+        fontFamily: FONT_FAMILY,
+        fontSize: `${22 * S}px`,
+        color: "#ffffff",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 3 * S,
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setAlpha(0);
+    questionContainer.add(countdownText);
+
+    let lastShownSec = -1;
+
     const timerEvent = this.scene.time.addEvent({
       delay: 50,
       loop: true,
@@ -391,6 +408,55 @@ export class QuizAnswerUI {
         else color = 0xe74c3c;
 
         drawRoundedBorderProgress(timerBorder, ratio, color);
+
+        // Countdown number display (last 5 seconds)
+        if (remaining <= 5000 && remaining > 0) {
+          const sec = Math.ceil(remaining / 1000);
+          countdownText.setText(`${sec}`);
+          countdownText.setAlpha(1);
+
+          if (sec !== lastShownSec) {
+            lastShownSec = sec;
+
+            // Color: red for <= 3s, white otherwise
+            if (sec <= 3) {
+              countdownText.setColor("#ff4444");
+            } else {
+              countdownText.setColor("#ffffff");
+            }
+
+            // Scale pulse tween
+            countdownText.setScale(1);
+            this.scene.tweens.add({
+              targets: countdownText,
+              scaleX: 1,
+              scaleY: 1,
+              duration: 200,
+              ease: "Back.Out",
+              onStart: () => {
+                countdownText.setScale(1.4);
+              },
+            });
+
+            // Shake tween for <= 3s
+            if (sec <= 3) {
+              const originalX = countdownText.x;
+              this.scene.tweens.add({
+                targets: countdownText,
+                x: originalX + 3 * S,
+                duration: 50,
+                yoyo: true,
+                repeat: 2,
+                ease: "Sine.InOut",
+                onComplete: () => {
+                  countdownText.x = originalX;
+                },
+              });
+            }
+          }
+        } else if (remaining > 5000) {
+          countdownText.setAlpha(0);
+        }
 
         if (remaining <= 0) {
           timerEvent.remove();
