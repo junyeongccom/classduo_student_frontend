@@ -615,6 +615,7 @@ export class GameScene extends Phaser.Scene {
     const item = itemObj as QuizItem;
     const ix = item.x;
     const iy = item.y;
+    item.markCollected();
     item.destroyWithTrail();
     this.quizManager.handleScrollCollect(ix, iy);
   };
@@ -639,6 +640,7 @@ export class GameScene extends Phaser.Scene {
     const item = new QuizItem(this, x, y, colorIndex);
     this.quizItems.add(item);
     item.setScrollSpeed(this.getEffectiveSpeed());
+    item.onMissed = () => this.quizManager.incrementSkipped();
   }
 
   private onCollectHeart: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (

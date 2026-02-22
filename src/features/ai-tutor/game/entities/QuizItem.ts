@@ -22,6 +22,8 @@ export class QuizItem extends Phaser.Physics.Arcade.Sprite {
   private baseY: number;
   private floatPhase: number;
   private elapsed = 0;
+  private collected = false;
+  onMissed: (() => void) | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -117,8 +119,15 @@ export class QuizItem extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.x + QUIZ_ITEM_SIZE / 2 < 0) {
+      if (!this.collected) {
+        this.onMissed?.();
+      }
       this.destroyWithTrail();
     }
+  }
+
+  markCollected(): void {
+    this.collected = true;
   }
 
   destroyWithTrail(): void {

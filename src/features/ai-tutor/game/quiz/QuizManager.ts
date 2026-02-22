@@ -182,6 +182,10 @@ export class QuizManager {
     }
   }
 
+  incrementSkipped(): void {
+    this.skippedCount++;
+  }
+
   getStats(): { correct: number; wrong: number; skipped: number } {
     return {
       correct: this.correctCount,
