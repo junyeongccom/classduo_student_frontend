@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, HelpCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 import {
   getInstructorQuizzes,
   type InstructorQuizItem,
@@ -36,6 +37,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const t = useTranslations('lectureStudy.quiz')
+  const { locale } = useI18n()
 
   useEffect(() => {
     let cancelled = false
@@ -45,7 +47,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
       setError(null)
       setQuizzes([])
 
-      const result = await getInstructorQuizzes(lectureId)
+      const result = await getInstructorQuizzes(lectureId, locale)
       if (cancelled) return
 
       if (result.error) {
@@ -62,7 +64,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
     return () => {
       cancelled = true
     }
-  }, [lectureId])
+  }, [lectureId, locale])
 
   // 유형별로 그룹화 (정의된 순서대로)
   const groupedQuizzes = useMemo(() => {

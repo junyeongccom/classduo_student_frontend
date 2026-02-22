@@ -11,6 +11,7 @@ import {
   handleJWTExpiration,
   getErrorMessage,
 } from '@/shared/lib/supabase'
+import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
 // ── Types ──
 
@@ -50,7 +51,7 @@ export interface InstructorQuizItem {
  * 특정 회차(lecture)에 해당하는 완료된 교수자 퀴즈를 조회한다.
  * step = 'QUIZ_COMPLETED' 인 퀴즈만 가져온다.
  */
-export async function getInstructorQuizzes(lectureId: string): Promise<{
+export async function getInstructorQuizzes(lectureId: string, locale: AppLocale = 'ko'): Promise<{
   data: InstructorQuizItem[] | null
   error: Error | null
 }> {
@@ -65,8 +66,11 @@ export async function getInstructorQuizzes(lectureId: string): Promise<{
         course_id,
         quiz_type,
         question,
+        question_eng,
         answer,
+        answer_eng,
         explanation,
+        explanation_eng,
         difficulty,
         created_at,
         instructor_quiz_choices (
@@ -74,8 +78,10 @@ export async function getInstructorQuizzes(lectureId: string): Promise<{
           quiz_id,
           choice_order,
           choice_text,
+          choice_text_eng,
           is_correct,
-          choice_explanation
+          choice_explanation,
+          choice_explanation_eng
         )
       `)
       .eq('lecture_id', lectureId)
@@ -94,14 +100,17 @@ export async function getInstructorQuizzes(lectureId: string): Promise<{
       return { data: null, error: new Error(getErrorMessage(error)) }
     }
 
+    const pick = (ko: string | null, en: string | null) =>
+      locale === 'en' && en ? en : (ko ?? '')
+
     const items: InstructorQuizItem[] = (data ?? []).map((row: any) => ({
       quiz_id: row.quiz_id,
       lecture_id: row.lecture_id,
       course_id: row.course_id ?? null,
       quiz_type: row.quiz_type,
-      question: row.question ?? '',
-      answer: row.answer ?? null,
-      explanation: row.explanation ?? null,
+      question: pick(row.question, row.question_eng),
+      answer: pick(row.answer, row.answer_eng) || null,
+      explanation: pick(row.explanation, row.explanation_eng) || null,
       difficulty: row.difficulty ?? null,
       created_at: row.created_at,
       choices: (row.instructor_quiz_choices ?? [])
@@ -110,9 +119,9 @@ export async function getInstructorQuizzes(lectureId: string): Promise<{
           choice_id: c.choice_id,
           quiz_id: c.quiz_id,
           choice_order: c.choice_order,
-          choice_text: c.choice_text,
+          choice_text: pick(c.choice_text, c.choice_text_eng),
           is_correct: c.is_correct,
-          choice_explanation: c.choice_explanation ?? null,
+          choice_explanation: pick(c.choice_explanation, c.choice_explanation_eng) || null,
         })),
     }))
 
