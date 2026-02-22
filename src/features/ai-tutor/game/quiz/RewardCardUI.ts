@@ -66,7 +66,7 @@ export class RewardCardUI {
   private pendingRewardTypes: ChoiceType[] = [];
   private rewardKeyHandler: ((e: KeyboardEvent) => void) | null = null;
 
-  onSelect: ((type: ChoiceType, isCorrect: boolean) => void) | null = null;
+  onSelect: ((type: ChoiceType) => void) | null = null;
 
   private get rewardCards() { return this.locale === "en" ? REWARD_CARDS_EN : REWARD_CARDS_KO; }
   private get activeCards() { return this.locale === "en" ? ACTIVE_CARDS_EN : ACTIVE_CARDS_KO; }
@@ -81,7 +81,7 @@ export class RewardCardUI {
     this.rewardCallbacks = callbacks;
   }
 
-  show(isCorrect: boolean): void {
+  show(): void {
     const selected = this.pickCards();
     const cardW = 150 * S;
     const cardH = 180 * S;
@@ -269,7 +269,7 @@ export class RewardCardUI {
         });
       });
       container.on("pointerdown", () => {
-        this.handleSelect(card.type, isCorrect);
+        this.handleSelect(card.type);
       });
 
       this.rewardUI.push(container);
@@ -285,15 +285,15 @@ export class RewardCardUI {
       };
       const idx = keyMap[e.key];
       if (idx !== undefined && this.pendingRewardTypes[idx]) {
-        this.handleSelect(this.pendingRewardTypes[idx], isCorrect);
+        this.handleSelect(this.pendingRewardTypes[idx]);
       }
     };
     this.scene.game.canvas.ownerDocument.addEventListener("keydown", this.rewardKeyHandler);
   }
 
-  private handleSelect(type: ChoiceType, isCorrect: boolean): void {
+  private handleSelect(type: ChoiceType): void {
     this.clearRewardUI();
-    this.onSelect?.(type, isCorrect);
+    this.onSelect?.(type);
   }
 
   private pickCards(): CardDef[] {

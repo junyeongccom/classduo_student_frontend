@@ -16,8 +16,6 @@ const FLOAT_AMPLITUDE = 8 * S;
 const FLOAT_SPEED = 0.0018;
 
 export class QuizItem extends Phaser.Physics.Arcade.Sprite {
-  readonly keyword: string;
-  readonly isCorrect: boolean;
   readonly colorIndex: number;
   private trail: Phaser.GameObjects.Graphics;
   private particles: ScrollParticle[] = [];
@@ -29,14 +27,10 @@ export class QuizItem extends Phaser.Physics.Arcade.Sprite {
     scene: Phaser.Scene,
     x: number,
     y: number,
-    keyword: string,
-    isCorrect: boolean,
     colorIndex: number
   ) {
     super(scene, x, y, `scroll_${colorIndex}`);
 
-    this.keyword = keyword;
-    this.isCorrect = isCorrect;
     this.colorIndex = colorIndex;
     this.baseY = y;
     this.floatPhase = Math.random() * Math.PI * 2;

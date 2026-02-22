@@ -54,6 +54,8 @@ export const COLOR_COIN = 0xf1c40f;
 // Quiz
 export const QUIZ_SAFE_ZONE_MS = 3000;
 export const QUIZ_INTERVAL_MS = 12000;
+export const SCROLL_SPAWN_INTERVAL_MS = 12000;
+export const QUIZ_ANSWER_TIMEOUT_MS = 15000;
 export const QUIZ_ANNOUNCE_MS = 4500;
 export const QUIZ_WINDOW_MS = 5000;
 export const QUIZ_RESULT_MS = 1000;

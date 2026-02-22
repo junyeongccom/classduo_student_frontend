@@ -1,10 +1,8 @@
 import * as Phaser from "phaser";
-import { drawGlassPanel } from "../ui/glassPanel";
 import {
   S,
   GAME_WIDTH,
   GAME_HEIGHT,
-  SCROLL_COLORS,
   FONT_FAMILY,
 } from "../constants";
 
@@ -12,168 +10,11 @@ export class QuizPanelUI {
   private scene: Phaser.Scene;
   private locale: "ko" | "en";
 
-  private bannerContainer: Phaser.GameObjects.Container | null = null;
   private resultContainer: Phaser.GameObjects.Container | null = null;
-  private previewMarkers: Phaser.GameObjects.GameObject[] = [];
-  private bannerBottomY = 0;
 
   constructor(scene: Phaser.Scene, locale: "ko" | "en") {
     this.scene = scene;
     this.locale = locale;
-  }
-
-  // ---- Banner ----
-
-  showBanner(label: string): number {
-    const maxTextW = GAME_WIDTH * 0.65;
-    const padX = 28 * S;
-    const padY = 16 * S;
-    const r = 16 * S;
-    const maxBoxH = 100 * S;
-    const baseFontSize = 20 * S;
-    const minFontSize = 12 * S;
-
-    let fontSize = baseFontSize;
-    const text = this.scene.add
-      .text(0, 0, label, {
-        fontFamily: FONT_FAMILY,
-        fontSize: `${fontSize}px`,
-        color: "#ffffff",
-        fontStyle: "bold",
-        stroke: "#000000",
-        strokeThickness: 2 * S,
-        wordWrap: { width: maxTextW, useAdvancedWrap: true },
-        align: "center",
-      })
-      .setOrigin(0.5)
-      .setAlpha(0.8);
-
-    while (text.height + padY * 2 > maxBoxH && fontSize > minFontSize) {
-      fontSize -= 1 * S;
-      text.setFontSize(fontSize);
-    }
-
-    const boxW = Math.max(text.width + padX * 2, 240 * S);
-    const boxH = Math.min(text.height + padY * 2, maxBoxH);
-    const hx = -boxW / 2;
-    const hy = -boxH / 2;
-
-    const bg = this.scene.add.graphics();
-    drawGlassPanel(bg, { x: hx, y: hy, width: boxW, height: boxH, radius: r });
-
-    const bannerY = 36 * S;
-    this.bannerBottomY = bannerY + boxH;
-    const container = this.scene.add
-      .container(GAME_WIDTH / 2, -boxH, [bg, text])
-      .setDepth(10);
-
-    // Slide-in from top
-    this.scene.tweens.add({
-      targets: container,
-      y: bannerY + boxH / 2,
-      duration: 450,
-      ease: "Back.Out",
-    });
-
-    // Gentle bg pulse
-    this.scene.tweens.add({
-      targets: bg,
-      alpha: { from: 1, to: 0.7 },
-      duration: 1500,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.InOut",
-    });
-
-    this.bannerContainer = container;
-    return this.bannerBottomY;
-  }
-
-  // ---- Preview markers ----
-
-  showPreviewMarkers(
-    words: string[],
-    colorIndices: number[],
-    bannerBottomY: number,
-  ): void {
-    const cardW = 140 * S;
-    const cardH = 44 * S;
-    const gap = 16 * S;
-    const totalW = cardW * words.length + gap * (words.length - 1);
-    const startX = (GAME_WIDTH - totalW) / 2;
-    const baseY = bannerBottomY + 16 * S + cardH / 2;
-    const r = 10 * S;
-
-    words.forEach((word, i) => {
-      const cx = startX + cardW / 2 + i * (cardW + gap);
-      const scrollColor = SCROLL_COLORS[colorIndices[i]];
-
-      const container = this.scene.add.container(cx, baseY).setDepth(5);
-
-      const bg = this.scene.add.graphics();
-      const hx = -cardW / 2;
-      const hy = -cardH / 2;
-
-      drawGlassPanel(bg, {
-        x: hx,
-        y: hy,
-        width: cardW,
-        height: cardH,
-        radius: r,
-        glowColor: scrollColor.main,
-        glowColorDark: scrollColor.dark,
-      });
-
-      container.add(bg);
-
-      // Word text — shrink font if it overflows card
-      const maxFontSize = 14 * S;
-      const minFontSize = 8 * S;
-      const padX = 8 * S;
-      let fontSize = maxFontSize;
-      const text = this.scene.add
-        .text(0, 0, word, {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${fontSize}px`,
-          color: "#ffffff",
-          fontStyle: "bold",
-          stroke: "#000000",
-          strokeThickness: 2 * S,
-        })
-        .setOrigin(0.5)
-        .setAlpha(0.8);
-
-      while (text.width > cardW - padX * 2 && fontSize > minFontSize) {
-        fontSize -= 1 * S;
-        text.setFontSize(fontSize);
-      }
-      container.add(text);
-
-      // Slide-in from top
-      container.setAlpha(0);
-      container.y = baseY - 20 * S;
-      this.scene.tweens.add({
-        targets: container,
-        y: baseY,
-        alpha: 1,
-        duration: 450,
-        delay: i * 80,
-        ease: "Back.Out",
-      });
-
-      // Gentle bg pulse
-      this.scene.tweens.add({
-        targets: bg,
-        alpha: { from: 1, to: 0.7 },
-        duration: 1500,
-        delay: i * 80,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.InOut",
-      });
-
-      this.previewMarkers.push(container);
-    });
   }
 
   // ---- Result popup ----
@@ -305,14 +146,6 @@ export class QuizPanelUI {
 
   // ---- Cleanup ----
 
-  clearBanner(): void {
-    if (this.bannerContainer) {
-      this.bannerContainer.destroy();
-      this.bannerContainer = null;
-    }
-    this.clearPreviewMarkers();
-  }
-
   clearResult(): void {
     if (this.resultContainer) {
       this.resultContainer.destroy();
@@ -320,13 +153,7 @@ export class QuizPanelUI {
     }
   }
 
-  private clearPreviewMarkers(): void {
-    this.previewMarkers.forEach((m) => m.destroy());
-    this.previewMarkers = [];
-  }
-
   cleanup(): void {
-    this.clearBanner();
     this.clearResult();
   }
 }

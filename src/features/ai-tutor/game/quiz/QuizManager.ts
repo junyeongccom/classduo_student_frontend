@@ -1,20 +1,10 @@
 import * as Phaser from "phaser";
-import { QuizItem } from "../entities/QuizItem";
 import { QuizQuestion, ChoiceType, ActiveAbilityType } from "./quizTypes";
 import { QuizPanelUI } from "./QuizPanelUI";
 import { RewardCardUI } from "./RewardCardUI";
+import { QuizAnswerUI } from "./QuizAnswerUI";
 import {
-  S,
-  GAME_WIDTH,
-  GROUND_Y,
-  GROUND_HEIGHT,
-  PLAYER_TEX_HEIGHT,
-  QUIZ_ANNOUNCE_MS,
-  QUIZ_WINDOW_MS,
   QUIZ_RESULT_MS,
-  QUIZ_ITEM_HIGH_Y,
-  QUIZ_ITEM_SIZE,
-  QUIZ_ITEM_SPACING_X,
   SCORE_BONUS,
 } from "../constants";
 
@@ -22,8 +12,7 @@ export type GameState =
   | "waiting_start"
   | "intro"
   | "playing"
-  | "quiz_announce"
-  | "quiz_active"
+  | "quiz_answering"
   | "quiz_result"
   | "choosing_reward"
   | "game_over";
@@ -53,13 +42,11 @@ export interface QuizCallbacks {
   addScore: (amount: number) => void;
   showEffect: (text: string, color: string) => void;
   onQuizCollect?: (x: number, y: number) => void;
-  onQuizAnnounce?: () => void;
   onRewardSelect?: (isCorrect: boolean) => void;
 }
 
 const T = {
   ko: {
-    eat: (answer: string) => `먹으세요: ${answer}`,
     timeout: "시간 초과!",
     correct: "정답! ",
     wrong: "오답! ",
@@ -67,7 +54,6 @@ const T = {
     points: (n: number) => (n > 0 ? `+${n}점!` : `${n}점!`),
   },
   en: {
-    eat: (answer: string) => `Collect: ${answer}`,
     timeout: "Time's up!",
     correct: "Correct! ",
     wrong: "Wrong! ",
@@ -84,12 +70,9 @@ interface KeywordEntry {
 export class QuizManager {
   private scene: Phaser.Scene;
   private callbacks: QuizCallbacks;
-  private quizItems: Phaser.Physics.Arcade.Group;
   private panelUI: QuizPanelUI;
   private rewardCardUI: RewardCardUI;
-  private timeoutTimer: Phaser.Time.TimerEvent | null = null;
-  private itemYPositions: number[] = [];
-  private itemColorIndices: number[] = [];
+  private quizAnswerUI: QuizAnswerUI;
 
   private keywords: KeywordEntry[] = [];
   private usedKeywordIndices: Set<number> = new Set();
@@ -100,15 +83,14 @@ export class QuizManager {
   private skippedCount = 0;
 
   private currentCorrectAnswer = "";
+  private pendingRewardType: ChoiceType | null = null;
   private get t() { return T[this.locale]; }
 
   constructor(
     scene: Phaser.Scene,
-    quizItems: Phaser.Physics.Arcade.Group,
     callbacks: QuizCallbacks
   ) {
     this.scene = scene;
-    this.quizItems = quizItems;
     this.callbacks = callbacks;
 
     const loc = scene.game.registry.get("locale") as string | undefined;
@@ -118,8 +100,14 @@ export class QuizManager {
       isJumpCountMaxed: callbacks.isJumpCountMaxed,
       isActiveUnlocked: callbacks.isActiveUnlocked,
     });
-    this.rewardCardUI.onSelect = (type, isCorrect) => {
-      this.handleRewardSelect(type, isCorrect);
+    this.rewardCardUI.onSelect = (type) => {
+      this.pendingRewardType = type;
+      this.showQuizAnswer();
+    };
+
+    this.quizAnswerUI = new QuizAnswerUI(scene, this.locale);
+    this.quizAnswerUI.onAnswer = (isCorrect) => {
+      this.handleQuizResult(isCorrect);
     };
 
     const kw = scene.game.registry.get("keywords") as KeywordEntry[] | undefined;
@@ -128,15 +116,32 @@ export class QuizManager {
     }
   }
 
-  startQuiz(): void {
-    if (this.keywords.length < 3) {
-      this.retryLoadKeywords();
-      return;
-    }
-    this.executeQuiz();
+  handleScrollCollect(x: number, y: number): void {
+    this.callbacks.onQuizCollect?.(x, y);
+    this.callbacks.setGameState("choosing_reward");
+    this.scene.physics.pause();
+    this.rewardCardUI.show();
   }
 
-  private async retryLoadKeywords(): Promise<void> {
+  private showQuizAnswer(): void {
+    if (this.keywords.length < 3) {
+      this.retryLoadKeywordsForQuiz();
+      return;
+    }
+
+    const question = this.pickQuestion();
+    if (!question) {
+      // Fallback: treat as correct if no question available
+      this.handleQuizResult(true);
+      return;
+    }
+
+    this.currentCorrectAnswer = question.correctAnswer;
+    this.callbacks.setGameState("quiz_answering");
+    this.quizAnswerUI.show(question);
+  }
+
+  private async retryLoadKeywordsForQuiz(): Promise<void> {
     try {
       const lectureId = this.scene.game.registry.get("lectureId") as string | undefined;
       if (lectureId) {
@@ -149,90 +154,29 @@ export class QuizManager {
             description: (isEn && k.description_eng) || k.description,
           }));
           this.scene.game.registry.set("keywords", this.keywords);
-          this.executeQuiz();
+          this.showQuizAnswer();
           return;
         }
       }
     } catch {
-      // API fail — show error below
+      // API fail — fallback to correct
     }
 
-    const msg = this.locale === "en"
-      ? "No keywords loaded — quiz unavailable"
-      : "키워드 데이터 없음 — 퀴즈 불가";
-    this.callbacks.showEffect(msg, "#e74c3c");
+    // No keywords available — treat as correct
+    this.handleQuizResult(true);
   }
 
-  private executeQuiz(): void {
-    const question = this.pickQuestion();
-    if (!question) return;
-
-    this.currentCorrectAnswer = question.correctAnswer;
-    this.callbacks.setGameState("quiz_announce");
-    this.callbacks.onQuizAnnounce?.();
-
-    const bannerLabel = this.keywords.length >= 3
-      ? question.text
-      : this.t.eat(question.correctAnswer);
-    const bannerBottomY = this.panelUI.showBanner(bannerLabel);
-
-    const allWords = Phaser.Utils.Array.Shuffle([
-      question.correctAnswer,
-      ...question.wrongAnswers,
-    ]);
-
-    // Generate Y positions snapped to character-height levels
-    const groundTop = GROUND_Y - GROUND_HEIGHT / 2;
-    const baseY = groundTop - QUIZ_ITEM_SIZE / 2 - 5 * S;
-    const step = PLAYER_TEX_HEIGHT;
-    const levels: number[] = [];
-    for (let y = baseY; y >= QUIZ_ITEM_HIGH_Y; y -= step) {
-      levels.push(y);
+  private handleQuizResult(isCorrect: boolean): void {
+    if (this.pendingRewardType) {
+      this.handleRewardSelect(this.pendingRewardType, isCorrect);
+      this.pendingRewardType = null;
     }
-    if (levels.length === 0) levels.push(baseY);
-    this.itemYPositions = allWords.map(
-      () => levels[Phaser.Math.Between(0, levels.length - 1)]
-    );
-
-    // Fixed color order: pink(0), purple(2), blue(1)
-    this.itemColorIndices = [0, 2, 1];
-
-    this.panelUI.showPreviewMarkers(allWords, this.itemColorIndices, bannerBottomY);
-
-    this.scene.time.delayedCall(QUIZ_ANNOUNCE_MS, () => {
-      this.callbacks.setGameState("quiz_active");
-      this.spawnQuizItems(allWords, question.correctAnswer);
-
-      this.timeoutTimer = this.scene.time.delayedCall(QUIZ_WINDOW_MS, () => {
-        this.handleTimeout();
-      });
-    });
-  }
-
-  handleCollection(item: QuizItem): void {
-    if (this.timeoutTimer) {
-      this.timeoutTimer.remove();
-      this.timeoutTimer = null;
-    }
-
-    this.callbacks.onQuizCollect?.(item.x, item.y);
-
-    this.clearQuizItems();
-    this.panelUI.clearBanner();
-
-    this.callbacks.setGameState("choosing_reward");
-    this.scene.physics.pause();
-    this.rewardCardUI.show(item.isCorrect);
   }
 
   cleanup(): void {
-    this.clearQuizItems();
     this.panelUI.cleanup();
     this.rewardCardUI.cleanup();
-    if (this.timeoutTimer) {
-      this.timeoutTimer.remove();
-      this.timeoutTimer = null;
-    }
+    this.quizAnswerUI.cleanup();
     if (this.scene.physics.world.isPaused) {
       this.scene.physics.resume();
     }
@@ -283,29 +227,6 @@ export class QuizManager {
       correctAnswer: correct.keyword,
       wrongAnswers,
     };
-  }
-
-  private spawnQuizItems(words: string[], correctAnswer: string): void {
-    const speed = this.callbacks.getScrollSpeed();
-    const startX = GAME_WIDTH + 50 * S;
-
-    words.forEach((word, i) => {
-      const y = this.itemYPositions[i];
-      const x = startX + i * QUIZ_ITEM_SPACING_X;
-      const isCorrect = word === correctAnswer;
-      const colorIndex = this.itemColorIndices[i];
-
-      const item = new QuizItem(this.scene, x, y, word, isCorrect, colorIndex);
-      this.quizItems.add(item);
-      item.setScrollSpeed(speed);
-    });
-  }
-
-  private handleTimeout(): void {
-    this.skippedCount++;
-    this.clearQuizItems();
-    this.panelUI.clearBanner();
-    this.showResult(this.t.timeout, "#e67e22", this.currentCorrectAnswer);
   }
 
   // ---- Result display ----
@@ -426,13 +347,5 @@ export class QuizManager {
 
     const answer = isCorrect ? undefined : this.currentCorrectAnswer;
     this.showResult(effectLabel, color, answer);
-  }
-
-  // ---- Cleanup helpers ----
-
-  private clearQuizItems(): void {
-    const items = [...this.quizItems.getChildren()] as QuizItem[];
-    items.forEach((item) => item.destroyWithTrail());
-    this.quizItems.clear(true);
   }
 }

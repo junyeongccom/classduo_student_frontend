@@ -37,8 +37,10 @@ import {
   COIN_DIAGONAL_COUNT,
   COIN_ZIGZAG_COUNT,
   COIN_DIAMOND_COUNT,
-  QUIZ_SAFE_ZONE_MS,
-  QUIZ_INTERVAL_MS,
+  SCROLL_SPAWN_INTERVAL_MS,
+  QUIZ_ITEM_SIZE,
+  QUIZ_ITEM_HIGH_Y,
+  SCROLL_COLORS,
   FALL_DEATH_Y,
   MAX_JUMPS,
   SPEED_STACK_BASE,
@@ -61,7 +63,6 @@ import {
   FREEZE_DEATH,
   FLASH_CORRECT,
   FLASH_WRONG,
-  ZOOM_PUNCH_QUIZ,
   ZOOM_PUNCH_REWARD,
   HEART_SPAWN_INTERVAL_MS,
   HEART_RESTORE_AMOUNT,
@@ -125,7 +126,7 @@ export class GameScene extends Phaser.Scene {
   private nextGroundX = 0;
   private distanceTraveled = 0;
   private totalCoinsCollected = 0;
-  private quizTimer = 0;
+  private scrollTimer = 0;
   private heartTimer = 0;
   private meteorTimer = 0;
   private meteorNextSpawn = 0;
@@ -231,7 +232,7 @@ export class GameScene extends Phaser.Scene {
     this.nextGroundX = 0;
     this.distanceTraveled = 0;
     this.totalCoinsCollected = 0;
-    this.quizTimer = 0;
+    this.scrollTimer = 0;
     this.heartTimer = 0;
     this.meteorTimer = 0;
     this.meteorNextSpawn = Phaser.Math.Between(METEOR_SPAWN_INTERVAL_MIN_MS, METEOR_SPAWN_INTERVAL_MAX_MS);
@@ -324,7 +325,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createQuizManager(): void {
-    this.quizManager = new QuizManager(this, this.quizItems, {
+    this.quizManager = new QuizManager(this, {
       getScrollSpeed: () => this.getEffectiveSpeed(),
       applySpeedUp: () => { this.applySpeedUp(); this.speedRewardStacks++; },
       applySpeedDown: () => { this.applySpeedDown(); this.speedRewardStacks--; },
@@ -355,15 +356,9 @@ export class GameScene extends Phaser.Scene {
       },
       showEffect: (text: string, color: string) => this.ui.showEffect(text, color),
       onQuizCollect: (x: number, y: number) => {
-        // Same effect for both correct and wrong — no spoiler
         this.screenFX.shake(SHAKE_QUIZ_COLLECT);
         this.screenFX.flash(FLASH_CORRECT);
         this.particles.spawnQuizFlash(x, y);
-      },
-      onQuizAnnounce: () => {
-        this.screenFX.zoomPunch(ZOOM_PUNCH_QUIZ);
-        // Clear all hazards so the player can focus on the quiz
-        this.meteors.getChildren().forEach((obj) => (obj as Meteor).destroyWithTrail());
       },
       onRewardSelect: (isCorrect: boolean) => {
         if (isCorrect) {
@@ -417,21 +412,15 @@ export class GameScene extends Phaser.Scene {
 
   private isQuizPhase(): boolean {
     return (
-      this.gameState === "quiz_announce" ||
-      this.gameState === "quiz_active" ||
-      this.gameState === "quiz_result" ||
-      this.gameState === "choosing_reward"
+      this.gameState === "choosing_reward" ||
+      this.gameState === "quiz_answering" ||
+      this.gameState === "quiz_result"
     );
-  }
-
-  /** True when the quiz is about to start — stop spawning hazards early */
-  private isQuizApproaching(): boolean {
-    return this.quizTimer >= QUIZ_INTERVAL_MS - QUIZ_SAFE_ZONE_MS;
   }
 
   private spawnNewGround(): void {
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH * 2) {
-      if (this.distanceTraveled > 800 && !this.isQuizPhase() && !this.isQuizApproaching() && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
+      if (this.distanceTraveled > 800 && !this.isQuizPhase() && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
         const gapWidth = Phaser.Math.Between(GAP_WIDTH_MIN, Math.round(this.lerpDiff(DIFF_GAP_MAX_WIDTH)));
         this.spawnArcCoins(this.nextGroundX, gapWidth);
         this.nextGroundX += gapWidth;
@@ -622,9 +611,12 @@ export class GameScene extends Phaser.Scene {
     _player,
     itemObj
   ): void => {
-    if (this.gameState !== "quiz_active") return;
+    if (this.gameState !== "playing") return;
     const item = itemObj as QuizItem;
-    this.quizManager.handleCollection(item);
+    const ix = item.x;
+    const iy = item.y;
+    item.destroyWithTrail();
+    this.quizManager.handleScrollCollect(ix, iy);
   };
 
   // ── Heart item spawn & collection ──
@@ -638,6 +630,15 @@ export class GameScene extends Phaser.Scene {
     this.heartItems.add(heart);
     heart.setScrollSpeed(this.getEffectiveSpeed());
     heart.setRestoreStacks(this.heartRestoreStacks);
+  }
+
+  private spawnScrollItem(): void {
+    const x = GAME_WIDTH + QUIZ_ITEM_SIZE;
+    const y = Phaser.Math.Between(QUIZ_ITEM_HIGH_Y, GROUND_Y - GROUND_HEIGHT / 2 - QUIZ_ITEM_SIZE);
+    const colorIndex = Phaser.Math.Between(0, SCROLL_COLORS.length - 1);
+    const item = new QuizItem(this, x, y, colorIndex);
+    this.quizItems.add(item);
+    item.setScrollSpeed(this.getEffectiveSpeed());
   }
 
   private onCollectHeart: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (
@@ -1002,7 +1003,8 @@ export class GameScene extends Phaser.Scene {
   update(time: number, delta: number): void {
     if (
       this.gameState === "game_over" ||
-      this.gameState === "choosing_reward"
+      this.gameState === "choosing_reward" ||
+      this.gameState === "quiz_answering"
     )
       return;
 
@@ -1030,10 +1032,10 @@ export class GameScene extends Phaser.Scene {
       this.ui.updateHpGauge(this.hp, this.hpMax);
 
       if (this.gameState === "playing") {
-        this.quizTimer += delta;
-        if (this.quizTimer >= QUIZ_INTERVAL_MS) {
-          this.quizTimer = 0;
-          this.quizManager.startQuiz();
+        this.scrollTimer += delta;
+        if (this.scrollTimer >= SCROLL_SPAWN_INTERVAL_MS) {
+          this.scrollTimer = 0;
+          this.spawnScrollItem();
         }
 
         this.heartTimer += delta;
@@ -1042,7 +1044,7 @@ export class GameScene extends Phaser.Scene {
           this.spawnHeartItem();
         }
 
-        if (!this.isQuizApproaching()) this.meteorTimer += delta;
+        this.meteorTimer += delta;
         if (this.meteorTimer >= this.meteorNextSpawn) {
           this.meteorTimer = 0;
           this.meteorNextSpawn = Phaser.Math.Between(
