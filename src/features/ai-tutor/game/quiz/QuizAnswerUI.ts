@@ -274,56 +274,107 @@ export class QuizAnswerUI {
     };
     this.scene.game.canvas.ownerDocument.addEventListener("keydown", this.keyHandler);
 
-    // Countdown timer — yellow border shrinking along question box perimeter
-    const borderW = 3 * S;
+    // Countdown timer — rounded glow border shrinking along question box perimeter
     const totalMs = QUIZ_ANSWER_TIMEOUT_MS;
     const startTime = Date.now();
     const bx = -boxW / 2;
     const by = -boxH / 2;
-    const perimeter = (boxW + boxH) * 2;
+    const r = questionR;
+
+    // Segment definitions for rounded rect (clockwise from top-left corner)
+    const straightW = boxW - 2 * r;
+    const straightH = boxH - 2 * r;
+    const arcLen = (Math.PI * r) / 2;
+    const perimeter = 2 * straightW + 2 * straightH + 4 * arcLen;
+
+    type Seg =
+      | { kind: "line"; x1: number; y1: number; x2: number; y2: number; len: number }
+      | { kind: "arc"; cx: number; cy: number; radius: number; sa: number; ea: number; len: number };
+
+    const segments: Seg[] = [
+      { kind: "line", x1: bx + r, y1: by, x2: bx + boxW - r, y2: by, len: straightW },
+      { kind: "arc", cx: bx + boxW - r, cy: by + r, radius: r, sa: -Math.PI / 2, ea: 0, len: arcLen },
+      { kind: "line", x1: bx + boxW, y1: by + r, x2: bx + boxW, y2: by + boxH - r, len: straightH },
+      { kind: "arc", cx: bx + boxW - r, cy: by + boxH - r, radius: r, sa: 0, ea: Math.PI / 2, len: arcLen },
+      { kind: "line", x1: bx + boxW - r, y1: by + boxH, x2: bx + r, y2: by + boxH, len: straightW },
+      { kind: "arc", cx: bx + r, cy: by + boxH - r, radius: r, sa: Math.PI / 2, ea: Math.PI, len: arcLen },
+      { kind: "line", x1: bx, y1: by + boxH - r, x2: bx, y2: by + r, len: straightH },
+      { kind: "arc", cx: bx + r, cy: by + r, radius: r, sa: Math.PI, ea: Math.PI * 1.5, len: arcLen },
+    ];
 
     const timerBorder = this.scene.add.graphics();
     timerBorder.setDepth(1); // above questionBg, below questionText
     questionContainer.add(timerBorder);
 
-    const drawBorderProgress = (g: Phaser.GameObjects.Graphics, ratio: number, color: number) => {
+    // 3-layer glow (same style as glassPanel border)
+    const glowLayers = [
+      { width: 6 * S, alpha: 0.12 },
+      { width: 3 * S, alpha: 0.25 },
+      { width: 1.5 * S, alpha: 0.5 },
+    ];
+
+    const drawRoundedBorderProgress = (
+      g: Phaser.GameObjects.Graphics,
+      ratio: number,
+      color: number,
+    ) => {
       g.clear();
       if (ratio <= 0) return;
-      g.lineStyle(borderW, color, 1);
-      g.beginPath();
 
-      // Trace clockwise from top-left: top → right → bottom → left
-      const totalLen = perimeter * ratio;
-      let remaining = totalLen;
+      // Skip the consumed portion, draw the remaining tail
+      const skipLen = perimeter * (1 - ratio);
+      const drawTotal = perimeter * ratio;
 
-      // Top edge (left to right)
-      const topLen = Math.min(remaining, boxW);
-      g.moveTo(bx, by);
-      g.lineTo(bx + topLen, by);
-      remaining -= topLen;
-      if (remaining <= 0) { g.strokePath(); return; }
+      for (const layer of glowLayers) {
+        g.lineStyle(layer.width, color, layer.alpha);
+        g.beginPath();
 
-      // Right edge (top to bottom)
-      const rightLen = Math.min(remaining, boxH);
-      g.lineTo(bx + boxW, by + rightLen);
-      remaining -= rightLen;
-      if (remaining <= 0) { g.strokePath(); return; }
+        let skipped = 0;
+        let drawn = 0;
+        let first = true;
 
-      // Bottom edge (right to left)
-      const bottomLen = Math.min(remaining, boxW);
-      g.lineTo(bx + boxW - bottomLen, by + boxH);
-      remaining -= bottomLen;
-      if (remaining <= 0) { g.strokePath(); return; }
+        for (const seg of segments) {
+          if (drawn >= drawTotal) break;
 
-      // Left edge (bottom to top)
-      const leftLen = Math.min(remaining, boxH);
-      g.lineTo(bx, by + boxH - leftLen);
+          const toSkip = Math.min(seg.len, Math.max(0, skipLen - skipped));
+          skipped += toSkip;
 
-      g.strokePath();
+          const available = seg.len - toSkip;
+          if (available <= 0) continue;
+          const toDraw = Math.min(available, drawTotal - drawn);
+
+          if (seg.kind === "line") {
+            const st = seg.len > 0 ? toSkip / seg.len : 0;
+            const et = seg.len > 0 ? (toSkip + toDraw) / seg.len : 1;
+            const sx = seg.x1 + (seg.x2 - seg.x1) * st;
+            const sy = seg.y1 + (seg.y2 - seg.y1) * st;
+            const ex = seg.x1 + (seg.x2 - seg.x1) * et;
+            const ey = seg.y1 + (seg.y2 - seg.y1) * et;
+            if (first) { g.moveTo(sx, sy); first = false; }
+            g.lineTo(ex, ey);
+          } else {
+            const st = seg.len > 0 ? toSkip / seg.len : 0;
+            const et = seg.len > 0 ? (toSkip + toDraw) / seg.len : 1;
+            const startA = seg.sa + (seg.ea - seg.sa) * st;
+            const endA = seg.sa + (seg.ea - seg.sa) * et;
+            if (first) {
+              g.moveTo(
+                seg.cx + seg.radius * Math.cos(startA),
+                seg.cy + seg.radius * Math.sin(startA),
+              );
+              first = false;
+            }
+            g.arc(seg.cx, seg.cy, seg.radius, startA, endA, false);
+          }
+
+          drawn += toDraw;
+        }
+        g.strokePath();
+      }
     };
 
     // Draw initial full border
-    drawBorderProgress(timerBorder, 1, 0xf1c40f);
+    drawRoundedBorderProgress(timerBorder, 1, 0xf1c40f);
 
     const timerEvent = this.scene.time.addEvent({
       delay: 50,
@@ -339,7 +390,7 @@ export class QuizAnswerUI {
         else if (ratio > 0.2) color = 0xf39c12;
         else color = 0xe74c3c;
 
-        drawBorderProgress(timerBorder, ratio, color);
+        drawRoundedBorderProgress(timerBorder, ratio, color);
 
         if (remaining <= 0) {
           timerEvent.remove();
