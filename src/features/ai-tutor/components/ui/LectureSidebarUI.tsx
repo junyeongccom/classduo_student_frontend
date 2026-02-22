@@ -7,7 +7,7 @@
 
 import { useRef, useEffect, useState, useMemo } from 'react'
 import { ChevronDown, Loader2, BookOpen, Calendar, Gamepad2 } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   calculateWeekAndSession,
   estimateTermStartDate,
@@ -121,6 +121,7 @@ export function LectureSidebarUI({
   const tHints = useTranslations('aiTutorHints')
   const tFlame = useTranslations('aiTutorFlameTooltip')
   const tSession = useTranslations('aiTutorSession')
+  const locale = useLocale()
   const lectureButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [showFlameTooltip, setShowFlameTooltip] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number; arrowLeft: number } | null>(null)
@@ -152,9 +153,9 @@ export function LectureSidebarUI({
         lectureInfos,
         lecture.lecture_id
       )
-      return formatWeekAndSession(result.weekNo, result.sessionNo)
+      return formatWeekAndSession(result.weekNo, result.sessionNo, locale)
     }
-  }, [selectedCourse, termStartDate])
+  }, [selectedCourse, termStartDate, locale])
 
   // 선택된 회차로 스크롤
   useEffect(() => {

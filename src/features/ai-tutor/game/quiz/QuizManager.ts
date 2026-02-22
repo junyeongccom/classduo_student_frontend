@@ -123,6 +123,12 @@ export class QuizManager {
     this.rewardCardUI.show();
   }
 
+  triggerAutoQuiz(): void {
+    this.callbacks.setGameState("choosing_reward");
+    this.scene.physics.pause();
+    this.rewardCardUI.show();
+  }
+
   private showQuizAnswer(): void {
     if (this.keywords.length < 3) {
       this.retryLoadKeywordsForQuiz();

@@ -1037,7 +1037,7 @@ export class GameScene extends Phaser.Scene {
         this.scrollTimer += delta;
         if (this.scrollTimer >= SCROLL_SPAWN_INTERVAL_MS) {
           this.scrollTimer = 0;
-          this.spawnScrollItem();
+          this.quizManager.triggerAutoQuiz();
         }
 
         this.heartTimer += delta;

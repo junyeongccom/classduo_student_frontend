@@ -290,7 +290,7 @@
       "wordListTitle": "단어 목록",
       "startGame": "게임 시작",
       "importKeywords": "키워드 가져오기",
-      "runningGameNote": "이 게임은 OX퀴즈 데이터로 진행됩니다. 단어 목록은 향후 업데이트에서 활용됩니다.",
+      "runningGameNote": "이 게임은 키워드 퀴즈 데이터로 진행됩니다. 단어 목록은 향후 업데이트에서 활용됩니다.",
       "wordKeywordPlaceholder": "단어",
       "wordDescriptionPlaceholder": "설명",
       "importError": "키워드를 가져오지 못했습니다. 수동으로 단어를 추가해주세요.",
@@ -300,14 +300,14 @@
         "controlsLabel": "조작 방법",
         "playButton": "게임 시작",
         "running": {
-          "subtitle": "장애물을 뛰어넘고 OX 퀴즈에 답하는 횡스크롤 러닝 게임",
-          "goal": "캐릭터가 자동으로 달립니다. 장애물을 뛰어넘고, 나타나는 OX 퀴즈에 정답을 맞혀 최대한 오래 살아남으세요.",
+          "subtitle": "장애물을 뛰어넘고 퀴즈에 답하는 횡스크롤 러닝 게임",
+          "goal": "캐릭터가 자동으로 달립니다. 장애물을 뛰어넘고, 주기적으로 나타나는 퀴즈에 정답을 맞혀 최대한 오래 살아남으세요!",
           "controlJump": "점프",
           "controlDuck": "웅크리기 (슬라이드)",
           "objCoin": "코인",
           "objCoinDesc": "점수 획득",
-          "objScroll": "퀴즈 두루마리",
-          "objScrollDesc": "OX 퀴즈 출제",
+          "objScroll": "퀴즈",
+          "objScrollDesc": "주기적으로 자동 출제",
           "objHeart": "하트",
           "objHeartDesc": "HP 회복",
           "objMeteor": "유성",
@@ -321,11 +321,10 @@
           "previewHint": "클릭하여 설명 확인"
         },
         "cardMatch": {
-          "subtitle": "키워드와 설명을 짝짓는 메모리 매칭 게임",
-          "goal": "격자에 뒤집힌 카드들이 있습니다. 두 장씩 뒤집어 키워드-설명 짝을 찾으세요. 빠를수록 좋습니다!",
-          "controlFlip": "카드를 클릭하여 뒤집기",
-          "controlTimer": "타이머가 경과 시간을 측정합니다",
-          "previewHint": "두 장씩 뒤집어 짝을 맞추세요"
+          "subtitle": "키워드와 설명을 짝짓는 매칭 게임",
+          "goal": "격자에 키워드 카드와 설명 카드가 표시됩니다. 두 장씩 선택하여 올바른 키워드-설명 짝을 찾으세요.",
+          "controlSelect": "카드를 클릭하여 선택",
+          "previewHint": "두 장씩 선택하여 짝을 맞추세요"
         },
         "definitionBuilder": {
           "subtitle": "빈칸에 올바른 토큰을 넣어 정의를 완성하세요",
@@ -614,7 +613,7 @@
     "visualDescription": "시각자료 설명"
   },
   "aiTutorFlameTooltip": {
-    "intro": "매 수업일마다 OX 퀴즈와\n매치 카드 게임을 진행하고\n상자를 열어 불꽃을 모으세요!",
+    "intro": "매 수업일마다 달리기 퀴즈와\n매치 카드 게임을 진행하고\n상자를 열어 불꽃을 모으세요!",
     "flame2": "불꽃 5개: 미니게임 기능 업그레이드",
     "flame4": "불꽃 10개: 캐릭터 업그레이드",
     "note": "(더 많은 퀴즈 게임, 벼락치기 모드, 연구 모드 등)"
@@ -779,7 +778,7 @@
       "복습 마법을 걸고 있어요... ✨"
     ],
     "game": [
-      "OX 퀴즈 문제 섞는 중... 🎲",
+      "퀴즈 문제 섞는 중... 🎲",
       "캐릭터가 준비운동 중... 🏃",
       "게임 시작 준비 중... 🎮",
       "문제를 꺼내는 중... 📝",

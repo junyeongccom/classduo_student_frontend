@@ -111,9 +111,9 @@ export function DialogueLectureSidebar({
         lectureInfos,
         lecture.lecture_id,
       )
-      return formatWeekAndSession(result.weekNo, result.sessionNo)
+      return formatWeekAndSession(result.weekNo, result.sessionNo, locale)
     }
-  }, [course, termStartDate])
+  }, [course, termStartDate, locale])
 
   // 선택된 회차로 스크롤
   useEffect(() => {

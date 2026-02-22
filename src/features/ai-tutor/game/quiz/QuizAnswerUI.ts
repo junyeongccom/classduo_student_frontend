@@ -7,6 +7,7 @@ import {
   GAME_HEIGHT,
   SCROLL_COLORS,
   FONT_FAMILY,
+  QUIZ_ANSWER_TIMEOUT_MS,
 } from "../constants";
 
 export class QuizAnswerUI {
@@ -273,7 +274,80 @@ export class QuizAnswerUI {
     };
     this.scene.game.canvas.ownerDocument.addEventListener("keydown", this.keyHandler);
 
-    // No timeout — player can take as long as they want
+    // Countdown timer — yellow border shrinking along question box perimeter
+    const borderW = 3 * S;
+    const totalMs = QUIZ_ANSWER_TIMEOUT_MS;
+    const startTime = Date.now();
+    const bx = -boxW / 2;
+    const by = -boxH / 2;
+    const perimeter = (boxW + boxH) * 2;
+
+    const timerBorder = this.scene.add.graphics();
+    timerBorder.setDepth(1); // above questionBg, below questionText
+    questionContainer.add(timerBorder);
+
+    const drawBorderProgress = (g: Phaser.GameObjects.Graphics, ratio: number, color: number) => {
+      g.clear();
+      if (ratio <= 0) return;
+      g.lineStyle(borderW, color, 1);
+      g.beginPath();
+
+      // Trace clockwise from top-left: top → right → bottom → left
+      const totalLen = perimeter * ratio;
+      let remaining = totalLen;
+
+      // Top edge (left to right)
+      const topLen = Math.min(remaining, boxW);
+      g.moveTo(bx, by);
+      g.lineTo(bx + topLen, by);
+      remaining -= topLen;
+      if (remaining <= 0) { g.strokePath(); return; }
+
+      // Right edge (top to bottom)
+      const rightLen = Math.min(remaining, boxH);
+      g.lineTo(bx + boxW, by + rightLen);
+      remaining -= rightLen;
+      if (remaining <= 0) { g.strokePath(); return; }
+
+      // Bottom edge (right to left)
+      const bottomLen = Math.min(remaining, boxW);
+      g.lineTo(bx + boxW - bottomLen, by + boxH);
+      remaining -= bottomLen;
+      if (remaining <= 0) { g.strokePath(); return; }
+
+      // Left edge (bottom to top)
+      const leftLen = Math.min(remaining, boxH);
+      g.lineTo(bx, by + boxH - leftLen);
+
+      g.strokePath();
+    };
+
+    // Draw initial full border
+    drawBorderProgress(timerBorder, 1, 0xf1c40f);
+
+    const timerEvent = this.scene.time.addEvent({
+      delay: 50,
+      loop: true,
+      callback: () => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, totalMs - elapsed);
+        const ratio = remaining / totalMs;
+
+        // Color: yellow → orange → red
+        let color: number;
+        if (ratio > 0.5) color = 0xf1c40f;
+        else if (ratio > 0.2) color = 0xf39c12;
+        else color = 0xe74c3c;
+
+        drawBorderProgress(timerBorder, ratio, color);
+
+        if (remaining <= 0) {
+          timerEvent.remove();
+          this.handleAnswer(false);
+        }
+      },
+    });
+    this.timers.push(timerEvent);
   }
 
   private handleAnswer(isCorrect: boolean): void {

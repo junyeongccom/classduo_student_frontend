@@ -290,7 +290,7 @@
       "wordListTitle": "Word List",
       "startGame": "Start Game",
       "importKeywords": "Import Keywords",
-      "runningGameNote": "This game uses OX quiz data. The word list will be utilized in future updates.",
+      "runningGameNote": "This game uses keyword quiz data. The word list will be utilized in future updates.",
       "wordKeywordPlaceholder": "Keyword",
       "wordDescriptionPlaceholder": "Description",
       "importError": "Failed to import keywords. Please add words manually.",
@@ -300,14 +300,14 @@
         "controlsLabel": "Controls",
         "playButton": "Start Game",
         "running": {
-          "subtitle": "A side-scrolling runner — jump obstacles and answer OX quizzes",
-          "goal": "Your character runs automatically. Jump over obstacles and answer OX quizzes that appear. Survive as long as you can!",
+          "subtitle": "A side-scrolling runner — jump obstacles and answer quizzes",
+          "goal": "Your character runs automatically. Jump over obstacles and answer quizzes that appear periodically. Survive as long as you can!",
           "controlJump": "Jump",
           "controlDuck": "Duck (slide)",
           "objCoin": "Coin",
           "objCoinDesc": "Earn points",
-          "objScroll": "Quiz Scroll",
-          "objScrollDesc": "Triggers OX quiz",
+          "objScroll": "Quiz",
+          "objScrollDesc": "Appears periodically",
           "objHeart": "Heart",
           "objHeartDesc": "Restores HP",
           "objMeteor": "Meteor",
@@ -321,11 +321,10 @@
           "previewHint": "Click to reveal description"
         },
         "cardMatch": {
-          "subtitle": "Memory matching game pairing keywords with descriptions",
-          "goal": "Cards are face-down in a grid. Flip two at a time to find matching keyword-description pairs. The faster, the better!",
-          "controlFlip": "Click a card to flip",
-          "controlTimer": "Timer tracks elapsed time",
-          "previewHint": "Flip two cards at a time to find pairs"
+          "subtitle": "Matching game pairing keywords with descriptions",
+          "goal": "Keyword and description cards are displayed in a grid. Select two cards at a time to find matching keyword-description pairs.",
+          "controlSelect": "Click a card to select",
+          "previewHint": "Select two cards at a time to find pairs"
         },
         "definitionBuilder": {
           "subtitle": "Fill in the blanks with correct tokens to complete definitions",
@@ -614,7 +613,7 @@
     "visualDescription": "Visual Description"
   },
   "aiTutorFlameTooltip": {
-    "intro": "For each class session, solve OX quiz and card match game, then open the box to collect flames!",
+    "intro": "For each class session, solve running game quizzes and card match game, then open the box to collect flames!",
     "flame2": "5 flames: Upgrade mini-game",
     "flame4": "10 flames: Upgrade character",
     "note": "(More quiz games, cramming mode, research mode, etc.)"
@@ -779,7 +778,7 @@
       "Casting review magic... ✨"
     ],
     "game": [
-      "Shuffling OX quiz questions... 🎲",
+      "Shuffling quiz questions... 🎲",
       "Character is warming up... 🏃",
       "Preparing to start game... 🎮",
       "Getting questions ready... 📝",

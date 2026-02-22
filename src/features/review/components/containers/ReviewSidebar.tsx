@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { ChevronDown, BookOpen, Calendar } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useLectureList } from '@/features/review/hooks/useReview'
 import { type LectureListItem } from '@/features/review/services/reviewService'
 import {
@@ -47,6 +47,7 @@ interface ReviewSidebarProps {
 export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseIdChange }: ReviewSidebarProps) {
   const t = useTranslations('review')
   const tFlame = useTranslations('aiTutorFlameTooltip')
+  const locale = useLocale()
   const { courses, isLoading: isLoadingCourses, error: coursesError } = useReviewCourses()
   const { gameProgress, flameCount, claimedRewards, claimReward } = useGameStatus()
   const userId = useAuthStore(state => state.user?.user_id ?? null)
@@ -107,9 +108,9 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
         lectureInfos,
         lecture.lecture_id
       )
-      return formatWeekAndSession(result.weekNo, result.sessionNo)
+      return formatWeekAndSession(result.weekNo, result.sessionNo, locale)
     }
-  }, [lectureList, termStartDate])
+  }, [lectureList, termStartDate, locale])
 
   useEffect(() => {
     if (!isSharedHydrated) return
