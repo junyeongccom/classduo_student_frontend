@@ -212,24 +212,6 @@ export class GameScene extends Phaser.Scene {
     this.createQuizManager();
     this.fillInitialGround();
 
-    // ── DEBUG: 테스트용 — 신규 능력 즉시 활성화 ──
-    {
-      // 점프횟수 UP 3스택 (multiJumpScore 해금 + 5단 점프)
-      this.jumpCountRewardStacks = 3;
-      this.jumpCountStacks = 3;
-      this.player.maxJumps = MAX_JUMPS + 3;
-      // multiJumpScore Lv3 (always-on이므로 stacks만 설정)
-      this.activeAbilities.multiJumpScore.stacks = 3;
-
-      // 점프력 UP 3스택 (skyTreasure 해금)
-      this.jumpRewardStacks = 3;
-      this.jumpStacks = 3;
-      this.player.jumpMultiplier = Math.pow(JUMP_STACK_BASE, 3);
-      // skyTreasure Lv3 (always-on이므로 stacks만 설정)
-      this.activeAbilities.skyTreasure.stacks = 3;
-    }
-    // ── END DEBUG ──
-
     // Begin intro — spin drop from above
     this.cameras.main.fadeIn(400);
     this.gameState = "intro";
