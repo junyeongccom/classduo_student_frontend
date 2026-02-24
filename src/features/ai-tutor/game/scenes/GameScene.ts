@@ -383,6 +383,7 @@ export class GameScene extends Phaser.Scene {
       applyHpDecayDown: () => this.applyHpDecayDown(),
       applyHpDecayUp: () => this.applyHpDecayUp(),
       isActiveUnlocked: (type: ActiveAbilityType) => this.isActiveUnlocked(type),
+      getActiveLevel: (type: ActiveAbilityType) => Math.min(Math.abs(this.activeAbilities[type].stacks), ACTIVE_MAX_LEVEL),
       applyMagnetUp: () => this.applyActiveAbilityUp("magnet"),
       applyMagnetDown: () => this.applyActiveAbilityDown("magnet"),
       applyGiantUp: () => this.applyActiveAbilityUp("giant"),
@@ -900,9 +901,21 @@ export class GameScene extends Phaser.Scene {
 
   private applyActiveAbilityDown(type: ActiveAbilityType): void {
     const state = this.activeAbilities[type];
-    const oldStacks = state.stacks;
-    state.stacks = Math.max(state.stacks - 1, -ACTIVE_MAX_LEVEL);
-    this.handleAbilityStackChange(type, oldStacks);
+    if (state.stacks > 0) {
+      // Reduce level by 1
+      const oldStacks = state.stacks;
+      state.stacks--;
+      this.handleAbilityStackChange(type, oldStacks);
+    } else {
+      // Already at 0 — reduce unlock tracker by 1 (may re-lock the ability)
+      switch (type) {
+        case "magnet":         this.scoreCardPickCount = Math.max(0, this.scoreCardPickCount - 1); break;
+        case "giant":          this.hpDecayStacks > 0 ? this.hpDecayStacks-- : this.hpDecayStacks++; break;
+        case "coinRain":       this.speedRewardStacks > 0 ? this.speedRewardStacks-- : this.speedRewardStacks++; break;
+        case "multiJumpScore": this.jumpCountRewardStacks > 0 ? this.jumpCountRewardStacks-- : this.jumpCountRewardStacks++; break;
+        case "skyTreasure":    this.jumpRewardStacks > 0 ? this.jumpRewardStacks-- : this.jumpRewardStacks++; break;
+      }
+    }
   }
 
   private handleAbilityStackChange(type: ActiveAbilityType, oldStacks: number): void {
@@ -930,7 +943,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Abilities that are always-on (no cooldown/duration cycle) */
-  private static readonly ALWAYS_ON_ABILITIES: Set<ActiveAbilityType> = new Set(["multiJumpScore", "skyTreasure"]);
+  private static readonly ALWAYS_ON_ABILITIES: Set<ActiveAbilityType> = new Set(["magnet", "multiJumpScore", "skyTreasure"]);
 
   private updateActiveAbilities(delta: number): void {
     const types: ActiveAbilityType[] = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"];

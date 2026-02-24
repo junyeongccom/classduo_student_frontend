@@ -58,6 +58,7 @@ const CHOOSE_REWARD = {
 export interface RewardCallbacks {
   isJumpCountMaxed: () => boolean;
   isActiveUnlocked: (type: ActiveAbilityType) => boolean;
+  getActiveLevel: (type: ActiveAbilityType) => number;
 }
 
 export class RewardCardUI {
@@ -311,11 +312,16 @@ export class RewardCardUI {
 
     if (unlocked.length > 0) {
       const chosenType = unlocked[Phaser.Math.Between(0, unlocked.length - 1)];
-      const activeCard = this.activeCards.find((c) => c.type === chosenType)!;
-      const passives = Phaser.Utils.Array.Shuffle(pool).slice(0, 2);
-      const insertIdx = Phaser.Math.Between(0, 2);
-      passives.splice(insertIdx, 0, activeCard);
-      return passives;
+      const level = this.rewardCallbacks.getActiveLevel(chosenType);
+      // Lv1: 20%, Lv2: 12%, Lv3: 6%
+      const chance = level >= 3 ? 0.06 : level >= 2 ? 0.12 : 0.20;
+      if (Math.random() < chance) {
+        const activeCard = this.activeCards.find((c) => c.type === chosenType)!;
+        const passives = Phaser.Utils.Array.Shuffle(pool).slice(0, 2);
+        const insertIdx = Phaser.Math.Between(0, 2);
+        passives.splice(insertIdx, 0, activeCard);
+        return passives;
+      }
     }
 
     return Phaser.Utils.Array.Shuffle(pool).slice(0, 3);

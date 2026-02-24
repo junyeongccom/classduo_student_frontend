@@ -266,8 +266,8 @@ export const SCORE_LERP_SPEED = 200;
 export const MAGNET_COOLDOWN_MS = 18000;
 export const MAGNET_DURATION_MS = 5000;
 //                                                            Lv0    Lv1       Lv2       Lv3
-export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 200 * S, 350 * S, 550 * S];
-export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 200 * S, 350 * S, 550 * S];
+export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 100 * S, 200 * S, 400 * S];
+export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 100 * S, 200 * S, 400 * S];
 export const MAGNET_RANGE = GAME_WIDTH * 0.6;
 
 // Giant — player scale change + meteor destroy
@@ -275,7 +275,7 @@ export const GIANT_COOLDOWN_MS = 22000;
 export const GIANT_DURATION_MS = 4000;
 export const GIANT_BUFF_SCALE:   [number, number, number, number] = [1, 1.5, 1.8, 2.0];
 export const GIANT_DEBUFF_SCALE: [number, number, number, number] = [1, 0.7, 0.5, 0.4];
-export const GIANT_METEOR_SCORE: [number, number, number, number] = [0, 0, 0, 5];
+export const GIANT_METEOR_SCORE: [number, number, number, number] = [0, 50, 100, 200];
 
 // Coin Rain — spawns coins (buff) or extra meteors (debuff)
 export const COIN_RAIN_COOLDOWN_MS = 18000;
