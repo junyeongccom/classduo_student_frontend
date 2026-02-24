@@ -1,8 +1,8 @@
 /**
  * @file MaterialsModal.tsx
- * @description 강의자료 문서파일 목록 모달 — 파일별 다운로드 (Supabase signed URL)
+ * @description 강의자료 문서파일 목록 모달 — 백엔드 Signed URL 기반 다운로드
  * @module features/lecture-study/components/ui
- * @dependencies lectureService, supabase, lucide-react
+ * @dependencies lectureService, lucide-react
  */
 
 'use client'
@@ -14,7 +14,6 @@ import {
   lectureService,
   type SnapshotMaterialItem,
 } from '../../services/lectureService'
-import { getSupabaseClient } from '@/shared/lib/supabase'
 
 interface MaterialsModalProps {
   open: boolean
@@ -23,29 +22,29 @@ interface MaterialsModalProps {
 }
 
 async function downloadMaterial(material: SnapshotMaterialItem) {
-  const supabase = getSupabaseClient()
+  const result = await lectureService.getMaterialDownloadUrl(material.material_id)
 
-  // materials 버킷에서 signed URL 생성
-  const candidates = [
-    `raw/${material.material_id}/source.pdf`,
-    `source/${material.material_id}/source.pdf`,
-  ]
+  if (result.error || !result.data?.download_url) {
+    console.error('[MaterialsModal] Failed to get download URL:', result.error)
+    return
+  }
 
-  for (const path of candidates) {
-    const { data, error } = await supabase.storage
-      .from('materials')
-      .createSignedUrl(path, 3600, {
-        download: material.original_filename || 'document.pdf',
-      })
+  const filename = result.data.filename || material.original_filename || 'document.pdf'
 
-    if (data?.signedUrl && !error) {
-      const a = document.createElement('a')
-      a.href = data.signedUrl
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      return
-    }
+  try {
+    const response = await fetch(result.data.download_url)
+    const blob = await response.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(blobUrl)
+  } catch (e) {
+    console.error('[MaterialsModal] Download failed, falling back to new tab:', e)
+    window.open(result.data.download_url, '_blank')
   }
 }
 

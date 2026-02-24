@@ -80,7 +80,7 @@ export function RecordingChunksModal({
     if (result.data) {
       setRecordings(
         result.data.recordings.filter(
-          r => r.status === 'COMPLETED' || r.status === 'DONE' || r.step === 'INDEXED',
+          r => r.status === 'COMPLETED' || r.status === 'DONE' || r.status === 'INDEXED',
         ),
       )
     }

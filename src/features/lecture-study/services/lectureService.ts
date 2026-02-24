@@ -181,4 +181,14 @@ export const lectureService = {
       auth: true,
     })
   },
+
+  getMaterialDownloadUrl: (materialId: string) => {
+    if (!isUUID(materialId)) {
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid materialId format' } })
+    }
+    return apiRequest<{ download_url: string; filename: string }>(`/materials/${materialId}/download-url`, {
+      method: 'GET',
+      auth: true,
+    })
+  },
 }
