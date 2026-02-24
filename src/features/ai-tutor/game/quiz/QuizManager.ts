@@ -38,6 +38,10 @@ export interface QuizCallbacks {
   applyGiantDown: () => void;
   applyCoinRainUp: () => void;
   applyCoinRainDown: () => void;
+  applyMultiJumpScoreUp: () => void;
+  applyMultiJumpScoreDown: () => void;
+  applySkyTreasureUp: () => void;
+  applySkyTreasureDown: () => void;
   setGameState: (state: GameState) => void;
   addScore: (amount: number) => void;
   showEffect: (text: string, color: string) => void;
@@ -351,6 +355,24 @@ export class QuizManager {
         } else {
           this.callbacks.applyCoinRainDown();
           effectLabel = prefix + "METEOR STORM!";
+        }
+        break;
+      case "multiJumpScore":
+        if (isCorrect) {
+          this.callbacks.applyMultiJumpScoreUp();
+          effectLabel = prefix + "MULTI JUMP!";
+        } else {
+          this.callbacks.applyMultiJumpScoreDown();
+          effectLabel = prefix + "JUMP PENALTY!";
+        }
+        break;
+      case "skyTreasure":
+        if (isCorrect) {
+          this.callbacks.applySkyTreasureUp();
+          effectLabel = prefix + "SKY TREASURE!";
+        } else {
+          this.callbacks.applySkyTreasureDown();
+          effectLabel = prefix + "SKY METEOR!";
         }
         break;
     }

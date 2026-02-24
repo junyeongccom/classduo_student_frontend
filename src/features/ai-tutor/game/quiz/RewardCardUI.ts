@@ -38,12 +38,16 @@ const ACTIVE_CARDS_KO: CardDef[] = [
   { type: "magnet", title: "자석", desc: "코인을 끌어당기는 힘!", color: 0xe74c3c },
   { type: "giant", title: "거인화", desc: "거대해져서 운석 파괴!", color: 0xe67e22 },
   { type: "coinRain", title: "코인 비", desc: "하늘에서 코인이 내린다!", color: 0xf1c40f },
+  { type: "multiJumpScore", title: "멀티점프", desc: "다단 점프로 보너스 점수!", color: 0x9b59b6 },
+  { type: "skyTreasure", title: "하늘 보물", desc: "높은 곳에서 보물이 내린다!", color: 0x3498db },
 ];
 
 const ACTIVE_CARDS_EN: CardDef[] = [
   { type: "magnet", title: "MAGNET", desc: "Attract coins!", color: 0xe74c3c },
   { type: "giant", title: "GIANT", desc: "Grow big & smash meteors!", color: 0xe67e22 },
   { type: "coinRain", title: "COIN RAIN", desc: "Coins from the sky!", color: 0xf1c40f },
+  { type: "multiJumpScore", title: "MULTI JUMP", desc: "Bonus score on multi-jumps!", color: 0x9b59b6 },
+  { type: "skyTreasure", title: "SKY TREASURE", desc: "Treasures from above!", color: 0x3498db },
 ];
 
 const CHOOSE_REWARD = {
@@ -302,7 +306,7 @@ export class RewardCardUI {
       pool = pool.filter((c) => c.type !== "jumpCount");
     }
 
-    const activeTypes: ActiveAbilityType[] = ["magnet", "giant", "coinRain"];
+    const activeTypes: ActiveAbilityType[] = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"];
     const unlocked = activeTypes.filter((t) => this.rewardCallbacks.isActiveUnlocked(t));
 
     if (unlocked.length > 0) {

@@ -52,6 +52,18 @@ export class HeartItem extends Phaser.Physics.Arcade.Sprite {
     this.restoreStacks = stacks;
   }
 
+  /** Mark as a small heart that falls from the sky (sky treasure buff) */
+  setSmallMode(restoreAmount: number): void {
+    this.setDisplaySize(HEART_ITEM_SIZE * 0.6, HEART_ITEM_SIZE * 0.6);
+    this.restoreStacks = 0;
+    // Store custom restore in baseY tag — retrieved via getSmallRestore()
+    this._smallRestore = restoreAmount;
+  }
+
+  private _smallRestore = 0;
+
+  get smallRestore(): number { return this._smallRestore; }
+
   private lerpColor(from: number, to: number, t: number): number {
     const fr = (from >> 16) & 0xff, fg = (from >> 8) & 0xff, fb = from & 0xff;
     const tr = (to >> 16) & 0xff, tg = (to >> 8) & 0xff, tb = to & 0xff;

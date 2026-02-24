@@ -283,6 +283,22 @@ export const COIN_RAIN_DURATION_MS = 5000;
 export const COIN_RAIN_SPAWN_MS:   [number, number, number, number] = [0, 250, 170, 100];
 export const METEOR_RAIN_SPAWN_MS: [number, number, number, number] = [0, 500, 300, 180];
 
+// Multi Jump Score (멀티점프 보너스) — jumpCount passive → active
+export const MULTI_JUMP_COOLDOWN_MS = 15000;
+export const MULTI_JUMP_DURATION_MS = 8000;
+export const MULTI_JUMP_SCORE_BUFF:  [number, number, number, number] = [0, 1, 2, 3];
+export const MULTI_JUMP_HP_PENALTY:  [number, number, number, number] = [0, 500, 1000, 1500];
+
+// Sky Treasure (하늘 보물) — jump passive → active
+export const SKY_TREASURE_COOLDOWN_MS = 20000;
+export const SKY_TREASURE_DURATION_MS = 6000;
+export const SKY_TREASURE_SPAWN_MS:        [number, number, number, number] = [0, 800, 500, 300];
+export const SKY_TREASURE_DEBUFF_SPAWN_MS: [number, number, number, number] = [0, 600, 400, 250];
+export const SKY_TREASURE_SPAWN_Y = 160 * S;
+export const BIG_COIN_SIZE = 32 * S;
+export const BIG_COIN_VALUE = 10;
+export const SMALL_HEART_RESTORE = 4000;
+
 // Active unlock thresholds
 export const ACTIVE_UNLOCK_SCORE = 30;
 export const ACTIVE_UNLOCK_STACKS = 3;
