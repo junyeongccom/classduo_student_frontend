@@ -32,6 +32,8 @@ export interface QuizCallbacks {
   applyHpDecayDown: () => void;
   applyHpDecayUp: () => void;
   isActiveUnlocked: (type: ActiveAbilityType) => boolean;
+  getActiveLevel: (type: ActiveAbilityType) => number;
+  isPassiveHidden: (passiveType: string) => boolean;
   applyMagnetUp: () => void;
   applyMagnetDown: () => void;
   applyGiantUp: () => void;
@@ -103,6 +105,8 @@ export class QuizManager {
     this.rewardCardUI = new RewardCardUI(scene, this.locale, {
       isJumpCountMaxed: callbacks.isJumpCountMaxed,
       isActiveUnlocked: callbacks.isActiveUnlocked,
+      getActiveLevel: callbacks.getActiveLevel,
+      isPassiveHidden: callbacks.isPassiveHidden,
     });
     this.rewardCardUI.onSelect = (type) => {
       this.pendingRewardType = type;

@@ -59,6 +59,7 @@ export interface RewardCallbacks {
   isJumpCountMaxed: () => boolean;
   isActiveUnlocked: (type: ActiveAbilityType) => boolean;
   getActiveLevel: (type: ActiveAbilityType) => number;
+  isPassiveHidden: (passiveType: string) => boolean;
 }
 
 export class RewardCardUI {
@@ -306,6 +307,8 @@ export class RewardCardUI {
     if (this.rewardCallbacks.isJumpCountMaxed()) {
       pool = pool.filter((c) => c.type !== "jumpCount");
     }
+    // Hide passives whose active ability is activated
+    pool = pool.filter((c) => !this.rewardCallbacks.isPassiveHidden(c.type));
 
     const activeTypes: ActiveAbilityType[] = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"];
     const unlocked = activeTypes.filter((t) => this.rewardCallbacks.isActiveUnlocked(t));

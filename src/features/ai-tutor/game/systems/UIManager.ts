@@ -21,6 +21,7 @@ import {
   SCORE_BOUNCE_DURATION,
   FONT_FAMILY,
   ACTIVE_MAX_LEVEL,
+  ACTIVE_UNLOCK_STACKS,
 } from "../constants";
 
 export class UIManager {
@@ -471,6 +472,48 @@ export class UIManager {
     }
   }
 
+  /** Show passive stack progress (0~2: building toward unlock, 3+: ready) */
+  updatePassiveStackHUD(type: string, passiveStacks: number): void {
+    const icon = this.abilityIcons[type];
+    if (!icon) return;
+
+    // Stop any active pulse
+    if (this.abilityActivePulse[type]) {
+      this.abilityActivePulse[type].stop();
+      delete this.abilityActivePulse[type];
+      icon.bgCircle.setAlpha(1);
+    }
+
+    if (passiveStacks === 0) {
+      icon.container.setVisible(false);
+      return;
+    }
+
+    icon.container.setVisible(true);
+    const iconR = 10 * S;
+    const progress = Math.min(passiveStacks, ACTIVE_UNLOCK_STACKS) / ACTIVE_UNLOCK_STACKS;
+
+    // Dimmed appearance for passive mode
+    icon.label.setAlpha(0.4);
+    icon.levelText.setText(`${passiveStacks}/${ACTIVE_UNLOCK_STACKS}`);
+    icon.levelText.setColor("#aaaaaa");
+
+    // Draw progress ring showing passive progress toward unlock
+    const g = icon.progressRing;
+    g.clear();
+    g.lineStyle(1.5 * S, 0x888888, 0.3);
+    g.strokeCircle(0, 0, iconR);
+
+    if (progress > 0) {
+      const startAngle = -Math.PI / 2;
+      const endAngle = startAngle + progress * Math.PI * 2;
+      g.lineStyle(2.5 * S, 0xaaaaaa, 0.6);
+      g.beginPath();
+      g.arc(0, 0, iconR + 1 * S, startAngle, endAngle, false);
+      g.strokePath();
+    }
+  }
+
   updateActiveAbilityHUD(
     type: string,
     stacks: number,
@@ -493,29 +536,25 @@ export class UIManager {
 
     icon.container.setVisible(true);
     const level = Math.min(Math.abs(stacks), ACTIVE_MAX_LEVEL);
-    const isBuff = stacks > 0;
     const iconR = 10 * S;
 
     // Update level text
     icon.levelText.setText(`Lv${level}`);
-    icon.levelText.setColor(isBuff ? "#2ecc71" : "#e74c3c");
-
-    // Border / ring colors
-    const borderColor = isBuff ? 0x2ecc71 : 0xe74c3c;
+    icon.levelText.setColor("#2ecc71");
 
     // Draw progress ring
     const g = icon.progressRing;
     g.clear();
 
     // Base border circle
-    g.lineStyle(1.5 * S, borderColor, 0.4);
+    g.lineStyle(1.5 * S, 0x2ecc71, 0.4);
     g.strokeCircle(0, 0, iconR);
 
     // Progress arc
     const startAngle = -Math.PI / 2;
     const endAngle = startAngle + Phaser.Math.Clamp(progress, 0, 1) * Math.PI * 2;
     if (progress > 0.001) {
-      g.lineStyle(2.5 * S, isActive ? 0xf1c40f : borderColor, 0.9);
+      g.lineStyle(2.5 * S, isActive ? 0xf1c40f : 0x2ecc71, 0.9);
       g.beginPath();
       g.arc(0, 0, iconR + 1 * S, startAngle, endAngle, false);
       g.strokePath();

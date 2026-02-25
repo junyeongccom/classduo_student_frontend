@@ -268,7 +268,8 @@ export const MAGNET_DURATION_MS = 5000;
 //                                                            Lv0    Lv1       Lv2       Lv3
 export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 100 * S, 200 * S, 400 * S];
 export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 100 * S, 200 * S, 400 * S];
-export const MAGNET_RANGE = GAME_WIDTH * 0.6;
+//                                                    Lv0    Lv1              Lv2              Lv3
+export const MAGNET_RANGE: [number, number, number, number] = [0, GAME_WIDTH * 0.25, GAME_WIDTH * 0.5, GAME_WIDTH];
 
 // Giant — player scale change + meteor destroy
 export const GIANT_COOLDOWN_MS = 22000;
@@ -301,5 +302,6 @@ export const SMALL_HEART_RESTORE = 4000;
 
 // Active unlock thresholds
 export const ACTIVE_UNLOCK_SCORE = 30;
-export const ACTIVE_UNLOCK_STACKS = 3;
+export const ACTIVE_UNLOCK_STACKS = 5;
 export const ACTIVE_MAX_LEVEL = 3;
+export const PASSIVE_STACK_MIN = -1;
