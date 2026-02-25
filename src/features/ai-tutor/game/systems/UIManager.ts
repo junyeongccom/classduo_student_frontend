@@ -422,7 +422,7 @@ export class UIManager {
   private createActiveAbilityIcons(): void {
     const types = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"] as const;
     const labels: Record<string, string> = { magnet: "M", giant: "G", coinRain: "C", multiJumpScore: "J", skyTreasure: "S" };
-    const colors: Record<string, number> = { magnet: 0xe74c3c, giant: 0xe67e22, coinRain: 0xf1c40f, multiJumpScore: 0x9b59b6, skyTreasure: 0x3498db };
+    const colors: Record<string, number> = { magnet: 0xf1c40f, giant: 0x1abc9c, coinRain: 0x3498db, multiJumpScore: 0x9b59b6, skyTreasure: 0x2ecc71 };
 
     const startX = HP_BAR_X;
     const startY = HP_BAR_Y + HP_BAR_HEIGHT + 8 * S;

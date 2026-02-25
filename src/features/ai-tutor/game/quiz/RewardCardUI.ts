@@ -17,37 +17,37 @@ interface CardDef {
 }
 
 const REWARD_CARDS_KO: CardDef[] = [
-  { type: "jump", title: "점프력 UP", desc: "점프력 15% 증가", color: 0x3498db },
+  { type: "jump", title: "점프력 UP", desc: "점프력 15% 증가", color: 0x2ecc71 },
   { type: "jumpCount", title: "점프횟수 UP", desc: "점프 횟수 +1", color: 0x9b59b6 },
-  { type: "speed", title: "속도 UP", desc: "이동속도 15% 증가", color: 0xf1c40f },
-  { type: "score", title: "점수 보너스", desc: "즉시 점수 획득", color: 0xe74c3c },
+  { type: "speed", title: "속도 UP", desc: "이동속도 15% 증가", color: 0x3498db },
+  { type: "score", title: "점수 보너스", desc: "즉시 점수 획득", color: 0xf1c40f },
   { type: "heartBoost", title: "회복 강화", desc: "하트 회복량 15% 증가", color: 0xff6b81 },
-  { type: "hpDecay", title: "체력 감소 DOWN", desc: "체력 감소 속도 15% 감소", color: 0xe67e22 },
+  { type: "hpDecay", title: "체력 감소 DOWN", desc: "체력 감소 속도 15% 감소", color: 0x1abc9c },
 ];
 
 const REWARD_CARDS_EN: CardDef[] = [
-  { type: "jump", title: "JUMP UP", desc: "Jump +15%", color: 0x3498db },
+  { type: "jump", title: "JUMP UP", desc: "Jump +15%", color: 0x2ecc71 },
   { type: "jumpCount", title: "JUMP COUNT UP", desc: "Jump count +1", color: 0x9b59b6 },
-  { type: "speed", title: "SPEED UP", desc: "Speed +15%", color: 0xf1c40f },
-  { type: "score", title: "SCORE BONUS", desc: "Instant score", color: 0xe74c3c },
+  { type: "speed", title: "SPEED UP", desc: "Speed +15%", color: 0x3498db },
+  { type: "score", title: "SCORE BONUS", desc: "Instant score", color: 0xf1c40f },
   { type: "heartBoost", title: "HEART BOOST", desc: "Heart restore +15%", color: 0xff6b81 },
-  { type: "hpDecay", title: "DECAY DOWN", desc: "Decay -15%", color: 0xe67e22 },
+  { type: "hpDecay", title: "DECAY DOWN", desc: "Decay -15%", color: 0x1abc9c },
 ];
 
 const ACTIVE_CARDS_KO: CardDef[] = [
-  { type: "magnet", title: "자석", desc: "코인을 끌어당기는 힘!", color: 0xe74c3c },
-  { type: "giant", title: "거인화", desc: "거대해져서 운석 파괴!", color: 0xe67e22 },
-  { type: "coinRain", title: "코인 비", desc: "하늘에서 코인이 내린다!", color: 0xf1c40f },
+  { type: "magnet", title: "자석", desc: "코인을 끌어당기는 힘!", color: 0xf1c40f },
+  { type: "giant", title: "거인화", desc: "거대해져서 운석 파괴!", color: 0x1abc9c },
+  { type: "coinRain", title: "코인 비", desc: "하늘에서 코인이 내린다!", color: 0x3498db },
   { type: "multiJumpScore", title: "멀티점프", desc: "다단 점프로 보너스 점수!", color: 0x9b59b6 },
-  { type: "skyTreasure", title: "하늘 보물", desc: "높은 곳에서 보물이 내린다!", color: 0x3498db },
+  { type: "skyTreasure", title: "하늘 보물", desc: "높은 곳에서 보물이 내린다!", color: 0x2ecc71 },
 ];
 
 const ACTIVE_CARDS_EN: CardDef[] = [
-  { type: "magnet", title: "MAGNET", desc: "Attract coins!", color: 0xe74c3c },
-  { type: "giant", title: "GIANT", desc: "Grow big & smash meteors!", color: 0xe67e22 },
-  { type: "coinRain", title: "COIN RAIN", desc: "Coins from the sky!", color: 0xf1c40f },
+  { type: "magnet", title: "MAGNET", desc: "Attract coins!", color: 0xf1c40f },
+  { type: "giant", title: "GIANT", desc: "Grow big & smash meteors!", color: 0x1abc9c },
+  { type: "coinRain", title: "COIN RAIN", desc: "Coins from the sky!", color: 0x3498db },
   { type: "multiJumpScore", title: "MULTI JUMP", desc: "Bonus score on multi-jumps!", color: 0x9b59b6 },
-  { type: "skyTreasure", title: "SKY TREASURE", desc: "Treasures from above!", color: 0x3498db },
+  { type: "skyTreasure", title: "SKY TREASURE", desc: "Treasures from above!", color: 0x2ecc71 },
 ];
 
 const CHOOSE_REWARD = {
