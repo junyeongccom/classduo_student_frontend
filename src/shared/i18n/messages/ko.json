@@ -358,6 +358,18 @@
       "loadFailed": "데이터를 불러오지 못했습니다. 다시 시도해주세요.",
       "materialsLoadError": "강의자료를 불러오지 못했습니다"
     },
+    "summary": {
+      "title": "요약",
+      "loading": "요약을 불러오는 중...",
+      "preparing": "요약 준비 중",
+      "sourceButtonMaterials": "(강의자료)",
+      "sourceButtonRecordings": "(녹음본)",
+      "sourceTooltipPages": "페이지 {pages}",
+      "sourceTooltipChunks": "청크 {chunks}",
+      "sourceEmptyTooltip": "출처 정보가 없습니다",
+      "recentIssuesTitle": "최근 쟁점",
+      "examPointsTitle": "요점 정리(시험 대비)"
+    },
     "quiz": {
       "typeLabel": {
         "RECALL": "내용 기억",

@@ -358,6 +358,18 @@
       "loadFailed": "Failed to load data. Please try again.",
       "materialsLoadError": "Failed to load materials"
     },
+    "summary": {
+      "title": "Summary",
+      "loading": "Loading summary...",
+      "preparing": "Summary in preparation",
+      "sourceButtonMaterials": "(Materials)",
+      "sourceButtonRecordings": "(Recordings)",
+      "sourceTooltipPages": "Page {pages}",
+      "sourceTooltipChunks": "Chunk {chunks}",
+      "sourceEmptyTooltip": "No source information",
+      "recentIssuesTitle": "Recent Issues",
+      "examPointsTitle": "Key Points (Exam Prep)"
+    },
     "quiz": {
       "typeLabel": {
         "RECALL": "Content Recall",
