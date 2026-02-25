@@ -164,6 +164,8 @@ export class GameScene extends Phaser.Scene {
   private jumpRewardStacks = 0;
 
   private lastCoinPattern = "";
+  private meteorSlowTimer = 0;
+  private meteorSlowMult = 1;
 
   // Active abilities
   private activeAbilities: Record<ActiveAbilityType, {
@@ -268,6 +270,8 @@ export class GameScene extends Phaser.Scene {
     this.lastSlideDustTime = 0;
     this.lastHpFlashTime = 0;
     this.lastCoinPattern = "";
+    this.meteorSlowTimer = 0;
+    this.meteorSlowMult = 1;
     this.activeAbilities = {
       magnet:         { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
       giant:          { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
@@ -381,6 +385,14 @@ export class GameScene extends Phaser.Scene {
       applyJumpCountDown: () => { this.applyJumpCountDown(); this.jumpCountRewardStacks--; },
       isJumpCountMaxed: () => this.player.maxJumps >= JUMP_COUNT_MAX,
       isJumpCountAtMin: () => this.player.maxJumps <= JUMP_COUNT_MIN,
+      applyScorePassiveUp: () => {
+        if (this.scoreCardPickCount >= ACTIVE_UNLOCK_STACKS) return;
+        this.scoreCardPickCount++;
+      },
+      applyScorePassiveDown: () => {
+        if (this.scoreCardPickCount <= PASSIVE_STACK_MIN) return;
+        this.scoreCardPickCount--;
+      },
       applyHeartBoostUp: () => this.applyHeartBoostUp(),
       applyHeartBoostDown: () => this.applyHeartBoostDown(),
       applyHpDecayDown: () => this.applyHpDecayDown(),
@@ -388,6 +400,7 @@ export class GameScene extends Phaser.Scene {
       isActiveUnlocked: (type: ActiveAbilityType) => this.isActiveUnlocked(type),
       getActiveLevel: (type: ActiveAbilityType) => Math.min(Math.abs(this.activeAbilities[type].stacks), ACTIVE_MAX_LEVEL),
       isPassiveHidden: (passiveType: string) => this.isPassiveHiddenByActive(passiveType),
+      isPassiveMaxed: (passiveType: string) => this.isPassiveAtMax(passiveType),
       applyMagnetUp: () => this.applyActiveAbilityUp("magnet"),
       applyMagnetDown: () => this.applyActiveAbilityDown("magnet"),
       applyGiantUp: () => this.applyActiveAbilityUp("giant"),
@@ -404,7 +417,6 @@ export class GameScene extends Phaser.Scene {
       addScore: (amount: number) => {
         this.score = Math.max(0, this.score + amount);
         this.ui.setScore(this.score);
-        this.scoreCardPickCount++;
       },
       showEffect: (text: string, color: string) => this.ui.showEffect(text, color),
       onQuizCollect: (x: number, y: number) => {
@@ -754,10 +766,9 @@ export class GameScene extends Phaser.Scene {
     this.hp = Math.max(0, this.hp - this.lerpDiff(DIFF_METEOR_DAMAGE));
     this.ui.updateHpGauge(this.hp, this.hpMax);
 
-    // Speed down (heavy penalty)
-    this.applySpeedDown();
-    this.applySpeedDown();
-    this.applySpeedDown();
+    // Temporary speed slow (does not affect speed stacks)
+    this.meteorSlowTimer = 2000; // 2 seconds of slow
+    this.meteorSlowMult = 0.5;
 
     // Screen effects
     this.screenFX.shake(SHAKE_WRONG_COLLECT);
@@ -785,10 +796,12 @@ export class GameScene extends Phaser.Scene {
   // ── Buff / Debuff ──
 
   private getEffectiveSpeed(): number {
-    return this.baseScrollSpeed * this.scrollSpeedMultiplier + this.lerpDiff(DIFF_SCROLL_SPEED_BONUS);
+    const base = this.baseScrollSpeed * this.scrollSpeedMultiplier + this.lerpDiff(DIFF_SCROLL_SPEED_BONUS);
+    return base * this.meteorSlowMult;
   }
 
   private applySpeedUp(): void {
+    if (this.speedStacks >= ACTIVE_UNLOCK_STACKS) return;
     this.speedStacks++;
     this.scrollSpeedMultiplier = Phaser.Math.Clamp(
       Math.pow(SPEED_STACK_BASE, this.speedStacks),
@@ -806,6 +819,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private applyJumpUp(): void {
+    if (this.jumpStacks >= ACTIVE_UNLOCK_STACKS) return;
     this.jumpStacks++;
     this.player.jumpMultiplier = Phaser.Math.Clamp(
       Math.pow(JUMP_STACK_BASE, this.jumpStacks),
@@ -823,6 +837,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private applyJumpCountUp(): void {
+    if (this.jumpCountStacks >= ACTIVE_UNLOCK_STACKS) return;
     this.jumpCountStacks++;
     this.player.maxJumps = Phaser.Math.Clamp(
       MAX_JUMPS + this.jumpCountStacks,
@@ -840,6 +855,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private applyHeartBoostUp(): void {
+    if (this.heartRestoreStacks >= ACTIVE_UNLOCK_STACKS) return;
     this.heartRestoreStacks++;
     this.heartRestoreMultiplier = Phaser.Math.Clamp(
       Math.pow(HEART_RESTORE_STACK_BASE, this.heartRestoreStacks),
@@ -865,7 +881,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private applyHpDecayDown(): void {
-    if (this.hpDecayStacks <= PASSIVE_STACK_MIN) return;
+    // hpDecay is inverted: negative = buff direction (less decay)
+    if (this.hpDecayStacks <= -ACTIVE_UNLOCK_STACKS) return;
     this.hpDecayStacks--;
     this.hpDecayMultiplier = Phaser.Math.Clamp(
       Math.pow(HP_DECAY_STACK_BASE, this.hpDecayStacks),
@@ -874,6 +891,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private applyHpDecayUp(): void {
+    // hpDecay is inverted: positive = debuff direction (more decay), capped at +1
+    if (this.hpDecayStacks >= -PASSIVE_STACK_MIN) return;
     this.hpDecayStacks++;
     this.hpDecayMultiplier = Phaser.Math.Clamp(
       Math.pow(HP_DECAY_STACK_BASE, this.hpDecayStacks),
@@ -900,6 +919,18 @@ export class GameScene extends Phaser.Scene {
     jump: "skyTreasure",
   };
 
+  private isPassiveAtMax(passiveType: string): boolean {
+    switch (passiveType) {
+      case "speed":      return this.speedStacks >= ACTIVE_UNLOCK_STACKS;
+      case "jump":       return this.jumpStacks >= ACTIVE_UNLOCK_STACKS;
+      case "jumpCount":  return this.jumpCountStacks >= ACTIVE_UNLOCK_STACKS;
+      case "score":      return this.scoreCardPickCount >= ACTIVE_UNLOCK_STACKS;
+      case "heartBoost": return this.heartRestoreStacks >= ACTIVE_UNLOCK_STACKS;
+      case "hpDecay":    return this.hpDecayStacks <= -ACTIVE_UNLOCK_STACKS;
+      default:           return false;
+    }
+  }
+
   private isPassiveHiddenByActive(passiveType: string): boolean {
     const activeType = GameScene.PASSIVE_TO_ACTIVE[passiveType];
     if (!activeType) return false;
@@ -908,6 +939,16 @@ export class GameScene extends Phaser.Scene {
 
   private isActiveUnlocked(type: ActiveAbilityType): boolean {
     return this.getPassiveStacksForAbility(type) >= ACTIVE_UNLOCK_STACKS;
+  }
+
+  private getSignedPassiveStacks(type: ActiveAbilityType): number {
+    switch (type) {
+      case "magnet":         return this.scoreCardPickCount;
+      case "giant":          return -this.hpDecayStacks; // hpDecay is inverted: negative stacks = buff
+      case "coinRain":       return this.speedStacks;
+      case "multiJumpScore": return this.jumpCountStacks;
+      case "skyTreasure":    return this.jumpStacks;
+    }
   }
 
   private getPassiveStacksForAbility(type: ActiveAbilityType): number {
@@ -920,36 +961,29 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Force-set the associated passive to a target absolute level, preserving sign direction */
+  /** Force-set the associated passive to a target buff level (always positive direction) */
   private setPassiveStacksForAbility(type: ActiveAbilityType, target: number): void {
     switch (type) {
       case "magnet":
         this.scoreCardPickCount = target;
         break;
-      case "giant": {
-        const sign = this.hpDecayStacks >= 0 ? 1 : -1;
-        this.hpDecayStacks = sign * target;
+      case "giant":
+        // hpDecay is inverted: negative = buff, so set to -target
+        this.hpDecayStacks = -target;
         this.hpDecayMultiplier = Phaser.Math.Clamp(Math.pow(HP_DECAY_STACK_BASE, this.hpDecayStacks), HP_DECAY_MULT_MIN, HP_DECAY_MULT_MAX);
         break;
-      }
-      case "coinRain": {
-        const sign = this.speedStacks >= 0 ? 1 : -1;
-        this.speedStacks = sign * target;
+      case "coinRain":
+        this.speedStacks = target;
         this.scrollSpeedMultiplier = Phaser.Math.Clamp(Math.pow(SPEED_STACK_BASE, this.speedStacks), SPEED_MULT_MIN, SPEED_MULT_MAX);
         break;
-      }
-      case "multiJumpScore": {
-        const sign = this.jumpCountStacks >= 0 ? 1 : -1;
-        this.jumpCountStacks = sign * target;
+      case "multiJumpScore":
+        this.jumpCountStacks = target;
         this.player.maxJumps = Phaser.Math.Clamp(MAX_JUMPS + this.jumpCountStacks, JUMP_COUNT_MIN, JUMP_COUNT_MAX);
         break;
-      }
-      case "skyTreasure": {
-        const sign = this.jumpStacks >= 0 ? 1 : -1;
-        this.jumpStacks = sign * target;
+      case "skyTreasure":
+        this.jumpStacks = target;
         this.player.jumpMultiplier = Phaser.Math.Clamp(Math.pow(JUMP_STACK_BASE, this.jumpStacks), JUMP_MULT_MIN, JUMP_MULT_MAX);
         break;
-      }
     }
   }
 
@@ -970,8 +1004,8 @@ export class GameScene extends Phaser.Scene {
     } else {
       // Active at 0 — reduce the associated passive by 1 (min PASSIVE_STACK_MIN)
       switch (type) {
-        case "magnet":         this.scoreCardPickCount = Math.max(0, this.scoreCardPickCount - 1); break;
-        case "giant":          this.applyHpDecayDown(); break;
+        case "magnet":         this.scoreCardPickCount = Math.max(PASSIVE_STACK_MIN, this.scoreCardPickCount - 1); break;
+        case "giant":          this.applyHpDecayUp(); break;
         case "coinRain":       this.applySpeedDown(); break;
         case "multiJumpScore": this.applyJumpCountDown(); break;
         case "skyTreasure":    this.applyJumpDown(); break;
@@ -1012,9 +1046,9 @@ export class GameScene extends Phaser.Scene {
       const state = this.activeAbilities[type];
       if (state.stacks === 0) {
         // Show passive stack progress instead
-        const passiveStacks = this.getPassiveStacksForAbility(type);
-        if (passiveStacks > 0) {
-          this.ui.updatePassiveStackHUD(type, passiveStacks);
+        const signedStacks = this.getSignedPassiveStacks(type);
+        if (signedStacks !== 0) {
+          this.ui.updatePassiveStackHUD(type, signedStacks);
         } else {
           this.ui.updateActiveAbilityHUD(type, 0, 0, false);
         }
@@ -1209,6 +1243,15 @@ export class GameScene extends Phaser.Scene {
     // Accumulate play time for difficulty ramp
     if (!isIntro) {
       this.elapsedPlayTime += delta;
+    }
+
+    // Meteor slow recovery
+    if (this.meteorSlowTimer > 0) {
+      this.meteorSlowTimer -= delta;
+      if (this.meteorSlowTimer <= 0) {
+        this.meteorSlowTimer = 0;
+        this.meteorSlowMult = 1;
+      }
     }
 
     // HP decay, quiz timer — only during active gameplay

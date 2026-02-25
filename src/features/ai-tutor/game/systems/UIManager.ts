@@ -472,8 +472,8 @@ export class UIManager {
     }
   }
 
-  /** Show passive stack progress (0~2: building toward unlock, 3+: ready) */
-  updatePassiveStackHUD(type: string, passiveStacks: number): void {
+  /** Show passive stack progress (signed: negative = debuff, positive = building toward unlock) */
+  updatePassiveStackHUD(type: string, signedStacks: number): void {
     const icon = this.abilityIcons[type];
     if (!icon) return;
 
@@ -484,33 +484,51 @@ export class UIManager {
       icon.bgCircle.setAlpha(1);
     }
 
-    if (passiveStacks === 0) {
+    if (signedStacks === 0) {
       icon.container.setVisible(false);
       return;
     }
 
     icon.container.setVisible(true);
     const iconR = 10 * S;
-    const progress = Math.min(passiveStacks, ACTIVE_UNLOCK_STACKS) / ACTIVE_UNLOCK_STACKS;
-
-    // Dimmed appearance for passive mode
-    icon.label.setAlpha(0.4);
-    icon.levelText.setText(`${passiveStacks}/${ACTIVE_UNLOCK_STACKS}`);
-    icon.levelText.setColor("#aaaaaa");
-
-    // Draw progress ring showing passive progress toward unlock
+    const isDebuff = signedStacks < 0;
+    const absStacks = Math.abs(signedStacks);
     const g = icon.progressRing;
     g.clear();
-    g.lineStyle(1.5 * S, 0x888888, 0.3);
-    g.strokeCircle(0, 0, iconR);
 
-    if (progress > 0) {
-      const startAngle = -Math.PI / 2;
-      const endAngle = startAngle + progress * Math.PI * 2;
-      g.lineStyle(2.5 * S, 0xaaaaaa, 0.6);
+    if (isDebuff) {
+      // Debuff: red filled ring, full progress
+      icon.label.setAlpha(0.4);
+      icon.levelText.setText(`${signedStacks}`);
+      icon.levelText.setColor("#e74c3c");
+
+      g.lineStyle(1.5 * S, 0xe74c3c, 0.4);
+      g.strokeCircle(0, 0, iconR);
+
+      // Full red ring
+      g.lineStyle(2.5 * S, 0xe74c3c, 0.7);
       g.beginPath();
-      g.arc(0, 0, iconR + 1 * S, startAngle, endAngle, false);
+      g.arc(0, 0, iconR + 1 * S, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2, false);
       g.strokePath();
+    } else {
+      // Buff: progress toward unlock
+      const progress = Math.min(absStacks, ACTIVE_UNLOCK_STACKS) / ACTIVE_UNLOCK_STACKS;
+
+      icon.label.setAlpha(0.4);
+      icon.levelText.setText(`${absStacks}/${ACTIVE_UNLOCK_STACKS}`);
+      icon.levelText.setColor("#aaaaaa");
+
+      g.lineStyle(1.5 * S, 0x888888, 0.3);
+      g.strokeCircle(0, 0, iconR);
+
+      if (progress > 0) {
+        const startAngle = -Math.PI / 2;
+        const endAngle = startAngle + progress * Math.PI * 2;
+        g.lineStyle(2.5 * S, 0xaaaaaa, 0.6);
+        g.beginPath();
+        g.arc(0, 0, iconR + 1 * S, startAngle, endAngle, false);
+        g.strokePath();
+      }
     }
   }
 

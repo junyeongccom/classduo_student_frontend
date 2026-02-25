@@ -30,11 +30,14 @@ export interface QuizCallbacks {
   isJumpCountAtMin: () => boolean;
   applyHeartBoostUp: () => void;
   applyHeartBoostDown: () => void;
+  applyScorePassiveUp: () => void;
+  applyScorePassiveDown: () => void;
   applyHpDecayDown: () => void;
   applyHpDecayUp: () => void;
   isActiveUnlocked: (type: ActiveAbilityType) => boolean;
   getActiveLevel: (type: ActiveAbilityType) => number;
   isPassiveHidden: (passiveType: string) => boolean;
+  isPassiveMaxed: (passiveType: string) => boolean;
   applyMagnetUp: () => void;
   applyMagnetDown: () => void;
   applyGiantUp: () => void;
@@ -108,6 +111,7 @@ export class QuizManager {
       isActiveUnlocked: callbacks.isActiveUnlocked,
       getActiveLevel: callbacks.getActiveLevel,
       isPassiveHidden: callbacks.isPassiveHidden,
+      isPassiveMaxed: callbacks.isPassiveMaxed,
     });
     this.rewardCardUI.onSelect = (type) => {
       this.pendingRewardType = type;
@@ -314,9 +318,14 @@ export class QuizManager {
       case "score": {
         const tier = Math.min(this.callbacks.getScoreTier(), SCORE_BONUS.length - 1);
         const bonus = SCORE_BONUS[tier];
-        const amount = isCorrect ? bonus : -bonus;
-        this.callbacks.addScore(amount);
-        effectLabel = prefix + this.t.points(amount);
+        if (isCorrect) {
+          this.callbacks.addScore(bonus);
+          this.callbacks.applyScorePassiveUp();
+        } else {
+          this.callbacks.addScore(-bonus);
+          this.callbacks.applyScorePassiveDown();
+        }
+        effectLabel = prefix + this.t.points(isCorrect ? bonus : -bonus);
         break;
       }
       case "scoreFallback": {

@@ -266,8 +266,8 @@ export const SCORE_LERP_SPEED = 200;
 export const MAGNET_COOLDOWN_MS = 18000;
 export const MAGNET_DURATION_MS = 5000;
 //                                                            Lv0    Lv1       Lv2       Lv3
-export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 100 * S, 200 * S, 400 * S];
-export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 100 * S, 200 * S, 400 * S];
+export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 400 * S, 400 * S, 400 * S];
+export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 400 * S, 400 * S, 400 * S];
 //                                                    Lv0    Lv1              Lv2              Lv3
 export const MAGNET_RANGE: [number, number, number, number] = [0, GAME_WIDTH * 0.10, GAME_WIDTH * 0.25, GAME_WIDTH];
 
