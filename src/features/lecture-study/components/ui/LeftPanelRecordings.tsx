@@ -58,8 +58,9 @@ function ChunkAccordionItem({
   valueKey: string
   chunkRef?: React.Ref<HTMLDivElement>
 }) {
+  const t = useTranslations()
   const hasTime = chunk.start_time != null || chunk.end_time != null
-  const title = chunk.title || `구간 ${chunk.chunk_index + 1}`
+  const title = chunk.title || t('lectureStudy.leftPanel.segmentFallback', { n: chunk.chunk_index + 1 })
 
   return (
     <AccordionItem
@@ -85,7 +86,7 @@ function ChunkAccordionItem({
         {chunk.content ? (
           <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">{chunk.content}</p>
         ) : (
-          <p className="text-xs text-gray-400 dark:text-gray-500 italic">요약 내용 없음</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 italic">{t('lectureStudy.leftPanel.recordingSummaryNull')}</p>
         )}
       </AccordionContent>
     </AccordionItem>
