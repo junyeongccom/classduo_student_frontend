@@ -1,50 +1,81 @@
 /**
  * @file LeftPanelMaterials.tsx
- * @description 좌측 패널 - 이미지 기반 PDF 뷰어 (materials/{materialId}/page_NNNN.jpg)
+ * @description 좌측 패널 - 연속 스크롤 이미지 뷰어 (다중 material 지원, lazy loading, 메모리 관리)
  * @module features/lecture-study/components/containers
  * @dependencies lectureService, useLectureStudyStore
  */
 
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Loader2, AlertTriangle } from 'lucide-react'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { lectureService } from '../../services/lectureService'
 import type { MaterialPageItem } from '../../services/lectureService'
 
-interface PageCache {
-  [pageNumber: number]: string | null
+/** 성공적으로 로딩된 페이지 */
+interface LoadedPage {
+  type: 'page'
+  materialId: string
+  pageIndex: number
+  imageUrl: string | null
 }
+
+/** 로딩 실패한 material placeholder */
+interface ErrorPage {
+  type: 'error'
+  materialId: string
+}
+
+type PageEntry = LoadedPage | ErrorPage
 
 function isValidImageUrl(url: string): boolean {
   return url.startsWith('https://') || url.startsWith('http://localhost')
 }
 
+/** 뷰포트 밖 이미지 unload 임계값 (±페이지 수) */
+const UNLOAD_THRESHOLD = 5
+
 export function LeftPanelMaterials() {
   const t = useTranslations()
   const lectureId = useLectureStudyStore((s) => s.lectureId)
+  const targetPage = useLectureStudyStore((s) => s.targetPage)
+  const setTargetPage = useLectureStudyStore((s) => s.setTargetPage)
 
-  const [materialId, setMaterialId] = useState<string | null>(null)
-  const [pages, setPages] = useState<MaterialPageItem[]>([])
-  const [totalPages, setTotalPages] = useState(0)
+  const [allPages, setAllPages] = useState<PageEntry[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const imageCache = useRef<PageCache>({})
 
-  // 1) lecture → material (input_snapshot_id 기반)
+  /** 각 페이지 요소 ref 배열 */
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([])
+  /** 스크롤 컨테이너 ref */
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  /** 프로그래밍적 스크롤 중 여부 (Observer 업데이트 억제용) */
+  const isScrollingRef = useRef(false)
+  /** 각 페이지의 이미지 로딩 상태 */
+  const loadedImagesRef = useRef<Set<number>>(new Set())
+  /** 이미지 에러로 retry한 material 추적 */
+  const retriedMaterialsRef = useRef<Set<string>>(new Set())
+  /** material별 원본 pages 데이터 (URL 재발급용) */
+  const materialPagesMapRef = useRef<Map<string, MaterialPageItem[]>>(new Map())
+
+  const totalPages = allPages.filter((p) => p.type === 'page').length
+
+  // ─── 다중 material 로딩 (Task 767) ───
   useEffect(() => {
     if (!lectureId) return
     let cancelled = false
 
-    async function fetchMaterial() {
+    async function fetchAllMaterials() {
       setIsLoading(true)
       setError(null)
-      setMaterialId(null)
-      setPages([])
+      setAllPages([])
+      setCurrentPage(1)
+      loadedImagesRef.current.clear()
+      retriedMaterialsRef.current.clear()
+      materialPagesMapRef.current.clear()
 
       try {
         const snapshotResult = await lectureService.getSnapshotSelections(lectureId!)
@@ -56,80 +87,275 @@ export function LeftPanelMaterials() {
           return
         }
 
-        const firstMaterialId = materials[0].material_id
-        setMaterialId(firstMaterialId)
-
-        const pagesResult = await lectureService.getMaterialPages(firstMaterialId)
+        // Promise.allSettled로 부분 실패 허용
+        const results = await Promise.allSettled(
+          materials.map((mat) => lectureService.getMaterialPages(mat.material_id)),
+        )
         if (cancelled) return
 
-        if (pagesResult.error || !pagesResult.data) {
-          console.error('[LeftPanelMaterials] Failed to load pages:', pagesResult.error)
-          setError('MATERIALS_LOAD_ERROR')
-          setIsLoading(false)
-          return
+        const pages: PageEntry[] = []
+        for (let i = 0; i < materials.length; i++) {
+          const result = results[i]
+          const materialId = materials[i].material_id
+
+          if (result.status === 'fulfilled' && result.value.data?.pages) {
+            const sorted = [...result.value.data.pages].sort(
+              (a, b) => a.page_number - b.page_number,
+            )
+            materialPagesMapRef.current.set(materialId, sorted)
+            for (let j = 0; j < sorted.length; j++) {
+              pages.push({
+                type: 'page',
+                materialId,
+                pageIndex: j,
+                imageUrl: sorted[j].image_url,
+              })
+            }
+          } else {
+            // 로딩 실패 → 에러 placeholder
+            pages.push({ type: 'error', materialId })
+          }
         }
 
-        const sortedPages = [...(pagesResult.data.pages ?? [])].sort(
-          (a, b) => a.page_number - b.page_number,
-        )
-        setPages(sortedPages)
-        setTotalPages(pagesResult.data.total_count || sortedPages.length)
-        setCurrentPage(1)
+        setAllPages(pages)
         setIsLoading(false)
-
-        // cache first page URL
-        if (sortedPages.length > 0 && sortedPages[0].image_url) {
-          imageCache.current[sortedPages[0].page_number] = sortedPages[0].image_url
-        }
       } catch (err) {
         if (cancelled) return
-        console.error('[LeftPanelMaterials] fetchMaterial error:', err)
+        console.error('[LeftPanelMaterials] fetchAllMaterials error:', err)
         setError('MATERIALS_LOAD_ERROR')
         setIsLoading(false)
       }
     }
 
-    fetchMaterial()
-    return () => { cancelled = true }
+    fetchAllMaterials()
+    return () => {
+      cancelled = true
+    }
   }, [lectureId])
 
-  // Current page image URL
-  const currentPageData = useMemo(
-    () => pages.find((p) => p.page_number === currentPage),
-    [pages, currentPage],
+  // ─── Intersection Observer: 현재 페이지 감지 (Task 764) ───
+  useEffect(() => {
+    if (allPages.length === 0 || !scrollContainerRef.current) return
+
+    const ratioMap = new Map<number, number>()
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isScrollingRef.current) return
+
+        for (const entry of entries) {
+          const idx = Number(entry.target.getAttribute('data-page-index'))
+          if (!Number.isNaN(idx)) {
+            ratioMap.set(idx, entry.intersectionRatio)
+          }
+        }
+
+        // 가장 많이 보이는 페이지를 currentPage로
+        let maxRatio = 0
+        let maxIdx = 0
+        for (const [idx, ratio] of ratioMap) {
+          if (ratio > maxRatio) {
+            maxRatio = ratio
+            maxIdx = idx
+          }
+        }
+        if (maxRatio > 0) {
+          setCurrentPage(maxIdx + 1) // 1-indexed
+        }
+      },
+      {
+        root: scrollContainerRef.current,
+        threshold: [0, 0.25, 0.5, 0.75, 1.0],
+      },
+    )
+
+    for (let i = 0; i < pageRefs.current.length; i++) {
+      const el = pageRefs.current[i]
+      if (el) observer.observe(el)
+    }
+
+    return () => observer.disconnect()
+  }, [allPages])
+
+  // ─── Lazy loading + 메모리 관리 (Task 769, 770) ───
+  useEffect(() => {
+    if (allPages.length === 0 || !scrollContainerRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const idx = Number(entry.target.getAttribute('data-page-index'))
+          if (Number.isNaN(idx)) continue
+
+          const img = entry.target.querySelector('img[data-lazy]') as HTMLImageElement | null
+          if (!img) continue
+
+          if (entry.isIntersecting) {
+            // 뷰포트 진입 → 이미지 로딩
+            const realSrc = img.getAttribute('data-src')
+            if (realSrc && img.src !== realSrc) {
+              img.src = realSrc
+            }
+          }
+        }
+
+        // 메모리 관리: 뷰포트 ±UNLOAD_THRESHOLD 바깥 이미지 해제
+        const container = scrollContainerRef.current
+        if (!container) return
+        const containerRect = container.getBoundingClientRect()
+
+        for (let i = 0; i < pageRefs.current.length; i++) {
+          const el = pageRefs.current[i]
+          if (!el) continue
+          const rect = el.getBoundingClientRect()
+          const distance = Math.abs(rect.top - containerRect.top) / (containerRect.height || 1)
+
+          const img = el.querySelector('img[data-lazy]') as HTMLImageElement | null
+          if (!img) continue
+
+          if (distance > UNLOAD_THRESHOLD) {
+            // 뷰포트 충분히 벗어남 → src 해제
+            if (img.src && img.getAttribute('data-src')) {
+              img.removeAttribute('src')
+            }
+          }
+        }
+      },
+      {
+        root: scrollContainerRef.current,
+        rootMargin: '200px 0px',
+        threshold: [0],
+      },
+    )
+
+    for (let i = 0; i < pageRefs.current.length; i++) {
+      const el = pageRefs.current[i]
+      if (el) observer.observe(el)
+    }
+
+    return () => observer.disconnect()
+  }, [allPages])
+
+  // ─── 화살표 클릭 → 스크롤 이동 (Task 765) ───
+  const scrollToPage = useCallback(
+    (pageIdx: number) => {
+      const el = pageRefs.current[pageIdx]
+      if (!el || !scrollContainerRef.current) return
+
+      isScrollingRef.current = true
+      setCurrentPage(pageIdx + 1)
+
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+      // scrollend 또는 timeout으로 스크롤 완료 감지
+      const container = scrollContainerRef.current
+      let settled = false
+      const settle = () => {
+        if (settled) return
+        settled = true
+        isScrollingRef.current = false
+        container.removeEventListener('scrollend', settle)
+      }
+      container.addEventListener('scrollend', settle, { once: true })
+      setTimeout(settle, 600) // fallback
+    },
+    [],
   )
 
-  const currentImageUrl = useMemo(() => {
-    const url = currentPageData?.image_url ?? null
-    if (url && !isValidImageUrl(url)) return null
-    return url
-  }, [currentPageData])
-
-  // Preload adjacent pages
+  // 수동 스크롤 감지 → 프로그래밍적 스크롤 중단
   useEffect(() => {
-    if (pages.length === 0) return
+    const container = scrollContainerRef.current
+    if (!container) return
 
-    const pagesToPreload = [currentPage - 1, currentPage - 2, currentPage + 1, currentPage + 2]
-    for (const pn of pagesToPreload) {
-      if (pn < 1 || pn > totalPages) continue
-      const page = pages.find((p) => p.page_number === pn)
-      if (page?.image_url && isValidImageUrl(page.image_url) && !imageCache.current[pn]) {
-        imageCache.current[pn] = page.image_url
-        const img = new Image()
-        img.src = page.image_url
+    let lastTouchY = 0
+    const handleWheel = () => {
+      if (isScrollingRef.current) {
+        isScrollingRef.current = false
       }
     }
-  }, [currentPage, pages, totalPages])
+    const handleTouchStart = (e: TouchEvent) => {
+      lastTouchY = e.touches[0]?.clientY ?? 0
+    }
+    const handleTouchMove = (e: TouchEvent) => {
+      const dy = Math.abs((e.touches[0]?.clientY ?? 0) - lastTouchY)
+      if (dy > 5 && isScrollingRef.current) {
+        isScrollingRef.current = false
+      }
+    }
 
-  const goToPage = useCallback(
-    (page: number) => {
-      if (page >= 1 && page <= totalPages) {
-        setImageLoaded(false)
-        setCurrentPage(page)
+    container.addEventListener('wheel', handleWheel, { passive: true })
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: true })
+    return () => {
+      container.removeEventListener('wheel', handleWheel)
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchmove', handleTouchMove)
+    }
+  }, [allPages])
+
+  const handlePrevPage = useCallback(() => {
+    if (currentPage > 1) {
+      scrollToPage(currentPage - 2) // 0-indexed
+    }
+  }, [currentPage, scrollToPage])
+
+  const handleNextPage = useCallback(() => {
+    if (currentPage < allPages.length) {
+      scrollToPage(currentPage) // currentPage는 1-indexed, 다음 = currentPage (0-indexed)
+    }
+  }, [currentPage, allPages.length, scrollToPage])
+
+  // ─── Store targetPage 소비 (Task 782) ───
+  useEffect(() => {
+    if (targetPage == null || allPages.length === 0) return
+
+    // targetPage는 0-indexed 배열 인덱스
+    if (targetPage >= 0 && targetPage < allPages.length) {
+      requestAnimationFrame(() => {
+        scrollToPage(targetPage)
+        setTargetPage(null)
+      })
+    } else {
+      setTargetPage(null)
+    }
+  }, [targetPage, allPages.length, scrollToPage, setTargetPage])
+
+  // ─── 이미지 로딩 에러 시 URL 재발급 (Task 771) ───
+  const handleImageError = useCallback(
+    async (pageIdx: number, entry: LoadedPage) => {
+      const key = `${entry.materialId}-${entry.pageIndex}`
+      if (retriedMaterialsRef.current.has(key)) return
+      retriedMaterialsRef.current.add(key)
+
+      try {
+        const result = await lectureService.getMaterialPages(entry.materialId)
+        if (result.data?.pages) {
+          const sorted = [...result.data.pages].sort((a, b) => a.page_number - b.page_number)
+          materialPagesMapRef.current.set(entry.materialId, sorted)
+
+          const newPage = sorted[entry.pageIndex]
+          if (newPage?.image_url) {
+            const img = pageRefs.current[pageIdx]?.querySelector('img[data-lazy]') as HTMLImageElement | null
+            if (img) {
+              img.setAttribute('data-src', newPage.image_url)
+              img.src = newPage.image_url
+            }
+            // allPages 업데이트
+            setAllPages((prev) =>
+              prev.map((p, i) =>
+                i === pageIdx && p.type === 'page' ? { ...p, imageUrl: newPage.image_url } : p,
+              ),
+            )
+          }
+        }
+      } catch {
+        // 재시도 실패 — 무시
       }
     },
-    [totalPages],
+    [],
   )
+
+  // ─── 렌더링 ───
 
   if (isLoading) {
     return (
@@ -147,7 +373,7 @@ export function LeftPanelMaterials() {
     )
   }
 
-  if (!materialId || pages.length === 0) {
+  if (allPages.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
         <FileText className="h-10 w-10" />
@@ -158,52 +384,75 @@ export function LeftPanelMaterials() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Scrollable content: image + text/visual summary */}
-      <div className="flex-1 min-h-0 overflow-y-auto bg-gray-100 flex flex-col">
-        {/* Page image */}
-        <div className="relative flex flex-1 items-center justify-center p-2" style={{ minHeight: 200 }}>
-          {currentImageUrl ? (
-            <>
-              {!imageLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-full w-full animate-pulse rounded-lg bg-gray-200" />
+      {/* 연속 스크롤 컨테이너 */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto bg-gray-100"
+      >
+        <div className="flex flex-col">
+          {allPages.map((entry, idx) => (
+            <div
+              key={idx}
+              ref={(el) => { pageRefs.current[idx] = el }}
+              data-page-index={idx}
+              className="relative w-full"
+              style={{ minHeight: 200 }}
+            >
+              {entry.type === 'error' ? (
+                /* 에러 placeholder (Task 768) */
+                <div className="flex h-[400px] flex-col items-center justify-center gap-2 bg-gray-50 text-gray-400">
+                  <AlertTriangle className="h-8 w-8" />
+                  <p className="text-sm">{t('lectureStudy.error.materialsLoadError')}</p>
+                </div>
+              ) : entry.imageUrl && isValidImageUrl(entry.imageUrl) ? (
+                <>
+                  {/* placeholder 오버레이 */}
+                  {!loadedImagesRef.current.has(idx) && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-full w-full animate-pulse rounded-lg bg-gray-200" />
+                    </div>
+                  )}
+                  <img
+                    data-lazy="true"
+                    data-src={entry.imageUrl}
+                    alt={`Page ${idx + 1}`}
+                    className="w-full object-contain"
+                    onLoad={() => {
+                      loadedImagesRef.current.add(idx)
+                    }}
+                    onError={() => {
+                      handleImageError(idx, entry)
+                    }}
+                  />
+                </>
+              ) : (
+                <div className="flex h-[200px] items-center justify-center text-sm text-gray-400">
+                  {t('lectureStudy.leftPanel.materialsPreparing')}
                 </div>
               )}
-              <img
-                key={currentPage}
-                src={currentImageUrl}
-                alt={`Page ${currentPage}`}
-                className="max-w-full object-contain"
-                onLoad={() => setImageLoaded(true)}
-                onError={() => setImageLoaded(true)}
-              />
-            </>
-          ) : (
-            <div className="flex items-center justify-center text-sm text-gray-400">
-              {t('lectureStudy.leftPanel.materialsPreparing')}
             </div>
-          )}
+          ))}
         </div>
       </div>
 
       {/* Navigation bar */}
-      <div className="flex shrink-0 items-center justify-between border-t border-gray-200 bg-white px-4 py-2">
+      <div className="flex shrink-0 items-center justify-between border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2">
         <button
-          onClick={() => goToPage(currentPage - 1)}
+          onClick={handlePrevPage}
           disabled={currentPage <= 1}
-          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
 
-        <span className="text-sm text-gray-600">
-          {currentPage} / {totalPages}
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {currentPage} / {allPages.length}
         </span>
 
         <button
-          onClick={() => goToPage(currentPage + 1)}
-          disabled={currentPage >= totalPages}
-          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+          onClick={handleNextPage}
+          disabled={currentPage >= allPages.length}
+          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
