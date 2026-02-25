@@ -64,6 +64,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const targetChunkIndex = useLectureStudyStore(s => s.targetChunkIndex)
   const setTargetChunkIndex = useLectureStudyStore(s => s.setTargetChunkIndex)
   const resetNavigationState = useLectureStudyStore(s => s.resetNavigationState)
+  const setTotalRecordingChunks = useLectureStudyStore(s => s.setTotalRecordingChunks)
 
   useEffect(() => {
     setStoreLectureId(lectureId)
@@ -80,6 +81,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     useSidebarStore.setState({ isCollapsed: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lectureId])
+
+  // totalRecordingChunks를 store에 반영 (SummaryTabContainer 출처 범위 검증용)
+  useEffect(() => {
+    const totalChunks = recordings.reduce((acc, rec) => acc + rec.chunk_summaries.length, 0)
+    setTotalRecordingChunks(totalChunks)
+  }, [recordings, setTotalRecordingChunks])
 
   // Local state
   const [leftWidth, setLeftWidth] = useState<number | null>(null)

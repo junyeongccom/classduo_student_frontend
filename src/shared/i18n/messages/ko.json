@@ -270,7 +270,8 @@
       "segmentFallback": "구간 {n}",
       "essenceTitle": "핵심 내용",
       "statusCompleted": "완료",
-      "statusProcessing": "처리 중"
+      "statusProcessing": "처리 중",
+      "pageAlt": "{page}페이지"
     },
     "rightPanel": {
       "summaryTab": "요약",

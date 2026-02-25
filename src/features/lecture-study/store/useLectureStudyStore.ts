@@ -29,6 +29,10 @@ interface LectureStudyState {
   targetPage: number | null
   /** 출처 클릭 시 녹음본 청크 이동 타겟 (합산 인덱스, 0-indexed) */
   targetChunkIndex: number | null
+  /** 성공적으로 로딩된 material 전체 페이지 수 (출처 범위 검증용) */
+  totalMaterialPages: number
+  /** 녹음본 전체 청크 수 (출처 범위 검증용) */
+  totalRecordingChunks: number
 }
 
 interface LectureStudyActions {
@@ -43,6 +47,8 @@ interface LectureStudyActions {
   setGameWords: (words: WordItem[]) => void
   setTargetPage: (page: number | null) => void
   setTargetChunkIndex: (index: number | null) => void
+  setTotalMaterialPages: (count: number) => void
+  setTotalRecordingChunks: (count: number) => void
   resetNavigationState: () => void
   reset: () => void
 }
@@ -59,6 +65,8 @@ const initialState: LectureStudyState = {
   gameWords: [],
   targetPage: null,
   targetChunkIndex: null,
+  totalMaterialPages: 0,
+  totalRecordingChunks: 0,
 }
 
 export const useLectureStudyStore = create<LectureStudyState & LectureStudyActions>()(
@@ -76,12 +84,14 @@ export const useLectureStudyStore = create<LectureStudyState & LectureStudyActio
       setGameWords: (gameWords) => set({ gameWords }),
       setTargetPage: (targetPage) => set({ targetPage }),
       setTargetChunkIndex: (targetChunkIndex) => set({ targetChunkIndex }),
+      setTotalMaterialPages: (totalMaterialPages) => set({ totalMaterialPages }),
+      setTotalRecordingChunks: (totalRecordingChunks) => set({ totalRecordingChunks }),
       resetNavigationState: () => set({ targetPage: null, targetChunkIndex: null }),
       reset: () => set(initialState),
     }),
     {
       name: 'lecture-study-state',
-      version: 5,
+      version: 6,
       migrate: (persisted, version) => {
         if (version < 5) {
           const old = persisted as Record<string, unknown>
@@ -94,6 +104,15 @@ export const useLectureStudyStore = create<LectureStudyState & LectureStudyActio
             chatPanelWidth: null,
             targetPage: null,
             targetChunkIndex: null,
+            totalMaterialPages: 0,
+            totalRecordingChunks: 0,
+          }
+        }
+        if (version < 6) {
+          return {
+            ...(persisted as Record<string, unknown>),
+            totalMaterialPages: 0,
+            totalRecordingChunks: 0,
           }
         }
         return persisted as LectureStudyState & LectureStudyActions

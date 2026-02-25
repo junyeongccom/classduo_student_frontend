@@ -42,6 +42,7 @@ export function LeftPanelMaterials() {
   const lectureId = useLectureStudyStore((s) => s.lectureId)
   const targetPage = useLectureStudyStore((s) => s.targetPage)
   const setTargetPage = useLectureStudyStore((s) => s.setTargetPage)
+  const setTotalMaterialPages = useLectureStudyStore((s) => s.setTotalMaterialPages)
 
   const [allPages, setAllPages] = useState<PageEntry[]>([])
   const [currentPage, setCurrentPage] = useState(1)
@@ -54,6 +55,8 @@ export function LeftPanelMaterials() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   /** 프로그래밍적 스크롤 중 여부 (Observer 업데이트 억제용) */
   const isScrollingRef = useRef(false)
+  /** 현재 페이지 ref (IntersectionObserver 콜백에서 최신 값 참조용) */
+  const currentPageRef = useRef(1)
   /** 각 페이지의 이미지 로딩 상태 */
   const loadedImagesRef = useRef<Set<number>>(new Set())
   /** 이미지 에러로 retry한 material 추적 */
@@ -62,6 +65,16 @@ export function LeftPanelMaterials() {
   const materialPagesMapRef = useRef<Map<string, MaterialPageItem[]>>(new Map())
 
   const totalPages = allPages.filter((p) => p.type === 'page').length
+
+  // currentPageRef 동기화 (IntersectionObserver 콜백에서 최신 값 참조용)
+  useEffect(() => {
+    currentPageRef.current = currentPage
+  }, [currentPage])
+
+  // totalMaterialPages를 store에 반영 (SummaryTabContainer 출처 범위 검증용)
+  useEffect(() => {
+    setTotalMaterialPages(totalPages)
+  }, [totalPages, setTotalMaterialPages])
 
   // ─── 다중 material 로딩 (Task 767) ───
   useEffect(() => {
@@ -112,8 +125,11 @@ export function LeftPanelMaterials() {
               })
             }
           } else {
-            // 로딩 실패 → 에러 placeholder
-            pages.push({ type: 'error', materialId })
+            // 로딩 실패 → 원래 페이지 수만큼 에러 placeholder 삽입 (인덱스 정합성 유지)
+            const pageCount = materials[i].total_pages ?? 1
+            for (let j = 0; j < pageCount; j++) {
+              pages.push({ type: 'error', materialId })
+            }
           }
         }
 
@@ -121,7 +137,7 @@ export function LeftPanelMaterials() {
         setIsLoading(false)
       } catch (err) {
         if (cancelled) return
-        console.error('[LeftPanelMaterials] fetchAllMaterials error:', err)
+        console.error('[LeftPanelMaterials] fetchAllMaterials error:', err instanceof Error ? err.message : String(err))
         setError('MATERIALS_LOAD_ERROR')
         setIsLoading(false)
       }
@@ -199,22 +215,15 @@ export function LeftPanelMaterials() {
           }
         }
 
-        // 메모리 관리: 뷰포트 ±UNLOAD_THRESHOLD 바깥 이미지 해제
-        const container = scrollContainerRef.current
-        if (!container) return
-        const containerRect = container.getBoundingClientRect()
-
+        // 메모리 관리: 현재 페이지 ±UNLOAD_THRESHOLD 페이지 바깥 이미지 해제 (인덱스 기반)
         for (let i = 0; i < pageRefs.current.length; i++) {
           const el = pageRefs.current[i]
           if (!el) continue
-          const rect = el.getBoundingClientRect()
-          const distance = Math.abs(rect.top - containerRect.top) / (containerRect.height || 1)
 
           const img = el.querySelector('img[data-lazy]') as HTMLImageElement | null
           if (!img) continue
 
-          if (distance > UNLOAD_THRESHOLD) {
-            // 뷰포트 충분히 벗어남 → src 해제
+          if (Math.abs(i - (currentPageRef.current - 1)) > UNLOAD_THRESHOLD) {
             if (img.src && img.getAttribute('data-src')) {
               img.removeAttribute('src')
             }
@@ -406,19 +415,21 @@ export function LeftPanelMaterials() {
                 </div>
               ) : entry.imageUrl && isValidImageUrl(entry.imageUrl) ? (
                 <>
-                  {/* placeholder 오버레이 */}
-                  {!loadedImagesRef.current.has(idx) && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-full w-full animate-pulse rounded-lg bg-gray-200" />
-                    </div>
-                  )}
+                  {/* placeholder 오버레이 — onLoad에서 imperative하게 hidden 처리 */}
+                  <div className="placeholder-overlay absolute inset-0 flex items-center justify-center">
+                    <div className="h-full w-full animate-pulse rounded-lg bg-gray-200" />
+                  </div>
                   <img
                     data-lazy="true"
+                    src={idx < 3 ? entry.imageUrl ?? undefined : undefined}
                     data-src={entry.imageUrl}
-                    alt={`Page ${idx + 1}`}
+                    alt={t('lectureStudy.leftPanel.pageAlt', { page: idx + 1 })}
                     className="w-full object-contain"
-                    onLoad={() => {
+                    onLoad={(e) => {
                       loadedImagesRef.current.add(idx)
+                      // placeholder를 imperative하게 숨김 (ref 기반 상태라 리렌더링 없이 처리)
+                      const placeholder = (e.target as HTMLElement).parentElement?.querySelector('.placeholder-overlay')
+                      if (placeholder) (placeholder as HTMLElement).classList.add('hidden')
                     }}
                     onError={() => {
                       handleImageError(idx, entry)
@@ -446,7 +457,7 @@ export function LeftPanelMaterials() {
         </button>
 
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          {currentPage} / {allPages.length}
+          {currentPage} / {totalPages}
         </span>
 
         <button

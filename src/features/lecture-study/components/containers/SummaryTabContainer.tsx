@@ -72,6 +72,8 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
   const setLeftTab = useLectureStudyStore((s) => s.setLeftTab)
   const isLeftPanelOpen = useLectureStudyStore((s) => s.isLeftPanelOpen)
   const toggleLeftPanel = useLectureStudyStore((s) => s.toggleLeftPanel)
+  const totalMaterialPages = useLectureStudyStore((s) => s.totalMaterialPages)
+  const totalRecordingChunks = useLectureStudyStore((s) => s.totalRecordingChunks)
 
   // ─── API 호출 (Task 773) ───
   useEffect(() => {
@@ -204,11 +206,6 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
     )
   }
 
-  // TODO: totalPageCount/totalChunkCount는 실제로 material/recording 데이터에서 가져와야 하지만,
-  // 현재 SummaryTabContainer에서는 직접 접근하지 않으므로 충분히 큰 값으로 대체.
-  // 실제 범위 초과는 LeftPanelMaterials/LeftPanelRecordings에서 자체 검증함.
-  const LARGE_COUNT = 99999
-
   return (
     <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24 text-sm text-gray-700 dark:text-gray-300">
       {/* 요약 타이틀 + overview */}
@@ -247,7 +244,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
                 }
                 disabled={!hasSourcePages}
                 disabledClick={isMobile}
-                onClick={() => handleMaterialSourceClick(sectionKey, section.source_pages, LARGE_COUNT)}
+                onClick={() => handleMaterialSourceClick(sectionKey, section.source_pages, totalMaterialPages)}
               />
 
               {/* 녹음본 출처 버튼 (Task 777) */}
@@ -261,7 +258,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
                 }
                 disabled={!hasSourceChunks}
                 disabledClick={isMobile}
-                onClick={() => handleRecordingSourceClick(sectionKey, section.source_chunks, LARGE_COUNT)}
+                onClick={() => handleRecordingSourceClick(sectionKey, section.source_chunks, totalRecordingChunks)}
               />
             </div>
 

@@ -270,7 +270,8 @@
       "segmentFallback": "Segment {n}",
       "essenceTitle": "Key Points",
       "statusCompleted": "Completed",
-      "statusProcessing": "Processing"
+      "statusProcessing": "Processing",
+      "pageAlt": "Page {page}"
     },
     "rightPanel": {
       "summaryTab": "Summary",
