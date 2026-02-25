@@ -5,8 +5,8 @@ import {
   S,
   GAME_WIDTH,
   GAME_HEIGHT,
-  SCORE_BONUS,
   FONT_FAMILY,
+  ACTIVE_MAX_LEVEL,
 } from "../constants";
 
 interface CardDef {
@@ -20,7 +20,7 @@ const REWARD_CARDS_KO: CardDef[] = [
   { type: "jump", title: "점프력 UP", desc: "점프력 15% 증가", color: 0x2ecc71 },
   { type: "jumpCount", title: "점프횟수 UP", desc: "점프 횟수 +1", color: 0x9b59b6 },
   { type: "speed", title: "속도 UP", desc: "이동속도 15% 증가", color: 0x3498db },
-  { type: "score", title: `+${SCORE_BONUS}점`, desc: "즉시 점수 획득", color: 0xf1c40f },
+  { type: "score", title: "점수 보너스", desc: "즉시 점수 획득", color: 0xf1c40f },
   { type: "heartBoost", title: "회복 강화", desc: "하트 회복량 15% 증가", color: 0xff6b81 },
   { type: "hpDecay", title: "체력 감소 DOWN", desc: "체력 감소 속도 15% 감소", color: 0x1abc9c },
 ];
@@ -29,7 +29,7 @@ const REWARD_CARDS_EN: CardDef[] = [
   { type: "jump", title: "JUMP UP", desc: "Jump +15%", color: 0x2ecc71 },
   { type: "jumpCount", title: "JUMP COUNT UP", desc: "Jump count +1", color: 0x9b59b6 },
   { type: "speed", title: "SPEED UP", desc: "Speed +15%", color: 0x3498db },
-  { type: "score", title: `+${SCORE_BONUS}pts`, desc: "Instant score", color: 0xf1c40f },
+  { type: "score", title: "SCORE BONUS", desc: "Instant score", color: 0xf1c40f },
   { type: "heartBoost", title: "HEART BOOST", desc: "Heart restore +15%", color: 0xff6b81 },
   { type: "hpDecay", title: "DECAY DOWN", desc: "Decay -15%", color: 0x1abc9c },
 ];
@@ -310,8 +310,11 @@ export class RewardCardUI {
     // Hide passives whose active ability is activated
     pool = pool.filter((c) => !this.rewardCallbacks.isPassiveHidden(c.type));
 
+    // Filter out max-level actives from unlocked pool
     const activeTypes: ActiveAbilityType[] = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"];
-    const unlocked = activeTypes.filter((t) => this.rewardCallbacks.isActiveUnlocked(t));
+    const unlocked = activeTypes.filter((t) =>
+      this.rewardCallbacks.isActiveUnlocked(t) && this.rewardCallbacks.getActiveLevel(t) < ACTIVE_MAX_LEVEL
+    );
 
     if (unlocked.length > 0) {
       const chosenType = unlocked[Phaser.Math.Between(0, unlocked.length - 1)];
@@ -323,11 +326,23 @@ export class RewardCardUI {
         const passives = Phaser.Utils.Array.Shuffle(pool).slice(0, 2);
         const insertIdx = Phaser.Math.Between(0, 2);
         passives.splice(insertIdx, 0, activeCard);
-        return passives;
+        return this.fillWithFallback(passives);
       }
     }
 
-    return Phaser.Utils.Array.Shuffle(pool).slice(0, 3);
+    const picked = Phaser.Utils.Array.Shuffle(pool).slice(0, 3);
+    return this.fillWithFallback(picked);
+  }
+
+  /** Fill remaining slots with +30 score fallback cards when pool is insufficient */
+  private fillWithFallback(cards: CardDef[]): CardDef[] {
+    const fallback: CardDef = this.locale === "ko"
+      ? { type: "scoreFallback", title: "+30점", desc: "즉시 점수 획득", color: 0xf1c40f }
+      : { type: "scoreFallback", title: "+30pts", desc: "Instant score", color: 0xf1c40f };
+    while (cards.length < 3) {
+      cards.push({ ...fallback });
+    }
+    return cards;
   }
 
   cleanup(): void {

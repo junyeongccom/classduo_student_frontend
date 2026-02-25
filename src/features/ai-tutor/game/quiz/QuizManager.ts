@@ -19,6 +19,7 @@ export type GameState =
 
 export interface QuizCallbacks {
   getScrollSpeed: () => number;
+  getScoreTier: () => number;
   applySpeedUp: () => void;
   applySpeedDown: () => void;
   applyJumpUp: () => void;
@@ -311,7 +312,15 @@ export class QuizManager {
         }
         break;
       case "score": {
-        const amount = isCorrect ? SCORE_BONUS : -SCORE_BONUS;
+        const tier = Math.min(this.callbacks.getScoreTier(), SCORE_BONUS.length - 1);
+        const bonus = SCORE_BONUS[tier];
+        const amount = isCorrect ? bonus : -bonus;
+        this.callbacks.addScore(amount);
+        effectLabel = prefix + this.t.points(amount);
+        break;
+      }
+      case "scoreFallback": {
+        const amount = isCorrect ? 30 : -30;
         this.callbacks.addScore(amount);
         effectLabel = prefix + this.t.points(amount);
         break;

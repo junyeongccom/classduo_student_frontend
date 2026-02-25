@@ -114,8 +114,8 @@ export const SPEED_MULT_MAX = 2.5;
 export const JUMP_MULT_MIN = 0.4;
 export const JUMP_MULT_MAX = 2.5;
 export const JUMP_COUNT_MIN = 1;
-export const JUMP_COUNT_MAX = 4;
-export const SCORE_BONUS = 30;
+export const JUMP_COUNT_MAX = 7;
+export const SCORE_BONUS = [100, 150, 200, 250, 300];
 export const EFFECT_DISPLAY_MS = 1500;
 
 // Heart restore stack-based (multiplier = base ^ stacks)
@@ -269,7 +269,7 @@ export const MAGNET_DURATION_MS = 5000;
 export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 100 * S, 200 * S, 400 * S];
 export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 100 * S, 200 * S, 400 * S];
 //                                                    Lv0    Lv1              Lv2              Lv3
-export const MAGNET_RANGE: [number, number, number, number] = [0, GAME_WIDTH * 0.25, GAME_WIDTH * 0.5, GAME_WIDTH];
+export const MAGNET_RANGE: [number, number, number, number] = [0, GAME_WIDTH * 0.10, GAME_WIDTH * 0.25, GAME_WIDTH];
 
 // Giant — player scale change + meteor destroy
 export const GIANT_COOLDOWN_MS = 22000;

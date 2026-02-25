@@ -11,6 +11,7 @@ export type ChoiceType =
   | "jump"
   | "jumpCount"
   | "score"
+  | "scoreFallback"
   | "heartBoost"
   | "hpDecay"
   | ActiveAbilityType;

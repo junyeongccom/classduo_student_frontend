@@ -119,6 +119,7 @@ import {
   BIG_COIN_SIZE,
   BIG_COIN_VALUE,
   SMALL_HEART_RESTORE,
+  SCORE_BONUS,
   ACTIVE_UNLOCK_STACKS,
   ACTIVE_MAX_LEVEL,
   PASSIVE_STACK_MIN,
@@ -371,6 +372,7 @@ export class GameScene extends Phaser.Scene {
   private createQuizManager(): void {
     this.quizManager = new QuizManager(this, {
       getScrollSpeed: () => this.getEffectiveSpeed(),
+      getScoreTier: () => Math.min(Math.max(this.scoreCardPickCount - 1, 0), SCORE_BONUS.length - 1),
       applySpeedUp: () => { this.applySpeedUp(); this.speedRewardStacks++; },
       applySpeedDown: () => { this.applySpeedDown(); this.speedRewardStacks--; },
       applyJumpUp: () => { this.applyJumpUp(); this.jumpRewardStacks++; },
@@ -961,11 +963,10 @@ export class GameScene extends Phaser.Scene {
   private applyActiveAbilityDown(type: ActiveAbilityType): void {
     const state = this.activeAbilities[type];
     if (state.stacks > 0) {
-      // Active wrong → reset active to 0, drop passive to unlock-1 (=4)
+      // Active wrong → reduce active level by 1
       const oldStacks = state.stacks;
-      state.stacks = 0;
+      state.stacks--;
       this.handleAbilityStackChange(type, oldStacks);
-      this.setPassiveStacksForAbility(type, ACTIVE_UNLOCK_STACKS - 1);
     } else {
       // Active at 0 — reduce the associated passive by 1 (min PASSIVE_STACK_MIN)
       switch (type) {
