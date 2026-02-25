@@ -6,25 +6,23 @@ import { QuizItem } from "../entities/QuizItem";
 import { Meteor } from "../entities/Meteor";
 import { HeartItem } from "../entities/HeartItem";
 import { QuizManager, GameState } from "../quiz/QuizManager";
-import { ActiveAbilityType } from "../quiz/quizTypes";
 import { ScreenFXManager } from "../systems/ScreenFXManager";
 import { ParticleManager } from "../systems/ParticleManager";
 import { CameraManager } from "../systems/CameraManager";
 import { UIManager } from "../systems/UIManager";
+import { BuffDebuffManager } from "../systems/BuffDebuffManager";
+import { ActiveAbilityManager } from "../systems/ActiveAbilityManager";
 import {
   S,
   GAME_WIDTH,
   GAME_HEIGHT,
   PLAYER_X,
-  PLAYER_TEX_HEIGHT,
   GROUND_Y,
   GROUND_HEIGHT,
   GROUND_TILE_WIDTH,
   GROUND_SEGMENT_MIN,
   GROUND_SEGMENT_MAX,
   GAP_WIDTH_MIN,
-  GAP_WIDTH_MAX,
-  GAP_PROBABILITY,
   SCROLL_SPEED_INITIAL,
   SCROLL_SPEED_MAX,
   SCROLL_SPEED_INCREMENT,
@@ -36,25 +34,12 @@ import {
   COIN_MID_Y,
   COIN_DIAGONAL_COUNT,
   COIN_ZIGZAG_COUNT,
-  COIN_DIAMOND_COUNT,
   SCROLL_SPAWN_INTERVAL_MS,
   QUIZ_ITEM_SIZE,
   QUIZ_ITEM_HIGH_Y,
   SCROLL_COLORS,
   FALL_DEATH_Y,
-  MAX_JUMPS,
-  SPEED_STACK_BASE,
-  JUMP_STACK_BASE,
-  SPEED_MULT_MIN,
-  SPEED_MULT_MAX,
-  JUMP_MULT_MIN,
-  JUMP_MULT_MAX,
-  JUMP_COUNT_MIN,
-  JUMP_COUNT_MAX,
   HP_MAX,
-  HP_DECAY_STACK_BASE,
-  HP_DECAY_MULT_MIN,
-  HP_DECAY_MULT_MAX,
   SPEED_LINE_THRESHOLD,
   SHAKE_FALL_DEATH,
   SHAKE_HP_DEATH,
@@ -66,15 +51,10 @@ import {
   ZOOM_PUNCH_REWARD,
   HEART_SPAWN_INTERVAL_MS,
   HEART_RESTORE_AMOUNT,
-  HEART_RESTORE_STACK_BASE,
-  HEART_RESTORE_MULT_MIN,
-  HEART_RESTORE_MULT_MAX,
   HEART_SPAWN_Y,
   HEART_ITEM_SIZE,
   METEOR_SPAWN_INTERVAL_MIN_MS,
   METEOR_SPAWN_INTERVAL_MAX_MS,
-  METEOR_SPEED_MULT,
-  METEOR_DAMAGE_HP,
   METEOR_SIZE,
   METEOR_SPAWN_Y_MIN,
   METEOR_SPAWN_Y_MAX,
@@ -93,36 +73,9 @@ import {
   DIFF_TRIPLE_METEOR_CHANCE,
   DIFF_METEOR_DAMAGE,
   DIFFICULTY_MAX,
-  MAGNET_COOLDOWN_MS,
-  MAGNET_DURATION_MS,
-  MAGNET_PULL_FORCE,
-  MAGNET_REPEL_FORCE,
-  MAGNET_RANGE,
-  GIANT_COOLDOWN_MS,
-  GIANT_DURATION_MS,
-  GIANT_BUFF_SCALE,
-  GIANT_DEBUFF_SCALE,
-  GIANT_METEOR_SCORE,
-  COIN_RAIN_COOLDOWN_MS,
-  COIN_RAIN_DURATION_MS,
-  COIN_RAIN_SPAWN_MS,
-  METEOR_RAIN_SPAWN_MS,
-  MULTI_JUMP_COOLDOWN_MS,
-  MULTI_JUMP_DURATION_MS,
-  MULTI_JUMP_SCORE_BUFF,
-  MULTI_JUMP_HP_PENALTY,
-  SKY_TREASURE_COOLDOWN_MS,
-  SKY_TREASURE_DURATION_MS,
-  SKY_TREASURE_SPAWN_MS,
-  SKY_TREASURE_DEBUFF_SPAWN_MS,
-  SKY_TREASURE_SPAWN_Y,
-  BIG_COIN_SIZE,
-  BIG_COIN_VALUE,
-  SMALL_HEART_RESTORE,
   SCORE_BONUS,
-  ACTIVE_UNLOCK_STACKS,
-  ACTIVE_MAX_LEVEL,
-  PASSIVE_STACK_MIN,
+  JUMP_COUNT_MAX,
+  JUMP_COUNT_MIN,
 } from "../constants";
 
 export class GameScene extends Phaser.Scene {
@@ -135,7 +88,6 @@ export class GameScene extends Phaser.Scene {
 
   private score = 0;
   private baseScrollSpeed = SCROLL_SPEED_INITIAL;
-  private scrollSpeedMultiplier = 1;
   private gameState: GameState = "playing";
   private nextGroundX = 0;
   private distanceTraveled = 0;
@@ -146,51 +98,23 @@ export class GameScene extends Phaser.Scene {
   private meteorNextSpawn = 0;
   private elapsedPlayTime = 0;
 
-  private speedStacks = 0;
-  private jumpStacks = 0;
-  private jumpCountStacks = 0;
-
   private hp = HP_MAX;
   private hpMax = HP_MAX;
-  private hpDecayStacks = 0;
-  private hpDecayMultiplier = 1;
-  private heartRestoreStacks = 0;
-  private heartRestoreMultiplier = 1;
-
-  // Independent unlock trackers (not affected by non-reward events)
-  private scoreCardPickCount = 0;
-  private speedRewardStacks = 0;
-  private jumpCountRewardStacks = 0;
-  private jumpRewardStacks = 0;
 
   private lastCoinPattern = "";
   private meteorSlowTimer = 0;
   private meteorSlowMult = 1;
 
-  // Active abilities
-  private activeAbilities: Record<ActiveAbilityType, {
-    stacks: number;
-    cooldown: number;
-    activeTimer: number;
-    isActive: boolean;
-    spawnTimer: number;
-  }> = {
-    magnet:         { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-    giant:          { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-    coinRain:       { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-    multiJumpScore: { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-    skyTreasure:    { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-  };
-
   private quizManager!: QuizManager;
   private lastSlideDustTime = 0;
-  private lastHpFlashTime = 0;
 
   // Managers
   private screenFX!: ScreenFXManager;
   private particles!: ParticleManager;
   private cameraManager!: CameraManager;
   private ui!: UIManager;
+  private buffDebuff!: BuffDebuffManager;
+  private activeAbility!: ActiveAbilityManager;
 
   constructor() {
     super({ key: "GameScene" });
@@ -211,6 +135,19 @@ export class GameScene extends Phaser.Scene {
 
     this.createGroups();
     this.createPlayer();
+
+    // BuffDebuff + ActiveAbility managers
+    this.buffDebuff = new BuffDebuffManager(this.player, () => this.heartItems);
+    this.activeAbility = new ActiveAbilityManager(this, this.buffDebuff, {
+      player: this.player,
+      getCoins: () => this.coins,
+      getMeteors: () => this.meteors,
+      spawnMeteor: () => this.spawnMeteor(),
+      getEffectiveSpeed: () => this.getEffectiveSpeed(),
+      lerpDiff: (keys) => this.lerpDiff(keys),
+    }, this.ui);
+    this.buffDebuff.setActiveStacksQuery((type) => this.activeAbility.getStacks(type));
+
     this.setupCollisions();
     this.setupInput();
     this.createQuizManager();
@@ -244,10 +181,6 @@ export class GameScene extends Phaser.Scene {
   private resetState(): void {
     this.score = 0;
     this.baseScrollSpeed = SCROLL_SPEED_INITIAL;
-    this.scrollSpeedMultiplier = 1;
-    this.speedStacks = 0;
-    this.jumpStacks = 0;
-    this.jumpCountStacks = 0;
     this.gameState = "intro";
     this.nextGroundX = 0;
     this.distanceTraveled = 0;
@@ -259,26 +192,11 @@ export class GameScene extends Phaser.Scene {
     this.elapsedPlayTime = 0;
     this.hp = HP_MAX;
     this.hpMax = HP_MAX;
-    this.hpDecayStacks = 0;
-    this.hpDecayMultiplier = 1;
-    this.heartRestoreStacks = 0;
-    this.heartRestoreMultiplier = 1;
-    this.scoreCardPickCount = 0;
-    this.speedRewardStacks = 0;
-    this.jumpCountRewardStacks = 0;
-    this.jumpRewardStacks = 0;
     this.lastSlideDustTime = 0;
-    this.lastHpFlashTime = 0;
     this.lastCoinPattern = "";
     this.meteorSlowTimer = 0;
     this.meteorSlowMult = 1;
-    this.activeAbilities = {
-      magnet:         { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-      giant:          { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-      coinRain:       { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-      multiJumpScore: { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-      skyTreasure:    { stacks: 0, cooldown: 0, activeTimer: 0, isActive: false, spawnTimer: 0 },
-    };
+    // Managers reset in create() after instantiation
   }
 
   private createGroups(): void {
@@ -310,10 +228,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
-    const groundTop = GROUND_Y - GROUND_HEIGHT / 2;
-    const bodyBottomFromCenter = -PLAYER_TEX_HEIGHT / 2 + (5 + 38) * S;
-    const playerY = groundTop - bodyBottomFromCenter;
-
     // Hidden above screen until intro drop
     this.player = new Player(this, PLAYER_X, -80 * S);
     this.player.setAlpha(0);
@@ -331,25 +245,21 @@ export class GameScene extends Phaser.Scene {
     this.particles.spawnJumpBurst(x, y, jumpCount);
 
     // Multi Jump Score active ability: bonus/penalty on double+ jumps
-    const mjs = this.activeAbilities.multiJumpScore;
-    if (mjs.isActive && mjs.stacks !== 0 && jumpCount >= 2) {
-      const level = Math.min(Math.abs(mjs.stacks), ACTIVE_MAX_LEVEL);
-      if (mjs.stacks > 0) {
-        const bonus = MULTI_JUMP_SCORE_BUFF[level];
-        if (bonus > 0) {
-          this.score += bonus;
-          this.ui.setScore(this.score);
-          this.particles.spawnScorePopup(x, y - 20 * S, `+${bonus}`, "#9b59b6");
+    const result = this.activeAbility.handleMultiJumpScore(jumpCount, x, y);
+    if (result) {
+      if (result.scoreDelta !== 0) {
+        this.score += result.scoreDelta;
+        this.ui.setScore(this.score);
+      }
+      if (result.hpDelta !== 0) {
+        this.hp = Math.max(0, this.hp + result.hpDelta);
+        this.ui.updateHpGauge(this.hp, this.hpMax);
+        if (this.hp <= 0) {
+          this.triggerGameOver("hp");
         }
-      } else {
-        const penalty = MULTI_JUMP_HP_PENALTY[level];
-        if (penalty > 0) {
-          this.hp = Math.max(0, this.hp - penalty);
-          this.ui.updateHpGauge(this.hp, this.hpMax);
-          if (this.hp <= 0) {
-            this.triggerGameOver("hp");
-          }
-        }
+      }
+      if (result.popupText) {
+        this.particles.spawnScorePopup(x, y - 20 * S, result.popupText, result.popupColor!);
       }
     }
   };
@@ -375,42 +285,12 @@ export class GameScene extends Phaser.Scene {
 
   private createQuizManager(): void {
     this.quizManager = new QuizManager(this, {
+      buffDebuff: this.buffDebuff,
+      activeAbility: this.activeAbility,
       getScrollSpeed: () => this.getEffectiveSpeed(),
-      getScoreTier: () => Math.min(Math.max(this.scoreCardPickCount - 1, 0), SCORE_BONUS.length - 1),
-      applySpeedUp: () => { this.applySpeedUp(); this.speedRewardStacks++; },
-      applySpeedDown: () => { this.applySpeedDown(); this.speedRewardStacks--; },
-      applyJumpUp: () => { this.applyJumpUp(); this.jumpRewardStacks++; },
-      applyJumpDown: () => { this.applyJumpDown(); this.jumpRewardStacks--; },
-      applyJumpCountUp: () => { this.applyJumpCountUp(); this.jumpCountRewardStacks++; },
-      applyJumpCountDown: () => { this.applyJumpCountDown(); this.jumpCountRewardStacks--; },
+      getScoreTier: () => Math.min(Math.max(this.buffDebuff.scoreCardPickCount - 1, 0), SCORE_BONUS.length - 1),
       isJumpCountMaxed: () => this.player.maxJumps >= JUMP_COUNT_MAX,
       isJumpCountAtMin: () => this.player.maxJumps <= JUMP_COUNT_MIN,
-      applyScorePassiveUp: () => {
-        if (this.scoreCardPickCount >= ACTIVE_UNLOCK_STACKS) return;
-        this.scoreCardPickCount++;
-      },
-      applyScorePassiveDown: () => {
-        if (this.scoreCardPickCount <= PASSIVE_STACK_MIN) return;
-        this.scoreCardPickCount--;
-      },
-      applyHeartBoostUp: () => this.applyHeartBoostUp(),
-      applyHeartBoostDown: () => this.applyHeartBoostDown(),
-      applyHpDecayDown: () => this.applyHpDecayDown(),
-      applyHpDecayUp: () => this.applyHpDecayUp(),
-      isActiveUnlocked: (type: ActiveAbilityType) => this.isActiveUnlocked(type),
-      getActiveLevel: (type: ActiveAbilityType) => Math.min(Math.abs(this.activeAbilities[type].stacks), ACTIVE_MAX_LEVEL),
-      isPassiveHidden: (passiveType: string) => this.isPassiveHiddenByActive(passiveType),
-      isPassiveMaxed: (passiveType: string) => this.isPassiveAtMax(passiveType),
-      applyMagnetUp: () => this.applyActiveAbilityUp("magnet"),
-      applyMagnetDown: () => this.applyActiveAbilityDown("magnet"),
-      applyGiantUp: () => this.applyActiveAbilityUp("giant"),
-      applyGiantDown: () => this.applyActiveAbilityDown("giant"),
-      applyCoinRainUp: () => this.applyActiveAbilityUp("coinRain"),
-      applyCoinRainDown: () => this.applyActiveAbilityDown("coinRain"),
-      applyMultiJumpScoreUp: () => this.applyActiveAbilityUp("multiJumpScore"),
-      applyMultiJumpScoreDown: () => this.applyActiveAbilityDown("multiJumpScore"),
-      applySkyTreasureUp: () => this.applyActiveAbilityUp("skyTreasure"),
-      applySkyTreasureDown: () => this.applyActiveAbilityDown("skyTreasure"),
       setGameState: (state: GameState) => {
         this.gameState = state;
       },
@@ -696,7 +576,7 @@ export class GameScene extends Phaser.Scene {
     const heart = new HeartItem(this, x, y);
     this.heartItems.add(heart);
     heart.setScrollSpeed(this.getEffectiveSpeed());
-    heart.setRestoreStacks(this.heartRestoreStacks);
+    heart.setRestoreStacks(this.buffDebuff.heartRestoreStacks);
   }
 
   private spawnScrollItem(): void {
@@ -719,7 +599,7 @@ export class GameScene extends Phaser.Scene {
     const isSmall = heart.smallRestore > 0;
     heart.destroyWithTrail();
 
-    const restore = isSmall ? heart.smallRestore : HEART_RESTORE_AMOUNT * this.heartRestoreMultiplier;
+    const restore = isSmall ? heart.smallRestore : HEART_RESTORE_AMOUNT * this.buffDebuff.heartRestoreMultiplier;
     this.hp = Math.min(this.hp + restore, this.hpMax);
     this.ui.updateHpGauge(this.hp, this.hpMax);
 
@@ -745,11 +625,9 @@ export class GameScene extends Phaser.Scene {
     const my = meteor.y;
 
     // Giant buff — smash meteor instead of taking damage
-    const giantState = this.activeAbilities.giant;
-    if (giantState.isActive && giantState.stacks > 0) {
+    if (this.activeAbility.isGiantActive()) {
       meteor.destroyWithTrail();
-      const level = Math.min(Math.abs(giantState.stacks), ACTIVE_MAX_LEVEL);
-      const meteorScore = GIANT_METEOR_SCORE[level];
+      const meteorScore = this.activeAbility.getGiantMeteorScore();
       if (meteorScore > 0) {
         this.score += meteorScore;
         this.ui.setScore(this.score);
@@ -793,413 +671,9 @@ export class GameScene extends Phaser.Scene {
     return keys[seg] + (keys[seg + 1] - keys[seg]) * t;
   }
 
-  // ── Buff / Debuff ──
-
   private getEffectiveSpeed(): number {
-    const base = this.baseScrollSpeed * this.scrollSpeedMultiplier + this.lerpDiff(DIFF_SCROLL_SPEED_BONUS);
+    const base = this.baseScrollSpeed * this.buffDebuff.scrollSpeedMultiplier + this.lerpDiff(DIFF_SCROLL_SPEED_BONUS);
     return base * this.meteorSlowMult;
-  }
-
-  private applySpeedUp(): void {
-    if (this.speedStacks >= ACTIVE_UNLOCK_STACKS) return;
-    this.speedStacks++;
-    this.scrollSpeedMultiplier = Phaser.Math.Clamp(
-      Math.pow(SPEED_STACK_BASE, this.speedStacks),
-      SPEED_MULT_MIN, SPEED_MULT_MAX
-    );
-  }
-
-  private applySpeedDown(): void {
-    if (this.speedStacks <= PASSIVE_STACK_MIN) return;
-    this.speedStacks--;
-    this.scrollSpeedMultiplier = Phaser.Math.Clamp(
-      Math.pow(SPEED_STACK_BASE, this.speedStacks),
-      SPEED_MULT_MIN, SPEED_MULT_MAX
-    );
-  }
-
-  private applyJumpUp(): void {
-    if (this.jumpStacks >= ACTIVE_UNLOCK_STACKS) return;
-    this.jumpStacks++;
-    this.player.jumpMultiplier = Phaser.Math.Clamp(
-      Math.pow(JUMP_STACK_BASE, this.jumpStacks),
-      JUMP_MULT_MIN, JUMP_MULT_MAX
-    );
-  }
-
-  private applyJumpDown(): void {
-    if (this.jumpStacks <= PASSIVE_STACK_MIN) return;
-    this.jumpStacks--;
-    this.player.jumpMultiplier = Phaser.Math.Clamp(
-      Math.pow(JUMP_STACK_BASE, this.jumpStacks),
-      JUMP_MULT_MIN, JUMP_MULT_MAX
-    );
-  }
-
-  private applyJumpCountUp(): void {
-    if (this.jumpCountStacks >= ACTIVE_UNLOCK_STACKS) return;
-    this.jumpCountStacks++;
-    this.player.maxJumps = Phaser.Math.Clamp(
-      MAX_JUMPS + this.jumpCountStacks,
-      JUMP_COUNT_MIN, JUMP_COUNT_MAX
-    );
-  }
-
-  private applyJumpCountDown(): void {
-    if (this.jumpCountStacks <= PASSIVE_STACK_MIN) return;
-    this.jumpCountStacks--;
-    this.player.maxJumps = Phaser.Math.Clamp(
-      MAX_JUMPS + this.jumpCountStacks,
-      JUMP_COUNT_MIN, JUMP_COUNT_MAX
-    );
-  }
-
-  private applyHeartBoostUp(): void {
-    if (this.heartRestoreStacks >= ACTIVE_UNLOCK_STACKS) return;
-    this.heartRestoreStacks++;
-    this.heartRestoreMultiplier = Phaser.Math.Clamp(
-      Math.pow(HEART_RESTORE_STACK_BASE, this.heartRestoreStacks),
-      HEART_RESTORE_MULT_MIN, HEART_RESTORE_MULT_MAX
-    );
-    this.syncHeartRestoreStacks();
-  }
-
-  private applyHeartBoostDown(): void {
-    if (this.heartRestoreStacks <= PASSIVE_STACK_MIN) return;
-    this.heartRestoreStacks--;
-    this.heartRestoreMultiplier = Phaser.Math.Clamp(
-      Math.pow(HEART_RESTORE_STACK_BASE, this.heartRestoreStacks),
-      HEART_RESTORE_MULT_MIN, HEART_RESTORE_MULT_MAX
-    );
-    this.syncHeartRestoreStacks();
-  }
-
-  private syncHeartRestoreStacks(): void {
-    this.heartItems.getChildren().forEach((obj) => {
-      (obj as HeartItem).setRestoreStacks(this.heartRestoreStacks);
-    });
-  }
-
-  private applyHpDecayDown(): void {
-    // hpDecay is inverted: negative = buff direction (less decay)
-    if (this.hpDecayStacks <= -ACTIVE_UNLOCK_STACKS) return;
-    this.hpDecayStacks--;
-    this.hpDecayMultiplier = Phaser.Math.Clamp(
-      Math.pow(HP_DECAY_STACK_BASE, this.hpDecayStacks),
-      HP_DECAY_MULT_MIN, HP_DECAY_MULT_MAX
-    );
-  }
-
-  private applyHpDecayUp(): void {
-    // hpDecay is inverted: positive = debuff direction (more decay), capped at +1
-    if (this.hpDecayStacks >= -PASSIVE_STACK_MIN) return;
-    this.hpDecayStacks++;
-    this.hpDecayMultiplier = Phaser.Math.Clamp(
-      Math.pow(HP_DECAY_STACK_BASE, this.hpDecayStacks),
-      HP_DECAY_MULT_MIN, HP_DECAY_MULT_MAX
-    );
-  }
-
-  // ── Active abilities ──
-
-  private static readonly ABILITY_CONFIG: Record<ActiveAbilityType, { cooldownMs: number; durationMs: number }> = {
-    magnet:         { cooldownMs: MAGNET_COOLDOWN_MS, durationMs: MAGNET_DURATION_MS },
-    giant:          { cooldownMs: GIANT_COOLDOWN_MS, durationMs: GIANT_DURATION_MS },
-    coinRain:       { cooldownMs: COIN_RAIN_COOLDOWN_MS, durationMs: COIN_RAIN_DURATION_MS },
-    multiJumpScore: { cooldownMs: MULTI_JUMP_COOLDOWN_MS, durationMs: MULTI_JUMP_DURATION_MS },
-    skyTreasure:    { cooldownMs: SKY_TREASURE_COOLDOWN_MS, durationMs: SKY_TREASURE_DURATION_MS },
-  };
-
-  /** Passive → Active mapping: hide passive when its active has stacks > 0 */
-  private static readonly PASSIVE_TO_ACTIVE: Record<string, ActiveAbilityType> = {
-    score: "magnet",
-    hpDecay: "giant",
-    speed: "coinRain",
-    jumpCount: "multiJumpScore",
-    jump: "skyTreasure",
-  };
-
-  private isPassiveAtMax(passiveType: string): boolean {
-    switch (passiveType) {
-      case "speed":      return this.speedStacks >= ACTIVE_UNLOCK_STACKS;
-      case "jump":       return this.jumpStacks >= ACTIVE_UNLOCK_STACKS;
-      case "jumpCount":  return this.jumpCountStacks >= ACTIVE_UNLOCK_STACKS;
-      case "score":      return this.scoreCardPickCount >= ACTIVE_UNLOCK_STACKS;
-      case "heartBoost": return this.heartRestoreStacks >= ACTIVE_UNLOCK_STACKS;
-      case "hpDecay":    return this.hpDecayStacks <= -ACTIVE_UNLOCK_STACKS;
-      default:           return false;
-    }
-  }
-
-  private isPassiveHiddenByActive(passiveType: string): boolean {
-    const activeType = GameScene.PASSIVE_TO_ACTIVE[passiveType];
-    if (!activeType) return false;
-    return this.activeAbilities[activeType].stacks > 0;
-  }
-
-  private isActiveUnlocked(type: ActiveAbilityType): boolean {
-    return this.getPassiveStacksForAbility(type) >= ACTIVE_UNLOCK_STACKS;
-  }
-
-  private getSignedPassiveStacks(type: ActiveAbilityType): number {
-    switch (type) {
-      case "magnet":         return this.scoreCardPickCount;
-      case "giant":          return -this.hpDecayStacks; // hpDecay is inverted: negative stacks = buff
-      case "coinRain":       return this.speedStacks;
-      case "multiJumpScore": return this.jumpCountStacks;
-      case "skyTreasure":    return this.jumpStacks;
-    }
-  }
-
-  private getPassiveStacksForAbility(type: ActiveAbilityType): number {
-    switch (type) {
-      case "magnet":         return this.scoreCardPickCount;
-      case "giant":          return Math.abs(this.hpDecayStacks);
-      case "coinRain":       return Math.abs(this.speedStacks);
-      case "multiJumpScore": return Math.abs(this.jumpCountStacks);
-      case "skyTreasure":    return Math.abs(this.jumpStacks);
-    }
-  }
-
-  /** Force-set the associated passive to a target buff level (always positive direction) */
-  private setPassiveStacksForAbility(type: ActiveAbilityType, target: number): void {
-    switch (type) {
-      case "magnet":
-        this.scoreCardPickCount = target;
-        break;
-      case "giant":
-        // hpDecay is inverted: negative = buff, so set to -target
-        this.hpDecayStacks = -target;
-        this.hpDecayMultiplier = Phaser.Math.Clamp(Math.pow(HP_DECAY_STACK_BASE, this.hpDecayStacks), HP_DECAY_MULT_MIN, HP_DECAY_MULT_MAX);
-        break;
-      case "coinRain":
-        this.speedStacks = target;
-        this.scrollSpeedMultiplier = Phaser.Math.Clamp(Math.pow(SPEED_STACK_BASE, this.speedStacks), SPEED_MULT_MIN, SPEED_MULT_MAX);
-        break;
-      case "multiJumpScore":
-        this.jumpCountStacks = target;
-        this.player.maxJumps = Phaser.Math.Clamp(MAX_JUMPS + this.jumpCountStacks, JUMP_COUNT_MIN, JUMP_COUNT_MAX);
-        break;
-      case "skyTreasure":
-        this.jumpStacks = target;
-        this.player.jumpMultiplier = Phaser.Math.Clamp(Math.pow(JUMP_STACK_BASE, this.jumpStacks), JUMP_MULT_MIN, JUMP_MULT_MAX);
-        break;
-    }
-  }
-
-  private applyActiveAbilityUp(type: ActiveAbilityType): void {
-    const state = this.activeAbilities[type];
-    const oldStacks = state.stacks;
-    state.stacks = Math.min(state.stacks + 1, ACTIVE_MAX_LEVEL);
-    this.handleAbilityStackChange(type, oldStacks);
-  }
-
-  private applyActiveAbilityDown(type: ActiveAbilityType): void {
-    const state = this.activeAbilities[type];
-    if (state.stacks > 0) {
-      // Active wrong → reduce active level by 1
-      const oldStacks = state.stacks;
-      state.stacks--;
-      this.handleAbilityStackChange(type, oldStacks);
-    } else {
-      // Active at 0 — reduce the associated passive by 1 (min PASSIVE_STACK_MIN)
-      switch (type) {
-        case "magnet":         this.scoreCardPickCount = Math.max(PASSIVE_STACK_MIN, this.scoreCardPickCount - 1); break;
-        case "giant":          this.applyHpDecayUp(); break;
-        case "coinRain":       this.applySpeedDown(); break;
-        case "multiJumpScore": this.applyJumpCountDown(); break;
-        case "skyTreasure":    this.applyJumpDown(); break;
-      }
-    }
-  }
-
-  private handleAbilityStackChange(type: ActiveAbilityType, oldStacks: number): void {
-    const state = this.activeAbilities[type];
-    if (state.stacks === 0) {
-      // Became inactive — deactivate if currently firing
-      if (state.isActive) this.deactivateAbility(type);
-      state.isActive = false;
-      state.cooldown = 0;
-      state.activeTimer = 0;
-      state.spawnTimer = 0;
-    } else if (oldStacks === 0) {
-      // Just became active
-      if (GameScene.ALWAYS_ON_ABILITIES.has(type)) {
-        // Always-on — activate immediately
-        state.isActive = true;
-        state.spawnTimer = 0;
-      } else {
-        // Cooldown-based — start cooldown cycle
-        state.cooldown = 0;
-        state.isActive = false;
-        state.spawnTimer = 0;
-      }
-    }
-  }
-
-  /** Abilities that are always-on (no cooldown/duration cycle) */
-  private static readonly ALWAYS_ON_ABILITIES: Set<ActiveAbilityType> = new Set(["magnet", "multiJumpScore", "skyTreasure"]);
-
-  private updateActiveAbilities(delta: number): void {
-    const types: ActiveAbilityType[] = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"];
-    for (const type of types) {
-      const state = this.activeAbilities[type];
-      if (state.stacks === 0) {
-        // Show passive stack progress instead
-        const signedStacks = this.getSignedPassiveStacks(type);
-        if (signedStacks !== 0) {
-          this.ui.updatePassiveStackHUD(type, signedStacks);
-        } else {
-          this.ui.updateActiveAbilityHUD(type, 0, 0, false);
-        }
-        continue;
-      }
-
-      const level = Math.min(Math.abs(state.stacks), ACTIVE_MAX_LEVEL);
-      const isBuff = state.stacks > 0;
-
-      // Always-on abilities — no cooldown, permanently active
-      if (GameScene.ALWAYS_ON_ABILITIES.has(type)) {
-        if (!state.isActive) {
-          state.isActive = true;
-          state.spawnTimer = 0;
-        }
-        this.applyAbilityEffect(type, level, isBuff, delta);
-        this.ui.updateActiveAbilityHUD(type, state.stacks, 1, true);
-        continue;
-      }
-
-      const config = GameScene.ABILITY_CONFIG[type];
-
-      if (state.isActive) {
-        // Active — count down duration
-        state.activeTimer -= delta;
-        if (state.activeTimer <= 0) {
-          this.deactivateAbility(type);
-          state.isActive = false;
-          state.cooldown = 0;
-        } else {
-          this.applyAbilityEffect(type, level, isBuff, delta);
-        }
-        this.ui.updateActiveAbilityHUD(type, state.stacks,
-          state.activeTimer / config.durationMs, true);
-      } else {
-        // Cooldown — count up
-        state.cooldown += delta;
-        if (state.cooldown >= config.cooldownMs) {
-          state.isActive = true;
-          state.activeTimer = config.durationMs;
-          state.cooldown = 0;
-          state.spawnTimer = 0;
-          this.activateAbility(type, level, isBuff);
-        }
-        this.ui.updateActiveAbilityHUD(type, state.stacks,
-          state.cooldown / config.cooldownMs, false);
-      }
-    }
-  }
-
-  private activateAbility(type: ActiveAbilityType, level: number, isBuff: boolean): void {
-    switch (type) {
-      case "giant": {
-        const scale = isBuff ? GIANT_BUFF_SCALE[level] : GIANT_DEBUFF_SCALE[level];
-        this.player.setGiantScale(scale);
-        break;
-      }
-    }
-  }
-
-  private deactivateAbility(type: ActiveAbilityType): void {
-    switch (type) {
-      case "giant":
-        this.player.setGiantScale(1);
-        break;
-    }
-  }
-
-  private applyAbilityEffect(type: ActiveAbilityType, level: number, isBuff: boolean, delta: number): void {
-    switch (type) {
-      case "magnet":
-        this.applyMagnetEffect(level, isBuff, delta);
-        break;
-      case "coinRain":
-        this.applyCoinRainEffect(level, isBuff, delta);
-        break;
-      case "skyTreasure":
-        this.applySkyTreasureEffect(level, isBuff, delta);
-        break;
-      // Giant effect is passive (scale), handled in activate/deactivate
-      // multiJumpScore is event-based (onPlayerJump), no per-frame effect
-    }
-  }
-
-  private applyMagnetEffect(level: number, isBuff: boolean, delta: number): void {
-    const force = isBuff ? MAGNET_PULL_FORCE[level] : MAGNET_REPEL_FORCE[level];
-    const direction = isBuff ? 1 : -1;
-    const dt = delta / 1000;
-
-    this.coins.getChildren().forEach((obj) => {
-      const coin = obj as Coin;
-      const dx = this.player.x - coin.x;
-      const dy = this.player.y - coin.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const range = MAGNET_RANGE[level];
-      if (dist > 10 * S && dist < range) {
-        const nx = dx / dist;
-        const ny = dy / dist;
-        coin.x += nx * force * direction * dt;
-        coin.adjustBaseY(ny * force * direction * dt);
-      }
-    });
-  }
-
-  private applyCoinRainEffect(level: number, isBuff: boolean, delta: number): void {
-    const state = this.activeAbilities.coinRain;
-    const interval = isBuff ? COIN_RAIN_SPAWN_MS[level] : METEOR_RAIN_SPAWN_MS[level];
-    if (interval <= 0) return;
-
-    state.spawnTimer += delta;
-    if (state.spawnTimer >= interval) {
-      state.spawnTimer -= interval;
-      if (isBuff) {
-        // Spawn coin from sky at random X
-        const x = Phaser.Math.Between(Math.round(100 * S), Math.round(GAME_WIDTH - 100 * S));
-        const coin = new Coin(this, x, 0);
-        this.coins.add(coin);
-        coin.setScrollSpeed(this.getEffectiveSpeed());
-        coin.setRainMode();
-      } else {
-        // Spawn extra meteor
-        this.spawnMeteor();
-      }
-    }
-  }
-
-  private applySkyTreasureEffect(level: number, isBuff: boolean, delta: number): void {
-    const state = this.activeAbilities.skyTreasure;
-    const interval = isBuff ? SKY_TREASURE_SPAWN_MS[level] : SKY_TREASURE_DEBUFF_SPAWN_MS[level];
-    if (interval <= 0) return;
-
-    state.spawnTimer += delta;
-    if (state.spawnTimer >= interval) {
-      state.spawnTimer -= interval;
-
-      if (isBuff) {
-        // Spawn bigCoin at sky height, scrolling from right (not falling)
-        const x = GAME_WIDTH + BIG_COIN_SIZE;
-        const y = Phaser.Math.Between(Math.round(SKY_TREASURE_SPAWN_Y - 40 * S), Math.round(SKY_TREASURE_SPAWN_Y + 40 * S));
-        const coin = new Coin(this, x, y);
-        coin.setBigMode();
-        this.coins.add(coin);
-        coin.setScrollSpeed(this.getEffectiveSpeed());
-      } else {
-        // Debuff — spawn meteor from high position
-        const x = GAME_WIDTH + METEOR_SIZE;
-        const meteor = new Meteor(this, x, SKY_TREASURE_SPAWN_Y);
-        this.meteors.add(meteor);
-        meteor.setScrollSpeed(this.getEffectiveSpeed() * this.lerpDiff(DIFF_METEOR_SPEED_MULT));
-      }
-    }
   }
 
   // ── Sync scroll speed ──
@@ -1256,7 +730,7 @@ export class GameScene extends Phaser.Scene {
 
     // HP decay, quiz timer — only during active gameplay
     if (!isIntro) {
-      this.hp -= delta * HP_DECAY_BASE_RATE * this.hpDecayMultiplier;
+      this.hp -= delta * HP_DECAY_BASE_RATE * this.buffDebuff.hpDecayMultiplier;
       if (this.hp <= 0) {
         this.hp = 0;
         this.ui.updateHpGauge(this.hp, this.hpMax);
@@ -1298,7 +772,7 @@ export class GameScene extends Phaser.Scene {
       }
 
       // Active abilities — cooldown cycling + effects
-      this.updateActiveAbilities(delta);
+      this.activeAbility.update(delta);
     }
 
     // Player physics — runs during intro for ground collision
@@ -1316,7 +790,7 @@ export class GameScene extends Phaser.Scene {
       }
 
       // Speed lines when going fast
-      if (this.scrollSpeedMultiplier >= SPEED_LINE_THRESHOLD) {
+      if (this.buffDebuff.scrollSpeedMultiplier >= SPEED_LINE_THRESHOLD) {
         this.particles.spawnSpeedLines();
       }
     }
@@ -1359,10 +833,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     // Deactivate all active abilities
-    for (const type of ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"] as ActiveAbilityType[]) {
-      if (this.activeAbilities[type].isActive) this.deactivateAbility(type);
-      this.activeAbilities[type].isActive = false;
-    }
+    this.activeAbility.deactivateAll();
 
     this.quizManager.cleanup();
     this.ui.cleanup();
