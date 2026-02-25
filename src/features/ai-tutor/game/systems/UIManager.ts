@@ -2,30 +2,20 @@ import * as Phaser from "phaser";
 import {
   S,
   GAME_WIDTH,
-  HP_ICON_RADIUS,
-  HP_BAR_X,
-  HP_BAR_Y,
-  HP_BAR_WIDTH,
-  HP_BAR_HEIGHT,
-  HP_BAR_RADIUS,
-  HP_BAR_PADDING,
-  COLOR_HP_HEART,
-  COLOR_HP_HEART_SHINE,
-  HP_LOW_THRESHOLD,
-  HP_HEARTBEAT_DURATION,
-  HP_DAMAGE_FLASH_MS,
   DEPTH_HUD,
   DEPTH_QUIZ,
   EFFECT_DISPLAY_MS,
   SCORE_BOUNCE_SCALE,
   SCORE_BOUNCE_DURATION,
   FONT_FAMILY,
-  ACTIVE_MAX_LEVEL,
-  ACTIVE_UNLOCK_STACKS,
 } from "../constants";
+import { HpGaugeRenderer } from "./HpGaugeRenderer";
+import { AbilityHudRenderer } from "./AbilityHudRenderer";
 
 export class UIManager {
   private scene: Phaser.Scene;
+  private hpGauge!: HpGaugeRenderer;
+  private abilityHud!: AbilityHudRenderer;
 
   // Score
   private scoreText!: Phaser.GameObjects.Text;
@@ -36,34 +26,6 @@ export class UIManager {
   // Effect text
   private effectText!: Phaser.GameObjects.Text;
   private effectDisplayTimer?: Phaser.Time.TimerEvent;
-
-  // HP gauge
-  private hpGaugeFrame!: Phaser.GameObjects.Graphics;
-  private hpGaugeFill!: Phaser.GameObjects.Graphics;
-  private displayedHpRatio = 1;
-  private lastHpRatio = 1;
-  private hpDamageFlashTimer = 0;
-  private hpShinePhase = 0;
-  private hpShineMaskGfx!: Phaser.GameObjects.Graphics;
-  private hpShineGfx!: Phaser.GameObjects.Graphics;
-
-  // Heartbeat
-  private heartbeatTween?: Phaser.Tweens.Tween;
-  private heartIcon!: Phaser.GameObjects.Graphics;
-  private isHeartbeating = false;
-
-  // HP bar wave effect
-  private hpWavePhase = 0;
-
-  // Active ability HUD
-  private abilityIcons: Record<string, {
-    container: Phaser.GameObjects.Container;
-    bgCircle: Phaser.GameObjects.Graphics;
-    progressRing: Phaser.GameObjects.Graphics;
-    label: Phaser.GameObjects.Text;
-    levelText: Phaser.GameObjects.Text;
-  }> = {};
-  private abilityActivePulse: Record<string, Phaser.Tweens.Tween> = {};
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -91,15 +53,9 @@ export class UIManager {
       .setOrigin(1, 0)
       .setDepth(DEPTH_HUD);
 
-    // HP gauge (frame behind fill)
-    this.hpGaugeFrame = this.scene.add.graphics().setDepth(DEPTH_HUD);
-    this.hpGaugeFill = this.scene.add.graphics().setDepth(DEPTH_HUD + 0.1);
-    this.heartIcon = this.scene.add.graphics().setDepth(DEPTH_HUD + 0.2);
-    this.hpShineMaskGfx = this.scene.add.graphics();
-    this.hpShineMaskGfx.setVisible(false);
-    this.hpShineGfx = this.scene.add.graphics().setDepth(DEPTH_HUD + 0.15);
-    this.hpShineGfx.setMask(this.hpShineMaskGfx.createGeometryMask());
-    this.drawHpGaugeFrame();
+    // HP gauge
+    this.hpGauge = new HpGaugeRenderer(this.scene);
+    this.hpGauge.create();
 
     // Effect text
     this.effectText = this.scene.add
@@ -117,10 +73,10 @@ export class UIManager {
 
     this.displayedScore = 0;
     this.targetScore = 0;
-    this.displayedHpRatio = 1;
-    this.lastHpRatio = 1;
 
-    this.createActiveAbilityIcons();
+    // Ability HUD
+    this.abilityHud = new AbilityHudRenderer(this.scene);
+    this.abilityHud.create();
   }
 
   // ── Score ──
@@ -148,388 +104,16 @@ export class UIManager {
     });
   }
 
-  // ── HP Gauge ──
+  // ── HP Gauge (delegated) ──
 
   updateHpGauge(hp: number, hpMax: number): void {
-    const ratio = hp / hpMax;
-
-    // Detect sudden damage for flash
-    if (ratio < this.lastHpRatio - 0.05) {
-      this.hpDamageFlashTimer = HP_DAMAGE_FLASH_MS;
-    }
-    this.lastHpRatio = ratio;
-
-    // Heartbeat when low HP
-    if (ratio <= HP_LOW_THRESHOLD && ratio > 0) {
-      if (!this.isHeartbeating) {
-        this.isHeartbeating = true;
-        this.heartbeatTween = this.scene.tweens.add({
-          targets: this.heartIcon,
-          scaleX: 1.2,
-          scaleY: 1.2,
-          duration: HP_HEARTBEAT_DURATION / 2,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.InOut",
-        });
-      }
-    } else if (this.isHeartbeating) {
-      this.isHeartbeating = false;
-      this.heartbeatTween?.stop();
-      this.heartIcon.setScale(1);
-    }
-
-    this.drawHpFill(ratio);
+    this.hpGauge.updateHpGauge(hp, hpMax);
   }
 
-  /** Trace parametric heart path: x=16sin³t, y=13cos−5cos2t−2cos3t−cos4t */
-  private traceHeartPath(
-    g: Phaser.GameObjects.Graphics,
-    cx: number,
-    cy: number,
-    r: number,
-  ): void {
-    const sc = r / 15;
-    const yOff = -2.5;
-    const N = 32;
-    for (let i = 0; i <= N; i++) {
-      const t = (i / N) * Math.PI * 2;
-      const st = Math.sin(t);
-      const hx = 16 * st * st * st;
-      const hy = -(
-        13 * Math.cos(t) -
-        5 * Math.cos(2 * t) -
-        2 * Math.cos(3 * t) -
-        Math.cos(4 * t)
-      );
-      const px = cx + hx * sc;
-      const py = cy + (hy + yOff) * sc;
-      if (i === 0) g.moveTo(px, py);
-      else g.lineTo(px, py);
-    }
-  }
+  // ── Ability HUD (delegated) ──
 
-  private drawHeartIcon(
-    g: Phaser.GameObjects.Graphics,
-    cx: number,
-    cy: number,
-    r: number,
-  ): void {
-    // Fill
-    g.fillStyle(COLOR_HP_HEART, 1);
-    g.beginPath();
-    this.traceHeartPath(g, cx, cy, r);
-    g.closePath();
-    g.fillPath();
-
-    // Outline
-    g.lineStyle(2 * S, 0x922b21, 1);
-    g.beginPath();
-    this.traceHeartPath(g, cx, cy, r);
-    g.closePath();
-    g.strokePath();
-
-    // Shine highlight on left bump
-    const sc = r / 15;
-    g.fillStyle(COLOR_HP_HEART_SHINE, 0.6);
-    g.fillCircle(cx - 8 * sc, cy - 10 * sc, r * 0.18);
-  }
-
-  private drawHpGaugeFrame(): void {
-    const g = this.hpGaugeFrame;
-    g.clear();
-
-    const barW = HP_BAR_WIDTH;
-    const bx = HP_BAR_X;
-    const by = HP_BAR_Y;
-    const bh = HP_BAR_HEIGHT;
-    const br = HP_BAR_RADIUS;
-    const pad = HP_BAR_PADDING;
-
-    // Background fill — translucent dark
-    g.fillStyle(0x000000, 0.3);
-    g.fillRoundedRect(bx, by, barW, bh, br);
-
-    // Subtle white border
-    g.lineStyle(1 * S, 0xffffff, 0.2);
-    g.strokeRoundedRect(bx, by, barW, bh, br);
-
-    // Segment lines at 25%, 50%, 75%
-    g.lineStyle(1 * S, 0xffffff, 0.15);
-    const innerW = barW - pad * 2;
-    for (const frac of [0.25, 0.5, 0.75]) {
-      const lx = bx + pad + innerW * frac;
-      g.lineBetween(lx, by + pad, lx, by + bh - pad);
-    }
-
-    // Heart icon
-    const iconCx = HP_ICON_RADIUS + 4 * S;
-    const iconCy = by + bh / 2;
-    this.heartIcon.clear();
-    this.drawHeartIcon(this.heartIcon, 0, 0, HP_ICON_RADIUS);
-    this.heartIcon.setPosition(iconCx, iconCy);
-  }
-
-  private getHpFillColor(displayRatio: number): number {
-    const r = Phaser.Math.Clamp(displayRatio, 0, 1);
-    // teal(0x00BFA5) → amber(0xFFA726) → red(0xEF5350)
-    if (r > 0.5) {
-      const t = (r - 0.5) / 0.5; // 1=teal, 0=amber
-      return this.lerpColor(0xffa726, 0x00bfa5, t);
-    }
-    const t = r / 0.5; // 1=amber, 0=red
-    return this.lerpColor(0xef5350, 0xffa726, t);
-  }
-
-  private lerpColor(a: number, b: number, t: number): number {
-    const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
-    const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
-    const rr = Math.round(ar + (br - ar) * t);
-    const gg = Math.round(ag + (bg - ag) * t);
-    const bl = Math.round(ab + (bb - ab) * t);
-    return (rr << 16) | (gg << 8) | bl;
-  }
-
-  /** Draw HP fill shape with wavy right edge when not full */
-  private drawHpFillShape(
-    g: Phaser.GameObjects.Graphics,
-    fx: number,
-    fy: number,
-    fillW: number,
-    innerH: number,
-    innerR: number,
-    color: number,
-    alpha: number,
-    wavy: boolean,
-  ): void {
-    const r = Math.min(innerR, fillW / 2);
-
-    g.fillStyle(color, alpha);
-    g.beginPath();
-
-    // Top-left rounded corner
-    g.arc(fx + r, fy + r, r, Math.PI, Math.PI * 1.5, false);
-
-    // Top edge to right
-    g.lineTo(fx + fillW, fy);
-
-    if (wavy) {
-      // Wavy right edge — gentle sway, not visible ripple
-      const segments = 12;
-      const amp = 1 * S;
-      const freq = 0.7;
-      for (let i = 1; i <= segments; i++) {
-        const t = i / segments;
-        const py = fy + t * innerH;
-        const wave =
-          Math.sin(t * Math.PI * 2 * freq + this.hpWavePhase) * amp;
-        g.lineTo(fx + fillW + wave, py);
-      }
-    } else {
-      // Straight right edge with rounded corners (full bar)
-      g.lineTo(fx + fillW, fy);
-      g.arc(fx + fillW - r, fy + r, r, Math.PI * 1.5, 0, false);
-      g.lineTo(fx + fillW, fy + innerH - r);
-      g.arc(fx + fillW - r, fy + innerH - r, r, 0, Math.PI * 0.5, false);
-    }
-
-    // Bottom edge going left
-    g.lineTo(fx + r, fy + innerH);
-
-    // Bottom-left rounded corner
-    g.arc(fx + r, fy + innerH - r, r, Math.PI * 0.5, Math.PI, false);
-
-    g.closePath();
-    g.fillPath();
-  }
-
-  private drawHpFill(ratio: number): void {
-    const pad = HP_BAR_PADDING;
-    const innerW = HP_BAR_WIDTH - pad * 2;
-    const innerH = HP_BAR_HEIGHT - pad * 2;
-    const innerR = HP_BAR_RADIUS - pad;
-
-    // Smooth lerp toward target
-    this.displayedHpRatio += (ratio - this.displayedHpRatio) * 0.15;
-    const displayRatio = Phaser.Math.Clamp(this.displayedHpRatio, 0, 1);
-    const fillW = Math.max(0, innerW * displayRatio);
-
-    const g = this.hpGaugeFill;
-    g.clear();
-    if (fillW <= 0) {
-      this.hpShineGfx.clear();
-      return;
-    }
-
-    const fx = HP_BAR_X + pad;
-    const fy = HP_BAR_Y + pad;
-    const wavy = displayRatio < 1;
-
-    if (this.hpDamageFlashTimer > 0) {
-      // Damage flash (white)
-      this.drawHpFillShape(g, fx, fy, fillW, innerH, innerR, 0xffffff, 1, wavy);
-      this.hpShineGfx.clear();
-      return;
-    }
-
-    const fillColor = this.getHpFillColor(displayRatio);
-
-    // Fill with wavy right edge
-    this.drawHpFillShape(g, fx, fy, fillW, innerH, innerR, fillColor, 0.7, wavy);
-
-    // Update geometry mask to match current fill shape (same wavy path)
-    this.hpShineMaskGfx.clear();
-    this.drawHpFillShape(this.hpShineMaskGfx, fx, fy, fillW, innerH, innerR, 0xffffff, 1, wavy);
-
-    // Diagonal shine sweep (active first 40% of cycle, paused 60%)
-    this.hpShineGfx.clear();
-    const sweepT = this.hpShinePhase < 0.4 ? this.hpShinePhase / 0.4 : -1;
-    if (sweepT >= 0) {
-      const eased =
-        sweepT < 0.5
-          ? 2 * sweepT * sweepT
-          : 1 - Math.pow(-2 * sweepT + 2, 2) / 2;
-
-      const shineW = innerW * 0.3;
-      const skew = innerH * 0.5;
-      const startX = fx - shineW - skew;
-      const endX = fx + fillW;
-      const shineX = startX + (endX - startX) * eased;
-      const strips = 10;
-      const bandW = shineW + skew;
-      const stripW = bandW / strips;
-
-      for (let i = 0; i < strips; i++) {
-        const t = i / (strips - 1);
-        const d = (t - 0.5) * 2.8;
-        const alpha = 0.3 * Math.exp(-(d * d));
-        const x = shineX + stripW * i;
-
-        this.hpShineGfx.fillStyle(0xffffff, alpha);
-        this.hpShineGfx.beginPath();
-        this.hpShineGfx.moveTo(x + skew, fy);
-        this.hpShineGfx.lineTo(x + stripW + skew + 0.5, fy);
-        this.hpShineGfx.lineTo(x + stripW + 0.5, fy + innerH);
-        this.hpShineGfx.lineTo(x, fy + innerH);
-        this.hpShineGfx.closePath();
-        this.hpShineGfx.fillPath();
-      }
-    }
-  }
-
-  // ── Active ability HUD ──
-
-  private createActiveAbilityIcons(): void {
-    const types = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"] as const;
-    const labels: Record<string, string> = { magnet: "M", giant: "G", coinRain: "C", multiJumpScore: "J", skyTreasure: "S" };
-    const colors: Record<string, number> = { magnet: 0xf1c40f, giant: 0x1abc9c, coinRain: 0x3498db, multiJumpScore: 0x9b59b6, skyTreasure: 0x2ecc71 };
-
-    const startX = HP_BAR_X;
-    const startY = HP_BAR_Y + HP_BAR_HEIGHT + 8 * S;
-    const iconR = 10 * S;
-    const spacing = 28 * S;
-
-    for (let i = 0; i < types.length; i++) {
-      const type = types[i];
-      const cx = startX + iconR + i * spacing;
-      const cy = startY + iconR;
-
-      const container = this.scene.add.container(cx, cy).setDepth(DEPTH_HUD + 0.3);
-      container.setVisible(false);
-
-      // Background circle
-      const bgCircle = this.scene.add.graphics();
-      bgCircle.fillStyle(colors[type], 0.3);
-      bgCircle.fillCircle(0, 0, iconR);
-      container.add(bgCircle);
-
-      // Progress ring (drawn each frame)
-      const progressRing = this.scene.add.graphics();
-      container.add(progressRing);
-
-      // Ability letter
-      const label = this.scene.add
-        .text(0, -1 * S, labels[type], {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${10 * S}px`,
-          color: "#ffffff",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5);
-      container.add(label);
-
-      // Level text below icon
-      const levelText = this.scene.add
-        .text(0, iconR + 4 * S, "", {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${7 * S}px`,
-          color: "#ffffff",
-        })
-        .setOrigin(0.5);
-      container.add(levelText);
-
-      this.abilityIcons[type] = { container, bgCircle, progressRing, label, levelText };
-    }
-  }
-
-  /** Show passive stack progress (signed: negative = debuff, positive = building toward unlock) */
   updatePassiveStackHUD(type: string, signedStacks: number): void {
-    const icon = this.abilityIcons[type];
-    if (!icon) return;
-
-    // Stop any active pulse
-    if (this.abilityActivePulse[type]) {
-      this.abilityActivePulse[type].stop();
-      delete this.abilityActivePulse[type];
-      icon.bgCircle.setAlpha(1);
-    }
-
-    if (signedStacks === 0) {
-      icon.container.setVisible(false);
-      return;
-    }
-
-    icon.container.setVisible(true);
-    const iconR = 10 * S;
-    const isDebuff = signedStacks < 0;
-    const absStacks = Math.abs(signedStacks);
-    const g = icon.progressRing;
-    g.clear();
-
-    if (isDebuff) {
-      // Debuff: red filled ring, full progress
-      icon.label.setAlpha(0.4);
-      icon.levelText.setText(`${signedStacks}`);
-      icon.levelText.setColor("#e74c3c");
-
-      g.lineStyle(1.5 * S, 0xe74c3c, 0.4);
-      g.strokeCircle(0, 0, iconR);
-
-      // Full red ring
-      g.lineStyle(2.5 * S, 0xe74c3c, 0.7);
-      g.beginPath();
-      g.arc(0, 0, iconR + 1 * S, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2, false);
-      g.strokePath();
-    } else {
-      // Buff: progress toward unlock
-      const progress = Math.min(absStacks, ACTIVE_UNLOCK_STACKS) / ACTIVE_UNLOCK_STACKS;
-
-      icon.label.setAlpha(0.4);
-      icon.levelText.setText(`${absStacks}/${ACTIVE_UNLOCK_STACKS}`);
-      icon.levelText.setColor("#aaaaaa");
-
-      g.lineStyle(1.5 * S, 0x888888, 0.3);
-      g.strokeCircle(0, 0, iconR);
-
-      if (progress > 0) {
-        const startAngle = -Math.PI / 2;
-        const endAngle = startAngle + progress * Math.PI * 2;
-        g.lineStyle(2.5 * S, 0xaaaaaa, 0.6);
-        g.beginPath();
-        g.arc(0, 0, iconR + 1 * S, startAngle, endAngle, false);
-        g.strokePath();
-      }
-    }
+    this.abilityHud.updatePassiveStackHUD(type, signedStacks);
   }
 
   updateActiveAbilityHUD(
@@ -538,64 +122,7 @@ export class UIManager {
     progress: number,
     isActive: boolean,
   ): void {
-    const icon = this.abilityIcons[type];
-    if (!icon) return;
-
-    if (stacks === 0) {
-      icon.container.setVisible(false);
-      // Stop pulse if any
-      if (this.abilityActivePulse[type]) {
-        this.abilityActivePulse[type].stop();
-        delete this.abilityActivePulse[type];
-        icon.bgCircle.setAlpha(1);
-      }
-      return;
-    }
-
-    icon.container.setVisible(true);
-    const level = Math.min(Math.abs(stacks), ACTIVE_MAX_LEVEL);
-    const iconR = 10 * S;
-
-    // Update level text
-    icon.levelText.setText(`Lv${level}`);
-    icon.levelText.setColor("#2ecc71");
-
-    // Draw progress ring
-    const g = icon.progressRing;
-    g.clear();
-
-    // Base border circle
-    g.lineStyle(1.5 * S, 0x2ecc71, 0.4);
-    g.strokeCircle(0, 0, iconR);
-
-    // Progress arc
-    const startAngle = -Math.PI / 2;
-    const endAngle = startAngle + Phaser.Math.Clamp(progress, 0, 1) * Math.PI * 2;
-    if (progress > 0.001) {
-      g.lineStyle(2.5 * S, isActive ? 0xf1c40f : 0x2ecc71, 0.9);
-      g.beginPath();
-      g.arc(0, 0, iconR + 1 * S, startAngle, endAngle, false);
-      g.strokePath();
-    }
-
-    // Brightness based on state
-    icon.label.setAlpha(isActive ? 1 : 0.6);
-
-    // Pulse during active
-    if (isActive && !this.abilityActivePulse[type]) {
-      this.abilityActivePulse[type] = this.scene.tweens.add({
-        targets: icon.bgCircle,
-        alpha: { from: 1, to: 0.4 },
-        duration: 500,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.InOut",
-      });
-    } else if (!isActive && this.abilityActivePulse[type]) {
-      this.abilityActivePulse[type].stop();
-      delete this.abilityActivePulse[type];
-      icon.bgCircle.setAlpha(1);
-    }
+    this.abilityHud.updateActiveAbilityHUD(type, stacks, progress, isActive);
   }
 
   // ── Update ──
@@ -616,31 +143,13 @@ export class UIManager {
     // Keep COIN label to the left of score number
     this.coinLabel.setX(this.scoreText.x - this.scoreText.displayWidth - 14 * S);
 
-    // Damage flash timer
-    if (this.hpDamageFlashTimer > 0) {
-      this.hpDamageFlashTimer -= delta;
-    }
-
-    // Shine sweep phase (5-second cycle)
-    this.hpShinePhase = (this.hpShinePhase + delta / 5000) % 1;
-
-    // Wave phase animation (continuous cycle)
-    this.hpWavePhase += delta / 300;
+    // HP gauge animations
+    this.hpGauge.update(delta);
   }
 
   cleanup(): void {
     this.effectDisplayTimer?.remove();
-    this.heartbeatTween?.stop();
-    this.hpShineGfx?.clearMask(true);
-
-    // Active ability icons
-    for (const key in this.abilityActivePulse) {
-      this.abilityActivePulse[key].stop();
-    }
-    this.abilityActivePulse = {};
-    for (const key in this.abilityIcons) {
-      this.abilityIcons[key].container.destroy();
-    }
-    this.abilityIcons = {};
+    this.hpGauge.cleanup();
+    this.abilityHud.cleanup();
   }
 }
