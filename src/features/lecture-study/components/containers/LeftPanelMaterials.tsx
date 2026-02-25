@@ -31,7 +31,7 @@ interface ErrorPage {
 type PageEntry = LoadedPage | ErrorPage
 
 function isValidImageUrl(url: string): boolean {
-  return url.startsWith('https://') || url.startsWith('http://localhost')
+  return url.startsWith('https://') || /^http:\/\/localhost(:\d+)?(\/|$)/.test(url)
 }
 
 /** 뷰포트 밖 이미지 unload 임계값 (±페이지 수) */
@@ -64,7 +64,7 @@ export function LeftPanelMaterials() {
   /** material별 원본 pages 데이터 (URL 재발급용) */
   const materialPagesMapRef = useRef<Map<string, MaterialPageItem[]>>(new Map())
 
-  const totalPages = allPages.filter((p) => p.type === 'page').length
+  const totalPages = allPages.length
 
   // currentPageRef 동기화 (IntersectionObserver 콜백에서 최신 값 참조용)
   useEffect(() => {
@@ -342,19 +342,15 @@ export function LeftPanelMaterials() {
           const sorted = [...result.data.pages].sort((a, b) => a.page_number - b.page_number)
           materialPagesMapRef.current.set(entry.materialId, sorted)
 
-          const newPage = sorted[entry.pageIndex]
-          if (newPage?.image_url) {
-            const img = pageRefs.current[pageIdx]?.querySelector('img[data-lazy]') as HTMLImageElement | null
-            if (img) {
-              img.setAttribute('data-src', newPage.image_url)
-              img.src = newPage.image_url
+          if (entry.pageIndex >= 0 && entry.pageIndex < sorted.length) {
+            const newPage = sorted[entry.pageIndex]
+            if (newPage?.image_url) {
+              const img = pageRefs.current[pageIdx]?.querySelector('img[data-lazy]') as HTMLImageElement | null
+              if (img) {
+                img.setAttribute('data-src', newPage.image_url)
+                img.src = newPage.image_url
+              }
             }
-            // allPages 업데이트
-            setAllPages((prev) =>
-              prev.map((p, i) =>
-                i === pageIdx && p.type === 'page' ? { ...p, imageUrl: newPage.image_url } : p,
-              ),
-            )
           }
         }
       } catch {

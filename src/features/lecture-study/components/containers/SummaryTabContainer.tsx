@@ -31,7 +31,23 @@ function parseContentSummary(raw: string | null): ContentSummary | null {
     const sections: ContentSummarySection[] = rawSections.map((s: Record<string, unknown>) => ({
       title: typeof s.title === 'string' ? s.title : '',
       bullets: Array.isArray(s.bullets) ? s.bullets.filter((b: unknown) => typeof b === 'string') : [],
-      tables: Array.isArray(s.tables) ? s.tables : undefined,
+      tables: Array.isArray(s.tables)
+        ? s.tables
+            .filter((t: unknown) => {
+              const tbl = t as Record<string, unknown>
+              return Array.isArray(tbl?.headers) && Array.isArray(tbl?.rows)
+            })
+            .map((t: unknown) => {
+              const tbl = t as Record<string, unknown>
+              return {
+                title: typeof tbl.title === 'string' ? tbl.title : null,
+                headers: (tbl.headers as unknown[]).filter((h: unknown) => typeof h === 'string') as string[],
+                rows: (tbl.rows as unknown[])
+                  .filter((r: unknown) => Array.isArray(r))
+                  .map((r: unknown) => (r as unknown[]).map(String)) as string[][],
+              }
+            })
+        : undefined,
       source_pages: Array.isArray(s.source_pages) ? s.source_pages.filter(Number.isFinite) : [],
       source_chunks: Array.isArray(s.source_chunks) ? s.source_chunks.filter(Number.isFinite) : [],
     }))
@@ -109,7 +125,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
         setIsLoading(false)
       } catch (err) {
         if (cancelled) return
-        console.error('[SummaryTabContainer] fetchSummary error:', err)
+        console.error('[SummaryTabContainer] fetchSummary error:', err instanceof Error ? err.message : String(err))
         setError('SUMMARY_LOAD_ERROR')
         setIsLoading(false)
       }

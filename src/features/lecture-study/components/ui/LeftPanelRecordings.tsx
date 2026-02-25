@@ -130,12 +130,12 @@ export function LeftPanelRecordings({
       return [...prev, target.valueKey]
     })
 
-    // DOM 렌더링 대기 후 스크롤
+    // DOM 렌더링 대기 후 스크롤 (Accordion 확장 트랜지션 완료 대기)
     requestAnimationFrame(() => {
       setTimeout(() => {
         targetChunkRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
         onTargetConsumed?.()
-      }, 100)
+      }, 300)
     })
   }, [targetChunkIndex, recordings, hasAnyChunks, hasMultipleRecordings, onTargetConsumed])
 
