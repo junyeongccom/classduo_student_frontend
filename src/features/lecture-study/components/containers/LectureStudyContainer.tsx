@@ -61,10 +61,14 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const setRightTab = useLectureStudyStore(s => s.setRightTab)
   const setStoreLectureId = useLectureStudyStore(s => s.setLectureId)
   const setGameWords = useLectureStudyStore(s => s.setGameWords)
+  const targetChunkIndex = useLectureStudyStore(s => s.targetChunkIndex)
+  const setTargetChunkIndex = useLectureStudyStore(s => s.setTargetChunkIndex)
+  const resetNavigationState = useLectureStudyStore(s => s.resetNavigationState)
 
   useEffect(() => {
     setStoreLectureId(lectureId)
     setGameWords([])
+    resetNavigationState() // Task 785: lectureId 변경 시 네비게이션 상태 초기화
     // 쿼리 파라미터로 초기 탭 지정 (예: ?tab=game)
     const tabParam = searchParams.get('tab')
     const validTabs: LectureStudyTab[] = ['summary', 'quiz', 'game']
@@ -391,6 +395,8 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                 <LeftPanelRecordings
                   recordings={recordings}
                   essence7Words={currentLecture?.essence_7words}
+                  targetChunkIndex={targetChunkIndex}
+                  onTargetConsumed={() => setTargetChunkIndex(null)}
                 />
               </TabsContent>
             </Tabs>
