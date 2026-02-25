@@ -10,7 +10,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
-import { useLocale } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
@@ -20,12 +19,10 @@ import {
   reviewService,
   ReviewMatchingGame,
   DefinitionBuilderGame,
-  GuessTheTermGameContainer,
   ReviewDeckView,
   useReviewDeck,
 } from '@/features/review'
 import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
-import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
 const GameOverlay = dynamic(
   () => import('@/features/ai-tutor').then(m => ({ default: m.GameOverlay })),
@@ -111,7 +108,6 @@ interface GameTabContainerProps {
 
 export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const t = useTranslations()
-  const locale = useLocale() as AppLocale
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [showDescriptionPopup, setShowDescriptionPopup] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
@@ -134,7 +130,6 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const [showMatchingOverlay, setShowMatchingOverlay] = useState(false)
   const [showDefBuilderOverlay, setShowDefBuilderOverlay] = useState(false)
   const [showDeckOverlay, setShowDeckOverlay] = useState(false)
-  const [showGuessTermOverlay, setShowGuessTermOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -220,11 +215,6 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
       return
     }
 
-    // GuessTheTerm: open overlay
-    if (selectedGame === 'guessTheTerm') {
-      setShowGuessTermOverlay(true)
-      return
-    }
   }, [selectedGame, loadDefBuilderData, deck])
 
   // Running game overlay (renders on top, no "isPlaying" needed)
@@ -415,54 +405,6 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
                 isReviewItemsLoading={false}
                 reviewItemsError={null}
                 deck={deck}
-              />
-            </div>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  // GuessTheTerm overlay
-  if (showGuessTermOverlay) {
-    const handleCloseGuessTerm = () => {
-      setShowGuessTermOverlay(false)
-      setSelectedGame(null)
-    }
-    return (
-      <>
-        <div
-          className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
-          onClick={handleCloseGuessTerm}
-        />
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center p-6"
-          onClick={handleCloseGuessTerm}
-        >
-          <div
-            className="relative flex max-h-[92vh] w-full max-w-[800px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
-                {t('lectureStudy.game.guessTheTerm')}
-              </h3>
-              <button
-                onClick={handleCloseGuessTerm}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            {/* Game area */}
-            <div className="flex-1 overflow-auto p-6">
-              <GuessTheTermGameContainer
-                lectureId={lectureId}
-                locale={locale}
-                isEnabled
-                reviewItems={reviewItems}
-                onExitGame={handleCloseGuessTerm}
               />
             </div>
           </div>

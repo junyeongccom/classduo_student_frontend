@@ -19,6 +19,7 @@ interface CourseCardProps {
   progress?: { completed: number; total: number } | null
   progressLabel?: string
   locale?: string
+  thumbnailUrl?: string | null
   onClick: () => void
 }
 
@@ -31,6 +32,7 @@ export function CourseCard({
   visual,
   progress,
   locale = 'ko-KR',
+  thumbnailUrl,
   onClick,
 }: CourseCardProps) {
   const progressPercent =
@@ -48,15 +50,25 @@ export function CourseCard({
         'hover:shadow-md hover:-translate-y-1',
       )}
     >
-      {/* 상단 컬러 배너 */}
+      {/* 상단 컬러 배너 / 썸네일 */}
       <div
-        className="relative h-48 w-full"
-        style={{ backgroundColor: visual.accent }}
+        className="relative h-48 w-full overflow-hidden"
+        style={thumbnailUrl ? undefined : { backgroundColor: visual.accent }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
-        <div className="absolute bottom-4 left-4">
-          <BookOpen className="h-8 w-8 text-white/60" />
-        </div>
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
+            <div className="absolute bottom-4 left-4">
+              <BookOpen className="h-8 w-8 text-white/60" />
+            </div>
+          </>
+        )}
       </div>
 
       {/* 카드 내용 */}

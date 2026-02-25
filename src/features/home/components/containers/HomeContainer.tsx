@@ -19,6 +19,11 @@ import { CourseCard } from '../ui/CourseCard'
 import { EmptyState } from '../ui/EmptyState'
 import { useAuthStore } from '@/features/auth/store/authStore'
 
+/** 과목명 → 커스텀 썸네일 경로 매핑 */
+const COURSE_THUMBNAILS: Record<string, string> = {
+  '생명과학의 세계': '/course_Thumbnail.png',
+}
+
 export function HomeContainer() {
   const t = useTranslations()
   const router = useRouter()
@@ -105,6 +110,7 @@ export function HomeContainer() {
                       ? { completed: course.activeLectures, total: course.totalLectures }
                       : null
                     }
+                    thumbnailUrl={COURSE_THUMBNAILS[course.name] ?? null}
                     locale={dateLocale}
                     onClick={() =>
                       router.push(`/studyspace/course/${course.id}`)

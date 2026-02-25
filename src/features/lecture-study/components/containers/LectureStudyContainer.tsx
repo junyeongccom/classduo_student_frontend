@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useSearchParams } from 'next/navigation'
-import { Loader2, X, ChevronRight, FileText, Bot, ClipboardPen, Share2 } from 'lucide-react'
+import { Loader2, X, ChevronRight, FileText, Bot } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
@@ -419,20 +419,6 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                 {resolveLectureLabel()}
               </h2>
             </div>
-
-            {/* 테스트/공유 버튼 — 양쪽 패널 닫혀 있을 때만 */}
-            {isCenterOnly && (
-              <div className="shrink-0 flex items-center gap-3 px-4 pb-3 pt-1">
-                <button className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-[#6366F1] py-1.5 text-sm font-medium text-white transition-colors hover:bg-[#4F46E5]">
-                  <ClipboardPen className="h-4 w-4" />
-                  {t('lectureStudy.buttons.startTest')}
-                </button>
-                <button className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-[#6366F1]/30 py-1.5 text-sm font-medium text-[#6366F1] transition-colors hover:bg-[#6366F1]/5">
-                  <Share2 className="h-4 w-4" />
-                  {t('lectureStudy.buttons.share')}
-                </button>
-              </div>
-            )}
 
             {rightPanelContent}
           </section>

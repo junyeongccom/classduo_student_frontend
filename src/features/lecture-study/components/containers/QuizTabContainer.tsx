@@ -9,7 +9,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Loader2, HelpCircle } from 'lucide-react'
+import { Loader2, HelpCircle, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import {
@@ -111,6 +111,13 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
 
   return (
     <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24">
+      {/* AI 퀴즈 안내 문구 */}
+      <div className="flex items-center gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 px-4 py-3">
+        <Sparkles className="h-4 w-4 shrink-0 text-indigo-500" />
+        <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+          {t('aiGeneratedNotice')}
+        </p>
+      </div>
       {groupedQuizzes.map((group) => (
         <section key={group.type}>
           {/* 유형 섹션 헤더 */}

@@ -380,6 +380,7 @@
         "RECALL": "내용 기억 퀴즈 (단답형)",
         "STRUCTURE": "구조 이해 퀴즈 (서술형)"
       },
+      "aiGeneratedNotice": "AI가 해당 회차 강의내용에 기반해 생성한 퀴즈입니다.",
       "loading": "퀴즈를 불러오는 중입니다...",
       "empty": "아직 생성된 퀴즈가 없습니다.",
       "itemCount": "{count}문항",
