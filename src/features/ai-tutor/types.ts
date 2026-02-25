@@ -138,12 +138,29 @@ export interface SessionWithMessages {
   lecture_ids?: string[] // 편의용 (session.lecture_ids와 동일)
 }
 
-export interface SearchResult {
+// Search result types (chat_search feature)
+export type SearchResultMatchType = 'session_title' | 'message_content'
+
+export interface SessionTitleSearchResult {
+  match_type: 'session_title'
   session_id: string
   title: string | null
-  updated_at: string
+  updated_at: string // ISO 8601
   rank: number
 }
+
+export interface MessageContentSearchResult {
+  match_type: 'message_content'
+  session_id: string
+  title: string | null
+  updated_at: string // Session updated_at, ISO 8601
+  rank: number
+  message_id: string
+  content_preview: string // 최대 120자
+  message_created_at: string // ISO 8601
+}
+
+export type SearchResult = SessionTitleSearchResult | MessageContentSearchResult
 
 export interface StreamProgressData {
   type: 'status' | 'source' | 'result' | 'error'

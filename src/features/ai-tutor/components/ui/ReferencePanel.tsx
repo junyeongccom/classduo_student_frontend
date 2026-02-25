@@ -494,7 +494,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                             <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                               <img
                                 src={ref.metadata.image_url}
-                                alt={ref.metadata.original_filename || `강의자료 ${index + 1}`}
+                                alt={ref.metadata.original_filename || t('materialAlt', { index: index + 1 })}
                                 className="w-full object-contain"
                                 style={{ maxHeight: 360 }}
                               />
@@ -504,7 +504,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                           {highlightedText && (
                             <div className="space-y-2">
                               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                강의자료 텍스트
+                                {t('materialText')}
                               </h4>
                               <p
                                 className="rounded-lg bg-white/80 p-3 text-sm leading-relaxed text-gray-800"
@@ -516,7 +516,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                           {visualDescription && (
                             <div className="space-y-2">
                               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                시각자료 설명
+                                {t('visualDescription')}
                               </h4>
                               <p 
                                 className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700"

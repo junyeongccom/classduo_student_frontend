@@ -19,6 +19,7 @@ export interface AITutorCourse {
     status: string
     is_available?: boolean
     essence_7words?: string | null  // 강의 본질 7단어 요약
+    content_pipeline_status?: string  // 컨텐츠 파이프라인 상태
   }>
 }
 

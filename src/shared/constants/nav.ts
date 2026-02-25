@@ -1,10 +1,14 @@
-import { 
-  Bot, 
-  PenLine, 
+import {
+  Bot,
+  PenLine,
   FileText,
   User,
   Home,
   Repeat,
+  LayoutGrid,
+  HelpCircle,
+  Puzzle,
+  MessageSquare,
 } from 'lucide-react'
 
 /**
@@ -40,6 +44,40 @@ export const SIDEBAR_MENU = [
     labelKey: 'nav.repeat',
     icon: Repeat,
     href: '/studyspace/repeat',
+  },
+] as const
+
+/**
+ * 새 UI 사이드바 메뉴
+ */
+export const NEW_SIDEBAR_MENU = [
+  {
+    id: 'home',
+    labelKey: 'newNav.classes',
+    icon: LayoutGrid,
+    href: '/studyspace/home',
+    color: '#3B82F6',    // blue
+  },
+  {
+    id: 'my-quizzes',
+    labelKey: 'newNav.myQuizzes',
+    icon: HelpCircle,
+    href: '/studyspace/exam',
+    color: '#F97316',    // orange
+  },
+  {
+    id: 'games',
+    labelKey: 'newNav.games',
+    icon: Puzzle,
+    href: '/studyspace/review',
+    color: '#22C55E',    // green
+  },
+  {
+    id: 'feedback',
+    labelKey: 'newNav.feedback',
+    icon: MessageSquare,
+    href: '/studyspace/ai-tutor',
+    color: '#7C3AED',    // violet
   },
 ] as const
 

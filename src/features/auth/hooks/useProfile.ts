@@ -1,17 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
-import { 
-  ChangePasswordRequest, 
-  UpdateProfileRequest, 
+import {
+  ChangePasswordRequest,
+  UpdateProfileRequest,
   DeleteAccountRequest,
-  AuthError 
+  AuthError
 } from '../types'
 
 export function useProfile() {
   const { user, setUser, logout } = useAuthStore()
+  const t = useTranslations('errors')
+  const tMsg = useTranslations('auth.messages')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<AuthError | null>(null)
 
@@ -35,11 +38,11 @@ export function useProfile() {
         setUser({ ...user, full_name: data.full_name })
       }
 
-      return { success: true, message: '프로필이 수정되었습니다.' }
+      return { success: true, message: tMsg('profileUpdated') }
     } catch (error) {
       const authError: AuthError = {
         error_code: 'UNEXPECTED_ERROR',
-        message: '프로필 수정 중 오류가 발생했습니다.',
+        message: t('profileUpdate'),
       }
       setError(authError)
       return { success: false, error: authError }
@@ -63,11 +66,11 @@ export function useProfile() {
         return { success: false, error: result.error }
       }
 
-      return { success: true, message: '비밀번호가 변경되었습니다.' }
+      return { success: true, message: tMsg('passwordChanged') }
     } catch (error) {
       const authError: AuthError = {
         error_code: 'UNEXPECTED_ERROR',
-        message: '비밀번호 변경 중 오류가 발생했습니다.',
+        message: t('passwordChange'),
       }
       setError(authError)
       return { success: false, error: authError }
@@ -94,11 +97,11 @@ export function useProfile() {
       // 로그아웃 처리
       logout()
 
-      return { success: true, message: '회원 탈퇴가 완료되었습니다.' }
+      return { success: true, message: tMsg('accountDeleted') }
     } catch (error) {
       const authError: AuthError = {
         error_code: 'UNEXPECTED_ERROR',
-        message: '회원 탈퇴 중 오류가 발생했습니다.',
+        message: t('deleteAccount'),
       }
       setError(authError)
       return { success: false, error: authError }
@@ -117,5 +120,3 @@ export function useProfile() {
     clearError: () => setError(null),
   }
 }
-
-

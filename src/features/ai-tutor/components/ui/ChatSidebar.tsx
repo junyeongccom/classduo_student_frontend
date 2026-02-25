@@ -329,6 +329,11 @@ export default function ChatSidebar({
                         <h3 className="text-sm font-semibold text-slate-900 truncate">
                           {result.title || t('sessionTitleFallback')}
                         </h3>
+                        {result.match_type === 'message_content' && (
+                          <p className="mt-1 text-xs text-slate-600 line-clamp-2">
+                            {result.content_preview}
+                          </p>
+                        )}
                         <p className="mt-1 text-xs text-slate-500">
                           {formatDate(result.updated_at)}
                         </p>

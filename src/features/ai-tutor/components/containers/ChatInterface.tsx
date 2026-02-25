@@ -12,9 +12,6 @@ import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
-import { useCardMatchSet } from '@/features/ai-tutor/hooks/useCardMatchSet'
-import { useCardMatchAttemptLogger } from '@/features/ai-tutor/hooks/useCardMatchAttemptLogger'
-import { CardMatchGame } from '@/features/ai-tutor/components/ui/CardMatchGame'
 import { ChatComposer } from '../ui/ChatComposer'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 
@@ -52,13 +49,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
   }))
   
-  // 기본 후킹 질문 (API에서 가져오지 못했을 때 사용)
-  const DEFAULT_HOOKING_QUESTIONS = [
-    t('defaultHookingQuestions.importantConcept'),
-    t('defaultHookingQuestions.realLifeApplication'),
-    t('defaultHookingQuestions.latestResearch'),
-    t('defaultHookingQuestions.easierUnderstanding'),
-  ]
   const [input, setInput] = useState('')
   const [chatMode, setChatMode] = useState<ChatMode>('simple')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -81,94 +71,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>(
-    DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null }))
-  )
+  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>([])
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
-  const [cardMatchState, setCardMatchState] = useState<'idle' | 'hidden' | 'completed'>('idle')
-  const [cardMatchOffset, setCardMatchOffset] = useState(0)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [successFading, setSuccessFading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
-  const prevLectureIdsRef = useRef<string[]>([]) // 이전 강의회차 선택 상태
-  const successFadeTimerRef = useRef<number | null>(null)
-  const successHideTimerRef = useRef<number | null>(null)
-
-  const singleLectureId = selectedLectureIds.length === 1 ? selectedLectureIds[0] : null
-  const { logAttempt } = useCardMatchAttemptLogger(singleLectureId)
-  const { data: cardMatchSet, isLoading: isCardMatchLoading } = useCardMatchSet(singleLectureId)
-  const cardMatchPairs = useMemo(() => {
-    const pairs = cardMatchSet?.pairs ?? []
-    if (pairs.length === 0) return []
-    const total = pairs.length
-    const normalizedOffset = ((cardMatchOffset % total) + total) % total
-    const targetCount = Math.min(6, total)
-    return Array.from({ length: targetCount }, (_, idx) => {
-      return pairs[(normalizedOffset + idx) % total]
-    })
-  }, [cardMatchSet?.pairs, cardMatchOffset])
-
-  const clearSuccessTimers = useCallback(() => {
-    if (successFadeTimerRef.current) {
-      window.clearTimeout(successFadeTimerRef.current)
-      successFadeTimerRef.current = null
-    }
-    if (successHideTimerRef.current) {
-      window.clearTimeout(successHideTimerRef.current)
-      successHideTimerRef.current = null
-    }
-  }, [])
-
-  // 강의회차 선택 시 카드매칭 상태 초기화
-  useEffect(() => {
-    // 강의회차가 선택되지 않은 상태에서 선택된 상태로 변경될 때 로드 상태 초기화
-    if (prevLectureIdsRef.current.length === 0 && selectedLectureIds.length > 0) {
-      setCardMatchState(selectedLectureIds.length === 1 ? 'idle' : 'hidden')
-      setCardMatchOffset(0)
-      setShowSuccess(false)
-      setSuccessFading(false)
-      clearSuccessTimers()
-    }
-    if (selectedLectureIds.length === 0) {
-      setCardMatchState('hidden')
-      setShowSuccess(false)
-      setSuccessFading(false)
-      clearSuccessTimers()
-      setCardMatchOffset(0)
-    }
-    // 강의회차 선택이 변경될 때마다 로드 상태 초기화 (다른 회차 선택 시)
-    else if (prevLectureIdsRef.current.length > 0 && selectedLectureIds.length > 0) {
-      // 선택된 회차가 실제로 변경되었는지 확인
-      const prevIds = prevLectureIdsRef.current.sort().join(',')
-      const currentIds = selectedLectureIds.sort().join(',')
-      if (prevIds !== currentIds) {
-        setCardMatchState(selectedLectureIds.length === 1 ? 'idle' : 'hidden')
-        setShowSuccess(false)
-        setSuccessFading(false)
-        clearSuccessTimers()
-        setCardMatchOffset(0)
-      }
-    }
-    prevLectureIdsRef.current = [...selectedLectureIds]
-  }, [clearSuccessTimers, selectedLectureIds])
-
-  useEffect(() => {
-    return () => {
-      clearSuccessTimers()
-    }
-  }, [clearSuccessTimers])
-
-  useEffect(() => {
-    if (cardMatchState !== 'completed') return
-    if (showSuccess) return
-    if (selectedLectureIds.length !== 1) return
-    if (isInputFocused) return
-    if (input.trim().length > 0) return
-    setCardMatchState('idle')
-  }, [cardMatchState, showSuccess, selectedLectureIds.length, isInputFocused, input])
 
   // 로딩 중 복습 정답 조회 (locale 캐시 스위치)
   useEffect(() => {
@@ -258,7 +166,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         summary_keywords_eng: cachedHooking.summary_keywords_eng || null
       }])
     } else if (cachedHooking === null) {
-      setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
+      setHookingQuestions([])
     }
 
     if (cachedPqm) {
@@ -291,12 +199,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         } else {
           setHookingCache(targetLocale, lectureId, null)
           if (updateState) {
-            setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
+            setHookingQuestions([])
           }
         }
       } else {
         if (updateState) {
-          setHookingQuestions(DEFAULT_HOOKING_QUESTIONS.map(q => ({ question: q, follow_up_question: null })))
+          setHookingQuestions([])
         }
       }
 
@@ -1180,30 +1088,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     )
   }
 
-  const showCardMatchGame = cardMatchState === 'idle' && selectedLectureIds.length === 1
-  const showSuggestions = isInputFocused && !showCardMatchGame && selectedLectureIds.length === 1 && (hookingQuestions.length > 0 || pqmQuestions.length > 0)
+  const showSuggestions = isInputFocused && selectedLectureIds.length === 1 && (hookingQuestions.length > 0 || pqmQuestions.length > 0)
 
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="flex h-full flex-col">
         {/* 중앙 컨텐츠 */}
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-6 max-w-full">
+        <div className="flex flex-1 flex-col items-center justify-center px-8 py-6 max-w-full">
           {/* 중앙 입력창 */}
-          <div className="w-full max-w-[772px] mx-auto">
-            {cardMatchState === 'completed' && showSuccess && (
-              <div className={`mb-6 -mt-3 flex items-center justify-center text-3xl font-bold text-gray-900 transition-opacity duration-500 ${successFading ? 'opacity-0' : 'opacity-100'}`}>
-                SUCCESS
-              </div>
-            )}
+          <div className="w-full max-w-[680px] 2xl:max-w-[820px] mx-auto">
             <ChatComposer
               value={input}
-              onChange={(nextValue) => {
-                setInput(nextValue)
-                if (cardMatchState === 'idle' && nextValue.trim().length > 0) {
-                  setCardMatchState('hidden')
-                }
-              }}
+              onChange={setInput}
               onSubmit={handleSubmit}
               disabled={isLoading}
               placeholder={t('askAnythingPlaceholder')}
@@ -1214,50 +1111,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               deepLabel={t('deepLabel')}
               simpleHelpText={t('simpleHelpText')}
               deepHelpText={t('deepHelpText')}
-              onFocus={() => {
-                setIsInputFocused(true)
-                if (cardMatchState === 'idle') {
-                  setCardMatchState('hidden')
-                }
-              }}
+              onFocus={() => setIsInputFocused(true)}
               onBlur={() => {
-                // 약간의 딜레이를 주어 버튼 클릭이 가능하도록 함
                 setTimeout(() => {
                   setIsInputFocused(false)
-                  if (cardMatchState !== 'completed' && input.trim().length === 0) {
-                    setCardMatchState('idle')
-                  }
                 }, 200)
               }}
             />
           </div>
-          {showCardMatchGame && (
-            <div className="mt-6 flex w-full justify-center">
-              <CardMatchGame
-                pairs={cardMatchPairs}
-                status={cardMatchSet?.status}
-                isLoading={isCardMatchLoading}
-                onAttempt={logAttempt}
-                onComplete={() => {
-                  setCardMatchState('completed')
-                  setCardMatchOffset((prev) => prev + 6)
-                  setShowSuccess(true)
-                  setSuccessFading(false)
-                  clearSuccessTimers()
-                  successFadeTimerRef.current = window.setTimeout(() => {
-                    setSuccessFading(true)
-                  }, 2500)
-                  successHideTimerRef.current = window.setTimeout(() => {
-                    setShowSuccess(false)
-                  }, 3000)
-                }}
-              />
-            </div>
-          )}
 
           {/* 입력창 포커스 시 나타나는 제안 질문 목록 (단일 선택 시에만 표시) */}
           {showSuggestions && (
-          <div className="mt-6 w-full max-w-[772px] space-y-2 animate-fade-in-up">
+          <div className="mt-6 w-full max-w-[680px] 2xl:max-w-[820px] space-y-2 animate-fade-in-up">
               {/* 후킹 질문 (1개) */}
               {hookingQuestions.length > 0 && (
                 <>
@@ -1510,10 +1375,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
       {/* 하단 입력 영역 */}
       <div
-        className="border-t border-gray-200 px-4 pt-3 pb-0"
-        style={{ transform: 'translateY(10px)' }}
+        className="border-t border-gray-200 px-8 pt-3 pb-0"
+        style={{ transform: 'translateY(0px)' }}
       >
-        <div className="mx-auto max-w-[772px]">
+        <div className="mx-auto max-w-[680px] 2xl:max-w-[820px]">
           <ChatComposer
             value={input}
             onChange={setInput}

@@ -107,8 +107,11 @@ export function estimateTermStartDate(lectures: LectureInfo[]): string {
  * @param sessionNo - 차시 번호
  * @returns 포맷된 문자열 (예: "1주차 01차시")
  */
-export function formatWeekAndSession(weekNo: number, sessionNo: number): string {
+export function formatWeekAndSession(weekNo: number, sessionNo: number, locale: string = 'ko'): string {
   const sessionStr = sessionNo.toString().padStart(2, '0');
+  if (locale === 'en') {
+    return `Week ${weekNo}, Session ${sessionStr}`;
+  }
   return `${weekNo}주차 ${sessionStr}차시`;
 }
 

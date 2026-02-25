@@ -7,13 +7,22 @@
     "repeat": "간격반복학습",
     "profile": "프로필"
   },
+  "newNav": {
+    "classes": "수업",
+    "myQuizzes": "내 퀴즈",
+    "games": "게임",
+    "feedback": "피드백"
+  },
   "aiTutorTopbar": {
     "newChat": "새 채팅",
     "chatHistory": "채팅 기록",
+    "chatHistorySearch": "채팅 기록 및 검색",
     "tab": {
       "answer": "답변",
       "notesSources": "수업녹음본 출처",
-      "materialsSources": "강의자료 출처"
+      "materialsSources": "강의자료 출처",
+      "notes": "수업녹음본",
+      "materials": "강의자료"
     }
   },
   "aiTutorChat": {
@@ -217,6 +226,182 @@
     "recordingContent": "녹음본 내용",
     "recordingSourceDisabled": "녹음 출처 표시가 비활성화된 수업입니다"
   },
+  "home": {
+    "title": "내 과목",
+    "greeting": "안녕하세요, {name}님!",
+    "greetingSubtitle": "오늘도 학습을 시작해볼까요?",
+    "greetingDate": "{date}",
+    "empty": "학습 공간에 강의가 등록되면 여기에 표시됩니다",
+    "emptySubtext": "교수님이 강의를 개설하면 자동으로 나타나요",
+    "loadError": "데이터를 불러올 수 없습니다",
+    "retry": "다시 시도",
+    "etcGroup": "기타",
+    "progress": "진행률"
+  },
+  "lectureStudy": {
+    "breadcrumbHome": "홈",
+    "tabLecture": "회차별 학습",
+    "tabMaterial": "강의자료별 학습",
+    "lectureSelect": {
+      "allInactive": "아직 준비된 학습 자료가 없습니다",
+      "empty": "등록된 회차가 없습니다",
+      "noContent": "컨텐츠 없음",
+      "hasRecording": "녹음",
+      "hasMaterial": "자료",
+      "newBadge": "NEW"
+    },
+    "dialogueLearning": "대화형 학습",
+    "weeklyLessons": "주간 수업",
+    "gameCta": {
+      "title": "핵심 개념을 게임으로 마스터하세요!",
+      "description": "각 회차의 핵심 개념을 재미있는 게임으로 쉽고 빠르게 배울 수 있습니다. 지금 도전해 보세요!",
+      "button": "게임 시작하기"
+    },
+    "materialSelect": {
+      "empty": "등록된 강의자료가 없습니다"
+    },
+    "leftPanel": {
+      "materialsTab": "강의자료",
+      "recordingsTab": "녹음본",
+      "materialsEmpty": "강의자료가 없습니다",
+      "materialsPreparing": "자료 준비 중",
+      "recordingsEmpty": "녹음본이 없습니다",
+      "recordingSummaryNull": "요약이 아직 생성되지 않았습니다",
+      "segmentFallback": "구간 {n}",
+      "essenceTitle": "핵심 내용",
+      "statusCompleted": "완료",
+      "statusProcessing": "처리 중"
+    },
+    "rightPanel": {
+      "summaryTab": "요약",
+      "quizTab": "퀴즈",
+      "gameTab": "게임",
+      "aiTutorTab": "AI조교",
+      "placeholder": "준비 중입니다"
+    },
+    "game": {
+      "title": "게임 선택",
+      "running": "달리기 게임",
+      "deck": "덱 (SRS)",
+      "cardMatch": "카드매칭",
+      "definitionBuilder": "정의 조립",
+      "guessTheTerm": "용어 추측",
+      "minWords": "최소 {n}개의 단어가 필요합니다",
+      "wordListTitle": "단어 목록",
+      "startGame": "게임 시작",
+      "importKeywords": "키워드 가져오기",
+      "runningGameNote": "이 게임은 키워드 퀴즈 데이터로 진행됩니다. 단어 목록은 향후 업데이트에서 활용됩니다.",
+      "wordKeywordPlaceholder": "단어",
+      "wordDescriptionPlaceholder": "설명",
+      "importError": "키워드를 가져오지 못했습니다. 수동으로 단어를 추가해주세요.",
+      "loadGameError": "게임을 불러오지 못했습니다",
+      "desc": {
+        "goalLabel": "목표",
+        "controlsLabel": "조작 방법",
+        "playButton": "게임 시작",
+        "running": {
+          "subtitle": "장애물을 뛰어넘고 퀴즈에 답하는 횡스크롤 러닝 게임",
+          "goal": "캐릭터가 자동으로 달립니다. 장애물을 뛰어넘고, 주기적으로 나타나는 퀴즈에 정답을 맞혀 최대한 오래 살아남으세요!",
+          "controlJump": "점프",
+          "controlDuck": "웅크리기 (슬라이드)",
+          "objCoin": "코인",
+          "objCoinDesc": "점수 획득",
+          "objScroll": "퀴즈",
+          "objScrollDesc": "주기적으로 자동 출제",
+          "objHeart": "하트",
+          "objHeartDesc": "HP 회복",
+          "objMeteor": "유성",
+          "objMeteorDesc": "장애물 — 피하세요!"
+        },
+        "deck": {
+          "subtitle": "간격 반복으로 효과적으로 암기하는 플래시카드",
+          "goal": "카드 앞면에 키워드가 표시됩니다. 뜻을 떠올린 후 카드를 뒤집어 확인하고, 난이도를 평가하세요.",
+          "controlFlip": "카드 뒤집기",
+          "controlRate": "암기 평가 (틀렸어요/잘 모르겠어요/알겠어요)",
+          "previewHint": "클릭하여 설명 확인"
+        },
+        "cardMatch": {
+          "subtitle": "키워드와 설명을 짝짓는 매칭 게임",
+          "goal": "격자에 키워드 카드와 설명 카드가 표시됩니다. 두 장씩 선택하여 올바른 키워드-설명 짝을 찾으세요.",
+          "controlSelect": "카드를 클릭하여 선택",
+          "previewHint": "두 장씩 선택하여 짝을 맞추세요"
+        },
+        "definitionBuilder": {
+          "subtitle": "빈칸에 올바른 토큰을 넣어 정의를 완성하세요",
+          "goal": "키워드가 주어지면 정의에 빈칸이 있습니다. 아래 보기에서 올바른 토큰을 선택하여 정의를 완성하세요.",
+          "controlSelect": "보기를 클릭하면 빈칸이 자동으로 채워집니다",
+          "controlPlace": "정답이면 +10점, 오답이면 −10점",
+          "previewHint": "보기에서 올바른 토큰을 선택하세요"
+        },
+        "guessTheTerm": {
+          "subtitle": "AI가 고른 비밀 용어를 추리하는 질문 게임",
+          "goal": "AI가 단어 목록에서 비밀 용어를 하나 고릅니다. 최대 5번의 질문과 4번의 추측 기회가 있습니다. 질문으로 범위를 좁힌 후 정답을 맞혀보세요.",
+          "controlType": "질문 입력",
+          "controlGuess": "용어를 클릭하여 추측",
+          "previewAI": "비밀 용어를 골랐어요!",
+          "previewUser": "생물학 관련인가요?",
+          "previewReply": "네, 맞습니다!",
+          "previewHint": "질문으로 비밀 용어를 추리하세요"
+        }
+      }
+    },
+    "breadcrumb": {
+      "courseLoading": "불러오는 중…",
+      "weekSession": "{week}주차 {session}차시",
+      "weekSessionTitle": "{week}주차 {session}차시 - {title}",
+      "lectureNumber": "회차 {number}",
+      "lectureNumberTitle": "회차 {number} - {title}",
+      "lectureFallback": "회차"
+    },
+    "error": {
+      "loadLectures": "회차 목록을 불러오지 못했습니다",
+      "loadFailed": "데이터를 불러오지 못했습니다. 다시 시도해주세요.",
+      "materialsLoadError": "강의자료를 불러오지 못했습니다"
+    },
+    "quiz": {
+      "typeLabel": {
+        "RECALL": "내용 기억",
+        "STRUCTURE": "구조 이해",
+        "STRUCTURE_OBJ": "구조 이해",
+        "MISCONCEPTION": "오개념 탐지",
+        "DEF_TO_TERM": "정의→용어",
+        "TERM_TO_DEF": "용어→정의"
+      },
+      "format": {
+        "multipleChoice": "5지선다",
+        "shortAnswer": "단답형",
+        "essay": "서술형"
+      },
+      "sectionLabel": {
+        "DEF_TO_TERM": "정의 → 용어 퀴즈",
+        "TERM_TO_DEF": "용어 → 정의 퀴즈",
+        "STRUCTURE_OBJ": "구조 이해 퀴즈 (객관식)",
+        "MISCONCEPTION": "오개념 탐지 퀴즈",
+        "RECALL": "내용 기억 퀴즈 (단답형)",
+        "STRUCTURE": "구조 이해 퀴즈 (서술형)"
+      },
+      "aiGeneratedNotice": "AI가 해당 회차 강의내용에 기반해 생성한 퀴즈입니다.",
+      "loading": "퀴즈를 불러오는 중입니다...",
+      "empty": "아직 생성된 퀴즈가 없습니다.",
+      "itemCount": "{count}문항",
+      "showAnswer": "정답 및 해설 보기",
+      "hideAnswer": "정답 및 해설 접기",
+      "answer": "정답",
+      "explanation": "해설",
+      "choiceAnalysis": "선지별 분석"
+    },
+    "contentsChat": {
+      "errorGenerate": "답변을 생성하지 못했습니다. 다시 시도해주세요.",
+      "errorGeneral": "오류가 발생했습니다. 다시 시도해주세요.",
+      "emptyHint": "강의 내용에 대해\n궁금한 점을 물어보세요",
+      "generating": "답변 생성 중...",
+      "inputPlaceholder": "질문을 입력하세요..."
+    },
+    "buttons": {
+      "startTest": "테스트 시작하기",
+      "share": "공유하기"
+    }
+  },
   "studyspacePlaceholder": {
     "exam": {
       "title": "시험 준비",
@@ -252,7 +437,37 @@
       "fullscreen": "전체화면으로 보기",
       "textDeleteConfirm": "삭제하시겠습니까?",
       "yes": "예",
-      "no": "아니오"
+      "no": "아니오",
+      "prev": "이전",
+      "next": "다음",
+      "fit": "맞춤",
+      "rotate": "회전",
+      "singleColumn": "1열",
+      "splitView": "2분할",
+      "hideTools": "도구숨김",
+      "defaultTool": "기본",
+      "drawTool": "그리기",
+      "eraserTool": "지우개",
+      "textTool": "텍스트",
+      "pen": "펜",
+      "highlighter": "형광펜",
+      "color": "색상",
+      "thickness": "두께",
+      "objectEraser": "개체 지우개",
+      "areaEraser": "영역 지우개",
+      "size": "크기",
+      "textColor": "글자색",
+      "background": "배경",
+      "deleteAria": "삭제",
+      "loadingTitle": "자료를 준비하고 있어요",
+      "loadingSubtitle": "잠시만 기다리면 PDF가 열립니다.",
+      "errorNoUrl": "PDF URL이 제공되지 않았습니다.",
+      "errorInvalidPdf": "PDF 파일이 손상되었거나 지원되지 않는 형식입니다.",
+      "errorMissingPdf": "PDF 파일을 찾을 수 없습니다.",
+      "errorPasswordPdf": "비밀번호가 설정된 PDF는 현재 지원되지 않습니다.",
+      "errorRequestFailed": "PDF 요청이 실패했습니다. (status: {status})",
+      "errorLoadFailed": "PDF를 불러오지 못했습니다. ({message})",
+      "unknownError": "알 수 없는 오류"
     },
     "tabs": {
       "summary": "요약",
@@ -304,6 +519,12 @@
         "focus": {
           "title": "퀴즈가 어떤 부분에 집중할까요?",
           "placeholder": "~와 관련된 부분에 집중해서 만들어줘"
+        },
+        "discardWarning": {
+          "title": "설정을 닫으시겠습니까?",
+          "description": "설정한 내용이 저장되지 않습니다. 저장하려면 확인을 눌러주세요.",
+          "cancel": "계속 설정",
+          "confirm": "닫기"
         }
       },
       "review": {
@@ -355,6 +576,19 @@
           "confirm": "삭제"
         }
       }
+    },
+    "notes": {
+      "placeholder": "노트를 입력하세요.",
+      "singleNote": "단일 노트",
+      "pageNote": "페이지별 노트",
+      "pageLabel": "{page} 페이지",
+      "template": {
+        "h1": { "label": "제목1", "content": "제목" },
+        "h2": { "label": "제목2", "content": "소제목" },
+        "bullet": { "label": "글머리", "content": "항목" },
+        "check": { "label": "체크리스트", "content": "할 일" },
+        "table": { "label": "표", "content": "표(테이블) 템플릿은 준비 중입니다." }
+      }
     }
   },
   "aiTutorReference": {
@@ -374,16 +608,87 @@
     "recordingSegmentLabel": "녹음 구간 #",
     "relevance": "관련도",
     "materialFallback": "강의자료",
-    "page": "페이지"
+    "page": "페이지",
+    "materialAlt": "강의자료 {index}",
+    "materialText": "강의자료 텍스트",
+    "visualDescription": "시각자료 설명"
   },
   "aiTutorFlameTooltip": {
-    "intro": "매 수업일마다 OX 퀴즈와\n매치 카드 게임을 진행하고\n상자를 열어 불꽃을 모으세요!",
+    "intro": "매 수업일마다 달리기 퀴즈와\n매치 카드 게임을 진행하고\n상자를 열어 불꽃을 모으세요!",
     "flame2": "불꽃 5개: 미니게임 기능 업그레이드",
     "flame4": "불꽃 10개: 캐릭터 업그레이드",
     "note": "(더 많은 퀴즈 게임, 벼락치기 모드, 연구 모드 등)"
   },
   "aiTutorSession": {
     "lockedHint": "새 채팅을 시작하면 다른 회차를 선택할 수 있습니다"
+  },
+  "errorReport": {
+    "title": "의견 보내기",
+    "subtitle": "불편하셨던 점이나 개선 아이디어를 알려주시면 적극 반영하겠습니다.",
+    "occurrenceContext": "발생시점",
+    "occurrenceTime": "발생시각",
+    "relatedFile": "관련파일",
+    "content": "내용",
+    "contactInfo": "연락처 정보",
+    "attachment": "첨부 파일",
+    "selectPlaceholder": "선택해주세요",
+    "placeholder": {
+      "filename": "예: 강의자료.pdf",
+      "content": "겪으신 문제나 개선 아이디어를 알려주세요...",
+      "contact": "이메일, 카카오톡 ID 등 회신받으실 연락처"
+    },
+    "hint": {
+      "content": "상황을 파악할 수 있도록 최대한 자세히 적어주시면 감사하겠습니다.",
+      "contact": "필요시 연락드리기 위해 사용됩니다. 문의량에 따라 개별 답변이 어려울 수 있습니다.",
+      "fileSize": "파일당 최대 10MB까지 첨부 가능합니다."
+    },
+    "cancel": "취소",
+    "submit": "의견 보내기",
+    "submitting": "전송 중...",
+    "fileError": {
+      "tooLarge": "파일 크기는 10MB 이하여야 합니다.",
+      "unsupportedType": "지원하지 않는 파일 형식입니다. (이미지, PDF, 문서 파일만 가능)"
+    },
+    "dragOrClick": "파일을 드래그하거나 클릭해서 선택하세요",
+    "attachmentTypes": "스크린샷, 영상 등 참고 자료를 첨부할 수 있습니다.",
+    "prefixCourse": "[과목]",
+    "prefixLecture": "[회차]",
+    "prefixError": "[에러 내용]",
+    "context": {
+      "AI_TUTOR": "AI 튜터",
+      "REVIEW": "복습",
+      "EXAM_PREP": "시험대비",
+      "QUIZ": "퀴즈",
+      "LOGIN": "로그인",
+      "OTHER": "기타"
+    }
+  },
+  "feedbackModal": {
+    "title": "의견 보내기",
+    "category": "발생 항목",
+    "categoryPlaceholder": "항목을 선택해주세요",
+    "occurrenceTime": "발생시각",
+    "contactInfo": "연락처 정보",
+    "contactPlaceholder": "이메일 또는 아이디를 입력하세요",
+    "content": "내용",
+    "contentPlaceholder": "내용을 상세히 입력해주세요 (필수)",
+    "attachment": "첨부 파일",
+    "dragOrClick": "파일을 드래그하여 업로드하거나 클릭하세요",
+    "fileLimit": "최대 20MB 이하의 JPG, PNG, PDF 파일",
+    "cancel": "취소",
+    "submit": "의견 보내기",
+    "submitting": "전송 중...",
+    "fileError": {
+      "tooLarge": "파일 크기는 20MB 이하여야 합니다.",
+      "unsupportedType": "지원하지 않는 파일 형식입니다. (이미지, PDF, 문서 파일만 가능)"
+    },
+    "categoryLabel": {
+      "COURSE": "수업",
+      "LECTURE": "회차",
+      "MATERIAL": "강의자료",
+      "QUIZ": "퀴즈",
+      "GAME": "게임"
+    }
   },
   "loginModal": {
     "loginTitle": "로그인",
@@ -474,7 +779,7 @@
       "복습 마법을 걸고 있어요... ✨"
     ],
     "game": [
-      "OX 퀴즈 문제 섞는 중... 🎲",
+      "퀴즈 문제 섞는 중... 🎲",
       "캐릭터가 준비운동 중... 🏃",
       "게임 시작 준비 중... 🎮",
       "문제를 꺼내는 중... 📝",
@@ -538,14 +843,58 @@
       "passwordNumber": "숫자를 포함해야 합니다",
       "passwordConfirmRequired": "비밀번호 확인을 입력해주세요",
       "passwordMismatch": "비밀번호가 일치하지 않습니다"
+    },
+    "messages": {
+      "profileUpdated": "프로필이 수정되었습니다.",
+      "passwordChanged": "비밀번호가 변경되었습니다.",
+      "accountDeleted": "회원 탈퇴가 완료되었습니다.",
+      "emailResent": "인증 이메일이 재전송되었습니다."
     }
+  },
+  "resetPassword": {
+    "invalidLink": "유효하지 않은 링크",
+    "linkExpired": "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다.",
+    "goToMain": "메인 페이지로 이동",
+    "completed": "비밀번호 변경 완료",
+    "successMessage": "비밀번호가 성공적으로 변경되었습니다.",
+    "redirecting": "잠시 후 로그인 페이지로 이동합니다...",
+    "title": "새 비밀번호 설정",
+    "subtitle": "새로운 비밀번호를 입력하세요",
+    "newPassword": "새 비밀번호",
+    "passwordHint": "영문 대문자, 소문자, 숫자, 특수문자 중 3가지 이상 포함 (최소 8자)",
+    "confirmPassword": "새 비밀번호 확인",
+    "submit": "비밀번호 변경",
+    "loading": "로딩 중...",
+    "validation": {
+      "minLength": "비밀번호는 최소 8자 이상이어야 합니다",
+      "complexity": "영문 대문자, 소문자, 숫자, 특수문자 중 3가지 이상을 포함해야 합니다",
+      "confirmRequired": "비밀번호 확인을 입력해주세요",
+      "mismatch": "비밀번호가 일치하지 않습니다"
+    },
+    "fallback": {
+      "emailSent": "비밀번호 재설정 이메일이 발송되었습니다.",
+      "passwordChanged": "비밀번호가 변경되었습니다.",
+      "error": "오류가 발생했습니다"
+    }
+  },
+  "recordingChunks": {
+    "segment": "구간"
   },
   "errors": {
     "unknown": "알 수 없는 오류가 발생했습니다",
     "cors": "CORS 오류: 백엔드 서버에 접근할 수 없습니다. 서버가 실행 중인지 확인해주세요.",
     "network": "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.",
     "sessionExpired": "세션이 만료되었습니다. 다시 로그인해주세요.",
-    "sessionExpiredRenewed": "세션이 만료되어 갱신되었습니다. 다시 시도해주세요."
+    "sessionExpiredRenewed": "세션이 만료되어 갱신되었습니다. 다시 시도해주세요.",
+    "signup": "회원가입 중 오류가 발생했습니다.",
+    "login": "로그인 중 오류가 발생했습니다.",
+    "general": "오류가 발생했습니다.",
+    "emailNotFound": "이메일 정보가 없습니다.",
+    "codeInvalid": "6자리 인증 코드를 입력해주세요.",
+    "emailResendError": "이메일 재전송 중 오류가 발생했습니다.",
+    "profileUpdate": "프로필 수정 중 오류가 발생했습니다.",
+    "passwordChange": "비밀번호 변경 중 오류가 발생했습니다.",
+    "deleteAccount": "회원 탈퇴 중 오류가 발생했습니다."
   }
 }
 

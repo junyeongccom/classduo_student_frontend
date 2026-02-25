@@ -7,13 +7,22 @@
     "repeat": "Repetition",
     "profile": "Profile"
   },
+  "newNav": {
+    "classes": "Classes",
+    "myQuizzes": "My Quiz",
+    "games": "Game",
+    "feedback": "Feedback"
+  },
   "aiTutorTopbar": {
     "newChat": "New chat",
     "chatHistory": "Chat history",
+    "chatHistorySearch": "Chat history & search",
     "tab": {
       "answer": "Answer",
       "notesSources": "Recording sources",
-      "materialsSources": "Material sources"
+      "materialsSources": "Material sources",
+      "notes": "Recordings",
+      "materials": "Materials"
     }
   },
   "aiTutorChat": {
@@ -217,6 +226,182 @@
     "recordingContent": "Recording content",
     "recordingSourceDisabled": "Recording source display is disabled for this class"
   },
+  "home": {
+    "title": "My Courses",
+    "greeting": "Hello, {name}!",
+    "greetingSubtitle": "Ready to conquer your lessons today?",
+    "greetingDate": "{date}",
+    "empty": "Your courses will appear here once registered",
+    "emptySubtext": "Courses will automatically show up when your professor creates them",
+    "loadError": "Failed to load data",
+    "retry": "Retry",
+    "etcGroup": "Other",
+    "progress": "Progress"
+  },
+  "lectureStudy": {
+    "breadcrumbHome": "Home",
+    "tabLecture": "By Lecture",
+    "tabMaterial": "By Material",
+    "lectureSelect": {
+      "allInactive": "No study materials are available yet",
+      "empty": "No lectures registered",
+      "noContent": "No content",
+      "hasRecording": "Recording",
+      "hasMaterial": "Material",
+      "newBadge": "NEW"
+    },
+    "dialogueLearning": "Dialogue Learning",
+    "weeklyLessons": "Weekly Lessons",
+    "gameCta": {
+      "title": "Master key concepts through game!",
+      "description": "Learn core concepts from each lesson through fun game. Try it now!",
+      "button": "Start Game"
+    },
+    "materialSelect": {
+      "empty": "No materials registered"
+    },
+    "leftPanel": {
+      "materialsTab": "Materials",
+      "recordingsTab": "Recordings",
+      "materialsEmpty": "No materials available",
+      "materialsPreparing": "Preparing materials",
+      "recordingsEmpty": "No recordings available",
+      "recordingSummaryNull": "Summary is not available yet",
+      "segmentFallback": "Segment {n}",
+      "essenceTitle": "Key Points",
+      "statusCompleted": "Completed",
+      "statusProcessing": "Processing"
+    },
+    "rightPanel": {
+      "summaryTab": "Summary",
+      "quizTab": "Quiz",
+      "gameTab": "Game",
+      "aiTutorTab": "AI Tutor",
+      "placeholder": "Coming soon"
+    },
+    "game": {
+      "title": "Choose a Game",
+      "running": "Running Game",
+      "deck": "Deck (SRS)",
+      "cardMatch": "Card Match",
+      "definitionBuilder": "Definition Builder",
+      "guessTheTerm": "Guess the Term",
+      "minWords": "Requires at least {n} words",
+      "wordListTitle": "Word List",
+      "startGame": "Start Game",
+      "importKeywords": "Import Keywords",
+      "runningGameNote": "This game uses keyword quiz data. The word list will be utilized in future updates.",
+      "wordKeywordPlaceholder": "Keyword",
+      "wordDescriptionPlaceholder": "Description",
+      "importError": "Failed to import keywords. Please add words manually.",
+      "loadGameError": "Failed to load game",
+      "desc": {
+        "goalLabel": "Goal",
+        "controlsLabel": "Controls",
+        "playButton": "Start Game",
+        "running": {
+          "subtitle": "A side-scrolling runner — jump obstacles and answer quizzes",
+          "goal": "Your character runs automatically. Jump over obstacles and answer quizzes that appear periodically. Survive as long as you can!",
+          "controlJump": "Jump",
+          "controlDuck": "Duck (slide)",
+          "objCoin": "Coin",
+          "objCoinDesc": "Earn points",
+          "objScroll": "Quiz",
+          "objScrollDesc": "Appears periodically",
+          "objHeart": "Heart",
+          "objHeartDesc": "Restores HP",
+          "objMeteor": "Meteor",
+          "objMeteorDesc": "Obstacle — dodge it!"
+        },
+        "deck": {
+          "subtitle": "Flashcards with spaced repetition for effective memorization",
+          "goal": "See a keyword on the front of the card. Try to recall its meaning, then flip to check. Rate how well you knew it.",
+          "controlFlip": "Flip card",
+          "controlRate": "Rate recall (Bad / Okay / Good)",
+          "previewHint": "Click to reveal description"
+        },
+        "cardMatch": {
+          "subtitle": "Matching game pairing keywords with descriptions",
+          "goal": "Keyword and description cards are displayed in a grid. Select two cards at a time to find matching keyword-description pairs.",
+          "controlSelect": "Click a card to select",
+          "previewHint": "Select two cards at a time to find pairs"
+        },
+        "definitionBuilder": {
+          "subtitle": "Fill in the blanks with correct tokens to complete definitions",
+          "goal": "Given a keyword, its definition has missing tokens. Select the correct tokens from the choices below to complete it.",
+          "controlSelect": "Click a choice to auto-fill the blank",
+          "controlPlace": "Correct +10 pts, wrong −10 pts",
+          "previewHint": "Select the correct token from the choices"
+        },
+        "guessTheTerm": {
+          "subtitle": "Deduce the AI's secret term by asking yes/no questions",
+          "goal": "The AI picks a secret term from your word list. You have up to 5 questions and 4 guess attempts. Narrow it down with questions, then pick the answer.",
+          "controlType": "Type your questions",
+          "controlGuess": "Click a term to guess",
+          "previewAI": "I picked a secret term!",
+          "previewUser": "Is it biology-related?",
+          "previewReply": "Yes, it is!",
+          "previewHint": "Ask questions to deduce the secret term"
+        }
+      }
+    },
+    "breadcrumb": {
+      "courseLoading": "Loading…",
+      "weekSession": "Week {week}, Session {session}",
+      "weekSessionTitle": "Week {week}, Session {session} - {title}",
+      "lectureNumber": "Lecture {number}",
+      "lectureNumberTitle": "Lecture {number} - {title}",
+      "lectureFallback": "Lecture"
+    },
+    "error": {
+      "loadLectures": "Failed to load lectures",
+      "loadFailed": "Failed to load data. Please try again.",
+      "materialsLoadError": "Failed to load materials"
+    },
+    "quiz": {
+      "typeLabel": {
+        "RECALL": "Content Recall",
+        "STRUCTURE": "Structure Understanding",
+        "STRUCTURE_OBJ": "Structure Understanding",
+        "MISCONCEPTION": "Misconception Detection",
+        "DEF_TO_TERM": "Definition→Term",
+        "TERM_TO_DEF": "Term→Definition"
+      },
+      "format": {
+        "multipleChoice": "Multiple Choice",
+        "shortAnswer": "Short Answer",
+        "essay": "Essay"
+      },
+      "sectionLabel": {
+        "DEF_TO_TERM": "Definition → Term Quiz",
+        "TERM_TO_DEF": "Term → Definition Quiz",
+        "STRUCTURE_OBJ": "Structure Understanding Quiz (Multiple Choice)",
+        "MISCONCEPTION": "Misconception Detection Quiz",
+        "RECALL": "Content Recall Quiz (Short Answer)",
+        "STRUCTURE": "Structure Understanding Quiz (Essay)"
+      },
+      "aiGeneratedNotice": "These quizzes were generated by AI based on this lecture's content.",
+      "loading": "Loading quizzes...",
+      "empty": "No quizzes available yet.",
+      "itemCount": "{count} questions",
+      "showAnswer": "Show answer & explanation",
+      "hideAnswer": "Hide answer & explanation",
+      "answer": "Answer",
+      "explanation": "Explanation",
+      "choiceAnalysis": "Choice analysis"
+    },
+    "contentsChat": {
+      "errorGenerate": "Failed to generate a response. Please try again.",
+      "errorGeneral": "An error occurred. Please try again.",
+      "emptyHint": "Ask anything about\nthe lecture content",
+      "generating": "Generating response...",
+      "inputPlaceholder": "Type your question..."
+    },
+    "buttons": {
+      "startTest": "Start Test",
+      "share": "Share"
+    }
+  },
   "studyspacePlaceholder": {
     "exam": {
       "title": "Exam Prep",
@@ -252,7 +437,37 @@
       "fullscreen": "View fullscreen",
       "textDeleteConfirm": "Delete this text box?",
       "yes": "Yes",
-      "no": "No"
+      "no": "No",
+      "prev": "Prev",
+      "next": "Next",
+      "fit": "Fit",
+      "rotate": "Rotate",
+      "singleColumn": "1 Col",
+      "splitView": "2 Split",
+      "hideTools": "Hide Tools",
+      "defaultTool": "Default",
+      "drawTool": "Draw",
+      "eraserTool": "Eraser",
+      "textTool": "Text",
+      "pen": "Pen",
+      "highlighter": "Highlighter",
+      "color": "Color",
+      "thickness": "Thickness",
+      "objectEraser": "Object Eraser",
+      "areaEraser": "Area Eraser",
+      "size": "Size",
+      "textColor": "Text Color",
+      "background": "Background",
+      "deleteAria": "Delete",
+      "loadingTitle": "Preparing your materials",
+      "loadingSubtitle": "Your PDF will open shortly.",
+      "errorNoUrl": "PDF URL was not provided.",
+      "errorInvalidPdf": "The PDF file is corrupted or in an unsupported format.",
+      "errorMissingPdf": "PDF file not found.",
+      "errorPasswordPdf": "Password-protected PDFs are not currently supported.",
+      "errorRequestFailed": "PDF request failed. (status: {status})",
+      "errorLoadFailed": "Failed to load PDF. ({message})",
+      "unknownError": "Unknown error"
     },
     "tabs": {
       "summary": "Summary",
@@ -304,6 +519,12 @@
         "focus": {
           "title": "What should the quiz focus on?",
           "placeholder": "Please focus on the parts related to ~"
+        },
+        "discardWarning": {
+          "title": "Close settings?",
+          "description": "Your changes will not be saved. Press confirm in the settings to save.",
+          "cancel": "Keep editing",
+          "confirm": "Close"
         }
       },
       "review": {
@@ -355,6 +576,19 @@
           "confirm": "Delete"
         }
       }
+    },
+    "notes": {
+      "placeholder": "Type your notes here.",
+      "singleNote": "Single Note",
+      "pageNote": "Page Notes",
+      "pageLabel": "Page {page}",
+      "template": {
+        "h1": { "label": "Heading 1", "content": "Heading" },
+        "h2": { "label": "Heading 2", "content": "Subheading" },
+        "bullet": { "label": "Bullet", "content": "Item" },
+        "check": { "label": "Checklist", "content": "To do" },
+        "table": { "label": "Table", "content": "Table template is coming soon." }
+      }
     }
   },
   "aiTutorReference": {
@@ -374,16 +608,87 @@
     "recordingSegmentLabel": "Recording segment #",
     "relevance": "Relevance",
     "materialFallback": "Material",
-    "page": "Page"
+    "page": "Page",
+    "materialAlt": "Material {index}",
+    "materialText": "Material Text",
+    "visualDescription": "Visual Description"
   },
   "aiTutorFlameTooltip": {
-    "intro": "For each class session, solve OX quiz and card match game, then open the box to collect flames!",
+    "intro": "For each class session, solve running game quizzes and card match game, then open the box to collect flames!",
     "flame2": "5 flames: Upgrade mini-game",
     "flame4": "10 flames: Upgrade character",
     "note": "(More quiz games, cramming mode, research mode, etc.)"
   },
   "aiTutorSession": {
     "lockedHint": "Start a new chat to select different sessions"
+  },
+  "errorReport": {
+    "title": "Send Feedback",
+    "subtitle": "Please share any issues or improvement ideas and we'll actively work on them.",
+    "occurrenceContext": "Context",
+    "occurrenceTime": "Time of occurrence",
+    "relatedFile": "Related file",
+    "content": "Details",
+    "contactInfo": "Contact info",
+    "attachment": "Attachment",
+    "selectPlaceholder": "Select",
+    "placeholder": {
+      "filename": "e.g., lecture_material.pdf",
+      "content": "Tell us about any issues or improvement ideas...",
+      "contact": "Email, KakaoTalk ID, or other contact info for reply"
+    },
+    "hint": {
+      "content": "Please provide as much detail as possible so we can understand the situation.",
+      "contact": "Used to contact you if needed. Individual responses may not be possible depending on volume.",
+      "fileSize": "Maximum 10MB per file."
+    },
+    "cancel": "Cancel",
+    "submit": "Send Feedback",
+    "submitting": "Sending...",
+    "fileError": {
+      "tooLarge": "File size must be 10MB or less.",
+      "unsupportedType": "Unsupported file type. (Images, PDF, and documents only)"
+    },
+    "dragOrClick": "Drag and drop or click to select a file",
+    "attachmentTypes": "You can attach screenshots, videos, and other reference materials.",
+    "prefixCourse": "[Course]",
+    "prefixLecture": "[Session]",
+    "prefixError": "[Error details]",
+    "context": {
+      "AI_TUTOR": "AI Tutor",
+      "REVIEW": "Review",
+      "EXAM_PREP": "Exam Prep",
+      "QUIZ": "Quiz",
+      "LOGIN": "Login",
+      "OTHER": "Other"
+    }
+  },
+  "feedbackModal": {
+    "title": "Send Feedback",
+    "category": "Category",
+    "categoryPlaceholder": "Select a category",
+    "occurrenceTime": "Occurrence Time",
+    "contactInfo": "Contact Info",
+    "contactPlaceholder": "Enter your email or ID",
+    "content": "Content",
+    "contentPlaceholder": "Please enter details (required)",
+    "attachment": "Attachment",
+    "dragOrClick": "Drag & drop a file or click to upload",
+    "fileLimit": "JPG, PNG, PDF up to 20MB",
+    "cancel": "Cancel",
+    "submit": "Send Feedback",
+    "submitting": "Submitting...",
+    "fileError": {
+      "tooLarge": "File size must be 20MB or less.",
+      "unsupportedType": "Unsupported file type. (Images, PDF, documents only)"
+    },
+    "categoryLabel": {
+      "COURSE": "Course",
+      "LECTURE": "Session",
+      "MATERIAL": "Materials",
+      "QUIZ": "Quiz",
+      "GAME": "Game"
+    }
   },
   "loginModal": {
     "loginTitle": "Log in",
@@ -474,7 +779,7 @@
       "Casting review magic... ✨"
     ],
     "game": [
-      "Shuffling OX quiz questions... 🎲",
+      "Shuffling quiz questions... 🎲",
       "Character is warming up... 🏃",
       "Preparing to start game... 🎮",
       "Getting questions ready... 📝",
@@ -538,14 +843,58 @@
       "passwordNumber": "Must include numbers",
       "passwordConfirmRequired": "Please confirm your password",
       "passwordMismatch": "Passwords do not match"
+    },
+    "messages": {
+      "profileUpdated": "Profile has been updated.",
+      "passwordChanged": "Password has been changed.",
+      "accountDeleted": "Account has been deleted.",
+      "emailResent": "Verification email has been resent."
     }
+  },
+  "resetPassword": {
+    "invalidLink": "Invalid Link",
+    "linkExpired": "The password reset link has expired or is invalid.",
+    "goToMain": "Go to Main Page",
+    "completed": "Password Changed",
+    "successMessage": "Your password has been changed successfully.",
+    "redirecting": "Redirecting to login page shortly...",
+    "title": "Set New Password",
+    "subtitle": "Enter your new password",
+    "newPassword": "New password",
+    "passwordHint": "Must include at least 3 of: uppercase, lowercase, numbers, special characters (min. 8 chars)",
+    "confirmPassword": "Confirm new password",
+    "submit": "Change Password",
+    "loading": "Loading...",
+    "validation": {
+      "minLength": "Password must be at least 8 characters",
+      "complexity": "Must include at least 3 of: uppercase, lowercase, numbers, special characters",
+      "confirmRequired": "Please confirm your password",
+      "mismatch": "Passwords do not match"
+    },
+    "fallback": {
+      "emailSent": "Password reset email has been sent.",
+      "passwordChanged": "Password has been changed.",
+      "error": "An error occurred"
+    }
+  },
+  "recordingChunks": {
+    "segment": "Segment"
   },
   "errors": {
     "unknown": "An unknown error occurred",
     "cors": "CORS error: Cannot access backend server. Please check if the server is running.",
     "network": "Network error occurred. Please check your internet connection.",
     "sessionExpired": "Session has expired. Please log in again.",
-    "sessionExpiredRenewed": "Session expired and has been renewed. Please try again."
+    "sessionExpiredRenewed": "Session expired and has been renewed. Please try again.",
+    "signup": "An error occurred during sign up.",
+    "login": "An error occurred during login.",
+    "general": "An error occurred.",
+    "emailNotFound": "Email information not found.",
+    "codeInvalid": "Please enter the 6-digit verification code.",
+    "emailResendError": "An error occurred while resending the email.",
+    "profileUpdate": "An error occurred while updating profile.",
+    "passwordChange": "An error occurred while changing password.",
+    "deleteAccount": "An error occurred while deleting account."
   }
 }
 

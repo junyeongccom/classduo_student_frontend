@@ -23,22 +23,35 @@ import {
 } from '../../hooks'
 import { examPrepService } from '../../services/examPrepService'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { isUUID } from '@/shared/lib/validation'
 import { gradeQuizAnswer } from '../../domain/gradeQuiz'
 
-const DEFAULT_LEFT_WIDTH = 620
-const MIN_LEFT_WIDTH = 400
-const MIN_RIGHT_WIDTH = 340
-const SIDEBAR_WIDTH = 140
+const DEFAULT_LEFT_WIDTH = 500
+const MIN_LEFT_WIDTH = 320
+const MIN_RIGHT_WIDTH = 300
+const SIDEBAR_WIDTH = 64
 const RESIZER_WIDTH = 1
 
-export function ExamPrepContainer() {
+interface ExamPrepContainerProps {
+  /** 외부에서 주입하는 courseId. 전달 시 과목 선택 드롭다운을 숨김 */
+  courseId?: string
+  /** 외부에서 주입하는 materialId. 전달 시 해당 자료 자동 선택 */
+  materialId?: string
+}
+
+export function ExamPrepContainer({ courseId: propCourseId, materialId: propMaterialId }: ExamPrepContainerProps) {
   const t = useTranslations('examPrep')
   const locale = useLocale()
   const language = locale === 'en' ? 'en' : 'ko'
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  
+
+  /** prop으로 courseId가 주입되면 과목 드롭다운을 숨긴다 */
+  const isCourseFixed = !!propCourseId
+  /** prop으로 materialId가 주입되면 자료 드롭다운을 숨긴다 */
+  const isMaterialFixed = !!propMaterialId
+
   const [activeTab, setActiveTab] = useState<ExamPrepTab>('summary')
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH)
   const [isResizing, setIsResizing] = useState(false)
@@ -54,16 +67,31 @@ export function ExamPrepContainer() {
   }, [activeTab])
 
   const { courses, isLoading: coursesLoading, error: coursesError, refresh: refreshCourses } = useExamPrepCourses()
-  
-  // URL에서 초기값 읽기
-  const initialCourseId = searchParams.get('courseId')
-  const initialMaterialId = searchParams.get('materialId')
-  
+
+  // prop 우선, 없으면 URL에서 초기값 읽기 (UUID 형식 검증)
+  const rawCourseId = propCourseId ?? searchParams.get('courseId')
+  const rawMaterialId = propMaterialId ?? searchParams.get('materialId')
+  const initialCourseId = rawCourseId && isUUID(rawCourseId) ? rawCourseId : null
+  const initialMaterialId = rawMaterialId && isUUID(rawMaterialId) ? rawMaterialId : null
+
   const [selectedCourseId, setSelectedCourseIdState] = useState<string | null>(initialCourseId)
   const { materials: materialsList, isLoading: materialsLoading, refresh: refreshMaterials } = useExamPrepMaterials(selectedCourseId)
   const materials = useMemo<ExamPrepMaterial[]>(() => materialsList, [materialsList])
   const [selectedMaterialId, setSelectedMaterialIdState] = useState<string | null>(initialMaterialId)
-  
+
+  // prop 변경 시 state 동기화
+  useEffect(() => {
+    if (propCourseId) {
+      setSelectedCourseIdState(propCourseId)
+    }
+  }, [propCourseId])
+
+  useEffect(() => {
+    if (propMaterialId) {
+      setSelectedMaterialIdState(propMaterialId)
+    }
+  }, [propMaterialId])
+
   // URL 파라미터 업데이트 함수
   const updateUrlParams = useCallback((courseId: string | null, materialId: string | null) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -614,53 +642,60 @@ export function ExamPrepContainer() {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="px-6 pt-6">
-        <div className="relative w-full pb-4 -mt-2 pt-10">
-          <div
-            className="absolute"
-            style={{
-              left: 'var(--exam-course-left, 0px)',
-              top: 'var(--exam-course-top, 0px)',
-            }}
-          >
-            <div className="w-[220px]">
-              <ExamPrepSelect
-                value={selectedCourseId}
-                placeholder={t('materials.courseSelectPlaceholder')}
-                options={courses.map(course => ({
-                  value: course.id,
-                  label: `${course.title}${course.professorName ? `(${course.professorName})` : ''}`,
-                }))}
-                onChange={value => setSelectedCourseId(value)}
-                isLoading={coursesLoading}
-                errorLabel={coursesError ?? undefined}
-                emptyLabel="강의가 없습니다"
-              />
-            </div>
-          </div>
-          <div
-            className="absolute"
-            style={{
-              left: 'var(--exam-material-left, 260px)',
-              top: 'var(--exam-material-top, 0px)',
-            }}
-          >
-            <div className="w-[280px]">
-              <ExamPrepSelect
-                value={selectedMaterialId}
-                placeholder={t('materials.materialSelectPlaceholder')}
-                options={materials.map(material => ({
-                  value: material.id,
-                  label: material.title,
-                }))}
-                onChange={value => setSelectedMaterialId(value)}
-                isLoading={materialsLoading}
-                emptyLabel={selectedCourseId ? '자료가 없습니다' : '수업을 먼저 선택하세요'}
-              />
-            </div>
+      {/* 과목/자료 드롭다운: 둘 다 외부 주입이면 전체 숨김 */}
+      {!(isCourseFixed && isMaterialFixed) && (
+        <div className="px-6 pt-6">
+          <div className="relative w-full pb-4 -mt-2 pt-10">
+            {!isCourseFixed && (
+              <div
+                className="absolute"
+                style={{
+                  left: 'var(--exam-course-left, 0px)',
+                  top: 'var(--exam-course-top, 0px)',
+                }}
+              >
+                <div className="w-[220px]">
+                  <ExamPrepSelect
+                    value={selectedCourseId}
+                    placeholder={t('materials.courseSelectPlaceholder')}
+                    options={courses.map(course => ({
+                      value: course.id,
+                      label: `${course.title}${course.professorName ? `(${course.professorName})` : ''}`,
+                    }))}
+                    onChange={value => setSelectedCourseId(value)}
+                    isLoading={coursesLoading}
+                    errorLabel={coursesError ?? undefined}
+                    emptyLabel="강의가 없습니다"
+                  />
+                </div>
+              </div>
+            )}
+            {!isMaterialFixed && (
+              <div
+                className="absolute"
+                style={{
+                  left: isCourseFixed ? 'var(--exam-course-left, 0px)' : 'var(--exam-material-left, 260px)',
+                  top: 'var(--exam-material-top, 0px)',
+                }}
+              >
+                <div className="w-[280px]">
+                  <ExamPrepSelect
+                    value={selectedMaterialId}
+                    placeholder={t('materials.materialSelectPlaceholder')}
+                    options={materials.map(material => ({
+                      value: material.id,
+                      label: material.title,
+                    }))}
+                    onChange={value => setSelectedMaterialId(value)}
+                    isLoading={materialsLoading}
+                    emptyLabel={selectedCourseId ? '자료가 없습니다' : '수업을 먼저 선택하세요'}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
       <div ref={containerRef} className="flex-1 min-h-1 w-full border-b border-gray-200 pb-4">
         <ExamPrepLayout
         title={t('title')}

@@ -57,7 +57,7 @@ export function ExamPrepQuizPanelContainer({
       'contentRecall',
       'structureUnderstanding',
     ],
-    difficulty: null,
+    difficulty: 'normal',
     questionCount: 10,
     focusHint: '',
   })

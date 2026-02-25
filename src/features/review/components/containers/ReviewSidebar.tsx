@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { ChevronDown, BookOpen, Calendar } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useLectureList } from '@/features/review/hooks/useReview'
 import { type LectureListItem } from '@/features/review/services/reviewService'
 import {
@@ -44,12 +44,10 @@ interface ReviewSidebarProps {
   onCourseIdChange?: (courseId: string | null) => void // 강의 ID 변경 콜백
 }
 
-// 데이터베이스에서 오는 "분석 중" 상태 값 (하드코딩된 한국어 문자열)
-const ANALYZING_STATUS = '분석 중'
-
 export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseIdChange }: ReviewSidebarProps) {
   const t = useTranslations('review')
   const tFlame = useTranslations('aiTutorFlameTooltip')
+  const locale = useLocale()
   const { courses, isLoading: isLoadingCourses, error: coursesError } = useReviewCourses()
   const { gameProgress, flameCount, claimedRewards, claimReward } = useGameStatus()
   const userId = useAuthStore(state => state.user?.user_id ?? null)
@@ -110,9 +108,9 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
         lectureInfos,
         lecture.lecture_id
       )
-      return formatWeekAndSession(result.weekNo, result.sessionNo)
+      return formatWeekAndSession(result.weekNo, result.sessionNo, locale)
     }
-  }, [lectureList, termStartDate])
+  }, [lectureList, termStartDate, locale])
 
   useEffect(() => {
     if (!isSharedHydrated) return
@@ -247,9 +245,9 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
   }
 
   // 회차 선택
-  const handleSelectLecture = (lectureId: string, essence7words: string | null) => {
-    // "분석 중" 상태인 경우 클릭 불가 (데이터베이스 값은 하드코딩된 한국어 "분석 중")
-    if (essence7words === ANALYZING_STATUS || !essence7words) {
+  const handleSelectLecture = (lectureId: string, isAvailable: boolean) => {
+    // 컨텐츠 파이프라인이 완료되지 않은 경우 클릭 불가
+    if (!isAvailable) {
       return
     }
     const nextLectureId = lectureId === selectedLectureId ? null : lectureId
@@ -274,7 +272,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
 
     const allLectures = lectureList.lectures || []
     const availableLectures = allLectures.filter(
-      (lecture) => lecture.essence_7words && lecture.essence_7words !== ANALYZING_STATUS
+      (lecture) => lecture.is_available
     )
 
     if (availableLectures.length === 0) {
@@ -494,7 +492,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
             ) : (
               lectureList.lectures.map(lecture => {
                 const isSelected = selectedLectureId === lecture.lecture_id
-                const isAnalyzing = lecture.essence_7words === ANALYZING_STATUS || !lecture.essence_7words
+                const isAnalyzing = !lecture.is_available
                 const progress = gameProgress[lecture.lecture_id] || 0
                 
                 return (
@@ -503,7 +501,7 @@ export function ReviewSidebar({ selectedLectureId, onSelectLectureId, onCourseId
                       lectureButtonRefs.current[lecture.lecture_id] = el
                     }}
                     key={lecture.lecture_id}
-                    onClick={() => handleSelectLecture(lecture.lecture_id, lecture.essence_7words)}
+                    onClick={() => handleSelectLecture(lecture.lecture_id, lecture.is_available)}
                     disabled={isAnalyzing}
                     className={`flex w-full flex-col rounded-lg px-3 py-2.5 text-left transition-all border ${
                       isAnalyzing

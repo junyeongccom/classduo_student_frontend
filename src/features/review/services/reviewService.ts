@@ -3,6 +3,7 @@
  */
 import { apiRequest } from '@/shared/lib/api'
 import { API_ENDPOINTS } from '@/shared/constants/api'
+import { isUUID } from '@/shared/lib/validation'
 import type {
   CreateLectureReviewItemRequest,
   CreateLectureReviewItemResponse,
@@ -26,6 +27,8 @@ export interface LectureListItem {
   lecture_date: string
   start_time: string | null
   essence_7words: string | null
+  is_available: boolean  // AI 튜터/스마트복습 사용 가능 여부 (content_pipeline_status == pipeline_completed)
+  content_pipeline_status: string  // 컨텐츠 파이프라인 상태
 }
 
 export interface LectureListResponse {
@@ -172,11 +175,15 @@ export const reviewService = {
       auth: true,
     }),
 
-  getDefinitionBuilderGame: (lectureId: string) =>
-    apiRequest<DefinitionBuilderGameResponse>(API_ENDPOINTS.REVIEW.GET_DEFINITION_BUILDER(lectureId), {
+  getDefinitionBuilderGame: (lectureId: string) => {
+    if (!isUUID(lectureId)) {
+      return Promise.resolve({ data: null, error: { message: 'Invalid ID', code: 'INVALID_ID' } })
+    }
+    return apiRequest<DefinitionBuilderGameResponse>(API_ENDPOINTS.REVIEW.GET_DEFINITION_BUILDER(lectureId), {
       method: 'GET',
       auth: true,
-    }),
+    })
+  },
 
   guessTheTermChat: (lectureId: string, request: GuessTheTermChatRequest) =>
     apiRequest<GuessTheTermChatResponse>(API_ENDPOINTS.REVIEW.GUESS_THE_TERM_CHAT(lectureId), {
@@ -222,10 +229,14 @@ export const reviewService = {
    * 강의 회차별 추천 키워드(lecture_keywords) 조회 (미리보기용)
    * - recording 도메인의 조회 API를 사용합니다.
    */
-  getLectureKeywordsPreview: (lectureId: string) =>
-    apiRequest<RecordingLectureKeywordsResponse>(API_ENDPOINTS.RECORDING.GET_LECTURE_KEYWORDS(lectureId), {
+  getLectureKeywordsPreview: (lectureId: string) => {
+    if (!isUUID(lectureId)) {
+      return Promise.resolve({ data: null, error: { message: 'Invalid ID', code: 'INVALID_ID' } })
+    }
+    return apiRequest<RecordingLectureKeywordsResponse>(API_ENDPOINTS.RECORDING.GET_LECTURE_KEYWORDS(lectureId), {
       method: 'GET',
       auth: true,
-    }),
+    })
+  },
 }
 

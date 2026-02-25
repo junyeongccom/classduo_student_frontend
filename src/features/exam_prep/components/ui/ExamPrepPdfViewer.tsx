@@ -66,6 +66,7 @@ export function ExamPrepPdfViewer({
   onPageChange,
   hideToolbars = false,
 }: ExamPrepPdfViewerProps) {
+  const t = useTranslations("examPrep.pdf")
   const containerRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<Record<number, HTMLDivElement | null>>({})
@@ -74,7 +75,7 @@ export function ExamPrepPdfViewer({
   const [containerWidth, setContainerWidth] = useState(0)
   const [pdfDoc, setPdfDoc] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null)
   const [pageCount, setPageCount] = useState(0)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<{ key: string; params?: Record<string, string> } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [internalPage, setInternalPage] = useState(1)
@@ -133,7 +134,7 @@ export function ExamPrepPdfViewer({
     const loadPdf = async () => {
       if (!url || url.trim() === '') {
         if (isMounted) {
-          setLoadError('PDF URL이 제공되지 않았습니다.')
+          setLoadError({ key: 'errorNoUrl' })
           setIsLoading(false)
         }
         return
@@ -166,7 +167,7 @@ export function ExamPrepPdfViewer({
                 : null
 
         const derivedMessage = (() => {
-          if (error instanceof Error) return error.message || error.name || '알 수 없는 오류'
+          if (error instanceof Error) return error.message || error.name || t("unknownError")
           if (errMessage) return errName ? `${errName}: ${errMessage}` : errMessage
           if (errName) return errName
           if (typeof error === 'string') return error
@@ -181,15 +182,15 @@ export function ExamPrepPdfViewer({
           return String(error)
         })()
 
-        const userFriendly = (() => {
-          if (errName === 'InvalidPDFException') return 'PDF 파일이 손상되었거나 지원되지 않는 형식입니다.'
-          if (errName === 'MissingPDFException') return 'PDF 파일을 찾을 수 없습니다.'
-          if (errName === 'PasswordException') return '비밀번호가 설정된 PDF는 현재 지원되지 않습니다.'
-          if (errName === 'UnexpectedResponseException' && errStatus) return `PDF 요청이 실패했습니다. (status: ${String(errStatus)})`
-          return `PDF를 불러오지 못했습니다. (${derivedMessage})`
+        const loadErrorInfo = ((): { key: string; params?: Record<string, string> } => {
+          if (errName === 'InvalidPDFException') return { key: 'errorInvalidPdf' }
+          if (errName === 'MissingPDFException') return { key: 'errorMissingPdf' }
+          if (errName === 'PasswordException') return { key: 'errorPasswordPdf' }
+          if (errName === 'UnexpectedResponseException' && errStatus) return { key: 'errorRequestFailed', params: { status: String(errStatus) } }
+          return { key: 'errorLoadFailed', params: { message: derivedMessage } }
         })()
 
-        setLoadError(userFriendly)
+        setLoadError(loadErrorInfo)
 
         const errorInfo: Record<string, unknown> = {
           url: url || 'undefined',
@@ -358,7 +359,7 @@ export function ExamPrepPdfViewer({
             disabled={activePage <= 1}
             className="rounded border border-gray-700 px-2 py-1 disabled:opacity-40"
           >
-            이전
+            {t("prev")}
           </button>
           <span>
             {activePage}/{pageCount || 1}
@@ -369,7 +370,7 @@ export function ExamPrepPdfViewer({
             disabled={activePage >= pageCount}
             className="rounded border border-gray-700 px-2 py-1 disabled:opacity-40"
           >
-            다음
+            {t("next")}
           </button>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -406,28 +407,28 @@ export function ExamPrepPdfViewer({
             onClick={handleFitToWidth}
             className="rounded border border-gray-700 px-2 py-1"
           >
-            맞춤
+            {t("fit")}
           </button>
           <button
             type="button"
             onClick={() => setRotation(prev => (prev + 90) % 360)}
             className="rounded border border-gray-700 px-2 py-1"
           >
-            회전
+            {t("rotate")}
           </button>
           <button
             type="button"
             onClick={() => setIsSpreadView(prev => !prev)}
             className="rounded border border-gray-700 px-2 py-1"
           >
-            {isSpreadView ? "1열" : "2분할"}
+            {isSpreadView ? t("singleColumn") : t("splitView")}
           </button>
           <button
             type="button"
             onClick={() => setIsToolbarHidden(prev => !prev)}
             className="rounded border border-gray-700 px-2 py-1"
           >
-            도구숨김
+            {t("hideTools")}
           </button>
         </div>
       </div>
@@ -439,28 +440,28 @@ export function ExamPrepPdfViewer({
             onClick={() => setTool("none")}
             className={`rounded border px-2 py-1 ${tool === "none" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white"}`}
           >
-            기본
+            {t("defaultTool")}
           </button>
           <button
             type="button"
             onClick={() => setTool("draw")}
             className={`rounded border px-2 py-1 ${tool === "draw" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white"}`}
           >
-            그리기
+            {t("drawTool")}
           </button>
           <button
             type="button"
             onClick={() => setTool("erase")}
             className={`rounded border px-2 py-1 ${tool === "erase" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white"}`}
           >
-            지우개
+            {t("eraserTool")}
           </button>
           <button
             type="button"
             onClick={() => setTool("text")}
             className={`rounded border px-2 py-1 ${tool === "text" ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 bg-white"}`}
           >
-            텍스트
+            {t("textTool")}
           </button>
           {tool === "draw" && (
             <>
@@ -469,11 +470,11 @@ export function ExamPrepPdfViewer({
                 onChange={event => setPenKind(event.target.value as "pen" | "highlighter")}
                 className="rounded border border-gray-200 bg-white px-2 py-1"
               >
-                <option value="pen">펜</option>
-                <option value="highlighter">형광펜</option>
+                <option value="pen">{t("pen")}</option>
+                <option value="highlighter">{t("highlighter")}</option>
               </select>
               <label className="flex items-center gap-2">
-                색상
+                {t("color")}
                 <input
                   type="color"
                   value={penColor}
@@ -481,7 +482,7 @@ export function ExamPrepPdfViewer({
                 />
               </label>
               <label className="flex items-center gap-2">
-                두께
+                {t("thickness")}
                 <input
                   type="range"
                   min={1}
@@ -499,11 +500,11 @@ export function ExamPrepPdfViewer({
                 onChange={event => setEraserMode(event.target.value as "object" | "area")}
                 className="rounded border border-gray-200 bg-white px-2 py-1"
               >
-                <option value="object">개체 지우개</option>
-                <option value="area">영역 지우개</option>
+                <option value="object">{t("objectEraser")}</option>
+                <option value="area">{t("areaEraser")}</option>
               </select>
               <label className="flex items-center gap-2">
-                크기
+                {t("size")}
                 <input
                   type="range"
                   min={2}
@@ -518,7 +519,7 @@ export function ExamPrepPdfViewer({
           {tool === "text" && (
             <>
               <label className="flex items-center gap-2">
-                글자색
+                {t("textColor")}
                 <input
                   type="color"
                   value={textColor}
@@ -526,7 +527,7 @@ export function ExamPrepPdfViewer({
                 />
               </label>
               <label className="flex items-center gap-2">
-                배경
+                {t("background")}
                 <input
                   type="color"
                   value={textBgColor}
@@ -552,7 +553,7 @@ export function ExamPrepPdfViewer({
         <div className={isSpreadView ? "grid grid-cols-2 gap-0 px-0 py-0" : "flex flex-col gap-0 px-0 py-0"}>
           {loadError ? (
             <div className="flex h-[420px] items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white text-sm text-gray-400">
-              {loadError}
+              {t(loadError.key, loadError.params)}
             </div>
           ) : isLoading ? (
             <div className="flex min-h-[420px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-gray-200 bg-white px-6 py-8 text-center">
@@ -565,8 +566,8 @@ export function ExamPrepPdfViewer({
                 playsInline
               />
               <div className="space-y-1 text-sm text-gray-600">
-                <p className="font-medium text-gray-700">자료를 준비하고 있어요</p>
-                <p className="text-xs text-gray-500">잠시만 기다리면 PDF가 열립니다.</p>
+                <p className="font-medium text-gray-700">{t("loadingTitle")}</p>
+                <p className="text-xs text-gray-500">{t("loadingSubtitle")}</p>
               </div>
             </div>
           ) : (
@@ -1704,7 +1705,7 @@ const TextLayer = ({
                       return next
                     })
                   }}
-                  aria-label="삭제"
+                  aria-label={t("deleteAria")}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
