@@ -1,6 +1,6 @@
 /**
  * @file useLectureStudyStore.ts
- * @description 회차별 학습 상태 저장소 (courseId → lectureId → 탭/패널 상태)
+ * @description 회차별 학습 상태 저장소 (courseId → lectureId → 탭/패널 상태 + 네비게이션)
  * @module features/lecture-study/store
  * @dependencies zustand
  */
@@ -25,6 +25,10 @@ interface LectureStudyState {
   leftPanelWidth: number | null
   chatPanelWidth: number | null
   gameWords: WordItem[]
+  /** 출처 클릭 시 강의자료 스크롤 타겟 (0-indexed 배열 인덱스) */
+  targetPage: number | null
+  /** 출처 클릭 시 녹음본 청크 이동 타겟 (합산 인덱스, 0-indexed) */
+  targetChunkIndex: number | null
 }
 
 interface LectureStudyActions {
@@ -37,6 +41,9 @@ interface LectureStudyActions {
   setLeftPanelWidth: (width: number) => void
   setChatPanelWidth: (width: number) => void
   setGameWords: (words: WordItem[]) => void
+  setTargetPage: (page: number | null) => void
+  setTargetChunkIndex: (index: number | null) => void
+  resetNavigationState: () => void
   reset: () => void
 }
 
@@ -50,6 +57,8 @@ const initialState: LectureStudyState = {
   leftPanelWidth: null,
   chatPanelWidth: null,
   gameWords: [],
+  targetPage: null,
+  targetChunkIndex: null,
 }
 
 export const useLectureStudyStore = create<LectureStudyState & LectureStudyActions>()(
@@ -65,16 +74,27 @@ export const useLectureStudyStore = create<LectureStudyState & LectureStudyActio
       setLeftPanelWidth: (leftPanelWidth) => set({ leftPanelWidth }),
       setChatPanelWidth: (chatPanelWidth) => set({ chatPanelWidth }),
       setGameWords: (gameWords) => set({ gameWords }),
+      setTargetPage: (targetPage) => set({ targetPage }),
+      setTargetChunkIndex: (targetChunkIndex) => set({ targetChunkIndex }),
+      resetNavigationState: () => set({ targetPage: null, targetChunkIndex: null }),
       reset: () => set(initialState),
     }),
     {
       name: 'lecture-study-state',
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
-        if (version < 4) {
+        if (version < 5) {
           const old = persisted as Record<string, unknown>
-          const { leftTab: _leftTab, ...rest } = old
-          return { ...initialState, ...rest, isLeftPanelOpen: false, isChatPanelOpen: false, chatPanelWidth: null }
+          const { leftTab: _leftTab, targetPage: _tp, targetChunkIndex: _tc, ...rest } = old
+          return {
+            ...initialState,
+            ...rest,
+            isLeftPanelOpen: false,
+            isChatPanelOpen: false,
+            chatPanelWidth: null,
+            targetPage: null,
+            targetChunkIndex: null,
+          }
         }
         return persisted as LectureStudyState & LectureStudyActions
       },
