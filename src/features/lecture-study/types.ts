@@ -53,3 +53,27 @@ export interface GameInfo {
   minWords: number
   icon: string
 }
+
+/** lecture_content_summaries 요약 섹션 (통합 요약) */
+export interface ContentSummarySection {
+  title: string
+  bullets: string[]
+  tables?: ContentSummaryTable[]
+  source_pages: number[]
+  source_chunks: number[]
+}
+
+/** 요약 섹션 내 테이블 */
+export interface ContentSummaryTable {
+  title?: string | null
+  headers: string[]
+  rows: string[][]
+}
+
+/** lecture_content_summaries 통합 요약 */
+export interface ContentSummary {
+  overview: string
+  sections: ContentSummarySection[]
+  recent_issues?: string[]
+  exam_points?: string[]
+}
