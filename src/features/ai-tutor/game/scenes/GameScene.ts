@@ -886,9 +886,9 @@ export class GameScene extends Phaser.Scene {
     switch (type) {
       case "magnet":         return this.scoreCardPickCount >= ACTIVE_UNLOCK_STACKS;
       case "giant":          return Math.abs(this.hpDecayStacks) >= ACTIVE_UNLOCK_STACKS;
-      case "coinRain":       return Math.abs(this.speedRewardStacks) >= ACTIVE_UNLOCK_STACKS;
-      case "multiJumpScore": return Math.abs(this.jumpCountRewardStacks) >= ACTIVE_UNLOCK_STACKS;
-      case "skyTreasure":    return Math.abs(this.jumpRewardStacks) >= ACTIVE_UNLOCK_STACKS;
+      case "coinRain":       return Math.abs(this.speedStacks) >= ACTIVE_UNLOCK_STACKS;
+      case "multiJumpScore": return Math.abs(this.jumpCountStacks) >= ACTIVE_UNLOCK_STACKS;
+      case "skyTreasure":    return Math.abs(this.jumpStacks) >= ACTIVE_UNLOCK_STACKS;
     }
   }
 
@@ -902,18 +902,18 @@ export class GameScene extends Phaser.Scene {
   private applyActiveAbilityDown(type: ActiveAbilityType): void {
     const state = this.activeAbilities[type];
     if (state.stacks > 0) {
-      // Reduce level by 1
+      // Reduce active level by 1
       const oldStacks = state.stacks;
       state.stacks--;
       this.handleAbilityStackChange(type, oldStacks);
     } else {
-      // Already at 0 — reduce unlock tracker by 1 (may re-lock the ability)
+      // Already at 0 — reduce the associated passive by 1 (may re-lock if passive drops to 2)
       switch (type) {
         case "magnet":         this.scoreCardPickCount = Math.max(0, this.scoreCardPickCount - 1); break;
         case "giant":          this.hpDecayStacks > 0 ? this.hpDecayStacks-- : this.hpDecayStacks++; break;
-        case "coinRain":       this.speedRewardStacks > 0 ? this.speedRewardStacks-- : this.speedRewardStacks++; break;
-        case "multiJumpScore": this.jumpCountRewardStacks > 0 ? this.jumpCountRewardStacks-- : this.jumpCountRewardStacks++; break;
-        case "skyTreasure":    this.jumpRewardStacks > 0 ? this.jumpRewardStacks-- : this.jumpRewardStacks++; break;
+        case "coinRain":       this.applySpeedDown(); break;
+        case "multiJumpScore": this.applyJumpCountDown(); break;
+        case "skyTreasure":    this.applyJumpDown(); break;
       }
     }
   }
