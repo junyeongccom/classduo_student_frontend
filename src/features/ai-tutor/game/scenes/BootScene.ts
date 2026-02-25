@@ -21,6 +21,7 @@ import {
   SCROLL_COLORS,
   COLOR_HP_HEART,
   COLOR_HP_HEART_SHINE,
+  BIG_COIN_SIZE,
 } from "../constants";
 
 export class BootScene extends Phaser.Scene {
@@ -39,6 +40,7 @@ export class BootScene extends Phaser.Scene {
     this.createPlayerTexture();
     this.createGroundTileTexture();
     this.createCoinTexture();
+    this.createBigCoinTexture();
     this.createMeteorTexture();
     this.createMountainTextures();
     this.createHeartTexture();
@@ -521,6 +523,68 @@ export class BootScene extends Phaser.Scene {
         g.fillCircle(glowSize / 2, glowSize / 2, (glowSize / 2) * t);
       }
       g.generateTexture("coinGlow", glowSize, glowSize);
+      g.destroy();
+    }
+  }
+
+  private createBigCoinTexture(): void {
+    const size = BIG_COIN_SIZE;
+    const COLOR_BIG_COIN = 0xf5c842;   // bright gold-yellow
+
+    const widths = [1.0, 0.7, 0.3, 0.7];
+    for (let frame = 0; frame < 4; frame++) {
+      const g = this.add.graphics();
+      const scaleX = widths[frame];
+      const cx = size / 2;
+      const cy = size / 2;
+      const rx = (size / 2 - 1 * S) * scaleX;
+      const ry = size / 2 - 1 * S;
+
+      // Outer
+      g.fillStyle(COLOR_BIG_COIN);
+      g.fillEllipse(cx, cy, rx * 2, ry * 2);
+
+      // Inner ring
+      g.fillStyle(0xd4a017, 0.4);
+      g.fillEllipse(cx, cy, rx * 1.4, ry * 1.4);
+
+      // Star in center
+      if (scaleX > 0.5) {
+        g.fillStyle(0xfff176, 0.8);
+        const starR = ry * 0.35;
+        g.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+          const innerAngle = angle + Math.PI / 5;
+          const ox = cx + Math.cos(angle) * starR * scaleX;
+          const oy = cy + Math.sin(angle) * starR;
+          const ix = cx + Math.cos(innerAngle) * starR * 0.4 * scaleX;
+          const iy = cy + Math.sin(innerAngle) * starR * 0.4;
+          if (i === 0) g.moveTo(ox, oy);
+          else g.lineTo(ox, oy);
+          g.lineTo(ix, iy);
+        }
+        g.closePath();
+        g.fillPath();
+      }
+
+      // Border
+      g.lineStyle(1.5 * S, 0xd4a017);
+      g.strokeEllipse(cx, cy, rx * 2, ry * 2);
+
+      // Highlight
+      if (scaleX > 0.4) {
+        g.fillStyle(0xfff176, 0.5);
+        g.fillEllipse(cx - rx * 0.2, cy - ry * 0.2, rx * 0.5, ry * 0.5);
+      }
+
+      // Shadow arc
+      g.lineStyle(1 * S, 0xb8860b, 0.3);
+      g.beginPath();
+      g.arc(cx + rx * 0.1, cy + ry * 0.1, ry * 0.7, 0.3, Math.PI * 0.8, false);
+      g.strokePath();
+
+      g.generateTexture(`bigCoin_f${frame}`, size, size);
       g.destroy();
     }
   }

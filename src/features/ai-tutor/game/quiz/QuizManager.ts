@@ -3,6 +3,8 @@ import { QuizQuestion, ChoiceType, ActiveAbilityType } from "./quizTypes";
 import { QuizPanelUI } from "./QuizPanelUI";
 import { RewardCardUI } from "./RewardCardUI";
 import { QuizAnswerUI } from "./QuizAnswerUI";
+import { BuffDebuffManager } from "../systems/BuffDebuffManager";
+import { ActiveAbilityManager } from "../systems/ActiveAbilityManager";
 import {
   QUIZ_RESULT_MS,
   SCORE_BONUS,
@@ -18,26 +20,12 @@ export type GameState =
   | "game_over";
 
 export interface QuizCallbacks {
+  buffDebuff: BuffDebuffManager;
+  activeAbility: ActiveAbilityManager;
   getScrollSpeed: () => number;
-  applySpeedUp: () => void;
-  applySpeedDown: () => void;
-  applyJumpUp: () => void;
-  applyJumpDown: () => void;
-  applyJumpCountUp: () => void;
-  applyJumpCountDown: () => void;
+  getScoreTier: () => number;
   isJumpCountMaxed: () => boolean;
   isJumpCountAtMin: () => boolean;
-  applyHeartBoostUp: () => void;
-  applyHeartBoostDown: () => void;
-  applyHpDecayDown: () => void;
-  applyHpDecayUp: () => void;
-  isActiveUnlocked: (type: ActiveAbilityType) => boolean;
-  applyMagnetUp: () => void;
-  applyMagnetDown: () => void;
-  applyGiantUp: () => void;
-  applyGiantDown: () => void;
-  applyCoinRainUp: () => void;
-  applyCoinRainDown: () => void;
   setGameState: (state: GameState) => void;
   addScore: (amount: number) => void;
   showEffect: (text: string, color: string) => void;
@@ -98,7 +86,10 @@ export class QuizManager {
     this.panelUI = new QuizPanelUI(scene, this.locale);
     this.rewardCardUI = new RewardCardUI(scene, this.locale, {
       isJumpCountMaxed: callbacks.isJumpCountMaxed,
-      isActiveUnlocked: callbacks.isActiveUnlocked,
+      isActiveUnlocked: (type: ActiveAbilityType) => callbacks.activeAbility.isActiveUnlocked(type),
+      getActiveLevel: (type: ActiveAbilityType) => callbacks.activeAbility.getActiveLevel(type),
+      isPassiveHidden: (passiveType: string) => callbacks.buffDebuff.isPassiveHiddenByActive(passiveType),
+      isPassiveMaxed: (passiveType: string) => callbacks.buffDebuff.isPassiveAtMax(passiveType),
     });
     this.rewardCardUI.onSelect = (type) => {
       this.pendingRewardType = type;
@@ -268,6 +259,7 @@ export class QuizManager {
     this.callbacks.onRewardSelect?.(isCorrect);
     this.scene.physics.resume();
 
+    const { buffDebuff, activeAbility } = this.callbacks;
     const prefix = isCorrect ? this.t.correct : this.t.wrong;
     const color = isCorrect ? "#2ecc71" : "#e74c3c";
     let effectLabel = "";
@@ -275,82 +267,113 @@ export class QuizManager {
     switch (type) {
       case "speed":
         if (isCorrect) {
-          this.callbacks.applySpeedUp();
+          buffDebuff.applySpeedUp(); buffDebuff.speedRewardStacks++;
           effectLabel = prefix + "SPEED UP!";
         } else {
-          this.callbacks.applySpeedDown();
+          buffDebuff.applySpeedDown(); buffDebuff.speedRewardStacks--;
           effectLabel = prefix + "SPEED DOWN!";
         }
         break;
       case "jump":
         if (isCorrect) {
-          this.callbacks.applyJumpUp();
+          buffDebuff.applyJumpUp(); buffDebuff.jumpRewardStacks++;
           effectLabel = prefix + "JUMP UP!";
         } else {
-          this.callbacks.applyJumpDown();
+          buffDebuff.applyJumpDown(); buffDebuff.jumpRewardStacks--;
           effectLabel = prefix + "JUMP DOWN!";
         }
         break;
       case "jumpCount":
         if (isCorrect) {
-          this.callbacks.applyJumpCountUp();
+          buffDebuff.applyJumpCountUp(); buffDebuff.jumpCountRewardStacks++;
           effectLabel = prefix + "JUMP COUNT UP!";
         } else if (this.callbacks.isJumpCountAtMin()) {
           effectLabel = this.t.wrongNoEffect;
         } else {
-          this.callbacks.applyJumpCountDown();
+          buffDebuff.applyJumpCountDown(); buffDebuff.jumpCountRewardStacks--;
           effectLabel = prefix + "JUMP COUNT DOWN!";
         }
         break;
       case "score": {
-        const amount = isCorrect ? SCORE_BONUS : -SCORE_BONUS;
+        const tier = Math.min(this.callbacks.getScoreTier(), SCORE_BONUS.length - 1);
+        const bonus = SCORE_BONUS[tier];
+        if (isCorrect) {
+          this.callbacks.addScore(bonus);
+          buffDebuff.applyScorePassiveUp();
+        } else {
+          this.callbacks.addScore(-bonus);
+          buffDebuff.applyScorePassiveDown();
+        }
+        effectLabel = prefix + this.t.points(isCorrect ? bonus : -bonus);
+        break;
+      }
+      case "scoreFallback": {
+        const amount = isCorrect ? 30 : -30;
         this.callbacks.addScore(amount);
         effectLabel = prefix + this.t.points(amount);
         break;
       }
       case "heartBoost":
         if (isCorrect) {
-          this.callbacks.applyHeartBoostUp();
+          buffDebuff.applyHeartBoostUp();
           effectLabel = prefix + "HEART UP!";
         } else {
-          this.callbacks.applyHeartBoostDown();
+          buffDebuff.applyHeartBoostDown();
           effectLabel = prefix + "HEART DOWN!";
         }
         break;
       case "hpDecay":
         if (isCorrect) {
-          this.callbacks.applyHpDecayDown();
+          buffDebuff.applyHpDecayDown();
           effectLabel = prefix + "DECAY SLOW!";
         } else {
-          this.callbacks.applyHpDecayUp();
+          buffDebuff.applyHpDecayUp();
           effectLabel = prefix + "DECAY FAST!";
         }
         break;
       case "magnet":
         if (isCorrect) {
-          this.callbacks.applyMagnetUp();
+          activeAbility.applyActiveAbilityUp("magnet");
           effectLabel = prefix + "MAGNET!";
         } else {
-          this.callbacks.applyMagnetDown();
+          activeAbility.applyActiveAbilityDown("magnet");
           effectLabel = prefix + "REPEL!";
         }
         break;
       case "giant":
         if (isCorrect) {
-          this.callbacks.applyGiantUp();
+          activeAbility.applyActiveAbilityUp("giant");
           effectLabel = prefix + "GIANT!";
         } else {
-          this.callbacks.applyGiantDown();
+          activeAbility.applyActiveAbilityDown("giant");
           effectLabel = prefix + "SHRINK!";
         }
         break;
       case "coinRain":
         if (isCorrect) {
-          this.callbacks.applyCoinRainUp();
+          activeAbility.applyActiveAbilityUp("coinRain");
           effectLabel = prefix + "COIN RAIN!";
         } else {
-          this.callbacks.applyCoinRainDown();
+          activeAbility.applyActiveAbilityDown("coinRain");
           effectLabel = prefix + "METEOR STORM!";
+        }
+        break;
+      case "multiJumpScore":
+        if (isCorrect) {
+          activeAbility.applyActiveAbilityUp("multiJumpScore");
+          effectLabel = prefix + "MULTI JUMP!";
+        } else {
+          activeAbility.applyActiveAbilityDown("multiJumpScore");
+          effectLabel = prefix + "JUMP PENALTY!";
+        }
+        break;
+      case "skyTreasure":
+        if (isCorrect) {
+          activeAbility.applyActiveAbilityUp("skyTreasure");
+          effectLabel = prefix + "SKY TREASURE!";
+        } else {
+          activeAbility.applyActiveAbilityDown("skyTreasure");
+          effectLabel = prefix + "SKY METEOR!";
         }
         break;
     }

@@ -5,69 +5,34 @@ import {
   GAME_HEIGHT,
   FONT_FAMILY,
 } from "../constants";
-import { HowToPlayModal } from "./HowToPlayModal";
+
 
 // ── i18n ──
 
 interface MenuStrings {
   title: string;
   startGame: string;
-  howToPlay: string;
   dashboard: string;
   settings: string;
   locked: string;
-  howToPlayTitle: string;
-  controls: string;
-  controlJump: string;
-  controlSlide: string;
-  rules: string;
-  ruleCoins: string;
-  ruleQuiz: string;
-  ruleHp: string;
-  close: string;
 }
 
 const STRINGS: Record<"ko" | "en", MenuStrings> = {
   ko: {
     title: "Quiz Runner",
     startGame: "게임 시작",
-    howToPlay: "게임 설명",
     dashboard: "대시보드",
     settings: "게임 설정",
     locked: "준비 중",
-    howToPlayTitle: "게임 설명",
-    controls: "조작법",
-    controlJump: "Space / 클릭  →  점프 (더블 점프 가능)",
-    controlSlide: "↓ 키  →  슬라이드",
-    rules: "규칙",
-    ruleCoins: "코인을 모아 점수를 올리세요",
-    ruleQuiz: "퀴즈 아이템을 모으면 보상/패널티 획득",
-    ruleHp: "HP가 0이 되거나 낭떠러지에 빠지면 게임 오버",
-    close: "닫기",
   },
   en: {
     title: "Quiz Runner",
     startGame: "Start Game",
-    howToPlay: "How to Play",
     dashboard: "Dashboard",
     settings: "Settings",
     locked: "Coming Soon",
-    howToPlayTitle: "How to Play",
-    controls: "Controls",
-    controlJump: "Space / Click  →  Jump (double jump available)",
-    controlSlide: "↓ Key  →  Slide",
-    rules: "Rules",
-    ruleCoins: "Collect coins to increase your score",
-    ruleQuiz: "Collect quiz items for rewards or penalties",
-    ruleHp: "Game over when HP reaches 0 or you fall off",
-    close: "Close",
   },
 };
-
-function detectLanguage(): "ko" | "en" {
-  const lang = navigator.language || "en";
-  return lang.startsWith("ko") ? "ko" : "en";
-}
 
 // ── Scene ──
 
@@ -79,7 +44,8 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.t = STRINGS[detectLanguage()];
+    const loc = this.game.registry.get("locale") as string | undefined;
+    this.t = STRINGS[loc === "en" ? "en" : "ko"];
 
     this.createBackground();
     this.createTitle();
@@ -184,11 +150,6 @@ export class MainMenuScene extends Phaser.Scene {
         label: this.t.startGame,
         enabled: true,
         action: () => this.scene.start("GameScene"),
-      },
-      {
-        label: this.t.howToPlay,
-        enabled: true,
-        action: () => this.showHowToPlay(),
       },
       {
         label: this.t.dashboard,
@@ -346,9 +307,4 @@ export class MainMenuScene extends Phaser.Scene {
     return container;
   }
 
-  // ── How to Play overlay ──
-
-  private showHowToPlay(): void {
-    new HowToPlayModal(this, this.t).show();
-  }
 }

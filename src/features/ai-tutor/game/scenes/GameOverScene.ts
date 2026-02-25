@@ -22,11 +22,6 @@ const STRINGS: Record<"ko" | "en", GameOverStrings> = {
   },
 };
 
-function detectLanguage(): "ko" | "en" {
-  const lang = navigator.language || "en";
-  return lang.startsWith("ko") ? "ko" : "en";
-}
-
 // ── Scene ──
 
 export class GameOverScene extends Phaser.Scene {
@@ -48,7 +43,8 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.t = STRINGS[detectLanguage()];
+    const loc = this.game.registry.get("locale") as string | undefined;
+    this.t = STRINGS[loc === "en" ? "en" : "ko"];
 
     this.createBackground();
     this.createTitle();

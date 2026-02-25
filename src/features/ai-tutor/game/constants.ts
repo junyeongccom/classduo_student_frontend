@@ -114,8 +114,8 @@ export const SPEED_MULT_MAX = 2.5;
 export const JUMP_MULT_MIN = 0.4;
 export const JUMP_MULT_MAX = 2.5;
 export const JUMP_COUNT_MIN = 1;
-export const JUMP_COUNT_MAX = 4;
-export const SCORE_BONUS = 30;
+export const JUMP_COUNT_MAX = 7;
+export const SCORE_BONUS = [100, 150, 200, 250, 300];
 export const EFFECT_DISPLAY_MS = 1500;
 
 // Heart restore stack-based (multiplier = base ^ stacks)
@@ -266,16 +266,17 @@ export const SCORE_LERP_SPEED = 200;
 export const MAGNET_COOLDOWN_MS = 18000;
 export const MAGNET_DURATION_MS = 5000;
 //                                                            Lv0    Lv1       Lv2       Lv3
-export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 200 * S, 350 * S, 550 * S];
-export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 200 * S, 350 * S, 550 * S];
-export const MAGNET_RANGE = GAME_WIDTH * 0.6;
+export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 400 * S, 400 * S, 400 * S];
+export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 400 * S, 400 * S, 400 * S];
+//                                                    Lv0    Lv1              Lv2              Lv3
+export const MAGNET_RANGE: [number, number, number, number] = [0, GAME_WIDTH * 0.10, GAME_WIDTH * 0.25, GAME_WIDTH];
 
 // Giant — player scale change + meteor destroy
 export const GIANT_COOLDOWN_MS = 22000;
 export const GIANT_DURATION_MS = 4000;
 export const GIANT_BUFF_SCALE:   [number, number, number, number] = [1, 1.5, 1.8, 2.0];
 export const GIANT_DEBUFF_SCALE: [number, number, number, number] = [1, 0.7, 0.5, 0.4];
-export const GIANT_METEOR_SCORE: [number, number, number, number] = [0, 0, 0, 5];
+export const GIANT_METEOR_SCORE: [number, number, number, number] = [0, 50, 100, 200];
 
 // Coin Rain — spawns coins (buff) or extra meteors (debuff)
 export const COIN_RAIN_COOLDOWN_MS = 18000;
@@ -283,7 +284,24 @@ export const COIN_RAIN_DURATION_MS = 5000;
 export const COIN_RAIN_SPAWN_MS:   [number, number, number, number] = [0, 250, 170, 100];
 export const METEOR_RAIN_SPAWN_MS: [number, number, number, number] = [0, 500, 300, 180];
 
+// Multi Jump Score (멀티점프 보너스) — jumpCount passive → active
+export const MULTI_JUMP_COOLDOWN_MS = 15000;
+export const MULTI_JUMP_DURATION_MS = 8000;
+export const MULTI_JUMP_SCORE_BUFF:  [number, number, number, number] = [0, 1, 2, 3];
+export const MULTI_JUMP_HP_PENALTY:  [number, number, number, number] = [0, 500, 1000, 1500];
+
+// Sky Treasure (하늘 보물) — jump passive → active
+export const SKY_TREASURE_COOLDOWN_MS = 20000;
+export const SKY_TREASURE_DURATION_MS = 6000;
+export const SKY_TREASURE_SPAWN_MS:        [number, number, number, number] = [0, 800, 500, 300];
+export const SKY_TREASURE_DEBUFF_SPAWN_MS: [number, number, number, number] = [0, 600, 400, 250];
+export const SKY_TREASURE_SPAWN_Y = 160 * S;
+export const BIG_COIN_SIZE = 32 * S;
+export const BIG_COIN_VALUE = 10;
+export const SMALL_HEART_RESTORE = 4000;
+
 // Active unlock thresholds
 export const ACTIVE_UNLOCK_SCORE = 30;
-export const ACTIVE_UNLOCK_STACKS = 3;
+export const ACTIVE_UNLOCK_STACKS = 5;
 export const ACTIVE_MAX_LEVEL = 3;
+export const PASSIVE_STACK_MIN = -1;

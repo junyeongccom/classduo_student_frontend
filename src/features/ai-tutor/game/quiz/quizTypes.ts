@@ -4,13 +4,14 @@ export interface QuizQuestion {
   wrongAnswers: string[];
 }
 
-export type ActiveAbilityType = "magnet" | "giant" | "coinRain";
+export type ActiveAbilityType = "magnet" | "giant" | "coinRain" | "multiJumpScore" | "skyTreasure";
 
 export type ChoiceType =
   | "speed"
   | "jump"
   | "jumpCount"
   | "score"
+  | "scoreFallback"
   | "heartBoost"
   | "hpDecay"
   | ActiveAbilityType;
