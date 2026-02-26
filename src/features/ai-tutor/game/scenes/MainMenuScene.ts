@@ -22,14 +22,14 @@ const STRINGS: Record<"ko" | "en", MenuStrings> = {
     title: "Quiz Runner",
     startGame: "게임 시작",
     leaderboard: "리더보드",
-    settings: "게임 설정",
+    settings: "닉네임 변경",
     locked: "준비 중",
   },
   en: {
     title: "Quiz Runner",
     startGame: "Start Game",
     leaderboard: "Leaderboard",
-    settings: "Settings",
+    settings: "Nickname",
     locked: "Coming Soon",
   },
 };

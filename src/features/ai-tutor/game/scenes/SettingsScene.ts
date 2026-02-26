@@ -16,7 +16,7 @@ interface SettingsStrings {
 
 const STRINGS: Record<"ko" | "en", SettingsStrings> = {
   ko: {
-    title: "게임 설정",
+    title: "닉네임 변경",
     nicknameLabel: "닉네임",
     nicknamePlaceholder: "닉네임 입력 (최대 20자)",
     save: "저장",
@@ -26,7 +26,7 @@ const STRINGS: Record<"ko" | "en", SettingsStrings> = {
     error: "저장 실패",
   },
   en: {
-    title: "Settings",
+    title: "Nickname",
     nicknameLabel: "Nickname",
     nicknamePlaceholder: "Enter nickname (max 20 chars)",
     save: "Save",
