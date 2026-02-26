@@ -112,7 +112,7 @@ export interface GameSubmissionResponse {
 
 export interface ScoreRankingEntry {
   rank: number
-  user_id: string
+  is_mine: boolean
   display_name: string | null
   score: number
   achieved_at: string
@@ -120,7 +120,7 @@ export interface ScoreRankingEntry {
 
 export interface MatchingRankingEntry {
   rank: number
-  user_id: string
+  is_mine: boolean
   display_name: string | null
   elapsed_ms: number
   pair_count: number

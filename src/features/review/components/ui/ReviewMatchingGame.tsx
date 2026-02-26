@@ -68,7 +68,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
   const [rankings, setRankings] = useState<MatchingRankingEntry[]>([])
   const [rankingsLoading, setRankingsLoading] = useState(false)
   const [rankingsError, setRankingsError] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  // currentUserId는 더 이상 사용하지 않음 (is_mine 플래그로 대체)
   const [activePairCount, setActivePairCount] = useState<number | null>(null)
   const pairCountTabs = useMemo(() => {
     const tabs: number[] = []
@@ -197,10 +197,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
         const { data: rankData } = await reviewService.getMatchingGameRankings(lectureId, pairCount, 10)
         if (!cancelled && rankData) {
           setRankings(rankData.rankings)
-          if (rankData.my_best) {
-            const me = rankData.rankings.find(r => r.rank === rankData.my_best!.rank && r.elapsed_ms === rankData.my_best!.elapsed_ms)
-            if (me) setCurrentUserId(me.user_id)
-          }
+          // is_mine 플래그가 백엔드에서 설정됨 — 별도 추출 불필요
         }
       } catch {
         if (!cancelled) setRankingsError(t('ranking.loadError'))
@@ -301,7 +298,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
           <GameRankingBoard
             rankings={rankings}
             myRank={submissionRank}
-            currentUserId={currentUserId}
+            currentUserId={null}
             isLoading={rankingsLoading}
             error={rankingsError}
             mode="time"

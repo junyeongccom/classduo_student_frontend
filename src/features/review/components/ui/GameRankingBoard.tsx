@@ -12,7 +12,8 @@ import type { ScoreRankingEntry, MatchingRankingEntry } from '@/features/review/
 interface GameRankingBoardProps {
   rankings: (ScoreRankingEntry | MatchingRankingEntry)[]
   myRank: number | null
-  currentUserId: string | null
+  /** @deprecated is_mine 플래그로 대체. 하위호환을 위해 유지 */
+  currentUserId?: string | null
   isLoading: boolean
   error: string | null
   mode: 'score' | 'time'
@@ -102,10 +103,10 @@ export function GameRankingBoard({
             </thead>
             <tbody>
               {rankings.map(entry => {
-                const isMe = currentUserId != null && entry.user_id === currentUserId
+                const isMe = entry.is_mine
                 return (
                   <tr
-                    key={`${entry.user_id}-${entry.rank}`}
+                    key={`${entry.rank}`}
                     className={`border-b border-slate-50 ${isMe ? 'bg-indigo-50/60 font-semibold' : ''}`}
                   >
                     <td className="px-3 py-2 text-slate-700">{entry.rank}</td>
