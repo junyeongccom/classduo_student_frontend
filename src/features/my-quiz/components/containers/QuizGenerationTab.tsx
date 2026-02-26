@@ -63,6 +63,7 @@ export default function QuizGenerationTab({
     setSelectedSessionId(null)
     setShowCreateForm(false)
     setError(null)
+    setPollingTimedOut(false)
     fetchSessions()
   }, [fetchSessions])
 
@@ -208,7 +209,7 @@ export default function QuizGenerationTab({
     <div className="relative flex h-full flex-col">
       {/* Toast messages */}
       {toasts.length > 0 && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
           {toasts.map(toast => (
             <div key={toast.id} className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white shadow-lg">
               {toast.message}

@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
+import { useToast } from '@/shared/hooks/useToast'
 import * as myQuizService from '../../services/myQuizService'
 import * as statusService from '../../services/myQuizStatusService'
 import { TYPE_ORDER } from '../../types'
@@ -30,6 +31,7 @@ export default function SessionDetailView({
 }: SessionDetailViewProps) {
   const t = useTranslations('myQuiz')
   const tQuiz = useTranslations('lectureStudy.quiz')
+  const { toasts, error: showErrorToast } = useToast()
 
   const [quizzes, setQuizzes] = useState<QuizItem[]>([])
   const [statusMap, setStatusMap] = useState<Map<string, QuizStatusEntry>>(new Map())
@@ -91,6 +93,7 @@ export default function SessionDetailView({
 
       const result = await statusService.toggleBookmark('customize', quizId, lectureId, newBookmark)
       if (result.error) {
+        showErrorToast(t('error.bookmarkFailed'))
         setStatusMap(prev => {
           const next = new Map(prev)
           if (current) next.set(key, current)
@@ -99,7 +102,7 @@ export default function SessionDetailView({
         })
       }
     },
-    [statusMap, lectureId],
+    [statusMap, lectureId, showErrorToast, t],
   )
 
   const handleCorrectUpdate = useCallback(
@@ -121,6 +124,7 @@ export default function SessionDetailView({
 
       const result = await statusService.updateCorrect('customize', quizId, lectureId, isCorrect)
       if (result.error) {
+        showErrorToast(t('error.correctFailed'))
         setStatusMap(prev => {
           const next = new Map(prev)
           if (current) next.set(key, current)
@@ -129,7 +133,7 @@ export default function SessionDetailView({
         })
       }
     },
-    [statusMap, lectureId],
+    [statusMap, lectureId, showErrorToast, t],
   )
 
   // 퀴즈를 type별 그룹화
@@ -165,6 +169,16 @@ export default function SessionDetailView({
 
   return (
     <div className="flex h-full flex-col">
+      {/* Toast messages */}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
+          {toasts.map(toast => (
+            <div key={toast.id} className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white shadow-lg">
+              {toast.message}
+            </div>
+          ))}
+        </div>
+      )}
       {/* 헤더 */}
       <div className="shrink-0 flex items-center gap-2 border-b border-gray-100 px-4 py-3">
         <button
