@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { DefinitionBuilderGameResponse, DefinitionBuilderQuestion, ScoreRankingEntry } from '@/features/review/types'
 import { reviewService } from '@/features/review/services/reviewService'
+import { useAuthStore } from '@/features/auth/store/authStore'
 import { GameRankingBoard } from './GameRankingBoard'
 
 interface DefinitionBuilderGameProps {
@@ -50,11 +51,12 @@ export function DefinitionBuilderGame({
 
   // 제출 + 랭킹 상태
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isSubmittingRef = useRef(false)
   const [submissionRank, setSubmissionRank] = useState<number | null>(null)
   const [rankings, setRankings] = useState<ScoreRankingEntry[]>([])
   const [rankingsLoading, setRankingsLoading] = useState(false)
   const [rankingsError, setRankingsError] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const currentUserId = useAuthStore(s => s.user?.user_id ?? null)
 
   const currentQuestion = questions[currentIndex] ?? null
   const blankIndices = useMemo(
@@ -99,10 +101,11 @@ export function DefinitionBuilderGame({
 
   // 게임 완료 시 점수 제출 + 랭킹 조회
   useEffect(() => {
-    if (!gameCompleted || !lectureId || isSubmitting) return
+    if (!gameCompleted || !lectureId || isSubmittingRef.current) return
     let cancelled = false
 
     const submitAndFetch = async () => {
+      isSubmittingRef.current = true
       setIsSubmitting(true)
       setRankingsLoading(true)
       setRankingsError(null)
@@ -124,11 +127,6 @@ export function DefinitionBuilderGame({
         const { data: rankData } = await reviewService.getDefinitionBuilderRankings(lectureId, 10)
         if (!cancelled && rankData) {
           setRankings(rankData.rankings)
-          // currentUserId 추출: 제출 응답의 rank로 매칭
-          if (rankData.my_best) {
-            const me = rankData.rankings.find(r => r.rank === rankData.my_best!.rank && r.score === rankData.my_best!.score)
-            if (me) setCurrentUserId(me.user_id)
-          }
         }
       } catch {
         if (!cancelled) setRankingsError(t('ranking.loadError'))
@@ -137,12 +135,13 @@ export function DefinitionBuilderGame({
           setIsSubmitting(false)
           setRankingsLoading(false)
         }
+        isSubmittingRef.current = false
       }
     }
 
     submitAndFetch()
     return () => { cancelled = true }
-  }, [gameCompleted, lectureId])
+  }, [gameCompleted, lectureId, currentScore, totalCount, t])
 
   const handleChoiceClick = (choice: string) => {
     if (!currentQuestion || completed) return
@@ -179,6 +178,8 @@ export function DefinitionBuilderGame({
     setCompleted(false)
     setUsedChoices(new Set())
     setLastWrongChoice(null)
+    setIsSubmitting(false)
+    isSubmittingRef.current = false
     setSubmissionRank(null)
     setRankings([])
     setRankingsError(null)
@@ -237,7 +238,8 @@ export function DefinitionBuilderGame({
           <button
             type="button"
             onClick={handleRestart}
-            className="mt-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            disabled={isSubmitting}
+            className="mt-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t('definitionBuilder.restart')}
           </button>

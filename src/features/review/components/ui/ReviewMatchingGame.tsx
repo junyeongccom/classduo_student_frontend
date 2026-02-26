@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { LectureReviewItem, MatchingRankingEntry } from '@/features/review/types'
 import { reviewService } from '@/features/review/services/reviewService'
+import { useAuthStore } from '@/features/auth/store/authStore'
 import { GameRankingBoard } from './GameRankingBoard'
 
 type MatchCard = {
@@ -64,11 +65,12 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
 
   // 제출 + 랭킹 상태
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isSubmittingRef = useRef(false)
   const [submissionRank, setSubmissionRank] = useState<number | null>(null)
   const [rankings, setRankings] = useState<MatchingRankingEntry[]>([])
   const [rankingsLoading, setRankingsLoading] = useState(false)
   const [rankingsError, setRankingsError] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const currentUserId = useAuthStore(s => s.user?.user_id ?? null)
   const [activePairCount, setActivePairCount] = useState<number | null>(null)
   const pairCountTabs = useMemo(() => {
     const tabs: number[] = []
@@ -116,6 +118,8 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
     setWrongIds(new Set())
     setElapsedMs(0)
     setGameCompleted(false)
+    setIsSubmitting(false)
+    isSubmittingRef.current = false
     setSubmissionRank(null)
     setRankings([])
     setRankingsError(null)
@@ -172,11 +176,13 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
 
   // 게임 완료 시 점수 제출 + 랭킹 조회
   useEffect(() => {
-    if (!gameCompleted || !lectureId || !selectedSize || isSubmitting) return
+    if (!gameCompleted || !lectureId || !selectedSize || isSubmittingRef.current) return
     let cancelled = false
     const pairCount = selectedSize.pairs
+    const capturedElapsedMs = elapsedMs
 
     const submitAndFetch = async () => {
+      isSubmittingRef.current = true
       setIsSubmitting(true)
       setRankingsLoading(true)
       setRankingsError(null)
@@ -184,7 +190,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
 
       try {
         const { data: submitData } = await reviewService.submitMatchingGameScore(
-          lectureId, elapsedMs, pairCount
+          lectureId, capturedElapsedMs, pairCount
         )
         if (!cancelled && submitData) {
           setSubmissionRank(submitData.rank)
@@ -197,10 +203,6 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
         const { data: rankData } = await reviewService.getMatchingGameRankings(lectureId, pairCount, 10)
         if (!cancelled && rankData) {
           setRankings(rankData.rankings)
-          if (rankData.my_best) {
-            const me = rankData.rankings.find(r => r.rank === rankData.my_best!.rank && r.elapsed_ms === rankData.my_best!.elapsed_ms)
-            if (me) setCurrentUserId(me.user_id)
-          }
         }
       } catch {
         if (!cancelled) setRankingsError(t('ranking.loadError'))
@@ -209,12 +211,13 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
           setIsSubmitting(false)
           setRankingsLoading(false)
         }
+        isSubmittingRef.current = false
       }
     }
 
     submitAndFetch()
     return () => { cancelled = true }
-  }, [gameCompleted, lectureId, selectedSize])
+  }, [gameCompleted, lectureId, selectedSize, elapsedMs, t])
 
   // pair_count 탭 전환 시 랭킹 재조회
   const handlePairCountChange = async (pairCount: number) => {
@@ -285,14 +288,16 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
           <button
             type="button"
             onClick={() => buildGame()}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            disabled={isSubmitting}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             다시 시작
           </button>
           <button
             type="button"
             onClick={onExit}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+            disabled={isSubmitting}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             목록으로
           </button>
