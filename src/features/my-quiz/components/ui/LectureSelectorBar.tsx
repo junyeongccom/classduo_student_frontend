@@ -34,7 +34,7 @@ function BottomDropdown({
   placeholder,
   onChange,
   isLoading = false,
-  loadingLabel = '...',
+  loadingLabel,
   emptyLabel,
   disabled = false,
 }: BottomDropdownProps) {

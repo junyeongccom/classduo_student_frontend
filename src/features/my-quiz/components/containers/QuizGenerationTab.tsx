@@ -7,31 +7,35 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Loader2 } from 'lucide-react'
 import * as myQuizService from '../../services/myQuizService'
 import type { QuizSession } from '../../types'
+import { useToast } from '@/shared/hooks/useToast'
 import SessionCard from '../ui/SessionCard'
 import CreateSessionForm from '../ui/CreateSessionForm'
 import SessionDetailView from './SessionDetailView'
 
+const ALLOWED_QUIZ_TYPES = ['DEF_TO_TERM', 'TERM_TO_DEF', 'MISCONCEPTION'] as const
+
 interface QuizGenerationTabProps {
   selectedLectureId: string | null
-  selectedCourseId: string | null
 }
 
 export default function QuizGenerationTab({
   selectedLectureId,
-  selectedCourseId,
 }: QuizGenerationTabProps) {
   const t = useTranslations('myQuiz')
+  const { toasts, error: showErrorToast } = useToast()
 
   const [sessions, setSessions] = useState<QuizSession[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [pollingTimedOut, setPollingTimedOut] = useState(false)
+  const pollStartTimeRef = useRef<number | null>(null)
 
   const fetchSessions = useCallback(async () => {
     if (!selectedLectureId) return
@@ -40,7 +44,8 @@ export default function QuizGenerationTab({
 
     const result = await myQuizService.getSessions()
     if (result.error || !result.data) {
-      setError(result.error?.message ?? t('error.loadFailed'))
+      if (process.env.NODE_ENV === 'development') console.error('[QuizGenerationTab] fetchSessions error:', result.error)
+      setError(t('error.loadFailed'))
       setIsLoading(false)
       return
     }
@@ -62,16 +67,23 @@ export default function QuizGenerationTab({
   }, [fetchSessions])
 
   // Polling: CREATING 세션이 있으면 3초 간격으로 상태 확인
-  useEffect(() => {
-    const hasCreating = sessions.some(s => s.status === 'CREATING')
-    if (!hasCreating || !selectedLectureId) return
+  const hasCreatingRef = useRef(false)
+  hasCreatingRef.current = sessions.some(s => s.status === 'CREATING')
 
-    const startTime = Date.now()
+  useEffect(() => {
+    if (!hasCreatingRef.current || !selectedLectureId) return
+
+    if (pollStartTimeRef.current === null) {
+      pollStartTimeRef.current = Date.now()
+    }
+    setPollingTimedOut(false)
     const MAX_POLL_MS = 5 * 60 * 1000
 
     const interval = setInterval(async () => {
-      if (Date.now() - startTime > MAX_POLL_MS) {
+      if (pollStartTimeRef.current !== null && Date.now() - pollStartTimeRef.current > MAX_POLL_MS) {
         clearInterval(interval)
+        pollStartTimeRef.current = null
+        setPollingTimedOut(true)
         return
       }
       const result = await myQuizService.getSessions()
@@ -84,17 +96,23 @@ export default function QuizGenerationTab({
       setSessions(filtered)
 
       const stillCreating = filtered.some(s => s.status === 'CREATING')
-      if (!stillCreating) clearInterval(interval)
+      if (!stillCreating) {
+        clearInterval(interval)
+        pollStartTimeRef.current = null
+      }
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [sessions, selectedLectureId])
+  }, [selectedLectureId, sessions.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = useCallback(async (sessionId: string) => {
     const result = await myQuizService.deleteSession(sessionId)
-    if (result.error) return
+    if (result.error) {
+      showErrorToast(t('error.deleteFailed'))
+      return
+    }
     setSessions(prev => prev.filter(s => s.session_id !== sessionId))
-  }, [])
+  }, [showErrorToast, t])
 
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
@@ -104,9 +122,22 @@ export default function QuizGenerationTab({
     setIsCreating(true)
     setCreateError(null)
 
-    const result = await myQuizService.createSession(selectedLectureId, quizCount, quizTypes)
+    // 런타임 검증: quizCount 범위 클램핑 + quizTypes 허용 목록 필터링
+    const safeCount = Math.max(1, Math.min(30, quizCount))
+    const safeTypes = quizTypes.filter(type => (ALLOWED_QUIZ_TYPES as readonly string[]).includes(type))
+    if (safeTypes.length === 0) {
+      setCreateError(t('error.createFailed'))
+      setIsCreating(false)
+      return
+    }
+
+    const result = await myQuizService.createSession(selectedLectureId, safeCount, safeTypes)
     if (result.error || !result.data) {
-      setCreateError(result.error?.message ?? t('error.createFailed'))
+      // API 400 → 스냅샷 부재 가능성 특별 분기
+      const errorMsg = result.status === 400
+        ? t('create.noSnapshot')
+        : t('error.createFailed')
+      setCreateError(errorMsg)
       setIsCreating(false)
       return
     }
@@ -132,11 +163,14 @@ export default function QuizGenerationTab({
 
   const handleRename = useCallback(async (sessionId: string, title: string) => {
     const result = await myQuizService.renameSession(sessionId, title)
-    if (result.error) return
+    if (result.error) {
+      showErrorToast(t('error.renameFailed'))
+      return
+    }
     setSessions(prev =>
       prev.map(s => s.session_id === sessionId ? { ...s, title } : s),
     )
-  }, [])
+  }, [showErrorToast, t])
 
   // 선택된 강의 없으면 안내
   if (!selectedLectureId) {
@@ -171,7 +205,17 @@ export default function QuizGenerationTab({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
+      {/* Toast messages */}
+      {toasts.length > 0 && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
+          {toasts.map(toast => (
+            <div key={toast.id} className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white shadow-lg">
+              {toast.message}
+            </div>
+          ))}
+        </div>
+      )}
       {/* 헤더: 새 퀴즈 생성 버튼 */}
       <div className="shrink-0 p-4 pb-2">
         <button
@@ -200,6 +244,21 @@ export default function QuizGenerationTab({
             >
               {t('error.retry')}
             </button>
+          </div>
+        ) : pollingTimedOut ? (
+          <div className="flex flex-col gap-2">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center">
+              <p className="text-sm text-amber-700">{t('session.pollingTimeout')}</p>
+            </div>
+            {sessions.map(session => (
+              <SessionCard
+                key={session.session_id}
+                session={session}
+                onSelect={setSelectedSessionId}
+                onDelete={handleDelete}
+                onRename={handleRename}
+              />
+            ))}
           </div>
         ) : sessions.length === 0 ? (
           <div className="flex items-center justify-center py-12 text-gray-400">

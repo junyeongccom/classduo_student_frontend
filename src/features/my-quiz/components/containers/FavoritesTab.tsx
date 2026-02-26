@@ -12,8 +12,9 @@ import { useTranslations } from 'next-intl'
 import { Loader2, Star } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
+import { useToast } from '@/shared/hooks/useToast'
 import * as statusService from '../../services/myQuizStatusService'
-import type { QuizStatusEntry, QuizSource } from '../../types'
+import type { QuizStatusEntry } from '../../types'
 import { groupQuizzesByType } from '../../domain/groupQuizzes'
 import type { QuizWithMeta, QuizGroup } from '../../domain/groupQuizzes'
 
@@ -26,6 +27,7 @@ const PAGE_SIZE = 20
 export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
   const t = useTranslations('myQuiz')
   const tQuiz = useTranslations('lectureStudy.quiz')
+  const { toasts, error: showErrorToast } = useToast()
 
   const [groups, setGroups] = useState<QuizGroup[]>([])
   const [allQuizzes, setAllQuizzes] = useState<QuizWithMeta[]>([])
@@ -35,9 +37,13 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
   const [offset, setOffset] = useState(0)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const rewardCheckingRef = useRef(false)
+  const isFetchingMoreRef = useRef(false)
 
   const fetchQuizzes = useCallback(async (currentOffset: number, append: boolean) => {
     if (!selectedLectureId) return
+
+    if (append && isFetchingMoreRef.current) return
+    if (append) isFetchingMoreRef.current = true
 
     if (currentOffset === 0) {
       setIsLoading(true)
@@ -51,8 +57,10 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
     )
 
     if (statusResult.error || !statusResult.data) {
-      setError(statusResult.error?.message ?? t('error.loadFailed'))
+      if (process.env.NODE_ENV === 'development') console.error('[FavoritesTab] fetchQuizzes error:', statusResult.error)
+      setError(t('error.loadFailed'))
       setIsLoading(false)
+      if (append) isFetchingMoreRef.current = false
       return
     }
 
@@ -62,6 +70,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
     if (statuses.length === 0) {
       if (!append) setAllQuizzes([])
       setIsLoading(false)
+      if (append) isFetchingMoreRef.current = false
       return
     }
 
@@ -77,6 +86,14 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
         ? statusService.fetchQuizContent(customizeIds, 'customize')
         : { data: [], error: null },
     ])
+
+    // fetchQuizContent 에러 체크 (QA-AW-1)
+    if (instructorResult.error || customizeResult.error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[FavoritesTab] fetchQuizContent error:', instructorResult.error, customizeResult.error)
+      }
+      showErrorToast(t('error.loadFailed'))
+    }
 
     const statusMap = new Map<string, QuizStatusEntry>()
     for (const s of statuses) {
@@ -107,11 +124,15 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
       })
     }
 
-    const updated = append ? [...allQuizzes, ...quizzesWithMeta] : quizzesWithMeta
-    setAllQuizzes(updated)
-    setGroups(groupQuizzesByType(updated))
+    // 함수형 업데이트로 allQuizzes를 deps에서 제거 (R-AW-10)
+    setAllQuizzes(prev => {
+      const updated = append ? [...prev, ...quizzesWithMeta] : quizzesWithMeta
+      setGroups(groupQuizzesByType(updated))
+      return updated
+    })
     setIsLoading(false)
-  }, [selectedLectureId, allQuizzes, t])
+    if (append) isFetchingMoreRef.current = false
+  }, [selectedLectureId, t, showErrorToast])
 
   // 회차 변경 시 리셋
   useEffect(() => {
@@ -120,17 +141,18 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
     setOffset(0)
     setHasMore(true)
     setError(null)
+    isFetchingMoreRef.current = false
     if (selectedLectureId) {
       fetchQuizzes(0, false)
     }
   }, [selectedLectureId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 무한 스크롤 IntersectionObserver
+  // 무한 스크롤 IntersectionObserver (R-AW-10: isFetchingMoreRef로 중복 방지)
   useEffect(() => {
     if (!sentinelRef.current || !hasMore || isLoading) return
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0]?.isIntersecting && hasMore && !isLoading) {
+        if (entries[0]?.isIntersecting && hasMore && !isLoading && !isFetchingMoreRef.current) {
           const nextOffset = offset + PAGE_SIZE
           setOffset(nextOffset)
           fetchQuizzes(nextOffset, true)
@@ -160,13 +182,14 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
       )
 
       if (result.error) {
-        // 롤백: refetch
+        showErrorToast(t('error.bookmarkFailed'))
+        // 롤백: refetch (R-AW-4)
         fetchQuizzes(0, false)
         setOffset(0)
         setHasMore(true)
       }
     },
-    [allQuizzes, selectedLectureId, fetchQuizzes],
+    [allQuizzes, selectedLectureId, fetchQuizzes, showErrorToast, t],
   )
 
   const handleCorrectUpdate = useCallback(
@@ -189,26 +212,31 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
       )
 
       if (result.error) {
-        // 롤백
-        setAllQuizzes(allQuizzes)
-        setGroups(groupQuizzesByType(allQuizzes))
+        showErrorToast(t('error.correctFailed'))
+        // 롤백: refetch로 통일 (R-AW-4)
+        fetchQuizzes(0, false)
+        setOffset(0)
+        setHasMore(true)
         return
       }
 
-      // 보상 판정 (instructor 퀴즈만)
+      // 보상 판정 (instructor 퀴즈만, R-AW-5: try-finally)
       if (isCorrect && quiz.quiz_source === 'instructor' && !rewardCheckingRef.current) {
         rewardCheckingRef.current = true
-        const allStatus = await statusService.getAllInstructorQuizStatuses(selectedLectureId)
-        if (allStatus.data && allStatus.data.length > 0) {
-          const allCorrect = allStatus.data.every(s => s.correct === true)
-          if (allCorrect) {
-            await statusService.grantReward(selectedLectureId)
+        try {
+          const allStatus = await statusService.getAllInstructorQuizStatuses(selectedLectureId)
+          if (allStatus.data && allStatus.data.length > 0) {
+            const allCorrect = allStatus.data.every(s => s.correct === true)
+            if (allCorrect) {
+              await statusService.grantReward(selectedLectureId)
+            }
           }
+        } finally {
+          rewardCheckingRef.current = false
         }
-        rewardCheckingRef.current = false
       }
     },
-    [allQuizzes, selectedLectureId],
+    [allQuizzes, selectedLectureId, fetchQuizzes, showErrorToast, t],
   )
 
   if (!selectedLectureId) {
@@ -252,7 +280,18 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="relative p-4 space-y-6">
+      {/* Toast messages */}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
+          {toasts.map(toast => (
+            <div key={toast.id} className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white shadow-lg">
+              {toast.message}
+            </div>
+          ))}
+        </div>
+      )}
+
       {groups.map(group => (
         <div key={group.type}>
           <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">

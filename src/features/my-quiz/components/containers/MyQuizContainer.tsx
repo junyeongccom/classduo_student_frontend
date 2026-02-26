@@ -59,7 +59,6 @@ export default function MyQuizContainer() {
       <TabsContent value="generation" className="flex-1 min-h-0 mt-0 overflow-y-auto">
         <QuizGenerationTab
           selectedLectureId={selectedLectureId}
-          selectedCourseId={selectedCourseId}
         />
       </TabsContent>
       <TabsContent value="favorites" className="flex-1 min-h-0 mt-0 overflow-y-auto">

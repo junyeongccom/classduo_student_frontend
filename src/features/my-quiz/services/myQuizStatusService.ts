@@ -60,6 +60,9 @@ export async function getQuizStatusesByLecture(
       query = query.eq('correct', filter.correct)
     }
 
+    // ORDER BY 필수: offset 기반 무한스크롤에서 일관된 정렬 보장
+    query = query.order('id', { ascending: true })
+
     if (options?.limit) {
       const offset = options.offset ?? 0
       query = query.range(offset, offset + options.limit - 1)
@@ -206,6 +209,8 @@ export async function fetchQuizContent(
 
 /* ───────────── Backend API 호출 ───────────── */
 
+const VALID_QUIZ_SOURCES: QuizSource[] = ['instructor', 'customize']
+
 /** 즐겨찾기 토글 */
 export async function toggleBookmark(
   quizSource: QuizSource,
@@ -213,8 +218,11 @@ export async function toggleBookmark(
   lectureId: string,
   bookmark: boolean,
 ) {
+  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
+    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
+  }
   return apiRequest<BookmarkResponse>(
-    `/quiz-status/${quizSource}/${quizId}/bookmark`,
+    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/bookmark`,
     {
       method: 'PATCH',
       auth: true,
@@ -230,8 +238,11 @@ export async function updateCorrect(
   lectureId: string,
   correct: boolean,
 ) {
+  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
+    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
+  }
   return apiRequest<CorrectResponse>(
-    `/quiz-status/${quizSource}/${quizId}/correct`,
+    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/correct`,
     {
       method: 'PATCH',
       auth: true,
@@ -243,7 +254,7 @@ export async function updateCorrect(
 /** 보상 획득 요청 */
 export async function grantReward(lectureId: string) {
   return apiRequest<RewardGrantResponse>(
-    `/quiz-status/lectures/${lectureId}/reward`,
+    `/quiz-status/lectures/${encodeURIComponent(lectureId)}/reward`,
     {
       method: 'POST',
       auth: true,

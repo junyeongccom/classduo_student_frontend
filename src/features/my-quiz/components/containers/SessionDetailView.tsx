@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
@@ -35,7 +35,6 @@ export default function SessionDetailView({
   const [statusMap, setStatusMap] = useState<Map<string, QuizStatusEntry>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const rewardCheckingRef = useRef(false)
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
@@ -48,7 +47,8 @@ export default function SessionDetailView({
         setIsLoading(false)
         return
       }
-      setError(detailResult.error?.message ?? t('error.loadFailed'))
+      if (process.env.NODE_ENV === 'development') console.error('[SessionDetailView] fetchData error:', detailResult.error)
+      setError(t('error.loadFailed'))
       setIsLoading(false)
       return
     }

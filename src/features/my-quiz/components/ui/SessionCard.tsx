@@ -8,7 +8,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useFormatter } from 'next-intl'
 import { Loader2, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import type { QuizSession, SessionStatus } from '../../types'
@@ -48,12 +48,21 @@ function StatusBadge({ status }: { status: SessionStatus }) {
   }
 }
 
+const MAX_TITLE_LENGTH = 100
+
 export default function SessionCard({ session, onSelect, onDelete, onRename }: SessionCardProps) {
   const t = useTranslations('myQuiz.session')
+  const format = useFormatter()
   const isClickable = session.status === 'COMPLETED'
   const isFailed = session.status === 'FAILED'
 
-  const displayTitle = session.title || new Date(session.created_at).toLocaleString()
+  const displayTitle = session.title || format.dateTime(new Date(session.created_at), {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(displayTitle)
@@ -70,9 +79,8 @@ export default function SessionCard({ session, onSelect, onDelete, onRename }: S
   const commitEdit = useCallback(() => {
     setIsEditing(false)
     const trimmed = editValue.trim()
-    if (trimmed && trimmed !== displayTitle) {
-      onRename(session.session_id, trimmed)
-    }
+    if (!trimmed || trimmed === displayTitle || trimmed.length > MAX_TITLE_LENGTH) return
+    onRename(session.session_id, trimmed)
   }, [editValue, displayTitle, session.session_id, onRename])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -100,6 +108,7 @@ export default function SessionCard({ session, onSelect, onDelete, onRename }: S
               ref={inputRef}
               type="text"
               value={editValue}
+              maxLength={MAX_TITLE_LENGTH}
               onChange={e => setEditValue(e.target.value)}
               onBlur={commitEdit}
               onKeyDown={handleKeyDown}
@@ -134,6 +143,7 @@ export default function SessionCard({ session, onSelect, onDelete, onRename }: S
           type="button"
           onClick={e => {
             e.stopPropagation()
+            if (!window.confirm(t('deleteConfirm'))) return
             onDelete(session.session_id)
           }}
           className="ml-2 shrink-0 rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition"

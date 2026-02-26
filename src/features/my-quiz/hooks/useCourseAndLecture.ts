@@ -60,14 +60,15 @@ export function useCourseAndLecture() {
     })
 
     if (result.error || !result.data) {
-      setError(result.error?.message ?? 'Failed to load courses')
+      if (process.env.NODE_ENV === 'development') console.error('[useCourseAndLecture] fetchCourses error:', result.error)
+      setError(t('error.loadFailed'))
       setIsLoading(false)
       return
     }
 
     setCourses(result.data.courses ?? [])
     setIsLoading(false)
-  }, [])
+  }, [t])
 
   useEffect(() => {
     fetchCourses()

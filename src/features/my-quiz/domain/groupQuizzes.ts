@@ -36,7 +36,7 @@ export interface QuizGroup {
 
 /**
  * quiz_type별 TYPE_ORDER 순 그룹화.
- * 동일 유형 내 instructor 먼저 → customize 순.
+ * 동일 유형 내 instructor 먼저 → customize 순, 동일 source 내 created_at 최신순.
  */
 export function groupQuizzesByType(quizzes: QuizWithMeta[]): QuizGroup[] {
   return TYPE_ORDER
@@ -47,6 +47,10 @@ export function groupQuizzesByType(quizzes: QuizWithMeta[]): QuizGroup[] {
         .sort((a, b) => {
           if (a.quiz_source !== b.quiz_source) {
             return a.quiz_source === 'instructor' ? -1 : 1
+          }
+          // 동일 source 내 created_at 최신순
+          if (a.created_at && b.created_at) {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           }
           return 0
         }),

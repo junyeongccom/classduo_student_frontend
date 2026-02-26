@@ -28,7 +28,7 @@ export async function getSessions() {
 /** 세션 상세 + 퀴즈 목록 조회 */
 export async function getSessionDetail(sessionId: string) {
   return apiRequest<SessionDetailResponse>(
-    `/customize-quiz/sessions/${sessionId}`,
+    `/customize-quiz/sessions/${encodeURIComponent(sessionId)}`,
     { method: 'GET', auth: true },
   )
 }
@@ -40,7 +40,7 @@ export async function createSession(
   quizTypes: string[],
 ) {
   return apiRequest<SessionCreateResponse>(
-    `/customize-quiz/lectures/${lectureId}/sessions`,
+    `/customize-quiz/lectures/${encodeURIComponent(lectureId)}/sessions`,
     {
       method: 'POST',
       auth: true,
@@ -52,7 +52,7 @@ export async function createSession(
 /** 세션 삭제 */
 export async function deleteSession(sessionId: string) {
   return apiRequest<void>(
-    `/customize-quiz/sessions/${sessionId}`,
+    `/customize-quiz/sessions/${encodeURIComponent(sessionId)}`,
     { method: 'DELETE', auth: true },
   )
 }
@@ -60,7 +60,7 @@ export async function deleteSession(sessionId: string) {
 /** 세션 제목 수정 */
 export async function renameSession(sessionId: string, title: string) {
   return apiRequest<QuizSession>(
-    `/customize-quiz/sessions/${sessionId}`,
+    `/customize-quiz/sessions/${encodeURIComponent(sessionId)}`,
     {
       method: 'PATCH',
       auth: true,
