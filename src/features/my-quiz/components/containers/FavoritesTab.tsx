@@ -107,6 +107,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
       const status = statusMap.get(key)
       quizzesWithMeta.push({
         ...item,
+        difficulty: item.difficulty ?? null,
         quiz_source: 'instructor',
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
@@ -118,6 +119,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
       const status = statusMap.get(key)
       quizzesWithMeta.push({
         ...item,
+        difficulty: item.difficulty ?? null,
         quiz_source: 'customize',
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,

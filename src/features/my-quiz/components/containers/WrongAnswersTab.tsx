@@ -106,6 +106,7 @@ export default function WrongAnswersTab({ selectedLectureId }: WrongAnswersTabPr
       const status = statusMap.get(key)
       quizzesWithMeta.push({
         ...item,
+        difficulty: item.difficulty ?? null,
         quiz_source: 'instructor',
         bookmark: status?.bookmark ?? false,
         correct: status?.correct ?? false,
@@ -117,6 +118,7 @@ export default function WrongAnswersTab({ selectedLectureId }: WrongAnswersTabPr
       const status = statusMap.get(key)
       quizzesWithMeta.push({
         ...item,
+        difficulty: item.difficulty ?? null,
         quiz_source: 'customize',
         bookmark: status?.bookmark ?? false,
         correct: status?.correct ?? false,
