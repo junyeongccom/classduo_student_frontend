@@ -208,6 +208,10 @@ export function LeftPanelRecordings({
             globalOffset += recordings[i].chunk_summaries.length
           }
 
+          // 이 recording에 속하는 valueKey만 필터링 (R-AC1 fix: openItems 공유 방지)
+          const recPrefix = `${rec.id}-`
+          const recOpenItems = openItems.filter((v) => v.startsWith(recPrefix))
+
           return (
             <div key={rec.id} className={recIdx > 0 ? 'mt-5' : ''}>
               <div className="mb-2 flex items-center gap-2">
@@ -220,8 +224,13 @@ export function LeftPanelRecordings({
               {rec.chunk_summaries.length > 0 ? (
                 <Accordion
                   type="multiple"
-                  value={openItems}
-                  onValueChange={setOpenItems}
+                  value={recOpenItems}
+                  onValueChange={(newValues: string[]) => {
+                    setOpenItems((prev) => {
+                      const otherItems = prev.filter((v) => !v.startsWith(recPrefix))
+                      return [...otherItems, ...newValues]
+                    })
+                  }}
                 >
                   {rec.chunk_summaries.map((chunk, i) => {
                     const vk = `${rec.id}-${i}`
