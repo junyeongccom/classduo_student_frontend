@@ -1,3 +1,9 @@
+/**
+ * @file DefinitionBuilderGame.tsx
+ * @description 정의 조립 게임 — 빈칸에 어절을 채워 정의를 완성하는 인터랙티브 게임 컴포넌트
+ * @module features/review
+ * @dependencies next-intl, reviewService, authStore, GameRankingBoard
+ */
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'

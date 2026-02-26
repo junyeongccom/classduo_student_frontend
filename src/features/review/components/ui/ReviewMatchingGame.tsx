@@ -1,3 +1,9 @@
+/**
+ * @file ReviewMatchingGame.tsx
+ * @description 매칭 게임 — 용어-정의 카드 쌍을 시간 내에 매칭하는 인터랙티브 게임 컴포넌트
+ * @module features/review
+ * @dependencies next-intl, reviewService, authStore, GameRankingBoard
+ */
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -241,7 +247,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
   if (!isEnabled) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-8 text-sm text-slate-500">
-        회차를 선택하면 매칭게임을 시작할 수 있어요.
+        {t('matchingGame.selectLecture')}
       </div>
     )
   }
@@ -249,8 +255,8 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
   if (!selectedSize) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white px-6 py-8 text-center">
-        <h3 className="text-sm font-semibold text-slate-900">게임 크기 선택</h3>
-        <p className="mt-2 text-xs text-slate-500">원하는 쌍 수를 선택하면 게임이 시작됩니다.</p>
+        <h3 className="text-sm font-semibold text-slate-900">{t('matchingGame.sizeSelectTitle')}</h3>
+        <p className="mt-2 text-xs text-slate-500">{t('matchingGame.sizeSelectDesc')}</p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           {SIZE_OPTIONS.map(option => {
             const disabled = availableCount < option.pairs
@@ -269,7 +275,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
                     : 'border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100'
                 }`}
               >
-                {option.pairs}쌍 ({option.cols}x{option.rows})
+                {t('matchingGame.pairsLabel', { pairs: option.pairs, cols: option.cols, rows: option.rows })}
               </button>
             )
           })}
@@ -281,8 +287,8 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
   if (gameCompleted) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center">
-        <div className="matching-game-success text-3xl font-extrabold text-emerald-600">SUCCESS</div>
-        <div className="text-sm font-semibold text-slate-600">최종 기록</div>
+        <div className="matching-game-success text-3xl font-extrabold text-emerald-600">{t('matchingGame.successTitle')}</div>
+        <div className="text-sm font-semibold text-slate-600">{t('matchingGame.finalTimeLabel')}</div>
         <div className="text-2xl font-bold text-slate-900">{formatTime(elapsedMs)}</div>
         <div className="mt-3 flex items-center gap-2">
           <button
@@ -291,7 +297,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
             disabled={isSubmitting}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            다시 시작
+            {t('matchingGame.restart')}
           </button>
           <button
             type="button"
@@ -299,7 +305,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
             disabled={isSubmitting}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            목록으로
+            {t('matchingGame.backToList')}
           </button>
         </div>
         {lectureId && (
@@ -328,7 +334,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
           </div>
         ) : (
           <div className="matching-game-start text-2xl font-semibold text-blue-600">
-            game start
+            {t('matchingGame.gameStart')}
           </div>
         )}
       </div>

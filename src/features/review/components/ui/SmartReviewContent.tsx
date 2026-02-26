@@ -1,3 +1,9 @@
+/**
+ * @file SmartReviewContent.tsx
+ * @description 스마트 복습 메인 컨텐츠 — 복습 탭/게임 전환 및 렌더링 오케스트레이션
+ * @module features/review
+ * @dependencies next-intl, reviewService, authStore, DefinitionBuilderGame, ReviewMatchingGame
+ */
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
@@ -420,7 +426,7 @@ export function SmartReviewContent({
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {gameItems.map(game => {
                   const isPlayable =
-                    game.id === 'definition-builder' || game.id === 'matching' || game.id === 'guess-the-term'
+                    game.id === 'definition-builder' || game.id === 'matching'
                   return (
                     <button
                       key={game.id}

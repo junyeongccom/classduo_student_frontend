@@ -1,5 +1,8 @@
 /**
- * 복습 콘텐츠 API
+ * @file reviewService.ts
+ * @description 복습 도메인 API 서비스 — 복습 아이템 CRUD, 게임 데이터, 랭킹 제출/조회
+ * @module features/review
+ * @dependencies shared/lib/api, shared/constants/api
  */
 import { apiRequest } from '@/shared/lib/api'
 import { API_ENDPOINTS } from '@/shared/constants/api'

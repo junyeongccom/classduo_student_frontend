@@ -167,6 +167,17 @@
         "finalScoreLabel": "최종 점수: {score}",
         "submitting": "저장 중..."
       },
+      "matchingGame": {
+        "selectLecture": "회차를 선택하면 매칭게임을 시작할 수 있어요.",
+        "sizeSelectTitle": "게임 크기 선택",
+        "sizeSelectDesc": "원하는 쌍 수를 선택하면 게임이 시작됩니다.",
+        "pairsLabel": "{pairs}쌍 ({cols}x{rows})",
+        "successTitle": "SUCCESS",
+        "finalTimeLabel": "최종 기록",
+        "restart": "다시 시작",
+        "backToList": "목록으로",
+        "gameStart": "game start"
+      },
       "ranking": {
         "title": "랭킹",
         "myRank": "{rank}위",

@@ -167,6 +167,17 @@
         "finalScoreLabel": "Final score: {score}",
         "submitting": "Saving..."
       },
+      "matchingGame": {
+        "selectLecture": "Select a lecture to start the matching game.",
+        "sizeSelectTitle": "Select game size",
+        "sizeSelectDesc": "Choose the number of pairs to start the game.",
+        "pairsLabel": "{pairs} pairs ({cols}x{rows})",
+        "successTitle": "SUCCESS",
+        "finalTimeLabel": "Final time",
+        "restart": "Restart",
+        "backToList": "Back to list",
+        "gameStart": "game start"
+      },
       "ranking": {
         "title": "Rankings",
         "myRank": "#{rank}",
