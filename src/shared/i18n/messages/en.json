@@ -927,7 +927,62 @@
     "deleteAccount": "An error occurred while deleting account."
   },
   "myQuiz": {
-    "title": "My Quiz"
+    "title": "My Quiz",
+    "tabs": {
+      "generation": "Quiz Generation",
+      "favorites": "Favorites",
+      "wrong": "Wrong Answers"
+    },
+    "selector": {
+      "selectCourse": "Select Course",
+      "selectLecture": "Select Lecture",
+      "noCourses": "No enrolled courses",
+      "selectPrompt": "Please select a lecture"
+    },
+    "empty": {
+      "selectLecture": "Select a lecture to view quizzes",
+      "noSessions": "Create a new quiz",
+      "noFavorites": "No bookmarked quizzes for this lecture",
+      "noWrong": "No wrong answers for this lecture"
+    },
+    "session": {
+      "title": "Session List",
+      "creating": "Creating",
+      "completed": "Completed",
+      "failed": "Failed",
+      "failedMessage": "Quiz generation failed",
+      "delete": "Delete Session",
+      "deleteConfirm": "Delete this session? All quizzes in this session will also be deleted.",
+      "rename": "Edit Title",
+      "pollingTimeout": "Generation is taking longer than expected. Please check back later",
+      "sessionDeleted": "Session has been deleted",
+      "quizCount": "{count} questions",
+      "back": "Back to list"
+    },
+    "create": {
+      "newSession": "Create New Quiz",
+      "quizCount": "Number of Questions",
+      "quizTypes": "Question Types",
+      "generate": "Generate",
+      "generating": "Generating...",
+      "noSnapshot": "Learning data is not ready for this lecture. Unable to generate quizzes",
+      "typeDEF_TO_TERM": "Definition→Term",
+      "typeTERM_TO_DEF": "Term→Definition",
+      "typeMISCONCEPTION": "Misconception Detection"
+    },
+    "quizSource": {
+      "instructor": "Instructor Quiz",
+      "customize": "My Quiz"
+    },
+    "error": {
+      "loadFailed": "Failed to load data",
+      "createFailed": "Failed to create session",
+      "deleteFailed": "Failed to delete session",
+      "renameFailed": "Failed to rename session",
+      "bookmarkFailed": "Failed to update bookmark",
+      "correctFailed": "Failed to save answer result",
+      "retry": "Retry"
+    }
   }
 }
 
