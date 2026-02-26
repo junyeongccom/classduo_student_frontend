@@ -4,6 +4,8 @@ import { BootScene } from "./scenes/BootScene";
 import { MainMenuScene } from "./scenes/MainMenuScene";
 import { GameScene } from "./scenes/GameScene";
 import { GameOverScene } from "./scenes/GameOverScene";
+import { LeaderboardScene } from "./scenes/LeaderboardScene";
+import { SettingsScene } from "./scenes/SettingsScene";
 
 export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameConfig {
   return {
@@ -33,10 +35,13 @@ export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameCon
         ],
       },
     },
+    dom: {
+      createContainer: true,
+    },
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, MainMenuScene, GameScene, GameOverScene],
+    scene: [BootScene, MainMenuScene, GameScene, GameOverScene, LeaderboardScene, SettingsScene],
   };
 }

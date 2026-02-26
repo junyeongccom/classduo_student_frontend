@@ -125,6 +125,9 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const [scoreDelta, setScoreDelta] = useState(0)
   const [scoreTone, setScoreTone] = useState<'positive' | 'negative' | null>(null)
 
+  // Game mode for running game
+  const [gameMode, setGameMode] = useState<'rank' | 'normal' | null>(null)
+
   // Overlay states (full-screen modal)
   const [showRunningOverlay, setShowRunningOverlay] = useState(false)
   const [showMatchingOverlay, setShowMatchingOverlay] = useState(false)
@@ -146,10 +149,19 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     setShowDescriptionPopup(true)
   }, [])
 
+  const handleRankPlayFromDescription = useCallback(() => {
+    setShowDescriptionPopup(false)
+    setGameMode('rank')
+    setShowRunningOverlay(true)
+  }, [])
+
   const handlePlayFromDescription = useCallback(() => {
     setShowDescriptionPopup(false)
+    if (selectedGame === 'running') {
+      setGameMode('normal')
+    }
     setShowWordModal(true)
-  }, [])
+  }, [selectedGame])
 
   const handleImportKeywords = useCallback(async () => {
     setIsImporting(true)
@@ -188,8 +200,9 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const handleStartGame = useCallback(() => {
     setShowWordModal(false)
 
-    // Running game: open overlay immediately
+    // Running game (normal mode): open overlay with words
     if (selectedGame === 'running') {
+      setGameMode('normal')
       setShowRunningOverlay(true)
       return
     }
@@ -225,9 +238,12 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         onClose={() => {
           setShowRunningOverlay(false)
           setSelectedGame(null)
+          setGameMode(null)
         }}
         triggerPosition={null}
         lectureId={lectureId}
+        gameMode={gameMode ?? undefined}
+        words={gameMode === 'normal' ? words.map(w => ({ keyword: w.keyword, description: w.description })) : undefined}
       />
     )
   }
@@ -421,6 +437,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         onOpenChange={setShowDescriptionPopup}
         gameId={selectedGame}
         onPlay={handlePlayFromDescription}
+        onRankPlay={selectedGame === 'running' ? handleRankPlayFromDescription : undefined}
       />
       <WordListModal
         open={showWordModal}
@@ -436,7 +453,6 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         }
         onStartGame={handleStartGame}
         isImporting={isImporting}
-        isRunningGame={selectedGame === 'running'}
         importError={importError}
       />
     </>

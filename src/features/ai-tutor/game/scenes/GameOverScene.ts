@@ -7,6 +7,9 @@ interface GameOverStrings {
   gameOver: string;
   restart: string;
   mainMenu: string;
+  scoreSubmitted: string;
+  submitting: string;
+  submitFailed: string;
 }
 
 const STRINGS: Record<"ko" | "en", GameOverStrings> = {
@@ -14,32 +17,54 @@ const STRINGS: Record<"ko" | "en", GameOverStrings> = {
     gameOver: "GAME OVER",
     restart: "다시 시작",
     mainMenu: "메인 메뉴",
+    scoreSubmitted: "점수 등록 완료!",
+    submitting: "점수 등록 중...",
+    submitFailed: "점수 등록 실패",
   },
   en: {
     gameOver: "GAME OVER",
     restart: "Restart",
     mainMenu: "Main Menu",
+    scoreSubmitted: "Score Submitted!",
+    submitting: "Submitting...",
+    submitFailed: "Submit Failed",
   },
 };
 
 // ── Scene ──
+
+interface GameOverData {
+  score: number;
+  correct: number;
+  wrong: number;
+  skipped: number;
+  gameMode: string;
+  elapsedMs: number;
+  lectureId: string;
+}
 
 export class GameOverScene extends Phaser.Scene {
   private score = 0;
   private correct = 0;
   private wrong = 0;
   private skipped = 0;
+  private gameMode = "normal";
+  private elapsedMs = 0;
+  private lectureId = "";
   private t!: GameOverStrings;
 
   constructor() {
     super({ key: "GameOverScene" });
   }
 
-  init(data: { score: number; correct: number; wrong: number; skipped: number }): void {
+  init(data: GameOverData): void {
     this.score = data.score ?? 0;
     this.correct = data.correct ?? 0;
     this.wrong = data.wrong ?? 0;
     this.skipped = data.skipped ?? 0;
+    this.gameMode = data.gameMode ?? "normal";
+    this.elapsedMs = data.elapsedMs ?? 0;
+    this.lectureId = data.lectureId ?? "";
   }
 
   create(): void {
@@ -47,13 +72,13 @@ export class GameOverScene extends Phaser.Scene {
     this.t = STRINGS[loc === "en" ? "en" : "ko"];
 
     this.createBackground();
+    this.createModeBadge();
     this.createTitle();
   }
 
   // ── Background (matches MainMenuScene) ──
 
   private createBackground(): void {
-    // Gradient: top 0x0d1117 → bottom 0x0a0a0a
     const gfx = this.add.graphics();
     const steps = 64;
     const sliceH = GAME_HEIGHT / steps;
@@ -67,12 +92,10 @@ export class GameOverScene extends Phaser.Scene {
       gfx.fillRect(0, i * sliceH, GAME_WIDTH, sliceH + 1);
     }
 
-    // Bottom indigo glow
     const glow = this.add.graphics();
     glow.fillStyle(0x6366f1, 0.07);
     glow.fillEllipse(GAME_WIDTH / 2, GAME_HEIGHT + 40 * S, GAME_WIDTH * 1.2, 260 * S);
 
-    // Floating indigo particles
     this.createParticles();
   }
 
@@ -100,6 +123,32 @@ export class GameOverScene extends Phaser.Scene {
     }
   }
 
+  // ── Mode badge ──
+
+  private createModeBadge(): void {
+    const isRank = this.gameMode === "rank";
+    const badgeText = isRank ? "RANK" : "NORMAL";
+    const badgeColor = isRank ? 0xf97316 : 0x6b7280;
+
+    const badgeW = 100 * S;
+    const badgeH = 28 * S;
+    const badgeX = GAME_WIDTH / 2;
+    const badgeY = GAME_HEIGHT * 0.18;
+
+    const bg = this.add.graphics();
+    bg.fillStyle(badgeColor, 0.9);
+    bg.fillRoundedRect(badgeX - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 8 * S);
+
+    this.add
+      .text(badgeX, badgeY, badgeText, {
+        fontFamily: FONT_FAMILY,
+        fontSize: `${Math.round(14 * S)}px`,
+        color: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+  }
+
   // ── Title (typewriter) ──
 
   private createTitle(): void {
@@ -122,7 +171,6 @@ export class GameOverScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Typewriter effect
     let charIndex = 0;
     this.time.addEvent({
       delay: 60,
@@ -133,7 +181,6 @@ export class GameOverScene extends Phaser.Scene {
       },
     });
 
-    // Score count-up (delayed until title finishes)
     const titleDuration = fullText.length * 60 + 200;
     this.createScoreCountUp(titleDuration);
   }
@@ -171,7 +218,6 @@ export class GameOverScene extends Phaser.Scene {
           const displayScore = Math.round(this.score * t);
           scoreText.setText(`Score: ${displayScore}`);
           if (t >= 1) {
-            // Final bounce
             this.tweens.add({
               targets: scoreText,
               scaleX: 1.2,
@@ -181,12 +227,76 @@ export class GameOverScene extends Phaser.Scene {
               ease: "Back.Out",
               onComplete: () => {
                 this.showQuizStats();
+                if (this.gameMode === "rank") {
+                  this.submitRankScore();
+                }
                 this.showButtons();
               },
             });
           }
         },
       });
+    });
+  }
+
+  // ── Rank score submission ──
+
+  private async submitRankScore(): Promise<void> {
+    const statusY = GAME_HEIGHT * 0.62;
+    const statusText = this.add
+      .text(GAME_WIDTH / 2, statusY, this.t.submitting, {
+        fontFamily: FONT_FAMILY,
+        fontSize: `${14 * S}px`,
+        color: "#818CF8",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
+    try {
+      const { computeScoreHmac, generateNonce } = await import("../utils/scoreHash");
+      const { gameScoreService } = await import("../../services/gameScoreService");
+
+      const nonce = generateNonce();
+      const timestamp = Date.now();
+
+      const hmacHash = await computeScoreHmac({
+        lectureId: this.lectureId,
+        score: this.score,
+        correctCount: this.correct,
+        wrongCount: this.wrong,
+        skippedCount: this.skipped,
+        elapsedMs: this.elapsedMs,
+        nonce,
+        timestamp,
+      });
+
+      const { data, error } = await gameScoreService.submitScore({
+        lecture_id: this.lectureId,
+        score: this.score,
+        correct_count: this.correct,
+        wrong_count: this.wrong,
+        skipped_count: this.skipped,
+        elapsed_ms: this.elapsedMs,
+        hmac_hash: hmacHash,
+        nonce,
+        timestamp,
+      });
+
+      if (data?.success) {
+        statusText.setText(this.t.scoreSubmitted);
+        statusText.setColor("#2ecc71");
+      } else {
+        statusText.setText(this.t.submitFailed);
+        statusText.setColor("#e74c3c");
+      }
+    } catch {
+      statusText.setText(this.t.submitFailed);
+      statusText.setColor("#e74c3c");
+    }
+
+    // Fade out status after 3 seconds
+    this.time.delayedCall(3000, () => {
+      this.tweens.add({ targets: statusText, alpha: 0, duration: 600 });
     });
   }
 
@@ -210,7 +320,6 @@ export class GameOverScene extends Phaser.Scene {
     const wrongStr = `✗ ${this.wrong}`;
     const skippedStr = `− ${this.skipped}`;
 
-    // Measure widths to center all three
     const tempText = this.add.text(0, 0, correctStr, { fontFamily: FONT_FAMILY, fontSize }).setVisible(false);
     const w1 = tempText.width;
     tempText.setText(wrongStr);
@@ -255,7 +364,6 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
 
-    // Fade in
     this.tweens.add({ targets: [t1, t2, t3], alpha: 1, duration: 400, ease: "Power2" });
   }
 
@@ -290,7 +398,6 @@ export class GameOverScene extends Phaser.Scene {
     );
     menuBtn.setAlpha(0);
 
-    // Fade in buttons
     this.tweens.add({
       targets: [restartBtn, menuBtn],
       alpha: 1,
@@ -298,7 +405,6 @@ export class GameOverScene extends Phaser.Scene {
       ease: "Power2",
     });
 
-    // Keyboard shortcuts — mapped to restart
     this.time.delayedCall(Math.max(RESTART_DELAY, 200), () => {
       this.input.keyboard?.on("keydown-SPACE", () => this.scene.start("GameScene"), this);
       this.input.keyboard?.on("keydown-UP", () => this.scene.start("GameScene"), this);

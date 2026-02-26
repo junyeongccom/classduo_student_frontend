@@ -12,7 +12,7 @@ import {
 interface MenuStrings {
   title: string;
   startGame: string;
-  dashboard: string;
+  leaderboard: string;
   settings: string;
   locked: string;
 }
@@ -21,14 +21,14 @@ const STRINGS: Record<"ko" | "en", MenuStrings> = {
   ko: {
     title: "Quiz Runner",
     startGame: "게임 시작",
-    dashboard: "대시보드",
+    leaderboard: "리더보드",
     settings: "게임 설정",
     locked: "준비 중",
   },
   en: {
     title: "Quiz Runner",
     startGame: "Start Game",
-    dashboard: "Dashboard",
+    leaderboard: "Leaderboard",
     settings: "Settings",
     locked: "Coming Soon",
   },
@@ -152,12 +152,14 @@ export class MainMenuScene extends Phaser.Scene {
         action: () => this.scene.start("GameScene"),
       },
       {
-        label: this.t.dashboard,
-        enabled: false,
+        label: this.t.leaderboard,
+        enabled: true,
+        action: () => this.scene.start("LeaderboardScene"),
       },
       {
         label: this.t.settings,
-        enabled: false,
+        enabled: true,
+        action: () => this.scene.start("SettingsScene"),
       },
     ];
 

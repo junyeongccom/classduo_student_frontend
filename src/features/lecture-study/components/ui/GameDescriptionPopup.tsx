@@ -26,6 +26,7 @@ interface GameDescriptionPopupProps {
   onOpenChange: (open: boolean) => void
   gameId: string | null
   onPlay: () => void
+  onRankPlay?: () => void
 }
 
 type GameTheme = {
@@ -343,6 +344,7 @@ export function GameDescriptionPopup({
   onOpenChange,
   gameId,
   onPlay,
+  onRankPlay,
 }: GameDescriptionPopupProps) {
   const t = useTranslations()
 
@@ -417,15 +419,32 @@ export function GameDescriptionPopup({
         </div>
 
         <DialogFooter className="px-5 pb-4 pt-1">
-          <button
-            onClick={onPlay}
-            className={cn(
-              'w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-colors',
-              theme.button,
-            )}
-          >
-            {t('lectureStudy.game.desc.playButton')}
-          </button>
+          {gameId === 'running' && onRankPlay ? (
+            <div className="flex w-full gap-2">
+              <button
+                onClick={onRankPlay}
+                className="flex-1 rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
+              >
+                {t('lectureStudy.game.desc.rankPlayButton')}
+              </button>
+              <button
+                onClick={onPlay}
+                className="flex-1 rounded-xl border border-gray-300 bg-white py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                {t('lectureStudy.game.desc.normalPlayButton')}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onPlay}
+              className={cn(
+                'w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-colors',
+                theme.button,
+              )}
+            >
+              {t('lectureStudy.game.desc.playButton')}
+            </button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

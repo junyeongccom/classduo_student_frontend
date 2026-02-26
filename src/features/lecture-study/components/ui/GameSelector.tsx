@@ -12,7 +12,7 @@ import { cn } from '@/shared/lib/utils'
 import type { GameInfo } from '../../types'
 
 const GAME_LIST: GameInfo[] = [
-  { id: 'running', name: '', description: '', minWords: 0, icon: '🏃' },
+  { id: 'running', name: '', description: '', minWords: 3, icon: '🏃' },
   { id: 'deck', name: '', description: '', minWords: 1, icon: '🃏' },
   { id: 'cardMatch', name: '', description: '', minWords: 6, icon: '🎴' },
   { id: 'definitionBuilder', name: '', description: '', minWords: 1, icon: '🧩' },

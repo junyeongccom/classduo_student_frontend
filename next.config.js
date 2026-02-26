@@ -6,12 +6,10 @@ const nextConfig = {
   // Next.js inferring the wrong workspace root in dev/build.
   outputFileTracingRoot: __dirname,
   typescript: {
-    // ⚠️ Vercel 빌드 시 TypeScript 에러 무시 (주의: 프로덕션에서는 권장하지 않음)
-    ignoreBuildErrors: false, // 에러 발생 시 빌드 중단 (안전)
+    ignoreBuildErrors: false,
   },
   eslint: {
-    // ⚠️ Vercel 빌드 시 ESLint 에러 무시 (주의: 프로덕션에서는 권장하지 않음)
-    ignoreDuringBuilds: false, // 에러 발생 시 빌드 중단 (안전)
+    ignoreDuringBuilds: false,
   },
   async redirects() {
     return [
@@ -26,6 +24,34 @@ const nextConfig = {
         permanent: true,
       },
     ]
+  },
+  webpack(config, { isServer }) {
+    // Game code obfuscation — production client builds only
+    if (!isServer && process.env.NODE_ENV === 'production') {
+      try {
+        const WebpackObfuscator = require('webpack-obfuscator')
+        config.plugins.push(
+          new WebpackObfuscator(
+            {
+              rotateStringArray: true,
+              stringArray: true,
+              stringArrayThreshold: 0.75,
+              identifierNamesGenerator: 'hexadecimal',
+              // Keep performance reasonable
+              selfDefending: false,
+              debugProtection: false,
+              disableConsoleOutput: false,
+            },
+            // Only obfuscate game-related code
+            ['**/features/ai-tutor/game/**']
+          )
+        )
+      } catch {
+        // webpack-obfuscator not installed — skip
+        console.warn('webpack-obfuscator not found, skipping game code obfuscation')
+      }
+    }
+    return config
   },
 }
 

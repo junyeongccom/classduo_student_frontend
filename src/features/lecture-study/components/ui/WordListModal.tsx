@@ -39,7 +39,6 @@ interface WordListModalProps {
   gameName: string
   onStartGame: () => void
   isImporting?: boolean
-  isRunningGame?: boolean
   importError?: string | null
 }
 
@@ -53,7 +52,6 @@ export function WordListModal({
   gameName,
   onStartGame,
   isImporting = false,
-  isRunningGame = false,
   importError = null,
 }: WordListModalProps) {
   const t = useTranslations()
@@ -63,7 +61,7 @@ export function WordListModal({
   const [editKeyword, setEditKeyword] = useState('')
   const [editDescription, setEditDescription] = useState('')
 
-  const canStart = isRunningGame || words.length >= minWords
+  const canStart = words.length >= minWords
 
   const handleAdd = () => {
     if (!newKeyword.trim() || words.length >= MAX_WORD_COUNT) return
@@ -111,12 +109,6 @@ export function WordListModal({
           <DialogTitle>{t('lectureStudy.game.wordListTitle')}</DialogTitle>
           <DialogDescription>{gameName}</DialogDescription>
         </DialogHeader>
-
-        {isRunningGame && (
-          <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
-            {t('lectureStudy.game.runningGameNote')}
-          </div>
-        )}
 
         <div className="flex-1 min-h-0 overflow-y-auto space-y-2 py-2">
           {words.map(word => (

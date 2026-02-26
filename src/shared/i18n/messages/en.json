@@ -299,6 +299,8 @@
         "goalLabel": "Goal",
         "controlsLabel": "Controls",
         "playButton": "Start Game",
+        "rankPlayButton": "Rank Play",
+        "normalPlayButton": "Normal Play",
         "running": {
           "subtitle": "A side-scrolling runner — jump obstacles and answer quizzes",
           "goal": "Your character runs automatically. Jump over obstacles and answer quizzes that appear periodically. Survive as long as you can!",

@@ -299,6 +299,8 @@
         "goalLabel": "목표",
         "controlsLabel": "조작 방법",
         "playButton": "게임 시작",
+        "rankPlayButton": "랭크 플레이",
+        "normalPlayButton": "일반 플레이",
         "running": {
           "subtitle": "장애물을 뛰어넘고 퀴즈에 답하는 횡스크롤 러닝 게임",
           "goal": "캐릭터가 자동으로 달립니다. 장애물을 뛰어넘고, 주기적으로 나타나는 퀴즈에 정답을 맞혀 최대한 오래 살아남으세요!",
