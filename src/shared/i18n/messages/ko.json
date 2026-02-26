@@ -925,6 +925,9 @@
     "profileUpdate": "프로필 수정 중 오류가 발생했습니다.",
     "passwordChange": "비밀번호 변경 중 오류가 발생했습니다.",
     "deleteAccount": "회원 탈퇴 중 오류가 발생했습니다."
+  },
+  "myQuiz": {
+    "title": "내 퀴즈"
   }
 }
 

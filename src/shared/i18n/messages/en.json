@@ -925,6 +925,9 @@
     "profileUpdate": "An error occurred while updating profile.",
     "passwordChange": "An error occurred while changing password.",
     "deleteAccount": "An error occurred while deleting account."
+  },
+  "myQuiz": {
+    "title": "My Quiz"
   }
 }
 
