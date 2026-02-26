@@ -1,12 +1,13 @@
 /**
  * @file SessionCard.tsx
- * @description 퀴즈 세션 카드 UI (상태별 뱃지 + 제목 + 퀴즈 수)
+ * @description 퀴즈 세션 카드 UI (상태별 뱃지 + 인라인 제목 편집 + 삭제)
  * @module features/my-quiz
  * @dependencies next-intl, lucide-react
  */
 
 'use client'
 
+import { useState, useRef, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { Loader2, CheckCircle2, AlertTriangle, Trash2 } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
@@ -16,6 +17,7 @@ interface SessionCardProps {
   session: QuizSession
   onSelect: (sessionId: string) => void
   onDelete: (sessionId: string) => void
+  onRename: (sessionId: string, title: string) => void
 }
 
 function StatusBadge({ status }: { status: SessionStatus }) {
@@ -46,27 +48,76 @@ function StatusBadge({ status }: { status: SessionStatus }) {
   }
 }
 
-export default function SessionCard({ session, onSelect, onDelete }: SessionCardProps) {
+export default function SessionCard({ session, onSelect, onDelete, onRename }: SessionCardProps) {
   const t = useTranslations('myQuiz.session')
   const isClickable = session.status === 'COMPLETED'
   const isFailed = session.status === 'FAILED'
 
-  const title = session.title || new Date(session.created_at).toLocaleString()
+  const displayTitle = session.title || new Date(session.created_at).toLocaleString()
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(displayTitle)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const startEdit = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (session.status === 'CREATING') return
+    setEditValue(displayTitle)
+    setIsEditing(true)
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }, [displayTitle, session.status])
+
+  const commitEdit = useCallback(() => {
+    setIsEditing(false)
+    const trimmed = editValue.trim()
+    if (trimmed && trimmed !== displayTitle) {
+      onRename(session.session_id, trimmed)
+    }
+  }, [editValue, displayTitle, session.session_id, onRename])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      commitEdit()
+    } else if (e.key === 'Escape') {
+      setIsEditing(false)
+      setEditValue(displayTitle)
+    }
+  }, [commitEdit, displayTitle])
 
   return (
     <div
       className={cn(
         'flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 transition',
         isClickable && 'cursor-pointer hover:border-indigo-300 hover:shadow-sm',
-        !isClickable && 'opacity-75',
+        !isClickable && !isFailed && 'opacity-75',
       )}
-      onClick={() => isClickable && onSelect(session.session_id)}
+      onClick={() => isClickable && !isEditing && onSelect(session.session_id)}
     >
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className={cn('text-sm font-medium truncate', isFailed && 'text-red-600')}>
-            {title}
-          </span>
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={editValue}
+              onChange={e => setEditValue(e.target.value)}
+              onBlur={commitEdit}
+              onKeyDown={handleKeyDown}
+              onClick={e => e.stopPropagation()}
+              className="text-sm font-medium text-gray-900 border-b border-indigo-400 bg-transparent outline-none px-0 py-0 w-full"
+            />
+          ) : (
+            <span
+              className={cn(
+                'text-sm font-medium truncate',
+                isFailed ? 'text-red-600' : 'cursor-text hover:text-indigo-600',
+              )}
+              onClick={startEdit}
+              title={t('rename')}
+            >
+              {displayTitle}
+            </span>
+          )}
           <StatusBadge status={session.status} />
         </div>
         {isFailed ? (

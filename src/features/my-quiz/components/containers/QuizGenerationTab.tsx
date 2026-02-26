@@ -101,6 +101,14 @@ export default function QuizGenerationTab({
     setShowCreateForm(false)
   }, [])
 
+  const handleRename = useCallback(async (sessionId: string, title: string) => {
+    const result = await myQuizService.renameSession(sessionId, title)
+    if (result.error) return
+    setSessions(prev =>
+      prev.map(s => s.session_id === sessionId ? { ...s, title } : s),
+    )
+  }, [])
+
   // 선택된 강의 없으면 안내
   if (!selectedLectureId) {
     return (
@@ -175,6 +183,7 @@ export default function QuizGenerationTab({
                 session={session}
                 onSelect={setSelectedSessionId}
                 onDelete={handleDelete}
+                onRename={handleRename}
               />
             ))}
           </div>
