@@ -44,7 +44,11 @@ function parseContentSummary(raw: string | null): ContentSummary | null {
                 headers: (tbl.headers as unknown[]).filter((h: unknown) => typeof h === 'string') as string[],
                 rows: (tbl.rows as unknown[])
                   .filter((r: unknown) => Array.isArray(r))
-                  .map((r: unknown) => (r as unknown[]).map(String)) as string[][],
+                  .map((r: unknown) =>
+                    (r as unknown[]).map((c: unknown) =>
+                      typeof c === 'string' ? c : typeof c === 'number' ? String(c) : '',
+                    ),
+                  ) as string[][],
               }
             })
         : undefined,
@@ -125,7 +129,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
         setIsLoading(false)
       } catch (err) {
         if (cancelled) return
-        console.error('[SummaryTabContainer] fetchSummary error:', err instanceof Error ? err.message : String(err))
+        console.error('[SummaryTabContainer] fetchSummary failed')
         setError('SUMMARY_LOAD_ERROR')
         setIsLoading(false)
       }
@@ -145,12 +149,14 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
       const safeCursor = cursor >= 0 && cursor < sourcePages.length ? cursor : 0
 
       // 유효한 페이지 찾기 (범위 초과 건너뛰기)
+      // Q-AC1 fix: totalPageCount <= 0 (material 미로딩)이면 범위 검증 건너뛰기
+      const shouldSkipRangeCheck = totalPageCount <= 0
       let attempts = 0
       let current = safeCursor
       while (attempts < sourcePages.length) {
         const page = sourcePages[current]
         const targetIdx = page - 1 // 1-indexed → 0-indexed
-        if (targetIdx >= 0 && targetIdx < totalPageCount) {
+        if (shouldSkipRangeCheck || (targetIdx >= 0 && targetIdx < totalPageCount)) {
           materialsCursorRef.current[sectionKey] = (current + 1) % sourcePages.length
 
           // 좌측 패널 열기 + 강의자료 탭 전환 + 타겟 설정
@@ -238,7 +244,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
 
       {/* Sections + 출처 버튼 */}
       {summary.sections.map((section, index) => {
-        const sectionKey = section.title || String(index)
+        const sectionKey = `${section.title || ''}-${index}`
         const hasSourcePages = section.source_pages.length > 0
         const hasSourceChunks = section.source_chunks.length > 0
 
@@ -371,6 +377,8 @@ function SourceButton({ label, tooltipId, tooltipContent, disabled, disabledClic
       <button
         type="button"
         aria-describedby={tooltipId}
+        aria-disabled={disabled || undefined}
+        tabIndex={disabled ? -1 : undefined}
         className={[
           'rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors',
           disabled
