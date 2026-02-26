@@ -416,7 +416,9 @@
       "hideAnswer": "Hide answer & explanation",
       "answer": "Answer",
       "explanation": "Explanation",
-      "choiceAnalysis": "Choice analysis"
+      "choiceAnalysis": "Choice analysis",
+      "bookmarkRemove": "Remove bookmark",
+      "bookmarkAdd": "Add bookmark"
     },
     "contentsChat": {
       "errorGenerate": "Failed to generate a response. Please try again.",

@@ -193,7 +193,7 @@ export function StudentQuizCard({
           type="button"
           onClick={handleBookmarkClick}
           className="ml-auto p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+          aria-label={isBookmarked ? t('bookmarkRemove') : t('bookmarkAdd')}
         >
           <Star
             className={`h-4 w-4 transition-colors ${

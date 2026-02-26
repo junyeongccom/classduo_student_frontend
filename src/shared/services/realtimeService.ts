@@ -17,11 +17,9 @@ export interface ProgressEvent {
 }
 
 export interface RewardEvent {
-  user_id: string
+  student_id: string
   lecture_id: string
-  course_id: string | null
-  reward_type: string
-  amount: number
+  earned_at: string
 }
 
 export type ProgressEventHandler = (event: ProgressEvent) => void

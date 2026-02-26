@@ -416,7 +416,9 @@
       "hideAnswer": "정답 및 해설 접기",
       "answer": "정답",
       "explanation": "해설",
-      "choiceAnalysis": "선지별 분석"
+      "choiceAnalysis": "선지별 분석",
+      "bookmarkRemove": "즐겨찾기 해제",
+      "bookmarkAdd": "즐겨찾기 추가"
     },
     "contentsChat": {
       "errorGenerate": "답변을 생성하지 못했습니다. 다시 시도해주세요.",

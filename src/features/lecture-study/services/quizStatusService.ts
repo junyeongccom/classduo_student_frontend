@@ -35,8 +35,9 @@ interface CorrectResponse {
 }
 
 interface RewardGrantResponse {
-  reward_id: string | null
-  already_granted: boolean
+  lecture_id: string
+  rewarded: boolean
+  already_exists: boolean
   message: string
 }
 

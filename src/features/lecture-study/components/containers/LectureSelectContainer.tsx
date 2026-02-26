@@ -58,7 +58,6 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
     supabase
       .from('student_quiz_rewards')
       .select('lecture_id')
-      .eq('reward_type', 'purple_gem')
       .then(({ data }) => {
         if (data) {
           const ids = new Set(data.map((r: { lecture_id: string }) => r.lecture_id))
