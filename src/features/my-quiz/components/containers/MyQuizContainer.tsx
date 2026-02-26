@@ -11,6 +11,8 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/Tabs'
 import type { TabType } from '../../types'
+import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
+import LectureSelectorBar from '../ui/LectureSelectorBar'
 import QuizGenerationTab from './QuizGenerationTab'
 import FavoritesTab from './FavoritesTab'
 import WrongAnswersTab from './WrongAnswersTab'
@@ -20,8 +22,17 @@ const TAB_KEYS: TabType[] = ['generation', 'favorites', 'wrong']
 export default function MyQuizContainer() {
   const t = useTranslations('myQuiz')
   const [activeTab, setActiveTab] = useState<TabType>('generation')
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
-  const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
+
+  const {
+    isLoading,
+    courseOptions,
+    lectureOptions,
+    selectedCourseId,
+    selectedLectureId,
+    onCourseChange,
+    onLectureChange,
+    hasCourses,
+  } = useCourseAndLecture()
 
   return (
     <Tabs
@@ -58,7 +69,17 @@ export default function MyQuizContainer() {
         <WrongAnswersTab selectedLectureId={selectedLectureId} />
       </TabsContent>
 
-      {/* 하단 강좌/회차 선택 바 — Task 4에서 구현 */}
+      {/* 하단 강좌/회차 선택 바 */}
+      <LectureSelectorBar
+        courseOptions={courseOptions}
+        lectureOptions={lectureOptions}
+        selectedCourseId={selectedCourseId}
+        selectedLectureId={selectedLectureId}
+        onCourseChange={onCourseChange}
+        onLectureChange={onLectureChange}
+        isLoading={isLoading}
+        hasCourses={hasCourses}
+      />
     </Tabs>
   )
 }
