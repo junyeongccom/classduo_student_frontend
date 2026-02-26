@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type { LectureReviewItem } from '@/features/review/types'
+import { useTranslations } from 'next-intl'
+import type { LectureReviewItem, MatchingRankingEntry } from '@/features/review/types'
+import { reviewService } from '@/features/review/services/reviewService'
+import { GameRankingBoard } from './GameRankingBoard'
 
 type MatchCard = {
   id: string
@@ -43,9 +46,11 @@ interface ReviewMatchingGameProps {
   reviewItems: LectureReviewItem[]
   isEnabled: boolean
   onExit: () => void
+  lectureId?: string | null
 }
 
-export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMatchingGameProps) {
+export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }: ReviewMatchingGameProps) {
+  const t = useTranslations('review.ui')
   const [selectedSize, setSelectedSize] = useState<SizeOption | null>(null)
   const [cards, setCards] = useState<MatchCard[]>([])
   const [flippedIds, setFlippedIds] = useState<string[]>([])
@@ -56,6 +61,22 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMat
   const [elapsedMs, setElapsedMs] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [gameCompleted, setGameCompleted] = useState(false)
+
+  // 제출 + 랭킹 상태
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submissionRank, setSubmissionRank] = useState<number | null>(null)
+  const [rankings, setRankings] = useState<MatchingRankingEntry[]>([])
+  const [rankingsLoading, setRankingsLoading] = useState(false)
+  const [rankingsError, setRankingsError] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [activePairCount, setActivePairCount] = useState<number | null>(null)
+  const pairCountTabs = useMemo(() => {
+    const tabs: number[] = []
+    SIZE_OPTIONS.forEach(opt => {
+      if (reviewItems.length >= opt.pairs) tabs.push(opt.pairs)
+    })
+    return tabs
+  }, [reviewItems.length])
 
   const availableCount = reviewItems.length
 
@@ -95,6 +116,9 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMat
     setWrongIds(new Set())
     setElapsedMs(0)
     setGameCompleted(false)
+    setSubmissionRank(null)
+    setRankings([])
+    setRankingsError(null)
     setStartBanner(true)
     setIsRunning(false)
     window.setTimeout(() => {
@@ -145,6 +169,71 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMat
       setGameCompleted(true)
     }
   }, [cards.length, matchedIds])
+
+  // 게임 완료 시 점수 제출 + 랭킹 조회
+  useEffect(() => {
+    if (!gameCompleted || !lectureId || !selectedSize || isSubmitting) return
+    let cancelled = false
+    const pairCount = selectedSize.pairs
+
+    const submitAndFetch = async () => {
+      setIsSubmitting(true)
+      setRankingsLoading(true)
+      setRankingsError(null)
+      setActivePairCount(pairCount)
+
+      try {
+        const { data: submitData } = await reviewService.submitMatchingGameScore(
+          lectureId, elapsedMs, pairCount
+        )
+        if (!cancelled && submitData) {
+          setSubmissionRank(submitData.rank)
+        }
+      } catch {
+        // 제출 실패는 무시
+      }
+
+      try {
+        const { data: rankData } = await reviewService.getMatchingGameRankings(lectureId, pairCount, 10)
+        if (!cancelled && rankData) {
+          setRankings(rankData.rankings)
+          if (rankData.my_best) {
+            const me = rankData.rankings.find(r => r.rank === rankData.my_best!.rank && r.elapsed_ms === rankData.my_best!.elapsed_ms)
+            if (me) setCurrentUserId(me.user_id)
+          }
+        }
+      } catch {
+        if (!cancelled) setRankingsError(t('ranking.loadError'))
+      } finally {
+        if (!cancelled) {
+          setIsSubmitting(false)
+          setRankingsLoading(false)
+        }
+      }
+    }
+
+    submitAndFetch()
+    return () => { cancelled = true }
+  }, [gameCompleted, lectureId, selectedSize])
+
+  // pair_count 탭 전환 시 랭킹 재조회
+  const handlePairCountChange = async (pairCount: number) => {
+    if (!lectureId) return
+    setActivePairCount(pairCount)
+    setRankingsLoading(true)
+    setRankingsError(null)
+    try {
+      const { data: rankData } = await reviewService.getMatchingGameRankings(lectureId, pairCount, 10)
+      if (rankData) {
+        setRankings(rankData.rankings)
+        setSubmissionRank(rankData.my_best?.rank ?? null)
+      }
+    } catch {
+      setRankingsError(t('ranking.loadError'))
+    } finally {
+      setRankingsLoading(false)
+    }
+  }
 
   if (!isEnabled) {
     return (
@@ -208,6 +297,19 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit }: ReviewMat
             목록으로
           </button>
         </div>
+        {lectureId && (
+          <GameRankingBoard
+            rankings={rankings}
+            myRank={submissionRank}
+            currentUserId={currentUserId}
+            isLoading={rankingsLoading}
+            error={rankingsError}
+            mode="time"
+            pairCountTabs={pairCountTabs}
+            activePairCount={activePairCount ?? undefined}
+            onPairCountChange={handlePairCountChange}
+          />
+        )}
       </div>
     )
   }

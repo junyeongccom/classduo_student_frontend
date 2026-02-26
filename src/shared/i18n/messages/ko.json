@@ -164,7 +164,22 @@
         "restart": "다시 시작",
         "back": "목록으로",
         "successTitle": "SUCCESS",
-        "finalScoreLabel": "최종 점수: {score}"
+        "finalScoreLabel": "최종 점수: {score}",
+        "submitting": "저장 중..."
+      },
+      "ranking": {
+        "title": "랭킹",
+        "myRank": "{rank}위",
+        "empty": "아직 기록이 없습니다",
+        "loadError": "랭킹을 불러올 수 없습니다",
+        "saveError": "점수를 저장할 수 없습니다",
+        "anonymous": "익명",
+        "rank": "순위",
+        "player": "플레이어",
+        "score": "점수",
+        "time": "시간",
+        "achievedAt": "달성일",
+        "pairs": "{count}쌍"
       },
       "guessTheTerm": {
         "selectLecture": "회차를 선택하면 게임을 시작할 수 있어요.",
