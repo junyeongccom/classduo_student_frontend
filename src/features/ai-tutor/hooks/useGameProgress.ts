@@ -116,7 +116,7 @@ export function useGameProgress() {
         })
       })
 
-      // Realtime 구독: user_lecture_rewards INSERT 이벤트
+      // Realtime 구독: student_quiz_rewards INSERT 이벤트
       unsubscribeReward = subscribeRewardEvents((event: RewardEvent) => {
         // RLS(user_id = auth.uid())가 서버에서 필터링하므로 클라이언트 필터 불필요
 

@@ -164,7 +164,22 @@
         "restart": "Restart",
         "back": "Back to list",
         "successTitle": "SUCCESS",
-        "finalScoreLabel": "Final score: {score}"
+        "finalScoreLabel": "Final score: {score}",
+        "submitting": "Saving..."
+      },
+      "ranking": {
+        "title": "Rankings",
+        "myRank": "#{rank}",
+        "empty": "No records yet",
+        "loadError": "Failed to load rankings",
+        "saveError": "Failed to save score",
+        "anonymous": "Anonymous",
+        "rank": "Rank",
+        "player": "Player",
+        "score": "Score",
+        "time": "Time",
+        "achievedAt": "Date",
+        "pairs": "{count} pairs"
       },
       "guessTheTerm": {
         "selectLecture": "Select a lecture to start the game.",
@@ -270,7 +285,8 @@
       "segmentFallback": "Segment {n}",
       "essenceTitle": "Key Points",
       "statusCompleted": "Completed",
-      "statusProcessing": "Processing"
+      "statusProcessing": "Processing",
+      "pageAlt": "Page {page}"
     },
     "rightPanel": {
       "summaryTab": "Summary",
@@ -363,6 +379,18 @@
       "loadFailed": "Failed to load data. Please try again.",
       "materialsLoadError": "Failed to load materials"
     },
+    "summary": {
+      "title": "Summary",
+      "loading": "Loading summary...",
+      "preparing": "Summary in preparation",
+      "sourceButtonMaterials": "(Materials)",
+      "sourceButtonRecordings": "(Recordings)",
+      "sourceTooltipPages": "Page {pages}",
+      "sourceTooltipChunks": "Chunk {chunks}",
+      "sourceEmptyTooltip": "No source information",
+      "recentIssuesTitle": "Recent Issues",
+      "examPointsTitle": "Key Points (Exam Prep)"
+    },
     "quiz": {
       "typeLabel": {
         "RECALL": "Content Recall",
@@ -393,7 +421,9 @@
       "hideAnswer": "Hide answer & explanation",
       "answer": "Answer",
       "explanation": "Explanation",
-      "choiceAnalysis": "Choice analysis"
+      "choiceAnalysis": "Choice analysis",
+      "bookmarkRemove": "Remove bookmark",
+      "bookmarkAdd": "Add bookmark"
     },
     "contentsChat": {
       "errorGenerate": "Failed to generate a response. Please try again.",
@@ -900,6 +930,67 @@
     "profileUpdate": "An error occurred while updating profile.",
     "passwordChange": "An error occurred while changing password.",
     "deleteAccount": "An error occurred while deleting account."
+  },
+  "myQuiz": {
+    "title": "My Quiz",
+    "tabs": {
+      "generation": "Quiz Generation",
+      "favorites": "Favorites",
+      "wrong": "Wrong Answers"
+    },
+    "selector": {
+      "selectCourse": "Select Course",
+      "selectLecture": "Select Lecture",
+      "noCourses": "No enrolled courses",
+      "selectPrompt": "Please select a lecture",
+      "loading": "Loading...",
+      "lectureLabel": "Lecture {no}",
+      "lectureLabelWithTitle": "Lecture {no} - {title}"
+    },
+    "empty": {
+      "selectLecture": "Select a lecture to view quizzes",
+      "noSessions": "Create a new quiz",
+      "noFavorites": "No bookmarked quizzes for this lecture",
+      "noWrong": "No wrong answers for this lecture"
+    },
+    "session": {
+      "title": "Session List",
+      "creating": "Creating",
+      "completed": "Completed",
+      "failed": "Failed",
+      "failedMessage": "Quiz generation failed",
+      "delete": "Delete Session",
+      "deleteConfirm": "Delete this session? All quizzes in this session will also be deleted.",
+      "rename": "Edit Title",
+      "pollingTimeout": "Generation is taking longer than expected. Please check back later",
+      "sessionDeleted": "Session has been deleted",
+      "quizCount": "{count} questions",
+      "back": "Back to list"
+    },
+    "create": {
+      "newSession": "Create New Quiz",
+      "quizCount": "Number of Questions",
+      "quizTypes": "Question Types",
+      "generate": "Generate",
+      "generating": "Generating...",
+      "noSnapshot": "Learning data is not ready for this lecture. Unable to generate quizzes",
+      "typeDEF_TO_TERM": "Definition→Term",
+      "typeTERM_TO_DEF": "Term→Definition",
+      "typeMISCONCEPTION": "Misconception Detection"
+    },
+    "quizSource": {
+      "instructor": "Instructor Quiz",
+      "customize": "My Quiz"
+    },
+    "error": {
+      "loadFailed": "Failed to load data",
+      "createFailed": "Failed to create session",
+      "deleteFailed": "Failed to delete session",
+      "renameFailed": "Failed to rename session",
+      "bookmarkFailed": "Failed to update bookmark",
+      "correctFailed": "Failed to save answer result",
+      "retry": "Retry"
+    }
   }
 }
 

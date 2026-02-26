@@ -134,7 +134,7 @@ export async function getLectureProgressStatusAll(): Promise<{
 
 /**
  * course_id별 보상 개수 조회
- * user_lecture_rewards 테이블에서 user_id 기준으로 해당 course_id의 보상 개수를 파악합니다.
+ * student_quiz_rewards 테이블에서 user_id 기준으로 해당 course_id의 보상 개수를 파악합니다.
  */
 export interface CourseRewardCount {
   course_id: string
@@ -148,13 +148,12 @@ export async function getCourseRewardCounts(): Promise<{
   try {
     const supabase = getSupabaseClient()
 
+    // lecture_id로 조회 후 lectures JOIN으로 course_id 도출
     const { data, error } = await supabase
-      .from('user_lecture_rewards')
-      .select('course_id, amount')
-      .eq('reward_type', 'purple_gem')
+      .from('student_quiz_rewards')
+      .select('lecture_id, lectures!inner(course_id)')
 
     if (error) {
-      // 에러 객체 전체를 로깅하여 디버깅 용이하게
       console.error('[progressService] 보상 개수 조회 실패:', {
         error,
         code: error.code,
@@ -163,108 +162,64 @@ export async function getCourseRewardCounts(): Promise<{
         hint: error.hint,
       })
 
-      // JWT 만료 에러 감지 및 처리
       if (isJWTExpiredError(error)) {
         console.warn('[progressService] JWT 만료 감지, 토큰 갱신 시도 중...')
         const refreshSuccess = await handleJWTExpiration()
-        
+
         if (!refreshSuccess) {
-          return { 
-            data: null, 
-            error: new Error('세션이 만료되었습니다. 다시 로그인해주세요.') 
+          return {
+            data: null,
+            error: new Error('세션이 만료되었습니다. 다시 로그인해주세요.')
           }
         }
-        
-        // 토큰 갱신 성공 시 원래 쿼리 자동 재시도
+
         console.log('[progressService] 토큰 갱신 성공, 쿼리 재시도 중...')
         const retrySupabase = getSupabaseClient()
         const retryResult = await retrySupabase
-          .from('user_lecture_rewards')
-          .select('course_id, amount')
-          .eq('reward_type', 'purple_gem')
-        
+          .from('student_quiz_rewards')
+          .select('lecture_id, lectures!inner(course_id)')
+
         if (retryResult.error) {
           console.error('[progressService] 재시도 실패:', retryResult.error)
-          return { 
-            data: null, 
-            error: new Error('세션이 갱신되었지만 쿼리 재시도에 실패했습니다. 다시 시도해주세요.') 
+          return {
+            data: null,
+            error: new Error('세션이 갱신되었지만 쿼리 재시도에 실패했습니다. 다시 시도해주세요.')
           }
         }
-        
-        // course_id별로 amount 합산
-        const rewardCountsMap = new Map<string, number>()
-        
-        if (retryResult.data) {
-          retryResult.data.forEach((reward) => {
-            if (reward.course_id) {
-              const current = rewardCountsMap.get(reward.course_id) || 0
-              rewardCountsMap.set(reward.course_id, current + (reward.amount || 1))
-            }
-          })
-        }
 
-        // Map을 배열로 변환
-        const result: CourseRewardCount[] = Array.from(rewardCountsMap.entries()).map(([course_id, total_amount]) => ({
-          course_id,
-          total_amount,
-        }))
-
-        return { data: result, error: null }
+        return { data: aggregateRewardCounts(retryResult.data), error: null }
       }
 
-      // 에러 메시지 추출 개선 (error.message가 없을 때 대체 메시지 사용)
       const errorMessage = getErrorMessage(error)
       return { data: null, error: new Error(errorMessage) }
     }
 
-    // course_id별로 amount 합산
-    const rewardCountsMap = new Map<string, number>()
-    
-    if (data) {
-      data.forEach((reward) => {
-        if (reward.course_id) {
-          const current = rewardCountsMap.get(reward.course_id) || 0
-          rewardCountsMap.set(reward.course_id, current + (reward.amount || 1))
-        }
-      })
-    }
-
-    // Map을 배열로 변환
-    const result: CourseRewardCount[] = Array.from(rewardCountsMap.entries()).map(([course_id, total_amount]) => ({
-      course_id,
-      total_amount,
-    }))
-
-    return { data: result, error: null }
+    return { data: aggregateRewardCounts(data), error: null }
   } catch (error) {
-    // 에러 객체 전체를 로깅하여 디버깅 용이하게
     console.error('[progressService] 보상 개수 조회 예외:', {
       error,
       type: typeof error,
       isError: error instanceof Error,
     })
-    
-    // JWT 만료 에러 감지 및 처리
+
     if (isJWTExpiredError(error)) {
       console.warn('[progressService] JWT 만료 감지 (예외), 토큰 갱신 시도 중...')
       const refreshSuccess = await handleJWTExpiration()
-      
+
       if (!refreshSuccess) {
         return {
           data: null,
           error: new Error('세션이 만료되었습니다. 다시 로그인해주세요.'),
         }
       }
-      
-      // 토큰 갱신 성공 시 원래 쿼리 자동 재시도
+
       console.log('[progressService] 토큰 갱신 성공, 쿼리 재시도 중...')
       try {
         const retrySupabase = getSupabaseClient()
         const retryResult = await retrySupabase
-          .from('user_lecture_rewards')
-          .select('course_id, amount')
-          .eq('reward_type', 'purple_gem')
-        
+          .from('student_quiz_rewards')
+          .select('lecture_id, lectures!inner(course_id)')
+
         if (retryResult.error) {
           console.error('[progressService] 재시도 실패:', retryResult.error)
           return {
@@ -272,26 +227,8 @@ export async function getCourseRewardCounts(): Promise<{
             error: new Error('세션이 갱신되었지만 쿼리 재시도에 실패했습니다. 다시 시도해주세요.'),
           }
         }
-        
-        // course_id별로 amount 합산
-        const rewardCountsMap = new Map<string, number>()
-        
-        if (retryResult.data) {
-          retryResult.data.forEach((reward) => {
-            if (reward.course_id) {
-              const current = rewardCountsMap.get(reward.course_id) || 0
-              rewardCountsMap.set(reward.course_id, current + (reward.amount || 1))
-            }
-          })
-        }
 
-        // Map을 배열로 변환
-        const result: CourseRewardCount[] = Array.from(rewardCountsMap.entries()).map(([course_id, total_amount]) => ({
-          course_id,
-          total_amount,
-        }))
-
-        return { data: result, error: null }
+        return { data: aggregateRewardCounts(retryResult.data), error: null }
       } catch (retryError) {
         console.error('[progressService] 재시도 중 예외 발생:', retryError)
         return {
@@ -300,7 +237,7 @@ export async function getCourseRewardCounts(): Promise<{
         }
       }
     }
-    
+
     return {
       data: null,
       error: error instanceof Error ? error : new Error(getErrorMessage(error)),
@@ -308,13 +245,35 @@ export async function getCourseRewardCounts(): Promise<{
   }
 }
 
+/** lecture JOIN 결과에서 course_id별 보상 개수 집계 */
+function aggregateRewardCounts(data: unknown[] | null): CourseRewardCount[] {
+  const rewardCountsMap = new Map<string, number>()
+
+  if (data) {
+    data.forEach((reward: any) => {
+      const courseId = reward.lectures?.course_id
+      if (courseId) {
+        const current = rewardCountsMap.get(courseId) || 0
+        rewardCountsMap.set(courseId, current + 1)
+      }
+    })
+  }
+
+  return Array.from(rewardCountsMap.entries()).map(([course_id, total_amount]) => ({
+    course_id,
+    total_amount,
+  }))
+}
+
 /**
- * 보상 클레임 API 호출
+ * 보상 클레임 API 호출 (student_quiz_rewards 기반 엔드포인트)
  */
 export interface ClaimRewardResponse {
   success: boolean
-  reward_type: string
-  amount: number
+  lecture_id: string
+  rewarded: boolean
+  already_exists: boolean
+  message: string
 }
 
 export async function claimReward(lectureId: string): Promise<{
@@ -322,8 +281,8 @@ export async function claimReward(lectureId: string): Promise<{
   error: { error_code: string; message: string } | null
 }> {
   try {
-    const result = await apiRequest<ClaimRewardResponse>(
-      API_ENDPOINTS.REWARD.CLAIM(lectureId),
+    const result = await apiRequest<{ lecture_id: string; rewarded: boolean; already_exists: boolean; message: string }>(
+      `/quiz-status/lectures/${lectureId}/reward`,
       {
         method: 'POST',
         auth: true,
@@ -334,7 +293,16 @@ export async function claimReward(lectureId: string): Promise<{
       return { data: null, error: result.error }
     }
 
-    return { data: result.data, error: null }
+    return {
+      data: {
+        success: result.data?.rewarded === true || result.data?.already_exists === true,
+        lecture_id: result.data?.lecture_id ?? lectureId,
+        rewarded: result.data?.rewarded ?? false,
+        already_exists: result.data?.already_exists ?? false,
+        message: result.data?.message ?? '',
+      },
+      error: null,
+    }
   } catch (error) {
     console.error('[progressService] 보상 클레임 실패:', error)
     return {

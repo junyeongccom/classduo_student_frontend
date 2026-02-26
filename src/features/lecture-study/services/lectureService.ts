@@ -79,6 +79,13 @@ export interface ContentsStudyChatResponse {
   answer: string
 }
 
+/** GET /content/lectures/{lectureId}/content-summary 응답 */
+export interface ContentSummaryApiResponse {
+  lecture_id: string
+  summary_json_ko: string | null
+  summary_json_en: string | null
+}
+
 /** input_snapshot_id 기반 강의자료 항목 */
 export interface SnapshotMaterialItem {
   material_id: string
@@ -177,6 +184,17 @@ export const lectureService = {
       return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
     }
     return apiRequest<SnapshotSelectionsResponse>(`/content/lectures/${lectureId}/snapshot-selections`, {
+      method: 'GET',
+      auth: true,
+    })
+  },
+
+  /** 회차 통합 요약 (lecture_content_summaries) 조회 */
+  getContentSummary: (lectureId: string) => {
+    if (!isUUID(lectureId)) {
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+    }
+    return apiRequest<ContentSummaryApiResponse>(`/content/lectures/${lectureId}/content-summary`, {
       method: 'GET',
       auth: true,
     })

@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import type { DefinitionBuilderGameResponse, DefinitionBuilderQuestion } from '@/features/review/types'
+import type { DefinitionBuilderGameResponse, DefinitionBuilderQuestion, ScoreRankingEntry } from '@/features/review/types'
+import { reviewService } from '@/features/review/services/reviewService'
+import { GameRankingBoard } from './GameRankingBoard'
 
 interface DefinitionBuilderGameProps {
   data: DefinitionBuilderGameResponse | null
@@ -13,6 +15,7 @@ interface DefinitionBuilderGameProps {
   currentScore: number
   onScoreDelta?: (delta: number) => void
   onRestart?: () => void
+  lectureId?: string | null
 }
 
 const createBlankMap = (question: DefinitionBuilderQuestion | null) => {
@@ -33,6 +36,7 @@ export function DefinitionBuilderGame({
   currentScore,
   onScoreDelta,
   onRestart,
+  lectureId,
 }: DefinitionBuilderGameProps) {
   const t = useTranslations('review.ui')
   const questions = data?.questions ?? []
@@ -43,6 +47,14 @@ export function DefinitionBuilderGame({
   const [usedChoices, setUsedChoices] = useState<Set<string>>(new Set())
   const [lastWrongChoice, setLastWrongChoice] = useState<string | null>(null)
   const [gameCompleted, setGameCompleted] = useState(false)
+
+  // 제출 + 랭킹 상태
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submissionRank, setSubmissionRank] = useState<number | null>(null)
+  const [rankings, setRankings] = useState<ScoreRankingEntry[]>([])
+  const [rankingsLoading, setRankingsLoading] = useState(false)
+  const [rankingsError, setRankingsError] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   const currentQuestion = questions[currentIndex] ?? null
   const blankIndices = useMemo(
@@ -85,6 +97,53 @@ export function DefinitionBuilderGame({
     }
   }, [completed, currentIndex, totalCount])
 
+  // 게임 완료 시 점수 제출 + 랭킹 조회
+  useEffect(() => {
+    if (!gameCompleted || !lectureId || isSubmitting) return
+    let cancelled = false
+
+    const submitAndFetch = async () => {
+      setIsSubmitting(true)
+      setRankingsLoading(true)
+      setRankingsError(null)
+
+      // 제출
+      try {
+        const { data: submitData } = await reviewService.submitDefinitionBuilderScore(
+          lectureId, currentScore, totalCount
+        )
+        if (!cancelled && submitData) {
+          setSubmissionRank(submitData.rank)
+        }
+      } catch {
+        // 제출 실패는 무시 (랭킹은 계속 조회)
+      }
+
+      // 랭킹 조회
+      try {
+        const { data: rankData } = await reviewService.getDefinitionBuilderRankings(lectureId, 10)
+        if (!cancelled && rankData) {
+          setRankings(rankData.rankings)
+          // currentUserId 추출: 제출 응답의 rank로 매칭
+          if (rankData.my_best) {
+            const me = rankData.rankings.find(r => r.rank === rankData.my_best!.rank && r.score === rankData.my_best!.score)
+            if (me) setCurrentUserId(me.user_id)
+          }
+        }
+      } catch {
+        if (!cancelled) setRankingsError(t('ranking.loadError'))
+      } finally {
+        if (!cancelled) {
+          setIsSubmitting(false)
+          setRankingsLoading(false)
+        }
+      }
+    }
+
+    submitAndFetch()
+    return () => { cancelled = true }
+  }, [gameCompleted, lectureId])
+
   const handleChoiceClick = (choice: string) => {
     if (!currentQuestion || completed) return
     const nextBlankIndex = currentQuestion.blanks.find(blank => blank.token === choice && !filledMap.get(blank.index))
@@ -120,6 +179,9 @@ export function DefinitionBuilderGame({
     setCompleted(false)
     setUsedChoices(new Set())
     setLastWrongChoice(null)
+    setSubmissionRank(null)
+    setRankings([])
+    setRankingsError(null)
     onRestart?.()
   }
 
@@ -179,6 +241,16 @@ export function DefinitionBuilderGame({
           >
             {t('definitionBuilder.restart')}
           </button>
+          {lectureId && (
+            <GameRankingBoard
+              rankings={rankings}
+              myRank={submissionRank}
+              currentUserId={currentUserId}
+              isLoading={rankingsLoading}
+              error={rankingsError}
+              mode="score"
+            />
+          )}
         </div>
       ) : (
         <>

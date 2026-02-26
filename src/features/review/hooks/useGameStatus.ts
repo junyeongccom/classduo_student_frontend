@@ -120,7 +120,7 @@ export function useGameStatus() {
       })
     })
 
-    // Realtime 구독: user_lecture_rewards INSERT 이벤트
+    // Realtime 구독: student_quiz_rewards INSERT 이벤트
     const unsubscribeReward = subscribeRewardEvents((event: RewardEvent) => {
       // 현재 사용자 ID 가져오기
       const currentUserId = user?.user_id
