@@ -63,6 +63,8 @@ export function LeftPanelMaterials() {
   const retriedMaterialsRef = useRef<Set<string>>(new Set())
   /** material별 원본 pages 데이터 (URL 재발급용) */
   const materialPagesMapRef = useRef<Map<string, MaterialPageItem[]>>(new Map())
+  /** scrollToPage settle ID (R-AW3 fix: 연속 호출 시 이전 settle 무효화) */
+  const settleIdRef = useRef(0)
 
   const totalPages = allPages.length
 
@@ -86,6 +88,7 @@ export function LeftPanelMaterials() {
       setError(null)
       setAllPages([])
       setCurrentPage(1)
+      pageRefs.current = [] // R-AW4 fix: stale ref 방지
       loadedImagesRef.current.clear()
       retriedMaterialsRef.current.clear()
       materialPagesMapRef.current.clear()
@@ -137,7 +140,7 @@ export function LeftPanelMaterials() {
         setIsLoading(false)
       } catch (err) {
         if (cancelled) return
-        console.error('[LeftPanelMaterials] fetchAllMaterials error:', err instanceof Error ? err.message : String(err))
+        console.error('[LeftPanelMaterials] fetchAllMaterials failed')
         setError('MATERIALS_LOAD_ERROR')
         setIsLoading(false)
       }
@@ -193,40 +196,22 @@ export function LeftPanelMaterials() {
     return () => observer.disconnect()
   }, [allPages])
 
-  // ─── Lazy loading + 메모리 관리 (Task 769, 770) ───
+  // ─── Lazy loading (Task 769) ───
   useEffect(() => {
     if (allPages.length === 0 || !scrollContainerRef.current) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          const idx = Number(entry.target.getAttribute('data-page-index'))
-          if (Number.isNaN(idx)) continue
+          if (!entry.isIntersecting) continue
 
           const img = entry.target.querySelector('img[data-lazy]') as HTMLImageElement | null
           if (!img) continue
 
-          if (entry.isIntersecting) {
-            // 뷰포트 진입 → 이미지 로딩
-            const realSrc = img.getAttribute('data-src')
-            if (realSrc && img.src !== realSrc) {
-              img.src = realSrc
-            }
-          }
-        }
-
-        // 메모리 관리: 현재 페이지 ±UNLOAD_THRESHOLD 페이지 바깥 이미지 해제 (인덱스 기반)
-        for (let i = 0; i < pageRefs.current.length; i++) {
-          const el = pageRefs.current[i]
-          if (!el) continue
-
-          const img = el.querySelector('img[data-lazy]') as HTMLImageElement | null
-          if (!img) continue
-
-          if (Math.abs(i - (currentPageRef.current - 1)) > UNLOAD_THRESHOLD) {
-            if (img.src && img.getAttribute('data-src')) {
-              img.removeAttribute('src')
-            }
+          // 뷰포트 진입 → 이미지 로딩
+          const realSrc = img.getAttribute('data-src')
+          if (realSrc && img.src !== realSrc) {
+            img.src = realSrc
           }
         }
       },
@@ -245,6 +230,43 @@ export function LeftPanelMaterials() {
     return () => observer.disconnect()
   }, [allPages])
 
+  // ─── 메모리 관리: 뷰포트 바깥 이미지 unload (Task 770, R-AW2 fix: 별도 debounce) ───
+  useEffect(() => {
+    if (allPages.length === 0) return
+
+    let timerId: ReturnType<typeof setTimeout> | null = null
+    const runMemoryCleanup = () => {
+      for (let i = 0; i < pageRefs.current.length; i++) {
+        const el = pageRefs.current[i]
+        if (!el) continue
+
+        const img = el.querySelector('img[data-lazy]') as HTMLImageElement | null
+        if (!img) continue
+
+        if (Math.abs(i - (currentPageRef.current - 1)) > UNLOAD_THRESHOLD) {
+          if (img.src && img.getAttribute('data-src')) {
+            img.removeAttribute('src')
+            // R-AW1 fix: placeholder 다시 표시
+            const placeholder = el.querySelector('.placeholder-overlay') as HTMLElement | null
+            if (placeholder) placeholder.classList.remove('hidden')
+          }
+        }
+      }
+    }
+
+    const handleScroll = () => {
+      if (timerId) clearTimeout(timerId)
+      timerId = setTimeout(runMemoryCleanup, 500)
+    }
+
+    const container = scrollContainerRef.current
+    container?.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      container?.removeEventListener('scroll', handleScroll)
+      if (timerId) clearTimeout(timerId)
+    }
+  }, [allPages])
+
   // ─── 화살표 클릭 → 스크롤 이동 (Task 765) ───
   const scrollToPage = useCallback(
     (pageIdx: number) => {
@@ -256,11 +278,12 @@ export function LeftPanelMaterials() {
 
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-      // scrollend 또는 timeout으로 스크롤 완료 감지
+      // R-AW3 fix: settleId로 연속 호출 시 이전 settle 무효화
+      const mySettleId = ++settleIdRef.current
       const container = scrollContainerRef.current
       let settled = false
       const settle = () => {
-        if (settled) return
+        if (settled || mySettleId !== settleIdRef.current) return
         settled = true
         isScrollingRef.current = false
         container.removeEventListener('scrollend', settle)
@@ -329,6 +352,13 @@ export function LeftPanelMaterials() {
     }
   }, [targetPage, allPages.length, scrollToPage, setTargetPage])
 
+  /** 언마운트 추적 (R-AW5 fix) */
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => { isMountedRef.current = false }
+  }, [])
+
   // ─── 이미지 로딩 에러 시 URL 재발급 (Task 771) ───
   const handleImageError = useCallback(
     async (pageIdx: number, entry: LoadedPage) => {
@@ -337,19 +367,27 @@ export function LeftPanelMaterials() {
       retriedMaterialsRef.current.add(key)
 
       try {
-        const result = await lectureService.getMaterialPages(entry.materialId)
-        if (result.data?.pages) {
-          const sorted = [...result.data.pages].sort((a, b) => a.page_number - b.page_number)
-          materialPagesMapRef.current.set(entry.materialId, sorted)
+        // S-AW3 fix: 이미 재발급된 material의 캐시가 있으면 API 재호출 없이 재사용
+        let sorted = materialPagesMapRef.current.get(entry.materialId)
+        if (!sorted) {
+          const result = await lectureService.getMaterialPages(entry.materialId)
+          if (!isMountedRef.current) return // R-AW5 fix: 언마운트 가드
+          if (result.data?.pages) {
+            sorted = [...result.data.pages].sort((a, b) => a.page_number - b.page_number)
+            materialPagesMapRef.current.set(entry.materialId, sorted)
+          }
+        }
 
-          if (entry.pageIndex >= 0 && entry.pageIndex < sorted.length) {
-            const newPage = sorted[entry.pageIndex]
-            if (newPage?.image_url) {
-              const img = pageRefs.current[pageIdx]?.querySelector('img[data-lazy]') as HTMLImageElement | null
-              if (img) {
-                img.setAttribute('data-src', newPage.image_url)
-                img.src = newPage.image_url
-              }
+        if (!isMountedRef.current || !sorted) return
+
+        if (entry.pageIndex >= 0 && entry.pageIndex < sorted.length) {
+          const newPage = sorted[entry.pageIndex]
+          // S-AW1 fix: 재발급 URL에도 isValidImageUrl 검증 적용
+          if (newPage?.image_url && isValidImageUrl(newPage.image_url)) {
+            const img = pageRefs.current[pageIdx]?.querySelector('img[data-lazy]') as HTMLImageElement | null
+            if (img) {
+              img.setAttribute('data-src', newPage.image_url)
+              img.src = newPage.image_url
             }
           }
         }
