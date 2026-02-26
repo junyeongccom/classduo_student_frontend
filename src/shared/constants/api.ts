@@ -52,11 +52,6 @@ export const API_ENDPOINTS = {
     SUBMIT: (lectureId: string) => `/api/lectures/${lectureId}/ox/submit`,
   },
 
-  // Reward
-  REWARD: {
-    CLAIM: (lectureId: string) => `/api/lectures/${lectureId}/reward/claim`,
-  },
-
   // Game Submission & Ranking
   GAME: {
     SUBMIT_RUNNING: (lectureId: string) => `/game/running/lectures/${lectureId}/submissions`,

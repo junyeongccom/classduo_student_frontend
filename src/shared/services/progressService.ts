@@ -309,7 +309,7 @@ export async function getCourseRewardCounts(): Promise<{
 }
 
 /**
- * 보상 클레임 API 호출
+ * 보상 클레임 API 호출 (student_quiz_rewards 기반 신규 엔드포인트)
  */
 export interface ClaimRewardResponse {
   success: boolean
@@ -322,8 +322,8 @@ export async function claimReward(lectureId: string): Promise<{
   error: { error_code: string; message: string } | null
 }> {
   try {
-    const result = await apiRequest<ClaimRewardResponse>(
-      API_ENDPOINTS.REWARD.CLAIM(lectureId),
+    const result = await apiRequest<{ reward_id: string | null; already_granted: boolean; message: string }>(
+      `/quiz-status/lectures/${lectureId}/reward`,
       {
         method: 'POST',
         auth: true,
@@ -334,7 +334,15 @@ export async function claimReward(lectureId: string): Promise<{
       return { data: null, error: result.error }
     }
 
-    return { data: result.data, error: null }
+    // 기존 호출자 호환을 위한 응답 매핑
+    return {
+      data: {
+        success: result.data?.reward_id != null || result.data?.already_granted === true,
+        reward_type: 'purple_gem',
+        amount: 1,
+      },
+      error: null,
+    }
   } catch (error) {
     console.error('[progressService] 보상 클레임 실패:', error)
     return {
