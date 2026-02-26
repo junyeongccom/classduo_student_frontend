@@ -1,14 +1,14 @@
 /**
  * @file QuizTabContainer.tsx
  * @description 회차별 학습 - 퀴즈 탭 컨테이너
- *   교수자가 생성한 AI 퀴즈를 유형별로 일렬 나열하여 표시한다.
+ *   교수자가 생성한 AI 퀴즈를 유형별로 나열하며, 즐겨찾기/풀이결과를 StudentQuizCard로 표시한다.
  * @module features/lecture-study/components/containers
- * @dependencies instructorQuizService, InstructorQuizCard
+ * @dependencies instructorQuizService, quizStatusService, StudentQuizCard
  */
 
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { Loader2, HelpCircle, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -17,7 +17,14 @@ import {
   type InstructorQuizItem,
   type InstructorQuizType,
 } from '../../services/instructorQuizService'
-import { InstructorQuizCard } from '../ui/InstructorQuizCard'
+import {
+  getQuizStatusByLecture,
+  toggleBookmark,
+  updateCorrect,
+  grantReward,
+  type QuizStatus,
+} from '../../services/quizStatusService'
+import { StudentQuizCard, type StudentQuizItem } from '@/shared/components/quiz'
 
 interface QuizTabContainerProps {
   lectureId: string
@@ -32,39 +39,169 @@ const TYPE_ORDER: InstructorQuizType[] = [
   'STRUCTURE',
 ]
 
+/** InstructorQuizItem → StudentQuizItem 변환 */
+function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
+  return {
+    quiz_id: quiz.quiz_id,
+    quiz_type: quiz.quiz_type,
+    question: quiz.question,
+    answer: quiz.answer,
+    explanation: quiz.explanation,
+    difficulty: quiz.difficulty,
+    choices: quiz.choices.map((c) => ({
+      choice_id: c.choice_id,
+      choice_order: c.choice_order,
+      choice_text: c.choice_text,
+      is_correct: c.is_correct,
+      choice_explanation: c.choice_explanation,
+    })),
+  }
+}
+
 export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
   const [quizzes, setQuizzes] = useState<InstructorQuizItem[]>([])
+  const [statusMap, setStatusMap] = useState<Map<string, QuizStatus>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const t = useTranslations('lectureStudy.quiz')
   const { locale } = useI18n()
 
+  // 보상 판정이 중복 호출되지 않도록 ref로 관리
+  const rewardCheckingRef = useRef(false)
+
   useEffect(() => {
     let cancelled = false
 
-    async function fetchQuizzes() {
+    async function fetchData() {
       setIsLoading(true)
       setError(null)
       setQuizzes([])
+      setStatusMap(new Map())
 
-      const result = await getInstructorQuizzes(lectureId, locale)
+      // 퀴즈 + 상태를 병렬 조회
+      const [quizResult, statusResult] = await Promise.all([
+        getInstructorQuizzes(lectureId, locale),
+        getQuizStatusByLecture(lectureId, 'instructor'),
+      ])
+
       if (cancelled) return
 
-      if (result.error) {
-        setError(result.error.message)
+      if (quizResult.error) {
+        setError(quizResult.error.message)
         setIsLoading(false)
         return
       }
 
-      setQuizzes(result.data ?? [])
+      setQuizzes(quizResult.data ?? [])
+
+      if (statusResult.data) {
+        const map = new Map<string, QuizStatus>()
+        for (const s of statusResult.data) {
+          map.set(s.quiz_id, s)
+        }
+        setStatusMap(map)
+      }
+
       setIsLoading(false)
     }
 
-    fetchQuizzes()
+    fetchData()
     return () => {
       cancelled = true
     }
   }, [lectureId, locale])
+
+  // 즐겨찾기 토글
+  const handleBookmarkToggle = useCallback(
+    async (quizId: string) => {
+      const current = statusMap.get(quizId)
+      const newBookmark = !(current?.bookmark ?? false)
+
+      // 낙관적 업데이트
+      setStatusMap((prev) => {
+        const next = new Map(prev)
+        next.set(quizId, {
+          quiz_id: quizId,
+          quiz_source: 'instructor',
+          bookmark: newBookmark,
+          correct: current?.correct ?? null,
+        })
+        return next
+      })
+
+      const result = await toggleBookmark('instructor', quizId, lectureId, newBookmark)
+      if (result.error) {
+        // 실패 시 롤백
+        setStatusMap((prev) => {
+          const next = new Map(prev)
+          if (current) {
+            next.set(quizId, current)
+          } else {
+            next.delete(quizId)
+          }
+          return next
+        })
+      }
+    },
+    [statusMap, lectureId],
+  )
+
+  // 풀이 결과 업데이트 + 보상 판정
+  const handleCorrectUpdate = useCallback(
+    async (quizId: string, isCorrect: boolean) => {
+      const current = statusMap.get(quizId)
+
+      // 낙관적 업데이트
+      setStatusMap((prev) => {
+        const next = new Map(prev)
+        next.set(quizId, {
+          quiz_id: quizId,
+          quiz_source: 'instructor',
+          bookmark: current?.bookmark ?? false,
+          correct: isCorrect,
+        })
+        return next
+      })
+
+      const result = await updateCorrect('instructor', quizId, lectureId, isCorrect)
+      if (result.error) {
+        // 실패 시 롤백
+        setStatusMap((prev) => {
+          const next = new Map(prev)
+          if (current) {
+            next.set(quizId, current)
+          } else {
+            next.delete(quizId)
+          }
+          return next
+        })
+        return
+      }
+
+      // 보상 판정: 모든 instructor 퀴즈가 정답이면 reward 요청
+      if (isCorrect && !rewardCheckingRef.current) {
+        // 현재 업데이트 포함해서 전체 판정
+        const updatedMap = new Map(statusMap)
+        updatedMap.set(quizId, {
+          quiz_id: quizId,
+          quiz_source: 'instructor',
+          bookmark: current?.bookmark ?? false,
+          correct: isCorrect,
+        })
+
+        const allCorrect =
+          quizzes.length > 0 &&
+          quizzes.every((q) => updatedMap.get(q.quiz_id)?.correct === true)
+
+        if (allCorrect) {
+          rewardCheckingRef.current = true
+          await grantReward(lectureId)
+          rewardCheckingRef.current = false
+        }
+      }
+    },
+    [statusMap, lectureId, quizzes],
+  )
 
   // 유형별로 그룹화 (정의된 순서대로)
   const groupedQuizzes = useMemo(() => {
@@ -134,8 +271,17 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
           <div className="space-y-3">
             {group.items.map((quiz) => {
               const idx = globalIndex++
+              const status = statusMap.get(quiz.quiz_id)
               return (
-                <InstructorQuizCard key={quiz.quiz_id} quiz={quiz} index={idx} />
+                <StudentQuizCard
+                  key={quiz.quiz_id}
+                  quiz={toStudentQuiz(quiz)}
+                  index={idx}
+                  isBookmarked={status?.bookmark ?? false}
+                  isCorrect={status?.correct ?? null}
+                  onBookmarkToggle={handleBookmarkToggle}
+                  onCorrectUpdate={handleCorrectUpdate}
+                />
               )
             })}
           </div>

@@ -56,7 +56,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
   useEffect(() => {
     const supabase = getSupabaseClient()
     supabase
-      .from('user_lecture_rewards')
+      .from('student_quiz_rewards')
       .select('lecture_id')
       .eq('reward_type', 'purple_gem')
       .then(({ data }) => {

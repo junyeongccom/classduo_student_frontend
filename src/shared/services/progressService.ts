@@ -134,7 +134,7 @@ export async function getLectureProgressStatusAll(): Promise<{
 
 /**
  * course_id별 보상 개수 조회
- * user_lecture_rewards 테이블에서 user_id 기준으로 해당 course_id의 보상 개수를 파악합니다.
+ * student_quiz_rewards 테이블에서 user_id 기준으로 해당 course_id의 보상 개수를 파악합니다.
  */
 export interface CourseRewardCount {
   course_id: string
@@ -149,7 +149,7 @@ export async function getCourseRewardCounts(): Promise<{
     const supabase = getSupabaseClient()
 
     const { data, error } = await supabase
-      .from('user_lecture_rewards')
+      .from('student_quiz_rewards')
       .select('course_id, amount')
       .eq('reward_type', 'purple_gem')
 
@@ -179,7 +179,7 @@ export async function getCourseRewardCounts(): Promise<{
         console.log('[progressService] 토큰 갱신 성공, 쿼리 재시도 중...')
         const retrySupabase = getSupabaseClient()
         const retryResult = await retrySupabase
-          .from('user_lecture_rewards')
+          .from('student_quiz_rewards')
           .select('course_id, amount')
           .eq('reward_type', 'purple_gem')
         
@@ -261,7 +261,7 @@ export async function getCourseRewardCounts(): Promise<{
       try {
         const retrySupabase = getSupabaseClient()
         const retryResult = await retrySupabase
-          .from('user_lecture_rewards')
+          .from('student_quiz_rewards')
           .select('course_id, amount')
           .eq('reward_type', 'purple_gem')
         

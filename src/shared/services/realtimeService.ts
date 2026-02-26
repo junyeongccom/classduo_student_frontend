@@ -1,6 +1,6 @@
 /**
  * Realtime 구독 서비스
- * user_progress_events와 user_lecture_rewards 테이블의 INSERT 이벤트를 구독합니다.
+ * user_progress_events와 student_quiz_rewards 테이블의 INSERT 이벤트를 구독합니다.
  */
 'use client'
 
@@ -91,9 +91,9 @@ class RealtimeSubscriptionManager {
       if (this.rewardHandlers.size > 0) {
         try {
           await this.initializeRewardSubscription()
-          console.log('[realtimeService] user_lecture_rewards 재구독 완료')
+          console.log('[realtimeService] student_quiz_rewards 재구독 완료')
         } catch (error) {
-          console.error('[realtimeService] user_lecture_rewards 재구독 실패:', error)
+          console.error('[realtimeService] student_quiz_rewards 재구독 실패:', error)
         }
       }
     } finally {
@@ -194,7 +194,7 @@ class RealtimeSubscriptionManager {
   }
 
   /**
-   * user_lecture_rewards INSERT 이벤트 구독 시작
+   * student_quiz_rewards INSERT 이벤트 구독 시작
    */
   subscribeRewardEvents(handler: RewardEventHandler): () => void {
     this.rewardHandlers.add(handler)
@@ -211,7 +211,7 @@ class RealtimeSubscriptionManager {
 
     // 새 구독 시작 (비동기로 처리하되 반환은 동기적으로)
     this.initializeRewardSubscription().catch((error) => {
-      console.error('[realtimeService] user_lecture_rewards 구독 초기화 실패:', error)
+      console.error('[realtimeService] student_quiz_rewards 구독 초기화 실패:', error)
     })
 
     return () => {
@@ -223,18 +223,18 @@ class RealtimeSubscriptionManager {
   }
 
   /**
-   * user_lecture_rewards 구독 초기화 (내부 비동기 메서드)
+   * student_quiz_rewards 구독 초기화 (내부 비동기 메서드)
    */
   private async initializeRewardSubscription(): Promise<void> {
     const supabase = getSupabaseClient()
     this.rewardChannel = supabase
-      .channel('user_lecture_rewards')
+      .channel('student_quiz_rewards')
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'user_lecture_rewards',
+          table: 'student_quiz_rewards',
         },
         (payload) => {
           const event = payload.new as RewardEvent
@@ -243,14 +243,14 @@ class RealtimeSubscriptionManager {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('[realtimeService] user_lecture_rewards 구독 성공')
+          console.log('[realtimeService] student_quiz_rewards 구독 성공')
           this.rewardRetryCount = 0
         } else if (status === 'CHANNEL_ERROR') {
-          console.error('[realtimeService] user_lecture_rewards 구독 실패')
+          console.error('[realtimeService] student_quiz_rewards 구독 실패')
           if (this.rewardRetryCount < RealtimeSubscriptionManager.MAX_RETRIES) {
             this.rewardRetryCount++
             const delay = Math.min(1000 * 2 ** this.rewardRetryCount, 30000)
-            console.log(`[realtimeService] user_lecture_rewards 재시도 ${this.rewardRetryCount}/${RealtimeSubscriptionManager.MAX_RETRIES} (${delay}ms 후)`)
+            console.log(`[realtimeService] student_quiz_rewards 재시도 ${this.rewardRetryCount}/${RealtimeSubscriptionManager.MAX_RETRIES} (${delay}ms 후)`)
             if (this.rewardChannel) {
               getSupabaseClient().removeChannel(this.rewardChannel)
               this.rewardChannel = null
@@ -260,7 +260,7 @@ class RealtimeSubscriptionManager {
               this.initializeRewardSubscription()
             }, delay)
           } else {
-            console.warn('[realtimeService] user_lecture_rewards 최대 재시도 초과')
+            console.warn('[realtimeService] student_quiz_rewards 최대 재시도 초과')
           }
         }
       })
@@ -279,14 +279,14 @@ class RealtimeSubscriptionManager {
   }
 
   /**
-   * user_lecture_rewards 구독 해제
+   * student_quiz_rewards 구독 해제
    */
   private unsubscribeRewardEvents(): void {
     if (this.rewardChannel) {
       const supabase = getSupabaseClient()
       supabase.removeChannel(this.rewardChannel)
       this.rewardChannel = null
-      console.log('[realtimeService] user_lecture_rewards 구독 해제')
+      console.log('[realtimeService] student_quiz_rewards 구독 해제')
     }
   }
 
@@ -313,7 +313,7 @@ export function subscribeProgressEvents(handler: ProgressEventHandler): () => vo
 }
 
 /**
- * user_lecture_rewards INSERT 이벤트 구독
+ * student_quiz_rewards INSERT 이벤트 구독
  * @returns 구독 해제 함수
  */
 export function subscribeRewardEvents(handler: RewardEventHandler): () => void {
