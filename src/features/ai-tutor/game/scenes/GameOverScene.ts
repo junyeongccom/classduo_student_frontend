@@ -185,6 +185,7 @@ export class GameOverScene extends Phaser.Scene {
       scoreText.setAlpha(1);
       const countDuration = Math.min(1000, this.score * 30);
       let elapsed = 0;
+      let finished = false;
       this.time.addEvent({
         delay: 16,
         repeat: Math.ceil(countDuration / 16),
@@ -193,7 +194,8 @@ export class GameOverScene extends Phaser.Scene {
           const t = Math.min(elapsed / countDuration, 1);
           const displayScore = Math.round(this.score * t);
           scoreText.setText(`Score: ${displayScore}`);
-          if (t >= 1) {
+          if (t >= 1 && !finished) {
+            finished = true;
             this.tweens.add({
               targets: scoreText,
               scaleX: 1.2,
