@@ -8,6 +8,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { apiRequest } from '@/shared/lib/api'
 
 interface LectureItem {
@@ -43,6 +44,7 @@ export interface LectureOption {
 }
 
 export function useCourseAndLecture() {
+  const t = useTranslations('myQuiz')
   const [courses, setCourses] = useState<CourseItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -84,8 +86,8 @@ export function useCourseAndLecture() {
     .map(l => ({
       value: l.lecture_id,
       label: l.title
-        ? `${l.lecture_no}회차 - ${l.title}`
-        : `${l.lecture_no}회차`,
+        ? t('selector.lectureLabelWithTitle', { no: l.lecture_no, title: l.title })
+        : t('selector.lectureLabel', { no: l.lecture_no }),
     }))
 
   const handleCourseChange = useCallback((courseId: string) => {

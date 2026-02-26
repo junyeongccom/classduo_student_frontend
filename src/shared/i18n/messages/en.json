@@ -937,7 +937,10 @@
       "selectCourse": "Select Course",
       "selectLecture": "Select Lecture",
       "noCourses": "No enrolled courses",
-      "selectPrompt": "Please select a lecture"
+      "selectPrompt": "Please select a lecture",
+      "loading": "Loading...",
+      "lectureLabel": "Lecture {no}",
+      "lectureLabelWithTitle": "Lecture {no} - {title}"
     },
     "empty": {
       "selectLecture": "Select a lecture to view quizzes",

@@ -1,8 +1,8 @@
 /**
  * @file CreateSessionForm.tsx
- * @description 퀴즈 세션 생성 설정 폼 (문항 수 + 유형 선택)
+ * @description 퀴즈 세션 생성 설정 폼 (문항 수 + 유형 선택) — props 기반 UI
  * @module features/my-quiz
- * @dependencies next-intl, myQuizService
+ * @dependencies next-intl, lucide-react
  */
 
 'use client'
@@ -11,8 +11,6 @@ import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
-import * as myQuizService from '../../services/myQuizService'
-import type { QuizSession } from '../../types'
 
 const QUIZ_TYPES = [
   { value: 'DEF_TO_TERM', labelKey: 'typeDEF_TO_TERM' },
@@ -21,25 +19,24 @@ const QUIZ_TYPES = [
 ] as const
 
 interface CreateSessionFormProps {
-  lectureId: string
-  onCreated: (session: QuizSession) => void
+  onSubmit: (quizCount: number, quizTypes: string[]) => Promise<void>
   onCancel: () => void
+  isSubmitting?: boolean
+  error?: string | null
 }
 
 export default function CreateSessionForm({
-  lectureId,
-  onCreated,
+  onSubmit,
   onCancel,
+  isSubmitting = false,
+  error = null,
 }: CreateSessionFormProps) {
   const t = useTranslations('myQuiz.create')
-  const tError = useTranslations('myQuiz.error')
 
   const [quizCount, setQuizCount] = useState(10)
   const [selectedTypes, setSelectedTypes] = useState<string[]>(
     QUIZ_TYPES.map(qt => qt.value),
   )
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const toggleType = useCallback((type: string) => {
     setSelectedTypes(prev => {
@@ -51,40 +48,10 @@ export default function CreateSessionForm({
     })
   }, [])
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(() => {
     if (isSubmitting || selectedTypes.length === 0) return
-    setIsSubmitting(true)
-    setError(null)
-
-    const result = await myQuizService.createSession(
-      lectureId,
-      quizCount,
-      selectedTypes,
-    )
-
-    if (result.error || !result.data) {
-      setError(result.error?.message ?? tError('createFailed'))
-      setIsSubmitting(false)
-      return
-    }
-
-    const newSession: QuizSession = {
-      session_id: result.data.session_id,
-      student_id: '',
-      lecture_id: lectureId,
-      course_id: '',
-      generation_batch_id: null,
-      language: null,
-      status: 'CREATING',
-      quiz_count: quizCount,
-      title: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }
-
-    setIsSubmitting(false)
-    onCreated(newSession)
-  }, [isSubmitting, selectedTypes, lectureId, quizCount, tError, onCreated])
+    onSubmit(quizCount, selectedTypes)
+  }, [isSubmitting, selectedTypes, quizCount, onSubmit])
 
   return (
     <div className="flex h-full flex-col">

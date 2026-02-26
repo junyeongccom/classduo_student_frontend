@@ -23,6 +23,7 @@ interface BottomDropdownProps {
   placeholder: string
   onChange: (value: string) => void
   isLoading?: boolean
+  loadingLabel?: string
   emptyLabel?: string
   disabled?: boolean
 }
@@ -33,6 +34,7 @@ function BottomDropdown({
   placeholder,
   onChange,
   isLoading = false,
+  loadingLabel = '...',
   emptyLabel,
   disabled = false,
 }: BottomDropdownProps) {
@@ -84,7 +86,7 @@ function BottomDropdown({
           onPointerDown={e => e.stopPropagation()}
         >
           {isLoading ? (
-            <div className="px-3 py-2 text-sm text-gray-500">불러오는 중...</div>
+            <div className="px-3 py-2 text-sm text-gray-500">{loadingLabel}</div>
           ) : options.length === 0 ? (
             <div className="px-3 py-2 text-sm text-gray-500">{emptyLabel}</div>
           ) : (
@@ -154,6 +156,7 @@ export default function LectureSelectorBar({
           placeholder={t('selector.selectCourse')}
           onChange={onCourseChange}
           isLoading={isLoading}
+          loadingLabel={t('selector.loading')}
           emptyLabel={t('selector.noCourses')}
         />
         <BottomDropdown
@@ -162,6 +165,7 @@ export default function LectureSelectorBar({
           placeholder={t('selector.selectLecture')}
           onChange={onLectureChange}
           disabled={!selectedCourseId}
+          loadingLabel={t('selector.loading')}
           emptyLabel={t('selector.selectCourse')}
         />
       </div>

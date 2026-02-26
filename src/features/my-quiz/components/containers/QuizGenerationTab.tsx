@@ -96,10 +96,39 @@ export default function QuizGenerationTab({
     setSessions(prev => prev.filter(s => s.session_id !== sessionId))
   }, [])
 
-  const handleSessionCreated = useCallback((newSession: QuizSession) => {
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+
+  const handleCreateSubmit = useCallback(async (quizCount: number, quizTypes: string[]) => {
+    if (!selectedLectureId || isCreating) return
+    setIsCreating(true)
+    setCreateError(null)
+
+    const result = await myQuizService.createSession(selectedLectureId, quizCount, quizTypes)
+    if (result.error || !result.data) {
+      setCreateError(result.error?.message ?? t('error.createFailed'))
+      setIsCreating(false)
+      return
+    }
+
+    const newSession: QuizSession = {
+      session_id: result.data.session_id,
+      student_id: '',
+      lecture_id: selectedLectureId,
+      course_id: '',
+      generation_batch_id: null,
+      language: null,
+      status: 'CREATING',
+      quiz_count: quizCount,
+      title: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+
     setSessions(prev => [newSession, ...prev])
     setShowCreateForm(false)
-  }, [])
+    setIsCreating(false)
+  }, [selectedLectureId, isCreating, t])
 
   const handleRename = useCallback(async (sessionId: string, title: string) => {
     const result = await myQuizService.renameSession(sessionId, title)
@@ -133,9 +162,10 @@ export default function QuizGenerationTab({
   if (showCreateForm) {
     return (
       <CreateSessionForm
-        lectureId={selectedLectureId}
-        onCreated={handleSessionCreated}
+        onSubmit={handleCreateSubmit}
         onCancel={() => setShowCreateForm(false)}
+        isSubmitting={isCreating}
+        error={createError}
       />
     )
   }
