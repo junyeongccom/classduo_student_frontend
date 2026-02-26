@@ -103,4 +103,51 @@ export interface GuessTheTermChatResponse {
   answer: string
 }
 
+// ── Game Submission & Ranking Types ──
+
+export interface GameSubmissionResponse {
+  id: string
+  rank: number
+}
+
+export interface ScoreRankingEntry {
+  rank: number
+  user_id: string
+  display_name: string | null
+  score: number
+  achieved_at: string
+}
+
+export interface MatchingRankingEntry {
+  rank: number
+  user_id: string
+  display_name: string | null
+  elapsed_ms: number
+  pair_count: number
+  achieved_at: string
+}
+
+export interface ScoreMyBest {
+  rank: number
+  score: number
+  achieved_at: string
+}
+
+export interface MatchingMyBest {
+  rank: number
+  elapsed_ms: number
+  pair_count: number
+  achieved_at: string
+}
+
+export interface ScoreRankingResponse {
+  rankings: ScoreRankingEntry[]
+  my_best: ScoreMyBest | null
+}
+
+export interface MatchingRankingResponse {
+  rankings: MatchingRankingEntry[]
+  my_best: MatchingMyBest | null
+}
+
 

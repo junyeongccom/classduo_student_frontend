@@ -10,11 +10,14 @@ import type {
   DefinitionBuilderGameResponse,
   DeleteLectureReviewItemResponse,
   DeleteLectureReviewItemsResponse,
+  GameSubmissionResponse,
   GuessTheTermChatRequest,
   GuessTheTermChatResponse,
   ImportLectureKeywordsResponse,
   LectureReviewListResponse,
+  MatchingRankingResponse,
   RecordingLectureKeywordsResponse,
+  ScoreRankingResponse,
   UpdateLectureReviewItemRequest,
   UpdateLectureReviewItemResponse,
 } from '@/features/review/types'
@@ -238,5 +241,33 @@ export const reviewService = {
       auth: true,
     })
   },
+
+  // ── Game Submission & Ranking ──
+
+  submitDefinitionBuilderScore: (lectureId: string, score: number, totalQuestions: number) =>
+    apiRequest<GameSubmissionResponse>(API_ENDPOINTS.GAME.SUBMIT_DEFINITION_BUILDER(lectureId), {
+      method: 'POST',
+      auth: true,
+      body: { score, total_questions: totalQuestions },
+    }),
+
+  submitMatchingGameScore: (lectureId: string, elapsedMs: number, pairCount: number) =>
+    apiRequest<GameSubmissionResponse>(API_ENDPOINTS.GAME.SUBMIT_MATCHING(lectureId), {
+      method: 'POST',
+      auth: true,
+      body: { elapsed_ms: elapsedMs, pair_count: pairCount },
+    }),
+
+  getDefinitionBuilderRankings: (lectureId: string, limit: number = 10) =>
+    apiRequest<ScoreRankingResponse>(`${API_ENDPOINTS.GAME.RANKINGS_DEFINITION_BUILDER(lectureId)}?limit=${limit}`, {
+      method: 'GET',
+      auth: true,
+    }),
+
+  getMatchingGameRankings: (lectureId: string, pairCount: number, limit: number = 10) =>
+    apiRequest<MatchingRankingResponse>(`${API_ENDPOINTS.GAME.RANKINGS_MATCHING(lectureId)}?pair_count=${pairCount}&limit=${limit}`, {
+      method: 'GET',
+      auth: true,
+    }),
 }
 

@@ -164,7 +164,22 @@
         "restart": "Restart",
         "back": "Back to list",
         "successTitle": "SUCCESS",
-        "finalScoreLabel": "Final score: {score}"
+        "finalScoreLabel": "Final score: {score}",
+        "submitting": "Saving..."
+      },
+      "ranking": {
+        "title": "Rankings",
+        "myRank": "#{rank}",
+        "empty": "No records yet",
+        "loadError": "Failed to load rankings",
+        "saveError": "Failed to save score",
+        "anonymous": "Anonymous",
+        "rank": "Rank",
+        "player": "Player",
+        "score": "Score",
+        "time": "Time",
+        "achievedAt": "Date",
+        "pairs": "{count} pairs"
       },
       "guessTheTerm": {
         "selectLecture": "Select a lecture to start the game.",
