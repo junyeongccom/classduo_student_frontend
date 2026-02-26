@@ -54,7 +54,7 @@ export function DefinitionBuilderGame({
   const [rankings, setRankings] = useState<ScoreRankingEntry[]>([])
   const [rankingsLoading, setRankingsLoading] = useState(false)
   const [rankingsError, setRankingsError] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  // currentUserId는 더 이상 사용하지 않음 (is_mine 플래그로 대체)
 
   const currentQuestion = questions[currentIndex] ?? null
   const blankIndices = useMemo(
@@ -124,11 +124,7 @@ export function DefinitionBuilderGame({
         const { data: rankData } = await reviewService.getDefinitionBuilderRankings(lectureId, 10)
         if (!cancelled && rankData) {
           setRankings(rankData.rankings)
-          // currentUserId 추출: 제출 응답의 rank로 매칭
-          if (rankData.my_best) {
-            const me = rankData.rankings.find(r => r.rank === rankData.my_best!.rank && r.score === rankData.my_best!.score)
-            if (me) setCurrentUserId(me.user_id)
-          }
+          // is_mine 플래그가 백엔드에서 설정됨 — 별도 추출 불필요
         }
       } catch {
         if (!cancelled) setRankingsError(t('ranking.loadError'))
@@ -245,7 +241,7 @@ export function DefinitionBuilderGame({
             <GameRankingBoard
               rankings={rankings}
               myRank={submissionRank}
-              currentUserId={currentUserId}
+              currentUserId={null}
               isLoading={rankingsLoading}
               error={rankingsError}
               mode="score"
