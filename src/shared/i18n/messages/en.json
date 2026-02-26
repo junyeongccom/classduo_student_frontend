@@ -295,6 +295,9 @@
       "wordDescriptionPlaceholder": "Description",
       "importError": "Failed to import keywords. Please add words manually.",
       "loadGameError": "Failed to load game",
+      "nicknamePrompt": "Enter your nickname to play Rank mode.",
+      "nicknamePlaceholder": "Nickname (max 20 chars)",
+      "nicknameConfirm": "Start",
       "desc": {
         "goalLabel": "Goal",
         "controlsLabel": "Controls",

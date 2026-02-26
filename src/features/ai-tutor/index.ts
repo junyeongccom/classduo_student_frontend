@@ -6,6 +6,9 @@ export { AITutorLoading } from './components/ui/AITutorLoading'
 export { ChatInterface } from './components/containers/ChatInterface'
 export { GameOverlay } from './components/ui/GameOverlay'
 
+// Services
+export { gameScoreService } from './services/gameScoreService'
+
 // Domain utilities
 export {
   calculateWeekAndSession,

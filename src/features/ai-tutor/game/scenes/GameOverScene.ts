@@ -7,7 +7,8 @@ interface GameOverStrings {
   gameOver: string;
   restart: string;
   mainMenu: string;
-  scoreSubmitted: string;
+  newBest: string;
+  notNewBest: string;
   submitting: string;
   submitFailed: string;
 }
@@ -17,16 +18,18 @@ const STRINGS: Record<"ko" | "en", GameOverStrings> = {
     gameOver: "GAME OVER",
     restart: "다시 시작",
     mainMenu: "메인 메뉴",
-    scoreSubmitted: "점수 등록 완료!",
-    submitting: "점수 등록 중...",
+    newBest: "개인 최고 기록 경신!",
+    notNewBest: "개인 최고 기록 미갱신",
+    submitting: "점수 확인 중...",
     submitFailed: "점수 등록 실패",
   },
   en: {
     gameOver: "GAME OVER",
     restart: "Restart",
     mainMenu: "Main Menu",
-    scoreSubmitted: "Score Submitted!",
-    submitting: "Submitting...",
+    newBest: "New Personal Best!",
+    notNewBest: "Not a personal best",
+    submitting: "Checking score...",
     submitFailed: "Submit Failed",
   },
 };
@@ -283,8 +286,13 @@ export class GameOverScene extends Phaser.Scene {
       });
 
       if (data?.success) {
-        statusText.setText(this.t.scoreSubmitted);
-        statusText.setColor("#2ecc71");
+        if (data.is_new_best) {
+          statusText.setText(this.t.newBest);
+          statusText.setColor("#f1c40f");
+        } else {
+          statusText.setText(this.t.notNewBest);
+          statusText.setColor("#95a5a6");
+        }
       } else {
         statusText.setText(this.t.submitFailed);
         statusText.setColor("#e74c3c");

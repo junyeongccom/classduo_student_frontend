@@ -76,7 +76,6 @@ import {
   SCORE_BONUS,
   JUMP_COUNT_MAX,
   JUMP_COUNT_MIN,
-  FONT_FAMILY,
 } from "../constants";
 
 export class GameScene extends Phaser.Scene {
@@ -187,130 +186,14 @@ export class GameScene extends Phaser.Scene {
     // Managers reset in create() after instantiation
   }
 
-  private async checkNicknameAndStart(): Promise<void> {
+  private checkNicknameAndStart(): void {
+    // Nickname is now handled by React (GameTabContainer) before the game starts.
+    // Just verify and begin intro.
     const existingNickname = this.game.registry.get("nickname");
-    if (existingNickname) {
-      this.beginIntro();
-      return;
+    if (!existingNickname) {
+      console.warn("[GameScene] Rank mode started without nickname — React should have handled this.");
     }
-
-    // Try to load nickname from server
-    try {
-      const { gameScoreService } = await import("../../services/gameScoreService");
-      const { data } = await gameScoreService.getNickname();
-      if (data?.nickname) {
-        this.game.registry.set("nickname", data.nickname);
-        this.beginIntro();
-        return;
-      }
-    } catch {
-      // Continue to prompt
-    }
-
-    // Show nickname prompt
-    this.showNicknamePrompt();
-  }
-
-  private showNicknamePrompt(): void {
-    const loc = this.game.registry.get("locale") as string | undefined;
-    const isEn = loc === "en";
-    const promptLabel = isEn ? "Enter your nickname to play Rank mode:" : "랭크 모드 플레이를 위해 닉네임을 입력하세요:";
-    const confirmLabel = isEn ? "Start" : "시작";
-
-    // Overlay
-    const overlay = this.add.graphics();
-    overlay.fillStyle(0x000000, 0.7);
-    overlay.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.setDepth(1000);
-
-    // Label
-    const label = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT * 0.35, promptLabel, {
-        fontFamily: FONT_FAMILY,
-        fontSize: `${18 * S}px`,
-        color: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(1001);
-
-    // HTML input
-    const inputW = 300 * S;
-    const inputH = 40 * S;
-    const input = document.createElement("input");
-    input.type = "text";
-    input.maxLength = 20;
-    input.placeholder = isEn ? "Nickname (max 20 chars)" : "닉네임 (최대 20자)";
-    input.style.cssText = `
-      width: ${inputW}px;
-      height: ${inputH}px;
-      font-size: ${16 * S}px;
-      font-family: ${FONT_FAMILY};
-      text-align: center;
-      border: 2px solid #6366f1;
-      border-radius: ${8 * S}px;
-      background: rgba(26, 26, 46, 0.9);
-      color: #ffffff;
-      outline: none;
-      padding: 0 ${12 * S}px;
-    `;
-
-    const domEl = this.add.dom(GAME_WIDTH / 2, GAME_HEIGHT * 0.45, input).setDepth(1001);
-
-    // Confirm button
-    const btnW = 160 * S;
-    const btnH = 40 * S;
-    const btnX = GAME_WIDTH / 2;
-    const btnY = GAME_HEIGHT * 0.55;
-    const radius = 10 * S;
-
-    const bg = this.add.graphics().setDepth(1001);
-    bg.fillStyle(0x6366f1, 1);
-    bg.fillRoundedRect(btnX - btnW / 2, btnY - btnH / 2, btnW, btnH, radius);
-
-    const btnText = this.add
-      .text(btnX, btnY, confirmLabel, {
-        fontFamily: FONT_FAMILY,
-        fontSize: `${Math.round(18 * S)}px`,
-        color: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5)
-      .setDepth(1001);
-
-    const hitZone = this.add.zone(btnX, btnY, btnW, btnH).setDepth(1002).setInteractive({ useHandCursor: true });
-
-    const confirmAction = async () => {
-      const nickname = input.value.trim();
-      if (!nickname) return;
-
-      hitZone.disableInteractive();
-
-      try {
-        const { gameScoreService } = await import("../../services/gameScoreService");
-        await gameScoreService.setNickname(nickname);
-        this.game.registry.set("nickname", nickname);
-      } catch {
-        // Still allow play even if save fails
-        this.game.registry.set("nickname", nickname);
-      }
-
-      // Cleanup prompt
-      overlay.destroy();
-      label.destroy();
-      domEl.destroy();
-      bg.destroy();
-      btnText.destroy();
-      hitZone.destroy();
-
-      this.beginIntro();
-    };
-
-    hitZone.on("pointerdown", confirmAction);
-    input.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "Enter") confirmAction();
-      e.stopPropagation(); // Prevent game input capture
-    });
+    this.beginIntro();
   }
 
   private beginIntro(): void {
@@ -453,6 +336,12 @@ export class GameScene extends Phaser.Scene {
           this.screenFX.flash(FLASH_WRONG);
         }
       },
+      onPhysicsPause: () => {
+        this.player.prepareForPause();
+      },
+      onPhysicsResume: () => {
+        this.player.restoreAfterPause();
+      },
     });
   }
 
@@ -493,17 +382,9 @@ export class GameScene extends Phaser.Scene {
     seg.setScrollSpeed(this.getEffectiveSpeed());
   }
 
-  private isQuizPhase(): boolean {
-    return (
-      this.gameState === "choosing_reward" ||
-      this.gameState === "quiz_answering" ||
-      this.gameState === "quiz_result"
-    );
-  }
-
   private spawnNewGround(): void {
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH * 2) {
-      if (this.distanceTraveled > 800 && !this.isQuizPhase() && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
+      if (this.distanceTraveled > 800 && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
         const gapWidth = Phaser.Math.Between(GAP_WIDTH_MIN, Math.round(this.lerpDiff(DIFF_GAP_MAX_WIDTH)));
         this.spawnArcCoins(this.nextGroundX, gapWidth);
         this.nextGroundX += gapWidth;
@@ -850,7 +731,7 @@ export class GameScene extends Phaser.Scene {
 
     // Camera / parallax — stationary during intro
     if (!isIntro) {
-      this.cameraManager.update(this.getEffectiveSpeed(), delta, this.score);
+      this.cameraManager.update(this.getEffectiveSpeed(), delta, this.elapsedPlayTime);
     }
 
     // Accumulate play time for difficulty ramp

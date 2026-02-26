@@ -12,6 +12,8 @@ import {
   PLAYER_TEX_HEIGHT,
   COLOR_PLAYER,
   TRAIL_LENGTH,
+  GROUND_Y,
+  GROUND_HEIGHT,
 } from "../constants";
 
 // 720° / 0.4s = 1800°/s (same speed as old 2-rotation tween)
@@ -314,6 +316,42 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   destroy(fromScene?: boolean): void {
     this.trail.destroy();
     super.destroy(fromScene);
+  }
+
+  private savedVelocity: { x: number; y: number } | null = null;
+
+  prepareForPause(): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    // Stop spinning and reset angle so collision box is aligned
+    if (this.spinning) {
+      this.spinning = false;
+      this.setAngle(0);
+    }
+    // Save and zero velocity
+    this.savedVelocity = { x: body.velocity.x, y: body.velocity.y };
+    body.setVelocity(0, 0);
+  }
+
+  restoreAfterPause(): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    // Restore saved velocity
+    if (this.savedVelocity) {
+      body.setVelocity(this.savedVelocity.x, this.savedVelocity.y);
+      this.savedVelocity = null;
+    }
+    // Ensure player is not below ground
+    this.ensureAboveGround();
+  }
+
+  ensureAboveGround(): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const groundTop = GROUND_Y - GROUND_HEIGHT / 2;
+    const bodyHeight = body.height * this.scaleY;
+    const maxY = groundTop - bodyHeight / 2;
+    if (this.y > maxY) {
+      this.y = maxY;
+      body.setVelocityY(0);
+    }
   }
 
   private executeJump(): void {

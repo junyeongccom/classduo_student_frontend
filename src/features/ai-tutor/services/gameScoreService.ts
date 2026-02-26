@@ -19,6 +19,7 @@ interface ScoreSubmitPayload {
 interface ScoreSubmitResponse {
   success: boolean
   score_id?: string
+  is_new_best: boolean
 }
 
 export interface LeaderboardEntry {

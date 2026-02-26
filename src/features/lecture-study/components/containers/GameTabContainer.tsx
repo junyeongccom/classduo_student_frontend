@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
@@ -22,6 +22,14 @@ import {
   ReviewDeckView,
   useReviewDeck,
 } from '@/features/review'
+import { gameScoreService } from '@/features/ai-tutor'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/shared/components/ui'
 import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
 
 const GameOverlay = dynamic(
@@ -128,6 +136,14 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   // Game mode for running game
   const [gameMode, setGameMode] = useState<'rank' | 'normal' | null>(null)
 
+  // Nickname state
+  const [rankNickname, setRankNickname] = useState<string | undefined>(undefined)
+  const [showNicknameModal, setShowNicknameModal] = useState(false)
+  const [nicknameInput, setNicknameInput] = useState('')
+  const [nicknameSaving, setNicknameSaving] = useState(false)
+  const [nicknameError, setNicknameError] = useState<string | null>(null)
+  const nicknameInputRef = useRef<HTMLInputElement>(null)
+
   // Overlay states (full-screen modal)
   const [showRunningOverlay, setShowRunningOverlay] = useState(false)
   const [showMatchingOverlay, setShowMatchingOverlay] = useState(false)
@@ -149,11 +165,44 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     setShowDescriptionPopup(true)
   }, [])
 
-  const handleRankPlayFromDescription = useCallback(() => {
-    setShowDescriptionPopup(false)
+  const startRankGame = useCallback(() => {
     setGameMode('rank')
     setShowRunningOverlay(true)
   }, [])
+
+  const handleRankPlayFromDescription = useCallback(async () => {
+    setShowDescriptionPopup(false)
+    try {
+      const { data } = await gameScoreService.getNickname()
+      if (data?.nickname) {
+        setRankNickname(data.nickname)
+        startRankGame()
+        return
+      }
+    } catch {
+      // If API fails, show modal to be safe
+    }
+    // No nickname — show input modal
+    setNicknameInput('')
+    setNicknameError(null)
+    setShowNicknameModal(true)
+  }, [startRankGame])
+
+  const handleNicknameConfirm = useCallback(async () => {
+    const trimmed = nicknameInput.trim()
+    if (!trimmed) return
+    setNicknameSaving(true)
+    setNicknameError(null)
+    try {
+      await gameScoreService.setNickname(trimmed)
+    } catch {
+      // Still allow play even if save fails
+    }
+    setNicknameSaving(false)
+    setShowNicknameModal(false)
+    setRankNickname(trimmed)
+    startRankGame()
+  }, [nicknameInput, startRankGame])
 
   const handlePlayFromDescription = useCallback(() => {
     setShowDescriptionPopup(false)
@@ -239,11 +288,13 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
           setShowRunningOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
+          setRankNickname(undefined)
         }}
         triggerPosition={null}
         lectureId={lectureId}
         gameMode={gameMode ?? undefined}
         words={gameMode === 'normal' ? words.map(w => ({ keyword: w.keyword, description: w.description })) : undefined}
+        nickname={rankNickname}
       />
     )
   }
@@ -455,6 +506,48 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         isImporting={isImporting}
         importError={importError}
       />
+      {/* Nickname input modal for rank mode */}
+      <Dialog open={showNicknameModal} onOpenChange={setShowNicknameModal}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold">
+              {t('lectureStudy.game.desc.rankPlayButton')}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              {t('lectureStudy.game.nicknamePrompt')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <input
+              ref={nicknameInputRef}
+              type="text"
+              maxLength={20}
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleNicknameConfirm()
+              }}
+              placeholder={t('lectureStudy.game.nicknamePlaceholder')}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-orange-500 dark:focus:ring-orange-900/30"
+              autoFocus
+            />
+            {nicknameError && (
+              <p className="text-xs text-red-500">{nicknameError}</p>
+            )}
+            <button
+              onClick={handleNicknameConfirm}
+              disabled={!nicknameInput.trim() || nicknameSaving}
+              className="w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {nicknameSaving ? (
+                <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+              ) : (
+                t('lectureStudy.game.nicknameConfirm')
+              )}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -237,8 +237,8 @@ export const SKY_TOP_COLOR = { r: 0x5b, g: 0x86, b: 0xc7 };
 export const SKY_MID_COLOR = { r: 0xa8, g: 0xce, b: 0xef };
 export const SKY_BOT_COLOR = { r: 0xf5, g: 0xe6, b: 0xca };
 
-// ── Day/Night cycle (score-based, loops every 500 points) ──
-export const DAY_NIGHT_CYCLE_SCORE = 500;
+// ── Day/Night cycle (time-based, loops every 2 minutes) ──
+export const DAY_NIGHT_CYCLE_MS = 120_000;
 export const DAY_NIGHT_STAGES = [
   { at: 0.00, sky: { r: 255, g: 255, b: 255, a: 0    }, mountain: 0xffffff },  // Day — clear
   { at: 0.25, sky: { r: 255, g: 140, b:  50, a: 0.25 }, mountain: 0xffd0a0 },  // Sunset — orange

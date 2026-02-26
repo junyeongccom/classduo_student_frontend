@@ -295,6 +295,9 @@
       "wordDescriptionPlaceholder": "설명",
       "importError": "키워드를 가져오지 못했습니다. 수동으로 단어를 추가해주세요.",
       "loadGameError": "게임을 불러오지 못했습니다",
+      "nicknamePrompt": "랭크 모드 플레이를 위해 닉네임을 입력하세요.",
+      "nicknamePlaceholder": "닉네임 (최대 20자)",
+      "nicknameConfirm": "시작",
       "desc": {
         "goalLabel": "목표",
         "controlsLabel": "조작 방법",
