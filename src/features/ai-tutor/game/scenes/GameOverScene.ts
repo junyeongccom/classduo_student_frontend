@@ -75,7 +75,6 @@ export class GameOverScene extends Phaser.Scene {
     this.t = STRINGS[loc === "en" ? "en" : "ko"];
 
     this.createBackground();
-    this.createModeBadge();
     this.createTitle();
   }
 
@@ -124,32 +123,6 @@ export class GameOverScene extends Phaser.Scene {
         delay: Phaser.Math.Between(0, 2000),
       });
     }
-  }
-
-  // ── Mode badge ──
-
-  private createModeBadge(): void {
-    const isRank = this.gameMode === "rank";
-    const badgeText = isRank ? "RANK" : "NORMAL";
-    const badgeColor = isRank ? 0xf97316 : 0x6b7280;
-
-    const badgeW = 100 * S;
-    const badgeH = 28 * S;
-    const badgeX = GAME_WIDTH / 2;
-    const badgeY = GAME_HEIGHT * 0.18;
-
-    const bg = this.add.graphics();
-    bg.fillStyle(badgeColor, 0.9);
-    bg.fillRoundedRect(badgeX - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 8 * S);
-
-    this.add
-      .text(badgeX, badgeY, badgeText, {
-        fontFamily: FONT_FAMILY,
-        fontSize: `${Math.round(14 * S)}px`,
-        color: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
   }
 
   // ── Title (typewriter) ──
