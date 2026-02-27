@@ -23,6 +23,37 @@ const nextConfig = {
         destination: '/studyspace',
         permanent: true,
       },
+      // Route renaming redirects (2026-02-28)
+      {
+        source: '/studyspace/exam/:path*',
+        destination: '/studyspace/my-quizzes/:path*',
+        permanent: true,
+      },
+      {
+        source: '/studyspace/exam',
+        destination: '/studyspace/my-quizzes',
+        permanent: true,
+      },
+      {
+        source: '/studyspace/review/:path*',
+        destination: '/studyspace/games/:path*',
+        permanent: true,
+      },
+      {
+        source: '/studyspace/review',
+        destination: '/studyspace/games',
+        permanent: true,
+      },
+      {
+        source: '/studyspace/ai-tutor/:path*',
+        destination: '/studyspace/feedback/:path*',
+        permanent: true,
+      },
+      {
+        source: '/studyspace/ai-tutor',
+        destination: '/studyspace/feedback',
+        permanent: true,
+      },
     ]
   },
   webpack(config, { isServer }) {

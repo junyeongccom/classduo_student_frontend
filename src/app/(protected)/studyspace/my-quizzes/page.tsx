@@ -1,7 +1,7 @@
 /**
  * @file page.tsx
  * @description 내 퀴즈 페이지 라우트 엔트리 (신규 UI: MyQuizContainer / 레거시: ExamPrepContainer)
- * @module app/studyspace/exam
+ * @module app/studyspace/my-quizzes
  * @dependencies features/my-quiz, features/exam_prep, shared/lib/featureFlags
  */
 

@@ -175,7 +175,7 @@ function LegacySidebar() {
   }
   const navigateToAiTutorNewChat = () => {
     const timestamp = Date.now()
-    const url = `/studyspace/ai-tutor?${AI_TUTOR_NEW_CHAT_PARAM}=${timestamp}`
+    const url = `/studyspace/feedback?${AI_TUTOR_NEW_CHAT_PARAM}=${timestamp}`
     router.push(url)
   }
   const toggleMenu = useCallback(() => {
