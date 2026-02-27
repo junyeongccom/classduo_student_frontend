@@ -945,13 +945,19 @@
       "selectPrompt": "Please select a lecture",
       "loading": "Loading...",
       "lectureLabel": "Lecture {no}",
-      "lectureLabelWithTitle": "Lecture {no} - {title}"
+      "lectureLabelWithTitle": "Lecture {no} - {title}",
+      "selectAll": "Select All",
+      "clearAll": "Clear All",
+      "lectureCount": "{count} lectures selected"
     },
     "empty": {
       "selectLecture": "Select a lecture to view quizzes",
-      "noSessions": "Create a new quiz",
+      "selectLectureGuide": "Select a course and lecture above",
+      "noSessions": "No quizzes generated yet",
       "noFavorites": "No bookmarked quizzes for this lecture",
-      "noWrong": "No wrong answers for this lecture"
+      "noWrong": "No wrong answers for this lecture",
+      "favoritesGuide": "Tap ★ while studying to bookmark quizzes",
+      "wrongGuide": "Wrong answers will automatically appear here"
     },
     "session": {
       "title": "Session List",

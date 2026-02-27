@@ -308,6 +308,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         </div>
       )}
 
+      <div className="mx-auto max-w-xl space-y-6">
       {groups.map(group => (
         <div key={group.type}>
           <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
@@ -358,6 +359,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
           <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
         </div>
       )}
+      </div>
     </div>
   )
 }

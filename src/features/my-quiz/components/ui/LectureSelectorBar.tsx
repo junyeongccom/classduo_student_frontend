@@ -63,7 +63,7 @@ function BottomDropdown({
   }, [isOpen])
 
   return (
-    <div ref={containerRef} className="relative flex-1 min-w-0">
+    <div ref={containerRef} className="relative w-48 min-w-0">
       <button
         type="button"
         disabled={disabled}
@@ -82,7 +82,7 @@ function BottomDropdown({
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 right-0 z-[70] mt-2 max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+          className="absolute top-full left-0 z-[70] mt-2 min-w-[12rem] max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
           onPointerDown={e => e.stopPropagation()}
         >
           {isLoading ? (
@@ -176,7 +176,7 @@ function MultiSelectDropdown({
   }, [isOpen])
 
   return (
-    <div ref={containerRef} className="relative flex-1 min-w-0">
+    <div ref={containerRef} className="relative w-48 min-w-0">
       <button
         type="button"
         disabled={disabled}
@@ -195,7 +195,7 @@ function MultiSelectDropdown({
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 right-0 z-[70] mt-2 max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+          className="absolute top-full left-0 z-[70] mt-2 min-w-[14rem] max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
           onPointerDown={e => e.stopPropagation()}
         >
           {/* 전체 선택 / 전체 해제 버튼 */}

@@ -47,13 +47,13 @@ export default function MyQuizContainer() {
       className="flex h-full flex-col"
     >
       {/* 상단 탭 바 */}
-      <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
-        <TabsList className="grid h-auto w-full grid-cols-3 rounded-none bg-transparent p-0">
+      <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-4">
+        <TabsList className="inline-flex h-auto rounded-none bg-transparent p-0 gap-1">
           {TAB_KEYS.map(tab => (
             <TabsTrigger
               key={tab}
               value={tab}
-              className="rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+              className="rounded-none bg-transparent px-3 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
             >
               {t(`tabs.${tab}`)}
             </TabsTrigger>

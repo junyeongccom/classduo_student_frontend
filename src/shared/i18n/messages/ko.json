@@ -945,13 +945,19 @@
       "selectPrompt": "강의를 선택하세요",
       "loading": "불러오는 중...",
       "lectureLabel": "{no}회차",
-      "lectureLabelWithTitle": "{no}회차 - {title}"
+      "lectureLabelWithTitle": "{no}회차 - {title}",
+      "selectAll": "전체 선택",
+      "clearAll": "전체 해제",
+      "lectureCount": "{count}개 회차 선택"
     },
     "empty": {
       "selectLecture": "강의를 선택하여 퀴즈를 확인하세요",
-      "noSessions": "새 퀴즈를 생성하세요",
+      "selectLectureGuide": "상단에서 강좌와 회차를 선택하세요",
+      "noSessions": "아직 생성된 퀴즈가 없습니다",
       "noFavorites": "이 회차에 즐겨찾기한 퀴즈가 없습니다",
-      "noWrong": "이 회차에 오답 퀴즈가 없습니다"
+      "noWrong": "이 회차에 오답 퀴즈가 없습니다",
+      "favoritesGuide": "퀴즈 풀이 중 ★를 눌러 즐겨찾기하세요",
+      "wrongGuide": "틀린 문제가 자동으로 여기에 모입니다"
     },
     "session": {
       "title": "세션 목록",
