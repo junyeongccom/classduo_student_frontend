@@ -29,10 +29,16 @@ export default function MyQuizContainer() {
     lectureOptions,
     selectedCourseId,
     selectedLectureId,
+    selectedLectureIds,
     onCourseChange,
     onLectureChange,
+    toggleLectureId,
+    selectAllLectures,
+    clearLectureIds,
     hasCourses,
   } = useCourseAndLecture()
+
+  const isMultiSelect = activeTab !== 'generation'
 
   return (
     <Tabs
@@ -42,12 +48,12 @@ export default function MyQuizContainer() {
     >
       {/* 상단 탭 바 */}
       <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
-        <TabsList className="h-auto w-full gap-4 rounded-none bg-transparent p-0">
+        <TabsList className="grid h-auto w-full grid-cols-3 rounded-none bg-transparent p-0">
           {TAB_KEYS.map(tab => (
             <TabsTrigger
               key={tab}
               value={tab}
-              className="flex-1 rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+              className="rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
             >
               {t(`tabs.${tab}`)}
             </TabsTrigger>
@@ -55,20 +61,7 @@ export default function MyQuizContainer() {
         </TabsList>
       </div>
 
-      {/* 탭별 콘텐츠 */}
-      <TabsContent value="generation" className="flex-1 min-h-0 mt-0 overflow-y-auto">
-        <QuizGenerationTab
-          selectedLectureId={selectedLectureId}
-        />
-      </TabsContent>
-      <TabsContent value="favorites" className="flex-1 min-h-0 mt-0 overflow-y-auto">
-        <FavoritesTab selectedLectureId={selectedLectureId} />
-      </TabsContent>
-      <TabsContent value="wrong" className="flex-1 min-h-0 mt-0 overflow-y-auto">
-        <WrongAnswersTab selectedLectureId={selectedLectureId} />
-      </TabsContent>
-
-      {/* 하단 강좌/회차 선택 바 */}
+      {/* 강좌/회차 선택 바 (상단) */}
       <LectureSelectorBar
         courseOptions={courseOptions}
         lectureOptions={lectureOptions}
@@ -78,7 +71,25 @@ export default function MyQuizContainer() {
         onLectureChange={onLectureChange}
         isLoading={isLoading}
         hasCourses={hasCourses}
+        multiSelect={isMultiSelect}
+        selectedLectureIds={selectedLectureIds}
+        onLectureToggle={toggleLectureId}
+        onSelectAllLectures={selectAllLectures}
+        onClearLectureIds={clearLectureIds}
       />
+
+      {/* 탭별 콘텐츠 */}
+      <TabsContent value="generation" className="flex-1 min-h-0 mt-0 overflow-y-auto">
+        <QuizGenerationTab
+          selectedLectureId={selectedLectureId}
+        />
+      </TabsContent>
+      <TabsContent value="favorites" className="flex-1 min-h-0 mt-0 overflow-y-auto">
+        <FavoritesTab selectedLectureIds={selectedLectureIds} />
+      </TabsContent>
+      <TabsContent value="wrong" className="flex-1 min-h-0 mt-0 overflow-y-auto">
+        <WrongAnswersTab selectedLectureIds={selectedLectureIds} />
+      </TabsContent>
     </Tabs>
   )
 }

@@ -93,6 +93,62 @@ export async function getQuizStatusesByLecture(
 }
 
 /**
+ * 복수 lecture의 user_quiz_status 조회 (필터: bookmark 또는 correct)
+ * RLS가 student_id 자동 필터링.
+ */
+export async function getQuizStatusesByLectureIds(
+  lectureIds: string[],
+  filter: { bookmark?: boolean; correct?: boolean },
+  options?: { limit?: number; offset?: number },
+): Promise<{ data: QuizStatusEntry[] | null; error: Error | null }> {
+  if (lectureIds.length === 0) return { data: [], error: null }
+
+  try {
+    const supabase = getSupabaseClient()
+    let query = supabase
+      .from('user_quiz_status')
+      .select('quiz_id, quiz_source, lecture_id, bookmark, correct')
+      .in('lecture_id', lectureIds)
+
+    if (filter.bookmark !== undefined) {
+      query = query.eq('bookmark', filter.bookmark)
+    }
+    if (filter.correct !== undefined) {
+      query = query.eq('correct', filter.correct)
+    }
+
+    query = query.order('id', { ascending: true })
+
+    if (options?.limit) {
+      const offset = options.offset ?? 0
+      query = query.range(offset, offset + options.limit - 1)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      if (isJWTExpiredError(error)) {
+        const ok = await handleJWTExpiration()
+        if (!ok) return { data: null, error: new Error('세션이 만료되었습니다.') }
+        return { data: null, error: new Error('세션이 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: new Error(getErrorMessage(error)) }
+    }
+
+    return { data: (data ?? []) as QuizStatusEntry[], error: null }
+  } catch (err) {
+    if (isJWTExpiredError(err)) {
+      await handleJWTExpiration()
+      return { data: null, error: new Error('세션이 만료되었습니다.') }
+    }
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error(getErrorMessage(err)),
+    }
+  }
+}
+
+/**
  * 특정 lecture의 모든 instructor quiz status 조회 (보상 판정용)
  */
 export async function getAllInstructorQuizStatuses(

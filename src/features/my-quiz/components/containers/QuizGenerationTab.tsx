@@ -176,8 +176,11 @@ export default function QuizGenerationTab({
   // 선택된 강의 없으면 안내
   if (!selectedLectureId) {
     return (
-      <div className="flex h-full items-center justify-center text-gray-400">
-        <p className="text-sm">{t('empty.selectLecture')}</p>
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400 px-6">
+        <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+        </svg>
+        <p className="text-sm text-center">{t('empty.selectLectureGuide')}</p>
       </div>
     )
   }
@@ -262,8 +265,22 @@ export default function QuizGenerationTab({
             ))}
           </div>
         ) : sessions.length === 0 ? (
-          <div className="flex items-center justify-center py-12 text-gray-400">
-            <p className="text-sm">{t('empty.noSessions')}</p>
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
+              <Plus className="h-7 w-7 text-indigo-400" />
+            </div>
+            <p className="text-sm text-gray-500">{t('empty.noSessions')}</p>
+            <p className="text-xs text-gray-400">{t('empty.aiDescription')}</p>
+            <button
+              type="button"
+              onClick={() => setShowCreateForm(true)}
+              className="mt-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition"
+            >
+              <span className="flex items-center gap-1.5">
+                <Plus className="h-4 w-4" />
+                {t('create.newSession')}
+              </span>
+            </button>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
