@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, Star } from 'lucide-react'
+import { Loader2, Star, ChevronUp } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { useToast } from '@/shared/hooks/useToast'
@@ -19,12 +19,12 @@ import { groupQuizzesByType } from '../../domain/groupQuizzes'
 import type { QuizWithMeta, QuizGroup } from '../../domain/groupQuizzes'
 
 interface FavoritesTabProps {
-  selectedLectureId: string | null
+  selectedLectureIds: string[]
 }
 
 const PAGE_SIZE = 20
 
-export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
+export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) {
   const t = useTranslations('myQuiz')
   const tQuiz = useTranslations('lectureStudy.quiz')
   const { toasts, error: showErrorToast } = useToast()
@@ -40,7 +40,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
   const isFetchingMoreRef = useRef(false)
 
   const fetchQuizzes = useCallback(async (currentOffset: number, append: boolean) => {
-    if (!selectedLectureId) return
+    if (selectedLectureIds.length === 0) return
 
     if (append && isFetchingMoreRef.current) return
     if (append) isFetchingMoreRef.current = true
@@ -50,8 +50,8 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
       setError(null)
     }
 
-    const statusResult = await statusService.getQuizStatusesByLecture(
-      selectedLectureId,
+    const statusResult = await statusService.getQuizStatusesByLectureIds(
+      selectedLectureIds,
       { bookmark: true },
       { limit: PAGE_SIZE, offset: currentOffset },
     )
@@ -109,6 +109,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'instructor',
+        lecture_id: status?.lecture_id,
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
       })
@@ -121,6 +122,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'customize',
+        lecture_id: status?.lecture_id,
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
       })
@@ -134,9 +136,10 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
     })
     setIsLoading(false)
     if (append) isFetchingMoreRef.current = false
-  }, [selectedLectureId, t, showErrorToast])
+  }, [selectedLectureIds, t, showErrorToast])
 
-  // 회차 변경 시 리셋
+  // 회차 변경 시 리셋 (배열 참조 변경 방지를 위해 JSON.stringify 비교)
+  const lectureIdsKey = JSON.stringify(selectedLectureIds)
   useEffect(() => {
     setAllQuizzes([])
     setGroups([])
@@ -144,10 +147,10 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
     setHasMore(true)
     setError(null)
     isFetchingMoreRef.current = false
-    if (selectedLectureId) {
+    if (selectedLectureIds.length > 0) {
       fetchQuizzes(0, false)
     }
-  }, [selectedLectureId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lectureIdsKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 무한 스크롤 IntersectionObserver (R-AW-10: isFetchingMoreRef로 중복 방지)
   useEffect(() => {
@@ -169,7 +172,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
   const handleBookmarkToggle = useCallback(
     async (quizId: string) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
-      if (!quiz || !selectedLectureId) return
+      if (!quiz || !quiz.lecture_id) return
 
       // Optimistic: 즉시 제거
       const updated = allQuizzes.filter(q => q.quiz_id !== quizId)
@@ -179,7 +182,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
       const result = await statusService.toggleBookmark(
         quiz.quiz_source,
         quizId,
-        selectedLectureId,
+        quiz.lecture_id,
         false,
       )
 
@@ -191,13 +194,13 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
         setHasMore(true)
       }
     },
-    [allQuizzes, selectedLectureId, fetchQuizzes, showErrorToast, t],
+    [allQuizzes, fetchQuizzes, showErrorToast, t],
   )
 
   const handleCorrectUpdate = useCallback(
     async (quizId: string, isCorrect: boolean) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
-      if (!quiz || !selectedLectureId) return
+      if (!quiz || !quiz.lecture_id) return
 
       // Optimistic update
       const updated = allQuizzes.map(q =>
@@ -209,7 +212,7 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
       const result = await statusService.updateCorrect(
         quiz.quiz_source,
         quizId,
-        selectedLectureId,
+        quiz.lecture_id,
         isCorrect,
       )
 
@@ -222,15 +225,15 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
         return
       }
 
-      // 보상 판정 (instructor 퀴즈만, R-AW-5: try-finally)
+      // 보상 판정 (instructor 퀴즈만, 각 quiz의 lecture_id 기준, R-AW-5: try-finally)
       if (isCorrect && quiz.quiz_source === 'instructor' && !rewardCheckingRef.current) {
         rewardCheckingRef.current = true
         try {
-          const allStatus = await statusService.getAllInstructorQuizStatuses(selectedLectureId)
+          const allStatus = await statusService.getAllInstructorQuizStatuses(quiz.lecture_id)
           if (allStatus.data && allStatus.data.length > 0) {
             const allCorrect = allStatus.data.every(s => s.correct === true)
             if (allCorrect) {
-              await statusService.grantReward(selectedLectureId)
+              await statusService.grantReward(quiz.lecture_id)
             }
           }
         } finally {
@@ -238,13 +241,14 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
         }
       }
     },
-    [allQuizzes, selectedLectureId, fetchQuizzes, showErrorToast, t],
+    [allQuizzes, fetchQuizzes, showErrorToast, t],
   )
 
-  if (!selectedLectureId) {
+  if (selectedLectureIds.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-gray-400">
-        <p className="text-sm">{t('empty.selectLecture')}</p>
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400 px-6">
+        <ChevronUp className="h-10 w-10 stroke-[1.5]" />
+        <p className="text-sm text-center">{t('empty.selectLecture')}</p>
       </div>
     )
   }
@@ -274,9 +278,12 @@ export default function FavoritesTab({ selectedLectureId }: FavoritesTabProps) {
 
   if (groups.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 text-gray-400">
-        <Star className="h-8 w-8 stroke-[1.5]" />
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+          <Star className="h-7 w-7 stroke-[1.5] text-amber-400" />
+        </div>
         <p className="text-sm">{t('empty.noFavorites')}</p>
+        <p className="text-xs text-gray-300">{t('empty.favoritesGuide')}</p>
       </div>
     )
   }

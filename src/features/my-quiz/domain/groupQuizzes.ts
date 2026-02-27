@@ -13,6 +13,7 @@ export interface QuizWithMeta {
   quiz_id: string
   quiz_type: StudentQuizType
   quiz_source: QuizSource
+  lecture_id?: string
   question: string
   answer: string | null
   explanation: string | null

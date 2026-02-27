@@ -67,96 +67,102 @@ export default function CreateSessionForm({
         <h3 className="text-sm font-semibold text-gray-800">{t('newSession')}</h3>
       </div>
 
-      {/* 설정 영역 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* 문항 수 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {t('quizCount')}
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min={1}
-              max={30}
-              value={quizCount}
-              onChange={e => setQuizCount(Number(e.target.value))}
-              className="flex-1 accent-indigo-500"
-            />
-            <span className="w-10 text-center text-sm font-semibold text-gray-700">
-              {quizCount}
-            </span>
-          </div>
-        </div>
-
-        {/* 문제 유형 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {t('quizTypes')}
-          </label>
-          <div className="flex flex-col gap-2">
-            {QUIZ_TYPES.map(qt => {
-              const isSelected = selectedTypes.includes(qt.value)
-              return (
-                <button
-                  key={qt.value}
-                  type="button"
-                  onClick={() => toggleType(qt.value)}
-                  className={cn(
-                    'flex items-center rounded-lg border px-3 py-2 text-sm transition',
-                    isSelected
-                      ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'mr-2 flex h-4 w-4 items-center justify-center rounded border',
-                      isSelected
-                        ? 'border-indigo-500 bg-indigo-500 text-white'
-                        : 'border-gray-300',
-                    )}
-                  >
-                    {isSelected && (
-                      <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
-                        <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
+      {/* 설정 영역 - 카드 레이아웃 */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="mx-auto max-w-lg">
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="p-5 space-y-6">
+              {/* 문항 수 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('quizCount')}
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={1}
+                    max={30}
+                    value={quizCount}
+                    onChange={e => setQuizCount(Number(e.target.value))}
+                    className="flex-1 accent-indigo-500"
+                  />
+                  <span className="w-10 text-center text-sm font-semibold text-gray-700">
+                    {quizCount}
                   </span>
-                  {t(qt.labelKey)}
-                </button>
-              )
-            })}
+                </div>
+              </div>
+
+              {/* 문제 유형 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('quizTypes')}
+                </label>
+                <div className="flex flex-col gap-2">
+                  {QUIZ_TYPES.map(qt => {
+                    const isSelected = selectedTypes.includes(qt.value)
+                    return (
+                      <button
+                        key={qt.value}
+                        type="button"
+                        onClick={() => toggleType(qt.value)}
+                        className={cn(
+                          'flex items-center rounded-lg border px-3 py-2 text-sm transition',
+                          isSelected
+                            ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'mr-2 flex h-4 w-4 items-center justify-center rounded border',
+                            isSelected
+                              ? 'border-indigo-500 bg-indigo-500 text-white'
+                              : 'border-gray-300',
+                          )}
+                        >
+                          {isSelected && (
+                            <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+                              <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </span>
+                        {t(qt.labelKey)}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-500">{error}</p>
+              )}
+            </div>
+
+            {/* 생성 버튼 — 카드 내부 하단 */}
+            <div className="border-t border-gray-100 px-5 py-4">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting || selectedTypes.length === 0}
+                className={cn(
+                  'flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white transition',
+                  isSubmitting || selectedTypes.length === 0
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700',
+                )}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t('generating')}
+                  </>
+                ) : (
+                  t('generate')
+                )}
+              </button>
+            </div>
           </div>
         </div>
-
-        {error && (
-          <p className="text-sm text-red-500">{error}</p>
-        )}
-      </div>
-
-      {/* 하단 생성 버튼 */}
-      <div className="shrink-0 border-t border-gray-100 p-4">
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isSubmitting || selectedTypes.length === 0}
-          className={cn(
-            'flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white transition',
-            isSubmitting || selectedTypes.length === 0
-              ? 'bg-gray-300 cursor-not-allowed'
-              : 'bg-indigo-600 hover:bg-indigo-700',
-          )}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {t('generating')}
-            </>
-          ) : (
-            t('generate')
-          )}
-        </button>
       </div>
     </div>
   )

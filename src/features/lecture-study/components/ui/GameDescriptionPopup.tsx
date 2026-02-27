@@ -144,26 +144,26 @@ function RunningGamePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
       </div>
 
       {/* Object legend with actual extracted game textures */}
-      <div className="grid grid-cols-3 gap-1.5">
-        <div className="flex items-center gap-2 rounded-lg bg-yellow-50 px-2.5 py-1.5 dark:bg-yellow-950/20">
-          <Image src="/game/coin.png" alt="coin" width={22} height={22} className="shrink-0" />
+      <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3">
+        <div className="flex items-center gap-2.5 rounded-lg bg-yellow-50 px-3 py-2 dark:bg-yellow-950/20">
+          <Image src="/game/coin.png" alt="coin" width={24} height={24} className="shrink-0" />
           <div>
-            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objCoin')}</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objCoinDesc')}</p>
+            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objCoin')}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objCoinDesc')}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 px-2.5 py-1.5 dark:bg-red-950/20">
-          <Image src="/game/heart_item.png" alt="heart item" width={22} height={22} className="shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-lg bg-red-50 px-3 py-2 dark:bg-red-950/20">
+          <Image src="/game/heart_item.png" alt="heart item" width={24} height={24} className="shrink-0" />
           <div>
-            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objHeart')}</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objHeartDesc')}</p>
+            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objHeart')}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objHeartDesc')}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-orange-50 px-2.5 py-1.5 dark:bg-orange-950/20">
-          <Image src="/game/meteor.png" alt="meteor" width={22} height={22} className="shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-lg bg-orange-50 px-3 py-2 dark:bg-orange-950/20">
+          <Image src="/game/meteor.png" alt="meteor" width={24} height={24} className="shrink-0" />
           <div>
-            <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objMeteor')}</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objMeteorDesc')}</p>
+            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.running.objMeteor')}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">{t('lectureStudy.game.desc.running.objMeteorDesc')}</p>
           </div>
         </div>
       </div>
@@ -176,13 +176,13 @@ function DeckGamePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   return (
     <div className="flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
       {/* Card */}
-      <div className="relative h-24 w-full max-w-[200px] rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="relative h-28 w-full max-w-[220px] rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div className="flex h-full flex-col items-center justify-center p-3">
           <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Keyword</span>
-          <span className="mt-1 text-[10px] text-slate-400">{t('lectureStudy.game.desc.deck.previewHint')}</span>
+          <span className="mt-1.5 text-[11px] text-slate-400">{t('lectureStudy.game.desc.deck.previewHint')}</span>
         </div>
         {/* Flip arrow indicator */}
-        <div className="absolute -right-6 top-1/2 -translate-y-1/2 text-slate-300">&#8644;</div>
+        <div className="absolute -right-7 top-1/2 -translate-y-1/2 text-lg text-slate-400">&#8644;</div>
       </div>
       {/* Rating buttons */}
       <div className="flex gap-2">
@@ -199,7 +199,7 @@ function CardMatchPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   return (
     <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900">
       {/* Card grid */}
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-4 gap-2">
         {Array.from({ length: 12 }).map((_, i) => {
           const isSelected = i === 2
           const isMatched = i === 5 || i === 8
@@ -208,7 +208,7 @@ function CardMatchPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
             <div
               key={i}
               className={cn(
-                'flex h-9 items-center justify-center rounded-lg border text-[10px] font-semibold transition-all',
+                'flex h-10 items-center justify-center rounded-lg border text-[11px] font-semibold transition-all',
                 isMatched
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-600 opacity-50'
                   : isSelected
@@ -223,7 +223,7 @@ function CardMatchPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
           )
         })}
       </div>
-      <p className="mt-2 text-center text-[10px] text-slate-400">{t('lectureStudy.game.desc.cardMatch.previewHint')}</p>
+      <p className="mt-2.5 text-center text-[11px] text-slate-400">{t('lectureStudy.game.desc.cardMatch.previewHint')}</p>
     </div>
   )
 }
@@ -235,7 +235,7 @@ function DefBuilderPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
       {/* Keyword */}
       <div className="mb-2 text-center text-base font-semibold text-blue-600">Keyword</div>
       {/* Definition with blanks */}
-      <div className="mb-3 flex flex-wrap items-center justify-center gap-1 text-sm text-slate-700 dark:text-slate-300">
+      <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5 text-sm text-slate-700 dark:text-slate-300">
         <span>The</span>
         <span className="inline-flex min-w-[48px] items-center justify-center rounded-md border border-slate-300 bg-white px-2 py-0.5 text-xs font-semibold text-slate-900 dark:border-slate-600 dark:bg-slate-800">____</span>
         <span>is</span>
@@ -260,7 +260,7 @@ function DefBuilderPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
           </span>
         ))}
       </div>
-      <p className="mt-2 text-center text-[10px] text-slate-400">{t('lectureStudy.game.desc.definitionBuilder.previewHint')}</p>
+      <p className="mt-2.5 text-center text-[11px] text-slate-400">{t('lectureStudy.game.desc.definitionBuilder.previewHint')}</p>
     </div>
   )
 }
@@ -362,8 +362,8 @@ export function GameDescriptionPopup({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl gap-0 overflow-hidden p-0">
-        <DialogHeader className="px-5 pt-4 pb-1">
+      <DialogContent className="max-w-3xl gap-0 overflow-hidden p-0 max-h-[90vh] flex flex-col">
+        <DialogHeader className="shrink-0 px-5 pt-5 pb-2 md:px-6 md:pt-5 md:pb-2">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{gameInfo.icon}</span>
             <div>
@@ -375,61 +375,63 @@ export function GameDescriptionPopup({
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-3 px-5 py-2">
-          {/* Left column — visual preview */}
-          <div className="flex flex-col gap-2">
-            <GamePreview gameId={gameId} t={t} />
-          </div>
-
-          {/* Right column — goal + controls */}
-          <div className="flex flex-col gap-2">
-            {/* Goal section */}
-            <div className={cn('rounded-xl p-3', theme.goalBg)}>
-              <div className="mb-1.5 flex items-center gap-2">
-                <Target className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  {t('lectureStudy.game.desc.goalLabel')}
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                {goal}
-              </p>
+        <div className="flex-1 overflow-y-auto px-5 py-3 md:px-6 md:py-4">
+          <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-5">
+            {/* Left column — visual preview */}
+            <div className="flex flex-col gap-2">
+              <GamePreview gameId={gameId} t={t} />
             </div>
 
-            {/* Controls section */}
-            <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
-              <div className="mb-2 flex items-center gap-2">
-                <Gamepad2 className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  {t('lectureStudy.game.desc.controlsLabel')}
-                </span>
+            {/* Right column — goal + controls */}
+            <div className="flex flex-col gap-3">
+              {/* Goal section */}
+              <div className={cn('rounded-xl p-3.5', theme.goalBg)}>
+                <div className="mb-1.5 flex items-center gap-2">
+                  <Target className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {t('lectureStudy.game.desc.goalLabel')}
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                  {goal}
+                </p>
               </div>
-              <div className="space-y-2">
-                {controls.map((ctrl) => (
-                  <div key={ctrl.labelKey} className="flex items-center gap-3">
-                    <div className="flex w-24 shrink-0 justify-start">{ctrl.icon}</div>
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      {t(`lectureStudy.game.desc.${gameId}.${ctrl.labelKey}` as Parameters<typeof t>[0])}
-                    </span>
-                  </div>
-                ))}
+
+              {/* Controls section */}
+              <div className="rounded-xl border border-gray-200 bg-white p-3.5 dark:border-gray-700 dark:bg-gray-900">
+                <div className="mb-2.5 flex items-center gap-2">
+                  <Gamepad2 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {t('lectureStudy.game.desc.controlsLabel')}
+                  </span>
+                </div>
+                <div className="space-y-2.5">
+                  {controls.map((ctrl) => (
+                    <div key={ctrl.labelKey} className="flex items-center gap-3">
+                      <div className="flex shrink-0 justify-start">{ctrl.icon}</div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {t(`lectureStudy.game.desc.${gameId}.${ctrl.labelKey}` as Parameters<typeof t>[0])}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="px-5 pb-4 pt-1">
+        <DialogFooter className="shrink-0 px-5 pb-4 pt-2 md:px-6 md:pb-5">
           {gameId === 'running' && onRankPlay ? (
             <div className="flex w-full gap-2">
               <button
                 onClick={onRankPlay}
-                className="flex-1 rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
+                className="flex-1 rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
               >
                 {t('lectureStudy.game.desc.rankPlayButton')}
               </button>
               <button
                 onClick={onPlay}
-                className="flex-1 rounded-xl border border-gray-300 bg-white py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="flex-1 rounded-xl border border-gray-300 bg-white py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
               >
                 {t('lectureStudy.game.desc.normalPlayButton')}
               </button>
@@ -438,7 +440,7 @@ export function GameDescriptionPopup({
             <button
               onClick={onPlay}
               className={cn(
-                'w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm transition-colors',
+                'w-full rounded-xl py-3 text-sm font-semibold text-white shadow-sm transition-colors',
                 theme.button,
               )}
             >

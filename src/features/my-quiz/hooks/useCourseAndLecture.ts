@@ -50,6 +50,7 @@ export function useCourseAndLecture() {
   const [error, setError] = useState<string | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
+  const [selectedLectureIds, setSelectedLectureIds] = useState<string[]>([])
 
   const fetchCourses = useCallback(async () => {
     setIsLoading(true)
@@ -94,10 +95,25 @@ export function useCourseAndLecture() {
   const handleCourseChange = useCallback((courseId: string) => {
     setSelectedCourseId(courseId)
     setSelectedLectureId(null)
+    setSelectedLectureIds([])
   }, [])
 
   const handleLectureChange = useCallback((lectureId: string) => {
     setSelectedLectureId(lectureId)
+  }, [])
+
+  const toggleLectureId = useCallback((id: string) => {
+    setSelectedLectureIds(prev =>
+      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id],
+    )
+  }, [])
+
+  const selectAllLectures = useCallback(() => {
+    setSelectedLectureIds(lectureOptions.map(l => l.value))
+  }, [lectureOptions])
+
+  const clearLectureIds = useCallback(() => {
+    setSelectedLectureIds([])
   }, [])
 
   return {
@@ -107,8 +123,12 @@ export function useCourseAndLecture() {
     lectureOptions,
     selectedCourseId,
     selectedLectureId,
+    selectedLectureIds,
     onCourseChange: handleCourseChange,
     onLectureChange: handleLectureChange,
+    toggleLectureId,
+    selectAllLectures,
+    clearLectureIds,
     hasCourses: courses.length > 0,
   }
 }
