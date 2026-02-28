@@ -115,6 +115,7 @@ export interface ScoreRankingEntry {
   is_mine: boolean
   display_name: string | null
   score: number
+  elapsed_ms?: number | null
   achieved_at: string
 }
 
@@ -130,6 +131,7 @@ export interface MatchingRankingEntry {
 export interface ScoreMyBest {
   rank: number
   score: number
+  elapsed_ms?: number | null
   achieved_at: string
 }
 

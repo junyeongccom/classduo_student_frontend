@@ -47,9 +47,10 @@ interface ReviewMatchingGameProps {
   isEnabled: boolean
   onExit: () => void
   lectureId?: string | null
+  gameMode?: 'rank' | 'normal'
 }
 
-export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }: ReviewMatchingGameProps) {
+export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, gameMode }: ReviewMatchingGameProps) {
   const t = useTranslations('review.ui')
   const [selectedSize, setSelectedSize] = useState<SizeOption | null>(null)
   const [cards, setCards] = useState<MatchCard[]>([])
@@ -170,9 +171,10 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
     }
   }, [cards.length, matchedIds])
 
-  // 게임 완료 시 점수 제출 + 랭킹 조회
+  // 게임 완료 시 점수 제출 + 랭킹 조회 (normal 모드에서는 스킵)
   useEffect(() => {
     if (!gameCompleted || !lectureId || !selectedSize || isSubmitting) return
+    if (gameMode === 'normal') return
     let cancelled = false
     const pairCount = selectedSize.pairs
 
@@ -197,7 +199,6 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
         const { data: rankData } = await reviewService.getMatchingGameRankings(lectureId, pairCount, 10)
         if (!cancelled && rankData) {
           setRankings(rankData.rankings)
-          // is_mine 플래그가 백엔드에서 설정됨 — 별도 추출 불필요
         }
       } catch {
         if (!cancelled) setRankingsError(t('ranking.loadError'))
@@ -211,7 +212,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
 
     submitAndFetch()
     return () => { cancelled = true }
-  }, [gameCompleted, lectureId, selectedSize])
+  }, [gameCompleted, lectureId, selectedSize, gameMode])
 
   // pair_count 탭 전환 시 랭킹 재조회
   const handlePairCountChange = async (pairCount: number) => {
@@ -294,7 +295,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId }
             목록으로
           </button>
         </div>
-        {lectureId && (
+        {gameMode !== 'normal' && lectureId && (
           <GameRankingBoard
             rankings={rankings}
             myRank={submissionRank}

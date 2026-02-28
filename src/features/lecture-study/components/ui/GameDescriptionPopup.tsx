@@ -9,7 +9,7 @@
 
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
-import { Target, Gamepad2, Mouse, Keyboard, ArrowUpDown, Eye, MessageSquare } from 'lucide-react'
+import { Target, Gamepad2, Mouse, Keyboard, ArrowUpDown, Eye, MessageSquare, Trophy } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ interface GameDescriptionPopupProps {
   gameId: string | null
   onPlay: () => void
   onRankPlay?: () => void
+  onViewRanking?: () => void
 }
 
 type GameTheme = {
@@ -345,6 +346,7 @@ export function GameDescriptionPopup({
   gameId,
   onPlay,
   onRankPlay,
+  onViewRanking,
 }: GameDescriptionPopupProps) {
   const t = useTranslations()
 
@@ -363,6 +365,15 @@ export function GameDescriptionPopup({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl gap-0 overflow-hidden p-0 max-h-[90vh] flex flex-col">
+        {onViewRanking && (
+          <button
+            onClick={onViewRanking}
+            className="absolute right-12 top-4 flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 opacity-70 transition-opacity hover:opacity-100"
+          >
+            <Trophy className="h-3.5 w-3.5" />
+            랭크
+          </button>
+        )}
         <DialogHeader className="shrink-0 px-5 pt-5 pb-2 md:px-6 md:pt-5 md:pb-2">
           <div className="flex items-center gap-3">
             <span className="text-2xl">{gameInfo.icon}</span>
@@ -421,11 +432,14 @@ export function GameDescriptionPopup({
         </div>
 
         <DialogFooter className="shrink-0 px-5 pb-4 pt-2 md:px-6 md:pb-5">
-          {gameId === 'running' && onRankPlay ? (
+          {onRankPlay ? (
             <div className="flex w-full gap-2">
               <button
                 onClick={onRankPlay}
-                className="flex-1 rounded-xl bg-orange-500 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
+                className={cn(
+                  'flex-1 rounded-xl py-3 text-sm font-semibold text-white shadow-sm transition-colors',
+                  theme.button,
+                )}
               >
                 {t('lectureStudy.game.desc.rankPlayButton')}
               </button>

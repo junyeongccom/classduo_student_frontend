@@ -16,6 +16,15 @@ interface DefinitionBuilderGameProps {
   onScoreDelta?: (delta: number) => void
   onRestart?: () => void
   lectureId?: string | null
+  gameMode?: 'rank' | 'normal'
+}
+
+const formatTime = (valueMs: number) => {
+  const totalSeconds = Math.floor(valueMs / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  const ms = Math.floor((valueMs % 1000) / 10)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`
 }
 
 const createBlankMap = (question: DefinitionBuilderQuestion | null) => {
@@ -37,6 +46,7 @@ export function DefinitionBuilderGame({
   onScoreDelta,
   onRestart,
   lectureId,
+  gameMode,
 }: DefinitionBuilderGameProps) {
   const t = useTranslations('review.ui')
   const questions = data?.questions ?? []
@@ -47,6 +57,10 @@ export function DefinitionBuilderGame({
   const [usedChoices, setUsedChoices] = useState<Set<string>>(new Set())
   const [lastWrongChoice, setLastWrongChoice] = useState<string | null>(null)
   const [gameCompleted, setGameCompleted] = useState(false)
+
+  // 타이머 (매칭 게임과 동일한 실시간 표시 방식)
+  const [elapsedMs, setElapsedMs] = useState(0)
+  const [isTimerRunning, setIsTimerRunning] = useState(false)
 
   // 제출 + 랭킹 상태
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -79,8 +93,18 @@ export function DefinitionBuilderGame({
     if (questions.length > 0) {
       setCurrentIndex(0)
       setGameCompleted(false)
+      setElapsedMs(0)
+      setIsTimerRunning(true)
     }
   }, [questions.length])
+
+  useEffect(() => {
+    if (!isTimerRunning) return
+    const timer = window.setInterval(() => {
+      setElapsedMs(prev => prev + 10)
+    }, 10)
+    return () => window.clearInterval(timer)
+  }, [isTimerRunning])
 
   const filledCount = Array.from(filledMap.values()).filter(Boolean).length
   const totalBlanks = blankIndices.length
@@ -93,13 +117,15 @@ export function DefinitionBuilderGame({
 
   useEffect(() => {
     if (completed && totalCount > 0 && currentIndex === totalCount - 1) {
+      setIsTimerRunning(false)
       setGameCompleted(true)
     }
   }, [completed, currentIndex, totalCount])
 
-  // 게임 완료 시 점수 제출 + 랭킹 조회
+  // 게임 완료 시 점수 제출 + 랭킹 조회 (normal 모드에서는 스킵)
   useEffect(() => {
     if (!gameCompleted || !lectureId || isSubmitting) return
+    if (gameMode === 'normal') return
     let cancelled = false
 
     const submitAndFetch = async () => {
@@ -107,24 +133,21 @@ export function DefinitionBuilderGame({
       setRankingsLoading(true)
       setRankingsError(null)
 
-      // 제출
       try {
         const { data: submitData } = await reviewService.submitDefinitionBuilderScore(
-          lectureId, currentScore, totalCount
+          lectureId, currentScore, totalCount, elapsedMs
         )
         if (!cancelled && submitData) {
           setSubmissionRank(submitData.rank)
         }
       } catch {
-        // 제출 실패는 무시 (랭킹은 계속 조회)
+        // 제출 실패는 무시
       }
 
-      // 랭킹 조회
       try {
         const { data: rankData } = await reviewService.getDefinitionBuilderRankings(lectureId, 10)
         if (!cancelled && rankData) {
           setRankings(rankData.rankings)
-          // is_mine 플래그가 백엔드에서 설정됨 — 별도 추출 불필요
         }
       } catch {
         if (!cancelled) setRankingsError(t('ranking.loadError'))
@@ -138,7 +161,7 @@ export function DefinitionBuilderGame({
 
     submitAndFetch()
     return () => { cancelled = true }
-  }, [gameCompleted, lectureId])
+  }, [gameCompleted, lectureId, gameMode])
 
   const handleChoiceClick = (choice: string) => {
     if (!currentQuestion || completed) return
@@ -178,6 +201,8 @@ export function DefinitionBuilderGame({
     setSubmissionRank(null)
     setRankings([])
     setRankingsError(null)
+    setElapsedMs(0)
+    setIsTimerRunning(true)
     onRestart?.()
   }
 
@@ -230,6 +255,9 @@ export function DefinitionBuilderGame({
           <div className="text-lg font-semibold text-slate-700">
             {t('definitionBuilder.finalScoreLabel', { score: currentScore })}
           </div>
+          <div className="text-sm font-semibold text-slate-500">
+            소요 시간: {formatTime(elapsedMs)}
+          </div>
           <button
             type="button"
             onClick={handleRestart}
@@ -237,20 +265,21 @@ export function DefinitionBuilderGame({
           >
             {t('definitionBuilder.restart')}
           </button>
-          {lectureId && (
+          {gameMode !== 'normal' && lectureId && (
             <GameRankingBoard
               rankings={rankings}
               myRank={submissionRank}
               currentUserId={null}
               isLoading={rankingsLoading}
               error={rankingsError}
-              mode="score"
+              mode="score_time"
             />
           )}
         </div>
       ) : (
         <>
-      <div className="flex items-center justify-end text-xs text-slate-400">
+      <div className="flex items-center justify-between text-xs text-slate-400">
+        <div className="font-mono text-base font-semibold text-slate-700">{formatTime(elapsedMs)}</div>
         <div>{t('definitionBuilder.progressLabel', { current: currentIndex + 1, total: totalCount })}</div>
       </div>
 

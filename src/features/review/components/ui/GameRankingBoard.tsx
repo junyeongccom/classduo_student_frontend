@@ -16,7 +16,7 @@ interface GameRankingBoardProps {
   currentUserId?: string | null
   isLoading: boolean
   error: string | null
-  mode: 'score' | 'time'
+  mode: 'score' | 'time' | 'score_time'
   /** 매칭 게임용: pair_count 탭 */
   pairCountTabs?: number[]
   activePairCount?: number
@@ -95,15 +95,21 @@ export function GameRankingBoard({
               <tr className="border-b border-slate-100 bg-slate-50 text-slate-500">
                 <th className="px-3 py-2 text-left font-semibold">{t('rank')}</th>
                 <th className="px-3 py-2 text-left font-semibold">{t('player')}</th>
-                <th className="px-3 py-2 text-right font-semibold">
-                  {mode === 'score' ? t('score') : t('time')}
-                </th>
+                {mode === 'time' ? (
+                  <th className="px-3 py-2 text-right font-semibold">{t('time')}</th>
+                ) : (
+                  <th className="px-3 py-2 text-right font-semibold">{t('score')}</th>
+                )}
+                {mode === 'score_time' && (
+                  <th className="px-3 py-2 text-right font-semibold">{t('time')}</th>
+                )}
                 <th className="px-3 py-2 text-right font-semibold">{t('achievedAt')}</th>
               </tr>
             </thead>
             <tbody>
               {rankings.map(entry => {
                 const isMe = entry.is_mine
+                const scoreEntry = entry as ScoreRankingEntry
                 return (
                   <tr
                     key={`${entry.rank}`}
@@ -116,11 +122,20 @@ export function GameRankingBoard({
                         <span className="ml-1 text-[10px] text-indigo-500">●</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right text-slate-700">
-                      {mode === 'score'
-                        ? (entry as ScoreRankingEntry).score
-                        : formatTime((entry as MatchingRankingEntry).elapsed_ms)}
-                    </td>
+                    {mode === 'time' ? (
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {formatTime((entry as MatchingRankingEntry).elapsed_ms)}
+                      </td>
+                    ) : (
+                      <td className="px-3 py-2 text-right text-slate-700">
+                        {scoreEntry.score}
+                      </td>
+                    )}
+                    {mode === 'score_time' && (
+                      <td className="px-3 py-2 text-right text-slate-400">
+                        {scoreEntry.elapsed_ms != null ? formatTime(scoreEntry.elapsed_ms) : '-'}
+                      </td>
+                    )}
                     <td className="px-3 py-2 text-right text-slate-400">
                       {formatDate(entry.achieved_at)}
                     </td>

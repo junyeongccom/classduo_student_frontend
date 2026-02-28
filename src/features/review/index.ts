@@ -11,9 +11,10 @@ export { ReviewMatchingGame } from './components/ui/ReviewMatchingGame'
 export { DefinitionBuilderGame } from './components/ui/DefinitionBuilderGame'
 export { GuessTheTermGameContainer } from './components/containers/GuessTheTermGameContainer'
 export { ReviewDeckView } from './components/ui/ReviewDeckView'
+export { GameRankingBoard } from './components/ui/GameRankingBoard'
 
 // Types (public boundary)
-export type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from './types'
+export type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank, ScoreRankingEntry, MatchingRankingEntry } from './types'
 
 // Services & Hooks
 export * from './services/reviewService'

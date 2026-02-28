@@ -244,11 +244,11 @@ export const reviewService = {
 
   // ── Game Submission & Ranking ──
 
-  submitDefinitionBuilderScore: (lectureId: string, score: number, totalQuestions: number) =>
+  submitDefinitionBuilderScore: (lectureId: string, score: number, totalQuestions: number, elapsedMs?: number) =>
     apiRequest<GameSubmissionResponse>(API_ENDPOINTS.GAME.SUBMIT_DEFINITION_BUILDER(lectureId), {
       method: 'POST',
       auth: true,
-      body: { score, total_questions: totalQuestions },
+      body: { score, total_questions: totalQuestions, ...(elapsedMs != null && elapsedMs > 0 ? { elapsed_ms: elapsedMs } : {}) },
     }),
 
   submitMatchingGameScore: (lectureId: string, elapsedMs: number, pairCount: number) =>
