@@ -111,6 +111,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         lecture_id: status?.lecture_id,
         bookmark: status?.bookmark ?? false,
         correct: status?.correct ?? false,
+        selected_answer: status?.answer ?? null,
       })
     }
 
@@ -124,6 +125,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         lecture_id: status?.lecture_id,
         bookmark: status?.bookmark ?? false,
         correct: status?.correct ?? false,
+        selected_answer: status?.answer ?? null,
       })
     }
 
@@ -199,18 +201,17 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
   )
 
   const handleCorrectUpdate = useCallback(
-    async (quizId: string, isCorrect: boolean) => {
+    async (quizId: string, isCorrect: boolean, answer: number) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
       if (!quiz || !quiz.lecture_id) return
 
       if (isCorrect) {
-        // Optimistic: 오답→정답이면 즉시 제거
         const updated = allQuizzes.filter(q => q.quiz_id !== quizId)
         setAllQuizzes(updated)
         setGroups(groupQuizzesByType(updated))
       } else {
         const updated = allQuizzes.map(q =>
-          q.quiz_id === quizId ? { ...q, correct: false } : q,
+          q.quiz_id === quizId ? { ...q, correct: false, selected_answer: answer } : q,
         )
         setAllQuizzes(updated)
         setGroups(groupQuizzesByType(updated))
@@ -221,6 +222,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         quizId,
         quiz.lecture_id,
         isCorrect,
+        answer,
       )
 
       if (result.error) {
@@ -344,6 +346,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
                     index={idx}
                     isBookmarked={quiz.bookmark}
                     isCorrect={quiz.correct}
+                    selectedAnswer={quiz.selected_answer}
                     onBookmarkToggle={handleBookmarkToggle}
                     onCorrectUpdate={handleCorrectUpdate}
                   />

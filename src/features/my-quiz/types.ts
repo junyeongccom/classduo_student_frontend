@@ -60,6 +60,7 @@ export interface QuizStatusEntry {
   lecture_id: string
   bookmark: boolean
   correct: boolean | null
+  answer: number | null
 }
 
 /** 세션 상세 응답 (퀴즈 목록 포함) */

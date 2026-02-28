@@ -27,6 +27,7 @@ export interface QuizWithMeta {
   }[]
   bookmark: boolean
   correct: boolean | null
+  selected_answer: number | null
   created_at?: string
 }
 

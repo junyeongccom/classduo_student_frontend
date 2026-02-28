@@ -112,6 +112,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         lecture_id: status?.lecture_id,
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
+        selected_answer: status?.answer ?? null,
       })
     }
 
@@ -125,6 +126,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         lecture_id: status?.lecture_id,
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
+        selected_answer: status?.answer ?? null,
       })
     }
 
@@ -198,13 +200,13 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
   )
 
   const handleCorrectUpdate = useCallback(
-    async (quizId: string, isCorrect: boolean) => {
+    async (quizId: string, isCorrect: boolean, answer: number) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
       if (!quiz || !quiz.lecture_id) return
 
       // Optimistic update
       const updated = allQuizzes.map(q =>
-        q.quiz_id === quizId ? { ...q, correct: isCorrect } : q,
+        q.quiz_id === quizId ? { ...q, correct: isCorrect, selected_answer: answer } : q,
       )
       setAllQuizzes(updated)
       setGroups(groupQuizzesByType(updated))
@@ -214,6 +216,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         quizId,
         quiz.lecture_id,
         isCorrect,
+        answer,
       )
 
       if (result.error) {
@@ -338,6 +341,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
                     index={idx}
                     isBookmarked={quiz.bookmark}
                     isCorrect={quiz.correct}
+                    selectedAnswer={quiz.selected_answer}
                     onBookmarkToggle={handleBookmarkToggle}
                     onCorrectUpdate={handleCorrectUpdate}
                   />

@@ -50,7 +50,7 @@ export async function getQuizStatusesByLecture(
     const supabase = getSupabaseClient()
     let query = supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct')
+      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer')
       .eq('lecture_id', lectureId)
 
     if (filter.bookmark !== undefined) {
@@ -107,7 +107,7 @@ export async function getQuizStatusesByLectureIds(
     const supabase = getSupabaseClient()
     let query = supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct')
+      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer')
       .in('lecture_id', lectureIds)
 
     if (filter.bookmark !== undefined) {
@@ -158,7 +158,7 @@ export async function getAllInstructorQuizStatuses(
     const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct')
+      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer')
       .eq('lecture_id', lectureId)
       .eq('quiz_source', 'instructor')
 
@@ -293,6 +293,7 @@ export async function updateCorrect(
   quizId: string,
   lectureId: string,
   correct: boolean,
+  answer?: number,
 ) {
   if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
     return { data: null, error: new Error('Invalid quiz source'), status: 400 }
@@ -302,7 +303,7 @@ export async function updateCorrect(
     {
       method: 'PATCH',
       auth: true,
-      body: { lecture_id: lectureId, correct },
+      body: { lecture_id: lectureId, correct, answer },
     },
   )
 }

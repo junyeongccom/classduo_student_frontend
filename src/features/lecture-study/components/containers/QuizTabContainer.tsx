@@ -125,6 +125,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
           quiz_source: 'instructor',
           bookmark: newBookmark,
           correct: current?.correct ?? null,
+          answer: current?.answer ?? null,
         })
         return next
       })
@@ -148,7 +149,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
 
   // 풀이 결과 업데이트 + 보상 판정
   const handleCorrectUpdate = useCallback(
-    async (quizId: string, isCorrect: boolean) => {
+    async (quizId: string, isCorrect: boolean, answer: number) => {
       const current = statusMap.get(quizId)
 
       // 낙관적 업데이트
@@ -159,11 +160,12 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
           quiz_source: 'instructor',
           bookmark: current?.bookmark ?? false,
           correct: isCorrect,
+          answer,
         })
         return next
       })
 
-      const result = await updateCorrect('instructor', quizId, lectureId, isCorrect)
+      const result = await updateCorrect('instructor', quizId, lectureId, isCorrect, answer)
       if (result.error) {
         // 실패 시 롤백
         setStatusMap((prev) => {
@@ -187,6 +189,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
           quiz_source: 'instructor',
           bookmark: current?.bookmark ?? false,
           correct: isCorrect,
+          answer,
         })
 
         const allCorrect =
@@ -279,6 +282,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
                   index={idx}
                   isBookmarked={status?.bookmark ?? false}
                   isCorrect={status?.correct ?? null}
+                  selectedAnswer={status?.answer ?? null}
                   onBookmarkToggle={handleBookmarkToggle}
                   onCorrectUpdate={handleCorrectUpdate}
                 />

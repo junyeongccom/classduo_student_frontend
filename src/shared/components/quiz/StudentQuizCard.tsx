@@ -52,10 +52,12 @@ export interface StudentQuizCardProps {
   isBookmarked: boolean
   /** 풀이 결과 (true=정답, false=오답, null=미풀이) */
   isCorrect: boolean | null
+  /** 이전에 선택한 선지 번호 (choice_order, 1-based). 재방문 시 하이라이트 복원용 */
+  selectedAnswer?: number | null
   /** 즐겨찾기 토글 콜백 */
   onBookmarkToggle: (quizId: string) => void
-  /** 풀이 결과 업데이트 콜백 (정답 공개 시 자동 호출) */
-  onCorrectUpdate: (quizId: string, isCorrect: boolean) => void
+  /** 풀이 결과 업데이트 콜백 (선지 클릭 시 호출, answer는 choice_order) */
+  onCorrectUpdate: (quizId: string, isCorrect: boolean, answer: number) => void
 }
 
 /* ───────────── 상수 ───────────── */
@@ -85,78 +87,89 @@ export function StudentQuizCard({
   index,
   isBookmarked,
   isCorrect,
+  selectedAnswer,
   onBookmarkToggle,
   onCorrectUpdate,
 }: StudentQuizCardProps) {
-  const [selectedChoiceIdx, setSelectedChoiceIdx] = useState<number | null>(null)
-  const [showAnswer, setShowAnswer] = useState(false)
-  const t = useTranslations('lectureStudy.quiz')
-
-  const badge = QUIZ_TYPE_BADGE[quiz.quiz_type]
   const isMultipleChoice =
     quiz.quiz_type === 'MISCONCEPTION' ||
     quiz.quiz_type === 'DEF_TO_TERM' ||
     quiz.quiz_type === 'TERM_TO_DEF' ||
     quiz.quiz_type === 'STRUCTURE_OBJ'
 
+  const [selectedChoiceIdx, setSelectedChoiceIdx] = useState<number | null>(() => {
+    if (isCorrect !== null && isMultipleChoice && selectedAnswer != null) {
+      return quiz.choices.findIndex((c) => c.choice_order === selectedAnswer)
+    }
+    return null
+  })
+  const [isSubmitted, setIsSubmitted] = useState(() => isCorrect !== null)
+  const [showAnswer, setShowAnswer] = useState(false)
+  const t = useTranslations('lectureStudy.quiz')
+
+  const badge = QUIZ_TYPE_BADGE[quiz.quiz_type]
+
+  const hasAnswered = isCorrect !== null || isSubmitted
+
   const handleChoiceClick = useCallback(
     (idx: number) => {
-      if (showAnswer) return
+      if (isSubmitted || showAnswer) return
       setSelectedChoiceIdx(idx)
+
+      const selectedChoice = quiz.choices[idx]
+      if (selectedChoice) {
+        setIsSubmitted(true)
+        onCorrectUpdate(quiz.quiz_id, selectedChoice.is_correct, selectedChoice.choice_order)
+      }
     },
-    [showAnswer],
+    [isSubmitted, showAnswer, quiz.choices, quiz.quiz_id, onCorrectUpdate],
   )
 
   const handleToggleAnswer = useCallback(() => {
-    const willShow = !showAnswer
-    setShowAnswer(willShow)
-
-    // 정답 공개 시: 선지가 선택되어 있으면 풀이 결과 자동 기록
-    if (willShow && isMultipleChoice && selectedChoiceIdx !== null) {
-      const selectedChoice = quiz.choices[selectedChoiceIdx]
-      if (selectedChoice) {
-        onCorrectUpdate(quiz.quiz_id, selectedChoice.is_correct)
-      }
-    }
-  }, [showAnswer, isMultipleChoice, selectedChoiceIdx, quiz.choices, quiz.quiz_id, onCorrectUpdate])
+    setShowAnswer((prev) => !prev)
+  }, [])
 
   const handleBookmarkClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
+      if (!hasAnswered) return
       onBookmarkToggle(quiz.quiz_id)
     },
-    [quiz.quiz_id, onBookmarkToggle],
+    [quiz.quiz_id, onBookmarkToggle, hasAnswered],
   )
 
   /* 선지 스타일 */
   const getChoiceStyle = (choice: StudentQuizChoice, idx: number) => {
     const isSelected = selectedChoiceIdx === idx
 
-    if (!showAnswer) {
-      if (isSelected) {
-        return 'border-[#6366F1] bg-[#6366F1]/5 ring-1 ring-[#6366F1]/20'
-      }
+    if (!isSubmitted) {
       return 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer'
     }
 
-    if (choice.is_correct) {
+    if (isSelected && choice.is_correct) {
       return 'border-green-300 bg-green-50/60 dark:border-green-700 dark:bg-green-900/20'
     }
     if (isSelected && !choice.is_correct) {
       return 'border-red-300 bg-red-50/60 dark:border-red-700 dark:bg-red-900/20'
     }
+
+    if (showAnswer && choice.is_correct) {
+      return 'border-green-300 bg-green-50/60 dark:border-green-700 dark:bg-green-900/20'
+    }
+
     return 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-60'
   }
 
   const getChoiceLabelStyle = (choice: StudentQuizChoice, idx: number) => {
     const isSelected = selectedChoiceIdx === idx
 
-    if (!showAnswer) {
-      return isSelected ? 'text-[#6366F1] font-bold' : 'text-gray-400'
+    if (!isSubmitted) {
+      return 'text-gray-400'
     }
 
-    if (choice.is_correct) return 'text-green-600 dark:text-green-400 font-bold'
+    if (isSelected && choice.is_correct) return 'text-green-600 dark:text-green-400 font-bold'
     if (isSelected && !choice.is_correct) return 'text-red-500 dark:text-red-400 font-bold'
+    if (showAnswer && choice.is_correct) return 'text-green-600 dark:text-green-400 font-bold'
     return 'text-gray-400'
   }
 
@@ -189,20 +202,35 @@ export function StudentQuizCard({
         )}
 
         {/* 즐겨찾기 Star — 우측 정렬 */}
-        <button
-          type="button"
-          onClick={handleBookmarkClick}
-          className="ml-auto p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          aria-label={isBookmarked ? t('bookmarkRemove') : t('bookmarkAdd')}
-        >
-          <Star
-            className={`h-4 w-4 transition-colors ${
-              isBookmarked
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'fill-none text-gray-300 dark:text-gray-500'
+        <div className="group relative ml-auto">
+          <button
+            type="button"
+            onClick={handleBookmarkClick}
+            disabled={!hasAnswered}
+            className={`p-1 rounded-full transition-colors ${
+              hasAnswered
+                ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
+                : 'cursor-not-allowed opacity-40'
             }`}
-          />
-        </button>
+            aria-label={isBookmarked ? t('bookmarkRemove') : t('bookmarkAdd')}
+          >
+            <Star
+              className={`h-4 w-4 transition-colors ${
+                isBookmarked
+                  ? 'fill-yellow-400 text-yellow-400'
+                  : 'fill-none text-gray-300 dark:text-gray-500'
+              }`}
+            />
+          </button>
+          {!hasAnswered && (
+            <div className="pointer-events-none absolute right-0 bottom-full mb-2 z-20 w-max max-w-[200px] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+              <div className="rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-sm">
+                {t('bookmarkDisabledTooltip')}
+              </div>
+              <div className="absolute right-3 top-full h-1.5 w-1.5 rotate-45 bg-gray-900" />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 문제 */}
@@ -215,10 +243,10 @@ export function StudentQuizCard({
         <div className="mt-4 space-y-2">
           {quiz.choices.map((choice, idx) => (
             <button
-              key={choice.choice_id}
+              key={choice.choice_id ?? `choice-${idx}`}
               type="button"
               onClick={() => handleChoiceClick(idx)}
-              disabled={showAnswer}
+              disabled={isSubmitted}
               className={`w-full flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${getChoiceStyle(choice, idx)}`}
             >
               <span
@@ -229,11 +257,14 @@ export function StudentQuizCard({
               <span className="flex-1 text-gray-700 dark:text-gray-300">
                 {choice.choice_text}
               </span>
-              {showAnswer && choice.is_correct && (
+              {isSubmitted && selectedChoiceIdx === idx && choice.is_correct && (
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
               )}
-              {showAnswer && selectedChoiceIdx === idx && !choice.is_correct && (
+              {isSubmitted && selectedChoiceIdx === idx && !choice.is_correct && (
                 <XCircle className="h-4 w-4 shrink-0 text-red-400" />
+              )}
+              {showAnswer && choice.is_correct && selectedChoiceIdx !== idx && (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
               )}
             </button>
           ))}
@@ -242,17 +273,32 @@ export function StudentQuizCard({
 
       {/* 정답/해설 토글 */}
       <div className="mt-4">
-        <button
-          onClick={handleToggleAnswer}
-          className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-        >
-          {showAnswer ? (
-            <ChevronUp className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5" />
+        <div className="group relative inline-flex">
+          <button
+            onClick={handleToggleAnswer}
+            disabled={!hasAnswered}
+            className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+              hasAnswered
+                ? 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer'
+                : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+            }`}
+          >
+            {showAnswer ? (
+              <ChevronUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+            {showAnswer ? t('hideAnswer') : t('showAnswer')}
+          </button>
+          {!hasAnswered && (
+            <div className="pointer-events-none absolute left-0 bottom-full mb-2 z-20 w-max max-w-[220px] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+              <div className="rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-sm">
+                {t('answerDisabledTooltip')}
+              </div>
+              <div className="absolute left-4 top-full h-1.5 w-1.5 rotate-45 bg-gray-900" />
+            </div>
           )}
-          {showAnswer ? t('hideAnswer') : t('showAnswer')}
-        </button>
+        </div>
 
         {showAnswer && (
           <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -290,7 +336,7 @@ export function StudentQuizCard({
                   </p>
                   <div className="space-y-1.5">
                     {quiz.choices.map((choice, idx) => (
-                      <div key={choice.choice_id} className="text-xs leading-relaxed">
+                      <div key={choice.choice_id ?? `analysis-${idx}`} className="text-xs leading-relaxed">
                         <span
                           className={`font-bold mr-1 ${
                             choice.is_correct

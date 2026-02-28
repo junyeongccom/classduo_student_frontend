@@ -383,8 +383,8 @@
       "title": "Summary",
       "loading": "Loading summary...",
       "preparing": "Summary in preparation",
-      "sourceButtonMaterials": "(Materials)",
-      "sourceButtonRecordings": "(Recordings)",
+      "sourceButtonMaterials": "Materials",
+      "sourceButtonRecordings": "Recordings",
       "sourceTooltipPages": "Page {pages}",
       "sourceTooltipChunks": "Chunk {chunks}",
       "sourceEmptyTooltip": "No source information",
@@ -423,7 +423,9 @@
       "explanation": "Explanation",
       "choiceAnalysis": "Choice analysis",
       "bookmarkRemove": "Remove bookmark",
-      "bookmarkAdd": "Add bookmark"
+      "bookmarkAdd": "Add bookmark",
+      "bookmarkDisabledTooltip": "Answer the question first to add to bookmarks",
+      "answerDisabledTooltip": "Answer the question first to view the answer and explanation"
     },
     "contentsChat": {
       "errorGenerate": "Failed to generate a response. Please try again.",

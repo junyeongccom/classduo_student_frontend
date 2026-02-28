@@ -20,6 +20,7 @@ export interface QuizStatus {
   quiz_source: 'instructor' | 'customize'
   bookmark: boolean
   correct: boolean | null
+  answer: number | null
 }
 
 interface BookmarkResponse {
@@ -56,7 +57,7 @@ export async function getQuizStatusByLecture(
 
     const { data, error } = await supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, bookmark, correct')
+      .select('quiz_id, quiz_source, bookmark, correct, answer')
       .eq('lecture_id', lectureId)
       .eq('quiz_source', quizSource)
 
@@ -107,13 +108,14 @@ export async function updateCorrect(
   quizId: string,
   lectureId: string,
   correct: boolean,
+  answer?: number,
 ) {
   return apiRequest<CorrectResponse>(
     `/quiz-status/${quizSource}/${quizId}/correct`,
     {
       method: 'PATCH',
       auth: true,
-      body: { lecture_id: lectureId, correct },
+      body: { lecture_id: lectureId, correct, answer },
     },
   )
 }

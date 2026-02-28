@@ -87,6 +87,7 @@ export default function SessionDetailView({
           lecture_id: lectureId,
           bookmark: newBookmark,
           correct: current?.correct ?? null,
+          answer: current?.answer ?? null,
         })
         return next
       })
@@ -106,7 +107,7 @@ export default function SessionDetailView({
   )
 
   const handleCorrectUpdate = useCallback(
-    async (quizId: string, isCorrect: boolean) => {
+    async (quizId: string, isCorrect: boolean, answer: number) => {
       const key = `customize:${quizId}`
       const current = statusMap.get(key)
 
@@ -118,11 +119,12 @@ export default function SessionDetailView({
           lecture_id: lectureId,
           bookmark: current?.bookmark ?? false,
           correct: isCorrect,
+          answer,
         })
         return next
       })
 
-      const result = await statusService.updateCorrect('customize', quizId, lectureId, isCorrect)
+      const result = await statusService.updateCorrect('customize', quizId, lectureId, isCorrect, answer)
       if (result.error) {
         showErrorToast(t('error.correctFailed'))
         setStatusMap(prev => {
@@ -221,6 +223,7 @@ export default function SessionDetailView({
                     index={idx}
                     isBookmarked={status?.bookmark ?? false}
                     isCorrect={status?.correct ?? null}
+                    selectedAnswer={status?.answer ?? null}
                     onBookmarkToggle={handleBookmarkToggle}
                     onCorrectUpdate={handleCorrectUpdate}
                   />
