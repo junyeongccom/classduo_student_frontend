@@ -7,7 +7,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
-import { trackAiTutorQuestion } from '@/shared/hooks/useAnalytics'
+import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
@@ -15,6 +15,7 @@ import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 import { ChatComposer } from '../ui/ChatComposer'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { FeedbackButtons } from '../ui/FeedbackButtons'
 
 const shuffleArray = <T,>(items: T[]) => {
   const array = [...items]
@@ -415,12 +416,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   }
                 }
               }
-              
+
               return {
                 role: m.role,
                 content: m.content,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
+                id: m.id,
+                feedback: m.feedback || null,
               }
             })
             setMessages(loadedMessages)
@@ -661,6 +664,22 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         question,
         // onProgress: 진행 상황 업데이트 (누적)
         (progressData) => {
+          // message_saved 이벤트: 마지막 assistant 메시지에 id 부여
+          if (progressData.type === 'message_saved' && progressData.message_id) {
+            const savedMessageId = progressData.message_id
+            setMessages(prev => {
+              const updated = [...prev]
+              // 마지막 assistant 메시지 찾기
+              for (let i = updated.length - 1; i >= 0; i--) {
+                if (updated[i].role === 'assistant') {
+                  updated[i] = { ...updated[i], id: savedMessageId }
+                  break
+                }
+              }
+              return updated
+            })
+            return
+          }
           if (progressData.type === 'status') {
             // 녹음 출처 비활성화 상태 저장
             if (progressData.step === 'recording_disabled') {
@@ -883,7 +902,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             
             // 세션 생성 완료 후 메시지 저장 (await 사용)
             try {
-              await chatService.saveHookingMessage(newSessionId, {
+              const saveResult = await chatService.saveHookingMessage(newSessionId, {
                 question: hooking.question,
                 answer: hooking.answer,
                 follow_up_question: hooking.follow_up_question || null,
@@ -892,6 +911,20 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
               })
               console.log('[후킹 질문] 메시지 저장 완료')
+              // assistant_message_id를 마지막 assistant 메시지에 부여
+              if (saveResult.data?.assistant_message_id) {
+                const asstMsgId = saveResult.data.assistant_message_id
+                setMessages(prev => {
+                  const updated = [...prev]
+                  for (let i = updated.length - 1; i >= 0; i--) {
+                    if (updated[i].role === 'assistant') {
+                      updated[i] = { ...updated[i], id: asstMsgId }
+                      break
+                    }
+                  }
+                  return updated
+                })
+              }
             } catch (err) {
               console.error('[후킹 질문] 메시지 저장 실패:', err)
             }
@@ -911,7 +944,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           : (hooking.summary_keywords || null)
         
         try {
-          await chatService.saveHookingMessage(currentSessionId, {
+          const saveResult = await chatService.saveHookingMessage(currentSessionId, {
             question: hooking.question,
             answer: hooking.answer,
             follow_up_question: hooking.follow_up_question || null,
@@ -919,6 +952,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             summary_keywords: summaryKeywords,
             hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
           })
+          if (saveResult.data?.assistant_message_id) {
+            const asstMsgId = saveResult.data.assistant_message_id
+            setMessages(prev => {
+              const updated = [...prev]
+              for (let i = updated.length - 1; i >= 0; i--) {
+                if (updated[i].role === 'assistant') {
+                  updated[i] = { ...updated[i], id: asstMsgId }
+                  break
+                }
+              }
+              return updated
+            })
+          }
         } catch (err) {
           console.error('Failed to save hooking message:', err)
         }
@@ -1044,7 +1090,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           
           // 세션 생성 완료 후 메시지 저장 (await 사용)
           try {
-            await chatService.savePQMMessage(newSessionId, {
+            const saveResult = await chatService.savePQMMessage(newSessionId, {
               question: pqmQuestion.question,
               answer: pqmQuestion.answer,
               follow_up_question: pqmQuestion.follow_up_question || null,
@@ -1053,6 +1099,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)
             })
             console.log('[PQM 질문] 메시지 저장 완료')
+            if (saveResult.data?.assistant_message_id) {
+              const asstMsgId = saveResult.data.assistant_message_id
+              setMessages(prev => {
+                const updated = [...prev]
+                for (let i = updated.length - 1; i >= 0; i--) {
+                  if (updated[i].role === 'assistant') {
+                    updated[i] = { ...updated[i], id: asstMsgId }
+                    break
+                  }
+                }
+                return updated
+              })
+            }
           } catch (err) {
             console.error('[PQM 질문] 메시지 저장 실패:', err)
           }
@@ -1072,7 +1131,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         : (pqmQuestion.summary_keywords || null)
       
       try {
-        await chatService.savePQMMessage(currentSessionId, {
+        const saveResult = await chatService.savePQMMessage(currentSessionId, {
           question: pqmQuestion.question,
           answer: pqmQuestion.answer,
           follow_up_question: pqmQuestion.follow_up_question || null,
@@ -1080,6 +1139,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           summary_keywords: summaryKeywords,
           pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)
         })
+        if (saveResult.data?.assistant_message_id) {
+          const asstMsgId = saveResult.data.assistant_message_id
+          setMessages(prev => {
+            const updated = [...prev]
+            for (let i = updated.length - 1; i >= 0; i--) {
+              if (updated[i].role === 'assistant') {
+                updated[i] = { ...updated[i], id: asstMsgId }
+                break
+              }
+            }
+            return updated
+          })
+        }
       } catch (err) {
         console.error('Failed to save PQM message:', err)
       }
@@ -1264,6 +1336,21 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                           <span>{followUpQuestion}</span>
                         </button>
                       </div>
+                    )}
+                    {/* 피드백 버튼 - 타이핑 완료된 AI 메시지에만 표시 */}
+                    {isTypingComplete && typingLength >= message.content.length && (
+                      <FeedbackButtons
+                        messageId={message.id}
+                        sessionId={currentSessionId}
+                        initialFeedback={message.feedback}
+                        onFeedbackChange={(newFeedback) => {
+                          setMessages(prev => {
+                            const updated = [...prev]
+                            updated[index] = { ...updated[index], feedback: newFeedback }
+                            return updated
+                          })
+                        }}
+                      />
                     )}
                     {/* 출처 확인 안내 멘트 - 타이핑 완료 후에만 표시 */}
                     {isTypingComplete && typingLength >= message.content.length && (

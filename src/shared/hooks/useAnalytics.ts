@@ -52,7 +52,6 @@ export function trackGameComplete(params: {
   course_id: string
   game_mode: string
   obstacle_hit?: number
-  skipped?: number
 }) {
   trackEvent('game_complete', params)
 }
@@ -107,6 +106,14 @@ export function trackQuizSelfStart(params: {
   tab: string
 }) {
   trackEvent('quiz_self_start', params)
+}
+
+export function trackAiTutorFeedback(params: {
+  feedback_type: 'like' | 'dislike' | 'cancel'
+  chat_session_id: string
+  message_id: string
+}) {
+  trackEvent('ai_tutor_feedback', params)
 }
 
 export function setUserProperties(props: {
