@@ -73,6 +73,7 @@ export function trackAiTutorQuestion(params: {
   chat_session_id: string
   lecture_count: number
   question_length: number
+  chat_mode: string
 }) {
   trackEvent('ai_tutor_question', params)
 }

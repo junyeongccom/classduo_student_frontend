@@ -707,6 +707,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             chat_session_id: sessionIdToUse,
             lecture_count: selectedLectureIds.length,
             question_length: question.length,
+            chat_mode: chatMode,
           })
 
           const assistantMessage: ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null } = {
