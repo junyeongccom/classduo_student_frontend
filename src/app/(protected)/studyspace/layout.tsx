@@ -78,24 +78,24 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isProfileOpen])
 
-  // 현재 과목 ID 추출 + 불꽃 카운트 조회
-  const courseIdMatch = pathname.match(/\/studyspace\/course\/([^/]+)/)
-  const currentCourseId = courseIdMatch ? courseIdMatch[1] : null
+  // 불꽃 카운트 조회 (전체 과목 합산, 페이지 무관 불변)
   const [flameCount, setFlameCount] = useState(0)
 
   useEffect(() => {
     if (!user) return
     getCourseRewardCounts().then(({ data }) => {
       if (!data) { setFlameCount(0); return }
-      if (currentCourseId) {
-        const match = data.find(r => r.course_id === currentCourseId)
-        setFlameCount(match?.total_amount ?? 0)
-      } else {
-        const total = data.reduce((sum, r) => sum + r.total_amount, 0)
-        setFlameCount(total)
-      }
+      const total = data.reduce((sum, r) => sum + r.total_amount, 0)
+      setFlameCount(total)
     })
-  }, [currentCourseId, user])
+  }, [user])
+
+  // 보상 모달에서 발행하는 flame-increment 이벤트 수신
+  useEffect(() => {
+    const handler = () => setFlameCount(prev => prev + 1)
+    window.addEventListener('flame-increment', handler)
+    return () => window.removeEventListener('flame-increment', handler)
+  }, [])
 
   return (
     <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
@@ -113,7 +113,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-3 pl-6">
-            <div className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3 py-2 text-[#6366F1]">
+            <div id="flame-badge" className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3 py-2 text-[#6366F1]">
               <Flame className="h-5 w-5 fill-current" />
               <span className="text-sm font-bold">{flameCount}</span>
             </div>

@@ -201,9 +201,13 @@ export async function fetchQuizContent(
       ? 'instructor_quiz_choices'
       : 'user_customize_quiz_choices'
 
+    const selectCols = quizSource === 'instructor'
+      ? 'quiz_id, quiz_type, question, answer, explanation, difficulty'
+      : 'quiz_id, quiz_type, question, answer, explanation'
+
     const { data: items, error: itemsError } = await supabase
       .from(table)
-      .select('quiz_id, quiz_type, question, answer, explanation, difficulty')
+      .select(selectCols)
       .in('quiz_id', quizIds)
 
     if (itemsError) {
@@ -247,7 +251,7 @@ export async function fetchQuizContent(
       answer: item.answer,
       explanation: item.explanation,
       quiz_keyword: null,
-      difficulty: item.difficulty ?? null,
+      difficulty: (item as Record<string, unknown>).difficulty as string ?? null,
       choices: choiceMap.get(item.quiz_id) ?? [],
     }))
 
@@ -287,13 +291,13 @@ export async function toggleBookmark(
   )
 }
 
-/** 풀이 결과 업데이트 */
+/** 풀이 결과 업데이트. correct=null이면 선택 해제(리셋). */
 export async function updateCorrect(
   quizSource: QuizSource,
   quizId: string,
   lectureId: string,
-  correct: boolean,
-  answer?: number,
+  correct: boolean | null,
+  answer?: number | null,
 ) {
   if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
     return { data: null, error: new Error('Invalid quiz source'), status: 400 }

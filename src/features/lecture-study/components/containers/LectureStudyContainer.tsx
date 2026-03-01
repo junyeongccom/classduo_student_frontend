@@ -303,7 +303,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         <SummaryTabContainer lectureId={lectureId} />
       </TabsContent>
       <TabsContent value="quiz" className="flex-1 min-h-0 mt-0">
-        <QuizTabContainer lectureId={lectureId} />
+        <QuizTabContainer
+          lectureId={lectureId}
+          courseTitle={courseTitle ?? fetchedCourseTitle ?? undefined}
+          weekNumber={currentLecture?.week_number}
+          sessionNumber={currentLecture?.session_number}
+        />
       </TabsContent>
       <TabsContent value="game" className="flex-1 min-h-0 mt-0">
         <GameTabContainer lectureId={lectureId} />

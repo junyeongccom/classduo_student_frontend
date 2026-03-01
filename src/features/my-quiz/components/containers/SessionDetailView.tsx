@@ -138,6 +138,38 @@ export default function SessionDetailView({
     [statusMap, lectureId, showErrorToast, t],
   )
 
+  const handleResetAnswer = useCallback(
+    async (quizId: string) => {
+      const key = `customize:${quizId}`
+      const current = statusMap.get(key)
+
+      setStatusMap(prev => {
+        const next = new Map(prev)
+        next.set(key, {
+          quiz_id: quizId,
+          quiz_source: 'customize',
+          lecture_id: lectureId,
+          bookmark: current?.bookmark ?? false,
+          correct: null,
+          answer: null,
+        })
+        return next
+      })
+
+      const result = await statusService.updateCorrect('customize', quizId, lectureId, null, null)
+      if (result.error) {
+        showErrorToast(t('error.correctFailed'))
+        setStatusMap(prev => {
+          const next = new Map(prev)
+          if (current) next.set(key, current)
+          else next.delete(key)
+          return next
+        })
+      }
+    },
+    [statusMap, lectureId, showErrorToast, t],
+  )
+
   // 퀴즈를 type별 그룹화
   const grouped = TYPE_ORDER
     .map(type => ({
@@ -226,6 +258,7 @@ export default function SessionDetailView({
                     selectedAnswer={status?.answer ?? null}
                     onBookmarkToggle={handleBookmarkToggle}
                     onCorrectUpdate={handleCorrectUpdate}
+                    onResetAnswer={handleResetAnswer}
                   />
                 )
               })}

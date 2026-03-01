@@ -425,7 +425,13 @@
       "bookmarkRemove": "Remove bookmark",
       "bookmarkAdd": "Add bookmark",
       "bookmarkDisabledTooltip": "Answer the question first to add to bookmarks",
-      "answerDisabledTooltip": "Answer the question first to view the answer and explanation"
+      "answerDisabledTooltip": "Answer the question first to view the answer and explanation",
+      "resetTooltip": "Click your selected answer again to deselect it",
+      "rewardModal": {
+        "title": "Congratulations!",
+        "message": "You have completed all quizzes for {courseName} {weekSession}",
+        "confirm": "OK"
+      }
     },
     "contentsChat": {
       "errorGenerate": "Failed to generate a response. Please try again.",
