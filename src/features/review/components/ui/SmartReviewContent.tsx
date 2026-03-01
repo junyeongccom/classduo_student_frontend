@@ -114,12 +114,7 @@ export function SmartReviewContent({
       description: t('games.quickfill.description'),
       thumbnail: '/DB_thumbnail.png',
     },
-    {
-      id: 'guess-the-term',
-      title: t('games.guessTheTerm.title'),
-      description: t('games.guessTheTerm.description'),
-      thumbnail: '/스크린샷 2026-02-01 060037.png',
-    },
+    // guess-the-term: 게임 선택 목록에서 숨김 (코드 보존, 향후 재활성화 가능)
   ]
   return (
     <div className="flex h-full flex-col gap-6 overflow-hidden">
@@ -364,6 +359,7 @@ export function SmartReviewContent({
                   onRetry={onRetryDefinitionBuilder}
                   isEnabled={hasSelectedLecture}
                   currentScore={definitionScore}
+                  lectureId={lectureId}
                   onScoreDelta={(delta) => {
                     setDefinitionScore(prev => prev + delta)
                     setScoreDelta(delta)
@@ -397,6 +393,7 @@ export function SmartReviewContent({
                   reviewItems={reviewItems}
                   isEnabled={hasSelectedLecture}
                   onExit={onExitGame}
+                  lectureId={lectureId}
                 />
               </div>
             ) : activeGameId === 'guess-the-term' ? (

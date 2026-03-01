@@ -84,7 +84,7 @@ export const DIFF_METEOR_MAX_MS:       [number, number, number, number] = [9000,
 export const DIFF_METEOR_SPEED_MULT:   [number, number, number, number] = [1.25,    1.8,    2.5,    3.2];
 export const DIFF_SCROLL_SPEED_BONUS:  [number, number, number, number] = [0, -100*S, -160*S, -200*S];
 export const DIFF_GAP_PROBABILITY:     [number, number, number, number] = [0.30,   0.50,   0.65,   0.75];
-export const DIFF_GAP_MAX_WIDTH:       [number, number, number, number] = [150*S,  200*S,  250*S,  300*S];
+export const DIFF_GAP_MAX_WIDTH:       [number, number, number, number] = [150*S,  250*S,  350*S,  450*S];
 export const DIFF_METEOR_DAMAGE:       [number, number, number, number] = [4000,   8000,  14000,  22000];
 export const DIFF_DOUBLE_METEOR_THRESHOLD = 0.6;
 export const DIFF_DOUBLE_METEOR_CHANCE = 0.25;
@@ -237,8 +237,8 @@ export const SKY_TOP_COLOR = { r: 0x5b, g: 0x86, b: 0xc7 };
 export const SKY_MID_COLOR = { r: 0xa8, g: 0xce, b: 0xef };
 export const SKY_BOT_COLOR = { r: 0xf5, g: 0xe6, b: 0xca };
 
-// ── Day/Night cycle (score-based, loops every 500 points) ──
-export const DAY_NIGHT_CYCLE_SCORE = 500;
+// ── Day/Night cycle (time-based, loops every 2 minutes) ──
+export const DAY_NIGHT_CYCLE_MS = 120_000;
 export const DAY_NIGHT_STAGES = [
   { at: 0.00, sky: { r: 255, g: 255, b: 255, a: 0    }, mountain: 0xffffff },  // Day — clear
   { at: 0.25, sky: { r: 255, g: 140, b:  50, a: 0.25 }, mountain: 0xffd0a0 },  // Sunset — orange

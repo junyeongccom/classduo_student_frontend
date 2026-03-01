@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { LoginRequest, AuthError } from '../types'
+import { setAnalyticsUser } from '@/shared/hooks/useAnalytics'
 
 export function useLogin() {
   const router = useRouter()
@@ -44,6 +45,7 @@ export function useLogin() {
       } else {
         console.log('[로그인] 사용자 정보 조회 성공:', meResult.data)
         setUser(meResult.data)
+        if (meResult.data?.user_id) setAnalyticsUser(meResult.data.user_id)
       }
 
       // 4. 대시보드로 이동

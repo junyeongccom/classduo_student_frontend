@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
@@ -21,7 +21,17 @@ import {
   DefinitionBuilderGame,
   ReviewDeckView,
   useReviewDeck,
+  GameRankingBoard,
 } from '@/features/review'
+import type { ScoreRankingEntry, MatchingRankingEntry } from '@/features/review'
+import { gameScoreService } from '@/features/ai-tutor'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/shared/components/ui'
 import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
 
 const GameOverlay = dynamic(
@@ -125,6 +135,32 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const [scoreDelta, setScoreDelta] = useState(0)
   const [scoreTone, setScoreTone] = useState<'positive' | 'negative' | null>(null)
 
+  // Game mode for running / cardMatch / definitionBuilder
+  const [gameMode, setGameMode] = useState<'rank' | 'normal' | null>(null)
+
+  // Rank mode: lecture_keywords 기반 reviewItems
+  const [rankReviewItems, setRankReviewItems] = useState<LectureReviewItem[]>([])
+  const [isLoadingRankData, setIsLoadingRankData] = useState(false)
+
+  // Nickname state
+  const [rankNickname, setRankNickname] = useState<string | undefined>(undefined)
+  const [showNicknameModal, setShowNicknameModal] = useState(false)
+  const [nicknameInput, setNicknameInput] = useState('')
+  const [nicknameSaving, setNicknameSaving] = useState(false)
+  const [nicknameError, setNicknameError] = useState<string | null>(null)
+  const nicknameInputRef = useRef<HTMLInputElement>(null)
+
+  // Ranking preview state
+  const [showRankingPreview, setShowRankingPreview] = useState(false)
+  const [rankingPreviewMode, setRankingPreviewMode] = useState<'score' | 'time' | 'score_time'>('score')
+  const [rankingPreviewData, setRankingPreviewData] = useState<(ScoreRankingEntry | MatchingRankingEntry)[]>([])
+  const [rankingPreviewLoading, setRankingPreviewLoading] = useState(false)
+  const [rankingPreviewError, setRankingPreviewError] = useState<string | null>(null)
+  const [rankingPreviewMyRank, setRankingPreviewMyRank] = useState<number | null>(null)
+  const [rankingPreviewPairTabs, setRankingPreviewPairTabs] = useState<number[]>([])
+  const [rankingPreviewActivePair, setRankingPreviewActivePair] = useState<number | undefined>(undefined)
+  const [rankingPreviewGameName, setRankingPreviewGameName] = useState('')
+
   // Overlay states (full-screen modal)
   const [showRunningOverlay, setShowRunningOverlay] = useState(false)
   const [showMatchingOverlay, setShowMatchingOverlay] = useState(false)
@@ -146,8 +182,166 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     setShowDescriptionPopup(true)
   }, [])
 
+  const loadDefBuilderDataFrom = useCallback((items: LectureReviewItem[]) => {
+    setDefBuilderError(null)
+    const data = buildDefBuilderFromLocal(items, lectureId)
+    if (data.total_count === 0) {
+      setDefBuilderError(t('lectureStudy.game.loadGameError'))
+      setDefBuilderData(null)
+    } else {
+      setDefBuilderData(data)
+    }
+  }, [lectureId, t])
+
+  const loadDefBuilderData = useCallback(() => {
+    loadDefBuilderDataFrom(reviewItems)
+  }, [reviewItems, loadDefBuilderDataFrom])
+
+  const startRankGame = useCallback((gameId: string, items?: LectureReviewItem[]) => {
+    setGameMode('rank')
+    if (gameId === 'running') {
+      setShowRunningOverlay(true)
+    } else if (gameId === 'cardMatch') {
+      setShowMatchingOverlay(true)
+    } else if (gameId === 'definitionBuilder') {
+      if (items) loadDefBuilderDataFrom(items)
+      setDefBuilderScore(0)
+      setShowDefBuilderOverlay(true)
+    }
+  }, [loadDefBuilderDataFrom])
+
+  const handleRankPlayFromDescription = useCallback(async () => {
+    setShowDescriptionPopup(false)
+
+    // Running game: nickname check flow (existing)
+    if (selectedGame === 'running') {
+      try {
+        const { data } = await gameScoreService.getNickname()
+        if (data?.nickname) {
+          setRankNickname(data.nickname)
+          startRankGame('running')
+          return
+        }
+      } catch {
+        // If API fails, show modal to be safe
+      }
+      setNicknameInput('')
+      setNicknameError(null)
+      setShowNicknameModal(true)
+      return
+    }
+
+    // cardMatch / definitionBuilder: fetch lecture_keywords then start
+    if (selectedGame === 'cardMatch' || selectedGame === 'definitionBuilder') {
+      setIsLoadingRankData(true)
+      try {
+        const result = await reviewService.getLectureKeywordsPreview(lectureId)
+        if (result.data?.keywords && result.data.keywords.length > 0) {
+          const items: LectureReviewItem[] = result.data.keywords.map(kw => ({
+            id: crypto.randomUUID(),
+            lecture_id: lectureId,
+            keyword: kw.keyword,
+            description: kw.description,
+          }))
+          setRankReviewItems(items)
+          startRankGame(selectedGame, items)
+        }
+      } catch {
+        // fetch 실패 시 무시
+      } finally {
+        setIsLoadingRankData(false)
+      }
+    }
+  }, [selectedGame, lectureId, startRankGame])
+
+  const handleNicknameConfirm = useCallback(async () => {
+    const trimmed = nicknameInput.trim()
+    if (!trimmed) return
+    setNicknameSaving(true)
+    setNicknameError(null)
+    try {
+      await gameScoreService.setNickname(trimmed)
+    } catch {
+      // Still allow play even if save fails
+    }
+    setNicknameSaving(false)
+    setShowNicknameModal(false)
+    setRankNickname(trimmed)
+    startRankGame('running')
+  }, [nicknameInput, startRankGame])
+
+  const fetchMatchingRankings = useCallback(async (pairCount: number) => {
+    setRankingPreviewLoading(true)
+    setRankingPreviewError(null)
+    try {
+      const { data } = await reviewService.getMatchingGameRankings(lectureId, pairCount, 10)
+      if (data) {
+        setRankingPreviewData(data.rankings)
+        setRankingPreviewMyRank(data.my_best?.rank ?? null)
+      }
+    } catch {
+      setRankingPreviewError('랭킹을 불러올 수 없습니다')
+    } finally {
+      setRankingPreviewLoading(false)
+    }
+  }, [lectureId])
+
+  const handleRankingPairChange = useCallback(async (pairCount: number) => {
+    setRankingPreviewActivePair(pairCount)
+    await fetchMatchingRankings(pairCount)
+  }, [fetchMatchingRankings])
+
+  const handleViewRanking = useCallback(async () => {
+    if (!selectedGame) return
+    const gameName = t(`lectureStudy.game.${selectedGame}` as Parameters<typeof t>[0])
+    setRankingPreviewGameName(gameName)
+    setRankingPreviewData([])
+    setRankingPreviewMyRank(null)
+    setRankingPreviewError(null)
+    setRankingPreviewPairTabs([])
+    setRankingPreviewActivePair(undefined)
+    setShowRankingPreview(true)
+    setRankingPreviewLoading(true)
+
+    try {
+      if (selectedGame === 'running') {
+        setRankingPreviewMode('score')
+        const { data } = await gameScoreService.getLeaderboard(lectureId)
+        if (data) {
+          const mapped: ScoreRankingEntry[] = data.entries.map(e => ({
+            rank: e.rank,
+            is_mine: e.is_current_user,
+            display_name: e.nickname || null,
+            score: e.score,
+            achieved_at: '',
+          }))
+          setRankingPreviewData(mapped)
+          setRankingPreviewMyRank(data.user_best?.rank ?? null)
+        }
+      } else if (selectedGame === 'cardMatch') {
+        setRankingPreviewMode('time')
+        setRankingPreviewPairTabs([6, 8, 10])
+        setRankingPreviewActivePair(6)
+        await fetchMatchingRankings(6)
+        return
+      } else if (selectedGame === 'definitionBuilder') {
+        setRankingPreviewMode('score_time')
+        const { data } = await reviewService.getDefinitionBuilderRankings(lectureId, 10)
+        if (data) {
+          setRankingPreviewData(data.rankings)
+          setRankingPreviewMyRank(data.my_best?.rank ?? null)
+        }
+      }
+    } catch {
+      setRankingPreviewError('랭킹을 불러올 수 없습니다')
+    } finally {
+      setRankingPreviewLoading(false)
+    }
+  }, [selectedGame, lectureId, t, fetchMatchingRankings])
+
   const handlePlayFromDescription = useCallback(() => {
     setShowDescriptionPopup(false)
+    setGameMode('normal')
     setShowWordModal(true)
   }, [])
 
@@ -174,34 +368,26 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     }
   }, [lectureId, words, setWords, t])
 
-  const loadDefBuilderData = useCallback(() => {
-    setDefBuilderError(null)
-    const data = buildDefBuilderFromLocal(reviewItems, lectureId)
-    if (data.total_count === 0) {
-      setDefBuilderError(t('lectureStudy.game.loadGameError'))
-      setDefBuilderData(null)
-    } else {
-      setDefBuilderData(data)
-    }
-  }, [reviewItems, lectureId, t])
-
   const handleStartGame = useCallback(() => {
     setShowWordModal(false)
 
-    // Running game: open overlay immediately
+    // Running game (normal mode): open overlay with words
     if (selectedGame === 'running') {
+      setGameMode('normal')
       setShowRunningOverlay(true)
       return
     }
 
-    // Card match: open overlay
+    // Card match (normal mode): open overlay
     if (selectedGame === 'cardMatch') {
+      setGameMode('normal')
       setShowMatchingOverlay(true)
       return
     }
 
-    // DefinitionBuilder: generate game data from local words, open overlay
+    // DefinitionBuilder (normal mode): generate game data from local words, open overlay
     if (selectedGame === 'definitionBuilder') {
+      setGameMode('normal')
       setDefBuilderScore(0)
       loadDefBuilderData()
       setShowDefBuilderOverlay(true)
@@ -225,9 +411,14 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         onClose={() => {
           setShowRunningOverlay(false)
           setSelectedGame(null)
+          setGameMode(null)
+          setRankNickname(undefined)
         }}
         triggerPosition={null}
         lectureId={lectureId}
+        gameMode={gameMode ?? undefined}
+        words={gameMode === 'normal' ? words.map(w => ({ keyword: w.keyword, description: w.description })) : undefined}
+        nickname={rankNickname}
       />
     )
   }
@@ -237,6 +428,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     const handleCloseMatching = () => {
       setShowMatchingOverlay(false)
       setSelectedGame(null)
+      setGameMode(null)
     }
     return (
       <>
@@ -269,9 +461,11 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
             {/* Game area */}
             <div className="flex-1 overflow-auto p-6">
               <ReviewMatchingGame
-                reviewItems={reviewItems}
+                reviewItems={gameMode === 'rank' ? rankReviewItems : reviewItems}
                 isEnabled
                 onExit={handleCloseMatching}
+                lectureId={lectureId}
+                gameMode={gameMode ?? undefined}
               />
             </div>
           </div>
@@ -282,9 +476,12 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
 
   // DefinitionBuilder overlay
   if (showDefBuilderOverlay) {
+    const currentDefBuilderItems = gameMode === 'rank' ? rankReviewItems : reviewItems
+    const retryDefBuilder = () => loadDefBuilderDataFrom(currentDefBuilderItems)
     const handleCloseDefBuilder = () => {
       setShowDefBuilderOverlay(false)
       setSelectedGame(null)
+      setGameMode(null)
       setDefBuilderData(null)
       setDefBuilderScore(0)
       setScoreDelta(0)
@@ -345,9 +542,11 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
                 data={defBuilderData}
                 isLoading={false}
                 error={defBuilderError}
-                onRetry={loadDefBuilderData}
+                onRetry={retryDefBuilder}
                 isEnabled
                 currentScore={defBuilderScore}
+                lectureId={lectureId}
+                gameMode={gameMode ?? undefined}
                 onScoreDelta={(delta) => {
                   setDefBuilderScore(s => s + delta)
                   setScoreDelta(delta)
@@ -357,7 +556,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
                     setScoreTone(null)
                   }, 800)
                 }}
-                onRestart={loadDefBuilderData}
+                onRestart={retryDefBuilder}
               />
             </div>
           </div>
@@ -421,6 +620,16 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         onOpenChange={setShowDescriptionPopup}
         gameId={selectedGame}
         onPlay={handlePlayFromDescription}
+        onRankPlay={
+          ['running', 'cardMatch', 'definitionBuilder'].includes(selectedGame ?? '')
+            ? handleRankPlayFromDescription
+            : undefined
+        }
+        onViewRanking={
+          ['running', 'cardMatch', 'definitionBuilder'].includes(selectedGame ?? '')
+            ? handleViewRanking
+            : undefined
+        }
       />
       <WordListModal
         open={showWordModal}
@@ -436,9 +645,74 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         }
         onStartGame={handleStartGame}
         isImporting={isImporting}
-        isRunningGame={selectedGame === 'running'}
         importError={importError}
       />
+      {/* Nickname input modal for rank mode */}
+      <Dialog open={showNicknameModal} onOpenChange={setShowNicknameModal}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold">
+              {t('lectureStudy.game.desc.rankPlayButton')}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              {t('lectureStudy.game.nicknamePrompt')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <input
+              ref={nicknameInputRef}
+              type="text"
+              maxLength={20}
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleNicknameConfirm()
+              }}
+              placeholder={t('lectureStudy.game.nicknamePlaceholder')}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition-colors focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-orange-500 dark:focus:ring-orange-900/30"
+              autoFocus
+            />
+            {nicknameError && (
+              <p className="text-xs text-red-500">{nicknameError}</p>
+            )}
+            <button
+              onClick={handleNicknameConfirm}
+              disabled={!nicknameInput.trim() || nicknameSaving}
+              className="w-full rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {nicknameSaving ? (
+                <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+              ) : (
+                t('lectureStudy.game.nicknameConfirm')
+              )}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Ranking preview dialog */}
+      <Dialog open={showRankingPreview} onOpenChange={setShowRankingPreview}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold">
+              {rankingPreviewGameName} 랭킹
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              현재 랭킹 순위입니다
+            </DialogDescription>
+          </DialogHeader>
+          <GameRankingBoard
+            rankings={rankingPreviewData}
+            myRank={rankingPreviewMyRank}
+            currentUserId={null}
+            isLoading={rankingPreviewLoading}
+            error={rankingPreviewError}
+            mode={rankingPreviewMode}
+            pairCountTabs={rankingPreviewPairTabs.length > 0 ? rankingPreviewPairTabs : undefined}
+            activePairCount={rankingPreviewActivePair}
+            onPairCountChange={handleRankingPairChange}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

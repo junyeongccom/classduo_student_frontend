@@ -164,7 +164,22 @@
         "restart": "다시 시작",
         "back": "목록으로",
         "successTitle": "SUCCESS",
-        "finalScoreLabel": "최종 점수: {score}"
+        "finalScoreLabel": "최종 점수: {score}",
+        "submitting": "저장 중..."
+      },
+      "ranking": {
+        "title": "랭킹",
+        "myRank": "{rank}위",
+        "empty": "아직 기록이 없습니다",
+        "loadError": "랭킹을 불러올 수 없습니다",
+        "saveError": "점수를 저장할 수 없습니다",
+        "anonymous": "익명",
+        "rank": "순위",
+        "player": "플레이어",
+        "score": "점수",
+        "time": "시간",
+        "achievedAt": "달성일",
+        "pairs": "{count}쌍"
       },
       "guessTheTerm": {
         "selectLecture": "회차를 선택하면 게임을 시작할 수 있어요.",
@@ -270,7 +285,8 @@
       "segmentFallback": "구간 {n}",
       "essenceTitle": "핵심 내용",
       "statusCompleted": "완료",
-      "statusProcessing": "처리 중"
+      "statusProcessing": "처리 중",
+      "pageAlt": "{page}페이지"
     },
     "rightPanel": {
       "summaryTab": "요약",
@@ -295,10 +311,15 @@
       "wordDescriptionPlaceholder": "설명",
       "importError": "키워드를 가져오지 못했습니다. 수동으로 단어를 추가해주세요.",
       "loadGameError": "게임을 불러오지 못했습니다",
+      "nicknamePrompt": "랭크 모드 플레이를 위해 닉네임을 입력하세요.",
+      "nicknamePlaceholder": "닉네임 (최대 20자)",
+      "nicknameConfirm": "시작",
       "desc": {
         "goalLabel": "목표",
         "controlsLabel": "조작 방법",
         "playButton": "게임 시작",
+        "rankPlayButton": "랭크 플레이",
+        "normalPlayButton": "일반 플레이",
         "running": {
           "subtitle": "장애물을 뛰어넘고 퀴즈에 답하는 횡스크롤 러닝 게임",
           "goal": "캐릭터가 자동으로 달립니다. 장애물을 뛰어넘고, 주기적으로 나타나는 퀴즈에 정답을 맞혀 최대한 오래 살아남으세요!",
@@ -358,6 +379,18 @@
       "loadFailed": "데이터를 불러오지 못했습니다. 다시 시도해주세요.",
       "materialsLoadError": "강의자료를 불러오지 못했습니다"
     },
+    "summary": {
+      "title": "요약",
+      "loading": "요약을 불러오는 중...",
+      "preparing": "요약 준비 중",
+      "sourceButtonMaterials": "강의자료",
+      "sourceButtonRecordings": "녹음본",
+      "sourceTooltipPages": "페이지 {pages}",
+      "sourceTooltipChunks": "청크 {chunks}",
+      "sourceEmptyTooltip": "출처 정보가 없습니다",
+      "recentIssuesTitle": "최근 쟁점",
+      "examPointsTitle": "요점 정리(시험 대비)"
+    },
     "quiz": {
       "typeLabel": {
         "RECALL": "내용 기억",
@@ -388,7 +421,11 @@
       "hideAnswer": "정답 및 해설 접기",
       "answer": "정답",
       "explanation": "해설",
-      "choiceAnalysis": "선지별 분석"
+      "choiceAnalysis": "선지별 분석",
+      "bookmarkRemove": "즐겨찾기 해제",
+      "bookmarkAdd": "즐겨찾기 추가",
+      "bookmarkDisabledTooltip": "문제를 풀어야만 즐겨찾기에 추가할 수 있습니다",
+      "answerDisabledTooltip": "문제를 풀어야만 정답 및 해설을 볼 수 있습니다"
     },
     "contentsChat": {
       "errorGenerate": "답변을 생성하지 못했습니다. 다시 시도해주세요.",
@@ -895,6 +932,73 @@
     "profileUpdate": "프로필 수정 중 오류가 발생했습니다.",
     "passwordChange": "비밀번호 변경 중 오류가 발생했습니다.",
     "deleteAccount": "회원 탈퇴 중 오류가 발생했습니다."
+  },
+  "myQuiz": {
+    "title": "내 퀴즈",
+    "tabs": {
+      "generation": "퀴즈 생성",
+      "favorites": "즐겨찾기",
+      "wrong": "오답"
+    },
+    "selector": {
+      "selectCourse": "강좌 선택",
+      "selectLecture": "회차 선택",
+      "noCourses": "수강 중인 강의가 없습니다",
+      "selectPrompt": "강의를 선택하세요",
+      "loading": "불러오는 중...",
+      "lectureLabel": "{no}회차",
+      "lectureLabelWithTitle": "{no}회차 - {title}",
+      "selectAll": "전체 선택",
+      "clearAll": "전체 해제",
+      "lectureCount": "{count}개 회차 선택"
+    },
+    "empty": {
+      "selectLecture": "강의를 선택하여 퀴즈를 확인하세요",
+      "selectLectureGuide": "상단에서 강좌와 회차를 선택하세요",
+      "noSessions": "아직 생성된 퀴즈가 없습니다",
+      "noFavorites": "이 회차에 즐겨찾기한 퀴즈가 없습니다",
+      "noWrong": "이 회차에 오답 퀴즈가 없습니다",
+      "favoritesGuide": "퀴즈 풀이 중 ★를 눌러 즐겨찾기하세요",
+      "wrongGuide": "틀린 문제가 자동으로 여기에 모입니다"
+    },
+    "session": {
+      "title": "세션 목록",
+      "creating": "생성 중",
+      "completed": "완료",
+      "failed": "실패",
+      "failedMessage": "퀴즈 생성에 실패했습니다",
+      "delete": "세션 삭제",
+      "deleteConfirm": "이 세션을 삭제하시겠습니까? 세션 내 퀴즈도 모두 삭제됩니다.",
+      "rename": "제목 수정",
+      "pollingTimeout": "생성이 지연되고 있습니다. 나중에 확인해 주세요",
+      "sessionDeleted": "세션이 삭제되었습니다",
+      "quizCount": "{count}문항",
+      "back": "목록으로"
+    },
+    "create": {
+      "newSession": "새 퀴즈 생성",
+      "quizCount": "문항 수",
+      "quizTypes": "문제 유형",
+      "generate": "생성",
+      "generating": "생성 중...",
+      "noSnapshot": "이 회차는 아직 학습 데이터가 준비되지 않아 퀴즈를 생성할 수 없습니다",
+      "typeDEF_TO_TERM": "정의→용어",
+      "typeTERM_TO_DEF": "용어→정의",
+      "typeMISCONCEPTION": "오개념 탐지"
+    },
+    "quizSource": {
+      "instructor": "교수자 퀴즈",
+      "customize": "내 퀴즈"
+    },
+    "error": {
+      "loadFailed": "데이터를 불러오는데 실패했습니다",
+      "createFailed": "세션 생성에 실패했습니다",
+      "deleteFailed": "세션 삭제에 실패했습니다",
+      "renameFailed": "제목 수정에 실패했습니다",
+      "bookmarkFailed": "즐겨찾기 변경에 실패했습니다",
+      "correctFailed": "풀이 결과 저장에 실패했습니다",
+      "retry": "다시 시도"
+    }
   }
 }
 

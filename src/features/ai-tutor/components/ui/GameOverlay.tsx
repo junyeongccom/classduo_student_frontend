@@ -15,9 +15,12 @@ interface GameOverlayProps {
   courseId?: string
   lectureNo?: number
   courseName?: string
+  gameMode?: 'rank' | 'normal'
+  words?: { keyword: string; description: string }[]
+  nickname?: string
 }
 
-export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: GameOverlayProps) {
+export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, gameMode, words, nickname }: GameOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<import('phaser').Game | null>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
@@ -53,10 +56,15 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
     }
   }, [isOpen])
 
-  // 키워드 fetch (애니메이션과 병렬)
+  // 키워드 fetch (애니메이션과 병렬) — normal 모드에서는 props로 전달받은 words 사용
   useEffect(() => {
     if (!isOpen || !lectureId) {
       keywordsRef.current = []
+      return
+    }
+    // Normal mode: use custom words passed from parent
+    if (gameMode === 'normal' && words && words.length > 0) {
+      keywordsRef.current = words
       return
     }
     let cancelled = false
@@ -72,7 +80,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
       }
     })()
     return () => { cancelled = true }
-  }, [isOpen, lectureId, locale])
+  }, [isOpen, lectureId, locale, gameMode, words])
 
   // Phaser 인스턴스 생성/소멸
   useEffect(() => {
@@ -94,6 +102,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId }: Gam
       game.registry.set('keywords', keywordsRef.current)
       game.registry.set('locale', locale)
       if (lectureId) game.registry.set('lectureId', lectureId)
+      game.registry.set('gameMode', gameMode ?? 'rank')
+      if (nickname) game.registry.set('nickname', nickname)
       gameRef.current = game
       setIsGameReady(true)
 

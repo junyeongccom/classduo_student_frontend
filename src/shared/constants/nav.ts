@@ -25,19 +25,19 @@ export const SIDEBAR_MENU = [
     id: 'ai-tutor',
     labelKey: 'nav.aiTutor',
     icon: Bot,
-    href: '/studyspace/ai-tutor',
+    href: '/studyspace/feedback',
   },
   {
     id: 'smart-review',
     labelKey: 'nav.smartReview',
     icon: PenLine,
-    href: '/studyspace/review',
+    href: '/studyspace/games',
   },
   {
     id: 'exam',
     labelKey: 'nav.exam',
     icon: FileText,
-    href: '/studyspace/exam',
+    href: '/studyspace/my-quizzes',
   },
   {
     id: 'repeat',
@@ -62,21 +62,21 @@ export const NEW_SIDEBAR_MENU = [
     id: 'my-quizzes',
     labelKey: 'newNav.myQuizzes',
     icon: HelpCircle,
-    href: '/studyspace/exam',
+    href: '/studyspace/my-quizzes',
     color: '#F97316',    // orange
   },
   {
     id: 'games',
     labelKey: 'newNav.games',
     icon: Puzzle,
-    href: '/studyspace/review',
+    href: '/studyspace/games',
     color: '#22C55E',    // green
   },
   {
     id: 'feedback',
     labelKey: 'newNav.feedback',
     icon: MessageSquare,
-    href: '/studyspace/ai-tutor',
+    href: '/studyspace/feedback',
     color: '#7C3AED',    // violet
   },
 ] as const
@@ -95,9 +95,9 @@ export const PROFILE_MENU = {
  * 상단 탭 메뉴 (AI 튜터 내부)
  */
 export const TOP_TABS = [
-  { id: 'answer', label: '답변', href: '/studyspace/ai-tutor' },
-  { id: 'notes', label: '수업녹음본', href: '/studyspace/ai-tutor/notes' },
-  { id: 'materials', label: '강의자료', href: '/studyspace/ai-tutor/materials' },
+  { id: 'answer', label: '답변', href: '/studyspace/feedback' },
+  { id: 'notes', label: '수업녹음본', href: '/studyspace/feedback/notes' },
+  { id: 'materials', label: '강의자료', href: '/studyspace/feedback/materials' },
 ] as const
 
 

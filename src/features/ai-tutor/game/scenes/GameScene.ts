@@ -104,6 +104,7 @@ export class GameScene extends Phaser.Scene {
   private lastCoinPattern = "";
   private meteorSlowTimer = 0;
   private meteorSlowMult = 1;
+  private isRankMode = false;
 
   private quizManager!: QuizManager;
   private lastSlideDustTime = 0;
@@ -122,6 +123,7 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.resetState();
+    this.isRankMode = this.game.registry.get('gameMode') === 'rank';
     this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT + 200);
 
     // Create managers
@@ -153,7 +155,48 @@ export class GameScene extends Phaser.Scene {
     this.createQuizManager();
     this.fillInitialGround();
 
+    // Check nickname for rank mode
+    if (this.isRankMode) {
+      this.checkNicknameAndStart();
+      return;
+    }
+
     // Begin intro — spin drop from above
+    this.beginIntro();
+  }
+
+  private resetState(): void {
+    this.score = 0;
+    this.baseScrollSpeed = SCROLL_SPEED_INITIAL;
+    this.gameState = "intro";
+    this.nextGroundX = 0;
+    this.distanceTraveled = 0;
+    this.totalCoinsCollected = 0;
+    this.scrollTimer = 0;
+    this.heartTimer = 0;
+    this.meteorTimer = 0;
+    this.meteorNextSpawn = Phaser.Math.Between(METEOR_SPAWN_INTERVAL_MIN_MS, METEOR_SPAWN_INTERVAL_MAX_MS);
+    this.elapsedPlayTime = 0;
+    this.hp = HP_MAX;
+    this.hpMax = HP_MAX;
+    this.lastSlideDustTime = 0;
+    this.lastCoinPattern = "";
+    this.meteorSlowTimer = 0;
+    this.meteorSlowMult = 1;
+    // Managers reset in create() after instantiation
+  }
+
+  private checkNicknameAndStart(): void {
+    // Nickname is now handled by React (GameTabContainer) before the game starts.
+    // Just verify and begin intro.
+    const existingNickname = this.game.registry.get("nickname");
+    if (!existingNickname) {
+      console.warn("[GameScene] Rank mode started without nickname — React should have handled this.");
+    }
+    this.beginIntro();
+  }
+
+  private beginIntro(): void {
     this.cameras.main.fadeIn(400);
     this.gameState = "intro";
     this.physics.resume();
@@ -176,27 +219,6 @@ export class GameScene extends Phaser.Scene {
         this.gameState = "playing";
       });
     });
-  }
-
-  private resetState(): void {
-    this.score = 0;
-    this.baseScrollSpeed = SCROLL_SPEED_INITIAL;
-    this.gameState = "intro";
-    this.nextGroundX = 0;
-    this.distanceTraveled = 0;
-    this.totalCoinsCollected = 0;
-    this.scrollTimer = 0;
-    this.heartTimer = 0;
-    this.meteorTimer = 0;
-    this.meteorNextSpawn = Phaser.Math.Between(METEOR_SPAWN_INTERVAL_MIN_MS, METEOR_SPAWN_INTERVAL_MAX_MS);
-    this.elapsedPlayTime = 0;
-    this.hp = HP_MAX;
-    this.hpMax = HP_MAX;
-    this.lastSlideDustTime = 0;
-    this.lastCoinPattern = "";
-    this.meteorSlowTimer = 0;
-    this.meteorSlowMult = 1;
-    // Managers reset in create() after instantiation
   }
 
   private createGroups(): void {
@@ -314,6 +336,12 @@ export class GameScene extends Phaser.Scene {
           this.screenFX.flash(FLASH_WRONG);
         }
       },
+      onPhysicsPause: () => {
+        this.player.prepareForPause();
+      },
+      onPhysicsResume: () => {
+        this.player.restoreAfterPause();
+      },
     });
   }
 
@@ -354,17 +382,9 @@ export class GameScene extends Phaser.Scene {
     seg.setScrollSpeed(this.getEffectiveSpeed());
   }
 
-  private isQuizPhase(): boolean {
-    return (
-      this.gameState === "choosing_reward" ||
-      this.gameState === "quiz_answering" ||
-      this.gameState === "quiz_result"
-    );
-  }
-
   private spawnNewGround(): void {
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH * 2) {
-      if (this.distanceTraveled > 800 && !this.isQuizPhase() && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
+      if (this.distanceTraveled > 800 && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
         const gapWidth = Phaser.Math.Between(GAP_WIDTH_MIN, Math.round(this.lerpDiff(DIFF_GAP_MAX_WIDTH)));
         this.spawnArcCoins(this.nextGroundX, gapWidth);
         this.nextGroundX += gapWidth;
@@ -711,7 +731,7 @@ export class GameScene extends Phaser.Scene {
 
     // Camera / parallax — stationary during intro
     if (!isIntro) {
-      this.cameraManager.update(this.getEffectiveSpeed(), delta, this.score);
+      this.cameraManager.update(this.getEffectiveSpeed(), delta, this.elapsedPlayTime);
     }
 
     // Accumulate play time for difficulty ramp
@@ -858,6 +878,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private finishGameOver(cause: "hp" | "fall"): void {
+    const gameOverData = {
+      score: this.score,
+      ...this.quizManager.getStats(),
+      gameMode: this.isRankMode ? "rank" : "normal",
+      elapsedMs: Math.round(this.elapsedPlayTime),
+      lectureId: this.game.registry.get("lectureId") || "",
+    };
+
     if (cause === "hp") {
       this.player.setTint(0xcccccc);
       this.tweens.add({
@@ -871,8 +899,7 @@ export class GameScene extends Phaser.Scene {
           this.cameras.main.zoomTo(1.1, 800);
           this.cameras.main.fadeOut(800, 0, 0, 0, (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
             if (progress === 1) {
-              const stats = this.quizManager.getStats();
-              this.scene.start("GameOverScene", { score: this.score, ...stats });
+              this.scene.start("GameOverScene", gameOverData);
             }
           });
         },
@@ -882,8 +909,7 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.zoomTo(1.1, 600);
       this.cameras.main.fadeOut(600, 0, 0, 0, (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
         if (progress === 1) {
-          const stats = this.quizManager.getStats();
-          this.scene.start("GameOverScene", { score: this.score, ...stats });
+          this.scene.start("GameOverScene", gameOverData);
         }
       });
     }

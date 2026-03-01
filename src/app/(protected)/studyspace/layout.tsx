@@ -238,8 +238,8 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   // Sidebar Logic: Hide Sidebar if Notes or Materials Panel is open
   const isAnyPanelOpen = isNotesPanelOpen || isMaterialsPanelOpen
   const showRightSidebar = !isAnyPanelOpen
-  const isExamPrep = pathname.startsWith('/studyspace/exam')
-  const isTutorOrReview = pathname.startsWith('/studyspace/ai-tutor') || pathname.startsWith('/studyspace/review')
+  const isExamPrep = pathname.startsWith('/studyspace/my-quizzes')
+  const isTutorOrReview = pathname.startsWith('/studyspace/feedback') || pathname.startsWith('/studyspace/games')
   const borderTone = isExamPrep || isTutorOrReview ? 'border-gray-200' : 'border-gray-100'
 
   const resizingRef = useRef<{ startX: number; startCombinedWidth: number } | null>(null)

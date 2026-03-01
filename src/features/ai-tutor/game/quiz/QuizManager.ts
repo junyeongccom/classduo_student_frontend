@@ -31,6 +31,8 @@ export interface QuizCallbacks {
   showEffect: (text: string, color: string) => void;
   onQuizCollect?: (x: number, y: number) => void;
   onRewardSelect?: (isCorrect: boolean) => void;
+  onPhysicsPause?: () => void;
+  onPhysicsResume?: () => void;
 }
 
 const T = {
@@ -110,12 +112,14 @@ export class QuizManager {
   handleScrollCollect(x: number, y: number): void {
     this.callbacks.onQuizCollect?.(x, y);
     this.callbacks.setGameState("choosing_reward");
+    this.callbacks.onPhysicsPause?.();
     this.scene.physics.pause();
     this.rewardCardUI.show();
   }
 
   triggerAutoQuiz(): void {
     this.callbacks.setGameState("choosing_reward");
+    this.callbacks.onPhysicsPause?.();
     this.scene.physics.pause();
     this.rewardCardUI.show();
   }
@@ -258,6 +262,7 @@ export class QuizManager {
 
     this.callbacks.onRewardSelect?.(isCorrect);
     this.scene.physics.resume();
+    this.callbacks.onPhysicsResume?.();
 
     const { buffDebuff, activeAbility } = this.callbacks;
     const prefix = isCorrect ? this.t.correct : this.t.wrong;

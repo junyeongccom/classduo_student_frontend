@@ -5,6 +5,7 @@ import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { TOKEN_KEY } from '@/shared/lib/utils'
 import { startTokenRefreshTimer, stopTokenRefreshTimer } from '@/shared/lib/supabase'
+import { setAnalyticsUser } from '@/shared/hooks/useAnalytics'
 
 /**
  * 앱 시작 시 인증 상태를 초기화하는 Provider
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout()
       } else {
         setUser(result.data)
+        if (result.data?.user_id) setAnalyticsUser(result.data.user_id)
         // 인증 성공 시 토큰 갱신 타이머 시작
         startTokenRefreshTimer()
       }

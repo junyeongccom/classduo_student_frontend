@@ -52,9 +52,14 @@ export const API_ENDPOINTS = {
     SUBMIT: (lectureId: string) => `/api/lectures/${lectureId}/ox/submit`,
   },
 
-  // Reward
-  REWARD: {
-    CLAIM: (lectureId: string) => `/api/lectures/${lectureId}/reward/claim`,
+  // Game Submission & Ranking
+  GAME: {
+    SUBMIT_RUNNING: (lectureId: string) => `/game/running/lectures/${lectureId}/submissions`,
+    SUBMIT_DEFINITION_BUILDER: (lectureId: string) => `/game/definition-builder/lectures/${lectureId}/submissions`,
+    SUBMIT_MATCHING: (lectureId: string) => `/game/matching/lectures/${lectureId}/submissions`,
+    RANKINGS_RUNNING: (lectureId: string) => `/game/running/lectures/${lectureId}/rankings`,
+    RANKINGS_DEFINITION_BUILDER: (lectureId: string) => `/game/definition-builder/lectures/${lectureId}/rankings`,
+    RANKINGS_MATCHING: (lectureId: string) => `/game/matching/lectures/${lectureId}/rankings`,
   },
 
   // Health

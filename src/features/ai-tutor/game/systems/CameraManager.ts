@@ -10,7 +10,7 @@ import {
   DEPTH_PARALLAX_FAR,
   DEPTH_PARALLAX_MID,
   DEPTH_PARALLAX_NEAR,
-  DAY_NIGHT_CYCLE_SCORE,
+  DAY_NIGHT_CYCLE_MS,
   DAY_NIGHT_STAGES,
 } from "../constants";
 
@@ -60,7 +60,7 @@ export class CameraManager {
       .setDepth(DEPTH_PARALLAX_NEAR);
   }
 
-  update(effectiveSpeed: number, delta: number, score: number): void {
+  update(effectiveSpeed: number, delta: number, elapsedMs: number): void {
     const dt = delta / 1000;
     const scrollAmount = Math.abs(effectiveSpeed) * dt;
 
@@ -69,12 +69,12 @@ export class CameraManager {
     this.mountainMid.tilePositionX += scrollAmount * 0.10;
     this.mountainNear.tilePositionX += scrollAmount * 0.20;
 
-    // Score-based day/night cycle
-    this.updateDayNight(score);
+    // Time-based day/night cycle
+    this.updateDayNight(elapsedMs);
   }
 
-  private updateDayNight(score: number): void {
-    const progress = (score % DAY_NIGHT_CYCLE_SCORE) / DAY_NIGHT_CYCLE_SCORE;
+  private updateDayNight(elapsedMs: number): void {
+    const progress = (elapsedMs % DAY_NIGHT_CYCLE_MS) / DAY_NIGHT_CYCLE_MS;
     const stages = DAY_NIGHT_STAGES;
 
     // Find which two stages we're between

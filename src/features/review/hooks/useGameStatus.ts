@@ -120,48 +120,24 @@ export function useGameStatus() {
       })
     })
 
-    // Realtime 구독: user_lecture_rewards INSERT 이벤트
+    // Realtime 구독: student_quiz_rewards INSERT 이벤트
     const unsubscribeReward = subscribeRewardEvents((event: RewardEvent) => {
-      // 현재 사용자 ID 가져오기
-      const currentUserId = user?.user_id
-      
-      // user_id 필터링: 자신과 관련된 이벤트만 처리
-      if (!currentUserId || event.user_id !== currentUserId) {
-        return // 다른 사용자의 이벤트는 무시
-      }
-      
+      // RLS(student_id = auth.uid())가 서버에서 필터링하므로 클라이언트 필터 불필요
+
       console.log('[useGameStatus] Realtime 보상 이벤트 수신:', {
         lecture_id: event.lecture_id,
-        course_id: event.course_id,
-        amount: event.amount,
       })
-      
+
       // 해당 lecture_id의 is_claimed=true
       setClaimedRewards((prev) => ({
         ...prev,
         [event.lecture_id]: true,
       }))
 
-      // course_id가 있으면 즉시 flameCount 업데이트
-      if (event.course_id) {
-        const courseId = event.course_id // 타입 가드를 위해 로컬 변수에 저장
-        setFlameCount((prev) => {
-          const current = prev[courseId] || 0
-          const amount = event.amount || 1
-          console.log(`[useGameStatus] flameCount 업데이트: ${courseId} = ${current} + ${amount}`)
-          return {
-            ...prev,
-            [courseId]: current + amount,
-          }
-        })
-      } else {
-        // course_id가 없으면 refreshStatus 호출하여 최신 데이터 조회
-        // (트리거로 course_id가 채워졌을 수 있음)
-        console.log('[useGameStatus] course_id가 없어 refreshStatus 호출')
-        setTimeout(() => {
-          refreshStatus()
-        }, 500) // 트리거 실행 시간 고려
-      }
+      // student_quiz_rewards에는 course_id가 없으므로 refreshData로 최신 보상 개수 조회
+      setTimeout(() => {
+        refreshData()
+      }, 500)
     })
 
     // throttle된 재조회 (5초 이내 중복 방지)
