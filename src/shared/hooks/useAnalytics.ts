@@ -30,3 +30,80 @@ export function setAnalyticsUser(userId: string) {
 export function clearAnalyticsUser() {
   trackEvent('set_user_id', { user_id: undefined })
 }
+
+// ── GA4 커스텀 이벤트 헬퍼 (타입 안전) ──
+
+export function trackGameStart(params: {
+  game_type: string
+  lecture_id: string
+  game_mode: string
+}) {
+  trackEvent('game_start', params)
+}
+
+export function trackGameComplete(params: {
+  game_type: string
+  score: number
+  correct: number
+  wrong: number
+  elapsed_ms: number
+  lecture_id: string
+  game_mode: string
+  obstacle_hit?: number
+  skipped?: number
+}) {
+  trackEvent('game_complete', params)
+}
+
+export function trackInGameQuizAttempt(params: {
+  correct: boolean
+  lecture_id: string
+}) {
+  trackEvent('in_game_quiz_attempt', params)
+}
+
+export function trackTabView(params: {
+  tab: string
+  lecture_id: string
+}) {
+  trackEvent('tab_view', params)
+}
+
+export function trackAiTutorQuestion(params: {
+  session_id: string
+  lecture_count: number
+  question_length: number
+}) {
+  trackEvent('ai_tutor_question', params)
+}
+
+export function trackSummaryViewed(params: {
+  lecture_id: string
+}) {
+  trackEvent('summary_viewed', params)
+}
+
+export function trackQuizAttempt(params: {
+  quiz_id: string
+  correct: boolean
+  quiz_type: string
+  lecture_id: string
+}) {
+  trackEvent('quiz_attempt', params)
+}
+
+export function trackQuizSelfStart(params: {
+  lecture_id: string
+  source: string
+  tab: string
+}) {
+  trackEvent('quiz_self_start', params)
+}
+
+export function setUserProperties(props: {
+  user_group?: string
+  ges_score?: number
+  lis_score?: number
+}) {
+  trackEvent('set_user_properties', props)
+}

@@ -13,6 +13,7 @@ import { useSearchParams } from 'next/navigation'
 import { Loader2, X, ChevronRight, FileText, Bot } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
+import { trackTabView } from '@/shared/hooks/useAnalytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
@@ -283,7 +284,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const rightPanelContent = (
     <Tabs
       value={rightTab}
-      onValueChange={v => setRightTab(v as LectureStudyTab)}
+      onValueChange={v => {
+        setRightTab(v as LectureStudyTab)
+        trackTabView({ tab: v, lecture_id: lectureId })
+      }}
       className="flex flex-1 min-h-0 flex-col"
     >
       <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
@@ -303,7 +307,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         <SummaryTabContainer lectureId={lectureId} />
       </TabsContent>
       <TabsContent value="quiz" className="flex-1 min-h-0 mt-0">
-        <QuizTabContainer lectureId={lectureId} />
+        <QuizTabContainer
+          lectureId={lectureId}
+          courseTitle={courseTitle ?? fetchedCourseTitle ?? undefined}
+          weekNumber={currentLecture?.week_number}
+          sessionNumber={currentLecture?.session_number}
+        />
       </TabsContent>
       <TabsContent value="game" className="flex-1 min-h-0 mt-0">
         <GameTabContainer lectureId={lectureId} />

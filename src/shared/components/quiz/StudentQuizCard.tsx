@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   Star,
+  RotateCcw,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -58,6 +59,8 @@ export interface StudentQuizCardProps {
   onBookmarkToggle: (quizId: string) => void
   /** 풀이 결과 업데이트 콜백 (선지 클릭 시 호출, answer는 choice_order) */
   onCorrectUpdate: (quizId: string, isCorrect: boolean, answer: number) => void
+  /** 선택 해제(리셋) 콜백 — 제공 시 이미 선택한 선지 재클릭으로 풀이 초기화 가능 */
+  onResetAnswer?: (quizId: string) => void
 }
 
 /* ───────────── 상수 ───────────── */
@@ -90,6 +93,7 @@ export function StudentQuizCard({
   selectedAnswer,
   onBookmarkToggle,
   onCorrectUpdate,
+  onResetAnswer,
 }: StudentQuizCardProps) {
   const isMultipleChoice =
     quiz.quiz_type === 'MISCONCEPTION' ||
@@ -113,7 +117,16 @@ export function StudentQuizCard({
 
   const handleChoiceClick = useCallback(
     (idx: number) => {
-      if (isSubmitted || showAnswer) return
+      if (isSubmitted) {
+        if (selectedChoiceIdx === idx && onResetAnswer && !showAnswer) {
+          onResetAnswer(quiz.quiz_id)
+          setIsSubmitted(false)
+          setSelectedChoiceIdx(null)
+          setShowAnswer(false)
+        }
+        return
+      }
+      if (showAnswer) return
       setSelectedChoiceIdx(idx)
 
       const selectedChoice = quiz.choices[idx]
@@ -122,7 +135,7 @@ export function StudentQuizCard({
         onCorrectUpdate(quiz.quiz_id, selectedChoice.is_correct, selectedChoice.choice_order)
       }
     },
-    [isSubmitted, showAnswer, quiz.choices, quiz.quiz_id, onCorrectUpdate],
+    [isSubmitted, showAnswer, selectedChoiceIdx, quiz.choices, quiz.quiz_id, onCorrectUpdate, onResetAnswer],
   )
 
   const handleToggleAnswer = useCallback(() => {
@@ -246,8 +259,10 @@ export function StudentQuizCard({
               key={choice.choice_id ?? `choice-${idx}`}
               type="button"
               onClick={() => handleChoiceClick(idx)}
-              disabled={isSubmitted}
-              className={`w-full flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${getChoiceStyle(choice, idx)}`}
+              disabled={isSubmitted && !(selectedChoiceIdx === idx && onResetAnswer && !showAnswer)}
+              className={`w-full flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${getChoiceStyle(choice, idx)} ${
+                isSubmitted && selectedChoiceIdx === idx && onResetAnswer && !showAnswer ? 'cursor-pointer hover:opacity-80' : ''
+              }`}
             >
               <span
                 className={`shrink-0 w-5 text-center ${getChoiceLabelStyle(choice, idx)}`}
@@ -262,6 +277,9 @@ export function StudentQuizCard({
               )}
               {isSubmitted && selectedChoiceIdx === idx && !choice.is_correct && (
                 <XCircle className="h-4 w-4 shrink-0 text-red-400" />
+              )}
+              {isSubmitted && selectedChoiceIdx === idx && onResetAnswer && !showAnswer && (
+                <RotateCcw className="h-3.5 w-3.5 shrink-0 text-gray-400" />
               )}
               {showAnswer && choice.is_correct && selectedChoiceIdx !== idx && (
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />

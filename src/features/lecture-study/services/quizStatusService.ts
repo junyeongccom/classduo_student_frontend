@@ -102,13 +102,13 @@ export async function toggleBookmark(
   )
 }
 
-/** 풀이 결과 업데이트 */
+/** 풀이 결과 업데이트. correct=null이면 선택 해제(리셋). */
 export async function updateCorrect(
   quizSource: 'instructor' | 'customize',
   quizId: string,
   lectureId: string,
-  correct: boolean,
-  answer?: number,
+  correct: boolean | null,
+  answer?: number | null,
 ) {
   return apiRequest<CorrectResponse>(
     `/quiz-status/${quizSource}/${quizId}/correct`,

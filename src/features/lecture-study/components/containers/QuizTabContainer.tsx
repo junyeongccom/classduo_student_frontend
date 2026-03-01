@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { Loader2, HelpCircle, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { trackQuizAttempt } from '@/shared/hooks/useAnalytics'
 import {
   getInstructorQuizzes,
   type InstructorQuizItem,
@@ -25,9 +26,13 @@ import {
   type QuizStatus,
 } from '../../services/quizStatusService'
 import { StudentQuizCard, type StudentQuizItem } from '@/shared/components/quiz'
+import { FlameRewardModal } from '../ui/FlameRewardModal'
 
 interface QuizTabContainerProps {
   lectureId: string
+  courseTitle?: string
+  weekNumber?: number | null
+  sessionNumber?: number | null
 }
 
 const TYPE_ORDER: InstructorQuizType[] = [
@@ -58,16 +63,23 @@ function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
   }
 }
 
-export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
+export function QuizTabContainer({ lectureId, courseTitle, weekNumber, sessionNumber }: QuizTabContainerProps) {
   const [quizzes, setQuizzes] = useState<InstructorQuizItem[]>([])
   const [statusMap, setStatusMap] = useState<Map<string, QuizStatus>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showRewardModal, setShowRewardModal] = useState(false)
   const t = useTranslations('lectureStudy.quiz')
   const { locale } = useI18n()
 
   // 보상 판정이 중복 호출되지 않도록 ref로 관리
   const rewardCheckingRef = useRef(false)
+
+  const weekSessionLabel = weekNumber != null && sessionNumber != null
+    ? locale === 'ko'
+      ? `${weekNumber}주차 ${String(sessionNumber).padStart(2, '0')}차시`
+      : `W${weekNumber} S${String(sessionNumber).padStart(2, '0')}`
+    : ''
 
   useEffect(() => {
     let cancelled = false
@@ -150,6 +162,14 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
   // 풀이 결과 업데이트 + 보상 판정
   const handleCorrectUpdate = useCallback(
     async (quizId: string, isCorrect: boolean, answer: number) => {
+      const quiz = quizzes.find(q => q.quiz_id === quizId)
+      trackQuizAttempt({
+        quiz_id: quizId,
+        correct: isCorrect,
+        quiz_type: quiz?.quiz_type ?? '',
+        lecture_id: lectureId,
+      })
+
       const current = statusMap.get(quizId)
 
       // 낙관적 업데이트
@@ -180,9 +200,8 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
         return
       }
 
-      // 보상 판정: 모든 instructor 퀴즈가 정답이면 reward 요청
-      if (isCorrect && !rewardCheckingRef.current) {
-        // 현재 업데이트 포함해서 전체 판정
+      // 보상 판정: 모든 instructor 퀴즈가 풀이되었으면 reward 요청 (정답/오답 무관)
+      if (!rewardCheckingRef.current) {
         const updatedMap = new Map(statusMap)
         updatedMap.set(quizId, {
           quiz_id: quizId,
@@ -192,18 +211,54 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
           answer,
         })
 
-        const allCorrect =
+        const allAnswered =
           quizzes.length > 0 &&
-          quizzes.every((q) => updatedMap.get(q.quiz_id)?.correct === true)
+          quizzes.every((q) => updatedMap.get(q.quiz_id)?.correct != null)
 
-        if (allCorrect) {
+        if (allAnswered) {
           rewardCheckingRef.current = true
-          await grantReward(lectureId)
+          const rewardResult = await grantReward(lectureId)
           rewardCheckingRef.current = false
+          if (rewardResult.data?.rewarded) {
+            setShowRewardModal(true)
+          }
         }
       }
     },
     [statusMap, lectureId, quizzes],
+  )
+
+  // 선택 해제(리셋)
+  const handleResetAnswer = useCallback(
+    async (quizId: string) => {
+      const current = statusMap.get(quizId)
+
+      setStatusMap((prev) => {
+        const next = new Map(prev)
+        next.set(quizId, {
+          quiz_id: quizId,
+          quiz_source: 'instructor',
+          bookmark: current?.bookmark ?? false,
+          correct: null,
+          answer: null,
+        })
+        return next
+      })
+
+      const result = await updateCorrect('instructor', quizId, lectureId, null, null)
+      if (result.error) {
+        setStatusMap((prev) => {
+          const next = new Map(prev)
+          if (current) {
+            next.set(quizId, current)
+          } else {
+            next.delete(quizId)
+          }
+          return next
+        })
+      }
+    },
+    [statusMap, lectureId],
   )
 
   // 유형별로 그룹화 (정의된 순서대로)
@@ -251,6 +306,13 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
 
   return (
     <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24">
+      {showRewardModal && (
+        <FlameRewardModal
+          courseName={courseTitle ?? ''}
+          weekSession={weekSessionLabel}
+          onClose={() => setShowRewardModal(false)}
+        />
+      )}
       {/* AI 퀴즈 안내 문구 */}
       <div className="flex items-center gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 px-4 py-3">
         <Sparkles className="h-4 w-4 shrink-0 text-indigo-500" />
@@ -285,6 +347,7 @@ export function QuizTabContainer({ lectureId }: QuizTabContainerProps) {
                   selectedAnswer={status?.answer ?? null}
                   onBookmarkToggle={handleBookmarkToggle}
                   onCorrectUpdate={handleCorrectUpdate}
+                  onResetAnswer={handleResetAnswer}
                 />
               )
             })}

@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { lectureService } from '../../services/lectureService'
+import { trackSummaryViewed } from '@/shared/hooks/useAnalytics'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import type { ContentSummary, ContentSummarySection } from '../../types'
@@ -81,6 +82,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
   const [summary, setSummary] = useState<ContentSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const summaryViewedRef = useRef(false)
 
   // 출처 cycling 커서 (Task 779)
   const materialsCursorRef = useRef<Record<string, number>>({})
@@ -103,6 +105,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
       setIsLoading(true)
       setError(null)
       setSummary(null)
+      summaryViewedRef.current = false
       materialsCursorRef.current = {}
       recordingsCursorRef.current = {}
 
@@ -126,6 +129,10 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
         }
 
         setSummary(parsed)
+        if (!summaryViewedRef.current) {
+          summaryViewedRef.current = true
+          trackSummaryViewed({ lecture_id: lectureId })
+        }
         setIsLoading(false)
       } catch (err) {
         if (cancelled) return

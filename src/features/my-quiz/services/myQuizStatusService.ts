@@ -13,6 +13,7 @@ import {
   getErrorMessage,
 } from '@/shared/lib/supabase'
 import type { QuizStatusEntry, QuizSource, QuizItem, QuizChoice } from '../types'
+import type { StudentQuizType } from '@/shared/components/quiz'
 
 /* ───────────── Types ───────────── */
 
@@ -194,41 +195,68 @@ export async function fetchQuizContent(
   try {
     const supabase = getSupabaseClient()
 
-    const table = quizSource === 'instructor'
-      ? 'instructor_quiz_items'
-      : 'user_customize_quiz_items'
-    const choiceTable = quizSource === 'instructor'
-      ? 'instructor_quiz_choices'
-      : 'user_customize_quiz_choices'
+    const selectChoices = 'quiz_id, choice_id, choice_order, choice_text, is_correct, choice_explanation' as const
 
-    const { data: items, error: itemsError } = await supabase
-      .from(table)
-      .select('quiz_id, quiz_type, question, answer, explanation, difficulty')
-      .in('quiz_id', quizIds)
+    interface RawItem {
+      quiz_id: string
+      quiz_type: string
+      question: string
+      answer: string | null
+      explanation: string | null
+      difficulty?: string | null
+    }
 
-    if (itemsError) {
-      if (isJWTExpiredError(itemsError)) {
-        await handleJWTExpiration()
-        return { data: null, error: new Error('세션이 만료되었습니다.') }
+    let rawItems: RawItem[] = []
+    let rawChoices: Array<{ quiz_id: string; choice_id: string; choice_order: number; choice_text: string; is_correct: boolean; choice_explanation: string | null }> = []
+
+    if (quizSource === 'instructor') {
+      const { data, error: err } = await supabase
+        .from('instructor_quiz_items')
+        .select('quiz_id, quiz_type, question, answer, explanation, difficulty')
+        .in('quiz_id', quizIds)
+      if (err) {
+        if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+        return { data: null, error: new Error(getErrorMessage(err)) }
       }
-      return { data: null, error: new Error(getErrorMessage(itemsError)) }
+      rawItems = (data ?? []) as RawItem[]
+
+      if (rawItems.length > 0) {
+        const ids = rawItems.map(i => i.quiz_id)
+        const { data: ch, error: chErr } = await supabase
+          .from('instructor_quiz_choices')
+          .select(selectChoices)
+          .in('quiz_id', ids)
+          .order('choice_order', { ascending: true })
+        if (chErr) return { data: null, error: new Error(getErrorMessage(chErr)) }
+        rawChoices = (ch ?? []) as typeof rawChoices
+      }
+    } else {
+      const { data, error: err } = await supabase
+        .from('user_customize_quiz_items')
+        .select('quiz_id, quiz_type, question, answer, explanation')
+        .in('quiz_id', quizIds)
+      if (err) {
+        if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+        return { data: null, error: new Error(getErrorMessage(err)) }
+      }
+      rawItems = (data ?? []) as RawItem[]
+
+      if (rawItems.length > 0) {
+        const ids = rawItems.map(i => i.quiz_id)
+        const { data: ch, error: chErr } = await supabase
+          .from('user_customize_quiz_choices')
+          .select(selectChoices)
+          .in('quiz_id', ids)
+          .order('choice_order', { ascending: true })
+        if (chErr) return { data: null, error: new Error(getErrorMessage(chErr)) }
+        rawChoices = (ch ?? []) as typeof rawChoices
+      }
     }
 
-    if (!items || items.length === 0) return { data: [], error: null }
-
-    const foundIds = items.map(i => i.quiz_id)
-    const { data: choices, error: choicesError } = await supabase
-      .from(choiceTable)
-      .select('quiz_id, choice_id, choice_order, choice_text, is_correct, choice_explanation')
-      .in('quiz_id', foundIds)
-      .order('choice_order', { ascending: true })
-
-    if (choicesError) {
-      return { data: null, error: new Error(getErrorMessage(choicesError)) }
-    }
+    if (rawItems.length === 0) return { data: [], error: null }
 
     const choiceMap = new Map<string, QuizChoice[]>()
-    for (const c of (choices ?? [])) {
+    for (const c of rawChoices) {
       const arr = choiceMap.get(c.quiz_id) ?? []
       arr.push({
         choice_id: c.choice_id,
@@ -240,12 +268,12 @@ export async function fetchQuizContent(
       choiceMap.set(c.quiz_id, arr)
     }
 
-    const quizItems: QuizItem[] = items.map(item => ({
+    const quizItems: QuizItem[] = rawItems.map(item => ({
       quiz_id: item.quiz_id,
-      quiz_type: item.quiz_type,
+      quiz_type: item.quiz_type as StudentQuizType,
       question: item.question,
-      answer: item.answer,
-      explanation: item.explanation,
+      answer: item.answer ?? null,
+      explanation: item.explanation ?? null,
       quiz_keyword: null,
       difficulty: item.difficulty ?? null,
       choices: choiceMap.get(item.quiz_id) ?? [],
@@ -287,13 +315,13 @@ export async function toggleBookmark(
   )
 }
 
-/** 풀이 결과 업데이트 */
+/** 풀이 결과 업데이트. correct=null이면 선택 해제(리셋). */
 export async function updateCorrect(
   quizSource: QuizSource,
   quizId: string,
   lectureId: string,
-  correct: boolean,
-  answer?: number,
+  correct: boolean | null,
+  answer?: number | null,
 ) {
   if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
     return { data: null, error: new Error('Invalid quiz source'), status: 400 }

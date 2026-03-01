@@ -36,7 +36,6 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
   const [hasMore, setHasMore] = useState(true)
   const [offset, setOffset] = useState(0)
   const sentinelRef = useRef<HTMLDivElement>(null)
-  const rewardCheckingRef = useRef(false)
   const isFetchingMoreRef = useRef(false)
 
   const fetchQuizzes = useCallback(async (currentOffset: number, append: boolean) => {
@@ -228,20 +227,34 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         return
       }
 
-      // 보상 판정 (instructor 퀴즈만, 각 quiz의 lecture_id 기준, R-AW-5: try-finally)
-      if (isCorrect && quiz.quiz_source === 'instructor' && !rewardCheckingRef.current) {
-        rewardCheckingRef.current = true
-        try {
-          const allStatus = await statusService.getAllInstructorQuizStatuses(quiz.lecture_id)
-          if (allStatus.data && allStatus.data.length > 0) {
-            const allCorrect = allStatus.data.every(s => s.correct === true)
-            if (allCorrect) {
-              await statusService.grantReward(quiz.lecture_id)
-            }
-          }
-        } finally {
-          rewardCheckingRef.current = false
-        }
+    },
+    [allQuizzes, fetchQuizzes, showErrorToast, t],
+  )
+
+  const handleResetAnswer = useCallback(
+    async (quizId: string) => {
+      const quiz = allQuizzes.find(q => q.quiz_id === quizId)
+      if (!quiz || !quiz.lecture_id) return
+
+      const updated = allQuizzes.map(q =>
+        q.quiz_id === quizId ? { ...q, correct: null, selected_answer: null } : q,
+      )
+      setAllQuizzes(updated)
+      setGroups(groupQuizzesByType(updated))
+
+      const result = await statusService.updateCorrect(
+        quiz.quiz_source,
+        quizId,
+        quiz.lecture_id,
+        null,
+        null,
+      )
+
+      if (result.error) {
+        showErrorToast(t('error.correctFailed'))
+        fetchQuizzes(0, false)
+        setOffset(0)
+        setHasMore(true)
       }
     },
     [allQuizzes, fetchQuizzes, showErrorToast, t],
@@ -344,6 +357,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
                     selectedAnswer={quiz.selected_answer}
                     onBookmarkToggle={handleBookmarkToggle}
                     onCorrectUpdate={handleCorrectUpdate}
+                    onResetAnswer={handleResetAnswer}
                   />
                 </div>
               )

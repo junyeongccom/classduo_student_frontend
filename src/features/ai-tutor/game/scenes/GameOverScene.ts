@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { S, GAME_WIDTH, GAME_HEIGHT, RESTART_DELAY, FONT_FAMILY } from "../constants";
+import { trackGameComplete } from '@/shared/hooks/useAnalytics'
 
 // ── i18n ──
 
@@ -44,6 +45,7 @@ interface GameOverData {
   gameMode: string;
   elapsedMs: number;
   lectureId: string;
+  obstacleHit: number;
 }
 
 export class GameOverScene extends Phaser.Scene {
@@ -54,6 +56,7 @@ export class GameOverScene extends Phaser.Scene {
   private gameMode = "normal";
   private elapsedMs = 0;
   private lectureId = "";
+  private obstacleHit = 0;
   private t!: GameOverStrings;
 
   constructor() {
@@ -68,11 +71,24 @@ export class GameOverScene extends Phaser.Scene {
     this.gameMode = data.gameMode ?? "normal";
     this.elapsedMs = data.elapsedMs ?? 0;
     this.lectureId = data.lectureId ?? "";
+    this.obstacleHit = data.obstacleHit ?? 0;
   }
 
   create(): void {
     const loc = this.game.registry.get("locale") as string | undefined;
     this.t = STRINGS[loc === "en" ? "en" : "ko"];
+
+    trackGameComplete({
+      game_type: 'platformer',
+      score: this.score,
+      correct: this.correct,
+      wrong: this.wrong,
+      elapsed_ms: this.elapsedMs,
+      lecture_id: this.lectureId,
+      game_mode: this.gameMode,
+      obstacle_hit: this.obstacleHit,
+      skipped: this.skipped,
+    });
 
     this.createBackground();
     this.createTitle();

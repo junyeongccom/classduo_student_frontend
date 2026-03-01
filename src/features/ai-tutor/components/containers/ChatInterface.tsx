@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
+import { trackAiTutorQuestion } from '@/shared/hooks/useAnalytics'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
@@ -702,6 +703,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         },
         // onComplete: 최종 결과 처리
         (result) => {
+          trackAiTutorQuestion({
+            session_id: sessionIdToUse,
+            lecture_count: selectedLectureIds.length,
+            question_length: question.length,
+          })
+
           const assistantMessage: ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null } = {
             role: 'assistant',
             content: result.answer,
