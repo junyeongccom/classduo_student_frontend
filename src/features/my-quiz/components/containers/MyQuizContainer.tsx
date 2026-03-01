@@ -48,7 +48,7 @@ export default function MyQuizContainer() {
         setActiveTab(v as TabType)
         trackQuizSelfStart({
           lecture_id: selectedLectureId ?? '',
-          source: 'my_quiz',
+          entry_source: 'my_quiz',
           tab: v,
         })
       }}

@@ -127,6 +127,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   // Store-backed words for tab persistence
   const words = useLectureStudyStore(s => s.gameWords)
   const setWords = useLectureStudyStore(s => s.setGameWords)
+  const courseId = useLectureStudyStore(s => s.courseId) ?? ''
 
   // DefinitionBuilder game state
   const [defBuilderData, setDefBuilderData] = useState<DefinitionBuilderGameResponse | null>(null)
@@ -416,6 +417,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         }}
         triggerPosition={null}
         lectureId={lectureId}
+        courseId={courseId}
         gameMode={gameMode ?? undefined}
         words={gameMode === 'normal' ? words.map(w => ({ keyword: w.keyword, description: w.description })) : undefined}
         nickname={rankNickname}
@@ -465,6 +467,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
                 isEnabled
                 onExit={handleCloseMatching}
                 lectureId={lectureId}
+                courseId={courseId}
                 gameMode={gameMode ?? undefined}
               />
             </div>
@@ -546,6 +549,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
                 isEnabled
                 currentScore={defBuilderScore}
                 lectureId={lectureId}
+                courseId={courseId}
                 gameMode={gameMode ?? undefined}
                 onScoreDelta={(delta) => {
                   setDefBuilderScore(s => s + delta)

@@ -48,10 +48,11 @@ interface ReviewMatchingGameProps {
   isEnabled: boolean
   onExit: () => void
   lectureId?: string | null
+  courseId?: string
   gameMode?: 'rank' | 'normal'
 }
 
-export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, gameMode }: ReviewMatchingGameProps) {
+export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, courseId, gameMode }: ReviewMatchingGameProps) {
   const t = useTranslations('review.ui')
   const [selectedSize, setSelectedSize] = useState<SizeOption | null>(null)
   const [cards, setCards] = useState<MatchCard[]>([])
@@ -127,6 +128,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
     trackGameStart({
       game_type: 'card_match',
       lecture_id: lectureId ?? '',
+      course_id: courseId ?? '',
       game_mode: gameMode ?? 'normal',
     })
     window.setTimeout(() => {
@@ -181,11 +183,12 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
         gameCompleteTrackedRef.current = true
         trackGameComplete({
           game_type: 'card_match',
-          score: 0,
+          game_score: 0,
           correct: matchedIds.size / 2,
           wrong: 0,
           elapsed_ms: elapsedMs,
           lecture_id: lectureId ?? '',
+          course_id: courseId ?? '',
           game_mode: gameMode ?? 'normal',
         })
       }

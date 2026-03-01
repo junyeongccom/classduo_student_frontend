@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl'
 import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { LoginRequest, AuthError } from '../types'
-import { setAnalyticsUser } from '@/shared/hooks/useAnalytics'
+import { setAnalyticsUser, setUserProperties } from '@/shared/hooks/useAnalytics'
 
 export function useLogin() {
   const router = useRouter()
@@ -46,6 +46,7 @@ export function useLogin() {
         console.log('[로그인] 사용자 정보 조회 성공:', meResult.data)
         setUser(meResult.data)
         if (meResult.data?.user_id) setAnalyticsUser(meResult.data.user_id)
+        if (meResult.data?.school) setUserProperties({ user_group: meResult.data.school })
       }
 
       // 4. 대시보드로 이동

@@ -20,6 +20,7 @@ import type { ContentSummary, ContentSummarySection } from '../../types'
 
 interface SummaryTabContainerProps {
   lectureId: string
+  courseId: string
 }
 
 /** 방어적 파싱: summary_json → ContentSummary (Task 774) */
@@ -74,7 +75,7 @@ function isSummaryEmpty(summary: ContentSummary): boolean {
   return summary.sections.length === 0 && (!summary.overview || summary.overview.trim() === '')
 }
 
-export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
+export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainerProps) {
   const t = useTranslations('lectureStudy')
   const locale = useLocale()
   const isMobile = useIsMobile()
@@ -131,7 +132,7 @@ export function SummaryTabContainer({ lectureId }: SummaryTabContainerProps) {
         setSummary(parsed)
         if (!summaryViewedRef.current) {
           summaryViewedRef.current = true
-          trackSummaryViewed({ lecture_id: lectureId })
+          trackSummaryViewed({ lecture_id: lectureId, course_id: courseId })
         }
         setIsLoading(false)
       } catch (err) {

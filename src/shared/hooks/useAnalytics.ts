@@ -36,6 +36,7 @@ export function clearAnalyticsUser() {
 export function trackGameStart(params: {
   game_type: string
   lecture_id: string
+  course_id: string
   game_mode: string
 }) {
   trackEvent('game_start', params)
@@ -43,11 +44,12 @@ export function trackGameStart(params: {
 
 export function trackGameComplete(params: {
   game_type: string
-  score: number
+  game_score: number
   correct: number
   wrong: number
   elapsed_ms: number
   lecture_id: string
+  course_id: string
   game_mode: string
   obstacle_hit?: number
   skipped?: number
@@ -58,6 +60,7 @@ export function trackGameComplete(params: {
 export function trackInGameQuizAttempt(params: {
   correct: boolean
   lecture_id: string
+  course_id: string
 }) {
   trackEvent('in_game_quiz_attempt', params)
 }
@@ -65,20 +68,24 @@ export function trackInGameQuizAttempt(params: {
 export function trackTabView(params: {
   tab: string
   lecture_id: string
+  course_id: string
 }) {
   trackEvent('tab_view', params)
 }
 
 export function trackAiTutorQuestion(params: {
-  session_id: string
+  chat_session_id: string
   lecture_count: number
   question_length: number
+  chat_mode: string
+  course_id: string
 }) {
   trackEvent('ai_tutor_question', params)
 }
 
 export function trackSummaryViewed(params: {
   lecture_id: string
+  course_id: string
 }) {
   trackEvent('summary_viewed', params)
 }
@@ -88,13 +95,15 @@ export function trackQuizAttempt(params: {
   correct: boolean
   quiz_type: string
   lecture_id: string
+  course_id: string
 }) {
   trackEvent('quiz_attempt', params)
 }
 
 export function trackQuizSelfStart(params: {
   lecture_id: string
-  source: string
+  course_id: string
+  entry_source: string
   tab: string
 }) {
   trackEvent('quiz_self_start', params)

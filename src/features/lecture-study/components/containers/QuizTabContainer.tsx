@@ -30,6 +30,7 @@ import { FlameRewardModal } from '../ui/FlameRewardModal'
 
 interface QuizTabContainerProps {
   lectureId: string
+  courseId: string
   courseTitle?: string
   weekNumber?: number | null
   sessionNumber?: number | null
@@ -63,7 +64,7 @@ function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
   }
 }
 
-export function QuizTabContainer({ lectureId, courseTitle, weekNumber, sessionNumber }: QuizTabContainerProps) {
+export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber, sessionNumber }: QuizTabContainerProps) {
   const [quizzes, setQuizzes] = useState<InstructorQuizItem[]>([])
   const [statusMap, setStatusMap] = useState<Map<string, QuizStatus>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
@@ -168,6 +169,7 @@ export function QuizTabContainer({ lectureId, courseTitle, weekNumber, sessionNu
         correct: isCorrect,
         quiz_type: quiz?.quiz_type ?? '',
         lecture_id: lectureId,
+        course_id: courseId,
       })
 
       const current = statusMap.get(quizId)
