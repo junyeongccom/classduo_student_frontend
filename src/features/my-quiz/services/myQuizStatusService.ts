@@ -194,33 +194,37 @@ export async function fetchQuizContent(
   try {
     const supabase = getSupabaseClient()
 
-    const table = quizSource === 'instructor'
-      ? 'instructor_quiz_items'
-      : 'user_customize_quiz_items'
     const choiceTable = quizSource === 'instructor'
       ? 'instructor_quiz_choices'
       : 'user_customize_quiz_choices'
 
-    const selectCols = quizSource === 'instructor'
-      ? 'quiz_id, quiz_type, question, answer, explanation, difficulty'
-      : 'quiz_id, quiz_type, question, answer, explanation'
+    let rawItems: Array<Record<string, unknown>> = []
 
-    const { data: items, error: itemsError } = await supabase
-      .from(table)
-      .select(selectCols)
-      .in('quiz_id', quizIds)
-
-    if (itemsError) {
-      if (isJWTExpiredError(itemsError)) {
-        await handleJWTExpiration()
-        return { data: null, error: new Error('세션이 만료되었습니다.') }
+    if (quizSource === 'instructor') {
+      const { data, error: err } = await supabase
+        .from('instructor_quiz_items')
+        .select('quiz_id, quiz_type, question, answer, explanation, difficulty')
+        .in('quiz_id', quizIds)
+      if (err) {
+        if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+        return { data: null, error: new Error(getErrorMessage(err)) }
       }
-      return { data: null, error: new Error(getErrorMessage(itemsError)) }
+      rawItems = (data ?? []) as Array<Record<string, unknown>>
+    } else {
+      const { data, error: err } = await supabase
+        .from('user_customize_quiz_items')
+        .select('quiz_id, quiz_type, question, answer, explanation')
+        .in('quiz_id', quizIds)
+      if (err) {
+        if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+        return { data: null, error: new Error(getErrorMessage(err)) }
+      }
+      rawItems = (data ?? []) as Array<Record<string, unknown>>
     }
 
-    if (!items || items.length === 0) return { data: [], error: null }
+    if (rawItems.length === 0) return { data: [], error: null }
 
-    const foundIds = items.map(i => i.quiz_id)
+    const foundIds = rawItems.map(i => i.quiz_id as string)
     const { data: choices, error: choicesError } = await supabase
       .from(choiceTable)
       .select('quiz_id, choice_id, choice_order, choice_text, is_correct, choice_explanation')
@@ -244,15 +248,15 @@ export async function fetchQuizContent(
       choiceMap.set(c.quiz_id, arr)
     }
 
-    const quizItems: QuizItem[] = items.map(item => ({
-      quiz_id: item.quiz_id,
-      quiz_type: item.quiz_type,
-      question: item.question,
-      answer: item.answer,
-      explanation: item.explanation,
+    const quizItems: QuizItem[] = rawItems.map(item => ({
+      quiz_id: item.quiz_id as string,
+      quiz_type: item.quiz_type as string,
+      question: item.question as string,
+      answer: (item.answer as string) ?? null,
+      explanation: (item.explanation as string) ?? null,
       quiz_keyword: null,
-      difficulty: (item as Record<string, unknown>).difficulty as string ?? null,
-      choices: choiceMap.get(item.quiz_id) ?? [],
+      difficulty: (item.difficulty as string) ?? null,
+      choices: choiceMap.get(item.quiz_id as string) ?? [],
     }))
 
     return { data: quizItems, error: null }
