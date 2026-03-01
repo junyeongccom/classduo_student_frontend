@@ -286,7 +286,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       value={rightTab}
       onValueChange={v => {
         setRightTab(v as LectureStudyTab)
-        trackTabView({ tab: v, lecture_id: lectureId })
+        trackTabView({ tab: v, lecture_id: lectureId, course_id: courseId ?? '' })
       }}
       className="flex flex-1 min-h-0 flex-col"
     >
@@ -304,11 +304,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         </TabsList>
       </div>
       <TabsContent value="summary" className="flex-1 min-h-0 mt-0">
-        <SummaryTabContainer lectureId={lectureId} />
+        <SummaryTabContainer lectureId={lectureId} courseId={courseId ?? ''} />
       </TabsContent>
       <TabsContent value="quiz" className="flex-1 min-h-0 mt-0">
         <QuizTabContainer
           lectureId={lectureId}
+          courseId={courseId ?? ''}
           courseTitle={courseTitle ?? fetchedCourseTitle ?? undefined}
           weekNumber={currentLecture?.week_number}
           sessionNumber={currentLecture?.session_number}

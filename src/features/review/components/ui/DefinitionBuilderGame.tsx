@@ -17,6 +17,7 @@ interface DefinitionBuilderGameProps {
   onScoreDelta?: (delta: number) => void
   onRestart?: () => void
   lectureId?: string | null
+  courseId?: string
   gameMode?: 'rank' | 'normal'
 }
 
@@ -47,6 +48,7 @@ export function DefinitionBuilderGame({
   onScoreDelta,
   onRestart,
   lectureId,
+  courseId,
   gameMode,
 }: DefinitionBuilderGameProps) {
   const t = useTranslations('review.ui')
@@ -102,6 +104,7 @@ export function DefinitionBuilderGame({
       trackGameStart({
         game_type: 'definition_builder',
         lecture_id: lectureId ?? '',
+        course_id: courseId ?? '',
         game_mode: gameMode ?? 'normal',
       })
     }
@@ -137,6 +140,7 @@ export function DefinitionBuilderGame({
           wrong: 0,
           elapsed_ms: elapsedMs,
           lecture_id: lectureId ?? '',
+          course_id: courseId ?? '',
           game_mode: gameMode ?? 'normal',
         })
       }
