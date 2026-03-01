@@ -172,6 +172,7 @@ export class QuizManager {
     trackInGameQuizAttempt({
       correct: isCorrect,
       lecture_id: (this.scene.game.registry.get('lectureId') as string) || '',
+      course_id: (this.scene.game.registry.get('courseId') as string) || '',
     });
 
     if (this.pendingRewardType) {

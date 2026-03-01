@@ -40,7 +40,7 @@ interface ChatInterfaceProps {
 export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel }: ChatInterfaceProps) {
   const t = useTranslations('aiTutorChat')
   const { locale } = useI18n()
-  const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled } = useAITutorStore(state => ({
+  const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled, selectedCourseId } = useAITutorStore(state => ({
     hookingByLocale: state.hookingByLocale,
     pqmByLocale: state.pqmByLocale,
     reviewKeyAnswersByLocale: state.reviewKeyAnswersByLocale,
@@ -48,6 +48,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setPqmCache: state.setPqmCache,
     setReviewKeyAnswersCache: state.setReviewKeyAnswersCache,
     setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
+    selectedCourseId: state.selectedCourseId,
   }))
   
   const [input, setInput] = useState('')
@@ -708,6 +709,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             lecture_count: selectedLectureIds.length,
             question_length: question.length,
             chat_mode: chatMode,
+            course_id: selectedCourseId ?? '',
           })
 
           const assistantMessage: ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null } = {
