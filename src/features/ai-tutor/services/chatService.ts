@@ -200,6 +200,8 @@ export const chatService = {
               }
               if (data.type === 'result') {
                 onComplete(data.data)
+              } else if (data.type === 'message_saved') {
+                onProgress(data)
               } else {
                 onProgress(data)
               }
@@ -227,8 +229,8 @@ export const chatService = {
       summary_keywords?: string | null
       hooking_question_id?: string  // 원본 후킹질문 ID (source_question_id로 저장됨)
     }
-  ): Promise<{ data: { success: boolean; message: string; follow_up_question?: string | null } | null; error: any }> {
-    return apiRequest<{ success: boolean; message: string; follow_up_question?: string | null }>(
+  ): Promise<{ data: { success: boolean; message: string; follow_up_question?: string | null; assistant_message_id?: string | null } | null; error: any }> {
+    return apiRequest<{ success: boolean; message: string; follow_up_question?: string | null; assistant_message_id?: string | null }>(
       `/ai-tutor/sessions/${sessionId}/hooking`,
       {
         method: 'POST',
@@ -251,12 +253,29 @@ export const chatService = {
       summary_keywords?: string | null
       pqm_question_id?: string  // 원본 PQM 질문 ID (source_question_id로 저장됨)
     }
-  ): Promise<{ data: { success: boolean; message: string; follow_up_question?: string | null } | null; error: any }> {
-    return apiRequest<{ success: boolean; message: string; follow_up_question?: string | null }>(
+  ): Promise<{ data: { success: boolean; message: string; follow_up_question?: string | null; assistant_message_id?: string | null } | null; error: any }> {
+    return apiRequest<{ success: boolean; message: string; follow_up_question?: string | null; assistant_message_id?: string | null }>(
       `/ai-tutor/sessions/${sessionId}/pqm`,
       {
         method: 'POST',
         body: pqm,
+        auth: true,
+      }
+    )
+  },
+
+  /**
+   * 메시지 피드백 업데이트 (좋아요/싫어요)
+   */
+  async updateMessageFeedback(
+    messageId: string,
+    feedback: 'like' | 'dislike' | null
+  ): Promise<{ data: { success: boolean; feedback: string | null } | null; error: any }> {
+    return apiRequest<{ success: boolean; feedback: string | null }>(
+      `/ai-tutor/messages/${messageId}/feedback`,
+      {
+        method: 'PATCH',
+        body: { feedback },
         auth: true,
       }
     )

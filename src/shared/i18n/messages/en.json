@@ -314,6 +314,10 @@
       "nicknamePrompt": "Enter your nickname to play Rank mode.",
       "nicknamePlaceholder": "Nickname (max 20 chars)",
       "nicknameConfirm": "Start",
+      "nicknameChange": "Change Nickname",
+      "currentNickname": "Nickname: {nickname}",
+      "nicknameChangePrompt": "Enter a new nickname.",
+      "nicknameChangeSave": "Save",
       "desc": {
         "goalLabel": "Goal",
         "controlsLabel": "Controls",

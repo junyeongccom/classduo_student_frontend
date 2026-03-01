@@ -5,6 +5,8 @@ export interface ChatMessage {
   follow_up_question?: string | null
   isError?: boolean  // 에러 메시지 여부
   retryQuestion?: string  // 재시도할 원본 질문
+  id?: string  // DB 메시지 ID (피드백용)
+  feedback?: 'like' | 'dislike' | null  // 피드백 상태
 }
 
 export type ChatMode = 'simple' | 'deep'
@@ -129,6 +131,7 @@ export interface StoredMessage {
   content: string
   reference_data: Reference[] | null
   summary_keywords: string | null
+  feedback?: 'like' | 'dislike' | null
   created_at: string
 }
 
@@ -163,9 +166,10 @@ export interface MessageContentSearchResult {
 export type SearchResult = SessionTitleSearchResult | MessageContentSearchResult
 
 export interface StreamProgressData {
-  type: 'status' | 'source' | 'result' | 'error'
+  type: 'status' | 'source' | 'result' | 'error' | 'message_saved'
   step: 'searching' | 'selecting' | 'generating' | 'extracting' | 'summarizing' | 'recording_disabled' | 'complete'
   message?: string
+  message_id?: string  // message_saved 이벤트에서 사용
   source_type?: 'recording' | 'material'
   data?: {
     title?: string

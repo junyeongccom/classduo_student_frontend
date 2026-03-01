@@ -91,7 +91,6 @@ export class GameOverScene extends Phaser.Scene {
       course_id: this.courseId,
       game_mode: this.gameMode,
       obstacle_hit: this.obstacleHit,
-      skipped: this.skipped,
     });
 
     this.createBackground();
@@ -306,7 +305,7 @@ export class GameOverScene extends Phaser.Scene {
   // ── Quiz stats ──
 
   private showQuizStats(): void {
-    if (this.correct === 0 && this.wrong === 0 && this.skipped === 0) return;
+    if (this.correct === 0 && this.wrong === 0) return;
 
     const y = GAME_HEIGHT * 0.56;
     const gap = 24 * S;
@@ -321,17 +320,14 @@ export class GameOverScene extends Phaser.Scene {
 
     const correctStr = `✓ ${this.correct}`;
     const wrongStr = `✗ ${this.wrong}`;
-    const skippedStr = `− ${this.skipped}`;
 
     const tempText = this.add.text(0, 0, correctStr, { fontFamily: FONT_FAMILY, fontSize }).setVisible(false);
     const w1 = tempText.width;
     tempText.setText(wrongStr);
     const w2 = tempText.width;
-    tempText.setText(skippedStr);
-    const w3 = tempText.width;
     tempText.destroy();
 
-    const totalW = w1 + w2 + w3 + gap * 2;
+    const totalW = w1 + w2 + gap;
     const startX = (GAME_WIDTH - totalW) / 2;
 
     const t1 = this.add
@@ -356,18 +352,7 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
 
-    const t3 = this.add
-      .text(startX + w1 + gap + w2 + gap + w3 / 2, y, skippedStr, {
-        fontFamily: FONT_FAMILY,
-        fontSize,
-        color: "#e67e22",
-        fontStyle: "bold",
-        shadow: shadowCfg,
-      })
-      .setOrigin(0.5)
-      .setAlpha(0);
-
-    this.tweens.add({ targets: [t1, t2, t3], alpha: 1, duration: 400, ease: "Power2" });
+    this.tweens.add({ targets: [t1, t2], alpha: 1, duration: 400, ease: "Power2" });
   }
 
   // ── Buttons ──
