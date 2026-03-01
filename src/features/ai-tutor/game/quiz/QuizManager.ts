@@ -30,7 +30,6 @@ export interface QuizCallbacks {
   setGameState: (state: GameState) => void;
   addScore: (amount: number) => void;
   showEffect: (text: string, color: string) => void;
-  onQuizCollect?: (x: number, y: number) => void;
   onRewardSelect?: (isCorrect: boolean) => void;
   onPhysicsPause?: () => void;
   onPhysicsResume?: () => void;
@@ -71,8 +70,6 @@ export class QuizManager {
 
   private correctCount = 0;
   private wrongCount = 0;
-  private skippedCount = 0;
-
   private currentCorrectAnswer = "";
   private pendingRewardType: ChoiceType | null = null;
   private get t() { return T[this.locale]; }
@@ -108,14 +105,6 @@ export class QuizManager {
     if (kw && kw.length >= 3) {
       this.keywords = kw;
     }
-  }
-
-  handleScrollCollect(x: number, y: number): void {
-    this.callbacks.onQuizCollect?.(x, y);
-    this.callbacks.setGameState("choosing_reward");
-    this.callbacks.onPhysicsPause?.();
-    this.scene.physics.pause();
-    this.rewardCardUI.show();
   }
 
   triggerAutoQuiz(): void {
@@ -190,15 +179,10 @@ export class QuizManager {
     }
   }
 
-  incrementSkipped(): void {
-    this.skippedCount++;
-  }
-
-  getStats(): { correct: number; wrong: number; skipped: number } {
+  getStats(): { correct: number; wrong: number } {
     return {
       correct: this.correctCount,
       wrong: this.wrongCount,
-      skipped: this.skippedCount,
     };
   }
 

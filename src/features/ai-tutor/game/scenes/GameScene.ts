@@ -2,7 +2,6 @@ import * as Phaser from "phaser";
 import { Player } from "../entities/Player";
 import { GroundSegment } from "../entities/GroundSegment";
 import { Coin } from "../entities/Coin";
-import { QuizItem } from "../entities/QuizItem";
 import { Meteor } from "../entities/Meteor";
 import { HeartItem } from "../entities/HeartItem";
 import { QuizManager, GameState } from "../quiz/QuizManager";
@@ -36,16 +35,12 @@ import {
   COIN_DIAGONAL_COUNT,
   COIN_ZIGZAG_COUNT,
   SCROLL_SPAWN_INTERVAL_MS,
-  QUIZ_ITEM_SIZE,
-  QUIZ_ITEM_HIGH_Y,
-  SCROLL_COLORS,
   FALL_DEATH_Y,
   HP_MAX,
   SPEED_LINE_THRESHOLD,
   SHAKE_FALL_DEATH,
   SHAKE_HP_DEATH,
   SHAKE_WRONG_COLLECT,
-  SHAKE_QUIZ_COLLECT,
   FREEZE_DEATH,
   FLASH_CORRECT,
   FLASH_WRONG,
@@ -83,7 +78,6 @@ export class GameScene extends Phaser.Scene {
   private player!: Player;
   private grounds!: Phaser.Physics.Arcade.Group;
   private coins!: Phaser.Physics.Arcade.Group;
-  private quizItems!: Phaser.Physics.Arcade.Group;
   private heartItems!: Phaser.Physics.Arcade.Group;
   private meteors!: Phaser.Physics.Arcade.Group;
 
@@ -242,11 +236,6 @@ export class GameScene extends Phaser.Scene {
       allowGravity: false,
       immovable: true,
     });
-    this.quizItems = this.physics.add.group({
-      runChildUpdate: true,
-      allowGravity: false,
-      immovable: true,
-    });
     this.heartItems = this.physics.add.group({
       runChildUpdate: true,
       allowGravity: false,
@@ -299,7 +288,6 @@ export class GameScene extends Phaser.Scene {
   private setupCollisions(): void {
     this.physics.add.collider(this.player, this.grounds);
     this.physics.add.overlap(this.player, this.coins, this.onCollectCoin, undefined, this);
-    this.physics.add.overlap(this.player, this.quizItems, this.onCollectQuizItem, undefined, this);
     this.physics.add.overlap(this.player, this.heartItems, this.onCollectHeart, undefined, this);
     this.physics.add.overlap(this.player, this.meteors, this.onHitMeteor, undefined, this);
   }
@@ -331,11 +319,6 @@ export class GameScene extends Phaser.Scene {
         this.ui.setScore(this.score);
       },
       showEffect: (text: string, color: string) => this.ui.showEffect(text, color),
-      onQuizCollect: (x: number, y: number) => {
-        this.screenFX.shake(SHAKE_QUIZ_COLLECT);
-        this.screenFX.flash(FLASH_CORRECT);
-        this.particles.spawnQuizFlash(x, y);
-      },
       onRewardSelect: (isCorrect: boolean) => {
         if (isCorrect) {
           this.hp = Math.min(this.hp + QUIZ_CORRECT_HP_RESTORE, this.hpMax);
@@ -581,21 +564,6 @@ export class GameScene extends Phaser.Scene {
     }
   };
 
-  // ── Quiz item collection ──
-
-  private onCollectQuizItem: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (
-    _player,
-    itemObj
-  ): void => {
-    if (this.gameState !== "playing") return;
-    const item = itemObj as QuizItem;
-    const ix = item.x;
-    const iy = item.y;
-    item.markCollected();
-    item.destroyWithTrail();
-    this.quizManager.handleScrollCollect(ix, iy);
-  };
-
   // ── Heart item spawn & collection ──
 
   private spawnHeartItem(): void {
@@ -607,16 +575,6 @@ export class GameScene extends Phaser.Scene {
     this.heartItems.add(heart);
     heart.setScrollSpeed(this.getEffectiveSpeed());
     heart.setRestoreStacks(this.buffDebuff.heartRestoreStacks);
-  }
-
-  private spawnScrollItem(): void {
-    const x = GAME_WIDTH + QUIZ_ITEM_SIZE;
-    const y = Phaser.Math.Between(QUIZ_ITEM_HIGH_Y, GROUND_Y - GROUND_HEIGHT / 2 - QUIZ_ITEM_SIZE);
-    const colorIndex = Phaser.Math.Between(0, SCROLL_COLORS.length - 1);
-    const item = new QuizItem(this, x, y, colorIndex);
-    this.quizItems.add(item);
-    item.setScrollSpeed(this.getEffectiveSpeed());
-    item.onMissed = () => this.quizManager.incrementSkipped();
   }
 
   private onCollectHeart: Phaser.Types.Physics.Arcade.ArcadePhysicsCallback = (
@@ -716,9 +674,6 @@ export class GameScene extends Phaser.Scene {
     });
     this.coins.getChildren().forEach((obj) => {
       (obj as Coin).setScrollSpeed(speed);
-    });
-    this.quizItems.getChildren().forEach((obj) => {
-      (obj as QuizItem).setScrollSpeed(speed);
     });
     this.heartItems.getChildren().forEach((obj) => {
       (obj as HeartItem).setScrollSpeed(speed);
@@ -892,6 +847,7 @@ export class GameScene extends Phaser.Scene {
     const gameOverData = {
       score: this.score,
       ...this.quizManager.getStats(),
+      skipped: 0,
       gameMode: this.isRankMode ? "rank" : "normal",
       elapsedMs: Math.round(this.elapsedPlayTime),
       lectureId: this.game.registry.get("lectureId") || "",

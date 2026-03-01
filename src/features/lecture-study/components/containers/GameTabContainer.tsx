@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
@@ -144,12 +144,37 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const [isLoadingRankData, setIsLoadingRankData] = useState(false)
 
   // Nickname state
-  const [rankNickname, setRankNickname] = useState<string | undefined>(undefined)
+  const [rankNickname, setRankNickname] = useState<string | null>(null)
   const [showNicknameModal, setShowNicknameModal] = useState(false)
+  const [nicknameModalMode, setNicknameModalMode] = useState<'create' | 'change'>('create')
   const [nicknameInput, setNicknameInput] = useState('')
   const [nicknameSaving, setNicknameSaving] = useState(false)
   const [nicknameError, setNicknameError] = useState<string | null>(null)
   const nicknameInputRef = useRef<HTMLInputElement>(null)
+  // 닉네임 모달 confirm 후 어떤 게임을 시작할지 추적
+  const pendingRankGameRef = useRef<string | null>(null)
+
+  // 초기 닉네임 로딩
+  useEffect(() => {
+    let cancelled = false
+    gameScoreService.getNickname()
+      .then(({ data }) => {
+        if (!cancelled && data?.nickname) {
+          setRankNickname(data.nickname)
+        }
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  // 닉네임 변경 버튼 핸들러
+  const handleOpenNicknameChange = useCallback(() => {
+    setNicknameModalMode('change')
+    setNicknameInput(rankNickname ?? '')
+    setNicknameError(null)
+    pendingRankGameRef.current = null
+    setShowNicknameModal(true)
+  }, [rankNickname])
 
   // Ranking preview state
   const [showRankingPreview, setShowRankingPreview] = useState(false)
@@ -211,49 +236,51 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     }
   }, [loadDefBuilderDataFrom])
 
-  const handleRankPlayFromDescription = useCallback(async () => {
-    setShowDescriptionPopup(false)
-
-    // Running game: nickname check flow (existing)
-    if (selectedGame === 'running') {
-      try {
-        const { data } = await gameScoreService.getNickname()
-        if (data?.nickname) {
-          setRankNickname(data.nickname)
-          startRankGame('running')
-          return
-        }
-      } catch {
-        // If API fails, show modal to be safe
-      }
-      setNicknameInput('')
-      setNicknameError(null)
-      setShowNicknameModal(true)
+  /** 닉네임 확인 후 실제 랭크 게임 시작 (running / cardMatch / definitionBuilder) */
+  const launchRankGame = useCallback(async (gameId: string) => {
+    if (gameId === 'running') {
+      startRankGame('running')
       return
     }
 
     // cardMatch / definitionBuilder: fetch lecture_keywords then start
-    if (selectedGame === 'cardMatch' || selectedGame === 'definitionBuilder') {
-      setIsLoadingRankData(true)
-      try {
-        const result = await reviewService.getLectureKeywordsPreview(lectureId)
-        if (result.data?.keywords && result.data.keywords.length > 0) {
-          const items: LectureReviewItem[] = result.data.keywords.map(kw => ({
-            id: crypto.randomUUID(),
-            lecture_id: lectureId,
-            keyword: kw.keyword,
-            description: kw.description,
-          }))
-          setRankReviewItems(items)
-          startRankGame(selectedGame, items)
-        }
-      } catch {
-        // fetch 실패 시 무시
-      } finally {
-        setIsLoadingRankData(false)
+    setIsLoadingRankData(true)
+    try {
+      const result = await reviewService.getLectureKeywordsPreview(lectureId)
+      if (result.data?.keywords && result.data.keywords.length > 0) {
+        const items: LectureReviewItem[] = result.data.keywords.map(kw => ({
+          id: crypto.randomUUID(),
+          lecture_id: lectureId,
+          keyword: kw.keyword,
+          description: kw.description,
+        }))
+        setRankReviewItems(items)
+        startRankGame(gameId, items)
       }
+    } catch {
+      // fetch 실패 시 무시
+    } finally {
+      setIsLoadingRankData(false)
     }
-  }, [selectedGame, lectureId, startRankGame])
+  }, [lectureId, startRankGame])
+
+  const handleRankPlayFromDescription = useCallback(async () => {
+    setShowDescriptionPopup(false)
+    if (!selectedGame) return
+
+    // 닉네임이 이미 있으면 바로 게임 시작
+    if (rankNickname) {
+      await launchRankGame(selectedGame)
+      return
+    }
+
+    // 닉네임이 없으면 모달 표시
+    setNicknameModalMode('create')
+    setNicknameInput('')
+    setNicknameError(null)
+    pendingRankGameRef.current = selectedGame
+    setShowNicknameModal(true)
+  }, [selectedGame, rankNickname, launchRankGame])
 
   const handleNicknameConfirm = useCallback(async () => {
     const trimmed = nicknameInput.trim()
@@ -268,8 +295,13 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     setNicknameSaving(false)
     setShowNicknameModal(false)
     setRankNickname(trimmed)
-    startRankGame('running')
-  }, [nicknameInput, startRankGame])
+
+    // 닉네임 변경 모드면 게임 시작 안 함
+    const pendingGame = pendingRankGameRef.current
+    pendingRankGameRef.current = null
+    if (nicknameModalMode === 'change' || !pendingGame) return
+    await launchRankGame(pendingGame)
+  }, [nicknameInput, nicknameModalMode, launchRankGame])
 
   const fetchMatchingRankings = useCallback(async (pairCount: number) => {
     setRankingPreviewLoading(true)
@@ -413,14 +445,13 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
           setShowRunningOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
-          setRankNickname(undefined)
         }}
         triggerPosition={null}
         lectureId={lectureId}
         courseId={courseId}
         gameMode={gameMode ?? undefined}
         words={gameMode === 'normal' ? words.map(w => ({ keyword: w.keyword, description: w.description })) : undefined}
-        nickname={rankNickname}
+        nickname={rankNickname ?? undefined}
       />
     )
   }
@@ -618,7 +649,11 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
 
   return (
     <>
-      <GameSelector onSelectGame={handleSelectGame} />
+      <GameSelector
+        onSelectGame={handleSelectGame}
+        nickname={rankNickname}
+        onChangeNickname={handleOpenNicknameChange}
+      />
       <GameDescriptionPopup
         open={showDescriptionPopup}
         onOpenChange={setShowDescriptionPopup}
@@ -651,15 +686,19 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         isImporting={isImporting}
         importError={importError}
       />
-      {/* Nickname input modal for rank mode */}
+      {/* Nickname input modal for rank mode / nickname change */}
       <Dialog open={showNicknameModal} onOpenChange={setShowNicknameModal}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">
-              {t('lectureStudy.game.desc.rankPlayButton')}
+              {nicknameModalMode === 'change'
+                ? t('lectureStudy.game.nicknameChange')
+                : t('lectureStudy.game.desc.rankPlayButton')}
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-500">
-              {t('lectureStudy.game.nicknamePrompt')}
+              {nicknameModalMode === 'change'
+                ? t('lectureStudy.game.nicknameChangePrompt')
+                : t('lectureStudy.game.nicknamePrompt')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-2">
@@ -686,6 +725,8 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
             >
               {nicknameSaving ? (
                 <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+              ) : nicknameModalMode === 'change' ? (
+                t('lectureStudy.game.nicknameChangeSave')
               ) : (
                 t('lectureStudy.game.nicknameConfirm')
               )}

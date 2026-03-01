@@ -1,6 +1,6 @@
 /**
  * @file GameSelector.tsx
- * @description 4개 게임 선택 카드 UI
+ * @description 4개 게임 선택 카드 UI + 닉네임 변경 버튼
  * @module features/lecture-study/components/ui
  * @dependencies lucide-react
  */
@@ -8,6 +8,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { UserCircle } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import type { GameInfo } from '../../types'
 
@@ -27,9 +28,11 @@ const GAME_COLORS = [
 
 interface GameSelectorProps {
   onSelectGame: (gameId: string) => void
+  nickname?: string | null
+  onChangeNickname?: () => void
 }
 
-export function GameSelector({ onSelectGame }: GameSelectorProps) {
+export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameSelectorProps) {
   const t = useTranslations()
 
   const gameNames: Record<string, string> = {
@@ -41,9 +44,21 @@ export function GameSelector({ onSelectGame }: GameSelectorProps) {
 
   return (
     <div className="h-full overflow-y-auto p-6">
-      <h3 className="mb-4 text-lg font-bold text-gray-900">
-        {t('lectureStudy.game.title')}
-      </h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-bold text-gray-900">
+          {t('lectureStudy.game.title')}
+        </h3>
+        {nickname && (
+          <button
+            type="button"
+            onClick={onChangeNickname}
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-orange-500 dark:hover:text-orange-400"
+          >
+            <UserCircle className="h-3.5 w-3.5" />
+            <span className="max-w-[100px] truncate">{nickname}</span>
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {GAME_LIST.map((game, i) => (
           <button

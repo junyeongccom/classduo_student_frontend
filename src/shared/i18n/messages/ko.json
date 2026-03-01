@@ -314,6 +314,10 @@
       "nicknamePrompt": "랭크 모드 플레이를 위해 닉네임을 입력하세요.",
       "nicknamePlaceholder": "닉네임 (최대 20자)",
       "nicknameConfirm": "시작",
+      "nicknameChange": "닉네임 변경",
+      "currentNickname": "닉네임: {nickname}",
+      "nicknameChangePrompt": "새 닉네임을 입력하세요.",
+      "nicknameChangeSave": "저장",
       "desc": {
         "goalLabel": "목표",
         "controlsLabel": "조작 방법",
