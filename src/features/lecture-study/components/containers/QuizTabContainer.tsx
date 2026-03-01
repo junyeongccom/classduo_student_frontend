@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { Loader2, HelpCircle, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { trackQuizAttempt } from '@/shared/hooks/useAnalytics'
 import {
   getInstructorQuizzes,
   type InstructorQuizItem,
@@ -161,6 +162,14 @@ export function QuizTabContainer({ lectureId, courseTitle, weekNumber, sessionNu
   // 풀이 결과 업데이트 + 보상 판정
   const handleCorrectUpdate = useCallback(
     async (quizId: string, isCorrect: boolean, answer: number) => {
+      const quiz = quizzes.find(q => q.quiz_id === quizId)
+      trackQuizAttempt({
+        quiz_id: quizId,
+        correct: isCorrect,
+        quiz_type: quiz?.quiz_type ?? '',
+        lecture_id: lectureId,
+      })
+
       const current = statusMap.get(quizId)
 
       // 낙관적 업데이트

@@ -9,6 +9,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { trackQuizSelfStart } from '@/shared/hooks/useAnalytics'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/Tabs'
 import type { TabType } from '../../types'
 import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
@@ -43,7 +44,14 @@ export default function MyQuizContainer() {
   return (
     <Tabs
       value={activeTab}
-      onValueChange={v => setActiveTab(v as TabType)}
+      onValueChange={v => {
+        setActiveTab(v as TabType)
+        trackQuizSelfStart({
+          lecture_id: selectedLectureId ?? '',
+          source: 'my_quiz',
+          tab: v,
+        })
+      }}
       className="flex h-full flex-col"
     >
       {/* 상단 탭 바 */}

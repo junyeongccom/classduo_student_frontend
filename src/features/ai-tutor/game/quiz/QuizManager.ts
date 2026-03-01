@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { trackInGameQuizAttempt } from '@/shared/hooks/useAnalytics'
 import { QuizQuestion, ChoiceType, ActiveAbilityType } from "./quizTypes";
 import { QuizPanelUI } from "./QuizPanelUI";
 import { RewardCardUI } from "./RewardCardUI";
@@ -168,6 +169,11 @@ export class QuizManager {
   }
 
   private handleQuizResult(isCorrect: boolean): void {
+    trackInGameQuizAttempt({
+      correct: isCorrect,
+      lecture_id: (this.scene.game.registry.get('lectureId') as string) || '',
+    });
+
     if (this.pendingRewardType) {
       this.handleRewardSelect(this.pendingRewardType, isCorrect);
       this.pendingRewardType = null;

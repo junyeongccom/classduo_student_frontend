@@ -12,6 +12,7 @@ import { CameraManager } from "../systems/CameraManager";
 import { UIManager } from "../systems/UIManager";
 import { BuffDebuffManager } from "../systems/BuffDebuffManager";
 import { ActiveAbilityManager } from "../systems/ActiveAbilityManager";
+import { trackGameStart } from '@/shared/hooks/useAnalytics'
 import {
   S,
   GAME_WIDTH,
@@ -105,6 +106,7 @@ export class GameScene extends Phaser.Scene {
   private meteorSlowTimer = 0;
   private meteorSlowMult = 1;
   private isRankMode = false;
+  private obstacleHitCount = 0;
 
   private quizManager!: QuizManager;
   private lastSlideDustTime = 0;
@@ -155,6 +157,12 @@ export class GameScene extends Phaser.Scene {
     this.createQuizManager();
     this.fillInitialGround();
 
+    trackGameStart({
+      game_type: 'platformer',
+      lecture_id: this.game.registry.get('lectureId') || '',
+      game_mode: this.isRankMode ? 'rank' : 'normal',
+    });
+
     // Check nickname for rank mode
     if (this.isRankMode) {
       this.checkNicknameAndStart();
@@ -183,6 +191,7 @@ export class GameScene extends Phaser.Scene {
     this.lastCoinPattern = "";
     this.meteorSlowTimer = 0;
     this.meteorSlowMult = 1;
+    this.obstacleHitCount = 0;
     // Managers reset in create() after instantiation
   }
 
@@ -659,6 +668,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     meteor.destroyWithTrail();
+    this.obstacleHitCount++;
 
     // HP damage
     this.hp = Math.max(0, this.hp - this.lerpDiff(DIFF_METEOR_DAMAGE));
@@ -884,6 +894,7 @@ export class GameScene extends Phaser.Scene {
       gameMode: this.isRankMode ? "rank" : "normal",
       elapsedMs: Math.round(this.elapsedPlayTime),
       lectureId: this.game.registry.get("lectureId") || "",
+      obstacleHit: this.obstacleHitCount,
     };
 
     if (cause === "hp") {

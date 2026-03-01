@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { trackGameStart, trackGameComplete } from '@/shared/hooks/useAnalytics'
 import type { LectureReviewItem, MatchingRankingEntry } from '@/features/review/types'
 import { reviewService } from '@/features/review/services/reviewService'
 import { GameRankingBoard } from './GameRankingBoard'
@@ -110,6 +111,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
       ])
     )
 
+    gameCompleteTrackedRef.current = false
     setCards(nextCards)
     setFlippedIds([])
     setMatchedIds(new Set())
@@ -122,6 +124,11 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
     setRankingsError(null)
     setStartBanner(true)
     setIsRunning(false)
+    trackGameStart({
+      game_type: 'card_match',
+      lecture_id: lectureId ?? '',
+      game_mode: gameMode ?? 'normal',
+    })
     window.setTimeout(() => {
       setStartBanner(false)
       setIsRunning(true)
@@ -164,12 +171,26 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
     return () => window.clearTimeout(timer)
   }, [cards, flippedIds])
 
+  const gameCompleteTrackedRef = useRef(false)
+
   useEffect(() => {
     if (cards.length > 0 && matchedIds.size === cards.length) {
       setIsRunning(false)
       setGameCompleted(true)
+      if (!gameCompleteTrackedRef.current) {
+        gameCompleteTrackedRef.current = true
+        trackGameComplete({
+          game_type: 'card_match',
+          score: 0,
+          correct: matchedIds.size / 2,
+          wrong: 0,
+          elapsed_ms: elapsedMs,
+          lecture_id: lectureId ?? '',
+          game_mode: gameMode ?? 'normal',
+        })
+      }
     }
-  }, [cards.length, matchedIds])
+  }, [cards.length, matchedIds, elapsedMs, lectureId, gameMode])
 
   // 게임 완료 시 점수 제출 + 랭킹 조회 (normal 모드에서는 스킵)
   useEffect(() => {

@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
+import { trackGameStart, trackGameComplete } from '@/shared/hooks/useAnalytics'
 import type { DefinitionBuilderGameResponse, DefinitionBuilderQuestion, ScoreRankingEntry } from '@/features/review/types'
 import { reviewService } from '@/features/review/services/reviewService'
 import { GameRankingBoard } from './GameRankingBoard'
@@ -89,14 +90,22 @@ export function DefinitionBuilderGame({
     setLastWrongChoice(null)
   }, [currentQuestion])
 
+  const gameCompleteTrackedRef = useRef(false)
+
   useEffect(() => {
     if (questions.length > 0) {
       setCurrentIndex(0)
       setGameCompleted(false)
       setElapsedMs(0)
       setIsTimerRunning(true)
+      gameCompleteTrackedRef.current = false
+      trackGameStart({
+        game_type: 'definition_builder',
+        lecture_id: lectureId ?? '',
+        game_mode: gameMode ?? 'normal',
+      })
     }
-  }, [questions.length])
+  }, [questions.length, lectureId, gameMode])
 
   useEffect(() => {
     if (!isTimerRunning) return
@@ -119,8 +128,20 @@ export function DefinitionBuilderGame({
     if (completed && totalCount > 0 && currentIndex === totalCount - 1) {
       setIsTimerRunning(false)
       setGameCompleted(true)
+      if (!gameCompleteTrackedRef.current) {
+        gameCompleteTrackedRef.current = true
+        trackGameComplete({
+          game_type: 'definition_builder',
+          score: currentScore,
+          correct: totalCount,
+          wrong: 0,
+          elapsed_ms: elapsedMs,
+          lecture_id: lectureId ?? '',
+          game_mode: gameMode ?? 'normal',
+        })
+      }
     }
-  }, [completed, currentIndex, totalCount])
+  }, [completed, currentIndex, totalCount, currentScore, elapsedMs, lectureId, gameMode])
 
   // 게임 완료 시 점수 제출 + 랭킹 조회 (normal 모드에서는 스킵)
   useEffect(() => {
