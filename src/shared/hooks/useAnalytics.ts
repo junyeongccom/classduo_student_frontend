@@ -43,7 +43,7 @@ export function trackGameStart(params: {
 
 export function trackGameComplete(params: {
   game_type: string
-  score: number
+  game_score: number
   correct: number
   wrong: number
   elapsed_ms: number

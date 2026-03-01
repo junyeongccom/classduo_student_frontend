@@ -181,7 +181,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
         gameCompleteTrackedRef.current = true
         trackGameComplete({
           game_type: 'card_match',
-          score: 0,
+          game_score: 0,
           correct: matchedIds.size / 2,
           wrong: 0,
           elapsed_ms: elapsedMs,

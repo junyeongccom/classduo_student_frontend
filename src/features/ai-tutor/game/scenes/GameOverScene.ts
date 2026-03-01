@@ -80,7 +80,7 @@ export class GameOverScene extends Phaser.Scene {
 
     trackGameComplete({
       game_type: 'platformer',
-      score: this.score,
+      game_score: this.score,
       correct: this.correct,
       wrong: this.wrong,
       elapsed_ms: this.elapsedMs,

@@ -132,7 +132,7 @@ export function DefinitionBuilderGame({
         gameCompleteTrackedRef.current = true
         trackGameComplete({
           game_type: 'definition_builder',
-          score: currentScore,
+          game_score: currentScore,
           correct: totalCount,
           wrong: 0,
           elapsed_ms: elapsedMs,
