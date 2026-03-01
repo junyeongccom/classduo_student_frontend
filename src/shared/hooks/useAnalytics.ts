@@ -70,7 +70,7 @@ export function trackTabView(params: {
 }
 
 export function trackAiTutorQuestion(params: {
-  session_id: string
+  chat_session_id: string
   lecture_count: number
   question_length: number
 }) {
@@ -94,7 +94,7 @@ export function trackQuizAttempt(params: {
 
 export function trackQuizSelfStart(params: {
   lecture_id: string
-  source: string
+  entry_source: string
   tab: string
 }) {
   trackEvent('quiz_self_start', params)

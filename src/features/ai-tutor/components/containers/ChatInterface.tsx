@@ -704,7 +704,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         // onComplete: 최종 결과 처리
         (result) => {
           trackAiTutorQuestion({
-            session_id: sessionIdToUse,
+            chat_session_id: sessionIdToUse,
             lecture_count: selectedLectureIds.length,
             question_length: question.length,
           })
