@@ -20,7 +20,7 @@ interface GameOverlayProps {
   nickname?: string
 }
 
-export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, gameMode, words, nickname }: GameOverlayProps) {
+export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, courseId, gameMode, words, nickname }: GameOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<import('phaser').Game | null>(null)
   const [animationState, setAnimationState] = useState<'entering' | 'entered' | 'exiting'>('entering')
@@ -102,6 +102,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, gameM
       game.registry.set('keywords', keywordsRef.current)
       game.registry.set('locale', locale)
       if (lectureId) game.registry.set('lectureId', lectureId)
+      if (courseId) game.registry.set('courseId', courseId)
       game.registry.set('gameMode', gameMode ?? 'rank')
       if (nickname) game.registry.set('nickname', nickname)
       gameRef.current = game

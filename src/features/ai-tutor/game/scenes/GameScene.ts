@@ -160,6 +160,7 @@ export class GameScene extends Phaser.Scene {
     trackGameStart({
       game_type: 'platformer',
       lecture_id: this.game.registry.get('lectureId') || '',
+      course_id: this.game.registry.get('courseId') || '',
       game_mode: this.isRankMode ? 'rank' : 'normal',
     });
 
@@ -894,6 +895,7 @@ export class GameScene extends Phaser.Scene {
       gameMode: this.isRankMode ? "rank" : "normal",
       elapsedMs: Math.round(this.elapsedPlayTime),
       lectureId: this.game.registry.get("lectureId") || "",
+      courseId: this.game.registry.get("courseId") || "",
       obstacleHit: this.obstacleHitCount,
     };
 

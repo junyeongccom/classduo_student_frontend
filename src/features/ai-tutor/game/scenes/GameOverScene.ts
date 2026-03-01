@@ -45,6 +45,7 @@ interface GameOverData {
   gameMode: string;
   elapsedMs: number;
   lectureId: string;
+  courseId: string;
   obstacleHit: number;
 }
 
@@ -56,6 +57,7 @@ export class GameOverScene extends Phaser.Scene {
   private gameMode = "normal";
   private elapsedMs = 0;
   private lectureId = "";
+  private courseId = "";
   private obstacleHit = 0;
   private t!: GameOverStrings;
 
@@ -71,6 +73,7 @@ export class GameOverScene extends Phaser.Scene {
     this.gameMode = data.gameMode ?? "normal";
     this.elapsedMs = data.elapsedMs ?? 0;
     this.lectureId = data.lectureId ?? "";
+    this.courseId = data.courseId ?? "";
     this.obstacleHit = data.obstacleHit ?? 0;
   }
 
@@ -85,6 +88,7 @@ export class GameOverScene extends Phaser.Scene {
       wrong: this.wrong,
       elapsed_ms: this.elapsedMs,
       lecture_id: this.lectureId,
+      course_id: this.courseId,
       game_mode: this.gameMode,
       obstacle_hit: this.obstacleHit,
       skipped: this.skipped,
