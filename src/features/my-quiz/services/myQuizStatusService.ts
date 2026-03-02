@@ -230,6 +230,27 @@ export async function fetchQuizContent(
         if (chErr) return { data: null, error: new Error(getErrorMessage(chErr)) }
         rawChoices = (ch ?? []) as typeof rawChoices
       }
+    } else if (quizSource === 'content') {
+      const { data, error: err } = await supabase
+        .from('content_quiz_items')
+        .select('quiz_id, quiz_type, question, explanation, difficulty')
+        .in('quiz_id', quizIds)
+      if (err) {
+        if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+        return { data: null, error: new Error(getErrorMessage(err)) }
+      }
+      rawItems = ((data ?? []) as Array<Omit<RawItem, 'answer'>>).map(d => ({ ...d, answer: null })) as RawItem[]
+
+      if (rawItems.length > 0) {
+        const ids = rawItems.map(i => i.quiz_id)
+        const { data: ch, error: chErr } = await supabase
+          .from('content_quiz_choices')
+          .select(selectChoices)
+          .in('quiz_id', ids)
+          .order('choice_order', { ascending: true })
+        if (chErr) return { data: null, error: new Error(getErrorMessage(chErr)) }
+        rawChoices = (ch ?? []) as typeof rawChoices
+      }
     } else {
       const { data, error: err } = await supabase
         .from('user_customize_quiz_items')
@@ -293,7 +314,7 @@ export async function fetchQuizContent(
 
 /* ───────────── Backend API 호출 ───────────── */
 
-const VALID_QUIZ_SOURCES: QuizSource[] = ['instructor', 'customize']
+const VALID_QUIZ_SOURCES: QuizSource[] = ['instructor', 'customize', 'content']
 
 /** 즐겨찾기 토글 */
 export async function toggleBookmark(

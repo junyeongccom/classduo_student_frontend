@@ -48,7 +48,8 @@ export function groupQuizzesByType(quizzes: QuizWithMeta[]): QuizGroup[] {
         .filter(q => q.quiz_type === type)
         .sort((a, b) => {
           if (a.quiz_source !== b.quiz_source) {
-            return a.quiz_source === 'instructor' ? -1 : 1
+            const order: Record<string, number> = { instructor: 0, content: 1, customize: 2 }
+            return (order[a.quiz_source] ?? 9) - (order[b.quiz_source] ?? 9)
           }
           // 동일 source 내 created_at 최신순
           if (a.created_at && b.created_at) {

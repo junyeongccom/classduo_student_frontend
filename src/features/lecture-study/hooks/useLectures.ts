@@ -85,7 +85,7 @@ export function useLectures(courseId: string): UseLecturesResult {
         session_number: ws.sessionNo,
         has_recordings: null,
         has_materials: null,
-        has_content: !!(l.essence_7words),
+        has_content: l.is_available ?? !!(l.essence_7words),
         essence_7words: l.essence_7words ?? null,
       }
     })

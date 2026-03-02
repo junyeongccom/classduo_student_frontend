@@ -41,8 +41,6 @@ const TYPE_ORDER: InstructorQuizType[] = [
   'TERM_TO_DEF',
   'STRUCTURE_OBJ',
   'MISCONCEPTION',
-  'RECALL',
-  'STRUCTURE',
 ]
 
 /** InstructorQuizItem → StudentQuizItem 변환 */
@@ -51,7 +49,7 @@ function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
     quiz_id: quiz.quiz_id,
     quiz_type: quiz.quiz_type,
     question: quiz.question,
-    answer: quiz.answer,
+    answer: null,
     explanation: quiz.explanation,
     difficulty: quiz.difficulty,
     choices: quiz.choices.map((c) => ({
@@ -94,7 +92,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       // 퀴즈 + 상태를 병렬 조회
       const [quizResult, statusResult] = await Promise.all([
         getInstructorQuizzes(lectureId, locale),
-        getQuizStatusByLecture(lectureId, 'instructor'),
+        getQuizStatusByLecture(lectureId, 'content'),
       ])
 
       if (cancelled) return
@@ -135,7 +133,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         const next = new Map(prev)
         next.set(quizId, {
           quiz_id: quizId,
-          quiz_source: 'instructor',
+          quiz_source: 'content',
           bookmark: newBookmark,
           correct: current?.correct ?? null,
           answer: current?.answer ?? null,
@@ -143,7 +141,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         return next
       })
 
-      const result = await toggleBookmark('instructor', quizId, lectureId, newBookmark)
+      const result = await toggleBookmark('content', quizId, lectureId, newBookmark)
       if (result.error) {
         // 실패 시 롤백
         setStatusMap((prev) => {
@@ -179,7 +177,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         const next = new Map(prev)
         next.set(quizId, {
           quiz_id: quizId,
-          quiz_source: 'instructor',
+          quiz_source: 'content',
           bookmark: current?.bookmark ?? false,
           correct: isCorrect,
           answer,
@@ -187,7 +185,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         return next
       })
 
-      const result = await updateCorrect('instructor', quizId, lectureId, isCorrect, answer)
+      const result = await updateCorrect('content', quizId, lectureId, isCorrect, answer)
       if (result.error) {
         // 실패 시 롤백
         setStatusMap((prev) => {
@@ -202,12 +200,12 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         return
       }
 
-      // 보상 판정: 모든 instructor 퀴즈가 풀이되었으면 reward 요청 (정답/오답 무관)
+      // 보상 판정: 모든 content 퀴즈가 풀이되었으면 reward 요청 (정답/오답 무관)
       if (!rewardCheckingRef.current) {
         const updatedMap = new Map(statusMap)
         updatedMap.set(quizId, {
           quiz_id: quizId,
-          quiz_source: 'instructor',
+          quiz_source: 'content',
           bookmark: current?.bookmark ?? false,
           correct: isCorrect,
           answer,
@@ -219,7 +217,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
         if (allAnswered) {
           rewardCheckingRef.current = true
-          const rewardResult = await grantReward(lectureId)
+          const rewardResult = await grantReward(lectureId, 'content')
           rewardCheckingRef.current = false
           if (rewardResult.data?.rewarded) {
             setShowRewardModal(true)
@@ -239,7 +237,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         const next = new Map(prev)
         next.set(quizId, {
           quiz_id: quizId,
-          quiz_source: 'instructor',
+          quiz_source: 'content',
           bookmark: current?.bookmark ?? false,
           correct: null,
           answer: null,
@@ -247,7 +245,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         return next
       })
 
-      const result = await updateCorrect('instructor', quizId, lectureId, null, null)
+      const result = await updateCorrect('content', quizId, lectureId, null, null)
       if (result.error) {
         setStatusMap((prev) => {
           const next = new Map(prev)
