@@ -15,6 +15,7 @@ export interface LectureApiItem {
   lecture_date: string
   start_time: string | null
   essence_7words: string | null
+  is_available: boolean
 }
 
 export interface LectureListApiResponse {

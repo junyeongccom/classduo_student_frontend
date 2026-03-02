@@ -44,7 +44,7 @@ export async function createSession(
     {
       method: 'POST',
       auth: true,
-      body: { quiz_count: quizCount, quiz_types: quizTypes },
+      body: { count: quizCount, quiz_types: quizTypes },
     },
   )
 }
