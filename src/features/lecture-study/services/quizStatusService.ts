@@ -95,11 +95,11 @@ export async function toggleBookmark(
   bookmark: boolean,
 ) {
   return apiRequest<BookmarkResponse>(
-    `/quiz-status/${quizSource}/${quizId}/bookmark`,
+    `/quiz-status/${quizSource}/${quizId}/bookmark?lecture_id=${lectureId}`,
     {
       method: 'PATCH',
       auth: true,
-      body: { lecture_id: lectureId, bookmark },
+      body: { bookmark },
     },
   )
 }

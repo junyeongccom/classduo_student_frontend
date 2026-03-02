@@ -33,10 +33,8 @@ export interface InstructorQuizChoice {
 export interface InstructorQuizItem {
   quiz_id: string
   lecture_id: string
-  course_id: string | null
   quiz_type: InstructorQuizType
   question: string
-  answer: string | null
   explanation: string | null
   difficulty: string | null
   created_at: string
@@ -60,12 +58,9 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
       .select(`
         quiz_id,
         lecture_id,
-        course_id,
         quiz_type,
         question,
         question_eng,
-        answer,
-        answer_eng,
         explanation,
         explanation_eng,
         difficulty,
@@ -101,10 +96,8 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
     const items: InstructorQuizItem[] = (data ?? []).map((row: any) => ({
       quiz_id: row.quiz_id,
       lecture_id: row.lecture_id,
-      course_id: row.course_id ?? null,
       quiz_type: row.quiz_type,
       question: pick(row.question, row.question_eng),
-      answer: pick(row.answer, row.answer_eng) || null,
       explanation: pick(row.explanation, row.explanation_eng) || null,
       difficulty: row.difficulty ?? null,
       created_at: row.created_at,

@@ -49,7 +49,7 @@ function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
     quiz_id: quiz.quiz_id,
     quiz_type: quiz.quiz_type,
     question: quiz.question,
-    answer: quiz.answer,
+    answer: null,
     explanation: quiz.explanation,
     difficulty: quiz.difficulty,
     choices: quiz.choices.map((c) => ({
@@ -200,7 +200,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         return
       }
 
-      // 보상 판정: 모든 instructor 퀴즈가 풀이되었으면 reward 요청 (정답/오답 무관)
+      // 보상 판정: 모든 content 퀴즈가 풀이되었으면 reward 요청 (정답/오답 무관)
       if (!rewardCheckingRef.current) {
         const updatedMap = new Map(statusMap)
         updatedMap.set(quizId, {
