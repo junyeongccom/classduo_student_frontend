@@ -1,6 +1,6 @@
 /**
  * @file instructorQuizService.ts
- * @description 교수자가 생성한 AI 퀴즈를 학생 UI에서 조회하는 서비스
+ * @description 컨텐츠 파이프라인 자동 생성 퀴즈를 학생 UI에서 조회하는 서비스 (content_quiz_items)
  * @module features/lecture-study/services
  * @dependencies shared/lib/supabase
  */
@@ -16,8 +16,6 @@ import type { AppLocale } from '@/shared/i18n/I18nProvider'
 // ── Types ──
 
 export type InstructorQuizType =
-  | 'RECALL'
-  | 'STRUCTURE'
   | 'MISCONCEPTION'
   | 'DEF_TO_TERM'
   | 'TERM_TO_DEF'
@@ -48,8 +46,7 @@ export interface InstructorQuizItem {
 // ── Service ──
 
 /**
- * 특정 회차(lecture)에 해당하는 완료된 교수자 퀴즈를 조회한다.
- * step = 'QUIZ_COMPLETED' 인 퀴즈만 가져온다.
+ * 특정 회차(lecture)에 해당하는 컨텐츠 퀴즈를 조회한다.
  */
 export async function getInstructorQuizzes(lectureId: string, locale: AppLocale = 'ko'): Promise<{
   data: InstructorQuizItem[] | null
@@ -59,7 +56,7 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
     const supabase = getSupabaseClient()
 
     const { data, error } = await supabase
-      .from('instructor_quiz_items')
+      .from('content_quiz_items')
       .select(`
         quiz_id,
         lecture_id,
@@ -73,7 +70,7 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
         explanation_eng,
         difficulty,
         created_at,
-        instructor_quiz_choices (
+        content_quiz_choices (
           choice_id,
           quiz_id,
           choice_order,
@@ -85,8 +82,6 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
         )
       `)
       .eq('lecture_id', lectureId)
-      .eq('step', 'QUIZ_COMPLETED')
-      .is('deleted_at', null)
       .order('created_at', { ascending: true })
 
     if (error) {
@@ -113,7 +108,7 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
       explanation: pick(row.explanation, row.explanation_eng) || null,
       difficulty: row.difficulty ?? null,
       created_at: row.created_at,
-      choices: (row.instructor_quiz_choices ?? [])
+      choices: (row.content_quiz_choices ?? [])
         .sort((a: any, b: any) => a.choice_order - b.choice_order)
         .map((c: any) => ({
           choice_id: c.choice_id,

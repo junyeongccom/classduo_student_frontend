@@ -15,9 +15,11 @@ import {
 
 /* ───────────── Types ───────────── */
 
+export type QuizSource = 'instructor' | 'customize' | 'content'
+
 export interface QuizStatus {
   quiz_id: string
-  quiz_source: 'instructor' | 'customize'
+  quiz_source: QuizSource
   bookmark: boolean
   correct: boolean | null
   answer: number | null
@@ -50,7 +52,7 @@ interface RewardGrantResponse {
  */
 export async function getQuizStatusByLecture(
   lectureId: string,
-  quizSource: 'instructor' | 'customize',
+  quizSource: QuizSource,
 ): Promise<{ data: QuizStatus[] | null; error: Error | null }> {
   try {
     const supabase = getSupabaseClient()
@@ -87,7 +89,7 @@ export async function getQuizStatusByLecture(
 
 /** 즐겨찾기 토글 */
 export async function toggleBookmark(
-  quizSource: 'instructor' | 'customize',
+  quizSource: QuizSource,
   quizId: string,
   lectureId: string,
   bookmark: boolean,
@@ -104,7 +106,7 @@ export async function toggleBookmark(
 
 /** 풀이 결과 업데이트. correct=null이면 선택 해제(리셋). */
 export async function updateCorrect(
-  quizSource: 'instructor' | 'customize',
+  quizSource: QuizSource,
   quizId: string,
   lectureId: string,
   correct: boolean | null,
@@ -121,9 +123,9 @@ export async function updateCorrect(
 }
 
 /** 보상 획득 요청 */
-export async function grantReward(lectureId: string) {
+export async function grantReward(lectureId: string, quizSource: QuizSource = 'instructor') {
   return apiRequest<RewardGrantResponse>(
-    `/quiz-status/lectures/${lectureId}/reward`,
+    `/quiz-status/lectures/${lectureId}/reward?quiz_source=${quizSource}`,
     {
       method: 'POST',
       auth: true,
