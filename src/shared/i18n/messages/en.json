@@ -998,7 +998,8 @@
     },
     "quizSource": {
       "instructor": "Instructor Quiz",
-      "customize": "My Quiz"
+      "customize": "My Quiz",
+      "content": "Content Quiz"
     },
     "error": {
       "loadFailed": "Failed to load data",

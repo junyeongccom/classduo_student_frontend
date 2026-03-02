@@ -998,7 +998,8 @@
     },
     "quizSource": {
       "instructor": "교수자 퀴즈",
-      "customize": "내 퀴즈"
+      "customize": "내 퀴즈",
+      "content": "컨텐츠 퀴즈"
     },
     "error": {
       "loadFailed": "데이터를 불러오는데 실패했습니다",

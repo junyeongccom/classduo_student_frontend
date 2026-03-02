@@ -76,20 +76,24 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
     // quiz_source별 분류
     const instructorIds = statuses.filter(s => s.quiz_source === 'instructor').map(s => s.quiz_id)
     const customizeIds = statuses.filter(s => s.quiz_source === 'customize').map(s => s.quiz_id)
+    const contentIds = statuses.filter(s => s.quiz_source === 'content').map(s => s.quiz_id)
 
-    const [instructorResult, customizeResult] = await Promise.all([
+    const [instructorResult, customizeResult, contentResult] = await Promise.all([
       instructorIds.length > 0
         ? statusService.fetchQuizContent(instructorIds, 'instructor')
         : { data: [], error: null },
       customizeIds.length > 0
         ? statusService.fetchQuizContent(customizeIds, 'customize')
         : { data: [], error: null },
+      contentIds.length > 0
+        ? statusService.fetchQuizContent(contentIds, 'content')
+        : { data: [], error: null },
     ])
 
     // fetchQuizContent 에러 체크 (QA-AW-1)
-    if (instructorResult.error || customizeResult.error) {
+    if (instructorResult.error || customizeResult.error || contentResult.error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('[FavoritesTab] fetchQuizContent error:', instructorResult.error, customizeResult.error)
+        console.error('[FavoritesTab] fetchQuizContent error:', instructorResult.error, customizeResult.error, contentResult.error)
       }
       showErrorToast(t('error.loadFailed'))
     }
@@ -108,6 +112,20 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'instructor',
+        lecture_id: status?.lecture_id,
+        bookmark: status?.bookmark ?? true,
+        correct: status?.correct ?? null,
+        selected_answer: status?.answer ?? null,
+      })
+    }
+
+    for (const item of (contentResult.data ?? [])) {
+      const key = `content:${item.quiz_id}`
+      const status = statusMap.get(key)
+      quizzesWithMeta.push({
+        ...item,
+        difficulty: item.difficulty ?? null,
+        quiz_source: 'content',
         lecture_id: status?.lecture_id,
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
@@ -344,7 +362,9 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
                     <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
                       quiz.quiz_source === 'instructor'
                         ? 'bg-purple-50 text-purple-600'
-                        : 'bg-indigo-50 text-indigo-600'
+                        : quiz.quiz_source === 'content'
+                          ? 'bg-teal-50 text-teal-600'
+                          : 'bg-indigo-50 text-indigo-600'
                     }`}>
                       {t(`quizSource.${quiz.quiz_source}`)}
                     </span>
