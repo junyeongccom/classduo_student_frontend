@@ -862,17 +862,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         
         // 참고자료가 있으면 부모에게 전달 (후킹 질문은 타이핑 애니메이션이 없으므로 즉시 전달)
         if (hooking.reference_data && hooking.reference_data.length > 0 && onReferencesUpdate) {
-          console.log('[후킹 질문] reference_data 전달:', hooking.reference_data)
           // 후킹 질문은 타이핑 애니메이션이 없으므로 즉시 전달
           setTimeout(() => {
             onReferencesUpdate(messageIndex, hooking.reference_data!)
           }, 0)
-        } else {
-          console.log('[후킹 질문] reference_data 없음:', {
-            hasReferenceData: !!hooking.reference_data,
-            referenceDataLength: hooking.reference_data?.length || 0,
-            hasOnReferencesUpdate: !!onReferencesUpdate
-          })
         }
         
         return updated
@@ -881,14 +874,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       // 세션이 없으면 생성하고 메시지 저장
       if (!currentSessionId) {
         try {
-          console.log('[후킹 질문] 세션 생성 시도:', { selectedLectureIds })
           // summary_keywords를 title로 사용
           const titleSource = summaryKeywords || hooking.question
           const sessionTitle = titleSource.length > 50
             ? titleSource.substring(0, 50) + '...'
             : titleSource
           const sessionResult = await chatService.createSession(selectedLectureIds, sessionTitle)
-          console.log('[후킹 질문] 세션 생성 결과:', sessionResult)
           if (sessionResult.error) {
             console.error('[후킹 질문] 세션 생성 실패:', sessionResult.error)
             setError(t('sessionCreateError'))
@@ -896,7 +887,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           }
           if (sessionResult.data && sessionResult.data.id) {
             const newSessionId = sessionResult.data.id
-            console.log('[후킹 질문] 세션 생성 성공:', newSessionId)
             selfCreatedSessionId.current = newSessionId
             setCurrentSessionId(newSessionId)
             onSessionCreated?.(newSessionId)
@@ -911,7 +901,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 summary_keywords: summaryKeywords,
                 hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
               })
-              console.log('[후킹 질문] 메시지 저장 완료')
               // assistant_message_id를 마지막 assistant 메시지에 부여
               if (saveResult.data?.assistant_message_id) {
                 const asstMsgId = saveResult.data.assistant_message_id
@@ -1046,15 +1035,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       
       // 참고자료가 있으면 부모에게 즉시 전달 (타이핑 애니메이션 없으므로)
       if (references.length > 0 && onReferencesUpdate) {
-        console.log('[PQM 질문] reference_data 전달:', references)
         setTimeout(() => {
           onReferencesUpdate(messageIndex, references)
         }, 0)
-      } else {
-        console.log('[PQM 질문] reference_data 없음:', {
-          referencesLength: references.length,
-          hasOnReferencesUpdate: !!onReferencesUpdate
-        })
       }
       
       // 타이핑 애니메이션 없음 (즉시 완료 상태로 설정)
@@ -1070,14 +1053,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     // 세션이 없으면 생성하고 메시지 저장
     if (!currentSessionId) {
       try {
-        console.log('[PQM 질문] 세션 생성 시도:', { selectedLectureIds })
         // summary_keywords를 title로 사용
         const titleSource = summaryKeywords || pqmQuestion.question
         const sessionTitle = titleSource.length > 50
           ? titleSource.substring(0, 50) + '...'
           : titleSource
         const sessionResult = await chatService.createSession(selectedLectureIds, sessionTitle)
-        console.log('[PQM 질문] 세션 생성 결과:', sessionResult)
         if (sessionResult.error) {
           console.error('[PQM 질문] 세션 생성 실패:', sessionResult.error)
           setError(t('sessionCreateError'))
@@ -1085,11 +1066,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         }
         if (sessionResult.data && sessionResult.data.id) {
           const newSessionId = sessionResult.data.id
-          console.log('[PQM 질문] 세션 생성 성공:', newSessionId)
           selfCreatedSessionId.current = newSessionId
           setCurrentSessionId(newSessionId)
           onSessionCreated?.(newSessionId)
-          
+
           // 세션 생성 완료 후 메시지 저장 (await 사용)
           try {
             const saveResult = await chatService.savePQMMessage(newSessionId, {
@@ -1100,7 +1080,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               summary_keywords: summaryKeywords,
               pqm_question_id: pqmQuestion.id,  // PQM 질문 ID (source_question_id로 저장)
             })
-            console.log('[PQM 질문] 메시지 저장 완료')
             if (saveResult.data?.assistant_message_id) {
               const asstMsgId = saveResult.data.assistant_message_id
               setMessages(prev => {
