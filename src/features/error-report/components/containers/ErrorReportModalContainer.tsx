@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useToast } from '@/shared/hooks/useToast';
 import { useAuthStore } from '@/features/auth';
 import { createErrorReport } from '../../services/errorReportService';
 import { uploadErrorReportAttachment } from '../../services/uploadAttachment';
@@ -23,6 +24,7 @@ export function ErrorReportModalContainer({
 }: ErrorReportModalContainerProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toasts, success: showSuccess } = useToast();
 
   // systemErrorMessage를 prefill이 clear되기 전에 저장
   const systemErrorMessageRef = useRef<string | undefined>(undefined);
@@ -69,7 +71,7 @@ export function ErrorReportModalContainer({
 
       // 성공 시 모달 닫기
       onClose();
-      alert('소중한 의견 감사합니다! 빠르게 검토하겠습니다.');
+      showSuccess('소중한 의견 감사합니다! 빠르게 검토하겠습니다.');
     } catch (err) {
       if (err instanceof Error) {
         if (err.message.includes('401') || err.message.includes('인증')) {
@@ -94,14 +96,25 @@ export function ErrorReportModalContainer({
   };
 
   return (
-    <ErrorReportModal
-      isOpen={isOpen}
-      onClose={handleClose}
-      onSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
-      error={error}
-      prefill={prefill}
-      onPrefillApplied={onPrefillApplied}
-    />
+    <>
+      <ErrorReportModal
+        isOpen={isOpen}
+        onClose={handleClose}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        error={error}
+        prefill={prefill}
+        onPrefillApplied={onPrefillApplied}
+      />
+      {toasts.length > 0 && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
+          {toasts.map(toast => (
+            <div key={toast.id} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white shadow-lg">
+              {toast.message}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
