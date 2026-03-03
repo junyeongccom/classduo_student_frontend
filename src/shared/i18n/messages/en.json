@@ -165,10 +165,21 @@
         "back": "Back to list",
         "successTitle": "SUCCESS",
         "finalScoreLabel": "Final score: {score}",
+        "elapsedTimeLabel": "Time:",
         "submitting": "Saving..."
+      },
+      "cardMatch": {
+        "selectLecture": "Select a lecture to start the matching game.",
+        "gameSizeTitle": "Choose game size",
+        "gameSizeDescription": "Select the number of pairs to start the game.",
+        "finalRecord": "Final time",
+        "restart": "Play again",
+        "backToList": "Back to list",
+        "pairsFormat": "{pairs} pairs ({cols}x{rows})"
       },
       "ranking": {
         "title": "Rankings",
+        "currentRankingDescription": "Current ranking order",
         "myRank": "#{rank}",
         "empty": "No records yet",
         "loadError": "Failed to load rankings",
@@ -176,6 +187,7 @@
         "anonymous": "Anonymous",
         "rank": "Rank",
         "player": "Player",
+        "nickname": "Nickname",
         "score": "Score",
         "time": "Time",
         "achievedAt": "Date",
@@ -318,6 +330,8 @@
       "currentNickname": "Nickname: {nickname}",
       "nicknameChangePrompt": "Enter a new nickname.",
       "nicknameChangeSave": "Save",
+      "rankButton": "Rank",
+      "rankingTitle": "{gameName} Rankings",
       "desc": {
         "goalLabel": "Goal",
         "controlsLabel": "Controls",

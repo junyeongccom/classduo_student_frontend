@@ -65,13 +65,13 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
   const [isRunning, setIsRunning] = useState(false)
   const [gameCompleted, setGameCompleted] = useState(false)
 
-  // 제출 + 랭킹 상태
+  // 제출 + 랭킹 상태 (랭킹은 닉네임만 표시)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionRank, setSubmissionRank] = useState<number | null>(null)
   const [rankings, setRankings] = useState<MatchingRankingEntry[]>([])
+  const [myNickname, setMyNickname] = useState<string | null>(null)
   const [rankingsLoading, setRankingsLoading] = useState(false)
   const [rankingsError, setRankingsError] = useState<string | null>(null)
-  // currentUserId는 더 이상 사용하지 않음 (is_mine 플래그로 대체)
   const [activePairCount, setActivePairCount] = useState<number | null>(null)
   const pairCountTabs = useMemo(() => {
     const tabs: number[] = []
@@ -195,7 +195,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
     }
   }, [cards.length, matchedIds, elapsedMs, lectureId, gameMode])
 
-  // 게임 완료 시 점수 제출 + 랭킹 조회 (normal 모드에서는 스킵)
+  // 게임 완료 시 점수 제출 + 랭킹·닉네임 조회 (normal 모드에서는 스킵)
   useEffect(() => {
     if (!gameCompleted || !lectureId || !selectedSize || isSubmitting) return
     if (gameMode === 'normal') return
@@ -220,6 +220,16 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
       }
 
       try {
+        const { gameScoreService } = await import('@/features/ai-tutor/services/gameScoreService')
+        const { data: nickData } = await gameScoreService.getNickname()
+        if (!cancelled && nickData?.nickname) {
+          setMyNickname(nickData.nickname)
+        }
+      } catch {
+        // 닉네임 조회 실패는 무시
+      }
+
+      try {
         const { data: rankData } = await reviewService.getMatchingGameRankings(lectureId, pairCount, 10)
         if (!cancelled && rankData) {
           setRankings(rankData.rankings)
@@ -238,12 +248,19 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
     return () => { cancelled = true }
   }, [gameCompleted, lectureId, selectedSize, gameMode])
 
-  // pair_count 탭 전환 시 랭킹 재조회
+  // pair_count 탭 전환 시 랭킹 재조회 (닉네임 없으면 이때 로드)
   const handlePairCountChange = async (pairCount: number) => {
     if (!lectureId) return
     setActivePairCount(pairCount)
     setRankingsLoading(true)
     setRankingsError(null)
+    try {
+      const { gameScoreService } = await import('@/features/ai-tutor/services/gameScoreService')
+      const { data: nickData } = await gameScoreService.getNickname()
+      if (nickData?.nickname) setMyNickname(nickData.nickname)
+    } catch {
+      // 무시
+    }
     try {
       const { data: rankData } = await reviewService.getMatchingGameRankings(lectureId, pairCount, 10)
       if (rankData) {
@@ -260,7 +277,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
   if (!isEnabled) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-8 text-sm text-slate-500">
-        회차를 선택하면 매칭게임을 시작할 수 있어요.
+        {t('cardMatch.selectLecture')}
       </div>
     )
   }
@@ -268,8 +285,8 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
   if (!selectedSize) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white px-6 py-8 text-center">
-        <h3 className="text-sm font-semibold text-slate-900">게임 크기 선택</h3>
-        <p className="mt-2 text-xs text-slate-500">원하는 쌍 수를 선택하면 게임이 시작됩니다.</p>
+        <h3 className="text-sm font-semibold text-slate-900">{t('cardMatch.gameSizeTitle')}</h3>
+        <p className="mt-2 text-xs text-slate-500">{t('cardMatch.gameSizeDescription')}</p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           {SIZE_OPTIONS.map(option => {
             const disabled = availableCount < option.pairs
@@ -288,7 +305,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
                     : 'border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100'
                 }`}
               >
-                {option.pairs}쌍 ({option.cols}x{option.rows})
+                {t('cardMatch.pairsFormat', { pairs: option.pairs, cols: option.cols, rows: option.rows })}
               </button>
             )
           })}
@@ -301,7 +318,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
     return (
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center">
         <div className="matching-game-success text-3xl font-extrabold text-emerald-600">SUCCESS</div>
-        <div className="text-sm font-semibold text-slate-600">최종 기록</div>
+        <div className="text-sm font-semibold text-slate-600">{t('cardMatch.finalRecord')}</div>
         <div className="text-2xl font-bold text-slate-900">{formatTime(elapsedMs)}</div>
         <div className="mt-3 flex items-center gap-2">
           <button
@@ -309,21 +326,21 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
             onClick={() => buildGame()}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            다시 시작
+            {t('cardMatch.restart')}
           </button>
           <button
             type="button"
             onClick={onExit}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50"
           >
-            목록으로
+            {t('cardMatch.backToList')}
           </button>
         </div>
         {gameMode !== 'normal' && lectureId && (
           <GameRankingBoard
             rankings={rankings}
             myRank={submissionRank}
-            currentUserId={null}
+            myNickname={myNickname}
             isLoading={rankingsLoading}
             error={rankingsError}
             mode="time"

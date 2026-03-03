@@ -165,10 +165,21 @@
         "back": "목록으로",
         "successTitle": "SUCCESS",
         "finalScoreLabel": "최종 점수: {score}",
+        "elapsedTimeLabel": "소요 시간:",
         "submitting": "저장 중..."
+      },
+      "cardMatch": {
+        "selectLecture": "회차를 선택하면 매칭게임을 시작할 수 있어요.",
+        "gameSizeTitle": "게임 크기 선택",
+        "gameSizeDescription": "원하는 쌍 수를 선택하면 게임이 시작됩니다.",
+        "finalRecord": "최종 기록",
+        "restart": "다시 시작",
+        "backToList": "목록으로",
+        "pairsFormat": "{pairs}쌍 ({cols}x{rows})"
       },
       "ranking": {
         "title": "랭킹",
+        "currentRankingDescription": "현재 랭킹 순위입니다",
         "myRank": "{rank}위",
         "empty": "아직 기록이 없습니다",
         "loadError": "랭킹을 불러올 수 없습니다",
@@ -176,6 +187,7 @@
         "anonymous": "익명",
         "rank": "순위",
         "player": "플레이어",
+        "nickname": "닉네임",
         "score": "점수",
         "time": "시간",
         "achievedAt": "달성일",
@@ -318,6 +330,8 @@
       "currentNickname": "닉네임: {nickname}",
       "nicknameChangePrompt": "새 닉네임을 입력하세요.",
       "nicknameChangeSave": "저장",
+      "rankButton": "랭크",
+      "rankingTitle": "{gameName} 랭킹",
       "desc": {
         "goalLabel": "목표",
         "controlsLabel": "조작 방법",
