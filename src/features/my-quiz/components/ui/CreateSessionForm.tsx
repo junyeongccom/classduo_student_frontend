@@ -1,6 +1,6 @@
 /**
  * @file CreateSessionForm.tsx
- * @description 퀴즈 세션 생성 설정 폼 (문항 수 + 유형 선택) — props 기반 UI
+ * @description 퀴즈 세션 생성 설정 폼 (문항 수 + 유형 선택) — props 기반 UI, 유형별 호버 툴팁
  * @module features/my-quiz
  * @dependencies next-intl, lucide-react
  */
@@ -9,13 +9,14 @@
 
 import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Info, Loader2 } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 
 const QUIZ_TYPES = [
   { value: 'DEF_TO_TERM', labelKey: 'typeDEF_TO_TERM' },
   { value: 'TERM_TO_DEF', labelKey: 'typeTERM_TO_DEF' },
   { value: 'MISCONCEPTION', labelKey: 'typeMISCONCEPTION' },
+  { value: 'STRUCTURE_OBJ', labelKey: 'typeSTRUCTURE_OBJ' },
 ] as const
 
 interface CreateSessionFormProps {
@@ -37,6 +38,7 @@ export default function CreateSessionForm({
   const [selectedTypes, setSelectedTypes] = useState<string[]>(
     QUIZ_TYPES.map(qt => qt.value),
   )
+  const [hoveredType, setHoveredType] = useState<string | null>(null)
 
   const toggleType = useCallback((type: string) => {
     setSelectedTypes(prev => {
@@ -100,34 +102,50 @@ export default function CreateSessionForm({
                 <div className="flex flex-col gap-2">
                   {QUIZ_TYPES.map(qt => {
                     const isSelected = selectedTypes.includes(qt.value)
+                    const isHovered = hoveredType === qt.value
                     return (
-                      <button
+                      <div
                         key={qt.value}
-                        type="button"
-                        onClick={() => toggleType(qt.value)}
-                        className={cn(
-                          'flex items-center rounded-lg border px-3 py-2 text-sm transition',
-                          isSelected
-                            ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium'
-                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
-                        )}
+                        className="relative"
+                        onMouseEnter={() => setHoveredType(qt.value)}
+                        onMouseLeave={() => setHoveredType(null)}
                       >
-                        <span
+                        <button
+                          type="button"
+                          onClick={() => toggleType(qt.value)}
                           className={cn(
-                            'mr-2 flex h-4 w-4 items-center justify-center rounded border',
+                            'flex w-full items-center rounded-lg border px-3 py-2 text-left text-sm transition',
                             isSelected
-                              ? 'border-indigo-500 bg-indigo-500 text-white'
-                              : 'border-gray-300',
+                              ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium'
+                              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
                           )}
                         >
-                          {isSelected && (
-                            <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
-                              <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
-                        </span>
-                        {t(qt.labelKey)}
-                      </button>
+                          <span
+                            className={cn(
+                              'mr-2 flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                              isSelected
+                                ? 'border-indigo-500 bg-indigo-500 text-white'
+                                : 'border-gray-300',
+                            )}
+                          >
+                            {isSelected && (
+                              <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </span>
+                          <span className="flex-1">{t(qt.labelKey)}</span>
+                          <Info className="h-4 w-4 shrink-0 text-gray-400" aria-hidden />
+                        </button>
+                        {isHovered && (
+                          <div
+                            role="tooltip"
+                            className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-gray-200 bg-gray-900 px-3 py-2 text-xs font-normal text-white shadow-lg"
+                          >
+                            {t(`typeDescription.${qt.value}`)}
+                          </div>
+                        )}
+                      </div>
                     )
                   })}
                 </div>

@@ -17,7 +17,7 @@ import SessionCard from '../ui/SessionCard'
 import CreateSessionForm from '../ui/CreateSessionForm'
 import SessionDetailView from './SessionDetailView'
 
-const ALLOWED_QUIZ_TYPES = ['DEF_TO_TERM', 'TERM_TO_DEF', 'MISCONCEPTION'] as const
+const ALLOWED_QUIZ_TYPES = ['DEF_TO_TERM', 'TERM_TO_DEF', 'MISCONCEPTION', 'STRUCTURE_OBJ'] as const
 
 interface QuizGenerationTabProps {
   selectedLectureId: string | null

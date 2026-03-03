@@ -82,6 +82,14 @@ export interface CreateSessionRequest {
   quiz_types: string[]
 }
 
+/** 퀴즈 생성 시 선택 가능한 유형 (백엔드 ALLOWED_TYPES와 동일 — STRUCTURE_OBJ 포함) */
+export const CUSTOMIZE_QUIZ_TYPES: StudentQuizType[] = [
+  'DEF_TO_TERM',
+  'TERM_TO_DEF',
+  'MISCONCEPTION',
+  'STRUCTURE_OBJ',
+]
+
 /** 유형별 그룹핑 순서 */
 export const TYPE_ORDER: StudentQuizType[] = [
   'DEF_TO_TERM',
