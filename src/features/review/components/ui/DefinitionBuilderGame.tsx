@@ -65,13 +65,13 @@ export function DefinitionBuilderGame({
   const [elapsedMs, setElapsedMs] = useState(0)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
 
-  // 제출 + 랭킹 상태
+  // 제출 + 랭킹 상태 (랭킹은 닉네임만 표시)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submissionRank, setSubmissionRank] = useState<number | null>(null)
   const [rankings, setRankings] = useState<ScoreRankingEntry[]>([])
+  const [myNickname, setMyNickname] = useState<string | null>(null)
   const [rankingsLoading, setRankingsLoading] = useState(false)
   const [rankingsError, setRankingsError] = useState<string | null>(null)
-  // currentUserId는 더 이상 사용하지 않음 (is_mine 플래그로 대체)
 
   const currentQuestion = questions[currentIndex] ?? null
   const blankIndices = useMemo(
@@ -147,7 +147,7 @@ export function DefinitionBuilderGame({
     }
   }, [completed, currentIndex, totalCount, currentScore, elapsedMs, lectureId, gameMode])
 
-  // 게임 완료 시 점수 제출 + 랭킹 조회 (normal 모드에서는 스킵)
+  // 게임 완료 시 점수 제출 + 랭킹·닉네임 조회 (normal 모드에서는 스킵)
   useEffect(() => {
     if (!gameCompleted || !lectureId || isSubmitting) return
     if (gameMode === 'normal') return
@@ -167,6 +167,16 @@ export function DefinitionBuilderGame({
         }
       } catch {
         // 제출 실패는 무시
+      }
+
+      try {
+        const { gameScoreService } = await import('@/features/ai-tutor/services/gameScoreService')
+        const { data: nickData } = await gameScoreService.getNickname()
+        if (!cancelled && nickData?.nickname) {
+          setMyNickname(nickData.nickname)
+        }
+      } catch {
+        // 닉네임 조회 실패는 무시
       }
 
       try {
@@ -281,7 +291,7 @@ export function DefinitionBuilderGame({
             {t('definitionBuilder.finalScoreLabel', { score: currentScore })}
           </div>
           <div className="text-sm font-semibold text-slate-500">
-            소요 시간: {formatTime(elapsedMs)}
+            {t('definitionBuilder.elapsedTimeLabel')} {formatTime(elapsedMs)}
           </div>
           <button
             type="button"
@@ -294,7 +304,7 @@ export function DefinitionBuilderGame({
             <GameRankingBoard
               rankings={rankings}
               myRank={submissionRank}
-              currentUserId={null}
+              myNickname={myNickname}
               isLoading={rankingsLoading}
               error={rankingsError}
               mode="score_time"

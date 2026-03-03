@@ -114,6 +114,8 @@ export interface ScoreRankingEntry {
   rank: number
   is_mine: boolean
   display_name: string | null
+  /** 게임 닉네임 (백엔드가 제공하면 우선 표시, 없으면 display_name 폴백) */
+  nickname?: string | null
   score: number
   elapsed_ms?: number | null
   achieved_at: string
@@ -123,6 +125,8 @@ export interface MatchingRankingEntry {
   rank: number
   is_mine: boolean
   display_name: string | null
+  /** 게임 닉네임 (백엔드가 제공하면 우선 표시, 없으면 display_name 폴백) */
+  nickname?: string | null
   elapsed_ms: number
   pair_count: number
   achieved_at: string

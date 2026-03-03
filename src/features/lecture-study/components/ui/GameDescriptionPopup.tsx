@@ -371,7 +371,7 @@ export function GameDescriptionPopup({
             className="absolute right-12 top-4 flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-500 opacity-70 transition-opacity hover:opacity-100"
           >
             <Trophy className="h-3.5 w-3.5" />
-            랭크
+            {t('lectureStudy.game.rankButton')}
           </button>
         )}
         <DialogHeader className="shrink-0 px-5 pt-5 pb-2 md:px-6 md:pt-5 md:pb-2">

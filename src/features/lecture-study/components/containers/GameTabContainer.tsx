@@ -313,7 +313,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         setRankingPreviewMyRank(data.my_best?.rank ?? null)
       }
     } catch {
-      setRankingPreviewError('랭킹을 불러올 수 없습니다')
+      setRankingPreviewError(t('review.ui.ranking.loadError'))
     } finally {
       setRankingPreviewLoading(false)
     }
@@ -366,7 +366,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         }
       }
     } catch {
-      setRankingPreviewError('랭킹을 불러올 수 없습니다')
+      setRankingPreviewError(t('review.ui.ranking.loadError'))
     } finally {
       setRankingPreviewLoading(false)
     }
@@ -739,16 +739,16 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">
-              {rankingPreviewGameName} 랭킹
+              {t('lectureStudy.game.rankingTitle', { gameName: rankingPreviewGameName })}
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-500">
-              현재 랭킹 순위입니다
+              {t('review.ui.ranking.currentRankingDescription')}
             </DialogDescription>
           </DialogHeader>
           <GameRankingBoard
             rankings={rankingPreviewData}
             myRank={rankingPreviewMyRank}
-            currentUserId={null}
+            myNickname={rankNickname}
             isLoading={rankingPreviewLoading}
             error={rankingPreviewError}
             mode={rankingPreviewMode}
