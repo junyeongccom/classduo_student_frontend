@@ -24,6 +24,9 @@ export interface RankingEntry {
   user_id: string
   display_name?: string | null
   score: number
+  correct_count?: number | null
+  wrong_count?: number | null
+  skipped_count?: number | null
   achieved_at: string
 }
 

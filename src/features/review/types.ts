@@ -118,6 +118,9 @@ export interface ScoreRankingEntry {
   nickname?: string | null
   score: number
   elapsed_ms?: number | null
+  correct_count?: number | null
+  wrong_count?: number | null
+  skipped_count?: number | null
   achieved_at: string
 }
 

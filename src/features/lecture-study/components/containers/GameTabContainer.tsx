@@ -239,8 +239,27 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
 
   /** 닉네임 확인 후 실제 랭크 게임 시작 (running / cardMatch / definitionBuilder) */
   const launchRankGame = useCallback(async (gameId: string) => {
+    // running: 키워드 가져와서 단어 모달 표시 → 사용자 확인 후 시작
     if (gameId === 'running') {
-      startRankGame('running')
+      setIsLoadingRankData(true)
+      try {
+        const result = await reviewService.getLectureKeywordsPreview(lectureId)
+        if (result.data?.keywords && result.data.keywords.length > 0) {
+          const isEn = locale === 'en'
+          const keywordWords: WordItem[] = result.data.keywords.map(kw => ({
+            id: crypto.randomUUID(),
+            keyword: (isEn && kw.keyword_eng) || kw.keyword,
+            description: (isEn && kw.description_eng) || kw.description,
+          }))
+          setWords(keywordWords)
+        }
+      } catch {
+        // fetch 실패해도 모달은 표시 (기존 words 사용)
+      } finally {
+        setIsLoadingRankData(false)
+      }
+      setGameMode('rank')
+      setShowWordModal(true)
       return
     }
 
@@ -264,7 +283,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     } finally {
       setIsLoadingRankData(false)
     }
-  }, [lectureId, locale, startRankGame])
+  }, [lectureId, locale, startRankGame, setWords])
 
   const handleRankPlayFromDescription = useCallback(async () => {
     setShowDescriptionPopup(false)
@@ -343,11 +362,14 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         setRankingPreviewMode('score')
         const { data } = await gameScoreService.getRankings(lectureId, 10)
         if (data) {
-          const mapped: ScoreRankingEntry[] = data.rankings.map((e: { rank: number; user_id: string; display_name?: string | null; score: number; achieved_at: string }) => ({
+          const mapped: ScoreRankingEntry[] = data.rankings.map((e: { rank: number; user_id: string; display_name?: string | null; score: number; correct_count?: number | null; wrong_count?: number | null; skipped_count?: number | null; achieved_at: string }) => ({
             rank: e.rank,
             is_mine: false,
             display_name: e.display_name || null,
             score: e.score,
+            correct_count: e.correct_count ?? null,
+            wrong_count: e.wrong_count ?? null,
+            skipped_count: e.skipped_count ?? null,
             achieved_at: e.achieved_at,
           }))
           setRankingPreviewData(mapped)
@@ -406,9 +428,9 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const handleStartGame = useCallback(() => {
     setShowWordModal(false)
 
-    // Running game (normal mode): open overlay with words
+    // Running game: open overlay (gameMode already set by the flow that opened this modal)
     if (selectedGame === 'running') {
-      setGameMode('normal')
+      if (!gameMode) setGameMode('normal')
       setShowRunningOverlay(true)
       return
     }
@@ -452,7 +474,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         lectureId={lectureId}
         courseId={courseId}
         gameMode={gameMode ?? undefined}
-        words={gameMode === 'normal' ? words.map(w => ({ keyword: w.keyword, description: w.description })) : undefined}
+        words={words.length > 0 ? words.map(w => ({ keyword: w.keyword, description: w.description })) : undefined}
         nickname={rankNickname ?? undefined}
       />
     )
