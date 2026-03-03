@@ -882,10 +882,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       if (!currentSessionId) {
         try {
           console.log('[후킹 질문] 세션 생성 시도:', { selectedLectureIds })
-          // 질문의 처음 50자를 title로 사용
-          const sessionTitle = hooking.question.length > 50 
-            ? hooking.question.substring(0, 50) + '...' 
-            : hooking.question
+          // summary_keywords를 title로 사용
+          const titleSource = summaryKeywords || hooking.question
+          const sessionTitle = titleSource.length > 50
+            ? titleSource.substring(0, 50) + '...'
+            : titleSource
           const sessionResult = await chatService.createSession(selectedLectureIds, sessionTitle)
           console.log('[후킹 질문] 세션 생성 결과:', sessionResult)
           if (sessionResult.error) {
@@ -1070,10 +1071,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     if (!currentSessionId) {
       try {
         console.log('[PQM 질문] 세션 생성 시도:', { selectedLectureIds })
-        // 질문의 처음 50자를 title로 사용
-        const sessionTitle = pqmQuestion.question.length > 50 
-          ? pqmQuestion.question.substring(0, 50) + '...' 
-          : pqmQuestion.question
+        // summary_keywords를 title로 사용
+        const titleSource = summaryKeywords || pqmQuestion.question
+        const sessionTitle = titleSource.length > 50
+          ? titleSource.substring(0, 50) + '...'
+          : titleSource
         const sessionResult = await chatService.createSession(selectedLectureIds, sessionTitle)
         console.log('[PQM 질문] 세션 생성 결과:', sessionResult)
         if (sessionResult.error) {

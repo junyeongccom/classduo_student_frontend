@@ -8,7 +8,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, CheckCircle2, ChevronUp } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
@@ -24,9 +24,16 @@ interface WrongAnswersTabProps {
 
 const PAGE_SIZE = 20
 
+/** locale이 'en'이고 _eng 필드가 있으면 영어, 아니면 한글 필드 반환 */
+function pickLocalizedText(ko: string | null | undefined, eng: string | null | undefined, locale: string): string | null {
+  if (locale === 'en' && eng != null && eng !== '') return eng
+  return ko ?? null
+}
+
 export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabProps) {
   const t = useTranslations('myQuiz')
   const tQuiz = useTranslations('lectureStudy.quiz')
+  const locale = useLocale()
   const { toasts, error: showErrorToast } = useToast()
 
   const [groups, setGroups] = useState<QuizGroup[]>([])
@@ -349,11 +356,15 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
               const studentQuiz: StudentQuizItem = {
                 quiz_id: quiz.quiz_id,
                 quiz_type: quiz.quiz_type,
-                question: quiz.question,
-                answer: quiz.answer,
-                explanation: quiz.explanation,
+                question: pickLocalizedText(quiz.question, quiz.question_eng, locale) ?? quiz.question,
+                answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
+                explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
                 difficulty: quiz.difficulty,
-                choices: quiz.choices,
+                choices: quiz.choices.map(c => ({
+                  ...c,
+                  choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
+                  choice_explanation: pickLocalizedText(c.choice_explanation, c.choice_explanation_eng, locale) ?? c.choice_explanation ?? null,
+                })),
               }
               return (
                 <div key={quiz.quiz_id}>

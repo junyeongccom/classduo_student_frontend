@@ -24,11 +24,17 @@ export interface QuizWithMeta {
     choice_text: string
     is_correct: boolean
     choice_explanation: string | null
+    choice_text_eng?: string | null
+    choice_explanation_eng?: string | null
   }[]
   bookmark: boolean
   correct: boolean | null
   selected_answer: number | null
   created_at?: string
+  /** 영어 번역 (한/영 토글용) */
+  question_eng?: string | null
+  answer_eng?: string | null
+  explanation_eng?: string | null
 }
 
 export interface QuizGroup {

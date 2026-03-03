@@ -38,6 +38,9 @@ export interface QuizChoice {
   choice_text: string
   is_correct: boolean
   choice_explanation: string | null
+  /** 영어 번역 (내 퀴즈 한/영 토글용) */
+  choice_text_eng?: string | null
+  choice_explanation_eng?: string | null
 }
 
 /** 퀴즈 아이템 */
@@ -51,6 +54,10 @@ export interface QuizItem {
   quiz_keyword: string | null
   difficulty?: string | null
   choices: QuizChoice[]
+  /** 영어 번역 (내 퀴즈 한/영 토글용) */
+  question_eng?: string | null
+  answer_eng?: string | null
+  explanation_eng?: string | null
 }
 
 /** 퀴즈 상태 (user_quiz_status) */

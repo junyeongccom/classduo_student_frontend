@@ -1,14 +1,12 @@
 'use client'
 
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useAITutorStore } from '../store/useAITutorStore'
-
-const AI_TUTOR_SESSION_KEY = 'ai-tutor-current-session-id'
 
 export function useAITutorSession() {
   const currentSessionId = useAITutorStore(state => state.currentSessionId)
   const selectedLectureIds = useAITutorStore(state => state.selectedLectureIds)
-  
+
   const setCurrentSessionId = useAITutorStore(state => state.setCurrentSessionId)
   const setIsSessionLocked = useAITutorStore(state => state.setIsSessionLocked)
   const incrementChatKey = useAITutorStore(state => state.incrementChatKey)
@@ -17,28 +15,6 @@ export function useAITutorSession() {
   const setActiveTab = useAITutorStore(state => state.setActiveTab)
   const setAutoSelectLatest = useAITutorStore(state => state.setAutoSelectLatest)
   const setSelectedLectureIds = useAITutorStore(state => state.setSelectedLectureIds)
-
-
-  // Initialize session ID from localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    const savedSessionId = localStorage.getItem(AI_TUTOR_SESSION_KEY) || undefined
-    if (savedSessionId) {
-      setCurrentSessionId(savedSessionId)
-    }
-  }, [setCurrentSessionId])
-
-  // Sync session ID to localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (currentSessionId) {
-        localStorage.setItem(AI_TUTOR_SESSION_KEY, currentSessionId)
-      } else {
-        localStorage.removeItem(AI_TUTOR_SESSION_KEY)
-      }
-    }
-  }, [currentSessionId])
 
   const handleSessionCreated = useCallback((sessionId: string | undefined) => {
     setCurrentSessionId(sessionId)
@@ -70,10 +46,6 @@ export function useAITutorSession() {
 
     const shouldAutoSelectLatest = selectedLectureIds.length === 0
     setAutoSelectLatest(shouldAutoSelectLatest)
-    
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(AI_TUTOR_SESSION_KEY)
-    }
   }, [setCurrentSessionId, setIsSessionLocked, incrementChatKey, setAllReferences, setMessages, setActiveTab, setAutoSelectLatest, selectedLectureIds])
 
   return {

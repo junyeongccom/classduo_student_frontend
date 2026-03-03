@@ -195,7 +195,8 @@ export async function fetchQuizContent(
   try {
     const supabase = getSupabaseClient()
 
-    const selectChoices = 'quiz_id, choice_id, choice_order, choice_text, is_correct, choice_explanation' as const
+    const selectChoices =
+      'quiz_id, choice_id, choice_order, choice_text, is_correct, choice_explanation, choice_text_eng, choice_explanation_eng' as const
 
     interface RawItem {
       quiz_id: string
@@ -204,15 +205,29 @@ export async function fetchQuizContent(
       answer: string | null
       explanation: string | null
       difficulty?: string | null
+      question_eng?: string | null
+      answer_eng?: string | null
+      explanation_eng?: string | null
+    }
+
+    type RawChoice = {
+      quiz_id: string
+      choice_id: string
+      choice_order: number
+      choice_text: string
+      is_correct: boolean
+      choice_explanation: string | null
+      choice_text_eng?: string | null
+      choice_explanation_eng?: string | null
     }
 
     let rawItems: RawItem[] = []
-    let rawChoices: Array<{ quiz_id: string; choice_id: string; choice_order: number; choice_text: string; is_correct: boolean; choice_explanation: string | null }> = []
+    let rawChoices: RawChoice[] = []
 
     if (quizSource === 'instructor') {
       const { data, error: err } = await supabase
         .from('instructor_quiz_items')
-        .select('quiz_id, quiz_type, question, answer, explanation, difficulty')
+        .select('quiz_id, quiz_type, question, answer, explanation, difficulty, question_eng, answer_eng, explanation_eng')
         .in('quiz_id', quizIds)
       if (err) {
         if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
@@ -228,18 +243,18 @@ export async function fetchQuizContent(
           .in('quiz_id', ids)
           .order('choice_order', { ascending: true })
         if (chErr) return { data: null, error: new Error(getErrorMessage(chErr)) }
-        rawChoices = (ch ?? []) as typeof rawChoices
+        rawChoices = (ch ?? []) as RawChoice[]
       }
     } else if (quizSource === 'content') {
       const { data, error: err } = await supabase
         .from('content_quiz_items')
-        .select('quiz_id, quiz_type, question, explanation, difficulty')
+        .select('quiz_id, quiz_type, question, explanation, difficulty, question_eng, explanation_eng')
         .in('quiz_id', quizIds)
       if (err) {
         if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
         return { data: null, error: new Error(getErrorMessage(err)) }
       }
-      rawItems = ((data ?? []) as Array<Omit<RawItem, 'answer'>>).map(d => ({ ...d, answer: null })) as RawItem[]
+      rawItems = ((data ?? []) as Array<Omit<RawItem, 'answer'> & { answer?: null }>).map(d => ({ ...d, answer: null })) as RawItem[]
 
       if (rawItems.length > 0) {
         const ids = rawItems.map(i => i.quiz_id)
@@ -249,12 +264,12 @@ export async function fetchQuizContent(
           .in('quiz_id', ids)
           .order('choice_order', { ascending: true })
         if (chErr) return { data: null, error: new Error(getErrorMessage(chErr)) }
-        rawChoices = (ch ?? []) as typeof rawChoices
+        rawChoices = (ch ?? []) as RawChoice[]
       }
     } else {
       const { data, error: err } = await supabase
         .from('user_customize_quiz_items')
-        .select('quiz_id, quiz_type, question, answer, explanation')
+        .select('quiz_id, quiz_type, question, answer, explanation, question_eng, answer_eng, explanation_eng')
         .in('quiz_id', quizIds)
       if (err) {
         if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
@@ -270,7 +285,7 @@ export async function fetchQuizContent(
           .in('quiz_id', ids)
           .order('choice_order', { ascending: true })
         if (chErr) return { data: null, error: new Error(getErrorMessage(chErr)) }
-        rawChoices = (ch ?? []) as typeof rawChoices
+        rawChoices = (ch ?? []) as RawChoice[]
       }
     }
 
@@ -284,7 +299,9 @@ export async function fetchQuizContent(
         choice_order: c.choice_order,
         choice_text: c.choice_text,
         is_correct: c.is_correct,
-        choice_explanation: c.choice_explanation,
+        choice_explanation: c.choice_explanation ?? null,
+        choice_text_eng: c.choice_text_eng ?? null,
+        choice_explanation_eng: c.choice_explanation_eng ?? null,
       })
       choiceMap.set(c.quiz_id, arr)
     }
@@ -298,6 +315,9 @@ export async function fetchQuizContent(
       quiz_keyword: null,
       difficulty: item.difficulty ?? null,
       choices: choiceMap.get(item.quiz_id) ?? [],
+      question_eng: item.question_eng ?? null,
+      answer_eng: item.answer_eng ?? null,
+      explanation_eng: item.explanation_eng ?? null,
     }))
 
     return { data: quizItems, error: null }
