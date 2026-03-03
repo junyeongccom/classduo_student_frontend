@@ -90,15 +90,18 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     }
   }, [setCollapsed])
 
-  // URL 파라미터로 초기 선택 설정
+  // 대화형 학습 진입 시 새 채팅으로 초기화 + URL 파라미터로 선택 설정
   const initializedRef = useRef(false)
   useEffect(() => {
     if (initializedRef.current) return
     initializedRef.current = true
+    // 이전 세션 초기화 (항상 새 채팅으로 시작)
+    handleNewChat()
+    // URL 파라미터로 선택 설정 (handleNewChat 이후 덮어씀)
     setSelectedCourseId(courseId)
     setSelectedLectureIds([lectureId])
     setAutoSelectLatest(false)
-  }, [courseId, lectureId, setSelectedCourseId, setSelectedLectureIds, setAutoSelectLatest])
+  }, [courseId, lectureId, setSelectedCourseId, setSelectedLectureIds, setAutoSelectLatest, handleNewChat])
 
   const handleLectureIdsLoaded = useCallback(
     (ids: string[]) => {
