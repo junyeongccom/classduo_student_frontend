@@ -151,7 +151,7 @@ export async function getCourseRewardCounts(): Promise<{
     // lecture_id로 조회 후 lectures JOIN으로 course_id 도출
     const { data, error } = await supabase
       .from('student_quiz_rewards')
-      .select('lecture_id, lectures!inner(course_id)')
+      .select('lecture_id, lectures!sqr_lecture_id_fkey(course_id)')
 
     if (error) {
       console.error('[progressService] 보상 개수 조회 실패:', {
@@ -177,7 +177,7 @@ export async function getCourseRewardCounts(): Promise<{
         const retrySupabase = getSupabaseClient()
         const retryResult = await retrySupabase
           .from('student_quiz_rewards')
-          .select('lecture_id, lectures!inner(course_id)')
+          .select('lecture_id, lectures!sqr_lecture_id_fkey(course_id)')
 
         if (retryResult.error) {
           console.error('[progressService] 재시도 실패:', retryResult.error)
@@ -218,7 +218,7 @@ export async function getCourseRewardCounts(): Promise<{
         const retrySupabase = getSupabaseClient()
         const retryResult = await retrySupabase
           .from('student_quiz_rewards')
-          .select('lecture_id, lectures!inner(course_id)')
+          .select('lecture_id, lectures!sqr_lecture_id_fkey(course_id)')
 
         if (retryResult.error) {
           console.error('[progressService] 재시도 실패:', retryResult.error)
