@@ -9,7 +9,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
@@ -118,6 +118,7 @@ interface GameTabContainerProps {
 
 export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const t = useTranslations()
+  const locale = useLocale()
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [showDescriptionPopup, setShowDescriptionPopup] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
@@ -248,11 +249,12 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     try {
       const result = await reviewService.getLectureKeywordsPreview(lectureId)
       if (result.data?.keywords && result.data.keywords.length > 0) {
+        const isEn = locale === 'en'
         const items: LectureReviewItem[] = result.data.keywords.map(kw => ({
           id: crypto.randomUUID(),
           lecture_id: lectureId,
-          keyword: kw.keyword,
-          description: kw.description,
+          keyword: (isEn && kw.keyword_eng) || kw.keyword,
+          description: (isEn && kw.description_eng) || kw.description,
         }))
         setRankReviewItems(items)
         startRankGame(gameId, items)
@@ -262,7 +264,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     } finally {
       setIsLoadingRankData(false)
     }
-  }, [lectureId, startRankGame])
+  }, [lectureId, locale, startRankGame])
 
   const handleRankPlayFromDescription = useCallback(async () => {
     setShowDescriptionPopup(false)
@@ -339,17 +341,17 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     try {
       if (selectedGame === 'running') {
         setRankingPreviewMode('score')
-        const { data } = await gameScoreService.getLeaderboard(lectureId)
+        const { data } = await gameScoreService.getRankings(lectureId, 10)
         if (data) {
-          const mapped: ScoreRankingEntry[] = data.entries.map(e => ({
+          const mapped: ScoreRankingEntry[] = data.rankings.map((e: { rank: number; user_id: string; display_name?: string | null; score: number; achieved_at: string }) => ({
             rank: e.rank,
-            is_mine: e.is_current_user,
-            display_name: e.nickname || null,
+            is_mine: false,
+            display_name: e.display_name || null,
             score: e.score,
-            achieved_at: '',
+            achieved_at: e.achieved_at,
           }))
           setRankingPreviewData(mapped)
-          setRankingPreviewMyRank(data.user_best?.rank ?? null)
+          setRankingPreviewMyRank(data.my_best?.rank ?? null)
         }
       } else if (selectedGame === 'cardMatch') {
         setRankingPreviewMode('time')
