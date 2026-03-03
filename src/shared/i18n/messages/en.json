@@ -994,7 +994,14 @@
       "noSnapshot": "Learning data is not ready for this lecture. Unable to generate quizzes",
       "typeDEF_TO_TERM": "Definition→Term",
       "typeTERM_TO_DEF": "Term→Definition",
-      "typeMISCONCEPTION": "Misconception Detection"
+      "typeMISCONCEPTION": "Misconception Detection",
+      "typeSTRUCTURE_OBJ": "Structure Understanding",
+      "typeDescription": {
+        "DEF_TO_TERM": "Choose the term that matches the given definition or description (5 multiple choice). e.g. \"Select the term that best fits the following description.\"",
+        "TERM_TO_DEF": "Choose the correct definition or description for the given term (5 multiple choice). e.g. \"Select the description that best matches the following term.\"",
+        "MISCONCEPTION": "Choose the one incorrect statement among five options. Designed to reveal common misconceptions or wrong interpretations.",
+        "STRUCTURE_OBJ": "Multiple-choice questions about relationships between concepts (why, how, or what is the relationship). Tests comprehension of structure, not just recall."
+      }
     },
     "quizSource": {
       "instructor": "Instructor Quiz",
