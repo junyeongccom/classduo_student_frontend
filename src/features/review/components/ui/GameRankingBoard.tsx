@@ -61,6 +61,9 @@ export function GameRankingBoard({
 }: GameRankingBoardProps) {
   const t = useTranslations('review.ui.ranking')
 
+  // 퀴즈 통계가 있는지 확인 (달리기 게임 등)
+  const hasQuizStats = rankings.length > 0 && 'correct_count' in rankings[0] && (rankings[0] as ScoreRankingEntry).correct_count != null
+
   return (
     <div className="mt-4 w-full max-w-md">
       <div className="flex items-center justify-between">
@@ -114,6 +117,9 @@ export function GameRankingBoard({
                 {mode === 'score_time' && (
                   <th className="px-3 py-2 text-right font-semibold">{t('time')}</th>
                 )}
+                {hasQuizStats && (
+                  <th className="px-3 py-2 text-right font-semibold">{t('quiz')}</th>
+                )}
                 <th className="px-3 py-2 text-right font-semibold">{t('achievedAt')}</th>
               </tr>
             </thead>
@@ -145,6 +151,13 @@ export function GameRankingBoard({
                     {mode === 'score_time' && (
                       <td className="px-3 py-2 text-right text-slate-400">
                         {scoreEntry.elapsed_ms != null ? formatTime(scoreEntry.elapsed_ms) : '-'}
+                      </td>
+                    )}
+                    {hasQuizStats && (
+                      <td className="px-3 py-2 text-right text-slate-500">
+                        {scoreEntry.correct_count != null
+                          ? `${scoreEntry.correct_count}/${(scoreEntry.correct_count ?? 0) + (scoreEntry.wrong_count ?? 0) + (scoreEntry.skipped_count ?? 0)}`
+                          : '-'}
                       </td>
                     )}
                     <td className="px-3 py-2 text-right text-slate-400">

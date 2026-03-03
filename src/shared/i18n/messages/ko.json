@@ -191,6 +191,7 @@
         "score": "점수",
         "time": "시간",
         "achievedAt": "달성일",
+        "quiz": "퀴즈",
         "pairs": "{count}쌍"
       },
       "guessTheTerm": {

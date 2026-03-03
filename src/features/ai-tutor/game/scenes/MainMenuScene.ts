@@ -12,25 +12,16 @@ import {
 interface MenuStrings {
   title: string;
   startGame: string;
-  leaderboard: string;
-  settings: string;
-  locked: string;
 }
 
 const STRINGS: Record<"ko" | "en", MenuStrings> = {
   ko: {
     title: "Quiz Runner",
     startGame: "게임 시작",
-    leaderboard: "리더보드",
-    settings: "닉네임 변경",
-    locked: "준비 중",
   },
   en: {
     title: "Quiz Runner",
     startGame: "Start Game",
-    leaderboard: "Leaderboard",
-    settings: "Nickname",
-    locked: "Coming Soon",
   },
 };
 
@@ -141,41 +132,14 @@ export class MainMenuScene extends Phaser.Scene {
   // ── Menu buttons ──
 
   private createMenuButtons(): void {
-    const menuItems: {
-      label: string;
-      enabled: boolean;
-      action?: () => void;
-    }[] = [
-      {
-        label: this.t.startGame,
-        enabled: true,
-        action: () => this.scene.start("GameScene"),
-      },
-      {
-        label: this.t.leaderboard,
-        enabled: true,
-        action: () => this.scene.start("LeaderboardScene"),
-      },
-      {
-        label: this.t.settings,
-        enabled: true,
-        action: () => this.scene.start("SettingsScene"),
-      },
-    ];
-
     const btnW = 260 * S;
     const btnH = 44 * S;
-    const gap = 12 * S;
-    const totalH = menuItems.length * btnH + (menuItems.length - 1) * gap;
-    const startY = GAME_HEIGHT * 0.38 + (GAME_HEIGHT * 0.62 - totalH) / 2;
     const centerX = GAME_WIDTH / 2;
+    const btnY = GAME_HEIGHT * 0.55;
 
-    menuItems.forEach((item, i) => {
-      const y = startY + i * (btnH + gap);
-      const variant: "primary" | "secondary" | "disabled" =
-        !item.enabled ? "disabled" : i === 0 ? "primary" : "secondary";
-      this.createButton(centerX, y, btnW, btnH, item.label, item.enabled, variant, item.action);
-    });
+    this.createButton(centerX, btnY, btnW, btnH, this.t.startGame, true, "primary", () =>
+      this.scene.start("GameScene"),
+    );
   }
 
   private createButton(
@@ -184,79 +148,34 @@ export class MainMenuScene extends Phaser.Scene {
     w: number,
     h: number,
     label: string,
-    enabled: boolean,
-    variant: "primary" | "secondary" | "disabled",
+    _enabled: boolean,
+    _variant: "primary",
     action?: () => void
   ): Phaser.GameObjects.Container {
     const radius = 12 * S;
 
     const bg = this.add.graphics();
+    bg.fillStyle(0x6366f1, 1);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
+
     const hoverBg = this.add.graphics();
+    hoverBg.fillStyle(0x818cf8, 1);
+    hoverBg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
     hoverBg.setAlpha(0);
 
-    if (variant === "primary") {
-      // Solid indigo background
-      bg.fillStyle(0x6366f1, 1);
-      bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
-      // Hover: brighter indigo + glow
-      hoverBg.fillStyle(0x818cf8, 1);
-      hoverBg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
-    } else if (variant === "secondary") {
-      // Dark background + indigo border
-      bg.fillStyle(0x1a1a2e, 0.8);
-      bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
-      bg.lineStyle(2 * S, 0x6366f1, 0.5);
-      bg.strokeRoundedRect(-w / 2, -h / 2, w, h, radius);
-      // Hover: brighter border
-      hoverBg.fillStyle(0x1a1a2e, 0.9);
-      hoverBg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
-      hoverBg.lineStyle(2 * S, 0x818cf8, 1);
-      hoverBg.strokeRoundedRect(-w / 2, -h / 2, w, h, radius);
-    } else {
-      // Disabled — dark + grey border
-      bg.fillStyle(0x000000, 0.3);
-      bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
-      bg.lineStyle(2 * S, 0xffffff, 0.15);
-      bg.strokeRoundedRect(-w / 2, -h / 2, w, h, radius);
-    }
-
-    // Label text
-    const fontSize = Math.round(20 * S);
     const text = this.add
       .text(0, 0, label, {
         fontFamily: FONT_FAMILY,
-        fontSize: `${fontSize}px`,
-        color: enabled ? "#ffffff" : "#888888",
+        fontSize: `${Math.round(20 * S)}px`,
+        color: "#ffffff",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
-    const children: Phaser.GameObjects.GameObject[] = [bg, hoverBg, text];
-
-    // Lock icon for disabled buttons
-    if (!enabled) {
-      const lockText = this.add
-        .text(-w / 2 + 18 * S, 0, "🔒", {
-          fontSize: `${Math.round(16 * S)}px`,
-        })
-        .setOrigin(0.5);
-      children.push(lockText);
-
-      // "Coming soon" subtitle
-      const subText = this.add
-        .text(0, h / 2 + 8 * S, this.t.locked, {
-          fontFamily: FONT_FAMILY,
-          fontSize: `${Math.round(11 * S)}px`,
-          color: "#666666",
-        })
-        .setOrigin(0.5);
-      children.push(subText);
-    }
-
-    const container = this.add.container(x, y, children);
+    const container = this.add.container(x, y, [bg, hoverBg, text]);
     container.setSize(w, h);
 
-    if (enabled && action) {
+    if (action) {
       container.setInteractive({ useHandCursor: true });
 
       container.on("pointerover", () => {

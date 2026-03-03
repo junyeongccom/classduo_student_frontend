@@ -62,8 +62,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
       keywordsRef.current = []
       return
     }
-    // Normal mode: use custom words passed from parent
-    if (gameMode === 'normal' && words && words.length > 0) {
+    // Use custom words passed from parent (both normal and rank mode)
+    if (words && words.length > 0) {
       keywordsRef.current = words
       return
     }
