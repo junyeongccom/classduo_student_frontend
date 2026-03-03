@@ -12,6 +12,8 @@ import type { ScoreRankingEntry, MatchingRankingEntry } from '@/features/review/
 interface GameRankingBoardProps {
   rankings: (ScoreRankingEntry | MatchingRankingEntry)[]
   myRank: number | null
+  /** 현재 사용자 게임 닉네임 (내 행에 표시, 랭킹은 실명 대신 닉네임만 사용) */
+  myNickname?: string | null
   /** @deprecated is_mine 플래그로 대체. 하위호환을 위해 유지 */
   currentUserId?: string | null
   isLoading: boolean
@@ -37,9 +39,18 @@ const formatTime = (ms: number) => {
   return `${minutes}:${seconds.toString().padStart(2, '0')}.${centis.toString().padStart(2, '0')}`
 }
 
+/** 랭킹은 닉네임만 표시. 내 행은 myNickname 폴백, 모든 유저 display_name 폴백. */
+function displayName(entry: ScoreRankingEntry | MatchingRankingEntry, isMe: boolean, myNickname: string | null | undefined): string {
+  if (isMe) {
+    return entry.nickname ?? myNickname ?? entry.display_name ?? ''
+  }
+  return entry.nickname ?? entry.display_name ?? ''
+}
+
 export function GameRankingBoard({
   rankings,
   myRank,
+  myNickname,
   currentUserId,
   isLoading,
   error,
@@ -94,7 +105,7 @@ export function GameRankingBoard({
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50 text-slate-500">
                 <th className="px-3 py-2 text-left font-semibold">{t('rank')}</th>
-                <th className="px-3 py-2 text-left font-semibold">{t('player')}</th>
+                <th className="px-3 py-2 text-left font-semibold">{t('nickname')}</th>
                 {mode === 'time' ? (
                   <th className="px-3 py-2 text-right font-semibold">{t('time')}</th>
                 ) : (
@@ -117,7 +128,7 @@ export function GameRankingBoard({
                   >
                     <td className="px-3 py-2 text-slate-700">{entry.rank}</td>
                     <td className="max-w-[120px] truncate px-3 py-2 text-slate-700">
-                      {entry.display_name || t('anonymous')}
+                      {displayName(entry, isMe, myNickname ?? null) || t('anonymous')}
                       {isMe && (
                         <span className="ml-1 text-[10px] text-indigo-500">●</span>
                       )}

@@ -9,7 +9,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
@@ -118,6 +118,7 @@ interface GameTabContainerProps {
 
 export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const t = useTranslations()
+  const locale = useLocale()
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [showDescriptionPopup, setShowDescriptionPopup] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
@@ -248,11 +249,12 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     try {
       const result = await reviewService.getLectureKeywordsPreview(lectureId)
       if (result.data?.keywords && result.data.keywords.length > 0) {
+        const isEn = locale === 'en'
         const items: LectureReviewItem[] = result.data.keywords.map(kw => ({
           id: crypto.randomUUID(),
           lecture_id: lectureId,
-          keyword: kw.keyword,
-          description: kw.description,
+          keyword: (isEn && kw.keyword_eng) || kw.keyword,
+          description: (isEn && kw.description_eng) || kw.description,
         }))
         setRankReviewItems(items)
         startRankGame(gameId, items)
@@ -262,7 +264,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     } finally {
       setIsLoadingRankData(false)
     }
-  }, [lectureId, startRankGame])
+  }, [lectureId, locale, startRankGame])
 
   const handleRankPlayFromDescription = useCallback(async () => {
     setShowDescriptionPopup(false)
@@ -313,7 +315,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         setRankingPreviewMyRank(data.my_best?.rank ?? null)
       }
     } catch {
-      setRankingPreviewError('랭킹을 불러올 수 없습니다')
+      setRankingPreviewError(t('review.ui.ranking.loadError'))
     } finally {
       setRankingPreviewLoading(false)
     }
@@ -366,7 +368,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         }
       }
     } catch {
-      setRankingPreviewError('랭킹을 불러올 수 없습니다')
+      setRankingPreviewError(t('review.ui.ranking.loadError'))
     } finally {
       setRankingPreviewLoading(false)
     }
@@ -739,16 +741,16 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">
-              {rankingPreviewGameName} 랭킹
+              {t('lectureStudy.game.rankingTitle', { gameName: rankingPreviewGameName })}
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-500">
-              현재 랭킹 순위입니다
+              {t('review.ui.ranking.currentRankingDescription')}
             </DialogDescription>
           </DialogHeader>
           <GameRankingBoard
             rankings={rankingPreviewData}
             myRank={rankingPreviewMyRank}
-            currentUserId={null}
+            myNickname={rankNickname}
             isLoading={rankingPreviewLoading}
             error={rankingPreviewError}
             mode={rankingPreviewMode}
