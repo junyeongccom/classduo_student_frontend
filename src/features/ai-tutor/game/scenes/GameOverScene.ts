@@ -8,8 +8,7 @@ interface GameOverStrings {
   gameOver: string;
   restart: string;
   mainMenu: string;
-  newBest: string;
-  notNewBest: string;
+  rankResult: string;
   submitting: string;
   submitFailed: string;
 }
@@ -19,18 +18,16 @@ const STRINGS: Record<"ko" | "en", GameOverStrings> = {
     gameOver: "GAME OVER",
     restart: "다시 시작",
     mainMenu: "메인 메뉴",
-    newBest: "개인 최고 기록 경신!",
-    notNewBest: "개인 최고 기록 미갱신",
-    submitting: "점수 확인 중...",
+    rankResult: "현재 순위: {rank}위",
+    submitting: "점수 등록 중...",
     submitFailed: "점수 등록 실패",
   },
   en: {
     gameOver: "GAME OVER",
     restart: "Restart",
     mainMenu: "Main Menu",
-    newBest: "New Personal Best!",
-    notNewBest: "Not a personal best",
-    submitting: "Checking score...",
+    rankResult: "Current Rank: #{rank}",
+    submitting: "Submitting score...",
     submitFailed: "Submit Failed",
   },
 };
@@ -250,43 +247,18 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     try {
-      const { computeScoreHmac, generateNonce } = await import("../utils/scoreHash");
       const { gameScoreService } = await import("../../services/gameScoreService");
 
-      const nonce = generateNonce();
-      const timestamp = Date.now();
-
-      const hmacHash = await computeScoreHmac({
-        lectureId: this.lectureId,
-        score: this.score,
-        correctCount: this.correct,
-        wrongCount: this.wrong,
-        skippedCount: this.skipped,
-        elapsedMs: this.elapsedMs,
-        nonce,
-        timestamp,
-      });
-
-      const { data, error } = await gameScoreService.submitScore({
-        lecture_id: this.lectureId,
+      const { data } = await gameScoreService.submitScore(this.lectureId, {
         score: this.score,
         correct_count: this.correct,
         wrong_count: this.wrong,
         skipped_count: this.skipped,
-        elapsed_ms: this.elapsedMs,
-        hmac_hash: hmacHash,
-        nonce,
-        timestamp,
       });
 
-      if (data?.success) {
-        if (data.is_new_best) {
-          statusText.setText(this.t.newBest);
-          statusText.setColor("#f1c40f");
-        } else {
-          statusText.setText(this.t.notNewBest);
-          statusText.setColor("#95a5a6");
-        }
+      if (data?.rank) {
+        statusText.setText(this.t.rankResult.replace("{rank}", String(data.rank)));
+        statusText.setColor("#f1c40f");
       } else {
         statusText.setText(this.t.submitFailed);
         statusText.setColor("#e74c3c");

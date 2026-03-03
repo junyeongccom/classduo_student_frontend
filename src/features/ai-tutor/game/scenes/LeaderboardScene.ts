@@ -6,9 +6,8 @@ import { S, GAME_WIDTH, GAME_HEIGHT, FONT_FAMILY } from "../constants";
 interface LeaderboardStrings {
   title: string;
   rank: string;
-  nickname: string;
+  name: string;
   score: string;
-  quiz: string;
   empty: string;
   back: string;
   yourBest: string;
@@ -19,9 +18,8 @@ const STRINGS: Record<"ko" | "en", LeaderboardStrings> = {
   ko: {
     title: "리더보드",
     rank: "순위",
-    nickname: "닉네임",
+    name: "이름",
     score: "점수",
-    quiz: "퀴즈",
     empty: "아직 기록이 없습니다",
     back: "뒤로가기",
     yourBest: "내 최고 기록",
@@ -30,9 +28,8 @@ const STRINGS: Record<"ko" | "en", LeaderboardStrings> = {
   en: {
     title: "Leaderboard",
     rank: "Rank",
-    nickname: "Nickname",
+    name: "Name",
     score: "Score",
-    quiz: "Quiz",
     empty: "No records yet",
     back: "Back",
     yourBest: "Your Best",
@@ -56,7 +53,7 @@ export class LeaderboardScene extends Phaser.Scene {
     this.createBackground();
     this.createTitle();
     this.createBackButton();
-    this.loadLeaderboardData();
+    this.loadRankingData();
   }
 
   // ── Background ──
@@ -150,7 +147,7 @@ export class LeaderboardScene extends Phaser.Scene {
 
   // ── Data loading ──
 
-  private async loadLeaderboardData(): Promise<void> {
+  private async loadRankingData(): Promise<void> {
     const lectureId = this.game.registry.get("lectureId") as string;
     if (!lectureId) {
       this.showEmptyState();
@@ -168,51 +165,44 @@ export class LeaderboardScene extends Phaser.Scene {
 
     try {
       const { gameScoreService } = await import("../../services/gameScoreService");
-      const { data } = await gameScoreService.getLeaderboard(lectureId);
+      const { data } = await gameScoreService.getRankings(lectureId);
 
       loadingText.destroy();
 
-      if (!data || data.entries.length === 0) {
+      if (!data || data.rankings.length === 0) {
         this.showEmptyState();
         return;
       }
 
-      this.renderLeaderboard(data.entries, data.user_best);
+      this.renderRankings(data.rankings, data.my_best);
     } catch {
       loadingText.destroy();
       this.showEmptyState();
     }
   }
 
-  // ── Render leaderboard ──
+  // ── Render rankings ──
 
-  private renderLeaderboard(
-    entries: Array<{
+  private renderRankings(
+    rankings: Array<{
       rank: number;
-      nickname?: string;
+      user_id: string;
+      display_name?: string | null;
       score: number;
-      correct_count: number;
-      wrong_count: number;
-      skipped_count: number;
-      is_current_user: boolean;
+      achieved_at: string;
     }>,
-    userBest: {
+    myBest: {
       rank: number;
-      nickname?: string;
       score: number;
-      correct_count: number;
-      wrong_count: number;
-      skipped_count: number;
-      is_current_user: boolean;
+      achieved_at: string;
     } | null,
   ): void {
     const headerY = 100 * S;
     const rowH = 30 * S;
     const colX = {
       rank: GAME_WIDTH * 0.15,
-      nickname: GAME_WIDTH * 0.35,
-      score: GAME_WIDTH * 0.6,
-      quiz: GAME_WIDTH * 0.8,
+      name: GAME_WIDTH * 0.5,
+      score: GAME_WIDTH * 0.8,
     };
     const fontSize = `${14 * S}px`;
     const headerFontSize = `${13 * S}px`;
@@ -220,9 +210,8 @@ export class LeaderboardScene extends Phaser.Scene {
     // Header
     const headerColor = "#888888";
     this.add.text(colX.rank, headerY, this.t.rank, { fontFamily: FONT_FAMILY, fontSize: headerFontSize, color: headerColor, fontStyle: "bold" }).setOrigin(0.5);
-    this.add.text(colX.nickname, headerY, this.t.nickname, { fontFamily: FONT_FAMILY, fontSize: headerFontSize, color: headerColor, fontStyle: "bold" }).setOrigin(0.5);
+    this.add.text(colX.name, headerY, this.t.name, { fontFamily: FONT_FAMILY, fontSize: headerFontSize, color: headerColor, fontStyle: "bold" }).setOrigin(0.5);
     this.add.text(colX.score, headerY, this.t.score, { fontFamily: FONT_FAMILY, fontSize: headerFontSize, color: headerColor, fontStyle: "bold" }).setOrigin(0.5);
-    this.add.text(colX.quiz, headerY, this.t.quiz, { fontFamily: FONT_FAMILY, fontSize: headerFontSize, color: headerColor, fontStyle: "bold" }).setOrigin(0.5);
 
     // Separator
     const sepGfx = this.add.graphics();
@@ -230,13 +219,13 @@ export class LeaderboardScene extends Phaser.Scene {
     sepGfx.lineBetween(GAME_WIDTH * 0.08, headerY + 16 * S, GAME_WIDTH * 0.92, headerY + 16 * S);
 
     // Rows (max ~12 visible)
-    const maxVisible = Math.min(entries.length, 12);
+    const maxVisible = Math.min(rankings.length, 12);
     for (let i = 0; i < maxVisible; i++) {
-      const entry = entries[i];
+      const entry = rankings[i];
       const y = headerY + 36 * S + i * rowH;
-      const isMe = entry.is_current_user;
+      // myBest가 있고 같은 순위이면 현재 사용자 행 하이라이트
+      const isMe = myBest !== null && entry.rank === myBest.rank && entry.score === myBest.score;
 
-      // Highlight current user row
       if (isMe) {
         const rowBg = this.add.graphics();
         rowBg.fillStyle(0x6366f1, 0.15);
@@ -247,13 +236,12 @@ export class LeaderboardScene extends Phaser.Scene {
       const rankColor = i < 3 ? ["#FFD700", "#C0C0C0", "#CD7F32"][i] : textColor;
 
       this.add.text(colX.rank, y, `${entry.rank}`, { fontFamily: FONT_FAMILY, fontSize, color: rankColor, fontStyle: "bold" }).setOrigin(0.5);
-      this.add.text(colX.nickname, y, entry.nickname || "???", { fontFamily: FONT_FAMILY, fontSize, color: textColor }).setOrigin(0.5);
+      this.add.text(colX.name, y, entry.display_name || "???", { fontFamily: FONT_FAMILY, fontSize, color: textColor }).setOrigin(0.5);
       this.add.text(colX.score, y, `${entry.score}`, { fontFamily: FONT_FAMILY, fontSize, color: textColor, fontStyle: "bold" }).setOrigin(0.5);
-      this.add.text(colX.quiz, y, `${entry.correct_count}/${entry.correct_count + entry.wrong_count + entry.skipped_count}`, { fontFamily: FONT_FAMILY, fontSize, color: textColor }).setOrigin(0.5);
     }
 
-    // If user is outside top visible entries, show their best below
-    if (userBest && userBest.rank > maxVisible) {
+    // If user's best is outside top visible entries, show below
+    if (myBest && myBest.rank > maxVisible) {
       const extraY = headerY + 36 * S + maxVisible * rowH + 20 * S;
 
       const sepGfx2 = this.add.graphics();
@@ -261,9 +249,8 @@ export class LeaderboardScene extends Phaser.Scene {
       sepGfx2.lineBetween(GAME_WIDTH * 0.2, extraY - 10 * S, GAME_WIDTH * 0.8, extraY - 10 * S);
 
       this.add.text(GAME_WIDTH * 0.12, extraY, this.t.yourBest, { fontFamily: FONT_FAMILY, fontSize: `${12 * S}px`, color: "#818CF8" }).setOrigin(0, 0.5);
-      this.add.text(colX.rank, extraY, `${userBest.rank}`, { fontFamily: FONT_FAMILY, fontSize, color: "#818CF8", fontStyle: "bold" }).setOrigin(0.5);
-      this.add.text(colX.nickname, extraY, userBest.nickname || "???", { fontFamily: FONT_FAMILY, fontSize, color: "#818CF8" }).setOrigin(0.5);
-      this.add.text(colX.score, extraY, `${userBest.score}`, { fontFamily: FONT_FAMILY, fontSize, color: "#818CF8", fontStyle: "bold" }).setOrigin(0.5);
+      this.add.text(colX.rank, extraY, `${myBest.rank}`, { fontFamily: FONT_FAMILY, fontSize, color: "#818CF8", fontStyle: "bold" }).setOrigin(0.5);
+      this.add.text(colX.score, extraY, `${myBest.score}`, { fontFamily: FONT_FAMILY, fontSize, color: "#818CF8", fontStyle: "bold" }).setOrigin(0.5);
     }
   }
 

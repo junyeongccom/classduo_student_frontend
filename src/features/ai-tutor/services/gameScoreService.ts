@@ -1,42 +1,41 @@
 /**
- * Game Score Service
- * 게임 점수 제출, 리더보드, 닉네임 API 호출
+ * @file gameScoreService.ts
+ * @description 달리기 게임 점수 제출 및 랭킹 조회 서비스
+ * @module features/ai-tutor/services
+ * @dependencies shared/lib/api, shared/constants/api
  */
 import { apiRequest } from '@/shared/lib/api'
+import { API_ENDPOINTS } from '@/shared/constants/api'
 
 interface ScoreSubmitPayload {
-  lecture_id: string
   score: number
   correct_count: number
   wrong_count: number
   skipped_count: number
-  elapsed_ms: number
-  hmac_hash: string
-  nonce: string
-  timestamp: number
 }
 
 interface ScoreSubmitResponse {
-  success: boolean
-  score_id?: string
-  is_new_best: boolean
-}
-
-export interface LeaderboardEntry {
+  id: string
   rank: number
-  nickname?: string
-  score: number
-  correct_count: number
-  wrong_count: number
-  skipped_count: number
-  is_current_user: boolean
 }
 
-interface LeaderboardResponse {
-  lecture_id: string
-  entries: LeaderboardEntry[]
-  user_best: LeaderboardEntry | null
-  total_players: number
+export interface RankingEntry {
+  rank: number
+  user_id: string
+  display_name?: string | null
+  score: number
+  achieved_at: string
+}
+
+interface MyBestRecord {
+  rank: number
+  score: number
+  achieved_at: string
+}
+
+interface RankingResponse {
+  rankings: RankingEntry[]
+  my_best: MyBestRecord | null
 }
 
 interface NicknameResponse {
@@ -44,18 +43,24 @@ interface NicknameResponse {
 }
 
 export const gameScoreService = {
-  async submitScore(payload: ScoreSubmitPayload) {
-    return apiRequest<ScoreSubmitResponse>('/api/game/scores', {
-      method: 'POST',
-      body: payload,
-      auth: true,
-    })
+  async submitScore(lectureId: string, payload: ScoreSubmitPayload) {
+    return apiRequest<ScoreSubmitResponse>(
+      API_ENDPOINTS.GAME.SUBMIT_RUNNING(lectureId),
+      {
+        method: 'POST',
+        body: payload,
+        auth: true,
+      },
+    )
   },
 
-  async getLeaderboard(lectureId: string) {
-    return apiRequest<LeaderboardResponse>(`/api/game/leaderboard/${lectureId}`, {
-      auth: true,
-    })
+  async getRankings(lectureId: string, limit: number = 10) {
+    return apiRequest<RankingResponse>(
+      `${API_ENDPOINTS.GAME.RANKINGS_RUNNING(lectureId)}?limit=${limit}`,
+      {
+        auth: true,
+      },
+    )
   },
 
   async getNickname() {

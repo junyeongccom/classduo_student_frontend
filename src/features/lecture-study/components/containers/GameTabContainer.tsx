@@ -339,17 +339,17 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     try {
       if (selectedGame === 'running') {
         setRankingPreviewMode('score')
-        const { data } = await gameScoreService.getLeaderboard(lectureId)
+        const { data } = await gameScoreService.getRankings(lectureId, 10)
         if (data) {
-          const mapped: ScoreRankingEntry[] = data.entries.map(e => ({
+          const mapped: ScoreRankingEntry[] = data.rankings.map((e: { rank: number; user_id: string; display_name?: string | null; score: number; achieved_at: string }) => ({
             rank: e.rank,
-            is_mine: e.is_current_user,
-            display_name: e.nickname || null,
+            is_mine: false,
+            display_name: e.display_name || null,
             score: e.score,
-            achieved_at: '',
+            achieved_at: e.achieved_at,
           }))
           setRankingPreviewData(mapped)
-          setRankingPreviewMyRank(data.user_best?.rank ?? null)
+          setRankingPreviewMyRank(data.my_best?.rank ?? null)
         }
       } else if (selectedGame === 'cardMatch') {
         setRankingPreviewMode('time')
