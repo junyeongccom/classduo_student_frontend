@@ -278,24 +278,13 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
           <div className="fixed bottom-3 right-0 z-20 px-8 transition-[left] duration-300 ease-in-out" style={{ left: sidebarWidth }}>
             <div className="mx-auto max-w-5xl">
               <div className="relative overflow-hidden rounded-2xl bg-gray-900 px-8 py-4 text-white shadow-2xl">
-                <div className="absolute right-3 top-3 z-20 flex items-center gap-1">
-                  <button
-                    onClick={() => {
-                      localStorage.setItem('gameCta_dismissedDate', new Date().toISOString().slice(0, 10))
-                      setIsCtaDismissed(true)
-                    }}
-                    className="rounded-lg px-2 py-1 text-[11px] text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
-                  >
-                    {locale === 'ko' ? '오늘하루 닫기' : 'Hide for today'}
-                  </button>
-                  <button
-                    onClick={() => setIsCtaDismissed(true)}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
-                    aria-label="Close"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => setIsCtaDismissed(true)}
+                  className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
                 <div className="relative z-10 flex items-center justify-between gap-6 pr-6">
                   <div>
                     <h4 className="text-lg font-bold">{t('lectureStudy.gameCta.title')}</h4>
@@ -306,6 +295,17 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                     className="shrink-0 rounded-2xl bg-white px-8 py-3 font-black text-gray-900 shadow-xl transition-all hover:bg-[#6366F1] hover:text-white"
                   >
                     {t('lectureStudy.gameCta.button')}
+                  </button>
+                </div>
+                <div className="relative z-10 mt-2 text-right pr-6">
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('gameCta_dismissedDate', new Date().toISOString().slice(0, 10))
+                      setIsCtaDismissed(true)
+                    }}
+                    className="text-xs text-gray-300 underline underline-offset-2 transition-colors hover:text-white"
+                  >
+                    {locale === 'ko' ? '오늘하루 닫기' : 'Hide for today'}
                   </button>
                 </div>
                 <Gamepad2 className="absolute bottom-2 right-4 h-20 w-20 opacity-10" />
