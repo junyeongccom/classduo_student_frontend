@@ -22,6 +22,9 @@ export const API_ENDPOINTS = {
     // Signup with verification code
     SIGNUP_SEND_CODE: '/auth/signup/send-code',
     SIGNUP_VERIFY_CODE: '/auth/signup/verify-code',
+    // Reset password with verification code
+    RESET_PASSWORD_SEND_CODE: '/auth/reset-password/send-code',
+    RESET_PASSWORD_VERIFY_CODE: '/auth/reset-password/verify-code',
   },
   
   // Recording (추후 사용)

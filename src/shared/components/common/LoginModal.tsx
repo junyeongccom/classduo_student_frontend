@@ -10,7 +10,8 @@ import { Button, Input } from '@/shared/components/ui'
 import { useLogin } from '@/features/auth/hooks/useLogin'
 import { useResetPassword } from '@/features/auth/hooks/useResetPassword'
 import { useAuthStore } from '@/features/auth/store/authStore'
-import { Mail, Lock, AlertCircle, X, ArrowLeft } from 'lucide-react'
+import { VerificationCodeInput } from '@/features/auth/components/ui/VerificationCodeInput'
+import { Mail, Lock, AlertCircle, X, ArrowLeft, CheckCircle } from 'lucide-react'
 
 const SAVED_ACCOUNTS_KEY = 'classduo_saved_accounts'
 
@@ -56,10 +57,15 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
   const tv = useTranslations('auth.validation')
   const { handleLogin, isLoading } = useLogin()
   const { error, clearError, user } = useAuthStore()
-  const { requestResetPassword, isLoading: isResetting, successMessage, error: resetError, clearError: clearResetError, clearSuccessMessage } = useResetPassword()
+  const resetPassword = useResetPassword()
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([])
   const [showForm, setShowForm] = useState(false)
   const [showResetPassword, setShowResetPassword] = useState(false)
+
+  // 비밀번호 재설정 verify step용 로컬 state
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   const loginSchema = createLoginSchema(tv)
   const resetPasswordSchema = createResetPasswordSchema(tv)
@@ -106,10 +112,13 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
       reset()
       resetResetForm()
       clearError()
-      clearResetError()
-      clearSuccessMessage()
+      resetPassword.clearError()
+      resetPassword.resetFlow()
       setShowForm(false)
       setShowResetPassword(false)
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordError(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
@@ -120,7 +129,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
 
     const saved = localStorage.getItem(SAVED_ACCOUNTS_KEY)
     let accounts: SavedAccount[] = []
-    
+
     if (saved) {
       try {
         accounts = JSON.parse(saved)
@@ -161,40 +170,250 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
     setShowForm(true)
   }
 
-  // 비밀번호 재설정 요청
-  const onSubmitResetPassword = async (data: ResetPasswordFormData) => {
-    clearResetError()
-    const result = await requestResetPassword(data)
-    // 성공 메시지는 successMessage로 표시됨
+  // 비밀번호 재설정: 이메일 입력 후 코드 전송
+  const onSubmitResetEmail = async (data: ResetPasswordFormData) => {
+    resetPassword.clearError()
+    await resetPassword.handleSendCode(data.email)
+  }
+
+  // 비밀번호 재설정: 코드 검증 + 비밀번호 변경
+  const onSubmitResetVerify = async () => {
+    setPasswordError(null)
+    resetPassword.clearError()
+
+    if (!newPassword) {
+      setPasswordError(tv('passwordRequired'))
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError(t('passwordMismatch'))
+      return
+    }
+
+    await resetPassword.handleVerifyCode(newPassword)
   }
 
   // 비밀번호 찾기 화면으로 전환
   const handleShowResetPassword = () => {
     clearError()
-    clearResetError()
-    clearSuccessMessage()
+    resetPassword.clearError()
+    resetPassword.resetFlow()
     setShowResetPassword(true)
     setShowForm(false)
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordError(null)
   }
 
   // 로그인 화면으로 돌아가기
   const handleBackToLogin = () => {
-    clearResetError()
-    clearSuccessMessage()
+    resetPassword.clearError()
+    resetPassword.resetFlow()
     setShowResetPassword(false)
     setShowForm(false)
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordError(null)
   }
 
   if (!isOpen) return null
 
+  // 비밀번호 재설정 섹션 렌더링
+  const renderResetPasswordContent = () => {
+    // Step: success
+    if (resetPassword.step === 'success') {
+      return (
+        <>
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('successTitle')}</h1>
+            <p className="mt-2 text-sm text-gray-500">{t('successMessage')}</p>
+          </div>
+
+          <Button
+            type="button"
+            className="w-full bg-gray-900"
+            size="lg"
+            onClick={handleBackToLogin}
+          >
+            {t('goToLogin')}
+          </Button>
+        </>
+      )
+    }
+
+    // Step: verify
+    if (resetPassword.step === 'verify') {
+      return (
+        <>
+          {/* 뒤로가기 버튼 */}
+          <button
+            onClick={handleBackToLogin}
+            className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {t('backToLogin')}
+          </button>
+
+          {/* 제목 */}
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-bold text-gray-900">{t('verifyStepTitle')}</h1>
+            <p className="mt-2 text-sm text-gray-500">{t('verifyStepSubtitle')}</p>
+          </div>
+
+          {/* 마스킹된 이메일 + 유효 시간 */}
+          <div className="mb-6 rounded-lg bg-gray-50 p-3 text-center text-sm text-gray-700">
+            <span className="font-medium">{resetPassword.maskedEmail}</span>
+            {t('codeSentTo')}
+            <br />
+            <span className="text-xs text-gray-500">
+              {t('validFor')}: {Math.floor(resetPassword.expiresIn / 60)}{t('minutesUnit')}
+            </span>
+          </div>
+
+          {/* 인증 코드 입력 */}
+          <div className="mb-6">
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              {t('enterCode')}
+            </label>
+            <VerificationCodeInput
+              value={resetPassword.verificationCode}
+              onChange={resetPassword.handleCodeChange}
+              disabled={resetPassword.isLoading}
+            />
+          </div>
+
+          {/* 새 비밀번호 */}
+          <div className="mb-4">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              {t('newPasswordLabel')}
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <Input
+                type="password"
+                placeholder={t('newPasswordPlaceholder')}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="pl-12"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-400">{t('passwordRequirements')}</p>
+          </div>
+
+          {/* 비밀번호 확인 */}
+          <div className="mb-6">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              {t('confirmPasswordLabel')}
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <Input
+                type="password"
+                placeholder={t('confirmPasswordPlaceholder')}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="pl-12"
+              />
+            </div>
+          </div>
+
+          {/* 에러 메시지 */}
+          {(resetPassword.error || passwordError) && (
+            <p className="mb-4 text-sm text-red-600">
+              {resetPassword.error || passwordError}
+            </p>
+          )}
+
+          {/* 비밀번호 재설정 버튼 */}
+          <Button
+            type="button"
+            className="w-full bg-gray-900"
+            size="lg"
+            isLoading={resetPassword.isLoading}
+            onClick={onSubmitResetVerify}
+          >
+            {resetPassword.isLoading ? t('resettingPassword') : t('resetPasswordButton')}
+          </Button>
+
+          {/* 인증 코드 재전송 */}
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={resetPassword.handleResendCode}
+              disabled={resetPassword.isLoading}
+              className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+            >
+              {t('resendCode')}
+            </button>
+          </div>
+        </>
+      )
+    }
+
+    // Step: email (기본)
+    return (
+      <>
+        {/* 뒤로가기 버튼 */}
+        <button
+          onClick={handleBackToLogin}
+          className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t('backToLogin')}
+        </button>
+
+        {/* 제목 */}
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold text-gray-900">{t('resetPasswordTitle')}</h1>
+          <p className="mt-2 text-sm text-gray-500">{t('resetPasswordSubtitle')}</p>
+        </div>
+
+        {/* 비밀번호 재설정 폼 */}
+        <form onSubmit={handleSubmitReset(onSubmitResetEmail)} className="space-y-5">
+          <div>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <Input
+                {...registerReset('email')}
+                type="email"
+                placeholder={t('emailPlaceholder')}
+                className={`pl-12 ${resetErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+              />
+            </div>
+            {resetErrors.email?.message && (
+              <p className="mt-1.5 text-xs text-red-500">{resetErrors.email.message}</p>
+            )}
+          </div>
+
+          {/* 에러 메시지 */}
+          {resetPassword.error && (
+            <p className="text-sm text-red-600">{resetPassword.error}</p>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full bg-gray-900"
+            size="lg"
+            isLoading={resetPassword.isLoading}
+          >
+            {resetPassword.isLoading ? t('sendingCode') : t('sendResetCode')}
+          </Button>
+        </form>
+      </>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center">
       {/* 배경 오버레이 */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/30"
         onClick={canClose ? onClose : undefined}
       />
-      
+
       {/* 모달 컨텐츠 */}
       <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
         {/* 닫기 버튼 - canClose가 true일 때만 표시 */}
@@ -209,61 +428,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
 
         {/* 비밀번호 찾기 화면 */}
         {showResetPassword ? (
-          <>
-            {/* 뒤로가기 버튼 */}
-            <button
-              onClick={handleBackToLogin}
-              className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t('backToLogin')}
-            </button>
-
-            {/* 제목 */}
-            <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-gray-900">{t('resetPasswordTitle')}</h1>
-              <p className="mt-2 text-sm text-gray-500">{t('resetPasswordSubtitle')}</p>
-            </div>
-
-            {/* 성공 메시지 */}
-            {successMessage && (
-              <div className="mb-4 rounded-lg bg-gray-100 p-4 text-xs text-gray-900 whitespace-pre-wrap break-words">
-                {successMessage}
-              </div>
-            )}
-
-            {/* 비밀번호 재설정 폼 */}
-            <form onSubmit={handleSubmitReset(onSubmitResetPassword)} className="space-y-5">
-              <div>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    {...registerReset('email')}
-                    type="email"
-                    placeholder={t('emailPlaceholder')}
-                    className={`pl-12 ${resetErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-                  />
-                </div>
-                {resetErrors.email?.message && (
-                  <p className="mt-1.5 text-xs text-red-500">{resetErrors.email.message}</p>
-                )}
-              </div>
-
-              {/* 에러 메시지 */}
-              {resetError && (
-                <p className="text-sm text-red-600">{resetError}</p>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-gray-900"
-                size="lg"
-                isLoading={isResetting}
-              >
-                {t('sendResetEmail')}
-              </Button>
-            </form>
-          </>
+          renderResetPasswordContent()
         ) : (
           <>
             {/* 로고 */}
@@ -278,7 +443,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                 {savedAccounts.map((account) => {
                   // 이니셜 생성 (이메일 첫 글자)
                   const initial = account.email.charAt(0).toUpperCase()
-                  
+
                   return (
                     <button
                       key={account.email}
@@ -327,7 +492,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                 {errors.password?.message && (
                   <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>
                 )}
-                
+
                 {/* 에러 메시지 - 비밀번호 입력 칸 아래 */}
                 {error && (
                   <p className="mt-2 text-sm text-red-600">{error.message}</p>
@@ -354,16 +519,16 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                   {t('signup')}
                 </button>
               ) : (
-                <Link 
+                <Link
                   href="/signup"
                   className="text-sm text-gray-600 hover:text-gray-900"
                 >
                   {t('signup')}
                 </Link>
               )}
-              
+
               <span className="text-gray-300">|</span>
-              
+
               <button
                 onClick={handleShowResetPassword}
                 className="text-sm text-gray-600 hover:text-gray-900"
@@ -377,4 +542,3 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
     </div>
   )
 }
-
