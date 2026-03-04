@@ -1,14 +1,13 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { FileText, Brain, ClipboardCheck, Maximize2 } from 'lucide-react'
+import { FileText, Brain, Maximize2 } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import type { ExamPrepCourse, ExamPrepTab, ExamPrepMaterial } from '../../types'
 
 const TAB_ITEMS: Array<{ id: ExamPrepTab; icon: typeof FileText }> = [
   { id: 'summary', icon: FileText },
   { id: 'memorize', icon: Brain },
-  { id: 'quiz', icon: ClipboardCheck },
 ]
 
 interface ExamPrepLayoutProps {
