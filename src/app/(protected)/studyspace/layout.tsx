@@ -68,6 +68,26 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const profileRef = useRef<HTMLDivElement>(null)
   const flameRef = useRef<HTMLDivElement>(null)
 
+  // 현재 URL에서 lectureId 추출
+  const currentLectureId = (() => {
+    const match = pathname.match(/\/lecture\/([^/]+)/)
+    return match?.[1] ?? null
+  })()
+
+  // 회차별 학습 페이지 진입 시 불꽃 팝업 자동 표시 (회차별 dismissed 상태 확인)
+  useEffect(() => {
+    if (!currentLectureId) {
+      setIsFlamePopupOpen(false)
+      return
+    }
+    const dismissed = localStorage.getItem(`flamePopup_dismissed_${currentLectureId}`)
+    if (!dismissed) {
+      setIsFlamePopupOpen(true)
+    } else {
+      setIsFlamePopupOpen(false)
+    }
+  }, [currentLectureId])
+
   // 프로필 드롭다운 외부 클릭 닫기
   useEffect(() => {
     if (!isProfileOpen) return
@@ -130,11 +150,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             <div ref={flameRef} className="relative">
               <button
                 id="flame-badge"
-                onClick={() => {
-                  const dismissed = localStorage.getItem('flamePopup_dismissedDate')
-                  if (dismissed === new Date().toISOString().slice(0, 10)) return
-                  setIsFlamePopupOpen(v => !v)
-                }}
+                onClick={() => setIsFlamePopupOpen(v => !v)}
                 className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3 py-2 text-[#6366F1] transition-colors hover:bg-[#6366F1]/20"
               >
                 <Flame className="h-5 w-5 fill-current" />
@@ -152,18 +168,14 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                         : 'Complete all 20 quizzes to earn flames! Raffle event coming soon!'}
                     </p>
                   </div>
-                  <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
+                  <div className="flex items-center justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
                     <button
                       onClick={() => {
-                        localStorage.setItem('flamePopup_dismissedDate', new Date().toISOString().slice(0, 10))
+                        if (currentLectureId) {
+                          localStorage.setItem(`flamePopup_dismissed_${currentLectureId}`, '1')
+                        }
                         setIsFlamePopupOpen(false)
                       }}
-                      className="text-xs text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
-                    >
-                      {locale === 'ko' ? '오늘하루 닫기' : 'Hide for today'}
-                    </button>
-                    <button
-                      onClick={() => setIsFlamePopupOpen(false)}
                       className="rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#5558E6]"
                     >
                       {locale === 'ko' ? '확인' : 'OK'}
