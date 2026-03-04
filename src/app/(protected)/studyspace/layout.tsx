@@ -158,14 +158,16 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               </button>
               {isFlamePopupOpen && (
                 <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-2xl">
-                  <div className="mb-3 flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#6366F1]/10">
-                      <Flame className="h-5 w-5 text-[#6366F1] fill-current" />
-                    </div>
+                  <div className="mb-3">
                     <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
                       {locale === 'ko'
-                        ? '퀴즈 20개를 모두 풀고 불꽃을 얻으세요! 추첨 이벤트 예정!'
-                        : 'Complete all 20 quizzes to earn flames! Raffle event coming soon!'}
+                        ? '퀴즈 20개를 모두 풀고 불꽃을 얻으세요!'
+                        : 'Complete all 20 quizzes to earn flames!'}
+                    </p>
+                    <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                      {locale === 'ko'
+                        ? '추첨 이벤트 예정!'
+                        : 'Raffle event coming soon!'}
                     </p>
                   </div>
                   <div className="flex items-center justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
