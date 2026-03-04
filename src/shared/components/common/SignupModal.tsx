@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { Button, Input } from '@/shared/components/ui'
 import { useSignup } from '@/features/auth/hooks/useSignup'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { VerificationCodeInput } from '@/features/auth/components/ui/VerificationCodeInput'
 import { Mail, Lock, User, AlertCircle, CheckCircle, X } from 'lucide-react'
 
 interface SignupModalProps {
@@ -20,7 +21,18 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
   const t = useTranslations('auth.signup')
   const tm = useTranslations('auth.signupModal')
   const tv = useTranslations('auth.validation')
-  const { handleSignup, handleResendVerification, isLoading, signupSuccess, registeredEmail } = useSignup()
+  const {
+    handleSendSignupCode,
+    handleVerifySignupCode,
+    handleVerificationCodeChange,
+    handleResendCode,
+    resetSignupFlow,
+    isLoading,
+    step,
+    maskedEmail,
+    expiresIn,
+    verificationCode,
+  } = useSignup()
   const { error, clearError } = useAuthStore()
 
   const signupSchema = z.object({
@@ -65,24 +77,33 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
     if (!isOpen) {
       reset()
       clearError()
+      resetSignupFlow()
     }
-  }, [isOpen, reset, clearError])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   const onSubmit = async (data: SignupFormData) => {
     clearError()
-    await handleSignup(data)
+    await handleSendSignupCode(data)
   }
+
+  const formatExpiresIn = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    return `${minutes}분`
+  }
+
+  const isCodeComplete = verificationCode.every(digit => digit !== '')
 
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center">
       {/* 배경 오버레이 */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/30"
         onClick={onClose}
       />
-      
+
       {/* 모달 컨텐츠 */}
       <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
         {/* 닫기 버튼 */}
@@ -93,47 +114,101 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
           <X className="h-5 w-5" />
         </button>
 
-        {/* 회원가입 성공 시 이메일 인증 안내 */}
-        {signupSuccess && registeredEmail ? (
+        {/* Step 3: 회원가입 완료 */}
+        {step === 'success' ? (
           <div className="text-center">
             <div className="mb-6 flex justify-center">
-              <div className="rounded-full bg-gray-100 p-4">
-                <CheckCircle className="h-12 w-12 text-gray-900" />
+              <div className="rounded-full bg-green-100 p-4">
+                <CheckCircle className="h-12 w-12 text-green-600" />
               </div>
             </div>
-            
-            <h2 className="mb-2 text-xl font-bold text-gray-900">{t('emailVerificationTitle')}</h2>
+
+            <h2 className="mb-2 text-xl font-bold text-gray-900">{t('signupCompleteTitle')}</h2>
             <p className="mb-6 text-sm text-gray-500">
-              <span className="font-medium text-gray-700">{registeredEmail}</span>으로<br />
-              {t('emailVerificationSent')}
+              {t('signupCompleteMessage')}
             </p>
 
-            <div className="space-y-3">
-              <Button
-                onClick={() => handleResendVerification(registeredEmail)}
-                variant="outline"
-                className="w-full"
-                isLoading={isLoading}
-              >
-                {t('resendVerification')}
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  onClose()
-                  onSwitchToLogin()
-                }}
-                variant="secondary"
-                className="w-full"
-              >
-                {t('goToLoginModal')}
-              </Button>
+            <Button
+              onClick={onClose}
+              className="w-full"
+              size="lg"
+            >
+              {t('goToHomeButton')}
+            </Button>
+          </div>
+
+        /* Step 2: 인증 코드 입력 */
+        ) : step === 'verification' ? (
+          <div>
+            <div className="mb-8 text-center">
+              <h1 className="text-2xl font-bold text-gray-900">{tm('title')}</h1>
+              <p className="mt-2 text-sm text-gray-500">{t('verificationTitle')}</p>
             </div>
 
-            <p className="mt-6 text-xs text-gray-400">
-              {t('checkSpam')}
-            </p>
+            {/* 에러 메시지 */}
+            {error && (
+              <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 p-4 text-sm text-red-600">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span>{error.message}</span>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm text-center">
+                <strong>{maskedEmail}</strong>{t('codeSentToEmail')}
+                <br />
+                <span className="text-blue-600">{t('codeValidFor')}: {formatExpiresIn(expiresIn)}</span>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-3 text-center">
+                  {t('enterCodeLabel')}
+                </label>
+                <VerificationCodeInput
+                  value={verificationCode}
+                  onChange={handleVerificationCodeChange}
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={handleVerifySignupCode}
+                  className="w-full"
+                  size="lg"
+                  isLoading={isLoading}
+                  disabled={!isCodeComplete}
+                >
+                  {t('verifyCodeButton')}
+                </Button>
+
+                <Button
+                  onClick={handleResendCode}
+                  variant="outline"
+                  className="w-full"
+                  isLoading={isLoading}
+                >
+                  {t('resendCodeButton')}
+                </Button>
+              </div>
+
+              <p className="text-center text-xs text-gray-400">
+                {t('checkSpam')}
+              </p>
+            </div>
+
+            <div className="mt-6 text-center text-sm text-gray-500">
+              <span>{t('hasAccount')}</span>
+              <button
+                onClick={onSwitchToLogin}
+                className="font-medium text-gray-900 hover:underline"
+              >
+                {t('loginLink')}
+              </button>
+            </div>
           </div>
+
+        /* Step 1: 회원가입 폼 */
         ) : (
           <>
             {/* 로고 */}
@@ -156,8 +231,6 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
                           onClick={() => {
                             if (action.type === 'login') {
                               onSwitchToLogin()
-                            } else if (action.type === 'resend_verification' && action.email) {
-                              handleResendVerification(action.email)
                             }
                           }}
                           className="text-red-700 underline hover:no-underline"
@@ -230,7 +303,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
             {/* 로그인 링크 */}
             <div className="mt-6 text-center text-sm text-gray-500">
               <span>{t('hasAccount')}</span>
-              <button 
+              <button
                 onClick={onSwitchToLogin}
                 className="font-medium text-gray-900 hover:underline"
               >
@@ -243,4 +316,3 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
     </div>
   )
 }
-
