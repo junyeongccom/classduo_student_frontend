@@ -71,6 +71,7 @@ export function ExamPrepPdfViewer({
   const listRef = useRef<HTMLDivElement>(null)
   const pageRefs = useRef<Record<number, HTMLDivElement | null>>({})
   const isProgrammaticScroll = useRef(false)
+  const settleIdRef = useRef(0)
   const ignoreExternalPageSync = useRef(false)
   const [containerWidth, setContainerWidth] = useState(0)
   const [pdfDoc, setPdfDoc] = useState<import("pdfjs-dist").PDFDocumentProxy | null>(null)
@@ -257,9 +258,17 @@ export function ExamPrepPdfViewer({
     if (target) {
       isProgrammaticScroll.current = true
       target.scrollIntoView({ behavior: "smooth", block: "start" })
-      window.setTimeout(() => {
+      const mySettleId = ++settleIdRef.current
+      const container = listRef.current
+      let settled = false
+      const settle = () => {
+        if (settled || mySettleId !== settleIdRef.current) return
+        settled = true
         isProgrammaticScroll.current = false
-      }, 300)
+        container?.removeEventListener("scrollend", settle)
+      }
+      container?.addEventListener("scrollend", settle, { once: true })
+      window.setTimeout(settle, 600)
     }
   }, [currentPage, pageCount, pageNumbers])
 
@@ -302,9 +311,17 @@ export function ExamPrepPdfViewer({
     if (target) {
       isProgrammaticScroll.current = true
       target.scrollIntoView({ behavior: "smooth", block: "start" })
-      window.setTimeout(() => {
+      const mySettleId = ++settleIdRef.current
+      const container = listRef.current
+      let settled = false
+      const settle = () => {
+        if (settled || mySettleId !== settleIdRef.current) return
+        settled = true
         isProgrammaticScroll.current = false
-      }, 300)
+        container?.removeEventListener("scrollend", settle)
+      }
+      container?.addEventListener("scrollend", settle, { once: true })
+      window.setTimeout(settle, 600)
     }
   }
 
