@@ -10,6 +10,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
+import Image from 'next/image'
 import { X, Puzzle, Loader2, ChevronRight } from 'lucide-react'
 import { apiRequest } from '@/shared/lib/api'
 import {
@@ -111,21 +112,49 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-[#22C55E]/10 p-2">
-              <Puzzle className="h-5 w-5 text-[#22C55E]" />
+        <header className="border-b border-gray-100 dark:border-gray-700 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-[#22C55E]/10 p-2">
+                <Puzzle className="h-5 w-5 text-[#22C55E]" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                {locale === 'ko' ? '게임 - 수업 & 회차 선택' : 'Game - Select Course & Lecture'}
+              </h2>
             </div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">
-              {locale === 'ko' ? '게임 - 수업 & 회차 선택' : 'Game - Select Course & Lecture'}
-            </h2>
+            <button
+              onClick={onClose}
+              className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {/* 게임 에셋 썸네일 스트립 */}
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {[
+              { id: 'running', icon: '🏃', color: 'border-orange-200 bg-orange-50' },
+              { id: 'deck', icon: '🃏', color: 'border-blue-200 bg-blue-50' },
+              { id: 'cardMatch', icon: '🎴', color: 'border-violet-200 bg-violet-50' },
+              { id: 'definitionBuilder', icon: '🧩', color: 'border-emerald-200 bg-emerald-50' },
+            ].map(game => (
+              <div
+                key={game.id}
+                className={`flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 ${game.color}`}
+              >
+                {game.id === 'running' ? (
+                  <Image src="/game/scene.png" alt="Running game" width={40} height={20} className="rounded" />
+                ) : (
+                  <span className="text-lg">{game.icon}</span>
+                )}
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  {locale === 'ko'
+                    ? { running: '달리기', deck: '플래시카드', cardMatch: '카드매칭', definitionBuilder: '정의 빌더' }[game.id]
+                    : { running: 'Running', deck: 'Flashcard', cardMatch: 'Card Match', definitionBuilder: 'Def Builder' }[game.id]
+                  }
+                </span>
+              </div>
+            ))}
+          </div>
         </header>
 
         {/* Body — 2-column */}
