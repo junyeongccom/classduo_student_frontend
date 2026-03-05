@@ -122,13 +122,14 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [showDescriptionPopup, setShowDescriptionPopup] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
-  const [isImporting, setIsImporting] = useState(false)
-  const [importError, setImportError] = useState<string | null>(null)
 
   // Store-backed words for tab persistence
   const words = useLectureStudyStore(s => s.gameWords)
   const setWords = useLectureStudyStore(s => s.setGameWords)
   const courseId = useLectureStudyStore(s => s.courseId) ?? ''
+
+  // DB loading state for normal mode
+  const [isLoadingReviewData, setIsLoadingReviewData] = useState(false)
 
   // DefinitionBuilder game state
   const [defBuilderData, setDefBuilderData] = useState<DefinitionBuilderGameResponse | null>(null)
@@ -396,34 +397,47 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     }
   }, [selectedGame, lectureId, t, fetchMatchingRankings])
 
-  const handlePlayFromDescription = useCallback(() => {
+  const handlePlayFromDescription = useCallback(async () => {
     setShowDescriptionPopup(false)
     setGameMode('normal')
-    setShowWordModal(true)
-  }, [])
-
-  const handleImportKeywords = useCallback(async () => {
-    setIsImporting(true)
-    setImportError(null)
+    setIsLoadingReviewData(true)
     try {
-      const result = await reviewService.getLectureKeywordsPreview(lectureId)
-      if (result.data?.keywords && result.data.keywords.length > 0) {
-        const existing = new Set(words.map(w => w.keyword.toLowerCase()))
-        const newWords: WordItem[] = result.data.keywords
-          .filter(kw => !existing.has(kw.keyword.toLowerCase()))
-          .map(kw => ({
-            id: crypto.randomUUID(),
-            keyword: kw.keyword,
-            description: kw.description,
-          }))
-        setWords([...words, ...newWords])
+      const { data } = await reviewService.getLectureReviewItems(lectureId)
+      let items = data?.items ?? []
+      if (items.length === 0) {
+        await reviewService.importLectureKeywordsToReview(lectureId)
+        const { data: imported } = await reviewService.getLectureReviewItems(lectureId)
+        items = imported?.items ?? []
       }
+      setWords(items.map(it => ({ id: it.id, keyword: it.keyword, description: it.description })))
     } catch {
-      setImportError(t('lectureStudy.game.importError'))
+      // fetch 실패 시 기존 words 유지
     } finally {
-      setIsImporting(false)
+      setIsLoadingReviewData(false)
     }
-  }, [lectureId, words, setWords, t])
+    setShowWordModal(true)
+  }, [lectureId, setWords])
+
+  const handleAddWord = useCallback(async (keyword: string, description: string) => {
+    const { data } = await reviewService.createLectureReviewItem(lectureId, { keyword, description })
+    if (data?.item_id) {
+      setWords([...words, { id: data.item_id, keyword, description }])
+    }
+  }, [lectureId, words, setWords])
+
+  const handleUpdateWord = useCallback(async (id: string, keyword: string, description: string) => {
+    const { data } = await reviewService.updateLectureReviewItem(id, { keyword, description })
+    if (data?.success) {
+      setWords(words.map(w => w.id === id ? { ...w, keyword, description } : w))
+    }
+  }, [words, setWords])
+
+  const handleDeleteWord = useCallback(async (id: string) => {
+    const { data } = await reviewService.deleteLectureReviewItem(id)
+    if (data?.success) {
+      setWords(words.filter(w => w.id !== id))
+    }
+  }, [words, setWords])
 
   const handleStartGame = useCallback(() => {
     setShowWordModal(false)
@@ -698,8 +712,9 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
         open={showWordModal}
         onOpenChange={setShowWordModal}
         words={words}
-        onWordsChange={setWords}
-        onImportKeywords={handleImportKeywords}
+        onAddWord={handleAddWord}
+        onUpdateWord={handleUpdateWord}
+        onDeleteWord={handleDeleteWord}
         minWords={currentGameInfo?.minWords ?? 1}
         gameName={
           currentGameInfo
@@ -707,8 +722,8 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
             : ''
         }
         onStartGame={handleStartGame}
-        isImporting={isImporting}
-        importError={importError}
+        isLoading={isLoadingReviewData}
+        readOnly={gameMode === 'rank'}
       />
       {/* Nickname input modal for rank mode / nickname change */}
       <Dialog open={showNicknameModal} onOpenChange={setShowNicknameModal}>
