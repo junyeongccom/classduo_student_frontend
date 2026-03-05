@@ -1,6 +1,6 @@
 /**
  * @file GameSelector.tsx
- * @description 4개 게임 선택 카드 UI + 닉네임 변경 버튼
+ * @description 아케이드 스타일 게임 선택 로비 UI + 닉네임 변경 버튼
  * @module features/lecture-study/components/ui
  * @dependencies lucide-react
  */
@@ -8,8 +8,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { UserCircle } from 'lucide-react'
-import { cn } from '@/shared/lib/utils'
+import { Gamepad2, UserCircle } from 'lucide-react'
 import type { GameInfo } from '../../types'
 
 const GAME_LIST: GameInfo[] = [
@@ -19,11 +18,44 @@ const GAME_LIST: GameInfo[] = [
   { id: 'definitionBuilder', name: '', description: '', minWords: 1, icon: '🧩' },
 ]
 
-const GAME_COLORS = [
-  'from-orange-50 to-orange-100 border-orange-200 hover:border-orange-400',
-  'from-blue-50 to-blue-100 border-blue-200 hover:border-blue-400',
-  'from-violet-50 to-violet-100 border-violet-200 hover:border-violet-400',
-  'from-emerald-50 to-emerald-100 border-emerald-200 hover:border-emerald-400',
+/** 게임별 테마 (밝은 배경용) */
+const CARD_THEMES = [
+  {
+    border: 'border-orange-200',
+    hoverBorder: 'hover:border-orange-400',
+    glow: 'hover:shadow-lg hover:shadow-orange-100',
+    iconBg: 'bg-orange-50',
+    accent: 'text-orange-600',
+    playBg: 'bg-orange-500 group-hover:bg-orange-600',
+    playText: 'text-white',
+  },
+  {
+    border: 'border-sky-200',
+    hoverBorder: 'hover:border-sky-400',
+    glow: 'hover:shadow-lg hover:shadow-sky-100',
+    iconBg: 'bg-sky-50',
+    accent: 'text-sky-600',
+    playBg: 'bg-sky-500 group-hover:bg-sky-600',
+    playText: 'text-white',
+  },
+  {
+    border: 'border-violet-200',
+    hoverBorder: 'hover:border-violet-400',
+    glow: 'hover:shadow-lg hover:shadow-violet-100',
+    iconBg: 'bg-violet-50',
+    accent: 'text-violet-600',
+    playBg: 'bg-violet-500 group-hover:bg-violet-600',
+    playText: 'text-white',
+  },
+  {
+    border: 'border-emerald-200',
+    hoverBorder: 'hover:border-emerald-400',
+    glow: 'hover:shadow-lg hover:shadow-emerald-100',
+    iconBg: 'bg-emerald-50',
+    accent: 'text-emerald-600',
+    playBg: 'bg-emerald-500 group-hover:bg-emerald-600',
+    playText: 'text-white',
+  },
 ]
 
 interface GameSelectorProps {
@@ -43,47 +75,61 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-gray-900">
-          {t('lectureStudy.game.title')}
-        </h3>
+    <div className="relative h-full overflow-y-auto bg-white p-6">
+      {/* 헤더 */}
+      <div className="relative mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <Gamepad2 className="h-5 w-5 text-orange-500" />
+          <h3 className="text-lg font-extrabold tracking-wide text-gray-800">
+            GAME ARCADE
+          </h3>
+        </div>
         {nickname && (
           <button
             type="button"
             onClick={onChangeNickname}
-            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:border-orange-300 hover:bg-orange-50 hover:text-orange-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-orange-500 dark:hover:text-orange-400"
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-all hover:border-orange-300 hover:text-orange-600"
           >
             <UserCircle className="h-3.5 w-3.5" />
             <span className="max-w-[100px] truncate">{nickname}</span>
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {GAME_LIST.map((game, i) => (
-          <button
-            key={game.id}
-            onClick={() => onSelectGame(game.id)}
-            className={cn(
-              'flex items-center gap-4 rounded-2xl border bg-gradient-to-br p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
-              GAME_COLORS[i],
-            )}
-          >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/70 text-2xl shadow-sm">
-              {game.icon}
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-gray-900">
+
+      {/* 구분선 */}
+      <div className="mb-5 h-px bg-gray-100" />
+
+      {/* 게임 카드 그리드 */}
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {GAME_LIST.map((game, i) => {
+          const theme = CARD_THEMES[i]
+          return (
+            <button
+              key={game.id}
+              onClick={() => onSelectGame(game.id)}
+              className={`group flex flex-col items-center gap-3 rounded-2xl border bg-white p-5 text-center transition-all duration-200 hover:-translate-y-1 ${theme.border} ${theme.hoverBorder} ${theme.glow}`}
+            >
+              {/* 아이콘 */}
+              <div
+                className={`flex h-14 w-14 items-center justify-center rounded-xl text-3xl ${theme.iconBg} transition-transform duration-200 group-hover:scale-110`}
+              >
+                {game.icon}
+              </div>
+
+              {/* 게임명 */}
+              <h4 className={`text-sm font-bold tracking-wide ${theme.accent}`}>
                 {gameNames[game.id]}
               </h4>
-              {game.minWords > 0 && (
-                <p className="text-xs text-gray-500">
-                  {t('lectureStudy.game.minWords', { n: game.minWords })}
-                </p>
-              )}
-            </div>
-          </button>
-        ))}
+
+              {/* PLAY 버튼 영역 */}
+              <div
+                className={`w-full rounded-lg px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-all duration-200 ${theme.playBg} ${theme.playText}`}
+              >
+                PLAY
+              </div>
+            </button>
+          )
+        })}
       </div>
     </div>
   )

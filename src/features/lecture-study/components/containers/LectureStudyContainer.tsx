@@ -353,26 +353,38 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         ref={containerRef}
         className="relative flex flex-1 min-h-0"
       >
-        {/* 강의자료 아이콘 (패널 닫힌 상태) — 모바일+데스크톱 공통 */}
+        {/* 강의자료 아이콘 + 말풍선 (패널 닫힌 상태) — 모바일+데스크톱 공통 */}
         {!isLeftPanelOpen && (
-          <button
-            onClick={toggleLeftPanel}
-            className="absolute bottom-4 left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
-            title={t('lectureStudy.leftPanel.materialsTab')}
-          >
-            <FileText className="h-6 w-6" />
-          </button>
+          <div className="absolute bottom-4 left-4 z-10 flex items-end gap-2">
+            <button
+              onClick={toggleLeftPanel}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
+              title={t('lectureStudy.leftPanel.materialsTab')}
+            >
+              <FileText className="h-6 w-6" />
+            </button>
+            <div className="relative mb-1 rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white shadow-md whitespace-nowrap">
+              강의자료 보기
+              <div className="absolute left-[-6px] bottom-2 h-0 w-0 border-t-[6px] border-t-transparent border-r-[6px] border-r-[#6366F1] border-b-[6px] border-b-transparent" />
+            </div>
+          </div>
         )}
 
-        {/* 챗봇 아이콘 (패널 닫힌 상태) — 모바일+데스크톱 공통 */}
+        {/* 챗봇 아이콘 + 말풍선 (패널 닫힌 상태) — 모바일+데스크톱 공통 */}
         {!isChatPanelOpen && (
-          <button
-            onClick={toggleChatPanel}
-            className="absolute bottom-4 right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
-            title="AI Chat"
-          >
-            <Bot className="h-6 w-6" />
-          </button>
+          <div className="absolute bottom-4 right-4 z-10 flex items-end gap-2">
+            <div className="relative mb-1 rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white shadow-md whitespace-nowrap">
+              AI에게 질문하기
+              <div className="absolute right-[-6px] bottom-2 h-0 w-0 border-t-[6px] border-t-transparent border-l-[6px] border-l-[#6366F1] border-b-[6px] border-b-transparent" />
+            </div>
+            <button
+              onClick={toggleChatPanel}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
+              title="AI Chat"
+            >
+              <Bot className="h-6 w-6" />
+            </button>
+          </div>
         )}
 
         {/* Desktop: 강의자료/녹음본 패널 (열린 상태) */}

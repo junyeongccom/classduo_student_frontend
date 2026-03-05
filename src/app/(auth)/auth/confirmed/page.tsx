@@ -248,7 +248,7 @@ function EmailConfirmedContent() {
         </h1>
         <p className="mb-8 text-gray-500">
           이메일 인증이 성공적으로 완료되었습니다.<br />
-          이제 로그인하여 ClassDuo를 이용할 수 있습니다.
+          이제 로그인하여 고려대학교 AI조교 에이플러스(Aplus)를 이용할 수 있습니다.
         </p>
 
         <Button

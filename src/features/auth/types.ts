@@ -138,4 +138,28 @@ export interface VerifySignupCodeResponse {
   expires_in: number
 }
 
+// ============ Password Reset with Verification Code ============
+
+export type ResetPasswordStep = 'email' | 'verify' | 'success'
+
+export interface SendResetPasswordCodeRequest {
+  email: string
+}
+
+export interface SendResetPasswordCodeResponse {
+  message: string
+  email_masked: string
+  expires_in: number
+}
+
+export interface VerifyResetPasswordCodeRequest {
+  email: string
+  code: string
+  new_password: string
+}
+
+export interface VerifyResetPasswordCodeResponse {
+  message: string
+}
+
 

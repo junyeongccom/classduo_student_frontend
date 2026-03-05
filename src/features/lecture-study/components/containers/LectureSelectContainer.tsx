@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, BookOpen, Gamepad2, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
-import { MaterialCard, useMaterialList } from '@/features/material-study'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '../../hooks/useLectures'
 import { LectureRow } from '../ui/LectureRow'
@@ -42,9 +41,12 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const locale = useLocale()
   const router = useRouter()
   const { lectures, courseTitle, section, professorName, isLoading, error, refresh } = useLectures(courseId)
-  const { materials, isLoading: materialsLoading } = useMaterialList(courseId)
   const [activeTab, setActiveTab] = useState<CourseTab>('lecture')
-  const [isCtaDismissed, setIsCtaDismissed] = useState(false)
+  const [isCtaDismissed, setIsCtaDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const dismissed = localStorage.getItem('gameCta_dismissedDate')
+    return dismissed === new Date().toISOString().slice(0, 10)
+  })
   const [isGameModalOpen, setIsGameModalOpen] = useState(false)
 
   const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
@@ -246,31 +248,26 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
               </div>
             )}
 
-            {/* Material Grid */}
+            {/* Material Grid → MOOC 안내문구로 대체 */}
             {activeTab === 'material' && (
-              <div>
-                {materialsLoading ? (
-                  <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-                  </div>
-                ) : materials.length === 0 ? (
-                  <div className="flex items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 text-sm text-gray-400">
-                    {t('lectureStudy.materialSelect.empty')}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {materials.map(material => (
-                      <MaterialCard
-                        key={material.id}
-                        material={material}
-                        courseId={courseId}
-                        onClick={() =>
-                          router.push(`/studyspace/course/${courseId}/material/${material.id}`)
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 px-6">
+                <BookOpen className="mb-4 h-12 w-12 text-gray-300" />
+                <p className="text-center text-base font-semibold text-gray-700 dark:text-gray-300">
+                  {locale === 'ko'
+                    ? 'MOOC 강의는 회차별 학습을 이용해주세요!'
+                    : 'For MOOC lectures, please use Lecture-based Study!'}
+                </p>
+                <p className="mt-2 text-center text-sm text-gray-400">
+                  {locale === 'ko'
+                    ? '상단 탭에서 "회차별학습"을 선택해주세요.'
+                    : 'Please select "By Lecture" from the tabs above.'}
+                </p>
+                <button
+                  onClick={() => setActiveTab('lecture')}
+                  className="mt-4 rounded-xl bg-[#6366F1] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#5558E6]"
+                >
+                  {locale === 'ko' ? '회차별학습으로 이동' : 'Go to Lecture-based Study'}
+                </button>
               </div>
             )}
           </div>
@@ -298,6 +295,17 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                     className="shrink-0 rounded-2xl bg-white px-8 py-3 font-black text-gray-900 shadow-xl transition-all hover:bg-[#6366F1] hover:text-white"
                   >
                     {t('lectureStudy.gameCta.button')}
+                  </button>
+                </div>
+                <div className="relative z-10 mt-2 text-right pr-6">
+                  <button
+                    onClick={() => {
+                      localStorage.setItem('gameCta_dismissedDate', new Date().toISOString().slice(0, 10))
+                      setIsCtaDismissed(true)
+                    }}
+                    className="text-xs text-gray-300 underline underline-offset-2 transition-colors hover:text-white"
+                  >
+                    {locale === 'ko' ? '오늘하루 닫기' : 'Hide for today'}
                   </button>
                 </div>
                 <Gamepad2 className="absolute bottom-2 right-4 h-20 w-20 opacity-10" />

@@ -17,6 +17,10 @@ import {
   SendSignupCodeResponse,
   VerifySignupCodeRequest,
   VerifySignupCodeResponse,
+  SendResetPasswordCodeRequest,
+  SendResetPasswordCodeResponse,
+  VerifyResetPasswordCodeRequest,
+  VerifyResetPasswordCodeResponse,
 } from '../types'
 
 /**
@@ -121,6 +125,24 @@ export const authService = {
    */
   verifySignupCode: (data: VerifySignupCodeRequest) =>
     apiRequest<VerifySignupCodeResponse>(API_ENDPOINTS.AUTH.SIGNUP_VERIFY_CODE, {
+      method: 'POST',
+      body: data,
+    }),
+
+  /**
+   * 비밀번호 재설정 인증 코드 전송
+   */
+  sendResetPasswordCode: (data: SendResetPasswordCodeRequest) =>
+    apiRequest<SendResetPasswordCodeResponse>(API_ENDPOINTS.AUTH.RESET_PASSWORD_SEND_CODE, {
+      method: 'POST',
+      body: data,
+    }),
+
+  /**
+   * 비밀번호 재설정 인증 코드 검증 + 비밀번호 변경
+   */
+  verifyResetPasswordCode: (data: VerifyResetPasswordCodeRequest) =>
+    apiRequest<VerifyResetPasswordCodeResponse>(API_ENDPOINTS.AUTH.RESET_PASSWORD_VERIFY_CODE, {
       method: 'POST',
       body: data,
     }),

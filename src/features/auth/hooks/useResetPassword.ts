@@ -1,99 +1,125 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { apiRequest } from '@/shared/lib/api'
-import { API_ENDPOINTS } from '@/shared/constants/api'
-
-interface ResetPasswordRequestData {
-  email: string
-}
-
-interface UpdatePasswordData {
-  access_token: string
-  new_password: string
-  new_password_confirm: string
-}
+import { authService } from '../services/authService'
+import { ResetPasswordStep, AuthError } from '../types'
 
 export function useResetPassword() {
-  const t = useTranslations('resetPassword.fallback')
+  const t = useTranslations('errors')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  // 비밀번호 재설정 이메일 요청
-  const requestResetPassword = async (data: ResetPasswordRequestData) => {
-    setIsLoading(true)
-    setError(null)
-    setSuccessMessage(null)
-
-    try {
-      const response = await apiRequest<{ message: string; email: string }>(
-        API_ENDPOINTS.AUTH.RESET_PASSWORD,
-        {
-          method: 'POST',
-          body: data,
-        }
-      )
-
-      if (response.error) {
-        setError(response.error.message)
-        return { success: false }
-      }
-
-      setSuccessMessage(response.data?.message || t('emailSent'))
-      return { success: true, message: response.data?.message }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('error')
-      setError(errorMessage)
-      return { success: false }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 새 비밀번호로 업데이트
-  const updatePassword = async (data: UpdatePasswordData) => {
-    setIsLoading(true)
-    setError(null)
-    setSuccessMessage(null)
-
-    try {
-      const response = await apiRequest<{ message: string }>(
-        API_ENDPOINTS.AUTH.UPDATE_PASSWORD,
-        {
-          method: 'PUT',
-          body: data,
-        }
-      )
-
-      if (response.error) {
-        setError(response.error.message)
-        return { success: false }
-      }
-
-      setSuccessMessage(response.data?.message || t('passwordChanged'))
-      return { success: true, message: response.data?.message }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('error')
-      setError(errorMessage)
-      return { success: false }
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const [step, setStep] = useState<ResetPasswordStep>('email')
+  const [email, setEmail] = useState('')
+  const [maskedEmail, setMaskedEmail] = useState('')
+  const [expiresIn, setExpiresIn] = useState(600)
+  const [verificationCode, setVerificationCode] = useState<string[]>(['', '', '', '', '', ''])
 
   const clearError = () => setError(null)
-  const clearSuccessMessage = () => setSuccessMessage(null)
+
+  const handleSendCode = useCallback(async (inputEmail: string) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const result = await authService.sendResetPasswordCode({ email: inputEmail })
+
+      if (result.error) {
+        const msg = result.status >= 400 && result.status < 500
+          ? result.error.message
+          : t('general')
+        setError(msg)
+        return { success: false }
+      }
+
+      if (result.data) {
+        setEmail(inputEmail)
+        setMaskedEmail(result.data.email_masked)
+        setExpiresIn(result.data.expires_in)
+        setStep('verify')
+        return { success: true }
+      }
+
+      return { success: false }
+    } catch {
+      setError(t('general'))
+      return { success: false }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [t])
+
+  const handleVerifyCode = useCallback(async (newPassword: string) => {
+    const code = verificationCode.join('')
+    if (code.length !== 6) {
+      setError(t('codeInvalid'))
+      return { success: false }
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const result = await authService.verifyResetPasswordCode({
+        email,
+        code,
+        new_password: newPassword,
+      })
+
+      if (result.error) {
+        const msg = result.status >= 400 && result.status < 500
+          ? result.error.message
+          : t('general')
+        setError(msg)
+        return { success: false }
+      }
+
+      setStep('success')
+      return { success: true }
+    } catch {
+      setError(t('general'))
+      return { success: false }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [email, verificationCode, t])
+
+  const handleResendCode = useCallback(async () => {
+    if (!email) return { success: false }
+    return handleSendCode(email)
+  }, [email, handleSendCode])
+
+  const handleCodeChange = useCallback((index: number, value: string) => {
+    setVerificationCode(prev => {
+      const newCode = [...prev]
+      newCode[index] = value
+      return newCode
+    })
+  }, [])
+
+  const resetFlow = useCallback(() => {
+    setStep('email')
+    setEmail('')
+    setMaskedEmail('')
+    setExpiresIn(600)
+    setVerificationCode(['', '', '', '', '', ''])
+    setError(null)
+  }, [])
 
   return {
     isLoading,
     error,
-    successMessage,
-    requestResetPassword,
-    updatePassword,
+    step,
+    email,
+    maskedEmail,
+    expiresIn,
+    verificationCode,
+    handleSendCode,
+    handleVerifyCode,
+    handleResendCode,
+    handleCodeChange,
+    resetFlow,
     clearError,
-    clearSuccessMessage,
   }
 }
-

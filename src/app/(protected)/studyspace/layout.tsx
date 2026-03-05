@@ -64,7 +64,29 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const toggleTheme = useThemeStore((s) => s.toggle)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [isFlamePopupOpen, setIsFlamePopupOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
+  const flameRef = useRef<HTMLDivElement>(null)
+
+  // 현재 URL에서 lectureId 추출
+  const currentLectureId = (() => {
+    const match = pathname.match(/\/lecture\/([^/]+)/)
+    return match?.[1] ?? null
+  })()
+
+  // 회차별 학습 페이지 진입 시 불꽃 팝업 자동 표시 (회차별 dismissed 상태 확인)
+  useEffect(() => {
+    if (!currentLectureId) {
+      setIsFlamePopupOpen(false)
+      return
+    }
+    const dismissed = localStorage.getItem(`flamePopup_dismissed_${currentLectureId}`)
+    if (!dismissed) {
+      setIsFlamePopupOpen(true)
+    } else {
+      setIsFlamePopupOpen(false)
+    }
+  }, [currentLectureId])
 
   // 프로필 드롭다운 외부 클릭 닫기
   useEffect(() => {
@@ -77,6 +99,18 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isProfileOpen])
+
+  // 불꽃 팝업 외부 클릭 닫기
+  useEffect(() => {
+    if (!isFlamePopupOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (flameRef.current && !flameRef.current.contains(e.target as Node)) {
+        setIsFlamePopupOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [isFlamePopupOpen])
 
   // 불꽃 카운트 조회 (전체 과목 합산, 페이지 무관 불변)
   const [flameCount, setFlameCount] = useState(0)
@@ -113,9 +147,45 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-3 pl-6">
-            <div id="flame-badge" className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3 py-2 text-[#6366F1]">
-              <Flame className="h-5 w-5 fill-current" />
-              <span className="text-sm font-bold">{flameCount}</span>
+            <div ref={flameRef} className="relative">
+              <button
+                id="flame-badge"
+                onClick={() => setIsFlamePopupOpen(v => !v)}
+                className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3 py-2 text-[#6366F1] transition-colors hover:bg-[#6366F1]/20"
+              >
+                <Flame className="h-5 w-5 fill-current" />
+                <span className="text-sm font-bold">{flameCount}</span>
+              </button>
+              {isFlamePopupOpen && (
+                <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-2xl">
+                  <div className="mb-3">
+                    <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                      {locale === 'ko'
+                        ? '퀴즈 20개를 모두 풀고 불꽃을 얻으세요!'
+                        : 'Complete all 20 quizzes to earn flames!'}
+                    </p>
+                    <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                      {locale === 'ko'
+                        ? '추첨 이벤트 예정!'
+                        : 'Raffle event coming soon!'}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
+                    <button
+                      onClick={() => {
+                        if (currentLectureId) {
+                          localStorage.setItem(`flamePopup_dismissed_${currentLectureId}`, '1')
+                        }
+                        setIsFlamePopupOpen(false)
+                      }}
+                      className="rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#5558E6]"
+                    >
+                      {locale === 'ko' ? '확인' : 'OK'}
+                    </button>
+                  </div>
+                  <div className="absolute -top-2 right-6 h-0 w-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-white dark:border-b-gray-900" />
+                </div>
+              )}
             </div>
             <div ref={profileRef} className="relative flex items-center gap-3 border-l border-gray-200 dark:border-gray-700 pl-3">
               <img src="/KU_logo.png" alt="" className="h-9 shrink-0 object-contain" />
