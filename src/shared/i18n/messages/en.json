@@ -405,7 +405,7 @@
       "sourceButtonMaterials": "Materials",
       "sourceButtonRecordings": "Recordings",
       "sourceTooltipPages": "Page {pages}",
-      "sourceTooltipChunks": "Chunk {chunks}",
+      "sourceTooltipChunks": "Recording {chunks}",
       "sourceEmptyTooltip": "No source information",
       "recentIssuesTitle": "Recent Issues",
       "examPointsTitle": "Key Points (Exam Prep)"
