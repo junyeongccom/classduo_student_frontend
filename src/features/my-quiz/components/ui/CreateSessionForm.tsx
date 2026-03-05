@@ -151,6 +151,11 @@ export default function CreateSessionForm({
                 </div>
               </div>
 
+              {/* 예상 소요시간 */}
+              <p className="text-xs text-gray-500">
+                {t('estimatedTime', { minutes: Math.ceil((75 + quizCount * 8) / 60) })}
+              </p>
+
               {error && (
                 <p className="text-sm text-red-500">{error}</p>
               )}
