@@ -405,7 +405,7 @@
       "sourceButtonMaterials": "강의자료",
       "sourceButtonRecordings": "녹음본",
       "sourceTooltipPages": "페이지 {pages}",
-      "sourceTooltipChunks": "청크 {chunks}",
+      "sourceTooltipChunks": "녹음본 {chunks}",
       "sourceEmptyTooltip": "출처 정보가 없습니다",
       "recentIssuesTitle": "최근 쟁점",
       "examPointsTitle": "요점 정리(시험 대비)"
