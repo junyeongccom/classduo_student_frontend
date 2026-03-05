@@ -1017,12 +1017,14 @@
       "pollingTimeout": "Generation is taking longer than expected. Please check back later",
       "sessionDeleted": "Session has been deleted",
       "quizCount": "{count} questions",
+      "generatingProgress": "Generating {current}/{total}",
       "back": "Back to list"
     },
     "create": {
       "newSession": "Create New Quiz",
       "quizCount": "Number of Questions",
       "quizTypes": "Question Types",
+      "estimatedTime": "Estimated time: ~{minutes} min",
       "generate": "Generate",
       "generating": "Generating...",
       "noSnapshot": "Learning data is not ready for this lecture. Unable to generate quizzes",

@@ -131,6 +131,25 @@ export default function SessionCard({ session, onSelect, onDelete, onRename }: S
         </div>
         {isFailed ? (
           <p className="text-xs text-red-500">{t('failedMessage')}</p>
+        ) : session.status === 'CREATING' ? (
+          <div className="flex items-center gap-2 mt-0.5">
+            <div className="h-1.5 flex-1 rounded-full bg-gray-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-blue-400 transition-all duration-500"
+                style={{
+                  width: session.quiz_count > 0
+                    ? `${Math.min(100, ((session.generated_count ?? 0) / session.quiz_count) * 100)}%`
+                    : '0%',
+                }}
+              />
+            </div>
+            <span className="text-xs text-blue-500 tabular-nums shrink-0">
+              {t('generatingProgress', {
+                current: session.generated_count ?? 0,
+                total: session.quiz_count,
+              })}
+            </span>
+          </div>
         ) : (
           <p className="text-xs text-gray-400">
             {t('quizCount', { count: session.quiz_count })}

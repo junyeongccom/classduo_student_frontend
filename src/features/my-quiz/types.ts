@@ -26,6 +26,7 @@ export interface QuizSession {
   language: string | null
   status: SessionStatus
   quiz_count: number
+  generated_count?: number | null
   title: string | null
   created_at: string
   updated_at: string
