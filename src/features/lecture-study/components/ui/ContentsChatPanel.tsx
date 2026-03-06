@@ -9,8 +9,8 @@
 
 import { useCallback, useRef, useState } from 'react'
 import { Loader2, Send } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
 import { useTranslations } from 'next-intl'
+import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { lectureService } from '../../services/lectureService'
 
 interface ChatMessage {
@@ -86,9 +86,7 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
               }`}
             >
               {msg.role === 'assistant' ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
+                <MarkdownMessage markdown={msg.content} className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0" />
               ) : (
                 <span className="whitespace-pre-wrap">{msg.content}</span>
               )}
