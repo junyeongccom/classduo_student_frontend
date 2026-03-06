@@ -109,7 +109,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       {/* Arcade Cabinet Frame */}
@@ -119,51 +119,54 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
         onClick={e => e.stopPropagation()}
       >
         {/* Left/Right neon side bars */}
-        <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-pink-500 via-fuchsia-500 to-pink-500 rounded-l-3xl z-10" />
+        <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-pink-400 via-fuchsia-400 to-pink-400 rounded-l-3xl z-10" />
         <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-cyan-400 via-teal-400 to-cyan-400 rounded-r-3xl z-10" />
 
-        {/* Inner content */}
-        <div className="flex flex-1 flex-col bg-[#0F172A] ml-2 mr-2 overflow-hidden">
+        {/* Inner content — light theme */}
+        <div className="flex flex-1 flex-col bg-white ml-2 mr-2 overflow-hidden">
           {/* Header */}
-          <header className="relative px-6 py-4 bg-gradient-to-r from-[#1E293B] to-[#0F172A]">
+          <header className="relative border-b border-gray-200 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/20 ring-2 ring-cyan-400/40">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1E293B]">
                   <Gamepad2 className="h-5 w-5 text-cyan-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-extrabold tracking-widest uppercase text-white" style={{ fontFamily: 'monospace' }}>
+                  <h2
+                    className="text-lg font-extrabold tracking-wide uppercase text-gray-900"
+                    style={{ fontFamily: 'Pretendard, sans-serif' }}
+                  >
                     {locale === 'ko' ? 'SELECT YOUR MISSION!' : 'SELECT YOUR MISSION!'}
                   </h2>
-                  <p className="text-xs text-gray-400 tracking-wide">
+                  <p className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard, sans-serif' }}>
                     {locale === 'ko' ? '수업과 회차를 선택하고 게임을 시작하세요' : 'Choose a course and a level to begin'}
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="rounded-xl p-2 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
+                className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Game Mode Cards */}
-            <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+            {/* Game Mode Cards — 균등 분할 */}
+            <div className="mt-4 grid grid-cols-4 gap-3">
               {GAME_MODES.map(game => (
                 <div
                   key={game.id}
-                  className="group flex shrink-0 flex-col items-center rounded-xl bg-[#1E293B] border border-gray-700/50 px-4 py-2.5 transition-all hover:border-gray-500 hover:bg-[#253349] cursor-default"
+                  className="flex flex-col items-center rounded-xl bg-gray-50 border border-gray-200 py-3 transition-all hover:border-gray-300 hover:shadow-sm cursor-default"
                   style={{ borderTopColor: game.color, borderTopWidth: 3 }}
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 mb-1.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm mb-1.5">
                     {game.id === 'running' ? (
                       <Image src="/game/scene.png" alt="Running" width={32} height={16} className="rounded" />
                     ) : (
                       <span className="text-xl">{game.emoji}</span>
                     )}
                   </div>
-                  <span className="text-[11px] font-bold tracking-wider uppercase text-gray-300" style={{ fontFamily: 'monospace' }}>
+                  <span className="text-[11px] font-bold tracking-wider uppercase text-gray-600" style={{ fontFamily: 'Pretendard, sans-serif' }}>
                     {locale === 'ko' ? game.label_ko : game.label_en}
                   </span>
                 </div>
@@ -174,18 +177,18 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
           {/* Body — 2-column */}
           {isLoading ? (
             <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="h-7 w-7 animate-spin text-cyan-400" />
+              <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
             </div>
           ) : courses.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-gray-500 tracking-wider uppercase" style={{ fontFamily: 'monospace' }}>
+            <div className="flex flex-1 items-center justify-center text-sm text-gray-400 tracking-wider uppercase" style={{ fontFamily: 'monospace' }}>
               {locale === 'ko' ? 'NO COURSES FOUND' : 'NO COURSES FOUND'}
             </div>
           ) : (
             <div className="flex flex-1 min-h-0">
               {/* Left — 수업 목록 (SELECT SUBJECT) */}
-              <div className="flex w-[260px] shrink-0 flex-col border-r border-gray-700/50">
+              <div className="flex w-[260px] shrink-0 flex-col border-r border-gray-200">
                 <div className="px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500" style={{ fontFamily: 'monospace' }}>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400" style={{ fontFamily: 'monospace' }}>
                     {locale === 'ko' ? 'SELECT SUBJECT' : 'SELECT SUBJECT'}
                   </p>
                 </div>
@@ -198,24 +201,24 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                         onClick={() => setSelectedCourseId(course.course_id)}
                         className={`group flex w-full items-center justify-between rounded-xl p-3 text-left transition-all ${
                           isSelected
-                            ? 'bg-emerald-500/10 border border-emerald-500/40'
-                            : 'border border-transparent hover:bg-white/5 hover:border-gray-700'
+                            ? 'bg-emerald-50 border border-emerald-400/50'
+                            : 'border border-transparent hover:bg-gray-50 hover:border-gray-200'
                         }`}
                       >
                         <div className="min-w-0 flex-1">
                           <p className={`truncate text-sm font-bold ${
-                            isSelected ? 'text-emerald-400' : 'text-gray-200'
+                            isSelected ? 'text-emerald-600' : 'text-gray-800'
                           }`}>
                             {course.title}
                           </p>
                           {course.professor_name && (
-                            <p className="mt-0.5 truncate text-xs text-gray-500">
+                            <p className="mt-0.5 truncate text-xs text-gray-400">
                               {course.professor_name}
                             </p>
                           )}
                         </div>
                         <ChevronRight className={`ml-2 h-4 w-4 shrink-0 transition-colors ${
-                          isSelected ? 'text-emerald-400' : 'text-gray-600'
+                          isSelected ? 'text-emerald-500' : 'text-gray-300'
                         }`} />
                       </button>
                     )
@@ -226,27 +229,27 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
               {/* Right — 회차 목록 (SELECT LEVEL) */}
               <div className="flex flex-1 flex-col min-w-0">
                 <div className="flex items-center justify-between px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500" style={{ fontFamily: 'monospace' }}>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400" style={{ fontFamily: 'monospace' }}>
                     {locale === 'ko' ? 'SELECT LEVEL' : 'SELECT LEVEL'}
                   </p>
                   {selectedCourse && availableLectures.length > 0 && (
                     <span
-                      className="rounded-md bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-400 border border-amber-400/30"
+                      className="rounded-md bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600 border border-amber-200"
                       style={{ fontFamily: 'monospace' }}
                     >
-                      {availableLectures.length} {locale === 'ko' ? 'LEVELS FOUND' : 'LEVELS FOUND'}
+                      {availableLectures.length} LEVELS FOUND
                     </span>
                   )}
                 </div>
                 <div className="flex-1 overflow-y-auto px-2 pb-2">
                   {!selectedCourse ? (
-                    <div className="flex h-full items-center justify-center text-sm text-gray-600 tracking-wider" style={{ fontFamily: 'monospace' }}>
+                    <div className="flex h-full items-center justify-center text-sm text-gray-400 tracking-wider" style={{ fontFamily: 'monospace' }}>
                       {locale === 'ko' ? '← 수업을 선택하세요' : '← SELECT A SUBJECT'}
                     </div>
                   ) : availableLectures.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-2">
-                      <Lock className="h-8 w-8 text-gray-600" />
-                      <p className="text-sm text-gray-600 tracking-wider" style={{ fontFamily: 'monospace' }}>
+                      <Lock className="h-8 w-8 text-gray-300" />
+                      <p className="text-sm text-gray-400 tracking-wider" style={{ fontFamily: 'monospace' }}>
                         {locale === 'ko' ? 'NO LEVELS AVAILABLE' : 'NO LEVELS AVAILABLE'}
                       </p>
                     </div>
@@ -263,12 +266,12 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                           <button
                             key={lecture.lecture_id}
                             onClick={() => handleSelectLecture(selectedCourse.course_id, lecture.lecture_id)}
-                            className="group flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all border border-transparent hover:bg-white/5 hover:border-cyan-500/30"
+                            className="group flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all border border-transparent hover:bg-gray-50 hover:border-cyan-200"
                           >
                             {/* Level number badge */}
                             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
                               <svg className="absolute inset-0 h-10 w-10" viewBox="0 0 40 40">
-                                <circle cx="20" cy="20" r="17" fill="none" stroke="#334155" strokeWidth="2.5" />
+                                <circle cx="20" cy="20" r="17" fill="none" stroke="#E5E7EB" strokeWidth="2.5" />
                                 <circle
                                   cx="20" cy="20" r="17" fill="none"
                                   stroke="#F43F5E" strokeWidth="2.5"
@@ -277,19 +280,19 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                                   transform="rotate(-90 20 20)"
                                 />
                               </svg>
-                              <span className="text-sm font-extrabold text-white" style={{ fontFamily: 'monospace' }}>
+                              <span className="text-sm font-extrabold text-gray-700" style={{ fontFamily: 'monospace' }}>
                                 {lecture.lecture_no}
                               </span>
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-bold text-gray-100 group-hover:text-cyan-300 transition-colors">
+                              <p className="truncate text-sm font-bold text-gray-800 group-hover:text-cyan-600 transition-colors">
                                 {lecture.title ?? (locale === 'ko' ? `Level ${lecture.lecture_no}` : `Level ${lecture.lecture_no}`)}
                               </p>
                               {weekLabel && (
-                                <p className="mt-0.5 text-xs text-gray-500">{weekLabel}</p>
+                                <p className="mt-0.5 text-xs text-gray-400">{weekLabel}</p>
                               )}
                             </div>
-                            <ChevronRight className="h-4 w-4 shrink-0 text-gray-600 opacity-0 transition-all group-hover:opacity-100 group-hover:text-cyan-400" />
+                            <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 opacity-0 transition-all group-hover:opacity-100 group-hover:text-cyan-500" />
                           </button>
                         )
                       })}
@@ -301,7 +304,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
           )}
 
           {/* Footer — Arcade Status Bar */}
-          <footer className="flex items-center justify-between border-t border-gray-700/50 bg-[#0B1120] px-5 py-2.5">
+          <footer className="flex items-center justify-between border-t border-gray-200 bg-[#1E293B] px-5 py-2.5">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -311,7 +314,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
               </span>
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500" style={{ fontFamily: 'monospace' }}>
-              {locale === 'ko' ? 'PRESS [START] TO CONTINUE' : 'PRESS [START] TO CONTINUE'}
+              PRESS [START] TO CONTINUE
             </span>
           </footer>
         </div>
