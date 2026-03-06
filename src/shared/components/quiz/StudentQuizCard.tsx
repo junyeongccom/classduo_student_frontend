@@ -13,8 +13,8 @@ import {
   ChevronUp,
   CheckCircle2,
   XCircle,
-  Star,
-  RotateCcw,
+  Bookmark,
+  Trash2,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
@@ -61,6 +61,10 @@ export interface StudentQuizCardProps {
   onCorrectUpdate: (quizId: string, isCorrect: boolean, answer: number) => void
   /** 선택 해제(리셋) 콜백 — 제공 시 이미 선택한 선지 재클릭으로 풀이 초기화 가능 */
   onResetAnswer?: (quizId: string) => void
+  /** 오답노트 삭제 모드 — true면 북마크 대신 삭제 버튼 표시 */
+  wrongNoteMode?: boolean
+  /** 오답노트 삭제 콜백 */
+  onDismissWrongNote?: (quizId: string) => void
 }
 
 /* ───────────── 상수 ───────────── */
@@ -78,8 +82,8 @@ const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
 
 /** 풀이 상태에 따른 카드 테두리 스타일 */
 function getCardBorderStyle(isCorrect: boolean | null): string {
-  if (isCorrect === true) return 'border-green-300 dark:border-green-700'
-  if (isCorrect === false) return 'border-red-300 dark:border-red-700'
+  if (isCorrect === true) return 'border-gray-200 dark:border-gray-700'
+  if (isCorrect === false) return 'border-gray-200 dark:border-gray-700'
   return 'border-gray-200 dark:border-gray-700'
 }
 
@@ -94,6 +98,8 @@ export function StudentQuizCard({
   onBookmarkToggle,
   onCorrectUpdate,
   onResetAnswer,
+  wrongNoteMode,
+  onDismissWrongNote,
 }: StudentQuizCardProps) {
   const isMultipleChoice =
     quiz.quiz_type === 'MISCONCEPTION' ||
@@ -117,18 +123,19 @@ export function StudentQuizCard({
 
   const handleChoiceClick = useCallback(
     (idx: number) => {
-      if (isSubmitted) {
-        if (selectedChoiceIdx === idx && onResetAnswer && !showAnswer) {
-          onResetAnswer(quiz.quiz_id)
-          setIsSubmitted(false)
-          setSelectedChoiceIdx(null)
-          setShowAnswer(false)
-        }
+      if (showAnswer) return
+
+      // 이미 제출된 상태에서 선택했던 선지를 다시 클릭 → 리셋
+      if (isSubmitted && selectedChoiceIdx === idx && onResetAnswer) {
+        setSelectedChoiceIdx(null)
+        setIsSubmitted(false)
+        onResetAnswer(quiz.quiz_id)
         return
       }
-      if (showAnswer) return
-      setSelectedChoiceIdx(idx)
 
+      if (isSubmitted) return
+
+      setSelectedChoiceIdx(idx)
       const selectedChoice = quiz.choices[idx]
       if (selectedChoice) {
         setIsSubmitted(true)
@@ -160,10 +167,10 @@ export function StudentQuizCard({
     }
 
     if (isSelected && choice.is_correct) {
-      return 'border-green-300 bg-green-50/60 dark:border-green-700 dark:bg-green-900/20'
+      return 'border-green-300 bg-green-50/60 dark:border-green-700 dark:bg-green-900/20 cursor-pointer'
     }
     if (isSelected && !choice.is_correct) {
-      return 'border-red-300 bg-red-50/60 dark:border-red-700 dark:bg-red-900/20'
+      return 'border-red-300 bg-red-50/60 dark:border-red-700 dark:bg-red-900/20 cursor-pointer'
     }
 
     if (showAnswer && choice.is_correct) {
@@ -214,34 +221,71 @@ export function StudentQuizCard({
           </span>
         )}
 
-        {/* 즐겨찾기 Star — 우측 정렬 */}
+        {/* 우측 액션 버튼 — 오답노트 모드: 삭제 / 일반 모드: 즐겨찾기 */}
         <div className="group relative ml-auto">
-          <button
-            type="button"
-            onClick={handleBookmarkClick}
-            disabled={!hasAnswered}
-            className={`p-1 rounded-full transition-colors ${
-              hasAnswered
-                ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
-                : 'cursor-not-allowed opacity-40'
-            }`}
-            aria-label={isBookmarked ? t('bookmarkRemove') : t('bookmarkAdd')}
-          >
-            <Star
-              className={`h-4 w-4 transition-colors ${
-                isBookmarked
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : 'fill-none text-gray-300 dark:text-gray-500'
-              }`}
-            />
-          </button>
-          {!hasAnswered && (
-            <div className="pointer-events-none absolute right-0 bottom-full mb-2 z-20 w-max max-w-[200px] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-              <div className="rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-sm">
-                {t('bookmarkDisabledTooltip')}
-              </div>
-              <div className="absolute right-3 top-full h-1.5 w-1.5 rotate-45 bg-gray-900" />
-            </div>
+          {wrongNoteMode ? (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDismissWrongNote?.(quiz.quiz_id)
+                }}
+                disabled={isCorrect === false}
+                className={`p-1 rounded-full transition-colors ${
+                  isCorrect === false
+                    ? 'cursor-not-allowed opacity-40'
+                    : 'hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer'
+                }`}
+                aria-label={t('wrongNoteDismiss')}
+              >
+                <Trash2
+                  className={`h-4 w-4 transition-colors ${
+                    isCorrect === false
+                      ? 'text-gray-300 dark:text-gray-600'
+                      : 'text-red-400 hover:text-red-500'
+                  }`}
+                />
+              </button>
+              {isCorrect === false && (
+                <div className="pointer-events-none absolute right-0 bottom-full mb-2 z-20 w-max max-w-[200px] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                  <div className="rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-sm">
+                    {t('wrongNoteDismissDisabledTooltip')}
+                  </div>
+                  <div className="absolute right-3 top-full h-1.5 w-1.5 rotate-45 bg-gray-900" />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleBookmarkClick}
+                disabled={!hasAnswered}
+                className={`p-1 rounded-full transition-colors ${
+                  hasAnswered
+                    ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
+                    : 'cursor-not-allowed opacity-40'
+                }`}
+                aria-label={isBookmarked ? t('bookmarkRemove') : t('bookmarkAdd')}
+              >
+                <Bookmark
+                  className={`h-4 w-4 transition-colors ${
+                    isBookmarked
+                      ? 'fill-blue-500 text-blue-500'
+                      : 'fill-none text-gray-300 dark:text-gray-500'
+                  }`}
+                />
+              </button>
+              {!hasAnswered && (
+                <div className="pointer-events-none absolute right-0 bottom-full mb-2 z-20 w-max max-w-[200px] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                  <div className="rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-sm">
+                    {t('bookmarkDisabledTooltip')}
+                  </div>
+                  <div className="absolute right-3 top-full h-1.5 w-1.5 rotate-45 bg-gray-900" />
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -259,10 +303,7 @@ export function StudentQuizCard({
               key={choice.choice_id ?? `choice-${idx}`}
               type="button"
               onClick={() => handleChoiceClick(idx)}
-              disabled={isSubmitted && !(selectedChoiceIdx === idx && onResetAnswer && !showAnswer)}
-              className={`w-full flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${getChoiceStyle(choice, idx)} ${
-                isSubmitted && selectedChoiceIdx === idx && onResetAnswer && !showAnswer ? 'cursor-pointer hover:opacity-80' : ''
-              }`}
+              className={`w-full flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-all ${getChoiceStyle(choice, idx)}`}
             >
               <span
                 className={`shrink-0 w-5 text-center ${getChoiceLabelStyle(choice, idx)}`}
@@ -277,9 +318,6 @@ export function StudentQuizCard({
               )}
               {isSubmitted && selectedChoiceIdx === idx && !choice.is_correct && (
                 <XCircle className="h-4 w-4 shrink-0 text-red-400" />
-              )}
-              {isSubmitted && selectedChoiceIdx === idx && onResetAnswer && !showAnswer && (
-                <RotateCcw className="h-3.5 w-3.5 shrink-0 text-gray-400" />
               )}
               {showAnswer && choice.is_correct && selectedChoiceIdx !== idx && (
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />

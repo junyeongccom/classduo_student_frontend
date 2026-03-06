@@ -35,6 +35,10 @@ export interface QuizWithMeta {
   question_eng?: string | null
   answer_eng?: string | null
   explanation_eng?: string | null
+  /** 3단 그룹핑용 메타 */
+  course_id?: string
+  course_name?: string
+  lecture_name?: string
 }
 
 export interface QuizGroup {
@@ -65,4 +69,55 @@ export function groupQuizzesByType(quizzes: QuizWithMeta[]): QuizGroup[] {
         }),
     }))
     .filter(g => g.items.length > 0)
+}
+
+export interface LectureGroup {
+  lecture_id: string
+  lecture_name: string
+  typeGroups: QuizGroup[]
+}
+
+export interface CourseGroup {
+  course_id: string
+  course_name: string
+  lectureGroups: LectureGroup[]
+}
+
+/**
+ * 강좌 → 회차 → 유형 3단 그룹핑.
+ */
+export function groupQuizzesByCourseAndLecture(quizzes: QuizWithMeta[]): CourseGroup[] {
+  const courseMap = new Map<string, { name: string; lectureMap: Map<string, { name: string; quizzes: QuizWithMeta[] }> }>()
+
+  for (const quiz of quizzes) {
+    const cid = quiz.course_id ?? 'unknown'
+    const cname = quiz.course_name ?? cid
+    const lid = quiz.lecture_id ?? 'unknown'
+    const lname = quiz.lecture_name ?? lid
+
+    if (!courseMap.has(cid)) {
+      courseMap.set(cid, { name: cname, lectureMap: new Map() })
+    }
+    const course = courseMap.get(cid)!
+    if (!course.lectureMap.has(lid)) {
+      course.lectureMap.set(lid, { name: lname, quizzes: [] })
+    }
+    course.lectureMap.get(lid)!.quizzes.push(quiz)
+  }
+
+  const result: CourseGroup[] = []
+  for (const [courseId, courseData] of courseMap) {
+    const lectureGroups: LectureGroup[] = []
+    for (const [lectureId, lectureData] of courseData.lectureMap) {
+      const typeGroups = groupQuizzesByType(lectureData.quizzes)
+      if (typeGroups.length > 0) {
+        lectureGroups.push({ lecture_id: lectureId, lecture_name: lectureData.name, typeGroups })
+      }
+    }
+    if (lectureGroups.length > 0) {
+      result.push({ course_id: courseId, course_name: courseData.name, lectureGroups })
+    }
+  }
+
+  return result
 }

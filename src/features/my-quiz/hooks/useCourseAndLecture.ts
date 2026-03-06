@@ -7,11 +7,11 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { apiRequest } from '@/shared/lib/api'
 
-interface LectureItem {
+export interface LectureItem {
   lecture_id: string
   lecture_no: number
   title: string | null
@@ -19,7 +19,7 @@ interface LectureItem {
   is_available?: boolean
 }
 
-interface CourseItem {
+export interface CourseItem {
   course_id: string
   title: string
   professor_name: string | null
@@ -67,9 +67,14 @@ export function useCourseAndLecture() {
       return
     }
 
-    setCourses(result.data.courses ?? [])
+    const list = result.data.courses ?? []
+    setCourses(list)
+    // 첫 진입 시 강좌가 선택되지 않았으면 첫 번째 강좌 자동 선택
+    if (!selectedCourseId && list.length > 0) {
+      setSelectedCourseId(list[0].course_id)
+    }
     setIsLoading(false)
-  }, [t])
+  }, [t]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchCourses()
@@ -116,6 +121,25 @@ export function useCourseAndLecture() {
     setSelectedLectureIds([])
   }, [])
 
+  const allLectureIds = courses.flatMap(c =>
+    c.lectures.filter(l => l.is_available !== false).map(l => l.lecture_id)
+  )
+
+  const lectureInfoMap = useMemo(() => {
+    const map = new Map<string, { course_id: string; course_name: string; lecture_name: string }>()
+    for (const c of courses) {
+      const courseName = c.section ? `${c.title} (${c.section})` : c.title
+      for (const l of c.lectures) {
+        map.set(l.lecture_id, {
+          course_id: c.course_id,
+          course_name: courseName,
+          lecture_name: l.title ?? `${l.lecture_no}회차`,
+        })
+      }
+    }
+    return map
+  }, [courses])
+
   return {
     isLoading,
     error,
@@ -130,5 +154,9 @@ export function useCourseAndLecture() {
     selectAllLectures,
     clearLectureIds,
     hasCourses: courses.length > 0,
+    courses,
+    selectedCourse,
+    allLectureIds,
+    lectureInfoMap,
   }
 }

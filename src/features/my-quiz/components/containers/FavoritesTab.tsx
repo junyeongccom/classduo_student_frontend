@@ -9,17 +9,34 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Loader2, Star, ChevronUp } from 'lucide-react'
+import { Loader2, Star, BookOpen, ArrowUpDown } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { useToast } from '@/shared/hooks/useToast'
 import * as statusService from '../../services/myQuizStatusService'
 import type { QuizStatusEntry } from '../../types'
-import { groupQuizzesByType } from '../../domain/groupQuizzes'
-import type { QuizWithMeta, QuizGroup } from '../../domain/groupQuizzes'
+import { groupQuizzesByCourseAndLecture } from '../../domain/groupQuizzes'
+import type { QuizWithMeta, CourseGroup } from '../../domain/groupQuizzes'
+import { BottomDropdown, MultiSelectDropdown } from '../ui/LectureSelectorBar'
+
+interface SelectOption {
+  value: string
+  label: string
+}
 
 interface FavoritesTabProps {
   selectedLectureIds: string[]
+  lectureInfoMap: Map<string, { course_id: string; course_name: string; lecture_name: string }>
+  courseOptions: SelectOption[]
+  lectureOptions: SelectOption[]
+  selectedCourseId: string | null
+  onCourseChange: (courseId: string) => void
+  selectedLectureIds_multi: string[]
+  onLectureToggle: (lectureId: string) => void
+  onSelectAllLectures: () => void
+  onClearLectureIds: () => void
+  isLoading?: boolean
+  hasCourses: boolean
 }
 
 const PAGE_SIZE = 20
@@ -30,14 +47,28 @@ function pickLocalizedText(ko: string | null | undefined, eng: string | null | u
   return ko ?? null
 }
 
-export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) {
+export default function FavoritesTab({
+  selectedLectureIds,
+  lectureInfoMap,
+  courseOptions,
+  lectureOptions,
+  selectedCourseId,
+  onCourseChange,
+  selectedLectureIds_multi,
+  onLectureToggle,
+  onSelectAllLectures,
+  onClearLectureIds,
+  isLoading: selectorLoading,
+  hasCourses,
+}: FavoritesTabProps) {
   const t = useTranslations('myQuiz')
   const tQuiz = useTranslations('lectureStudy.quiz')
   const locale = useLocale()
   const { toasts, error: showErrorToast } = useToast()
 
-  const [groups, setGroups] = useState<QuizGroup[]>([])
+  const [courseGroups, setCourseGroups] = useState<CourseGroup[]>([])
   const [allQuizzes, setAllQuizzes] = useState<QuizWithMeta[]>([])
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
@@ -115,6 +146,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
     for (const item of (instructorResult.data ?? [])) {
       const key = `instructor:${item.quiz_id}`
       const status = statusMap.get(key)
+      const info = lectureInfoMap.get(status?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
@@ -123,12 +155,16 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
         selected_answer: status?.answer ?? null,
+        course_id: info?.course_id,
+        course_name: info?.course_name,
+        lecture_name: info?.lecture_name,
       })
     }
 
     for (const item of (contentResult.data ?? [])) {
       const key = `content:${item.quiz_id}`
       const status = statusMap.get(key)
+      const info = lectureInfoMap.get(status?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
@@ -137,12 +173,16 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
         selected_answer: status?.answer ?? null,
+        course_id: info?.course_id,
+        course_name: info?.course_name,
+        lecture_name: info?.lecture_name,
       })
     }
 
     for (const item of (customizeResult.data ?? [])) {
       const key = `customize:${item.quiz_id}`
       const status = statusMap.get(key)
+      const info = lectureInfoMap.get(status?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
@@ -151,24 +191,23 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         bookmark: status?.bookmark ?? true,
         correct: status?.correct ?? null,
         selected_answer: status?.answer ?? null,
+        course_id: info?.course_id,
+        course_name: info?.course_name,
+        lecture_name: info?.lecture_name,
       })
     }
 
     // 함수형 업데이트로 allQuizzes를 deps에서 제거 (R-AW-10)
-    setAllQuizzes(prev => {
-      const updated = append ? [...prev, ...quizzesWithMeta] : quizzesWithMeta
-      setGroups(groupQuizzesByType(updated))
-      return updated
-    })
+    setAllQuizzes(prev => append ? [...prev, ...quizzesWithMeta] : quizzesWithMeta)
     setIsLoading(false)
     if (append) isFetchingMoreRef.current = false
-  }, [selectedLectureIds, t, showErrorToast])
+  }, [selectedLectureIds, t, showErrorToast, lectureInfoMap])
 
   // 회차 변경 시 리셋 (배열 참조 변경 방지를 위해 JSON.stringify 비교)
   const lectureIdsKey = JSON.stringify(selectedLectureIds)
   useEffect(() => {
     setAllQuizzes([])
-    setGroups([])
+    setCourseGroups([])
     setOffset(0)
     setHasMore(true)
     setError(null)
@@ -195,6 +234,20 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
     return () => observer.disconnect()
   }, [hasMore, isLoading, offset, fetchQuizzes])
 
+  // sortOrder 또는 allQuizzes 변경 시 courseGroups 재생성
+  useEffect(() => {
+    if (allQuizzes.length === 0) {
+      setCourseGroups([])
+      return
+    }
+    const sorted = [...allQuizzes].sort((a, b) => {
+      const dateA = new Date(a.created_at ?? 0).getTime()
+      const dateB = new Date(b.created_at ?? 0).getTime()
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
+    })
+    setCourseGroups(groupQuizzesByCourseAndLecture(sorted))
+  }, [sortOrder, allQuizzes])
+
   const handleBookmarkToggle = useCallback(
     async (quizId: string) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
@@ -203,7 +256,6 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
       // Optimistic: 즉시 제거
       const updated = allQuizzes.filter(q => q.quiz_id !== quizId)
       setAllQuizzes(updated)
-      setGroups(groupQuizzesByType(updated))
 
       const result = await statusService.toggleBookmark(
         quiz.quiz_source,
@@ -233,7 +285,6 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         q.quiz_id === quizId ? { ...q, correct: isCorrect, selected_answer: answer } : q,
       )
       setAllQuizzes(updated)
-      setGroups(groupQuizzesByType(updated))
 
       const result = await statusService.updateCorrect(
         quiz.quiz_source,
@@ -265,7 +316,6 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         q.quiz_id === quizId ? { ...q, correct: null, selected_answer: null } : q,
       )
       setAllQuizzes(updated)
-      setGroups(groupQuizzesByType(updated))
 
       const result = await statusService.updateCorrect(
         quiz.quiz_source,
@@ -288,8 +338,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
   if (selectedLectureIds.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400 px-6">
-        <ChevronUp className="h-10 w-10 stroke-[1.5]" />
-        <p className="text-sm text-center">{t('empty.selectLecture')}</p>
+        <p className="text-sm text-center">{t('selector.noCourses')}</p>
       </div>
     )
   }
@@ -317,7 +366,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
     )
   }
 
-  if (groups.length === 0) {
+  if (courseGroups.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
@@ -330,7 +379,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
   }
 
   return (
-    <div className="relative p-4 space-y-6">
+    <div className="relative p-4 space-y-6 bg-gray-50 min-h-full">
       {/* Toast messages */}
       {toasts.length > 0 && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
@@ -342,59 +391,118 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
         </div>
       )}
 
-      <div className="mx-auto max-w-xl space-y-6">
-      {groups.map(group => (
-        <div key={group.type}>
-          <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
-            <span>{tQuiz(`sectionLabel.${group.type}`)}</span>
-            <span className="text-xs font-normal text-gray-400">
-              {tQuiz('itemCount', { count: group.items.length })}
-            </span>
-          </h4>
-          <div className="space-y-3">
-            {group.items.map((quiz, idx) => {
-              const studentQuiz: StudentQuizItem = {
-                quiz_id: quiz.quiz_id,
-                quiz_type: quiz.quiz_type,
-                question: pickLocalizedText(quiz.question, quiz.question_eng, locale) ?? quiz.question,
-                answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
-                explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
-                difficulty: quiz.difficulty,
-                choices: quiz.choices.map(c => ({
-                  ...c,
-                  choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
-                  choice_explanation: pickLocalizedText(c.choice_explanation, c.choice_explanation_eng, locale) ?? c.choice_explanation ?? null,
-                })),
-              }
-              return (
-                <div key={quiz.quiz_id}>
-                  {/* quiz_source 뱃지 */}
-                  <div className="mb-1">
-                    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                      quiz.quiz_source === 'instructor'
-                        ? 'bg-purple-50 text-purple-600'
-                        : quiz.quiz_source === 'content'
-                          ? 'bg-teal-50 text-teal-600'
-                          : 'bg-indigo-50 text-indigo-600'
-                    }`}>
-                      {t(`quizSource.${quiz.quiz_source}`)}
-                    </span>
-                  </div>
-                  <StudentQuizCard
-                    quiz={studentQuiz}
-                    index={idx}
-                    isBookmarked={quiz.bookmark}
-                    isCorrect={quiz.correct}
-                    selectedAnswer={quiz.selected_answer}
-                    onBookmarkToggle={handleBookmarkToggle}
-                    onCorrectUpdate={handleCorrectUpdate}
-                    onResetAnswer={handleResetAnswer}
-                  />
-                </div>
-              )
-            })}
-          </div>
+      <div className="mx-auto max-w-2xl">
+      {/* 제목 + 설명 */}
+      <div className="mb-4">
+        <h2 className="text-lg font-bold text-gray-900">{t('favorites.title')}</h2>
+        <p className="text-sm text-gray-500 mt-0.5">{t('favorites.description')}</p>
+      </div>
+
+      {/* 드롭다운 + 정렬 */}
+      <div className="flex items-center gap-3 mb-6">
+        <BottomDropdown
+          value={selectedCourseId}
+          options={courseOptions}
+          placeholder={t('selector.selectCourse')}
+          onChange={onCourseChange}
+          isLoading={selectorLoading}
+          loadingLabel={t('selector.loading')}
+          emptyLabel={t('selector.noCourses')}
+        />
+        <MultiSelectDropdown
+          options={lectureOptions}
+          selectedIds={selectedLectureIds_multi}
+          placeholder={t('selector.selectLecture')}
+          onToggle={onLectureToggle}
+          onSelectAll={onSelectAllLectures}
+          onClearAll={onClearLectureIds}
+          disabled={!selectedCourseId}
+          selectAllLabel={t('selector.selectAll')}
+          clearAllLabel={t('selector.clearAll')}
+          countLabel={(count) => t('selector.lectureCount', { count })}
+        />
+        <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
+          <ArrowUpDown className="h-3.5 w-3.5" />
+          <select
+            value={sortOrder}
+            onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
+            className="bg-transparent border-none text-xs text-gray-500 focus:outline-none cursor-pointer"
+          >
+            <option value="newest">{t('sort.newest')}</option>
+            <option value="oldest">{t('sort.oldest')}</option>
+          </select>
         </div>
+      </div>
+
+      <div className="space-y-6">
+      {courseGroups.map(courseGroup => (
+        <section key={courseGroup.course_id} className="space-y-4">
+          <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
+            <BookOpen className="h-4 w-4 text-blue-500" />
+            {courseGroup.course_name}
+          </h3>
+          {courseGroup.lectureGroups.map(lectureGroup => (
+            <div key={lectureGroup.lecture_id} className="space-y-3 pl-2">
+              <h4 className="text-sm font-semibold text-gray-600 border-l-2 border-blue-400 pl-2">
+                {lectureGroup.lecture_name}
+              </h4>
+              {lectureGroup.typeGroups.map(typeGroup => (
+                <div key={typeGroup.type}>
+                  <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                    {tQuiz(`sectionLabel.${typeGroup.type}`)}
+                    <span className="text-xs font-normal text-gray-400">
+                      {tQuiz('itemCount', { count: typeGroup.items.length })}
+                    </span>
+                  </h5>
+                  <div className="space-y-3">
+                    {typeGroup.items.map((quiz, idx) => {
+                      const studentQuiz: StudentQuizItem = {
+                        quiz_id: quiz.quiz_id,
+                        quiz_type: quiz.quiz_type,
+                        question: pickLocalizedText(quiz.question, quiz.question_eng, locale) ?? quiz.question,
+                        answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
+                        explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
+                        difficulty: quiz.difficulty,
+                        choices: quiz.choices.map(c => ({
+                          ...c,
+                          choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
+                          choice_explanation: pickLocalizedText(c.choice_explanation, c.choice_explanation_eng, locale) ?? c.choice_explanation ?? null,
+                        })),
+                      }
+                      return (
+                        <div key={quiz.quiz_id}>
+                          {/* quiz_source 뱃지 */}
+                          <div className="mb-1">
+                            <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                              quiz.quiz_source === 'instructor'
+                                ? 'bg-purple-50 text-purple-600'
+                                : quiz.quiz_source === 'content'
+                                  ? 'bg-teal-50 text-teal-600'
+                                  : 'bg-indigo-50 text-indigo-600'
+                            }`}>
+                              {t(`quizSource.${quiz.quiz_source}`)}
+                            </span>
+                          </div>
+                          <StudentQuizCard
+                            quiz={studentQuiz}
+                            index={idx}
+                            isBookmarked={quiz.bookmark}
+                            isCorrect={quiz.correct}
+                            selectedAnswer={quiz.selected_answer}
+                            onBookmarkToggle={handleBookmarkToggle}
+                            onCorrectUpdate={handleCorrectUpdate}
+                            onResetAnswer={handleResetAnswer}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </section>
       ))}
 
       {/* 무한 스크롤 센티넬 */}
@@ -403,6 +511,7 @@ export default function FavoritesTab({ selectedLectureIds }: FavoritesTabProps) 
           <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
         </div>
       )}
+      </div>
       </div>
     </div>
   )

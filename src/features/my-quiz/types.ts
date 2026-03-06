@@ -69,6 +69,7 @@ export interface QuizStatusEntry {
   bookmark: boolean
   correct: boolean | null
   answer: number | null
+  incorrect_save: boolean
 }
 
 /** 세션 상세 응답 (퀴즈 목록 포함) */

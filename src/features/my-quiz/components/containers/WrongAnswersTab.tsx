@@ -7,22 +7,40 @@
 
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Loader2, CheckCircle2, ChevronUp } from 'lucide-react'
+import { Loader2, CheckCircle2, BookOpen, RotateCw, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { useToast } from '@/shared/hooks/useToast'
 import * as statusService from '../../services/myQuizStatusService'
 import type { QuizStatusEntry } from '../../types'
-import { groupQuizzesByType } from '../../domain/groupQuizzes'
-import type { QuizWithMeta, QuizGroup } from '../../domain/groupQuizzes'
+import { groupQuizzesByCourseAndLecture } from '../../domain/groupQuizzes'
+import type { QuizWithMeta, CourseGroup } from '../../domain/groupQuizzes'
+import { BottomDropdown, MultiSelectDropdown } from '../ui/LectureSelectorBar'
+
+interface SelectOption {
+  value: string
+  label: string
+}
 
 interface WrongAnswersTabProps {
   selectedLectureIds: string[]
+  lectureInfoMap: Map<string, { course_id: string; course_name: string; lecture_name: string }>
+  courseOptions: SelectOption[]
+  lectureOptions: SelectOption[]
+  selectedCourseId: string | null
+  onCourseChange: (courseId: string) => void
+  selectedLectureIds_multi: string[]
+  onLectureToggle: (lectureId: string) => void
+  onSelectAllLectures: () => void
+  onClearLectureIds: () => void
+  isLoading?: boolean
+  hasCourses: boolean
 }
 
 const PAGE_SIZE = 20
+const INITIAL_DISPLAY_COUNT = 5
 
 /** locale이 'en'이고 _eng 필드가 있으면 영어, 아니면 한글 필드 반환 */
 function pickLocalizedText(ko: string | null | undefined, eng: string | null | undefined, locale: string): string | null {
@@ -30,20 +48,35 @@ function pickLocalizedText(ko: string | null | undefined, eng: string | null | u
   return ko ?? null
 }
 
-export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabProps) {
+export default function WrongAnswersTab({
+  selectedLectureIds,
+  lectureInfoMap,
+  courseOptions,
+  lectureOptions,
+  selectedCourseId,
+  onCourseChange,
+  selectedLectureIds_multi,
+  onLectureToggle,
+  onSelectAllLectures,
+  onClearLectureIds,
+  isLoading: selectorLoading,
+  hasCourses,
+}: WrongAnswersTabProps) {
   const t = useTranslations('myQuiz')
   const tQuiz = useTranslations('lectureStudy.quiz')
   const locale = useLocale()
   const { toasts, error: showErrorToast } = useToast()
 
-  const [groups, setGroups] = useState<QuizGroup[]>([])
+  const [courseGroups, setCourseGroups] = useState<CourseGroup[]>([])
   const [allQuizzes, setAllQuizzes] = useState<QuizWithMeta[]>([])
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [offset, setOffset] = useState(0)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const isFetchingMoreRef = useRef(false)
+  const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY_COUNT)
 
   const fetchQuizzes = useCallback(async (currentOffset: number, append: boolean) => {
     if (selectedLectureIds.length === 0) return
@@ -58,7 +91,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
 
     const statusResult = await statusService.getQuizStatusesByLectureIds(
       selectedLectureIds,
-      { correct: false },
+      { incorrect_save: true },
       { limit: PAGE_SIZE, offset: currentOffset },
     )
 
@@ -114,6 +147,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
     for (const item of (instructorResult.data ?? [])) {
       const key = `instructor:${item.quiz_id}`
       const status = statusMap.get(key)
+      const info = lectureInfoMap.get(status?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
@@ -122,12 +156,16 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         bookmark: status?.bookmark ?? false,
         correct: status?.correct ?? false,
         selected_answer: status?.answer ?? null,
+        course_id: info?.course_id,
+        course_name: info?.course_name,
+        lecture_name: info?.lecture_name,
       })
     }
 
     for (const item of (contentResult.data ?? [])) {
       const key = `content:${item.quiz_id}`
       const status = statusMap.get(key)
+      const info = lectureInfoMap.get(status?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
@@ -136,12 +174,16 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         bookmark: status?.bookmark ?? false,
         correct: status?.correct ?? false,
         selected_answer: status?.answer ?? null,
+        course_id: info?.course_id,
+        course_name: info?.course_name,
+        lecture_name: info?.lecture_name,
       })
     }
 
     for (const item of (customizeResult.data ?? [])) {
       const key = `customize:${item.quiz_id}`
       const status = statusMap.get(key)
+      const info = lectureInfoMap.get(status?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
@@ -150,27 +192,27 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         bookmark: status?.bookmark ?? false,
         correct: status?.correct ?? false,
         selected_answer: status?.answer ?? null,
+        course_id: info?.course_id,
+        course_name: info?.course_name,
+        lecture_name: info?.lecture_name,
       })
     }
 
     // 함수형 업데이트로 allQuizzes를 deps에서 제거 (R-AW-10)
-    setAllQuizzes(prev => {
-      const updated = append ? [...prev, ...quizzesWithMeta] : quizzesWithMeta
-      setGroups(groupQuizzesByType(updated))
-      return updated
-    })
+    setAllQuizzes(prev => append ? [...prev, ...quizzesWithMeta] : quizzesWithMeta)
     setIsLoading(false)
     if (append) isFetchingMoreRef.current = false
-  }, [selectedLectureIds, t, showErrorToast])
+  }, [selectedLectureIds, t, showErrorToast, lectureInfoMap])
 
   // 회차 변경 시 리셋 (배열 참조 변경 방지를 위해 JSON.stringify 비교)
   const lectureIdsKey = JSON.stringify(selectedLectureIds)
   useEffect(() => {
     setAllQuizzes([])
-    setGroups([])
+    setCourseGroups([])
     setOffset(0)
     setHasMore(true)
     setError(null)
+    setDisplayCount(INITIAL_DISPLAY_COUNT)
     isFetchingMoreRef.current = false
     if (selectedLectureIds.length > 0) {
       fetchQuizzes(0, false)
@@ -194,6 +236,65 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
     return () => observer.disconnect()
   }, [hasMore, isLoading, offset, fetchQuizzes])
 
+  // sortOrder 또는 allQuizzes 변경 시 courseGroups 재생성
+  useEffect(() => {
+    if (allQuizzes.length === 0) {
+      setCourseGroups([])
+      return
+    }
+    const sorted = [...allQuizzes].sort((a, b) => {
+      const dateA = new Date(a.created_at ?? 0).getTime()
+      const dateB = new Date(b.created_at ?? 0).getTime()
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
+    })
+    setCourseGroups(groupQuizzesByCourseAndLecture(sorted))
+  }, [sortOrder, allQuizzes])
+
+  // 표시 갯수 제한된 그룹 생성
+  const { visibleGroups, totalQuizCount, shownQuizCount } = useMemo(() => {
+    let count = 0
+    const totalCount = courseGroups.reduce(
+      (sum, cg) => sum + cg.lectureGroups.reduce(
+        (lSum, lg) => lSum + lg.typeGroups.reduce(
+          (tSum, tg) => tSum + tg.items.length, 0
+        ), 0
+      ), 0
+    )
+
+    const limited: CourseGroup[] = []
+    for (const cg of courseGroups) {
+      if (count >= displayCount) break
+      const limitedLectures = []
+      for (const lg of cg.lectureGroups) {
+        if (count >= displayCount) break
+        const limitedTypes = []
+        for (const tg of lg.typeGroups) {
+          if (count >= displayCount) break
+          const remaining = displayCount - count
+          const items = tg.items.slice(0, remaining)
+          limitedTypes.push({ ...tg, items })
+          count += items.length
+        }
+        if (limitedTypes.length > 0) {
+          limitedLectures.push({ ...lg, typeGroups: limitedTypes })
+        }
+      }
+      if (limitedLectures.length > 0) {
+        limited.push({ ...cg, lectureGroups: limitedLectures })
+      }
+    }
+
+    return { visibleGroups: limited, totalQuizCount: totalCount, shownQuizCount: count }
+  }, [courseGroups, displayCount])
+
+  const handleStartLearning = useCallback(() => {
+    if (allQuizzes.length === 0) return
+    const firstId = allQuizzes[0]?.quiz_id
+    if (firstId) {
+      document.getElementById(`quiz-${firstId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [allQuizzes])
+
   const handleBookmarkToggle = useCallback(
     async (quizId: string) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
@@ -204,7 +305,6 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         q.quiz_id === quizId ? { ...q, bookmark: newBookmark } : q,
       )
       setAllQuizzes(updated)
-      setGroups(groupQuizzesByType(updated))
 
       const result = await statusService.toggleBookmark(
         quiz.quiz_source,
@@ -233,7 +333,6 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         q.quiz_id === quizId ? { ...q, correct: isCorrect, selected_answer: answer } : q,
       )
       setAllQuizzes(updated)
-      setGroups(groupQuizzesByType(updated))
 
       const result = await statusService.updateCorrect(
         quiz.quiz_source,
@@ -265,7 +364,6 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         q.quiz_id === quizId ? { ...q, correct: null, selected_answer: null } : q,
       )
       setAllQuizzes(updated)
-      setGroups(groupQuizzesByType(updated))
 
       const result = await statusService.updateCorrect(
         quiz.quiz_source,
@@ -285,11 +383,38 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
     [allQuizzes, fetchQuizzes, showErrorToast, t],
   )
 
+  const handleDismissWrongNote = useCallback(
+    async (quizId: string) => {
+      const quiz = allQuizzes.find(q => q.quiz_id === quizId)
+      if (!quiz) return
+
+      // correct=false면 삭제 불가 (UI에서도 비활성이지만 이중 방어)
+      if (quiz.correct === false) return
+
+      // Optimistic: 목록에서 즉시 제거
+      const updated = allQuizzes.filter(q => q.quiz_id !== quizId)
+      setAllQuizzes(updated)
+
+      const result = await statusService.dismissIncorrectSave(
+        quiz.quiz_source,
+        quizId,
+      )
+
+      if (result.error) {
+        showErrorToast(t('error.dismissFailed'))
+        // 롤백: refetch
+        fetchQuizzes(0, false)
+        setOffset(0)
+        setHasMore(true)
+      }
+    },
+    [allQuizzes, fetchQuizzes, showErrorToast, t],
+  )
+
   if (selectedLectureIds.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400 px-6">
-        <ChevronUp className="h-10 w-10 stroke-[1.5]" />
-        <p className="text-sm text-center">{t('empty.selectLecture')}</p>
+        <p className="text-sm text-center">{t('selector.noCourses')}</p>
       </div>
     )
   }
@@ -317,7 +442,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
     )
   }
 
-  if (groups.length === 0) {
+  if (courseGroups.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
@@ -330,7 +455,7 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
   }
 
   return (
-    <div className="relative p-4 space-y-6">
+    <div className="relative p-4 space-y-6 bg-gray-50 min-h-full">
       {/* Toast messages */}
       {toasts.length > 0 && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
@@ -342,65 +467,164 @@ export default function WrongAnswersTab({ selectedLectureIds }: WrongAnswersTabP
         </div>
       )}
 
-      <div className="mx-auto max-w-xl space-y-6">
-      {groups.map(group => (
-        <div key={group.type}>
-          <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
-            <span>{tQuiz(`sectionLabel.${group.type}`)}</span>
-            <span className="text-xs font-normal text-gray-400">
-              {tQuiz('itemCount', { count: group.items.length })}
-            </span>
-          </h4>
-          <div className="space-y-3">
-            {group.items.map((quiz, idx) => {
-              const studentQuiz: StudentQuizItem = {
-                quiz_id: quiz.quiz_id,
-                quiz_type: quiz.quiz_type,
-                question: pickLocalizedText(quiz.question, quiz.question_eng, locale) ?? quiz.question,
-                answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
-                explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
-                difficulty: quiz.difficulty,
-                choices: quiz.choices.map(c => ({
-                  ...c,
-                  choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
-                  choice_explanation: pickLocalizedText(c.choice_explanation, c.choice_explanation_eng, locale) ?? c.choice_explanation ?? null,
-                })),
-              }
-              return (
-                <div key={quiz.quiz_id}>
-                  <div className="mb-1">
-                    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                      quiz.quiz_source === 'instructor'
-                        ? 'bg-purple-50 text-purple-600'
-                        : quiz.quiz_source === 'content'
-                          ? 'bg-teal-50 text-teal-600'
-                          : 'bg-indigo-50 text-indigo-600'
-                    }`}>
-                      {t(`quizSource.${quiz.quiz_source}`)}
-                    </span>
-                  </div>
-                  <StudentQuizCard
-                    quiz={studentQuiz}
-                    index={idx}
-                    isBookmarked={quiz.bookmark}
-                    isCorrect={quiz.correct}
-                    selectedAnswer={quiz.selected_answer}
-                    onBookmarkToggle={handleBookmarkToggle}
-                    onCorrectUpdate={handleCorrectUpdate}
-                    onResetAnswer={handleResetAnswer}
-                  />
-                </div>
-              )
-            })}
+      <div className="mx-auto max-w-2xl">
+      {/* 제목 + 설명 */}
+      <div className="mb-4">
+        <h2 className="text-lg font-bold text-gray-900">{t('wrong.title')}</h2>
+        <p className="text-sm text-gray-500 mt-0.5">{t('wrong.description')}</p>
+      </div>
+
+      {/* 드롭다운 + 정렬 + 학습 시작 */}
+      <div className="flex items-center gap-3 mb-6">
+        <BottomDropdown
+          value={selectedCourseId}
+          options={courseOptions}
+          placeholder={t('selector.selectCourse')}
+          onChange={onCourseChange}
+          isLoading={selectorLoading}
+          loadingLabel={t('selector.loading')}
+          emptyLabel={t('selector.noCourses')}
+        />
+        <MultiSelectDropdown
+          options={lectureOptions}
+          selectedIds={selectedLectureIds_multi}
+          placeholder={t('selector.selectLecture')}
+          onToggle={onLectureToggle}
+          onSelectAll={onSelectAllLectures}
+          onClearAll={onClearLectureIds}
+          disabled={!selectedCourseId}
+          selectAllLabel={t('selector.selectAll')}
+          clearAllLabel={t('selector.clearAll')}
+          countLabel={(count) => t('selector.lectureCount', { count })}
+        />
+        <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <ArrowUpDown className="h-3.5 w-3.5" />
+            <select
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
+              className="bg-transparent border-none text-xs text-gray-500 focus:outline-none cursor-pointer"
+            >
+              <option value="newest">{t('sort.newest')}</option>
+              <option value="oldest">{t('sort.oldest')}</option>
+            </select>
           </div>
+          <button
+            type="button"
+            onClick={handleStartLearning}
+            disabled={allQuizzes.length === 0}
+            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed shrink-0"
+          >
+            <RotateCw className="h-4 w-4" />
+            {t('wrong.startLearning')}
+          </button>
         </div>
+      </div>
+
+      <div className="space-y-6">
+      {visibleGroups.map(courseGroup => (
+        <section key={courseGroup.course_id} className="space-y-4">
+          <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
+            <BookOpen className="h-4 w-4 text-blue-500" />
+            {courseGroup.course_name}
+          </h3>
+          {courseGroup.lectureGroups.map(lectureGroup => (
+            <div key={lectureGroup.lecture_id} className="space-y-3 pl-2">
+              <h4 className="text-sm font-semibold text-gray-600 border-l-2 border-blue-400 pl-2">
+                {lectureGroup.lecture_name}
+              </h4>
+              {lectureGroup.typeGroups.map(typeGroup => (
+                <div key={typeGroup.type}>
+                  <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                    {tQuiz(`sectionLabel.${typeGroup.type}`)}
+                    <span className="text-xs font-normal text-gray-400">
+                      {tQuiz('itemCount', { count: typeGroup.items.length })}
+                    </span>
+                  </h5>
+                  <div className="space-y-3">
+                    {typeGroup.items.map((quiz, idx) => {
+                      const studentQuiz: StudentQuizItem = {
+                        quiz_id: quiz.quiz_id,
+                        quiz_type: quiz.quiz_type,
+                        question: pickLocalizedText(quiz.question, quiz.question_eng, locale) ?? quiz.question,
+                        answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
+                        explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
+                        difficulty: quiz.difficulty,
+                        choices: quiz.choices.map(c => ({
+                          ...c,
+                          choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
+                          choice_explanation: pickLocalizedText(c.choice_explanation, c.choice_explanation_eng, locale) ?? c.choice_explanation ?? null,
+                        })),
+                      }
+                      return (
+                        <div key={quiz.quiz_id} id={`quiz-${quiz.quiz_id}`}>
+                          <div className="mb-1">
+                            <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                              quiz.quiz_source === 'instructor'
+                                ? 'bg-purple-50 text-purple-600'
+                                : quiz.quiz_source === 'content'
+                                  ? 'bg-teal-50 text-teal-600'
+                                  : 'bg-indigo-50 text-indigo-600'
+                            }`}>
+                              {t(`quizSource.${quiz.quiz_source}`)}
+                            </span>
+                          </div>
+                          <StudentQuizCard
+                            quiz={studentQuiz}
+                            index={idx}
+                            isBookmarked={quiz.bookmark}
+                            isCorrect={quiz.correct}
+                            selectedAnswer={quiz.selected_answer}
+                            onBookmarkToggle={handleBookmarkToggle}
+                            onCorrectUpdate={handleCorrectUpdate}
+                            onResetAnswer={handleResetAnswer}
+                            wrongNoteMode
+                            onDismissWrongNote={handleDismissWrongNote}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </section>
       ))}
 
-      {hasMore && (
-        <div ref={sentinelRef} className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
+      {/* 카운터 텍스트 + 더 보기 버튼 */}
+      {totalQuizCount > 0 && (
+        <div className="flex flex-col items-center gap-2 py-4">
+          <p className="text-xs text-gray-400">
+            {t('wrong.showingCount', { total: totalQuizCount, showing: shownQuizCount })}
+          </p>
+          {shownQuizCount < totalQuizCount && (
+            <button
+              type="button"
+              onClick={() => {
+                setDisplayCount(prev => prev + 5)
+                // 서버에서 더 가져올 필요가 있으면 fetch
+                if (hasMore && shownQuizCount >= allQuizzes.length - 2) {
+                  const nextOffset = offset + PAGE_SIZE
+                  setOffset(nextOffset)
+                  fetchQuizzes(nextOffset, true)
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-6 py-2.5 text-sm text-gray-600 transition hover:border-blue-300 hover:shadow-sm"
+            >
+              <ChevronDown className="h-4 w-4" />
+              {t('wrong.showMore')}
+            </button>
+          )}
         </div>
       )}
+
+      {/* 무한 스크롤 센티넬 (숨김 — 더 보기 버튼에서 트리거) */}
+      {hasMore && (
+        <div ref={sentinelRef} className="h-1" />
+      )}
+      </div>
       </div>
     </div>
   )

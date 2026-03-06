@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { ArrowLeft, Info, Loader2 } from 'lucide-react'
+import { ArrowLeft, Info, Layers, Loader2, Rocket } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 
 const QUIZ_TYPES = [
@@ -24,6 +24,8 @@ interface CreateSessionFormProps {
   onCancel: () => void
   isSubmitting?: boolean
   error?: string | null
+  courseName?: string
+  lectureName?: string
 }
 
 export default function CreateSessionForm({
@@ -31,6 +33,8 @@ export default function CreateSessionForm({
   onCancel,
   isSubmitting = false,
   error = null,
+  courseName,
+  lectureName,
 }: CreateSessionFormProps) {
   const t = useTranslations('myQuiz.create')
 
@@ -57,15 +61,23 @@ export default function CreateSessionForm({
   return (
     <div className="flex h-full flex-col">
       {/* 헤더 */}
-      <div className="shrink-0 flex items-center gap-2 border-b border-gray-100 px-4 py-3">
+      <div className="shrink-0 px-6 py-4">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+          className="mb-3 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h3 className="text-sm font-semibold text-gray-800">{t('newSession')}</h3>
+        {(courseName || lectureName) && (
+          <p className="text-sm mb-2">
+            <span className="text-blue-600 font-medium">{courseName}</span>
+            {courseName && lectureName && <span className="mx-1 text-gray-400">{'>'}</span>}
+            <span className="text-gray-600">{lectureName}</span>
+          </p>
+        )}
+        <h2 className="text-2xl font-bold text-gray-900">{t('settingTitle')}</h2>
+        <p className="text-sm text-gray-500 mt-1">{t('settingDescription')}</p>
       </div>
 
       {/* 설정 영역 - 카드 레이아웃 */}
@@ -75,9 +87,19 @@ export default function CreateSessionForm({
             <div className="p-5 space-y-6">
               {/* 유형별 문항 수 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('perTypeCount')}
-                </label>
+                <div className="flex items-center gap-2 mb-3">
+                  <Layers className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-semibold text-gray-800">{t('quizTypes')}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTypeCounts(Object.fromEntries(QUIZ_TYPES.map(qt => [qt.value, 5])))
+                    }}
+                    className="ml-auto text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {t('selectAll')}
+                  </button>
+                </div>
                 <div className="flex flex-col gap-2">
                   {QUIZ_TYPES.map(qt => {
                     const count = typeCounts[qt.value] ?? 0
@@ -164,29 +186,34 @@ export default function CreateSessionForm({
               )}
             </div>
 
-            {/* 생성 버튼 — 카드 내부 하단 */}
-            <div className="border-t border-gray-100 px-5 py-4">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting || totalCount === 0}
-                className={cn(
-                  'flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white transition',
-                  isSubmitting || totalCount === 0
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-700',
-                )}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t('generating')}
-                  </>
-                ) : (
-                  t('generate')
-                )}
-              </button>
-            </div>
+          </div>
+
+          {/* 생성 버튼 — 카드 밖 하단 */}
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting || totalCount === 0}
+              className={cn(
+                'flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-base font-semibold text-white transition',
+                isSubmitting || totalCount === 0
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700',
+              )}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  {t('generating')}
+                </>
+              ) : (
+                <>
+                  <Rocket className="h-5 w-5" />
+                  {t('generate')}
+                </>
+              )}
+            </button>
+            <p className="text-center text-xs text-gray-400 mt-2">{t('aiNote')}</p>
           </div>
         </div>
       </div>

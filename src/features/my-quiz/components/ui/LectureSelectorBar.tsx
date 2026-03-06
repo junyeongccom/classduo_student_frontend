@@ -28,7 +28,7 @@ interface BottomDropdownProps {
   disabled?: boolean
 }
 
-function BottomDropdown({
+export function BottomDropdown({
   value,
   options,
   placeholder,
@@ -136,7 +136,7 @@ interface MultiSelectDropdownProps {
   countLabel?: (count: number) => string
 }
 
-function MultiSelectDropdown({
+export function MultiSelectDropdown({
   options,
   selectedIds,
   placeholder,
