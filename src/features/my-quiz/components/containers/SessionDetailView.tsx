@@ -100,6 +100,7 @@ export default function SessionDetailView({
           bookmark: newBookmark,
           correct: current?.correct ?? null,
           answer: current?.answer ?? null,
+          incorrect_save: current?.incorrect_save ?? false,
         })
         return next
       })
@@ -132,6 +133,7 @@ export default function SessionDetailView({
           bookmark: current?.bookmark ?? false,
           correct: isCorrect,
           answer,
+          incorrect_save: isCorrect === false ? true : (current?.incorrect_save ?? false),
         })
         return next
       })
@@ -164,6 +166,7 @@ export default function SessionDetailView({
           bookmark: current?.bookmark ?? false,
           correct: null,
           answer: null,
+          incorrect_save: current?.incorrect_save ?? false,
         })
         return next
       })
