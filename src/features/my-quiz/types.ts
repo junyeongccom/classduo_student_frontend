@@ -79,8 +79,7 @@ export interface SessionDetailResponse {
 
 /** 세션 생성 요청 */
 export interface CreateSessionRequest {
-  quiz_count: number
-  quiz_types: string[]
+  type_counts: Record<string, number>
 }
 
 /** 퀴즈 생성 시 선택 가능한 유형 (백엔드 ALLOWED_TYPES와 동일 — STRUCTURE_OBJ 포함) */

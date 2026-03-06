@@ -36,15 +36,14 @@ export async function getSessionDetail(sessionId: string) {
 /** 세션 생성 (HTTP 202) */
 export async function createSession(
   lectureId: string,
-  quizCount: number,
-  quizTypes: string[],
+  typeCounts: Record<string, number>,
 ) {
   return apiRequest<SessionCreateResponse>(
     `/customize-quiz/lectures/${encodeURIComponent(lectureId)}/sessions`,
     {
       method: 'POST',
       auth: true,
-      body: { count: quizCount, quiz_types: quizTypes },
+      body: { type_counts: typeCounts },
     },
   )
 }

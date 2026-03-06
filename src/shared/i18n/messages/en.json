@@ -1027,6 +1027,8 @@
       "estimatedTime": "Estimated time: ~{minutes} min",
       "generate": "Generate",
       "generating": "Generating...",
+      "perTypeCount": "Questions per Type",
+      "totalCount": "Total: {count} questions",
       "noSnapshot": "Learning data is not ready for this lecture. Unable to generate quizzes",
       "typeDEF_TO_TERM": "Definition→Term",
       "typeTERM_TO_DEF": "Term→Definition",

@@ -118,21 +118,25 @@ export default function QuizGenerationTab({
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
-  const handleCreateSubmit = useCallback(async (quizCount: number, quizTypes: string[]) => {
+  const handleCreateSubmit = useCallback(async (typeCounts: Record<string, number>) => {
     if (!selectedLectureId || isCreating) return
     setIsCreating(true)
     setCreateError(null)
 
-    // 런타임 검증: quizCount 범위 클램핑 + quizTypes 허용 목록 필터링
-    const safeCount = Math.max(1, Math.min(30, quizCount))
-    const safeTypes = quizTypes.filter(type => (ALLOWED_QUIZ_TYPES as readonly string[]).includes(type))
-    if (safeTypes.length === 0) {
+    // 런타임 검증: 허용 유형만, 0-20 클램핑, total >= 1
+    const safeCounts: Record<string, number> = {}
+    for (const type of ALLOWED_QUIZ_TYPES) {
+      const val = typeCounts[type] ?? 0
+      safeCounts[type] = Math.max(0, Math.min(20, val))
+    }
+    const totalCount = Object.values(safeCounts).reduce((a, b) => a + b, 0)
+    if (totalCount === 0) {
       setCreateError(t('error.createFailed'))
       setIsCreating(false)
       return
     }
 
-    const result = await myQuizService.createSession(selectedLectureId, safeCount, safeTypes)
+    const result = await myQuizService.createSession(selectedLectureId, safeCounts)
     if (result.error || !result.data) {
       // API 400 → 스냅샷 부재 가능성 특별 분기
       const errorMsg = result.status === 400
@@ -151,7 +155,7 @@ export default function QuizGenerationTab({
       generation_batch_id: null,
       language: null,
       status: 'CREATING',
-      quiz_count: quizCount,
+      quiz_count: totalCount,
       title: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
