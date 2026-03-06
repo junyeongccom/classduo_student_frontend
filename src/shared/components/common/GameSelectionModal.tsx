@@ -1,6 +1,6 @@
 /**
  * @file GameSelectionModal.tsx
- * @description 게임탭 진입용 수업/회차 선택 모달 — 사이드바 게임 메뉴에서 호출
+ * @description 게임탭 진입용 수업/회차 선택 모달 — 아케이드 게임 테마 UI
  * @module shared/components/common
  * @dependencies apiRequest, ai-tutor/lectureUtils, next/navigation
  */
@@ -11,7 +11,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import Image from 'next/image'
-import { X, Puzzle, Loader2, ChevronRight } from 'lucide-react'
+import { X, Loader2, ChevronRight, Gamepad2, Lock } from 'lucide-react'
 import { apiRequest } from '@/shared/lib/api'
 import {
   calculateWeekAndSession,
@@ -44,6 +44,13 @@ interface GameSelectionModalProps {
   open: boolean
   onClose: () => void
 }
+
+const GAME_MODES = [
+  { id: 'running', emoji: '🏃', color: '#F43F5E', label_ko: '달리기', label_en: 'Runner' },
+  { id: 'deck', emoji: '🃏', color: '#3B82F6', label_ko: '플래시카드', label_en: 'Flashcards' },
+  { id: 'cardMatch', emoji: '🎴', color: '#8B5CF6', label_ko: '카드매칭', label_en: 'Match-Up' },
+  { id: 'definitionBuilder', emoji: '🧩', color: '#10B981', label_ko: '정의 빌더', label_en: 'Def Builder' },
+]
 
 export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
   const router = useRouter()
@@ -82,7 +89,6 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
   const selectedCourse = courses.find(c => c.course_id === selectedCourseId) ?? null
   const availableLectures = selectedCourse?.lectures?.filter(l => l.is_available) ?? []
 
-  /** 선택된 수업의 주차/차시 계산 */
   const lectureWeekMap = useMemo(() => {
     if (!selectedCourse?.lectures) return new Map<string, { weekNo: number; sessionNo: number }>()
     const infos: LectureInfo[] = selectedCourse.lectures.map(l => ({
@@ -106,164 +112,212 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onClick={onClose}
     >
+      {/* Arcade Cabinet Frame */}
       <div
-        className="relative flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-2xl"
-        style={{ height: '70vh' }}
+        className="relative flex w-full max-w-3xl flex-col overflow-hidden rounded-3xl shadow-2xl"
+        style={{ height: '72vh' }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <header className="border-b border-gray-100 dark:border-gray-700 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-[#22C55E]/10 p-2">
-                <Puzzle className="h-5 w-5 text-[#22C55E]" />
+        {/* Left/Right neon side bars */}
+        <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-pink-400 via-fuchsia-400 to-pink-400 rounded-l-3xl z-10" />
+        <div className="absolute right-0 top-0 bottom-0 w-2 bg-gradient-to-b from-cyan-400 via-teal-400 to-cyan-400 rounded-r-3xl z-10" />
+
+        {/* Inner content — light theme */}
+        <div className="flex flex-1 flex-col bg-white ml-2 mr-2 overflow-hidden">
+          {/* Header */}
+          <header className="relative border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1E293B]">
+                  <Gamepad2 className="h-5 w-5 text-cyan-400" />
+                </div>
+                <div>
+                  <h2
+                    className="text-lg font-extrabold tracking-wide uppercase text-gray-900"
+                    style={{ fontFamily: 'Pretendard, sans-serif' }}
+                  >
+                    {locale === 'ko' ? 'SELECT YOUR MISSION!' : 'SELECT YOUR MISSION!'}
+                  </h2>
+                  <p className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard, sans-serif' }}>
+                    {locale === 'ko' ? '수업과 회차를 선택하고 게임을 시작하세요' : 'Choose a course and a level to begin'}
+                  </p>
+                </div>
               </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                {locale === 'ko' ? '게임 - 수업 & 회차 선택' : 'Game - Select Course & Lecture'}
-              </h2>
-            </div>
-            <button
-              onClick={onClose}
-              className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          {/* 게임 에셋 썸네일 스트립 */}
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {[
-              { id: 'running', icon: '🏃', color: 'border-orange-200 bg-orange-50' },
-              { id: 'deck', icon: '🃏', color: 'border-blue-200 bg-blue-50' },
-              { id: 'cardMatch', icon: '🎴', color: 'border-violet-200 bg-violet-50' },
-              { id: 'definitionBuilder', icon: '🧩', color: 'border-emerald-200 bg-emerald-50' },
-            ].map(game => (
-              <div
-                key={game.id}
-                className={`flex shrink-0 items-center gap-2 rounded-lg border px-3 py-1.5 ${game.color}`}
+              <button
+                onClick={onClose}
+                className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               >
-                {game.id === 'running' ? (
-                  <Image src="/game/scene.png" alt="Running game" width={40} height={20} className="rounded" />
-                ) : (
-                  <span className="text-lg">{game.icon}</span>
-                )}
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                  {locale === 'ko'
-                    ? { running: '달리기', deck: '플래시카드', cardMatch: '카드매칭', definitionBuilder: '정의 빌더' }[game.id]
-                    : { running: 'Running', deck: 'Flashcard', cardMatch: 'Card Match', definitionBuilder: 'Def Builder' }[game.id]
-                  }
-                </span>
-              </div>
-            ))}
-          </div>
-        </header>
-
-        {/* Body — 2-column */}
-        {isLoading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
-          </div>
-        ) : courses.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
-            {locale === 'ko' ? '수업이 없습니다' : 'No courses available'}
-          </div>
-        ) : (
-          <div className="flex flex-1 min-h-0">
-            {/* Left — 수업 목록 */}
-            <div className="flex w-[280px] shrink-0 flex-col border-r border-gray-100 dark:border-gray-700">
-              <div className="px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  {locale === 'ko' ? '수업' : 'Courses'}
-                </p>
-              </div>
-              <div className="flex-1 overflow-y-auto px-2 pb-2">
-                {courses.map(course => {
-                  const isSelected = course.course_id === selectedCourseId
-                  return (
-                    <button
-                      key={course.course_id}
-                      onClick={() => setSelectedCourseId(course.course_id)}
-                      className={`group flex w-full items-center justify-between rounded-lg p-3 text-left transition-all ${
-                        isSelected
-                          ? 'bg-[#22C55E]/10 text-[#22C55E]'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className={`truncate text-sm font-semibold ${
-                          isSelected ? 'text-[#22C55E]' : 'text-gray-900 dark:text-gray-50'
-                        }`}>
-                          {course.title}
-                        </p>
-                        {course.professor_name && (
-                          <p className="mt-0.5 truncate text-xs text-gray-400">
-                            {course.professor_name}
-                          </p>
-                        )}
-                      </div>
-                      <ChevronRight className={`ml-2 h-4 w-4 shrink-0 transition-colors ${
-                        isSelected ? 'text-[#22C55E]' : 'text-gray-300'
-                      }`} />
-                    </button>
-                  )
-                })}
-              </div>
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
-            {/* Right — 회차 목록 */}
-            <div className="flex flex-1 flex-col min-w-0">
-              <div className="px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  {locale === 'ko' ? '회차' : 'Lectures'}
-                  {selectedCourse && (
-                    <span className="ml-2 normal-case tracking-normal font-medium text-gray-300">
-                      — {selectedCourse.title}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex-1 overflow-y-auto px-2 pb-2">
-                {!selectedCourse ? (
-                  <div className="flex h-full items-center justify-center text-sm text-gray-400">
-                    {locale === 'ko' ? '수업을 선택해주세요' : 'Select a course'}
+            {/* Game Mode Cards — 균등 분할 */}
+            <div className="mt-4 grid grid-cols-4 gap-3">
+              {GAME_MODES.map(game => (
+                <div
+                  key={game.id}
+                  className="flex flex-col items-center rounded-xl bg-gray-50 border border-gray-200 py-3 transition-all hover:border-gray-300 hover:shadow-sm cursor-default"
+                  style={{ borderTopColor: game.color, borderTopWidth: 3 }}
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm mb-1.5">
+                    {game.id === 'running' ? (
+                      <Image src="/game/scene.png" alt="Running" width={32} height={16} className="rounded" />
+                    ) : (
+                      <span className="text-xl">{game.emoji}</span>
+                    )}
                   </div>
-                ) : availableLectures.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-sm text-gray-400">
-                    {locale === 'ko' ? '학습 가능한 회차가 없습니다' : 'No available lectures'}
-                  </div>
-                ) : (
-                  availableLectures.map(lecture => {
-                    const ws = lectureWeekMap.get(lecture.lecture_id)
-                    const weekLabel = ws
-                      ? (locale === 'ko'
-                          ? `${ws.weekNo}주차 ${String(ws.sessionNo).padStart(2, '0')}차시`
-                          : `W${ws.weekNo} S${String(ws.sessionNo).padStart(2, '0')}`)
-                      : null
+                  <span className="text-[11px] font-bold tracking-wider uppercase text-gray-600" style={{ fontFamily: 'Pretendard, sans-serif' }}>
+                    {locale === 'ko' ? game.label_ko : game.label_en}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </header>
+
+          {/* Body — 2-column */}
+          {isLoading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center text-sm text-gray-400 tracking-wider uppercase" style={{ fontFamily: 'monospace' }}>
+              {locale === 'ko' ? 'NO COURSES FOUND' : 'NO COURSES FOUND'}
+            </div>
+          ) : (
+            <div className="flex flex-1 min-h-0">
+              {/* Left — 수업 목록 (SELECT SUBJECT) */}
+              <div className="flex w-[260px] shrink-0 flex-col border-r border-gray-200">
+                <div className="px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400" style={{ fontFamily: 'monospace' }}>
+                    {locale === 'ko' ? 'SELECT SUBJECT' : 'SELECT SUBJECT'}
+                  </p>
+                </div>
+                <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1">
+                  {courses.map(course => {
+                    const isSelected = course.course_id === selectedCourseId
                     return (
                       <button
-                        key={lecture.lecture_id}
-                        onClick={() => handleSelectLecture(selectedCourse.course_id, lecture.lecture_id)}
-                        className="group flex w-full items-center gap-3 rounded-lg p-3 text-left transition-all hover:bg-[#22C55E]/5"
+                        key={course.course_id}
+                        onClick={() => setSelectedCourseId(course.course_id)}
+                        className={`group flex w-full items-center justify-between rounded-xl p-3 text-left transition-all ${
+                          isSelected
+                            ? 'bg-emerald-50 border border-emerald-400/50'
+                            : 'border border-transparent hover:bg-gray-50 hover:border-gray-200'
+                        }`}
                       >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#22C55E]/10 text-[#22C55E] text-sm font-bold">
-                          {lecture.lecture_no}
-                        </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-50 group-hover:text-[#22C55E] transition-colors">
-                            {lecture.title ?? (locale === 'ko' ? `${lecture.lecture_no}회차` : `Lecture ${lecture.lecture_no}`)}
+                          <p className={`truncate text-sm font-bold ${
+                            isSelected ? 'text-emerald-600' : 'text-gray-800'
+                          }`}>
+                            {course.title}
                           </p>
-                          {weekLabel && (
-                            <p className="mt-0.5 text-xs text-gray-400">{weekLabel}</p>
+                          {course.professor_name && (
+                            <p className="mt-0.5 truncate text-xs text-gray-400">
+                              {course.professor_name}
+                            </p>
                           )}
                         </div>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100" />
+                        <ChevronRight className={`ml-2 h-4 w-4 shrink-0 transition-colors ${
+                          isSelected ? 'text-emerald-500' : 'text-gray-300'
+                        }`} />
                       </button>
                     )
-                  })
-                )}
+                  })}
+                </div>
+              </div>
+
+              {/* Right — 회차 목록 (SELECT LEVEL) */}
+              <div className="flex flex-1 flex-col min-w-0">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400" style={{ fontFamily: 'monospace' }}>
+                    {locale === 'ko' ? 'SELECT LEVEL' : 'SELECT LEVEL'}
+                  </p>
+                  {selectedCourse && availableLectures.length > 0 && (
+                    <span
+                      className="rounded-md bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600 border border-amber-200"
+                      style={{ fontFamily: 'monospace' }}
+                    >
+                      {availableLectures.length} LEVELS FOUND
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto px-2 pb-2">
+                  {!selectedCourse ? (
+                    <div className="flex h-full items-center justify-center text-sm text-gray-400 tracking-wider" style={{ fontFamily: 'monospace' }}>
+                      {locale === 'ko' ? '← 수업을 선택하세요' : '← SELECT A SUBJECT'}
+                    </div>
+                  ) : availableLectures.length === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-2">
+                      <Lock className="h-8 w-8 text-gray-300" />
+                      <p className="text-sm text-gray-400 tracking-wider" style={{ fontFamily: 'monospace' }}>
+                        {locale === 'ko' ? 'NO LEVELS AVAILABLE' : 'NO LEVELS AVAILABLE'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {availableLectures.map((lecture, idx) => {
+                        const ws = lectureWeekMap.get(lecture.lecture_id)
+                        const weekLabel = ws
+                          ? (locale === 'ko'
+                              ? `${ws.weekNo}주차 ${String(ws.sessionNo).padStart(2, '0')}차시`
+                              : `W${ws.weekNo} S${String(ws.sessionNo).padStart(2, '0')}`)
+                          : null
+                        return (
+                          <button
+                            key={lecture.lecture_id}
+                            onClick={() => handleSelectLecture(selectedCourse.course_id, lecture.lecture_id)}
+                            className="group flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all border border-transparent hover:bg-gray-50 hover:border-cyan-200"
+                          >
+                            {/* Level number badge */}
+                            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+                              <svg className="absolute inset-0 h-10 w-10" viewBox="0 0 40 40">
+                                <circle cx="20" cy="20" r="17" fill="none" stroke="#E5E7EB" strokeWidth="2.5" />
+                                <circle
+                                  cx="20" cy="20" r="17" fill="none"
+                                  stroke="#F43F5E" strokeWidth="2.5"
+                                  strokeDasharray={`${Math.min((idx + 1) / availableLectures.length, 1) * 107} 107`}
+                                  strokeLinecap="round"
+                                  transform="rotate(-90 20 20)"
+                                />
+                              </svg>
+                              <span className="text-sm font-extrabold text-gray-700" style={{ fontFamily: 'monospace' }}>
+                                {lecture.lecture_no}
+                              </span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-bold text-gray-800 group-hover:text-cyan-600 transition-colors">
+                                {lecture.title ?? (locale === 'ko' ? `Level ${lecture.lecture_no}` : `Level ${lecture.lecture_no}`)}
+                              </p>
+                              {weekLabel && (
+                                <p className="mt-0.5 text-xs text-gray-400">{weekLabel}</p>
+                              )}
+                            </div>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 opacity-0 transition-all group-hover:opacity-100 group-hover:text-cyan-500" />
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Footer — Arcade Status Bar */}
+          <footer className="flex items-center justify-between border-t border-gray-200 bg-[#1E293B] px-5 py-2.5">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" style={{ fontFamily: 'monospace' }}>
+                  SYSTEM ONLINE
+                </span>
+              </span>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500" style={{ fontFamily: 'monospace' }}>
+              PRESS [START] TO CONTINUE
+            </span>
+          </footer>
+        </div>
       </div>
     </div>
   )

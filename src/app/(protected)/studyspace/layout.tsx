@@ -74,9 +74,11 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     return match?.[1] ?? null
   })()
 
-  // 회차별 학습 페이지 진입 시 불꽃 팝업 자동 표시 (회차별 dismissed 상태 확인)
+  // 콘텐츠형 학습 페이지 진입 시에만 불꽃 팝업 자동 표시 (대화형 학습 제외)
+  const isDialoguePage = pathname.includes('/dialogue')
+
   useEffect(() => {
-    if (!currentLectureId) {
+    if (!currentLectureId || isDialoguePage) {
       setIsFlamePopupOpen(false)
       return
     }
@@ -86,7 +88,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     } else {
       setIsFlamePopupOpen(false)
     }
-  }, [currentLectureId])
+  }, [currentLectureId, isDialoguePage])
 
   // 프로필 드롭다운 외부 클릭 닫기
   useEffect(() => {
