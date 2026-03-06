@@ -61,7 +61,7 @@ export function SurveyPopup() {
             />
             <div>
               <h2 className="text-lg font-bold text-white">
-                Aplus 서비스 개선 설문
+                Aplus 서비스 사용 설문
               </h2>
               <p className="text-sm text-white/80">
                 고려대학교 AI 학습 플랫폼
