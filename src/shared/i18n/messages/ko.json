@@ -288,6 +288,8 @@
     "materialSelect": {
       "empty": "등록된 강의자료가 없습니다"
     },
+    "materialsBubble": "강의자료 보기",
+    "askAiBubble": "AI에게 질문하기",
     "leftPanel": {
       "materialsTab": "강의자료",
       "recordingsTab": "녹음본",

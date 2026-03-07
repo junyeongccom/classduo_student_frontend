@@ -253,6 +253,8 @@ export function LeftPanelMaterials() {
 
     const handleScroll = () => {
       if (timerId) clearTimeout(timerId)
+      // 프로그래밍적 스크롤(페이지 점프) 중에는 cleanup 건너뛰기
+      if (isScrollingRef.current) return
       timerId = setTimeout(runMemoryCleanup, 500)
     }
 
@@ -273,6 +275,20 @@ export function LeftPanelMaterials() {
       isScrollingRef.current = true
       setCurrentPage(pageIdx + 1)
 
+      // 목적지 주변 이미지를 미리 로딩 (깜박임 방지)
+      const preloadRange = UNLOAD_THRESHOLD
+      for (let i = Math.max(0, pageIdx - preloadRange); i < Math.min(pageRefs.current.length, pageIdx + preloadRange + 1); i++) {
+        const pageEl = pageRefs.current[i]
+        if (!pageEl) continue
+        const img = pageEl.querySelector('img[data-lazy]') as HTMLImageElement | null
+        if (img) {
+          const realSrc = img.getAttribute('data-src')
+          if (realSrc && img.src !== realSrc) {
+            img.src = realSrc
+          }
+        }
+      }
+
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
       // R-AW3 fix: settleId로 연속 호출 시 이전 settle 무효화
@@ -286,7 +302,7 @@ export function LeftPanelMaterials() {
         container.removeEventListener('scrollend', settle)
       }
       container.addEventListener('scrollend', settle, { once: true })
-      setTimeout(settle, 600) // fallback
+      setTimeout(settle, 1000) // fallback (긴 점프 대비 여유 확보)
     },
     [],
   )
