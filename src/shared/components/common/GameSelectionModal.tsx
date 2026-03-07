@@ -47,7 +47,7 @@ interface GameSelectionModalProps {
 
 const GAME_MODES = [
   { id: 'running', emoji: '🏃', color: '#F43F5E', label_ko: '달리기', label_en: 'Runner' },
-  { id: 'deck', emoji: '🃏', color: '#3B82F6', label_ko: '플래시카드', label_en: 'Flashcards' },
+  { id: 'deck', emoji: '🃏', color: '#3B82F6', label_ko: '덱', label_en: 'Deck' },
   { id: 'cardMatch', emoji: '🎴', color: '#8B5CF6', label_ko: '카드매칭', label_en: 'Match-Up' },
   { id: 'definitionBuilder', emoji: '🧩', color: '#10B981', label_ko: '정의 빌더', label_en: 'Def Builder' },
 ]

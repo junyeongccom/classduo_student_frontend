@@ -78,7 +78,6 @@ export default function WrongAnswersTab({
   const isFetchingMoreRef = useRef(false)
   const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY_COUNT)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
   const [resetKey, setResetKey] = useState(0)
 
   const fetchQuizzes = useCallback(async (currentOffset: number, append: boolean) => {
@@ -290,35 +289,13 @@ export default function WrongAnswersTab({
     return { visibleGroups: limited, totalQuizCount: totalCount, shownQuizCount: count }
   }, [courseGroups, displayCount])
 
-  const handleRetryWrong = useCallback(async () => {
+  const handleRetryWrong = useCallback(() => {
     if (allQuizzes.length === 0) return
-    setIsResetting(true)
 
-    // Optimistic: 모든 퀴즈의 선택 상태 초기화 + 카드 re-mount
+    // 즉시 팝업 닫기 + optimistic 초기화 + 카드 re-mount
+    setShowResetConfirm(false)
     setAllQuizzes(prev => prev.map(q => ({ ...q, correct: null, selected_answer: null })))
     setResetKey(prev => prev + 1)
-
-    // API 병렬 호출
-    const results = await Promise.allSettled(
-      allQuizzes.map(quiz =>
-        quiz.lecture_id
-          ? statusService.updateCorrect(quiz.quiz_source, quiz.quiz_id, quiz.lecture_id, null, null)
-          : Promise.resolve({ error: null }),
-      ),
-    )
-
-    const hasError = results.some(
-      r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value && 'error' in r.value && r.value.error),
-    )
-    if (hasError) {
-      showErrorToast(t('error.correctFailed'))
-      fetchQuizzes(0, false)
-      setOffset(0)
-      setHasMore(true)
-    }
-
-    setIsResetting(false)
-    setShowResetConfirm(false)
 
     // 첫 번째 퀴즈로 스크롤
     const firstId = allQuizzes[0]?.quiz_id
@@ -327,6 +304,26 @@ export default function WrongAnswersTab({
         document.getElementById(`quiz-${firstId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 100)
     }
+
+    // API 백그라운드 호출
+    const quizSnapshot = [...allQuizzes]
+    Promise.allSettled(
+      quizSnapshot.map(quiz =>
+        quiz.lecture_id
+          ? statusService.updateCorrect(quiz.quiz_source, quiz.quiz_id, quiz.lecture_id, null, null)
+          : Promise.resolve({ error: null }),
+      ),
+    ).then(results => {
+      const hasError = results.some(
+        r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value && 'error' in r.value && r.value.error),
+      )
+      if (hasError) {
+        showErrorToast(t('error.correctFailed'))
+        fetchQuizzes(0, false)
+        setOffset(0)
+        setHasMore(true)
+      }
+    })
   }, [allQuizzes, fetchQuizzes, showErrorToast, t])
 
   const handleBookmarkToggle = useCallback(
@@ -623,22 +620,16 @@ export default function WrongAnswersTab({
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(false)}
-                disabled={isResetting}
-                className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
               >
                 {t('wrong.resetCancel')}
               </button>
               <button
                 type="button"
                 onClick={handleRetryWrong}
-                disabled={isResetting}
-                className="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+                className="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
               >
-                {isResetting ? (
-                  <Loader2 className="mx-auto h-4 w-4 animate-spin" />
-                ) : (
-                  t('wrong.resetConfirm')
-                )}
+                {t('wrong.resetConfirm')}
               </button>
             </div>
           </div>
@@ -690,7 +681,7 @@ export default function WrongAnswersTab({
           <button
             type="button"
             onClick={() => setShowResetConfirm(true)}
-            disabled={allQuizzes.length === 0 || isResetting}
+            disabled={allQuizzes.length === 0}
             className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed shrink-0"
           >
             <RotateCw className="h-4 w-4" />
