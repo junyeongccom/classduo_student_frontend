@@ -292,14 +292,6 @@ export default function WrongAnswersTab({
     setAllQuizzes(prev => prev.map(q => ({ ...q, correct: null, selected_answer: null })))
     setResetKey(prev => prev + 1)
 
-    // 첫 번째 퀴즈로 스크롤
-    const firstId = allQuizzes[0]?.quiz_id
-    if (firstId) {
-      setTimeout(() => {
-        document.getElementById(`quiz-${firstId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }, 100)
-    }
-
     // API 백그라운드 호출
     const quizSnapshot = [...allQuizzes]
     Promise.allSettled(
