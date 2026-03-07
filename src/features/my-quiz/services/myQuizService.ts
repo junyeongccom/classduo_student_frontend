@@ -37,13 +37,14 @@ export async function getSessionDetail(sessionId: string) {
 export async function createSession(
   lectureId: string,
   typeCounts: Record<string, number>,
+  language: string = 'ko',
 ) {
   return apiRequest<SessionCreateResponse>(
     `/customize-quiz/lectures/${encodeURIComponent(lectureId)}/sessions`,
     {
       method: 'POST',
       auth: true,
-      body: { type_counts: typeCounts },
+      body: { type_counts: typeCounts, language },
     },
   )
 }
