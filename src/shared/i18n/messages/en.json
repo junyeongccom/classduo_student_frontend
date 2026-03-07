@@ -288,6 +288,8 @@
     "materialSelect": {
       "empty": "No materials registered"
     },
+    "materialsBubble": "View Materials",
+    "askAiBubble": "Ask AI",
     "leftPanel": {
       "materialsTab": "Materials",
       "recordingsTab": "Recordings",

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Script from 'next/script'
+import { cookies } from 'next/headers'
 import '@/shared/styles/globals.css'
 import { AuthProvider } from '@/features/auth'
 import { I18nRootProvider } from '@/shared/i18n/I18nRootProvider'
@@ -37,13 +38,16 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const cookieStore = await cookies()
+  const locale = cookieStore.get('classduo_locale')?.value === 'en' ? 'en' : 'ko'
+
   return (
-    <html lang="ko">
+    <html lang={locale}>
       <head>
         {GTM_ID && (
           <Script

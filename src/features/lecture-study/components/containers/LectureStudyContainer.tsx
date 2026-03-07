@@ -364,7 +364,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               <FileText className="h-6 w-6" />
             </button>
             <div className="relative mb-1 rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white shadow-md whitespace-nowrap">
-              강의자료 보기
+              {t('lectureStudy.materialsBubble')}
               <div className="absolute left-[-6px] bottom-2 h-0 w-0 border-t-[6px] border-t-transparent border-r-[6px] border-r-[#6366F1] border-b-[6px] border-b-transparent" />
             </div>
           </div>
@@ -374,7 +374,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         {!isChatPanelOpen && (
           <div className="absolute bottom-4 right-4 z-10 flex items-end gap-2">
             <div className="relative mb-1 rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white shadow-md whitespace-nowrap">
-              AI에게 질문하기
+              {t('lectureStudy.askAiBubble')}
               <div className="absolute right-[-6px] bottom-2 h-0 w-0 border-t-[6px] border-t-transparent border-l-[6px] border-l-[#6366F1] border-b-[6px] border-b-transparent" />
             </div>
             <button

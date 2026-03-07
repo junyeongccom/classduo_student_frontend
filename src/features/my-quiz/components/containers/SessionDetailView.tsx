@@ -8,7 +8,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useTranslations, useFormatter } from 'next-intl'
+import { useTranslations, useFormatter, useLocale } from 'next-intl'
 import { ArrowLeft, Loader2, CheckCircle2, XCircle, TrendingUp, Calendar } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
@@ -18,6 +18,12 @@ import * as myQuizService from '../../services/myQuizService'
 import * as statusService from '../../services/myQuizStatusService'
 import { TYPE_ORDER } from '../../types'
 import type { QuizItem, QuizStatusEntry, QuizSession } from '../../types'
+
+/** locale이 'en'이고 _eng 필드가 있으면 영어, 아니면 한글 필드 반환 */
+function pickLocalizedText(ko: string | null | undefined, eng: string | null | undefined, loc: string): string | null {
+  if (loc === 'en' && eng != null && eng !== '') return eng
+  return ko ?? null
+}
 
 interface SessionDetailViewProps {
   sessionId: string
@@ -40,6 +46,7 @@ export default function SessionDetailView({
   const t = useTranslations('myQuiz')
   const tQuiz = useTranslations('lectureStudy.quiz')
   const format = useFormatter()
+  const locale = useLocale()
   const { toasts, error: showErrorToast } = useToast()
 
   const [quizzes, setQuizzes] = useState<QuizItem[]>([])
@@ -378,11 +385,15 @@ export default function SessionDetailView({
                   const studentQuiz: StudentQuizItem = {
                     quiz_id: quiz.quiz_id,
                     quiz_type: quiz.quiz_type,
-                    question: quiz.question,
-                    answer: quiz.answer,
-                    explanation: quiz.explanation,
+                    question: pickLocalizedText(quiz.question, quiz.question_eng, locale) ?? quiz.question,
+                    answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
+                    explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
                     difficulty: quiz.difficulty ?? null,
-                    choices: quiz.choices,
+                    choices: quiz.choices.map(c => ({
+                      ...c,
+                      choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
+                      choice_explanation: pickLocalizedText(c.choice_explanation, c.choice_explanation_eng, locale) ?? c.choice_explanation ?? null,
+                    })),
                   }
                   return (
                     <div key={`${quiz.quiz_id}-${resetKey}`} id={`quiz-${quiz.quiz_id}`}>
