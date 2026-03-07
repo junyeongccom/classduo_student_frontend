@@ -8,7 +8,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Plus, Loader2, ArrowLeft, ChevronDown } from 'lucide-react'
 import * as myQuizService from '../../services/myQuizService'
 import * as statusService from '../../services/myQuizStatusService'
@@ -30,6 +30,7 @@ type GenerationView = 'course-lecture' | 'quiz-setting' | 'session-list' | 'sess
 
 export default function QuizGenerationTab() {
   const t = useTranslations('myQuiz')
+  const locale = useLocale()
   const { toasts, error: showErrorToast } = useToast()
 
   // 강좌/회차 데이터
@@ -198,7 +199,7 @@ export default function QuizGenerationTab() {
       return
     }
 
-    const result = await myQuizService.createSession(selectedLectureId, safeCounts)
+    const result = await myQuizService.createSession(selectedLectureId, safeCounts, locale)
     if (result.error || !result.data) {
       const errorMsg = result.status === 400
         ? t('create.noSnapshot')
@@ -214,7 +215,7 @@ export default function QuizGenerationTab() {
       lecture_id: selectedLectureId,
       course_id: selectedCourseId ?? '',
       generation_batch_id: null,
-      language: null,
+      language: locale,
       status: 'CREATING',
       quiz_count: totalCount,
       title: null,
