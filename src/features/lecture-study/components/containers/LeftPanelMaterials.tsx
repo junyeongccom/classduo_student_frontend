@@ -34,9 +34,6 @@ function isValidImageUrl(url: string): boolean {
   return url.startsWith('https://') || /^http:\/\/localhost(:\d+)?(\/|$)/.test(url)
 }
 
-/** 뷰포트 밖 이미지 unload 임계값 (±페이지 수) */
-const UNLOAD_THRESHOLD = 15
-
 export function LeftPanelMaterials() {
   const t = useTranslations()
   const lectureId = useLectureStudyStore((s) => s.lectureId)
@@ -196,75 +193,6 @@ export function LeftPanelMaterials() {
     return () => observer.disconnect()
   }, [allPages])
 
-  // ─── Lazy loading (Task 769) ───
-  useEffect(() => {
-    if (allPages.length === 0 || !scrollContainerRef.current) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-
-          const img = entry.target.querySelector('img[data-lazy]') as HTMLImageElement | null
-          if (!img) continue
-
-          // 뷰포트 진입 → 이미지 로딩
-          const realSrc = img.getAttribute('data-src')
-          if (realSrc && img.src !== realSrc) {
-            img.src = realSrc
-          }
-        }
-      },
-      {
-        root: scrollContainerRef.current,
-        rootMargin: '600px 0px',
-        threshold: [0],
-      },
-    )
-
-    for (let i = 0; i < pageRefs.current.length; i++) {
-      const el = pageRefs.current[i]
-      if (el) observer.observe(el)
-    }
-
-    return () => observer.disconnect()
-  }, [allPages])
-
-  // ─── 메모리 관리: 뷰포트 바깥 이미지 unload (Task 770, R-AW2 fix: 별도 debounce) ───
-  useEffect(() => {
-    if (allPages.length === 0) return
-
-    let timerId: ReturnType<typeof setTimeout> | null = null
-    const runMemoryCleanup = () => {
-      for (let i = 0; i < pageRefs.current.length; i++) {
-        const el = pageRefs.current[i]
-        if (!el) continue
-
-        const img = el.querySelector('img[data-lazy]') as HTMLImageElement | null
-        if (!img) continue
-
-        if (Math.abs(i - (currentPageRef.current - 1)) > UNLOAD_THRESHOLD) {
-          if (img.src && img.getAttribute('data-src')) {
-            img.removeAttribute('src')
-          }
-        }
-      }
-    }
-
-    const handleScroll = () => {
-      if (timerId) clearTimeout(timerId)
-      // 프로그래밍적 스크롤(페이지 점프) 중에는 cleanup 건너뛰기
-      if (isScrollingRef.current) return
-      timerId = setTimeout(runMemoryCleanup, 500)
-    }
-
-    const container = scrollContainerRef.current
-    container?.addEventListener('scroll', handleScroll, { passive: true })
-    return () => {
-      container?.removeEventListener('scroll', handleScroll)
-      if (timerId) clearTimeout(timerId)
-    }
-  }, [allPages])
 
   // ─── 화살표 클릭 → 스크롤 이동 (Task 765) ───
   const scrollToPage = useCallback(
@@ -274,20 +202,6 @@ export function LeftPanelMaterials() {
 
       isScrollingRef.current = true
       setCurrentPage(pageIdx + 1)
-
-      // 목적지 주변 이미지를 미리 로딩 (깜박임 방지)
-      const preloadRange = UNLOAD_THRESHOLD
-      for (let i = Math.max(0, pageIdx - preloadRange); i < Math.min(pageRefs.current.length, pageIdx + preloadRange + 1); i++) {
-        const pageEl = pageRefs.current[i]
-        if (!pageEl) continue
-        const img = pageEl.querySelector('img[data-lazy]') as HTMLImageElement | null
-        if (img) {
-          const realSrc = img.getAttribute('data-src')
-          if (realSrc && img.src !== realSrc) {
-            img.src = realSrc
-          }
-        }
-      }
 
       el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -397,7 +311,7 @@ export function LeftPanelMaterials() {
           const newPage = sorted[entry.pageIndex]
           // S-AW1 fix: 재발급 URL에도 isValidImageUrl 검증 적용
           if (newPage?.image_url && isValidImageUrl(newPage.image_url)) {
-            const img = pageRefs.current[pageIdx]?.querySelector('img[data-lazy]') as HTMLImageElement | null
+            const img = pageRefs.current[pageIdx]?.querySelector('img') as HTMLImageElement | null
             if (img) {
               img.setAttribute('data-src', newPage.image_url)
               img.src = newPage.image_url
@@ -467,14 +381,12 @@ export function LeftPanelMaterials() {
                     <div className="h-full w-full animate-pulse rounded-lg bg-gray-200" />
                   </div>
                   <img
-                    data-lazy="true"
-                    src={idx < 3 ? entry.imageUrl ?? undefined : undefined}
+                    src={entry.imageUrl ?? undefined}
                     data-src={entry.imageUrl}
                     alt={t('lectureStudy.leftPanel.pageAlt', { page: idx + 1 })}
                     className="w-full object-contain"
                     onLoad={(e) => {
                       loadedImagesRef.current.add(idx)
-                      // placeholder를 imperative하게 숨김 (ref 기반 상태라 리렌더링 없이 처리)
                       const placeholder = (e.target as HTMLElement).parentElement?.querySelector('.placeholder-overlay')
                       if (placeholder) (placeholder as HTMLElement).classList.add('hidden')
                     }}
