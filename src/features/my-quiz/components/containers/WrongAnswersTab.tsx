@@ -77,6 +77,9 @@ export default function WrongAnswersTab({
   const sentinelRef = useRef<HTMLDivElement>(null)
   const isFetchingMoreRef = useRef(false)
   const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY_COUNT)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [resetKey, setResetKey] = useState(0)
 
   const fetchQuizzes = useCallback(async (currentOffset: number, append: boolean) => {
     if (selectedLectureIds.length === 0) return
@@ -287,13 +290,44 @@ export default function WrongAnswersTab({
     return { visibleGroups: limited, totalQuizCount: totalCount, shownQuizCount: count }
   }, [courseGroups, displayCount])
 
-  const handleStartLearning = useCallback(() => {
+  const handleRetryWrong = useCallback(async () => {
     if (allQuizzes.length === 0) return
+    setIsResetting(true)
+
+    // Optimistic: 모든 퀴즈의 선택 상태 초기화 + 카드 re-mount
+    setAllQuizzes(prev => prev.map(q => ({ ...q, correct: null, selected_answer: null })))
+    setResetKey(prev => prev + 1)
+
+    // API 병렬 호출
+    const results = await Promise.allSettled(
+      allQuizzes.map(quiz =>
+        quiz.lecture_id
+          ? statusService.updateCorrect(quiz.quiz_source, quiz.quiz_id, quiz.lecture_id, null, null)
+          : Promise.resolve({ error: null }),
+      ),
+    )
+
+    const hasError = results.some(
+      r => r.status === 'rejected' || (r.status === 'fulfilled' && r.value && 'error' in r.value && r.value.error),
+    )
+    if (hasError) {
+      showErrorToast(t('error.correctFailed'))
+      fetchQuizzes(0, false)
+      setOffset(0)
+      setHasMore(true)
+    }
+
+    setIsResetting(false)
+    setShowResetConfirm(false)
+
+    // 첫 번째 퀴즈로 스크롤
     const firstId = allQuizzes[0]?.quiz_id
     if (firstId) {
-      document.getElementById(`quiz-${firstId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setTimeout(() => {
+        document.getElementById(`quiz-${firstId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 100)
     }
-  }, [allQuizzes])
+  }, [allQuizzes, fetchQuizzes, showErrorToast, t])
 
   const handleBookmarkToggle = useCallback(
     async (quizId: string) => {
@@ -497,7 +531,7 @@ export default function WrongAnswersTab({
                           })),
                         }
                         return (
-                          <div key={quiz.quiz_id} id={`quiz-${quiz.quiz_id}`}>
+                          <div key={`${quiz.quiz_id}-${resetKey}`} id={`quiz-${quiz.quiz_id}`}>
                             <div className="mb-1">
                               <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
                                 quiz.quiz_source === 'instructor'
@@ -580,6 +614,37 @@ export default function WrongAnswersTab({
         </div>
       )}
 
+      {/* 초기화 확인 팝업 */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+            <p className="text-sm text-gray-700 text-center">{t('wrong.resetConfirmMessage')}</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                disabled={isResetting}
+                className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+              >
+                {t('wrong.resetCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleRetryWrong}
+                disabled={isResetting}
+                className="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isResetting ? (
+                  <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+                ) : (
+                  t('wrong.resetConfirm')
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-2xl">
       {/* 제목 + 설명 */}
       <div className="mb-4">
@@ -624,12 +689,12 @@ export default function WrongAnswersTab({
           </div>
           <button
             type="button"
-            onClick={handleStartLearning}
-            disabled={allQuizzes.length === 0}
+            onClick={() => setShowResetConfirm(true)}
+            disabled={allQuizzes.length === 0 || isResetting}
             className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed shrink-0"
           >
             <RotateCw className="h-4 w-4" />
-            {t('wrong.startLearning')}
+            {t('wrong.retryWrong')}
           </button>
         </div>
       </div>

@@ -1087,7 +1087,10 @@
     "wrong": {
       "title": "오답 노트",
       "description": "한번이라도 틀린 문제를 복습하고 취약한 부분을 보완하세요.",
-      "startLearning": "전체 학습 시작",
+      "retryWrong": "오답 문제 다시 풀기",
+      "resetConfirmMessage": "선지가 모두 초기화됩니다. 진행하시겠습니까?",
+      "resetConfirm": "확인",
+      "resetCancel": "취소",
       "showingCount": "{total}개의 문제 중 {showing}개를 표시함",
       "showMore": "더 보기"
     },

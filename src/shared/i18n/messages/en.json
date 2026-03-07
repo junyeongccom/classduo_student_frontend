@@ -1087,7 +1087,10 @@
     "wrong": {
       "title": "Wrong Answers",
       "description": "Review questions you've gotten wrong and strengthen weak areas.",
-      "startLearning": "Start Learning",
+      "retryWrong": "Retry Wrong Answers",
+      "resetConfirmMessage": "All selections will be reset. Continue?",
+      "resetConfirm": "Confirm",
+      "resetCancel": "Cancel",
       "showingCount": "Showing {showing} of {total} problems",
       "showMore": "Show More"
     },
