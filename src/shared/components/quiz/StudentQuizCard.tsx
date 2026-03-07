@@ -152,10 +152,9 @@ export function StudentQuizCard({
   const handleBookmarkClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
-      if (!hasAnswered) return
       onBookmarkToggle(quiz.quiz_id)
     },
-    [quiz.quiz_id, onBookmarkToggle, hasAnswered],
+    [quiz.quiz_id, onBookmarkToggle],
   )
 
   /* 선지 스타일 */
@@ -257,35 +256,20 @@ export function StudentQuizCard({
               )}
             </>
           ) : (
-            <>
-              <button
-                type="button"
-                onClick={handleBookmarkClick}
-                disabled={!hasAnswered}
-                className={`p-1 rounded-full transition-colors ${
-                  hasAnswered
-                    ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer'
-                    : 'cursor-not-allowed opacity-40'
+            <button
+              type="button"
+              onClick={handleBookmarkClick}
+              className="p-1 rounded-full transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              aria-label={isBookmarked ? t('bookmarkRemove') : t('bookmarkAdd')}
+            >
+              <Bookmark
+                className={`h-4 w-4 transition-colors ${
+                  isBookmarked
+                    ? 'fill-blue-500 text-blue-500'
+                    : 'fill-none text-gray-300 dark:text-gray-500'
                 }`}
-                aria-label={isBookmarked ? t('bookmarkRemove') : t('bookmarkAdd')}
-              >
-                <Bookmark
-                  className={`h-4 w-4 transition-colors ${
-                    isBookmarked
-                      ? 'fill-blue-500 text-blue-500'
-                      : 'fill-none text-gray-300 dark:text-gray-500'
-                  }`}
-                />
-              </button>
-              {!hasAnswered && (
-                <div className="pointer-events-none absolute right-0 bottom-full mb-2 z-20 w-max max-w-[200px] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-                  <div className="rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-sm">
-                    {t('bookmarkDisabledTooltip')}
-                  </div>
-                  <div className="absolute right-3 top-full h-1.5 w-1.5 rotate-45 bg-gray-900" />
-                </div>
-              )}
-            </>
+              />
+            </button>
           )}
         </div>
       </div>

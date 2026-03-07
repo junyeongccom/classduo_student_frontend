@@ -1,6 +1,6 @@
 /**
  * @file FavoritesTab.tsx
- * @description 즐겨찾기 탭 — 선택된 회차의 bookmark=true 퀴즈 유형별 그룹화
+ * @description 즐겨찾기 탭 — user_quiz_bookmarks 테이블에서 조회 + 풀이 상태 병합
  * @module features/my-quiz
  * @dependencies next-intl, shared/components/quiz, myQuizStatusService
  */
@@ -14,7 +14,7 @@ import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { useToast } from '@/shared/hooks/useToast'
 import * as statusService from '../../services/myQuizStatusService'
-import type { QuizStatusEntry } from '../../types'
+import type { QuizBookmarkEntry } from '../../types'
 import { groupQuizzesByCourseAndLecture } from '../../domain/groupQuizzes'
 import type { QuizWithMeta, CourseGroup } from '../../domain/groupQuizzes'
 import { BottomDropdown, MultiSelectDropdown } from '../ui/LectureSelectorBar'
@@ -87,24 +87,23 @@ export default function FavoritesTab({
       setError(null)
     }
 
-    const statusResult = await statusService.getQuizStatusesByLectureIds(
+    const bookmarkResult = await statusService.getBookmarksByLectureIds(
       selectedLectureIds,
-      { bookmark: true },
       { limit: PAGE_SIZE, offset: currentOffset },
     )
 
-    if (statusResult.error || !statusResult.data) {
-      if (process.env.NODE_ENV === 'development') console.error('[FavoritesTab] fetchQuizzes error:', statusResult.error)
+    if (bookmarkResult.error || !bookmarkResult.data) {
+      if (process.env.NODE_ENV === 'development') console.error('[FavoritesTab] fetchQuizzes error:', bookmarkResult.error)
       setError(t('error.loadFailed'))
       setIsLoading(false)
       if (append) isFetchingMoreRef.current = false
       return
     }
 
-    const statuses = statusResult.data
-    if (statuses.length < PAGE_SIZE) setHasMore(false)
+    const bookmarks = bookmarkResult.data
+    if (bookmarks.length < PAGE_SIZE) setHasMore(false)
 
-    if (statuses.length === 0) {
+    if (bookmarks.length === 0) {
       if (!append) setAllQuizzes([])
       setIsLoading(false)
       if (append) isFetchingMoreRef.current = false
@@ -112,9 +111,9 @@ export default function FavoritesTab({
     }
 
     // quiz_source별 분류
-    const instructorIds = statuses.filter(s => s.quiz_source === 'instructor').map(s => s.quiz_id)
-    const customizeIds = statuses.filter(s => s.quiz_source === 'customize').map(s => s.quiz_id)
-    const contentIds = statuses.filter(s => s.quiz_source === 'content').map(s => s.quiz_id)
+    const instructorIds = bookmarks.filter(b => b.quiz_source === 'instructor').map(b => b.quiz_id)
+    const customizeIds = bookmarks.filter(b => b.quiz_source === 'customize').map(b => b.quiz_id)
+    const contentIds = bookmarks.filter(b => b.quiz_source === 'content').map(b => b.quiz_id)
 
     const [instructorResult, customizeResult, contentResult] = await Promise.all([
       instructorIds.length > 0
@@ -136,25 +135,26 @@ export default function FavoritesTab({
       showErrorToast(t('error.loadFailed'))
     }
 
-    const statusMap = new Map<string, QuizStatusEntry>()
-    for (const s of statuses) {
-      statusMap.set(`${s.quiz_source}:${s.quiz_id}`, s)
+    // bookmark lookup용 맵
+    const bookmarkMap = new Map<string, QuizBookmarkEntry>()
+    for (const b of bookmarks) {
+      bookmarkMap.set(`${b.quiz_source}:${b.quiz_id}`, b)
     }
 
     const quizzesWithMeta: QuizWithMeta[] = []
 
     for (const item of (instructorResult.data ?? [])) {
       const key = `instructor:${item.quiz_id}`
-      const status = statusMap.get(key)
-      const info = lectureInfoMap.get(status?.lecture_id ?? '')
+      const bm = bookmarkMap.get(key)
+      const info = lectureInfoMap.get(bm?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'instructor',
-        lecture_id: status?.lecture_id,
-        bookmark: status?.bookmark ?? true,
-        correct: status?.correct ?? null,
-        selected_answer: status?.answer ?? null,
+        lecture_id: bm?.lecture_id,
+        bookmark: true,
+        correct: bm?.correct ?? null,
+        selected_answer: bm?.selected_answer ?? null,
         course_id: info?.course_id,
         course_name: info?.course_name,
         lecture_name: info?.lecture_name,
@@ -163,16 +163,16 @@ export default function FavoritesTab({
 
     for (const item of (contentResult.data ?? [])) {
       const key = `content:${item.quiz_id}`
-      const status = statusMap.get(key)
-      const info = lectureInfoMap.get(status?.lecture_id ?? '')
+      const bm = bookmarkMap.get(key)
+      const info = lectureInfoMap.get(bm?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'content',
-        lecture_id: status?.lecture_id,
-        bookmark: status?.bookmark ?? true,
-        correct: status?.correct ?? null,
-        selected_answer: status?.answer ?? null,
+        lecture_id: bm?.lecture_id,
+        bookmark: true,
+        correct: bm?.correct ?? null,
+        selected_answer: bm?.selected_answer ?? null,
         course_id: info?.course_id,
         course_name: info?.course_name,
         lecture_name: info?.lecture_name,
@@ -181,16 +181,16 @@ export default function FavoritesTab({
 
     for (const item of (customizeResult.data ?? [])) {
       const key = `customize:${item.quiz_id}`
-      const status = statusMap.get(key)
-      const info = lectureInfoMap.get(status?.lecture_id ?? '')
+      const bm = bookmarkMap.get(key)
+      const info = lectureInfoMap.get(bm?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'customize',
-        lecture_id: status?.lecture_id,
-        bookmark: status?.bookmark ?? true,
-        correct: status?.correct ?? null,
-        selected_answer: status?.answer ?? null,
+        lecture_id: bm?.lecture_id,
+        bookmark: true,
+        correct: bm?.correct ?? null,
+        selected_answer: bm?.selected_answer ?? null,
         course_id: info?.course_id,
         course_name: info?.course_name,
         lecture_name: info?.lecture_name,
@@ -234,19 +234,25 @@ export default function FavoritesTab({
     return () => observer.disconnect()
   }, [hasMore, isLoading, offset, fetchQuizzes])
 
-  // sortOrder 또는 allQuizzes 변경 시 courseGroups 재생성
+  // sortOrder, allQuizzes, lectureInfoMap 변경 시 courseGroups 재생성
   useEffect(() => {
     if (allQuizzes.length === 0) {
       setCourseGroups([])
       return
     }
-    const sorted = [...allQuizzes].sort((a, b) => {
+    // lectureInfoMap에서 최신 이름 반영
+    const withLatestNames = allQuizzes.map(q => {
+      const info = lectureInfoMap.get(q.lecture_id ?? '')
+      if (!info) return q
+      return { ...q, course_name: info.course_name, lecture_name: info.lecture_name }
+    })
+    const sorted = withLatestNames.sort((a, b) => {
       const dateA = new Date(a.created_at ?? 0).getTime()
       const dateB = new Date(b.created_at ?? 0).getTime()
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
     })
     setCourseGroups(groupQuizzesByCourseAndLecture(sorted))
-  }, [sortOrder, allQuizzes])
+  }, [sortOrder, allQuizzes, lectureInfoMap])
 
   const handleBookmarkToggle = useCallback(
     async (quizId: string) => {
@@ -278,7 +284,7 @@ export default function FavoritesTab({
   const handleCorrectUpdate = useCallback(
     async (quizId: string, isCorrect: boolean, answer: number) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
-      if (!quiz || !quiz.lecture_id) return
+      if (!quiz) return
 
       // Optimistic update
       const updated = allQuizzes.map(q =>
@@ -286,17 +292,15 @@ export default function FavoritesTab({
       )
       setAllQuizzes(updated)
 
-      const result = await statusService.updateCorrect(
+      const result = await statusService.updateBookmarkAnswer(
         quiz.quiz_source,
         quizId,
-        quiz.lecture_id,
-        isCorrect,
         answer,
+        isCorrect,
       )
 
       if (result.error) {
         showErrorToast(t('error.correctFailed'))
-        // 롤백: refetch로 통일 (R-AW-4)
         fetchQuizzes(0, false)
         setOffset(0)
         setHasMore(true)
@@ -310,19 +314,16 @@ export default function FavoritesTab({
   const handleResetAnswer = useCallback(
     async (quizId: string) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
-      if (!quiz || !quiz.lecture_id) return
+      if (!quiz) return
 
       const updated = allQuizzes.map(q =>
         q.quiz_id === quizId ? { ...q, correct: null, selected_answer: null } : q,
       )
       setAllQuizzes(updated)
 
-      const result = await statusService.updateCorrect(
+      const result = await statusService.resetBookmarkAnswer(
         quiz.quiz_source,
         quizId,
-        quiz.lecture_id,
-        null,
-        null,
       )
 
       if (result.error) {

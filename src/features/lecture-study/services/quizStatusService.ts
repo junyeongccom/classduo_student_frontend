@@ -20,7 +20,6 @@ export type QuizSource = 'instructor' | 'customize' | 'content'
 export interface QuizStatus {
   quiz_id: string
   quiz_source: QuizSource
-  bookmark: boolean
   correct: boolean | null
   answer: number | null
 }
@@ -59,7 +58,7 @@ export async function getQuizStatusByLecture(
 
     const { data, error } = await supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, bookmark, correct, answer')
+      .select('quiz_id, quiz_source, correct, answer')
       .eq('lecture_id', lectureId)
       .eq('quiz_source', quizSource)
 
@@ -85,21 +84,56 @@ export async function getQuizStatusByLecture(
   }
 }
 
+/* ───────────── 즐겨찾기 Supabase 조회 ───────────── */
+
+/**
+ * 특정 lecture의 모든 user_quiz_bookmarks를 조회한다.
+ * RLS가 student_id를 자동 필터링하므로 student_id 파라미터 불필요.
+ */
+export async function getBookmarksByLecture(
+  lectureId: string,
+): Promise<{ data: { quiz_id: string; quiz_source: QuizSource }[] | null; error: Error | null }> {
+  try {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('user_quiz_bookmarks')
+      .select('quiz_id, quiz_source')
+      .eq('lecture_id', lectureId)
+    if (error) {
+      if (isJWTExpiredError(error)) {
+        const ok = await handleJWTExpiration()
+        if (!ok) return { data: null, error: new Error('세션이 만료되었습니다.') }
+        return { data: null, error: new Error('세션이 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: new Error(getErrorMessage(error)) }
+    }
+    return { data: (data ?? []) as { quiz_id: string; quiz_source: QuizSource }[], error: null }
+  } catch (err) {
+    if (isJWTExpiredError(err)) {
+      await handleJWTExpiration()
+      return { data: null, error: new Error('세션이 만료되었습니다.') }
+    }
+    return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
 /* ───────────── Backend API 호출 ───────────── */
 
-/** 즐겨찾기 토글 */
+/** 즐겨찾기 토글 (추가 시 현재 풀이 상태 복사) */
 export async function toggleBookmark(
   quizSource: QuizSource,
   quizId: string,
   lectureId: string,
   bookmark: boolean,
+  selectedAnswer?: number | null,
+  correct?: boolean | null,
 ) {
   return apiRequest<BookmarkResponse>(
-    `/quiz-status/${quizSource}/${quizId}/bookmark?lecture_id=${lectureId}`,
+    `/quiz-status/${quizSource}/${quizId}/bookmark`,
     {
       method: 'PATCH',
       auth: true,
-      body: { bookmark },
+      body: { bookmark, lecture_id: lectureId, selected_answer: selectedAnswer ?? null, correct: correct ?? null },
     },
   )
 }

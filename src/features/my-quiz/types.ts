@@ -66,10 +66,31 @@ export interface QuizStatusEntry {
   quiz_id: string
   quiz_source: QuizSource
   lecture_id: string
-  bookmark: boolean
   correct: boolean | null
   answer: number | null
-  incorrect_save: boolean
+}
+
+/** 즐겨찾기 (user_quiz_bookmarks) */
+export interface QuizBookmarkEntry {
+  id: string
+  quiz_id: string
+  quiz_source: QuizSource
+  lecture_id: string
+  selected_answer: number | null
+  correct: boolean | null
+  created_at: string
+}
+
+/** 오답노트 (user_quiz_incorrect) */
+export interface QuizIncorrectEntry {
+  id: string
+  quiz_id: string
+  quiz_source: QuizSource
+  lecture_id: string
+  original_answer: number | null
+  retry_answer: number | null
+  retry_correct: boolean | null
+  created_at: string
 }
 
 /** 세션 상세 응답 (퀴즈 목록 포함) */

@@ -23,6 +23,7 @@ import {
   toggleBookmark,
   updateCorrect,
   grantReward,
+  getBookmarksByLecture,
   type QuizStatus,
 } from '../../services/quizStatusService'
 import { StudentQuizCard, type StudentQuizItem } from '@/shared/components/quiz'
@@ -65,6 +66,7 @@ function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
 export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber, sessionNumber }: QuizTabContainerProps) {
   const [quizzes, setQuizzes] = useState<InstructorQuizItem[]>([])
   const [statusMap, setStatusMap] = useState<Map<string, QuizStatus>>(new Map())
+  const [bookmarkSet, setBookmarkSet] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showRewardModal, setShowRewardModal] = useState(false)
@@ -89,10 +91,11 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       setQuizzes([])
       setStatusMap(new Map())
 
-      // 퀴즈 + 상태를 병렬 조회
-      const [quizResult, statusResult] = await Promise.all([
+      // 퀴즈 + 상태 + 즐겨찾기를 병렬 조회
+      const [quizResult, statusResult, bookmarkResult] = await Promise.all([
         getInstructorQuizzes(lectureId, locale),
         getQuizStatusByLecture(lectureId, 'content'),
+        getBookmarksByLecture(lectureId),
       ])
 
       if (cancelled) return
@@ -113,6 +116,14 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         setStatusMap(map)
       }
 
+      if (bookmarkResult.data) {
+        const bSet = new Set<string>()
+        for (const b of bookmarkResult.data) {
+          bSet.add(b.quiz_id)
+        }
+        setBookmarkSet(bSet)
+      }
+
       setIsLoading(false)
     }
 
@@ -125,37 +136,34 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   // 즐겨찾기 토글
   const handleBookmarkToggle = useCallback(
     async (quizId: string) => {
-      const current = statusMap.get(quizId)
-      const newBookmark = !(current?.bookmark ?? false)
+      const isCurrentlyBookmarked = bookmarkSet.has(quizId)
+      const newBookmark = !isCurrentlyBookmarked
 
       // 낙관적 업데이트
-      setStatusMap((prev) => {
-        const next = new Map(prev)
-        next.set(quizId, {
-          quiz_id: quizId,
-          quiz_source: 'content',
-          bookmark: newBookmark,
-          correct: current?.correct ?? null,
-          answer: current?.answer ?? null,
-        })
+      setBookmarkSet((prev) => {
+        const next = new Set(prev)
+        if (newBookmark) next.add(quizId)
+        else next.delete(quizId)
         return next
       })
 
-      const result = await toggleBookmark('content', quizId, lectureId, newBookmark)
+      // 추가 시 현재 풀이 상태 복사
+      const status = newBookmark ? statusMap.get(quizId) : undefined
+      const result = await toggleBookmark(
+        'content', quizId, lectureId, newBookmark,
+        status?.answer ?? null, status?.correct ?? null,
+      )
       if (result.error) {
         // 실패 시 롤백
-        setStatusMap((prev) => {
-          const next = new Map(prev)
-          if (current) {
-            next.set(quizId, current)
-          } else {
-            next.delete(quizId)
-          }
+        setBookmarkSet((prev) => {
+          const next = new Set(prev)
+          if (isCurrentlyBookmarked) next.add(quizId)
+          else next.delete(quizId)
           return next
         })
       }
     },
-    [statusMap, lectureId],
+    [bookmarkSet, lectureId, statusMap],
   )
 
   // 풀이 결과 업데이트 + 보상 판정
@@ -178,7 +186,6 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         next.set(quizId, {
           quiz_id: quizId,
           quiz_source: 'content',
-          bookmark: current?.bookmark ?? false,
           correct: isCorrect,
           answer,
         })
@@ -206,7 +213,6 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         updatedMap.set(quizId, {
           quiz_id: quizId,
           quiz_source: 'content',
-          bookmark: current?.bookmark ?? false,
           correct: isCorrect,
           answer,
         })
@@ -238,7 +244,6 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         next.set(quizId, {
           quiz_id: quizId,
           quiz_source: 'content',
-          bookmark: current?.bookmark ?? false,
           correct: null,
           answer: null,
         })
@@ -342,7 +347,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                   key={quiz.quiz_id}
                   quiz={toStudentQuiz(quiz)}
                   index={idx}
-                  isBookmarked={status?.bookmark ?? false}
+                  isBookmarked={bookmarkSet.has(quiz.quiz_id)}
                   isCorrect={status?.correct ?? null}
                   selectedAnswer={status?.answer ?? null}
                   onBookmarkToggle={handleBookmarkToggle}

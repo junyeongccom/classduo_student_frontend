@@ -133,12 +133,14 @@ export function useCourseAndLecture() {
         map.set(l.lecture_id, {
           course_id: c.course_id,
           course_name: courseName,
-          lecture_name: l.title ?? `${l.lecture_no}회차`,
+          lecture_name: l.title
+            ? t('selector.lectureLabelWithTitle', { no: l.lecture_no, title: l.title })
+            : t('selector.lectureLabel', { no: l.lecture_no }),
         })
       }
     }
     return map
-  }, [courses])
+  }, [courses, t])
 
   return {
     isLoading,
