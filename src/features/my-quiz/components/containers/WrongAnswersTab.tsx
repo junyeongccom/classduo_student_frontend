@@ -411,45 +411,158 @@ export default function WrongAnswersTab({
     [allQuizzes, fetchQuizzes, showErrorToast, t],
   )
 
-  if (selectedLectureIds.length === 0) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400 px-6">
-        <p className="text-sm text-center">{t('selector.noCourses')}</p>
-      </div>
-    )
-  }
-
-  if (isLoading && allQuizzes.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-2">
-        <p className="text-sm text-red-500">{error}</p>
-        <button
-          type="button"
-          onClick={() => { setOffset(0); setHasMore(true); fetchQuizzes(0, false) }}
-          className="text-xs text-indigo-600 hover:underline"
-        >
-          {t('error.retry')}
-        </button>
-      </div>
-    )
-  }
-
-  if (courseGroups.length === 0) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
-          <CheckCircle2 className="h-7 w-7 stroke-[1.5] text-green-400" />
+  const renderContent = () => {
+    if (selectedLectureIds.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
+            <CheckCircle2 className="h-7 w-7 stroke-[1.5] text-green-400" />
+          </div>
+          <p className="text-sm">{t('empty.noWrong')}</p>
+          <p className="text-xs text-gray-300">{t('empty.wrongGuide')}</p>
         </div>
-        <p className="text-sm">{t('empty.noWrong')}</p>
-        <p className="text-xs text-gray-300">{t('empty.wrongGuide')}</p>
+      )
+    }
+
+    if (isLoading && allQuizzes.length === 0) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        </div>
+      )
+    }
+
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <p className="text-sm text-red-500">{error}</p>
+          <button
+            type="button"
+            onClick={() => { setOffset(0); setHasMore(true); fetchQuizzes(0, false) }}
+            className="text-xs text-indigo-600 hover:underline"
+          >
+            {t('error.retry')}
+          </button>
+        </div>
+      )
+    }
+
+    if (courseGroups.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
+            <CheckCircle2 className="h-7 w-7 stroke-[1.5] text-green-400" />
+          </div>
+          <p className="text-sm">{t('empty.noWrong')}</p>
+          <p className="text-xs text-gray-300">{t('empty.wrongGuide')}</p>
+        </div>
+      )
+    }
+
+    return (
+      <div className="space-y-6">
+        {visibleGroups.map(courseGroup => (
+          <section key={courseGroup.course_id} className="space-y-4">
+            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
+              <BookOpen className="h-4 w-4 text-blue-500" />
+              {courseGroup.course_name}
+            </h3>
+            {courseGroup.lectureGroups.map(lectureGroup => (
+              <div key={lectureGroup.lecture_id} className="space-y-3 pl-2">
+                <h4 className="text-sm font-semibold text-gray-600 border-l-2 border-blue-400 pl-2">
+                  {lectureGroup.lecture_name}
+                </h4>
+                {lectureGroup.typeGroups.map(typeGroup => (
+                  <div key={typeGroup.type}>
+                    <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+                      {tQuiz(`sectionLabel.${typeGroup.type}`)}
+                      <span className="text-xs font-normal text-gray-400">
+                        {tQuiz('itemCount', { count: typeGroup.items.length })}
+                      </span>
+                    </h5>
+                    <div className="space-y-3">
+                      {typeGroup.items.map((quiz, idx) => {
+                        const studentQuiz: StudentQuizItem = {
+                          quiz_id: quiz.quiz_id,
+                          quiz_type: quiz.quiz_type,
+                          question: pickLocalizedText(quiz.question, quiz.question_eng, locale) ?? quiz.question,
+                          answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
+                          explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
+                          difficulty: quiz.difficulty,
+                          choices: quiz.choices.map(c => ({
+                            ...c,
+                            choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
+                            choice_explanation: pickLocalizedText(c.choice_explanation, c.choice_explanation_eng, locale) ?? c.choice_explanation ?? null,
+                          })),
+                        }
+                        return (
+                          <div key={quiz.quiz_id} id={`quiz-${quiz.quiz_id}`}>
+                            <div className="mb-1">
+                              <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                                quiz.quiz_source === 'instructor'
+                                  ? 'bg-purple-50 text-purple-600'
+                                  : quiz.quiz_source === 'content'
+                                    ? 'bg-teal-50 text-teal-600'
+                                    : 'bg-indigo-50 text-indigo-600'
+                              }`}>
+                                {t(`quizSource.${quiz.quiz_source}`)}
+                              </span>
+                            </div>
+                            <StudentQuizCard
+                              quiz={studentQuiz}
+                              index={idx}
+                              isBookmarked={quiz.bookmark}
+                              isCorrect={quiz.correct}
+                              selectedAnswer={quiz.selected_answer}
+                              onBookmarkToggle={handleBookmarkToggle}
+                              onCorrectUpdate={handleCorrectUpdate}
+                              onResetAnswer={handleResetAnswer}
+                              wrongNoteMode
+                              onDismissWrongNote={handleDismissWrongNote}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </section>
+        ))}
+
+        {/* 카운터 텍스트 + 더 보기 버튼 */}
+        {totalQuizCount > 0 && (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <p className="text-xs text-gray-400">
+              {t('wrong.showingCount', { total: totalQuizCount, showing: shownQuizCount })}
+            </p>
+            {shownQuizCount < totalQuizCount && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDisplayCount(prev => prev + 5)
+                  // 서버에서 더 가져올 필요가 있으면 fetch
+                  if (hasMore && shownQuizCount >= allQuizzes.length - 2) {
+                    const nextOffset = offset + PAGE_SIZE
+                    setOffset(nextOffset)
+                    fetchQuizzes(nextOffset, true)
+                  }
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-6 py-2.5 text-sm text-gray-600 transition hover:border-blue-300 hover:shadow-sm"
+              >
+                <ChevronDown className="h-4 w-4" />
+                {t('wrong.showMore')}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 무한 스크롤 센티넬 */}
+        {hasMore && (
+          <div ref={sentinelRef} className="h-1" />
+        )}
       </div>
     )
   }
@@ -521,110 +634,8 @@ export default function WrongAnswersTab({
         </div>
       </div>
 
-      <div className="space-y-6">
-      {visibleGroups.map(courseGroup => (
-        <section key={courseGroup.course_id} className="space-y-4">
-          <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
-            <BookOpen className="h-4 w-4 text-blue-500" />
-            {courseGroup.course_name}
-          </h3>
-          {courseGroup.lectureGroups.map(lectureGroup => (
-            <div key={lectureGroup.lecture_id} className="space-y-3 pl-2">
-              <h4 className="text-sm font-semibold text-gray-600 border-l-2 border-blue-400 pl-2">
-                {lectureGroup.lecture_name}
-              </h4>
-              {lectureGroup.typeGroups.map(typeGroup => (
-                <div key={typeGroup.type}>
-                  <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500">
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-                    {tQuiz(`sectionLabel.${typeGroup.type}`)}
-                    <span className="text-xs font-normal text-gray-400">
-                      {tQuiz('itemCount', { count: typeGroup.items.length })}
-                    </span>
-                  </h5>
-                  <div className="space-y-3">
-                    {typeGroup.items.map((quiz, idx) => {
-                      const studentQuiz: StudentQuizItem = {
-                        quiz_id: quiz.quiz_id,
-                        quiz_type: quiz.quiz_type,
-                        question: pickLocalizedText(quiz.question, quiz.question_eng, locale) ?? quiz.question,
-                        answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
-                        explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
-                        difficulty: quiz.difficulty,
-                        choices: quiz.choices.map(c => ({
-                          ...c,
-                          choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
-                          choice_explanation: pickLocalizedText(c.choice_explanation, c.choice_explanation_eng, locale) ?? c.choice_explanation ?? null,
-                        })),
-                      }
-                      return (
-                        <div key={quiz.quiz_id} id={`quiz-${quiz.quiz_id}`}>
-                          <div className="mb-1">
-                            <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                              quiz.quiz_source === 'instructor'
-                                ? 'bg-purple-50 text-purple-600'
-                                : quiz.quiz_source === 'content'
-                                  ? 'bg-teal-50 text-teal-600'
-                                  : 'bg-indigo-50 text-indigo-600'
-                            }`}>
-                              {t(`quizSource.${quiz.quiz_source}`)}
-                            </span>
-                          </div>
-                          <StudentQuizCard
-                            quiz={studentQuiz}
-                            index={idx}
-                            isBookmarked={quiz.bookmark}
-                            isCorrect={quiz.correct}
-                            selectedAnswer={quiz.selected_answer}
-                            onBookmarkToggle={handleBookmarkToggle}
-                            onCorrectUpdate={handleCorrectUpdate}
-                            onResetAnswer={handleResetAnswer}
-                            wrongNoteMode
-                            onDismissWrongNote={handleDismissWrongNote}
-                          />
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </section>
-      ))}
+      {renderContent()}
 
-      {/* 카운터 텍스트 + 더 보기 버튼 */}
-      {totalQuizCount > 0 && (
-        <div className="flex flex-col items-center gap-2 py-4">
-          <p className="text-xs text-gray-400">
-            {t('wrong.showingCount', { total: totalQuizCount, showing: shownQuizCount })}
-          </p>
-          {shownQuizCount < totalQuizCount && (
-            <button
-              type="button"
-              onClick={() => {
-                setDisplayCount(prev => prev + 5)
-                // 서버에서 더 가져올 필요가 있으면 fetch
-                if (hasMore && shownQuizCount >= allQuizzes.length - 2) {
-                  const nextOffset = offset + PAGE_SIZE
-                  setOffset(nextOffset)
-                  fetchQuizzes(nextOffset, true)
-                }
-              }}
-              className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-6 py-2.5 text-sm text-gray-600 transition hover:border-blue-300 hover:shadow-sm"
-            >
-              <ChevronDown className="h-4 w-4" />
-              {t('wrong.showMore')}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* 무한 스크롤 센티넬 (숨김 — 더 보기 버튼에서 트리거) */}
-      {hasMore && (
-        <div ref={sentinelRef} className="h-1" />
-      )}
-      </div>
       </div>
     </div>
   )
