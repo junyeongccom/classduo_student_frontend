@@ -194,29 +194,52 @@ export function LeftPanelMaterials() {
   }, [allPages])
 
 
-  // ─── 화살표 클릭 → 스크롤 이동 (Task 765) ───
+  // ─── 페이지 이동 (화살표: smooth, 출처 점프: instant) ───
   const scrollToPage = useCallback(
-    (pageIdx: number) => {
+    (pageIdx: number, instant = false) => {
       const el = pageRefs.current[pageIdx]
       if (!el || !scrollContainerRef.current) return
 
       isScrollingRef.current = true
       setCurrentPage(pageIdx + 1)
 
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      if (instant) {
+        // 긴 거리 점프: 즉시 이동 + 이미지 로드 후 위치 보정
+        el.scrollIntoView({ behavior: 'instant', block: 'start' })
 
-      // R-AW3 fix: settleId로 연속 호출 시 이전 settle 무효화
-      const mySettleId = ++settleIdRef.current
-      const container = scrollContainerRef.current
-      let settled = false
-      const settle = () => {
-        if (settled || mySettleId !== settleIdRef.current) return
-        settled = true
-        isScrollingRef.current = false
-        container.removeEventListener('scrollend', settle)
+        // 이미지 로드로 높이 변경 시 위치 보정 (최대 3회)
+        let retries = 0
+        const correctPosition = () => {
+          if (retries >= 3 || !pageRefs.current[pageIdx]) return
+          retries++
+          requestAnimationFrame(() => {
+            pageRefs.current[pageIdx]?.scrollIntoView({ behavior: 'instant', block: 'start' })
+          })
+        }
+        setTimeout(correctPosition, 100)
+        setTimeout(correctPosition, 300)
+        setTimeout(correctPosition, 600)
+
+        // instant는 scrollend 이벤트가 안 날 수 있으므로 즉시 해제
+        requestAnimationFrame(() => {
+          isScrollingRef.current = false
+        })
+      } else {
+        // 화살표: smooth scroll (1페이지 이동)
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+        const mySettleId = ++settleIdRef.current
+        const container = scrollContainerRef.current
+        let settled = false
+        const settle = () => {
+          if (settled || mySettleId !== settleIdRef.current) return
+          settled = true
+          isScrollingRef.current = false
+          container.removeEventListener('scrollend', settle)
+        }
+        container.addEventListener('scrollend', settle, { once: true })
+        setTimeout(settle, 800)
       }
-      container.addEventListener('scrollend', settle, { once: true })
-      setTimeout(settle, 1000) // fallback (긴 점프 대비 여유 확보)
     },
     [],
   )
@@ -271,7 +294,7 @@ export function LeftPanelMaterials() {
     // targetPage는 0-indexed 배열 인덱스
     if (targetPage >= 0 && targetPage < allPages.length) {
       requestAnimationFrame(() => {
-        scrollToPage(targetPage)
+        scrollToPage(targetPage, true)
         setTargetPage(null)
       })
     } else {

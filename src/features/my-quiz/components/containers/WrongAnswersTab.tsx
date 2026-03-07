@@ -536,6 +536,7 @@ export default function WrongAnswersTab({
                               </span>
                             </div>
                             <StudentQuizCard
+                              key={`card-${quiz.quiz_id}-${resetKey}`}
                               quiz={studentQuiz}
                               index={idx}
                               isBookmarked={quiz.bookmark}
