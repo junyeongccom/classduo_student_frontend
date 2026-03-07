@@ -160,7 +160,7 @@ export default function CreateSessionForm({
                         {isHovered && (
                           <div
                             role="tooltip"
-                            className="absolute left-0 right-0 top-full z-10 mt-1 rounded-lg border border-gray-200 bg-gray-900 px-3 py-2 text-xs font-normal text-white shadow-lg"
+                            className="absolute right-full top-0 z-10 mr-2 w-56 rounded-lg border border-gray-200 bg-gray-900 px-3 py-2 text-xs font-normal text-white shadow-lg"
                           >
                             {t(`typeDescription.${qt.value}`)}
                           </div>

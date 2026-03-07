@@ -36,11 +36,12 @@ export default function MyQuizContainer() {
     selectAllLectures,
     clearLectureIds,
     hasCourses,
-    allLectureIds,
     lectureInfoMap,
   } = useCourseAndLecture()
 
-  const effectiveLectureIds = selectedLectureIds.length > 0 ? selectedLectureIds : allLectureIds
+  const effectiveLectureIds = selectedLectureIds.length > 0
+    ? selectedLectureIds
+    : lectureOptions.map(l => l.value)
 
   return (
     <Tabs
