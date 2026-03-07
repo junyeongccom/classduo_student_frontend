@@ -67,7 +67,6 @@ export default function WrongAnswersTab({
   const locale = useLocale()
   const { toasts, error: showErrorToast } = useToast()
 
-  const [courseGroups, setCourseGroups] = useState<CourseGroup[]>([])
   const [allQuizzes, setAllQuizzes] = useState<QuizWithMeta[]>([])
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [isLoading, setIsLoading] = useState(false)
@@ -210,7 +209,6 @@ export default function WrongAnswersTab({
   const lectureIdsKey = JSON.stringify(selectedLectureIds)
   useEffect(() => {
     setAllQuizzes([])
-    setCourseGroups([])
     setOffset(0)
     setHasMore(true)
     setError(null)
@@ -238,18 +236,15 @@ export default function WrongAnswersTab({
     return () => observer.disconnect()
   }, [hasMore, isLoading, offset, fetchQuizzes])
 
-  // sortOrder 또는 allQuizzes 변경 시 courseGroups 재생성
-  useEffect(() => {
-    if (allQuizzes.length === 0) {
-      setCourseGroups([])
-      return
-    }
+  // sortOrder 또는 allQuizzes 변경 시 courseGroups 동기 재생성 (useMemo)
+  const courseGroups = useMemo(() => {
+    if (allQuizzes.length === 0) return []
     const sorted = [...allQuizzes].sort((a, b) => {
       const dateA = new Date(a.created_at ?? 0).getTime()
       const dateB = new Date(b.created_at ?? 0).getTime()
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
     })
-    setCourseGroups(groupQuizzesByCourseAndLecture(sorted))
+    return groupQuizzesByCourseAndLecture(sorted)
   }, [sortOrder, allQuizzes])
 
   // 표시 갯수 제한된 그룹 생성
