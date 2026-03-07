@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { ArrowLeft, Info, Loader2 } from 'lucide-react'
+import { ArrowLeft, Info, Layers, Loader2, Rocket } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 
 const QUIZ_TYPES = [
@@ -20,10 +20,12 @@ const QUIZ_TYPES = [
 ] as const
 
 interface CreateSessionFormProps {
-  onSubmit: (quizCount: number, quizTypes: string[]) => Promise<void>
+  onSubmit: (typeCounts: Record<string, number>) => Promise<void>
   onCancel: () => void
   isSubmitting?: boolean
   error?: string | null
+  courseName?: string
+  lectureName?: string
 }
 
 export default function CreateSessionForm({
@@ -31,42 +33,51 @@ export default function CreateSessionForm({
   onCancel,
   isSubmitting = false,
   error = null,
+  courseName,
+  lectureName,
 }: CreateSessionFormProps) {
   const t = useTranslations('myQuiz.create')
 
-  const [quizCount, setQuizCount] = useState(10)
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(
-    QUIZ_TYPES.map(qt => qt.value),
+  const [typeCounts, setTypeCounts] = useState<Record<string, number>>(
+    Object.fromEntries(QUIZ_TYPES.map(qt => [qt.value, 0])),
   )
   const [hoveredType, setHoveredType] = useState<string | null>(null)
 
-  const toggleType = useCallback((type: string) => {
-    setSelectedTypes(prev => {
-      if (prev.includes(type)) {
-        if (prev.length <= 1) return prev
-        return prev.filter(t => t !== type)
-      }
-      return [...prev, type]
+  const totalCount = Object.values(typeCounts).reduce((a, b) => a + b, 0)
+
+  const updateCount = useCallback((type: string, delta: number) => {
+    setTypeCounts(prev => {
+      const current = prev[type] ?? 0
+      const next = Math.max(0, Math.min(20, current + delta))
+      return { ...prev, [type]: next }
     })
   }, [])
 
   const handleSubmit = useCallback(() => {
-    if (isSubmitting || selectedTypes.length === 0) return
-    onSubmit(quizCount, selectedTypes)
-  }, [isSubmitting, selectedTypes, quizCount, onSubmit])
+    if (isSubmitting || totalCount === 0) return
+    onSubmit(typeCounts)
+  }, [isSubmitting, totalCount, typeCounts, onSubmit])
 
   return (
     <div className="flex h-full flex-col">
       {/* 헤더 */}
-      <div className="shrink-0 flex items-center gap-2 border-b border-gray-100 px-4 py-3">
+      <div className="shrink-0 px-6 py-4">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+          className="mb-3 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h3 className="text-sm font-semibold text-gray-800">{t('newSession')}</h3>
+        {(courseName || lectureName) && (
+          <p className="text-sm mb-2">
+            <span className="text-blue-600 font-medium">{courseName}</span>
+            {courseName && lectureName && <span className="mx-1 text-gray-400">{'>'}</span>}
+            <span className="text-gray-600">{lectureName}</span>
+          </p>
+        )}
+        <h2 className="text-2xl font-bold text-gray-900">{t('settingTitle')}</h2>
+        <p className="text-sm text-gray-500 mt-1">{t('settingDescription')}</p>
       </div>
 
       {/* 설정 영역 - 카드 레이아웃 */}
@@ -74,34 +85,25 @@ export default function CreateSessionForm({
         <div className="mx-auto max-w-lg">
           <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div className="p-5 space-y-6">
-              {/* 문항 수 */}
+              {/* 유형별 문항 수 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('quizCount')}
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min={1}
-                    max={30}
-                    value={quizCount}
-                    onChange={e => setQuizCount(Number(e.target.value))}
-                    className="flex-1 accent-indigo-500"
-                  />
-                  <span className="w-10 text-center text-sm font-semibold text-gray-700">
-                    {quizCount}
-                  </span>
+                <div className="flex items-center gap-2 mb-3">
+                  <Layers className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-semibold text-gray-800">{t('quizTypes')}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTypeCounts(Object.fromEntries(QUIZ_TYPES.map(qt => [qt.value, 5])))
+                    }}
+                    className="ml-auto text-xs text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {t('selectAll')}
+                  </button>
                 </div>
-              </div>
-
-              {/* 문제 유형 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('quizTypes')}
-                </label>
                 <div className="flex flex-col gap-2">
                   {QUIZ_TYPES.map(qt => {
-                    const isSelected = selectedTypes.includes(qt.value)
+                    const count = typeCounts[qt.value] ?? 0
+                    const isActive = count > 0
                     const isHovered = hoveredType === qt.value
                     return (
                       <div
@@ -110,33 +112,51 @@ export default function CreateSessionForm({
                         onMouseEnter={() => setHoveredType(qt.value)}
                         onMouseLeave={() => setHoveredType(null)}
                       >
-                        <button
-                          type="button"
-                          onClick={() => toggleType(qt.value)}
+                        <div
                           className={cn(
-                            'flex w-full items-center rounded-lg border px-3 py-2 text-left text-sm transition',
-                            isSelected
+                            'flex w-full items-center rounded-lg border px-3 py-2 text-sm transition',
+                            isActive
                               ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium'
-                              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300',
+                              : 'border-gray-200 bg-white text-gray-400',
                           )}
                         >
-                          <span
-                            className={cn(
-                              'mr-2 flex h-4 w-4 shrink-0 items-center justify-center rounded border',
-                              isSelected
-                                ? 'border-indigo-500 bg-indigo-500 text-white'
-                                : 'border-gray-300',
-                            )}
-                          >
-                            {isSelected && (
-                              <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
-                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
-                          </span>
                           <span className="flex-1">{t(qt.labelKey)}</span>
-                          <Info className="h-4 w-4 shrink-0 text-gray-400" aria-hidden />
-                        </button>
+                          <Info className="h-4 w-4 shrink-0 text-gray-400 mr-3" aria-hidden />
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => updateCount(qt.value, -1)}
+                              disabled={count <= 0}
+                              className={cn(
+                                'flex h-7 w-7 items-center justify-center rounded-md border text-sm font-medium transition',
+                                count <= 0
+                                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                  : 'border-indigo-300 text-indigo-600 hover:bg-indigo-100',
+                              )}
+                            >
+                              −
+                            </button>
+                            <span className={cn(
+                              'w-8 text-center text-sm font-semibold',
+                              isActive ? 'text-indigo-700' : 'text-gray-400',
+                            )}>
+                              {count}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateCount(qt.value, 1)}
+                              disabled={count >= 20}
+                              className={cn(
+                                'flex h-7 w-7 items-center justify-center rounded-md border text-sm font-medium transition',
+                                count >= 20
+                                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                                  : 'border-indigo-300 text-indigo-600 hover:bg-indigo-100',
+                              )}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
                         {isHovered && (
                           <div
                             role="tooltip"
@@ -151,39 +171,49 @@ export default function CreateSessionForm({
                 </div>
               </div>
 
-              {/* 예상 소요시간 */}
-              <p className="text-xs text-gray-500">
-                {t('estimatedTime', { minutes: Math.ceil((75 + quizCount * 8) / 60) })}
-              </p>
+              {/* 총 문항 수 + 예상 소요시간 */}
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span className={cn('font-medium', totalCount > 0 && 'text-indigo-600')}>
+                  {t('totalCount', { count: totalCount })}
+                </span>
+                <span>
+                  {t('estimatedTime', { minutes: Math.ceil((75 + totalCount * 8) / 60) })}
+                </span>
+              </div>
 
               {error && (
                 <p className="text-sm text-red-500">{error}</p>
               )}
             </div>
 
-            {/* 생성 버튼 — 카드 내부 하단 */}
-            <div className="border-t border-gray-100 px-5 py-4">
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting || selectedTypes.length === 0}
-                className={cn(
-                  'flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white transition',
-                  isSubmitting || selectedTypes.length === 0
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-indigo-600 hover:bg-indigo-700',
-                )}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t('generating')}
-                  </>
-                ) : (
-                  t('generate')
-                )}
-              </button>
-            </div>
+          </div>
+
+          {/* 생성 버튼 — 카드 밖 하단 */}
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting || totalCount === 0}
+              className={cn(
+                'flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-base font-semibold text-white transition',
+                isSubmitting || totalCount === 0
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700',
+              )}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  {t('generating')}
+                </>
+              ) : (
+                <>
+                  <Rocket className="h-5 w-5" />
+                  {t('generate')}
+                </>
+              )}
+            </button>
+            <p className="text-center text-xs text-gray-400 mt-2">{t('aiNote')}</p>
           </div>
         </div>
       </div>

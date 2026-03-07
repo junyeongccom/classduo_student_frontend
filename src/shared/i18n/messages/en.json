@@ -444,6 +444,8 @@
       "bookmarkRemove": "Remove bookmark",
       "bookmarkAdd": "Add bookmark",
       "bookmarkDisabledTooltip": "Answer the question first to add to bookmarks",
+      "wrongNoteDismiss": "Remove from wrong notes",
+      "wrongNoteDismissDisabledTooltip": "Cannot remove while answer is incorrect. Choose the correct answer or reset first.",
       "answerDisabledTooltip": "Answer the question first to view the answer and explanation",
       "resetTooltip": "Click your selected answer again to deselect it",
       "rewardModal": {
@@ -984,6 +986,14 @@
       "favorites": "Favorites",
       "wrong": "Wrong Answers"
     },
+    "generation": {
+      "courseSelect": "Select Course",
+      "lectureCount": "{count} lectures",
+      "selectCourseFirst": "Select a course from the left panel",
+      "goToSessions": "Go to Quiz Sessions",
+      "lectureHint": "Click a lecture to go to the quiz creation page.",
+      "totalSessions": "{count} sessions total"
+    },
     "selector": {
       "selectCourse": "Select Course",
       "selectLecture": "Select Lecture",
@@ -1001,12 +1011,13 @@
       "selectLectureGuide": "Select a course and lecture above",
       "noSessions": "No quizzes generated yet",
       "noFavorites": "No bookmarked quizzes for this lecture",
-      "noWrong": "No wrong answers for this lecture",
+      "noWrong": "No questions saved in wrong notes",
       "favoritesGuide": "Tap ★ while studying to bookmark quizzes",
-      "wrongGuide": "Wrong answers will automatically appear here"
+      "wrongGuide": "Questions you answer incorrectly are automatically saved here"
     },
     "session": {
-      "title": "Session List",
+      "title": "My Quiz Sessions",
+      "description": "View your generated quiz sessions and continue studying.",
       "creating": "Creating",
       "completed": "Completed",
       "failed": "Failed",
@@ -1018,15 +1029,38 @@
       "sessionDeleted": "Session has been deleted",
       "quizCount": "{count} questions",
       "generatingProgress": "Generating {current}/{total}",
-      "back": "Back to list"
+      "estimatedMinutes": "est. {minutes} min",
+      "back": "Back to list",
+      "studyDate": "Study Date",
+      "viewResult": "View Results",
+      "continueSession": "Continue",
+      "correctCount": "Correct",
+      "incorrectCount": "Incorrect",
+      "progressRate": "Progress",
+      "continueUnanswered": "Continue Unanswered",
+      "retryAll": "Retry All",
+      "retryAllConfirm": "Reset all answers in this session?",
+      "showMore": "Show More",
+      "detailTitle": "Session Details",
+      "sessionTitle": "{course} {lecture} Quiz Session",
+      "createdAt": "Created",
+      "solvingStatusComplete": "Status: Completed",
+      "solvingStatusProgress": "Status: In Progress ({answered}/{total} questions)",
+      "solvingInProgress": "In Progress",
+      "solvingNotStarted": "Not Started",
+      "unitLabel": "Unit",
+      "completionSummary": "{completed} of {total} questions completed",
+      "unknownUnit": "TBD"
     },
     "create": {
       "newSession": "Create New Quiz",
       "quizCount": "Number of Questions",
       "quizTypes": "Question Types",
       "estimatedTime": "Estimated time: ~{minutes} min",
-      "generate": "Generate",
+      "generate": "Generate Quiz",
       "generating": "Generating...",
+      "perTypeCount": "Questions per Type",
+      "totalCount": "Total: {count} questions",
       "noSnapshot": "Learning data is not ready for this lecture. Unable to generate quizzes",
       "typeDEF_TO_TERM": "Definition→Term",
       "typeTERM_TO_DEF": "Term→Definition",
@@ -1037,12 +1071,31 @@
         "TERM_TO_DEF": "Choose the correct definition or description for the given term (5 multiple choice). e.g. \"Select the description that best matches the following term.\"",
         "MISCONCEPTION": "Choose the one incorrect statement among five options. Designed to reveal common misconceptions or wrong interpretations.",
         "STRUCTURE_OBJ": "Multiple-choice questions about relationships between concepts (why, how, or what is the relationship). Tests comprehension of structure, not just recall."
-      }
+      },
+      "settingTitle": "Quiz Settings",
+      "settingDescription": "Choose customized quiz options to boost your study efficiency.",
+      "aiNote": "Press generate and AI will prepare customized questions.",
+      "selectAll": "Select All"
     },
     "quizSource": {
       "instructor": "Instructor Quiz",
       "customize": "My Quiz",
       "content": "Content Quiz"
+    },
+    "wrong": {
+      "title": "Wrong Answers",
+      "description": "Review questions you've gotten wrong and strengthen weak areas.",
+      "startLearning": "Start Learning",
+      "showingCount": "Showing {showing} of {total} problems",
+      "showMore": "Show More"
+    },
+    "favorites": {
+      "title": "Favorites",
+      "description": "Review your bookmarked quizzes."
+    },
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest"
     },
     "error": {
       "loadFailed": "Failed to load data",
@@ -1051,6 +1104,7 @@
       "renameFailed": "Failed to rename session",
       "bookmarkFailed": "Failed to update bookmark",
       "correctFailed": "Failed to save answer result",
+      "dismissFailed": "Failed to remove from wrong notes",
       "retry": "Retry"
     }
   }

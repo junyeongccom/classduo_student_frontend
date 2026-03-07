@@ -13,7 +13,6 @@ import { trackQuizSelfStart } from '@/shared/hooks/useAnalytics'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/Tabs'
 import type { TabType } from '../../types'
 import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
-import LectureSelectorBar from '../ui/LectureSelectorBar'
 import QuizGenerationTab from './QuizGenerationTab'
 import FavoritesTab from './FavoritesTab'
 import WrongAnswersTab from './WrongAnswersTab'
@@ -37,9 +36,11 @@ export default function MyQuizContainer() {
     selectAllLectures,
     clearLectureIds,
     hasCourses,
+    allLectureIds,
+    lectureInfoMap,
   } = useCourseAndLecture()
 
-  const isMultiSelect = activeTab !== 'generation'
+  const effectiveLectureIds = selectedLectureIds.length > 0 ? selectedLectureIds : allLectureIds
 
   return (
     <Tabs
@@ -70,34 +71,41 @@ export default function MyQuizContainer() {
         </TabsList>
       </div>
 
-      {/* 강좌/회차 선택 바 (상단) */}
-      <LectureSelectorBar
-        courseOptions={courseOptions}
-        lectureOptions={lectureOptions}
-        selectedCourseId={selectedCourseId}
-        selectedLectureId={selectedLectureId}
-        onCourseChange={onCourseChange}
-        onLectureChange={onLectureChange}
-        isLoading={isLoading}
-        hasCourses={hasCourses}
-        multiSelect={isMultiSelect}
-        selectedLectureIds={selectedLectureIds}
-        onLectureToggle={toggleLectureId}
-        onSelectAllLectures={selectAllLectures}
-        onClearLectureIds={clearLectureIds}
-      />
-
       {/* 탭별 콘텐츠 */}
       <TabsContent value="generation" className="flex-1 min-h-0 mt-0 overflow-y-auto">
-        <QuizGenerationTab
-          selectedLectureId={selectedLectureId}
-        />
+        <QuizGenerationTab />
       </TabsContent>
       <TabsContent value="favorites" className="flex-1 min-h-0 mt-0 overflow-y-auto">
-        <FavoritesTab selectedLectureIds={selectedLectureIds} />
+        <FavoritesTab
+          selectedLectureIds={effectiveLectureIds}
+          lectureInfoMap={lectureInfoMap}
+          courseOptions={courseOptions}
+          lectureOptions={lectureOptions}
+          selectedCourseId={selectedCourseId}
+          onCourseChange={onCourseChange}
+          selectedLectureIds_multi={selectedLectureIds}
+          onLectureToggle={toggleLectureId}
+          onSelectAllLectures={selectAllLectures}
+          onClearLectureIds={clearLectureIds}
+          isLoading={isLoading}
+          hasCourses={hasCourses}
+        />
       </TabsContent>
       <TabsContent value="wrong" className="flex-1 min-h-0 mt-0 overflow-y-auto">
-        <WrongAnswersTab selectedLectureIds={selectedLectureIds} />
+        <WrongAnswersTab
+          selectedLectureIds={effectiveLectureIds}
+          lectureInfoMap={lectureInfoMap}
+          courseOptions={courseOptions}
+          lectureOptions={lectureOptions}
+          selectedCourseId={selectedCourseId}
+          onCourseChange={onCourseChange}
+          selectedLectureIds_multi={selectedLectureIds}
+          onLectureToggle={toggleLectureId}
+          onSelectAllLectures={selectAllLectures}
+          onClearLectureIds={clearLectureIds}
+          isLoading={isLoading}
+          hasCourses={hasCourses}
+        />
       </TabsContent>
     </Tabs>
   )

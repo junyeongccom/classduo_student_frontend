@@ -7,36 +7,47 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useTranslations, useFormatter } from 'next-intl'
+import { ArrowLeft, Loader2, CheckCircle2, XCircle, TrendingUp, Calendar } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
+import { cn } from '@/shared/lib/utils'
 import { useToast } from '@/shared/hooks/useToast'
 import * as myQuizService from '../../services/myQuizService'
 import * as statusService from '../../services/myQuizStatusService'
 import { TYPE_ORDER } from '../../types'
-import type { QuizItem, QuizStatusEntry } from '../../types'
+import type { QuizItem, QuizStatusEntry, QuizSession } from '../../types'
 
 interface SessionDetailViewProps {
   sessionId: string
   lectureId: string
   onBack: () => void
+  courseName?: string
+  lectureName?: string
+  /** 세션 목록에서 이미 알고 있는 created_at (API 응답 fallback용) */
+  createdAt?: string
 }
 
 export default function SessionDetailView({
   sessionId,
   lectureId,
   onBack,
+  courseName,
+  lectureName,
+  createdAt: createdAtProp,
 }: SessionDetailViewProps) {
   const t = useTranslations('myQuiz')
   const tQuiz = useTranslations('lectureStudy.quiz')
+  const format = useFormatter()
   const { toasts, error: showErrorToast } = useToast()
 
   const [quizzes, setQuizzes] = useState<QuizItem[]>([])
+  const [sessionData, setSessionData] = useState<QuizSession | null>(null)
   const [statusMap, setStatusMap] = useState<Map<string, QuizStatusEntry>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [resetKey, setResetKey] = useState(0)
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
@@ -56,6 +67,7 @@ export default function SessionDetailView({
     }
 
     setQuizzes(detailResult.data.quizzes ?? [])
+    setSessionData(detailResult.data.session ?? null)
 
     const statusResult = await statusService.getQuizStatusesByLecture(lectureId, {})
     if (statusResult.data) {
@@ -88,6 +100,7 @@ export default function SessionDetailView({
           bookmark: newBookmark,
           correct: current?.correct ?? null,
           answer: current?.answer ?? null,
+          incorrect_save: current?.incorrect_save ?? false,
         })
         return next
       })
@@ -120,6 +133,7 @@ export default function SessionDetailView({
           bookmark: current?.bookmark ?? false,
           correct: isCorrect,
           answer,
+          incorrect_save: isCorrect === false ? true : (current?.incorrect_save ?? false),
         })
         return next
       })
@@ -152,6 +166,7 @@ export default function SessionDetailView({
           bookmark: current?.bookmark ?? false,
           correct: null,
           answer: null,
+          incorrect_save: current?.incorrect_save ?? false,
         })
         return next
       })
@@ -178,6 +193,73 @@ export default function SessionDetailView({
     }))
     .filter(g => g.items.length > 0)
 
+  const stats = useMemo(() => {
+    let correct = 0
+    let incorrect = 0
+    let unanswered = 0
+
+    for (const quiz of quizzes) {
+      const key = `customize:${quiz.quiz_id}`
+      const status = statusMap.get(key)
+      if (status?.correct === true) correct++
+      else if (status?.correct === false) incorrect++
+      else unanswered++
+    }
+
+    const total = quizzes.length
+    const answered = correct + incorrect
+    const progressPercent = total > 0 ? Math.round((answered / total) * 100) : 0
+
+    return { correct, incorrect, unanswered, total, answered, progressPercent }
+  }, [quizzes, statusMap])
+
+  const firstUnansweredId = useMemo(() => {
+    for (const group of grouped) {
+      for (const quiz of group.items) {
+        const key = `customize:${quiz.quiz_id}`
+        const status = statusMap.get(key)
+        if (status?.correct == null) return quiz.quiz_id
+      }
+    }
+    return null
+  }, [grouped, statusMap])
+
+  const handleContinue = useCallback(() => {
+    if (!firstUnansweredId) return
+    document.getElementById(`quiz-${firstUnansweredId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [firstUnansweredId])
+
+  const handleRetryAll = useCallback(async () => {
+    // Optimistic: reset all statuses + force re-mount cards
+    setStatusMap(prev => {
+      const next = new Map(prev)
+      for (const quiz of quizzes) {
+        const key = `customize:${quiz.quiz_id}`
+        const existing = next.get(key)
+        if (existing) {
+          next.set(key, { ...existing, correct: null, answer: null })
+        }
+      }
+      return next
+    })
+    setResetKey(prev => prev + 1)
+
+    // Parallel API calls
+    const results = await Promise.allSettled(
+      quizzes.map(quiz =>
+        statusService.updateCorrect('customize', quiz.quiz_id, lectureId, null, null)
+      )
+    )
+
+    const hasError = results.some(r =>
+      r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error)
+    )
+    if (hasError) {
+      showErrorToast(t('error.correctFailed'))
+      fetchData()
+    }
+  }, [quizzes, lectureId, t, showErrorToast, fetchData])
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -202,7 +284,7 @@ export default function SessionDetailView({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-gray-50">
       {/* Toast messages */}
       {toasts.length > 0 && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
@@ -213,58 +295,138 @@ export default function SessionDetailView({
           ))}
         </div>
       )}
-      {/* 헤더 */}
-      <div className="shrink-0 flex items-center gap-2 border-b border-gray-100 px-4 py-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <h3 className="text-sm font-semibold text-gray-800">{t('session.back')}</h3>
+      {/* 헤더 — 흰색 바: 제목만 */}
+      <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h2 className="text-sm font-semibold text-gray-900">{t('session.detailTitle')}</h2>
+        </div>
       </div>
 
-      {/* 퀴즈 목록 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {grouped.map(group => (
-          <div key={group.type}>
-            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <span>{tQuiz(`sectionLabel.${group.type}`)}</span>
-              <span className="text-xs font-normal text-gray-400">
-                {tQuiz('itemCount', { count: group.items.length })}
-              </span>
-            </h4>
-            <div className="space-y-3">
-              {group.items.map((quiz, idx) => {
-                const key = `customize:${quiz.quiz_id}`
-                const status = statusMap.get(key)
-                const studentQuiz: StudentQuizItem = {
-                  quiz_id: quiz.quiz_id,
-                  quiz_type: quiz.quiz_type,
-                  question: quiz.question,
-                  answer: quiz.answer,
-                  explanation: quiz.explanation,
-                  difficulty: quiz.difficulty ?? null,
-                  choices: quiz.choices,
-                }
-                return (
-                  <StudentQuizCard
-                    key={quiz.quiz_id}
-                    quiz={studentQuiz}
-                    index={idx}
-                    isBookmarked={status?.bookmark ?? false}
-                    isCorrect={status?.correct ?? null}
-                    selectedAnswer={status?.answer ?? null}
-                    onBookmarkToggle={handleBookmarkToggle}
-                    onCorrectUpdate={handleCorrectUpdate}
-                    onResetAnswer={handleResetAnswer}
-                  />
-                )
-              })}
+      {/* 스크롤 영역: 세션 정보 + 통계 + 퀴즈 전체 */}
+      <div className="flex-1 overflow-y-auto p-4">
+        <div className="mx-auto max-w-2xl space-y-4">
+          {/* 세션 정보 */}
+          <div>
+            {(() => {
+              const dateStr = sessionData?.created_at ?? createdAtProp
+              if (!dateStr) return null
+              const d = new Date(dateStr)
+              const y = d.getFullYear()
+              const m = String(d.getMonth() + 1).padStart(2, '0')
+              const day = String(d.getDate()).padStart(2, '0')
+              return (
+                <p className="text-xs text-gray-400 mb-1">
+                  {`${y}. ${m}. ${day}`} {t('session.createdAt')}
+                </p>
+              )
+            })()}
+            {(courseName || lectureName) && (
+              <p className="text-lg font-bold text-gray-900">
+                {courseName}{courseName && lectureName ? ' · ' : ''}{lectureName} {t('session.title').replace('내 퀴즈 ', '')}
+              </p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              {t('session.unitLabel')}: {lectureName || t('session.unknownUnit')} | {t('session.completionSummary', { total: stats.total, completed: stats.answered })}
+            </p>
+          </div>
+
+          {/* 통계 카드 */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">{t('session.correctCount')}</span>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              </div>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{stats.correct}</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">{t('session.incorrectCount')}</span>
+                <XCircle className="h-4 w-4 text-red-500" />
+              </div>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{stats.incorrect}</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">{t('session.progressRate')}</span>
+                <TrendingUp className="h-4 w-4 text-blue-500" />
+              </div>
+              <p className="mt-1 text-2xl font-bold text-gray-900">{stats.progressPercent}%</p>
             </div>
           </div>
-        ))}
+
+          {/* 퀴즈 목록 */}
+          {grouped.map(group => (
+            <div key={group.type}>
+              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <span>{tQuiz(`sectionLabel.${group.type}`)}</span>
+                <span className="text-xs font-normal text-gray-400">
+                  {tQuiz('itemCount', { count: group.items.length })}
+                </span>
+              </h4>
+              <div className="space-y-3">
+                {group.items.map((quiz, idx) => {
+                  const statusKey = `customize:${quiz.quiz_id}`
+                  const status = statusMap.get(statusKey)
+                  const studentQuiz: StudentQuizItem = {
+                    quiz_id: quiz.quiz_id,
+                    quiz_type: quiz.quiz_type,
+                    question: quiz.question,
+                    answer: quiz.answer,
+                    explanation: quiz.explanation,
+                    difficulty: quiz.difficulty ?? null,
+                    choices: quiz.choices,
+                  }
+                  return (
+                    <div key={`${quiz.quiz_id}-${resetKey}`} id={`quiz-${quiz.quiz_id}`}>
+                      <StudentQuizCard
+                        quiz={studentQuiz}
+                        index={idx}
+                        isBookmarked={status?.bookmark ?? false}
+                        isCorrect={status?.correct ?? null}
+                        selectedAnswer={status?.answer ?? null}
+                        onBookmarkToggle={handleBookmarkToggle}
+                        onCorrectUpdate={handleCorrectUpdate}
+                        onResetAnswer={handleResetAnswer}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 하단 액션 버튼 */}
+      <div className="shrink-0 border-t border-gray-200 p-4">
+        <div className="mx-auto max-w-2xl space-y-2">
+          <button
+            type="button"
+            onClick={handleContinue}
+            disabled={firstUnansweredId === null}
+            className={cn(
+              'w-full rounded-xl py-3 text-sm font-semibold text-white transition',
+              firstUnansweredId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed',
+            )}
+          >
+            {t('session.continueUnanswered')}
+          </button>
+          <button
+            type="button"
+            onClick={handleRetryAll}
+            className="w-full rounded-xl border border-gray-300 bg-gray-50 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+          >
+            {t('session.retryAll')}
+          </button>
+        </div>
       </div>
     </div>
   )

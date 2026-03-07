@@ -44,14 +44,14 @@ interface RewardGrantResponse {
  */
 export async function getQuizStatusesByLecture(
   lectureId: string,
-  filter: { bookmark?: boolean; correct?: boolean },
+  filter: { bookmark?: boolean; correct?: boolean; incorrect_save?: boolean },
   options?: { limit?: number; offset?: number },
 ): Promise<{ data: QuizStatusEntry[] | null; error: Error | null }> {
   try {
     const supabase = getSupabaseClient()
     let query = supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer')
+      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer, incorrect_save')
       .eq('lecture_id', lectureId)
 
     if (filter.bookmark !== undefined) {
@@ -59,6 +59,9 @@ export async function getQuizStatusesByLecture(
     }
     if (filter.correct !== undefined) {
       query = query.eq('correct', filter.correct)
+    }
+    if (filter.incorrect_save !== undefined) {
+      query = query.eq('incorrect_save', filter.incorrect_save)
     }
 
     // ORDER BY 필수: offset 기반 무한스크롤에서 일관된 정렬 보장
@@ -99,7 +102,7 @@ export async function getQuizStatusesByLecture(
  */
 export async function getQuizStatusesByLectureIds(
   lectureIds: string[],
-  filter: { bookmark?: boolean; correct?: boolean },
+  filter: { bookmark?: boolean; correct?: boolean; incorrect_save?: boolean },
   options?: { limit?: number; offset?: number },
 ): Promise<{ data: QuizStatusEntry[] | null; error: Error | null }> {
   if (lectureIds.length === 0) return { data: [], error: null }
@@ -108,7 +111,7 @@ export async function getQuizStatusesByLectureIds(
     const supabase = getSupabaseClient()
     let query = supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer')
+      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer, incorrect_save')
       .in('lecture_id', lectureIds)
 
     if (filter.bookmark !== undefined) {
@@ -116,6 +119,9 @@ export async function getQuizStatusesByLectureIds(
     }
     if (filter.correct !== undefined) {
       query = query.eq('correct', filter.correct)
+    }
+    if (filter.incorrect_save !== undefined) {
+      query = query.eq('incorrect_save', filter.incorrect_save)
     }
 
     query = query.order('id', { ascending: true })
@@ -159,7 +165,7 @@ export async function getAllInstructorQuizStatuses(
     const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer')
+      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer, incorrect_save')
       .eq('lecture_id', lectureId)
       .eq('quiz_source', 'instructor')
 
@@ -332,6 +338,91 @@ export async function fetchQuizContent(
   }
 }
 
+/* ───────────── 세션 풀이 통계 ───────────── */
+
+export interface SessionSolvingStats {
+  answered: number
+  correct: number
+  total: number
+}
+
+/**
+ * 복수 세션의 풀이 통계를 일괄 조회.
+ * user_customize_quiz_items에서 quiz_id→session_id 매핑 후,
+ * user_quiz_status에서 correct 상태를 집계.
+ */
+export async function getSessionSolvingStats(
+  sessionIds: string[],
+): Promise<{ data: Map<string, SessionSolvingStats> | null; error: Error | null }> {
+  if (sessionIds.length === 0) return { data: new Map(), error: null }
+
+  try {
+    const supabase = getSupabaseClient()
+
+    const { data: quizItems, error: itemErr } = await supabase
+      .from('user_customize_quiz_items')
+      .select('quiz_id, session_id')
+      .in('session_id', sessionIds)
+
+    if (itemErr) {
+      if (isJWTExpiredError(itemErr)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+      return { data: null, error: new Error(getErrorMessage(itemErr)) }
+    }
+
+    if (!quizItems || quizItems.length === 0) {
+      const empty = new Map<string, SessionSolvingStats>()
+      for (const sid of sessionIds) empty.set(sid, { answered: 0, correct: 0, total: 0 })
+      return { data: empty, error: null }
+    }
+
+    const quizIds = quizItems.map(q => q.quiz_id)
+    const quizToSession = new Map<string, string>()
+    for (const q of quizItems) {
+      quizToSession.set(q.quiz_id, q.session_id)
+    }
+
+    const { data: statuses, error: statusErr } = await supabase
+      .from('user_quiz_status')
+      .select('quiz_id, correct')
+      .eq('quiz_source', 'customize')
+      .in('quiz_id', quizIds)
+
+    if (statusErr) {
+      if (isJWTExpiredError(statusErr)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+      return { data: null, error: new Error(getErrorMessage(statusErr)) }
+    }
+
+    const statusByQuiz = new Map<string, boolean | null>()
+    for (const s of (statuses ?? [])) {
+      statusByQuiz.set(s.quiz_id, s.correct)
+    }
+
+    const result = new Map<string, SessionSolvingStats>()
+    for (const sid of sessionIds) {
+      result.set(sid, { answered: 0, correct: 0, total: 0 })
+    }
+
+    for (const q of quizItems) {
+      const stats = result.get(q.session_id)
+      if (!stats) continue
+      stats.total++
+      const correctVal = statusByQuiz.get(q.quiz_id)
+      if (correctVal !== undefined && correctVal !== null) {
+        stats.answered++
+        if (correctVal === true) stats.correct++
+      }
+    }
+
+    return { data: result, error: null }
+  } catch (err) {
+    if (isJWTExpiredError(err)) { await handleJWTExpiration() }
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error(getErrorMessage(err)),
+    }
+  }
+}
+
 /* ───────────── Backend API 호출 ───────────── */
 
 const VALID_QUIZ_SOURCES: QuizSource[] = ['instructor', 'customize', 'content']
@@ -383,6 +474,23 @@ export async function grantReward(lectureId: string) {
     `/quiz-status/lectures/${encodeURIComponent(lectureId)}/reward`,
     {
       method: 'POST',
+      auth: true,
+    },
+  )
+}
+
+/** 오답노트에서 제거 */
+export async function dismissIncorrectSave(
+  quizSource: QuizSource,
+  quizId: string,
+) {
+  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
+    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
+  }
+  return apiRequest<{ quiz_source: string; quiz_id: string; incorrect_save: boolean }>(
+    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/incorrect-save/dismiss`,
+    {
+      method: 'PATCH',
       auth: true,
     },
   )
