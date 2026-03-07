@@ -142,6 +142,11 @@ export default function QuizGenerationTab() {
       const filtered = (result.data.sessions ?? [])
         .filter(s => courseLectureIds.has(s.lecture_id))
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .map(s =>
+          s.status === 'CREATING' && s.generated_count != null && s.generated_count >= s.quiz_count
+            ? { ...s, status: 'COMPLETED' as const }
+            : s
+        )
 
       setSessions(filtered)
       fetchSolvingStats(filtered)
@@ -230,7 +235,10 @@ export default function QuizGenerationTab() {
     const courseName = selectedCourse.section
       ? `${selectedCourse.title} (${selectedCourse.section})`
       : selectedCourse.title
-    return `${courseName} ${t('selector.lectureLabel', { no: lecture.lecture_no })}`
+    const lectureLabel = lecture.title
+      ? t('selector.lectureLabelWithTitle', { no: lecture.lecture_no, title: lecture.title })
+      : t('selector.lectureLabel', { no: lecture.lecture_no })
+    return `${courseName} ${lectureLabel}`
   }, [selectedCourse, t])
 
   // 선택된 회차의 이름 가져오기

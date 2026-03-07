@@ -241,17 +241,6 @@ export default function SessionCard({
           </button>
         </div>
       )}
-      {isCreating && (session.generated_count ?? 0) >= session.quiz_count && session.quiz_count > 0 && (
-        <div className="mt-3">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onSelect(session.session_id) }}
-            className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
-          >
-            {t('continueSession')}
-          </button>
-        </div>
-      )}
     </div>
   )
 }
