@@ -52,6 +52,7 @@ export default function SessionDetailView({
   const [quizzes, setQuizzes] = useState<QuizItem[]>([])
   const [sessionData, setSessionData] = useState<QuizSession | null>(null)
   const [statusMap, setStatusMap] = useState<Map<string, QuizStatusEntry>>(new Map())
+  const [bookmarkSet, setBookmarkSet] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resetKey, setResetKey] = useState(0)
@@ -85,6 +86,15 @@ export default function SessionDetailView({
       setStatusMap(map)
     }
 
+    const bookmarkResult = await statusService.getBookmarksByLectureIds([lectureId])
+    if (bookmarkResult.data) {
+      const bSet = new Set<string>()
+      for (const b of bookmarkResult.data) {
+        bSet.add(`${b.quiz_source}:${b.quiz_id}`)
+      }
+      setBookmarkSet(bSet)
+    }
+
     setIsLoading(false)
   }, [sessionId, lectureId, t])
 
@@ -95,35 +105,35 @@ export default function SessionDetailView({
   const handleBookmarkToggle = useCallback(
     async (quizId: string) => {
       const key = `customize:${quizId}`
-      const current = statusMap.get(key)
-      const newBookmark = !(current?.bookmark ?? false)
+      const isCurrentlyBookmarked = bookmarkSet.has(key)
+      const newBookmark = !isCurrentlyBookmarked
 
-      setStatusMap(prev => {
-        const next = new Map(prev)
-        next.set(key, {
-          quiz_id: quizId,
-          quiz_source: 'customize',
-          lecture_id: lectureId,
-          bookmark: newBookmark,
-          correct: current?.correct ?? null,
-          answer: current?.answer ?? null,
-          incorrect_save: current?.incorrect_save ?? false,
-        })
+      // Optimistic
+      setBookmarkSet(prev => {
+        const next = new Set(prev)
+        if (newBookmark) next.add(key)
+        else next.delete(key)
         return next
       })
 
-      const result = await statusService.toggleBookmark('customize', quizId, lectureId, newBookmark)
+      // 추가 시 현재 풀이 상태 복사
+      const status = newBookmark ? statusMap.get(key) : undefined
+      const result = await statusService.toggleBookmark(
+        'customize', quizId, lectureId, newBookmark,
+        status?.answer ?? null, status?.correct ?? null,
+      )
       if (result.error) {
         showErrorToast(t('error.bookmarkFailed'))
-        setStatusMap(prev => {
-          const next = new Map(prev)
-          if (current) next.set(key, current)
+        // 롤백
+        setBookmarkSet(prev => {
+          const next = new Set(prev)
+          if (isCurrentlyBookmarked) next.add(key)
           else next.delete(key)
           return next
         })
       }
     },
-    [statusMap, lectureId, showErrorToast, t],
+    [bookmarkSet, lectureId, statusMap, showErrorToast, t],
   )
 
   const handleCorrectUpdate = useCallback(
@@ -137,10 +147,8 @@ export default function SessionDetailView({
           quiz_id: quizId,
           quiz_source: 'customize',
           lecture_id: lectureId,
-          bookmark: current?.bookmark ?? false,
           correct: isCorrect,
           answer,
-          incorrect_save: isCorrect === false ? true : (current?.incorrect_save ?? false),
         })
         return next
       })
@@ -170,10 +178,8 @@ export default function SessionDetailView({
           quiz_id: quizId,
           quiz_source: 'customize',
           lecture_id: lectureId,
-          bookmark: current?.bookmark ?? false,
           correct: null,
           answer: null,
-          incorrect_save: current?.incorrect_save ?? false,
         })
         return next
       })
@@ -400,7 +406,7 @@ export default function SessionDetailView({
                       <StudentQuizCard
                         quiz={studentQuiz}
                         index={idx}
-                        isBookmarked={status?.bookmark ?? false}
+                        isBookmarked={bookmarkSet.has(`customize:${quiz.quiz_id}`)}
                         isCorrect={status?.correct ?? null}
                         selectedAnswer={status?.answer ?? null}
                         onBookmarkToggle={handleBookmarkToggle}

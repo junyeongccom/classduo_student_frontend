@@ -12,7 +12,7 @@ import {
   handleJWTExpiration,
   getErrorMessage,
 } from '@/shared/lib/supabase'
-import type { QuizStatusEntry, QuizSource, QuizItem, QuizChoice } from '../types'
+import type { QuizStatusEntry, QuizBookmarkEntry, QuizIncorrectEntry, QuizSource, QuizItem, QuizChoice } from '../types'
 import type { StudentQuizType } from '@/shared/components/quiz'
 
 /* ───────────── Types ───────────── */
@@ -39,29 +39,23 @@ interface RewardGrantResponse {
 /* ───────────── Supabase 직접 조회 ───────────── */
 
 /**
- * 특정 lecture의 user_quiz_status 조회 (필터: bookmark 또는 correct)
+ * 특정 lecture의 user_quiz_status 조회 (필터: correct)
  * RLS가 student_id 자동 필터링.
  */
 export async function getQuizStatusesByLecture(
   lectureId: string,
-  filter: { bookmark?: boolean; correct?: boolean; incorrect_save?: boolean },
+  filter: { correct?: boolean },
   options?: { limit?: number; offset?: number },
 ): Promise<{ data: QuizStatusEntry[] | null; error: Error | null }> {
   try {
     const supabase = getSupabaseClient()
     let query = supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer, incorrect_save')
+      .select('quiz_id, quiz_source, lecture_id, correct, answer')
       .eq('lecture_id', lectureId)
 
-    if (filter.bookmark !== undefined) {
-      query = query.eq('bookmark', filter.bookmark)
-    }
     if (filter.correct !== undefined) {
       query = query.eq('correct', filter.correct)
-    }
-    if (filter.incorrect_save !== undefined) {
-      query = query.eq('incorrect_save', filter.incorrect_save)
     }
 
     // ORDER BY 필수: offset 기반 무한스크롤에서 일관된 정렬 보장
@@ -97,12 +91,12 @@ export async function getQuizStatusesByLecture(
 }
 
 /**
- * 복수 lecture의 user_quiz_status 조회 (필터: bookmark 또는 correct)
+ * 복수 lecture의 user_quiz_status 조회 (필터: correct)
  * RLS가 student_id 자동 필터링.
  */
 export async function getQuizStatusesByLectureIds(
   lectureIds: string[],
-  filter: { bookmark?: boolean; correct?: boolean; incorrect_save?: boolean },
+  filter: { correct?: boolean },
   options?: { limit?: number; offset?: number },
 ): Promise<{ data: QuizStatusEntry[] | null; error: Error | null }> {
   if (lectureIds.length === 0) return { data: [], error: null }
@@ -111,17 +105,11 @@ export async function getQuizStatusesByLectureIds(
     const supabase = getSupabaseClient()
     let query = supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer, incorrect_save')
+      .select('quiz_id, quiz_source, lecture_id, correct, answer')
       .in('lecture_id', lectureIds)
 
-    if (filter.bookmark !== undefined) {
-      query = query.eq('bookmark', filter.bookmark)
-    }
     if (filter.correct !== undefined) {
       query = query.eq('correct', filter.correct)
-    }
-    if (filter.incorrect_save !== undefined) {
-      query = query.eq('incorrect_save', filter.incorrect_save)
     }
 
     query = query.order('id', { ascending: true })
@@ -165,7 +153,7 @@ export async function getAllInstructorQuizStatuses(
     const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, bookmark, correct, answer, incorrect_save')
+      .select('quiz_id, quiz_source, lecture_id, correct, answer')
       .eq('lecture_id', lectureId)
       .eq('quiz_source', 'instructor')
 
@@ -427,12 +415,14 @@ export async function getSessionSolvingStats(
 
 const VALID_QUIZ_SOURCES: QuizSource[] = ['instructor', 'customize', 'content']
 
-/** 즐겨찾기 토글 */
+/** 즐겨찾기 토글 (추가 시 현재 풀이 상태 복사) */
 export async function toggleBookmark(
   quizSource: QuizSource,
   quizId: string,
   lectureId: string,
   bookmark: boolean,
+  selectedAnswer?: number | null,
+  correct?: boolean | null,
 ) {
   if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
     return { data: null, error: new Error('Invalid quiz source'), status: 400 }
@@ -442,7 +432,7 @@ export async function toggleBookmark(
     {
       method: 'PATCH',
       auth: true,
-      body: { lecture_id: lectureId, bookmark },
+      body: { lecture_id: lectureId, bookmark, selected_answer: selectedAnswer ?? null, correct: correct ?? null },
     },
   )
 }
@@ -479,19 +469,137 @@ export async function grantReward(lectureId: string) {
   )
 }
 
+/* ── 즐겨찾기 Supabase 조회 ── */
+
+export async function getBookmarksByLectureIds(
+  lectureIds: string[],
+  options?: { limit?: number; offset?: number },
+): Promise<{ data: QuizBookmarkEntry[] | null; error: Error | null }> {
+  if (lectureIds.length === 0) return { data: [], error: null }
+  try {
+    const supabase = getSupabaseClient()
+    let query = supabase
+      .from('user_quiz_bookmarks')
+      .select('id, quiz_id, quiz_source, lecture_id, selected_answer, correct, created_at')
+      .in('lecture_id', lectureIds)
+      .order('id', { ascending: true })
+    if (options?.limit) {
+      const offset = options.offset ?? 0
+      query = query.range(offset, offset + options.limit - 1)
+    }
+    const { data, error } = await query
+    if (error) {
+      if (isJWTExpiredError(error)) {
+        const ok = await handleJWTExpiration()
+        if (!ok) return { data: null, error: new Error('세션이 만료되었습니다.') }
+        return { data: null, error: new Error('세션이 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: new Error(getErrorMessage(error)) }
+    }
+    return { data: (data ?? []) as QuizBookmarkEntry[], error: null }
+  } catch (err) {
+    if (isJWTExpiredError(err)) { await handleJWTExpiration() }
+    return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
+/* ── 오답노트 Supabase 조회 ── */
+
+export async function getIncorrectsByLectureIds(
+  lectureIds: string[],
+  options?: { limit?: number; offset?: number },
+): Promise<{ data: QuizIncorrectEntry[] | null; error: Error | null }> {
+  if (lectureIds.length === 0) return { data: [], error: null }
+  try {
+    const supabase = getSupabaseClient()
+    let query = supabase
+      .from('user_quiz_incorrect')
+      .select('id, quiz_id, quiz_source, lecture_id, original_answer, retry_answer, retry_correct, created_at')
+      .in('lecture_id', lectureIds)
+      .order('id', { ascending: true })
+    if (options?.limit) {
+      const offset = options.offset ?? 0
+      query = query.range(offset, offset + options.limit - 1)
+    }
+    const { data, error } = await query
+    if (error) {
+      if (isJWTExpiredError(error)) {
+        const ok = await handleJWTExpiration()
+        if (!ok) return { data: null, error: new Error('세션이 만료되었습니다.') }
+        return { data: null, error: new Error('세션이 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: new Error(getErrorMessage(error)) }
+    }
+    return { data: (data ?? []) as QuizIncorrectEntry[], error: null }
+  } catch (err) {
+    if (isJWTExpiredError(err)) { await handleJWTExpiration() }
+    return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
+/* ── 오답노트 Backend API ── */
+
 /** 오답노트에서 제거 */
-export async function dismissIncorrectSave(
+export async function dismissIncorrect(quizSource: QuizSource, quizId: string) {
+  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
+    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
+  }
+  return apiRequest<{ quiz_source: string; quiz_id: string; removed: boolean }>(
+    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/incorrect`,
+    { method: 'DELETE', auth: true },
+  )
+}
+
+/** 오답노트 다시풀기 */
+export async function retryIncorrect(
   quizSource: QuizSource,
   quizId: string,
+  retryAnswer: number | null,
+  retryCorrect: boolean | null,
 ) {
   if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
     return { data: null, error: new Error('Invalid quiz source'), status: 400 }
   }
-  return apiRequest<{ quiz_source: string; quiz_id: string; incorrect_save: boolean }>(
-    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/incorrect-save/dismiss`,
-    {
-      method: 'PATCH',
-      auth: true,
-    },
+  return apiRequest<{ quiz_source: string; quiz_id: string; retry_answer: number | null; retry_correct: boolean | null }>(
+    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/incorrect/retry`,
+    { method: 'PATCH', auth: true, body: { retry_answer: retryAnswer, retry_correct: retryCorrect } },
+  )
+}
+
+/** 오답노트 다시풀기 초기화 */
+export async function resetRetryIncorrect(quizSource: QuizSource, quizId: string) {
+  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
+    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
+  }
+  return apiRequest<{ quiz_source: string; quiz_id: string; retry_answer: null; retry_correct: null }>(
+    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/incorrect/reset`,
+    { method: 'PATCH', auth: true },
+  )
+}
+
+/** 즐겨찾기 내 독립 풀이 결과 업데이트 */
+export async function updateBookmarkAnswer(
+  quizSource: QuizSource,
+  quizId: string,
+  selectedAnswer: number | null,
+  correct: boolean | null,
+) {
+  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
+    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
+  }
+  return apiRequest<{ quiz_source: string; quiz_id: string; selected_answer: number | null; correct: boolean | null }>(
+    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/bookmark/answer`,
+    { method: 'PATCH', auth: true, body: { selected_answer: selectedAnswer, correct } },
+  )
+}
+
+/** 즐겨찾기 내 풀이 초기화 */
+export async function resetBookmarkAnswer(quizSource: QuizSource, quizId: string) {
+  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
+    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
+  }
+  return apiRequest<{ quiz_source: string; quiz_id: string; selected_answer: null; correct: null }>(
+    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/bookmark/reset`,
+    { method: 'PATCH', auth: true },
   )
 }

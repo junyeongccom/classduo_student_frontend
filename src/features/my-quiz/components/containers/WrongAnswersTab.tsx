@@ -14,7 +14,7 @@ import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { useToast } from '@/shared/hooks/useToast'
 import * as statusService from '../../services/myQuizStatusService'
-import type { QuizStatusEntry } from '../../types'
+import type { QuizIncorrectEntry } from '../../types'
 import { groupQuizzesByCourseAndLecture } from '../../domain/groupQuizzes'
 import type { QuizWithMeta, CourseGroup } from '../../domain/groupQuizzes'
 import { BottomDropdown, MultiSelectDropdown } from '../ui/LectureSelectorBar'
@@ -90,33 +90,32 @@ export default function WrongAnswersTab({
       setError(null)
     }
 
-    const statusResult = await statusService.getQuizStatusesByLectureIds(
+    const incorrectResult = await statusService.getIncorrectsByLectureIds(
       selectedLectureIds,
-      { incorrect_save: true },
       { limit: PAGE_SIZE, offset: currentOffset },
     )
 
-    if (statusResult.error || !statusResult.data) {
-      if (process.env.NODE_ENV === 'development') console.error('[WrongAnswersTab] fetchQuizzes error:', statusResult.error)
+    if (incorrectResult.error || !incorrectResult.data) {
+      if (process.env.NODE_ENV === 'development') console.error('[WrongAnswersTab] fetchQuizzes error:', incorrectResult.error)
       setError(t('error.loadFailed'))
       setIsLoading(false)
       if (append) isFetchingMoreRef.current = false
       return
     }
 
-    const statuses = statusResult.data
-    if (statuses.length < PAGE_SIZE) setHasMore(false)
+    const incorrects = incorrectResult.data
+    if (incorrects.length < PAGE_SIZE) setHasMore(false)
 
-    if (statuses.length === 0) {
+    if (incorrects.length === 0) {
       if (!append) setAllQuizzes([])
       setIsLoading(false)
       if (append) isFetchingMoreRef.current = false
       return
     }
 
-    const instructorIds = statuses.filter(s => s.quiz_source === 'instructor').map(s => s.quiz_id)
-    const customizeIds = statuses.filter(s => s.quiz_source === 'customize').map(s => s.quiz_id)
-    const contentIds = statuses.filter(s => s.quiz_source === 'content').map(s => s.quiz_id)
+    const instructorIds = incorrects.filter(s => s.quiz_source === 'instructor').map(s => s.quiz_id)
+    const customizeIds = incorrects.filter(s => s.quiz_source === 'customize').map(s => s.quiz_id)
+    const contentIds = incorrects.filter(s => s.quiz_source === 'content').map(s => s.quiz_id)
 
     const [instructorResult, customizeResult, contentResult] = await Promise.all([
       instructorIds.length > 0
@@ -138,25 +137,39 @@ export default function WrongAnswersTab({
       showErrorToast(t('error.loadFailed'))
     }
 
-    const statusMap = new Map<string, QuizStatusEntry>()
-    for (const s of statuses) {
-      statusMap.set(`${s.quiz_source}:${s.quiz_id}`, s)
+    // user_quiz_status에서 세션 풀이 상태 조회
+    const uniqueLectureIds = [...new Set(incorrects.map(inc => inc.lecture_id))]
+    const statusResult = await statusService.getQuizStatusesByLectureIds(uniqueLectureIds, {})
+    const statusMap = new Map<string, { correct: boolean | null; answer: number | null }>()
+    if (statusResult.data) {
+      for (const s of statusResult.data) {
+        statusMap.set(`${s.quiz_source}:${s.quiz_id}`, { correct: s.correct, answer: s.answer })
+      }
+    }
+
+    // incorrect 데이터를 맵으로
+    const incorrectMap = new Map<string, QuizIncorrectEntry>()
+    for (const inc of incorrects) {
+      incorrectMap.set(`${inc.quiz_source}:${inc.quiz_id}`, inc)
     }
 
     const quizzesWithMeta: QuizWithMeta[] = []
 
     for (const item of (instructorResult.data ?? [])) {
       const key = `instructor:${item.quiz_id}`
+      const inc = incorrectMap.get(key)
       const status = statusMap.get(key)
-      const info = lectureInfoMap.get(status?.lecture_id ?? '')
+      const info = lectureInfoMap.get(inc?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'instructor',
-        lecture_id: status?.lecture_id,
-        bookmark: status?.bookmark ?? false,
+        lecture_id: inc?.lecture_id,
+        bookmark: false,
         correct: status?.correct ?? null,
         selected_answer: status?.answer ?? null,
+        retry_answer: inc?.retry_answer ?? null,
+        retry_correct: inc?.retry_correct ?? null,
         course_id: info?.course_id,
         course_name: info?.course_name,
         lecture_name: info?.lecture_name,
@@ -165,16 +178,19 @@ export default function WrongAnswersTab({
 
     for (const item of (contentResult.data ?? [])) {
       const key = `content:${item.quiz_id}`
+      const inc = incorrectMap.get(key)
       const status = statusMap.get(key)
-      const info = lectureInfoMap.get(status?.lecture_id ?? '')
+      const info = lectureInfoMap.get(inc?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'content',
-        lecture_id: status?.lecture_id,
-        bookmark: status?.bookmark ?? false,
+        lecture_id: inc?.lecture_id,
+        bookmark: false,
         correct: status?.correct ?? null,
         selected_answer: status?.answer ?? null,
+        retry_answer: inc?.retry_answer ?? null,
+        retry_correct: inc?.retry_correct ?? null,
         course_id: info?.course_id,
         course_name: info?.course_name,
         lecture_name: info?.lecture_name,
@@ -183,16 +199,19 @@ export default function WrongAnswersTab({
 
     for (const item of (customizeResult.data ?? [])) {
       const key = `customize:${item.quiz_id}`
+      const inc = incorrectMap.get(key)
       const status = statusMap.get(key)
-      const info = lectureInfoMap.get(status?.lecture_id ?? '')
+      const info = lectureInfoMap.get(inc?.lecture_id ?? '')
       quizzesWithMeta.push({
         ...item,
         difficulty: item.difficulty ?? null,
         quiz_source: 'customize',
-        lecture_id: status?.lecture_id,
-        bookmark: status?.bookmark ?? false,
+        lecture_id: inc?.lecture_id,
+        bookmark: false,
         correct: status?.correct ?? null,
         selected_answer: status?.answer ?? null,
+        retry_answer: inc?.retry_answer ?? null,
+        retry_correct: inc?.retry_correct ?? null,
         course_id: info?.course_id,
         course_name: info?.course_name,
         lecture_name: info?.lecture_name,
@@ -236,16 +255,22 @@ export default function WrongAnswersTab({
     return () => observer.disconnect()
   }, [hasMore, isLoading, offset, fetchQuizzes])
 
-  // sortOrder 또는 allQuizzes 변경 시 courseGroups 동기 재생성 (useMemo)
+  // sortOrder, allQuizzes, lectureInfoMap 변경 시 courseGroups 동기 재생성 (useMemo)
   const courseGroups = useMemo(() => {
     if (allQuizzes.length === 0) return []
-    const sorted = [...allQuizzes].sort((a, b) => {
+    // lectureInfoMap에서 최신 이름 반영
+    const withLatestNames = allQuizzes.map(q => {
+      const info = lectureInfoMap.get(q.lecture_id ?? '')
+      if (!info) return q
+      return { ...q, course_name: info.course_name, lecture_name: info.lecture_name }
+    })
+    const sorted = withLatestNames.sort((a, b) => {
       const dateA = new Date(a.created_at ?? 0).getTime()
       const dateB = new Date(b.created_at ?? 0).getTime()
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
     })
     return groupQuizzesByCourseAndLecture(sorted)
-  }, [sortOrder, allQuizzes])
+  }, [sortOrder, allQuizzes, lectureInfoMap])
 
   // 표시 갯수 제한된 그룹 생성
   const { visibleGroups, totalQuizCount, shownQuizCount } = useMemo(() => {
@@ -287,18 +312,14 @@ export default function WrongAnswersTab({
   const handleRetryWrong = useCallback(() => {
     if (allQuizzes.length === 0) return
 
-    // 즉시 팝업 닫기 + optimistic 초기화 + 카드 re-mount
     setShowResetConfirm(false)
-    setAllQuizzes(prev => prev.map(q => ({ ...q, correct: null, selected_answer: null })))
+    setAllQuizzes(prev => prev.map(q => ({ ...q, retry_correct: null, retry_answer: null })))
     setResetKey(prev => prev + 1)
 
-    // API 백그라운드 호출
     const quizSnapshot = [...allQuizzes]
     Promise.allSettled(
       quizSnapshot.map(quiz =>
-        quiz.lecture_id
-          ? statusService.updateCorrect(quiz.quiz_source, quiz.quiz_id, quiz.lecture_id, null, null)
-          : Promise.resolve({ error: null }),
+        statusService.resetRetryIncorrect(quiz.quiz_source, quiz.quiz_id),
       ),
     ).then(results => {
       const hasError = results.some(
@@ -345,30 +366,27 @@ export default function WrongAnswersTab({
   const handleCorrectUpdate = useCallback(
     async (quizId: string, isCorrect: boolean, answer: number) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
-      if (!quiz || !quiz.lecture_id) return
+      if (!quiz) return
 
+      // Optimistic: retry 상태 업데이트
       const updated = allQuizzes.map(q =>
-        q.quiz_id === quizId ? { ...q, correct: isCorrect, selected_answer: answer } : q,
+        q.quiz_id === quizId ? { ...q, retry_correct: isCorrect, retry_answer: answer } : q,
       )
       setAllQuizzes(updated)
 
-      const result = await statusService.updateCorrect(
+      const result = await statusService.retryIncorrect(
         quiz.quiz_source,
         quizId,
-        quiz.lecture_id,
-        isCorrect,
         answer,
+        isCorrect,
       )
 
       if (result.error) {
         showErrorToast(t('error.correctFailed'))
-        // 롤백: refetch (R-AW-4)
         fetchQuizzes(0, false)
         setOffset(0)
         setHasMore(true)
-        return
       }
-
     },
     [allQuizzes, fetchQuizzes, showErrorToast, t],
   )
@@ -376,19 +394,16 @@ export default function WrongAnswersTab({
   const handleResetAnswer = useCallback(
     async (quizId: string) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
-      if (!quiz || !quiz.lecture_id) return
+      if (!quiz) return
 
       const updated = allQuizzes.map(q =>
-        q.quiz_id === quizId ? { ...q, correct: null, selected_answer: null } : q,
+        q.quiz_id === quizId ? { ...q, retry_correct: null, retry_answer: null } : q,
       )
       setAllQuizzes(updated)
 
-      const result = await statusService.updateCorrect(
+      const result = await statusService.resetRetryIncorrect(
         quiz.quiz_source,
         quizId,
-        quiz.lecture_id,
-        null,
-        null,
       )
 
       if (result.error) {
@@ -406,21 +421,17 @@ export default function WrongAnswersTab({
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
       if (!quiz) return
 
-      // correct=false면 삭제 불가 (UI에서도 비활성이지만 이중 방어)
-      if (quiz.correct === false) return
-
-      // Optimistic: 목록에서 즉시 제거
+      // 별도 테이블이므로 언제든 제거 가능
       const updated = allQuizzes.filter(q => q.quiz_id !== quizId)
       setAllQuizzes(updated)
 
-      const result = await statusService.dismissIncorrectSave(
+      const result = await statusService.dismissIncorrect(
         quiz.quiz_source,
         quizId,
       )
 
       if (result.error) {
         showErrorToast(t('error.dismissFailed'))
-        // 롤백: refetch
         fetchQuizzes(0, false)
         setOffset(0)
         setHasMore(true)
@@ -532,8 +543,8 @@ export default function WrongAnswersTab({
                               quiz={studentQuiz}
                               index={idx}
                               isBookmarked={quiz.bookmark}
-                              isCorrect={quiz.correct}
-                              selectedAnswer={quiz.selected_answer}
+                              isCorrect={quiz.retry_correct !== undefined && quiz.retry_correct !== null ? quiz.retry_correct : quiz.correct}
+                              selectedAnswer={quiz.retry_answer !== undefined && quiz.retry_answer !== null ? quiz.retry_answer : quiz.selected_answer}
                               onBookmarkToggle={handleBookmarkToggle}
                               onCorrectUpdate={handleCorrectUpdate}
                               onResetAnswer={handleResetAnswer}
