@@ -35,7 +35,7 @@ function isValidImageUrl(url: string): boolean {
 }
 
 /** 뷰포트 밖 이미지 unload 임계값 (±페이지 수) */
-const UNLOAD_THRESHOLD = 5
+const UNLOAD_THRESHOLD = 15
 
 export function LeftPanelMaterials() {
   const t = useTranslations()
@@ -217,7 +217,7 @@ export function LeftPanelMaterials() {
       },
       {
         root: scrollContainerRef.current,
-        rootMargin: '200px 0px',
+        rootMargin: '600px 0px',
         threshold: [0],
       },
     )
@@ -246,9 +246,6 @@ export function LeftPanelMaterials() {
         if (Math.abs(i - (currentPageRef.current - 1)) > UNLOAD_THRESHOLD) {
           if (img.src && img.getAttribute('data-src')) {
             img.removeAttribute('src')
-            // R-AW1 fix: placeholder 다시 표시
-            const placeholder = el.querySelector('.placeholder-overlay') as HTMLElement | null
-            if (placeholder) placeholder.classList.remove('hidden')
           }
         }
       }
