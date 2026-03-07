@@ -366,18 +366,6 @@ export default function FavoritesTab({
     )
   }
 
-  if (courseGroups.length === 0) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
-          <Star className="h-7 w-7 stroke-[1.5] text-amber-400" />
-        </div>
-        <p className="text-sm">{t('empty.noFavorites')}</p>
-        <p className="text-xs text-gray-300">{t('empty.favoritesGuide')}</p>
-      </div>
-    )
-  }
-
   return (
     <div className="relative p-4 space-y-6 bg-gray-50 min-h-full">
       {/* Toast messages */}
@@ -434,6 +422,15 @@ export default function FavoritesTab({
         </div>
       </div>
 
+      {courseGroups.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+            <Star className="h-7 w-7 stroke-[1.5] text-amber-400" />
+          </div>
+          <p className="text-sm">{t('empty.noFavorites')}</p>
+          <p className="text-xs text-gray-300">{t('empty.favoritesGuide')}</p>
+        </div>
+      ) : (
       <div className="space-y-6">
       {courseGroups.map(courseGroup => (
         <section key={courseGroup.course_id} className="space-y-4">
@@ -512,6 +509,7 @@ export default function FavoritesTab({
         </div>
       )}
       </div>
+      )}
       </div>
     </div>
   )
