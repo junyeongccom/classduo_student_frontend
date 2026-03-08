@@ -475,6 +475,10 @@
     }
   },
   "examPrep": {
+    "chatResetTitle": "Reset Chat",
+    "chatResetMessage": "Starting a new chat will clear the current conversation. Continue?",
+    "chatResetConfirm": "Confirm",
+    "chatResetCancel": "Cancel",
     "title": "Exam Prep",
     "subtitle": "Prepare summaries, quizzes, and memorization from your lecture materials.",
     "summary": {
@@ -1026,6 +1030,8 @@
       "failedMessage": "Quiz generation failed",
       "delete": "Delete Session",
       "deleteConfirm": "Delete this session? All quizzes in this session will also be deleted.",
+      "deleteCancel": "Cancel",
+      "deleteConfirmBtn": "Delete",
       "rename": "Edit Title",
       "pollingTimeout": "Generation is taking longer than expected. Please check back later",
       "sessionDeleted": "Session has been deleted",
@@ -1088,7 +1094,11 @@
       "title": "Wrong Answers",
       "description": "Review questions you've gotten wrong and strengthen weak areas.",
       "retryWrong": "Retry Wrong Answers",
-      "resetConfirmMessage": "All selections will be reset. Continue?",
+      "resetConfirmMessage": "All questions will return to their unsolved state. Continue?",
+      "dismissConfirmTitle": "Remove Wrong Answer",
+      "dismissConfirmMessage": "Are you sure you want to remove this question from your wrong answer notes?",
+      "dismissConfirm": "Remove",
+      "dismissCancel": "Cancel",
       "resetConfirm": "Confirm",
       "resetCancel": "Cancel",
       "showingCount": "Showing {showing} of {total} problems",

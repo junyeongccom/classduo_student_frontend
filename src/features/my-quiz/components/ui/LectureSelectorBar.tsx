@@ -70,11 +70,11 @@ export function BottomDropdown({
         onPointerDown={e => e.stopPropagation()}
         onClick={() => !disabled && setIsOpen(prev => !prev)}
         className={cn(
-          'flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-900/10',
+          'flex w-full items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-900/10',
           disabled && 'opacity-50 cursor-not-allowed',
         )}
       >
-        <span className={cn('truncate', selectedLabel ? 'text-gray-900' : 'text-gray-400')}>
+        <span className={cn('truncate', selectedLabel ? 'text-gray-900 dark:text-gray-50' : 'text-gray-400')}>
           {selectedLabel || placeholder}
         </span>
         <ChevronDown className={cn('ml-1 h-4 w-4 shrink-0 text-gray-400 transition-transform', isOpen ? 'rotate-180' : '')} />
@@ -82,7 +82,7 @@ export function BottomDropdown({
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 z-[70] mt-2 min-w-[12rem] max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+          className="absolute top-full left-0 z-[70] mt-2 min-w-[12rem] max-h-64 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg"
           onPointerDown={e => e.stopPropagation()}
         >
           {isLoading ? (
@@ -99,9 +99,9 @@ export function BottomDropdown({
                   setIsOpen(false)
                 }}
                 className={cn(
-                  'flex w-full items-center justify-between px-3 py-2 text-left text-sm text-gray-700 transition-all duration-200',
+                  'flex w-full items-center justify-between px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 transition-all duration-200',
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1',
-                  'hover:bg-gray-50',
+                  'hover:bg-gray-50 dark:hover:bg-gray-700',
                   option.value === value
                     ? 'bg-indigo-50 border-l-2 border-indigo-500 font-semibold text-indigo-700'
                     : '',
@@ -183,11 +183,11 @@ export function MultiSelectDropdown({
         onPointerDown={e => e.stopPropagation()}
         onClick={() => !disabled && setIsOpen(prev => !prev)}
         className={cn(
-          'flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-900/10',
+          'flex w-full items-center justify-between rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-gray-900/10',
           disabled && 'opacity-50 cursor-not-allowed',
         )}
       >
-        <span className={cn('truncate', selectedIds.length > 0 ? 'text-gray-900' : 'text-gray-400')}>
+        <span className={cn('truncate', selectedIds.length > 0 ? 'text-gray-900 dark:text-gray-50' : 'text-gray-400')}>
           {displayText}
         </span>
         <ChevronDown className={cn('ml-1 h-4 w-4 shrink-0 text-gray-400 transition-transform', isOpen ? 'rotate-180' : '')} />
@@ -195,7 +195,7 @@ export function MultiSelectDropdown({
 
       {isOpen && (
         <div
-          className="absolute top-full left-0 z-[70] mt-2 min-w-[14rem] max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+          className="absolute top-full left-0 z-[70] mt-2 min-w-[14rem] max-h-64 overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg"
           onPointerDown={e => e.stopPropagation()}
         >
           {/* 전체 선택 / 전체 해제 버튼 */}
@@ -228,9 +228,9 @@ export function MultiSelectDropdown({
                   type="button"
                   onClick={() => onToggle(option.value)}
                   className={cn(
-                    'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 transition-all duration-200',
+                    'flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-200 transition-all duration-200',
                     isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1',
-                    'hover:bg-gray-50',
+                    'hover:bg-gray-50 dark:hover:bg-gray-700',
                     isSelected
                       ? 'bg-indigo-50 border-l-2 border-indigo-500 font-semibold text-indigo-700'
                       : '',

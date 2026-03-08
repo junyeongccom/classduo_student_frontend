@@ -45,9 +45,10 @@ export default async function RootLayout({
 }) {
   const cookieStore = await cookies()
   const locale = cookieStore.get('classduo_locale')?.value === 'en' ? 'en' : 'ko'
+  const theme = cookieStore.get('classduo_theme')?.value === 'dark' ? 'dark' : ''
 
   return (
-    <html lang={locale}>
+    <html lang={locale} className={theme} suppressHydrationWarning>
       <head>
         {GTM_ID && (
           <Script

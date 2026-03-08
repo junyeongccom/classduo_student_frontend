@@ -61,6 +61,7 @@ export default function SessionCard({
 
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(displayTitle)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const startEdit = useCallback((e: React.MouseEvent) => {
@@ -89,8 +90,8 @@ export default function SessionCard({
   return (
     <div
       className={cn(
-        'rounded-xl border border-gray-200 bg-white p-4 transition',
-        isClickable && 'cursor-pointer hover:border-blue-300 hover:shadow-sm',
+        'rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 transition',
+        isClickable && 'cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm',
         !isClickable && !isFailed && 'opacity-75',
       )}
       onClick={() => isClickable && !isEditing && onSelect(session.session_id)}
@@ -108,13 +109,13 @@ export default function SessionCard({
               onBlur={commitEdit}
               onKeyDown={handleKeyDown}
               onClick={e => e.stopPropagation()}
-              className="text-base font-bold text-gray-900 border-b border-blue-400 bg-transparent outline-none px-0 py-0 w-full"
+              className="text-base font-bold text-gray-900 dark:text-gray-50 border-b border-blue-400 bg-transparent outline-none px-0 py-0 w-full"
             />
           ) : (
             <h3
               className={cn(
                 'text-base font-bold truncate',
-                isFailed ? 'text-red-600' : 'text-gray-900 cursor-text hover:text-blue-600',
+                isFailed ? 'text-red-600' : 'text-gray-900 dark:text-gray-50 cursor-text hover:text-blue-600',
               )}
               onClick={startEdit}
               title={t('rename')}
@@ -157,10 +158,9 @@ export default function SessionCard({
               type="button"
               onClick={e => {
                 e.stopPropagation()
-                if (!window.confirm(t('deleteConfirm'))) return
-                onDelete(session.session_id)
+                setShowDeleteConfirm(true)
               }}
-              className="shrink-0 rounded-md p-1 text-gray-300 hover:bg-red-50 hover:text-red-500 transition"
+              className="shrink-0 rounded-md p-1 text-gray-300 dark:text-gray-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 transition"
               title={t('delete')}
             >
               <Trash2 className="h-4 w-4" />
@@ -239,6 +239,35 @@ export default function SessionCard({
           >
             {isSolvingComplete ? t('viewResult') : t('continueSession')}
           </button>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="mx-4 w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50 text-center mb-2">{t('delete')}</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-200 text-center">{t('deleteConfirm')}</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); setShowDeleteConfirm(false) }}
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                {t('deleteCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); setShowDeleteConfirm(false); onDelete(session.session_id) }}
+                className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-medium text-white transition hover:bg-red-700"
+              >
+                {t('deleteConfirmBtn')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

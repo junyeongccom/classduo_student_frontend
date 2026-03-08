@@ -41,15 +41,15 @@ export default function LectureGrid({
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
       {/* 상단: 세션 바로가기 — 분리된 버튼 */}
       <div className="mx-4 mt-4 mb-3">
         <button
           type="button"
           onClick={onGoToSessionList}
-          className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm transition hover:border-blue-300 hover:shadow"
+          className="flex w-full items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm shadow-sm transition hover:border-blue-300 dark:hover:border-blue-600 hover:shadow"
         >
-          <span className="flex items-center gap-2 text-gray-600">
+          <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-gray-300" />
             {t('generation.goToSessions')}
           </span>
@@ -68,7 +68,7 @@ export default function LectureGrid({
               key={lecture.lecture_id}
               type="button"
               onClick={() => onSelectLecture(lecture.lecture_id)}
-              className="relative flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white p-4 text-center transition hover:border-blue-300 hover:shadow-sm"
+              className="relative flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 text-center transition hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm"
             >
               {lecture.has_completed_session && (
                 <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-blue-500" />
@@ -76,7 +76,7 @@ export default function LectureGrid({
               <span className="text-lg font-bold text-blue-600">
                 {String(lecture.lecture_no).padStart(2, '0')}
               </span>
-              <span className="text-xs text-gray-600 line-clamp-2">
+              <span className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">
                 {lecture.title ?? t('selector.lectureLabel', { no: lecture.lecture_no })}
               </span>
             </button>

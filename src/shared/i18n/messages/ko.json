@@ -475,6 +475,10 @@
     }
   },
   "examPrep": {
+    "chatResetTitle": "채팅 초기화",
+    "chatResetMessage": "새 채팅을 시작하면 현재 대화가 초기화됩니다. 계속할까요?",
+    "chatResetConfirm": "확인",
+    "chatResetCancel": "취소",
     "title": "시험 준비",
     "subtitle": "강의자료 기반으로 요약·퀴즈·암기를 준비하는 공간입니다.",
     "summary": {
@@ -1026,6 +1030,8 @@
       "failedMessage": "퀴즈 생성에 실패했습니다",
       "delete": "세션 삭제",
       "deleteConfirm": "이 세션을 삭제하시겠습니까? 세션 내 퀴즈도 모두 삭제됩니다.",
+      "deleteCancel": "취소",
+      "deleteConfirmBtn": "삭제",
       "rename": "제목 수정",
       "pollingTimeout": "생성이 지연되고 있습니다. 나중에 확인해 주세요",
       "sessionDeleted": "세션이 삭제되었습니다",
@@ -1088,7 +1094,11 @@
       "title": "오답 노트",
       "description": "한번이라도 틀린 문제를 복습하고 취약한 부분을 보완하세요.",
       "retryWrong": "오답 문제 다시 풀기",
-      "resetConfirmMessage": "선지가 모두 초기화됩니다. 진행하시겠습니까?",
+      "resetConfirmMessage": "모든 문제가 풀이 이전 상태로 돌아갑니다. 진행하시겠습니까?",
+      "dismissConfirmTitle": "오답 문항 삭제",
+      "dismissConfirmMessage": "정말로 오답 노트에서 해당 문항을 삭제하시겠습니까?",
+      "dismissConfirm": "삭제",
+      "dismissCancel": "취소",
       "resetConfirm": "확인",
       "resetCancel": "취소",
       "showingCount": "{total}개의 문제 중 {showing}개를 표시함",

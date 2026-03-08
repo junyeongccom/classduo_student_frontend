@@ -297,7 +297,7 @@ export default function SessionDetailView({
   }
 
   return (
-    <div className="flex h-full flex-col bg-gray-50">
+    <div className="flex h-full flex-col bg-gray-50 dark:bg-gray-950">
       {/* Toast messages */}
       {toasts.length > 0 && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
@@ -309,16 +309,16 @@ export default function SessionDetailView({
         </div>
       )}
       {/* 헤더 — 흰색 바: 제목만 */}
-      <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-3">
+      <div className="shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h2 className="text-sm font-semibold text-gray-900">{t('session.detailTitle')}</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-50">{t('session.detailTitle')}</h2>
         </div>
       </div>
 
@@ -341,44 +341,44 @@ export default function SessionDetailView({
               )
             })()}
             {(courseName || lectureName) && (
-              <p className="text-lg font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
                 {courseName}{courseName && lectureName ? ' · ' : ''}{lectureName} {t('session.title').replace('내 퀴즈 ', '')}
               </p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {t('session.unitLabel')}: {lectureName || t('session.unknownUnit')} | {t('session.completionSummary', { total: stats.total, completed: stats.answered })}
             </p>
           </div>
 
           {/* 통계 카드 */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">{t('session.correctCount')}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('session.correctCount')}</span>
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
               </div>
-              <p className="mt-1 text-2xl font-bold text-gray-900">{stats.correct}</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-50">{stats.correct}</p>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">{t('session.incorrectCount')}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('session.incorrectCount')}</span>
                 <XCircle className="h-4 w-4 text-red-500" />
               </div>
-              <p className="mt-1 text-2xl font-bold text-gray-900">{stats.incorrect}</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-50">{stats.incorrect}</p>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">{t('session.progressRate')}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('session.progressRate')}</span>
                 <TrendingUp className="h-4 w-4 text-blue-500" />
               </div>
-              <p className="mt-1 text-2xl font-bold text-gray-900">{stats.progressPercent}%</p>
+              <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-50">{stats.progressPercent}%</p>
             </div>
           </div>
 
           {/* 퀴즈 목록 */}
           {grouped.map(group => (
             <div key={group.type}>
-              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                 <span>{tQuiz(`sectionLabel.${group.type}`)}</span>
                 <span className="text-xs font-normal text-gray-400">
                   {tQuiz('itemCount', { count: group.items.length })}
@@ -423,7 +423,7 @@ export default function SessionDetailView({
       </div>
 
       {/* 하단 액션 버튼 */}
-      <div className="shrink-0 border-t border-gray-200 p-4">
+      <div className="shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
         <div className="mx-auto max-w-2xl space-y-2">
           <button
             type="button"
@@ -439,7 +439,7 @@ export default function SessionDetailView({
           <button
             type="button"
             onClick={handleRetryAll}
-            className="w-full rounded-xl border border-gray-300 bg-gray-50 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
+            className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             {t('session.retryAll')}
           </button>

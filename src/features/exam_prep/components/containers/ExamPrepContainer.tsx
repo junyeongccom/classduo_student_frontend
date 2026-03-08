@@ -58,6 +58,7 @@ export function ExamPrepContainer({ courseId: propCourseId, materialId: propMate
   const [hasUserResized, setHasUserResized] = useState(false)
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false)
   const [isPdfSlideshow, setIsPdfSlideshow] = useState(false)
+  const [showResetChatConfirm, setShowResetChatConfirm] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -513,8 +514,11 @@ export function ExamPrepContainer({ courseId: propCourseId, materialId: propMate
   }
 
   const handleResetChat = () => {
-    const confirmed = window.confirm('새 채팅을 시작하면 현재 대화가 초기화됩니다. 계속할까요?')
-    if (!confirmed) return
+    setShowResetChatConfirm(true)
+  }
+
+  const handleConfirmResetChat = () => {
+    setShowResetChatConfirm(false)
     setChatMessages([])
     setChatReferences([])
     setChatInput('')
@@ -642,6 +646,31 @@ export function ExamPrepContainer({ courseId: propCourseId, materialId: propMate
 
   return (
     <div className="flex h-full w-full flex-col">
+      {/* 채팅 초기화 확인 모달 */}
+      {showResetChatConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50 text-center mb-2">{t('chatResetTitle')}</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-200 text-center">{t('chatResetMessage')}</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowResetChatConfirm(false)}
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                {t('chatResetCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmResetChat}
+                className="flex-1 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700"
+              >
+                {t('chatResetConfirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 과목/자료 드롭다운: 둘 다 외부 주입이면 전체 숨김 */}
       {!(isCourseFixed && isMaterialFixed) && (
         <div className="px-6 pt-6">

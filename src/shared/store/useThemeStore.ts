@@ -43,6 +43,7 @@ export const useThemeStore = create<ThemeState>((set, get) => {
     toggle: () => {
       const next = get().theme === 'light' ? 'dark' : 'light'
       localStorage.setItem(THEME_KEY, next)
+      document.cookie = `${THEME_KEY}=${next};path=/;max-age=31536000;SameSite=Lax`
       applyTheme(next)
       set({ theme: next })
     },
