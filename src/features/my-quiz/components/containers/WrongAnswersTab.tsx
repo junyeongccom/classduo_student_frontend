@@ -543,8 +543,8 @@ export default function WrongAnswersTab({
                               quiz={studentQuiz}
                               index={idx}
                               isBookmarked={quiz.bookmark}
-                              isCorrect={quiz.retry_correct !== undefined && quiz.retry_correct !== null ? quiz.retry_correct : quiz.correct}
-                              selectedAnswer={quiz.retry_answer !== undefined && quiz.retry_answer !== null ? quiz.retry_answer : quiz.selected_answer}
+                              isCorrect={quiz.retry_correct ?? null}
+                              selectedAnswer={quiz.retry_answer ?? null}
                               onBookmarkToggle={handleBookmarkToggle}
                               onCorrectUpdate={handleCorrectUpdate}
                               onResetAnswer={handleResetAnswer}
