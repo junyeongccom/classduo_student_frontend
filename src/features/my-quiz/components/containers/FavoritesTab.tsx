@@ -368,7 +368,7 @@ export default function FavoritesTab({
   }
 
   return (
-    <div className="relative p-4 space-y-6 bg-gray-50 min-h-full">
+    <div className="relative p-4 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-full">
       {/* Toast messages */}
       {toasts.length > 0 && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
@@ -383,8 +383,8 @@ export default function FavoritesTab({
       <div className="mx-auto max-w-2xl">
       {/* 제목 + 설명 */}
       <div className="mb-4">
-        <h2 className="text-lg font-bold text-gray-900">{t('favorites.title')}</h2>
-        <p className="text-sm text-gray-500 mt-0.5">{t('favorites.description')}</p>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">{t('favorites.title')}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('favorites.description')}</p>
       </div>
 
       {/* 드롭다운 + 정렬 */}
@@ -410,12 +410,12 @@ export default function FavoritesTab({
           clearAllLabel={t('selector.clearAll')}
           countLabel={(count) => t('selector.lectureCount', { count })}
         />
-        <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
+        <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
           <ArrowUpDown className="h-3.5 w-3.5" />
           <select
             value={sortOrder}
             onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
-            className="bg-transparent border-none text-xs text-gray-500 focus:outline-none cursor-pointer"
+            className="bg-transparent border-none text-xs text-gray-500 dark:text-gray-400 focus:outline-none cursor-pointer"
           >
             <option value="newest">{t('sort.newest')}</option>
             <option value="oldest">{t('sort.oldest')}</option>
@@ -435,18 +435,18 @@ export default function FavoritesTab({
       <div className="space-y-6">
       {courseGroups.map(courseGroup => (
         <section key={courseGroup.course_id} className="space-y-4">
-          <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
+          <h3 className="flex items-center gap-2 text-base font-bold text-gray-800 dark:text-gray-100">
             <BookOpen className="h-4 w-4 text-blue-500" />
             {courseGroup.course_name}
           </h3>
           {courseGroup.lectureGroups.map(lectureGroup => (
             <div key={lectureGroup.lecture_id} className="space-y-3 pl-2">
-              <h4 className="text-sm font-semibold text-gray-600 border-l-2 border-blue-400 pl-2">
+              <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 border-l-2 border-blue-400 pl-2">
                 {lectureGroup.lecture_name}
               </h4>
               {lectureGroup.typeGroups.map(typeGroup => (
                 <div key={typeGroup.type}>
-                  <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500">
+                  <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
                     <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
                     {tQuiz(`sectionLabel.${typeGroup.type}`)}
                     <span className="text-xs font-normal text-gray-400">

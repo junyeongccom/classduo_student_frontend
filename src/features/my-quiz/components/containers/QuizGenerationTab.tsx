@@ -305,7 +305,7 @@ export default function QuizGenerationTab() {
     const hasMoreSessions = sessions.length > sessionDisplayCount
 
     return (
-      <div className="relative flex h-full flex-col bg-gray-50">
+      <div className="relative flex h-full flex-col bg-gray-50 dark:bg-gray-950">
         {/* Toast */}
         {toasts.length > 0 && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
@@ -318,18 +318,18 @@ export default function QuizGenerationTab() {
         )}
 
         {/* 헤더 */}
-        <div className="shrink-0 bg-white border-b border-gray-200 px-6 py-4">
+        <div className="shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex items-start gap-3">
             <button
               type="button"
               onClick={() => setView('course-lecture')}
-              className="mt-1 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+              className="mt-1 rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900">{t('session.title')}</h2>
-              <p className="text-sm text-gray-500 mt-1">{t('session.description')}</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{t('session.title')}</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('session.description')}</p>
             </div>
             <button
               type="button"
@@ -400,7 +400,7 @@ export default function QuizGenerationTab() {
                   <button
                     type="button"
                     onClick={() => setSessionDisplayCount(prev => prev + 3)}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600 transition hover:border-blue-300 hover:shadow-sm"
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-600 dark:text-gray-300 transition hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm"
                   >
                     <ChevronDown className="h-4 w-4" />
                     {t('session.showMore')}
@@ -435,7 +435,7 @@ export default function QuizGenerationTab() {
   return (
     <div className="flex h-full">
       {/* 좌측: 강좌 패널 */}
-      <div className="w-80 shrink-0 border-r border-gray-200 overflow-y-auto">
+      <div className="w-80 shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
         <CoursePanel
           courses={courseCards}
           selectedCourseId={selectedCourseId}

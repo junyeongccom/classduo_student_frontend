@@ -65,7 +65,7 @@ export default function CreateSessionForm({
         <button
           type="button"
           onClick={onCancel}
-          className="mb-3 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition"
+          className="mb-3 flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
@@ -73,23 +73,23 @@ export default function CreateSessionForm({
           <p className="text-sm mb-2">
             <span className="text-blue-600 font-medium">{courseName}</span>
             {courseName && lectureName && <span className="mx-1 text-gray-400">{'>'}</span>}
-            <span className="text-gray-600">{lectureName}</span>
+            <span className="text-gray-600 dark:text-gray-300">{lectureName}</span>
           </p>
         )}
-        <h2 className="text-2xl font-bold text-gray-900">{t('settingTitle')}</h2>
-        <p className="text-sm text-gray-500 mt-1">{t('settingDescription')}</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{t('settingTitle')}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('settingDescription')}</p>
       </div>
 
       {/* 설정 영역 - 카드 레이아웃 */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="mx-auto max-w-lg">
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
             <div className="p-5 space-y-6">
               {/* 유형별 문항 수 */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Layers className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm font-semibold text-gray-800">{t('quizTypes')}</span>
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">{t('quizTypes')}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -117,7 +117,7 @@ export default function CreateSessionForm({
                             'flex w-full items-center rounded-lg border px-3 py-2 text-sm transition',
                             isActive
                               ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-medium'
-                              : 'border-gray-200 bg-white text-gray-400',
+                              : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-400',
                           )}
                         >
                           <span className="flex-1">{t(qt.labelKey)}</span>
@@ -172,7 +172,7 @@ export default function CreateSessionForm({
               </div>
 
               {/* 총 문항 수 + 예상 소요시간 */}
-              <div className="flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                 <span className={cn('font-medium', totalCount > 0 && 'text-indigo-600')}>
                   {t('totalCount', { count: totalCount })}
                 </span>

@@ -51,7 +51,7 @@ export default function CoursePanel({
 
   return (
     <div className="flex flex-col gap-2 p-3">
-      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 px-1">
+      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 px-1">
         <BookOpen className="h-4 w-4" />
         {t('generation.courseSelect')}
       </h3>
@@ -66,20 +66,20 @@ export default function CoursePanel({
             className={cn(
               'flex items-start gap-3 rounded-xl border p-3 text-left transition',
               isSelected
-                ? 'border-blue-400 bg-blue-50 shadow-sm'
-                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm',
+                ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/30 shadow-sm'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm',
             )}
           >
             <div className={cn(
               'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold',
-              isSelected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500',
+              isSelected ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
             )}>
               {course.title.charAt(0)}
             </div>
             <div className="min-w-0 flex-1">
               <p className={cn(
                 'text-sm font-medium truncate',
-                isSelected ? 'text-blue-900' : 'text-gray-800',
+                isSelected ? 'text-blue-900 dark:text-blue-200' : 'text-gray-800 dark:text-gray-100',
               )}>
                 {displayName}
               </p>

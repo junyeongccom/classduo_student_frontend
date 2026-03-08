@@ -78,6 +78,7 @@ export default function WrongAnswersTab({
   const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY_COUNT)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [resetKey, setResetKey] = useState(0)
+  const [dismissTargetId, setDismissTargetId] = useState<string | null>(null)
 
   const fetchQuizzes = useCallback(async (currentOffset: number, append: boolean) => {
     if (selectedLectureIds.length === 0) return
@@ -416,29 +417,32 @@ export default function WrongAnswersTab({
     [allQuizzes, fetchQuizzes, showErrorToast, t],
   )
 
-  const handleDismissWrongNote = useCallback(
-    async (quizId: string) => {
-      const quiz = allQuizzes.find(q => q.quiz_id === quizId)
-      if (!quiz) return
+  const handleRequestDismiss = useCallback((quizId: string) => {
+    setDismissTargetId(quizId)
+  }, [])
 
-      // 별도 테이블이므로 언제든 제거 가능
-      const updated = allQuizzes.filter(q => q.quiz_id !== quizId)
-      setAllQuizzes(updated)
+  const handleConfirmDismiss = useCallback(async () => {
+    if (!dismissTargetId) return
+    const quiz = allQuizzes.find(q => q.quiz_id === dismissTargetId)
+    setDismissTargetId(null)
+    if (!quiz) return
 
-      const result = await statusService.dismissIncorrect(
-        quiz.quiz_source,
-        quizId,
-      )
+    // 별도 테이블이므로 언제든 제거 가능
+    const updated = allQuizzes.filter(q => q.quiz_id !== dismissTargetId)
+    setAllQuizzes(updated)
 
-      if (result.error) {
-        showErrorToast(t('error.dismissFailed'))
-        fetchQuizzes(0, false)
-        setOffset(0)
-        setHasMore(true)
-      }
-    },
-    [allQuizzes, fetchQuizzes, showErrorToast, t],
-  )
+    const result = await statusService.dismissIncorrect(
+      quiz.quiz_source,
+      dismissTargetId,
+    )
+
+    if (result.error) {
+      showErrorToast(t('error.dismissFailed'))
+      fetchQuizzes(0, false)
+      setOffset(0)
+      setHasMore(true)
+    }
+  }, [dismissTargetId, allQuizzes, fetchQuizzes, showErrorToast, t])
 
   const renderContent = () => {
     if (selectedLectureIds.length === 0) {
@@ -492,18 +496,18 @@ export default function WrongAnswersTab({
       <div className="space-y-6">
         {visibleGroups.map(courseGroup => (
           <section key={courseGroup.course_id} className="space-y-4">
-            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800">
+            <h3 className="flex items-center gap-2 text-base font-bold text-gray-800 dark:text-gray-100">
               <BookOpen className="h-4 w-4 text-blue-500" />
               {courseGroup.course_name}
             </h3>
             {courseGroup.lectureGroups.map(lectureGroup => (
               <div key={lectureGroup.lecture_id} className="space-y-3 pl-2">
-                <h4 className="text-sm font-semibold text-gray-600 border-l-2 border-blue-400 pl-2">
+                <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-300 border-l-2 border-blue-400 pl-2">
                   {lectureGroup.lecture_name}
                 </h4>
                 {lectureGroup.typeGroups.map(typeGroup => (
                   <div key={typeGroup.type}>
-                    <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500">
+                    <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
                       {tQuiz(`sectionLabel.${typeGroup.type}`)}
                       <span className="text-xs font-normal text-gray-400">
@@ -549,7 +553,7 @@ export default function WrongAnswersTab({
                               onCorrectUpdate={handleCorrectUpdate}
                               onResetAnswer={handleResetAnswer}
                               wrongNoteMode
-                              onDismissWrongNote={handleDismissWrongNote}
+                              onDismissWrongNote={handleRequestDismiss}
                             />
                           </div>
                         )
@@ -580,7 +584,7 @@ export default function WrongAnswersTab({
                     fetchQuizzes(nextOffset, true)
                   }
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-6 py-2.5 text-sm text-gray-600 transition hover:border-blue-300 hover:shadow-sm"
+                className="flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 py-2.5 text-sm text-gray-600 dark:text-gray-300 transition hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm"
               >
                 <ChevronDown className="h-4 w-4" />
                 {t('wrong.showMore')}
@@ -598,7 +602,7 @@ export default function WrongAnswersTab({
   }
 
   return (
-    <div className="relative p-4 space-y-6 bg-gray-50 min-h-full">
+    <div className="relative p-4 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-full">
       {/* Toast messages */}
       {toasts.length > 0 && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
@@ -613,13 +617,13 @@ export default function WrongAnswersTab({
       {/* 초기화 확인 팝업 */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-            <p className="text-sm text-gray-700 text-center">{t('wrong.resetConfirmMessage')}</p>
+          <div className="mx-4 w-full max-w-md rounded-xl bg-white dark:bg-gray-800 p-6 shadow-2xl">
+            <p className="text-sm text-gray-700 dark:text-gray-200 text-center whitespace-nowrap">{t('wrong.resetConfirmMessage')}</p>
             <div className="mt-5 flex gap-3">
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(false)}
-                className="flex-1 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 {t('wrong.resetCancel')}
               </button>
@@ -635,11 +639,37 @@ export default function WrongAnswersTab({
         </div>
       )}
 
+      {/* 오답 삭제 확인 팝업 */}
+      {dismissTargetId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="mx-4 w-full max-w-sm rounded-xl bg-white dark:bg-gray-800 p-6 shadow-2xl">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50 text-center mb-2">{t('wrong.dismissConfirmTitle')}</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-200 text-center">{t('wrong.dismissConfirmMessage')}</p>
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDismissTargetId(null)}
+                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                {t('wrong.dismissCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDismiss}
+                className="flex-1 rounded-lg bg-red-600 py-2.5 text-sm font-medium text-white transition hover:bg-red-700"
+              >
+                {t('wrong.dismissConfirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-2xl">
       {/* 제목 + 설명 */}
       <div className="mb-4">
-        <h2 className="text-lg font-bold text-gray-900">{t('wrong.title')}</h2>
-        <p className="text-sm text-gray-500 mt-0.5">{t('wrong.description')}</p>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">{t('wrong.title')}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('wrong.description')}</p>
       </div>
 
       {/* 드롭다운 + 정렬 + 학습 시작 */}
@@ -666,12 +696,12 @@ export default function WrongAnswersTab({
           countLabel={(count) => t('selector.lectureCount', { count })}
         />
         <div className="ml-auto flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <ArrowUpDown className="h-3.5 w-3.5" />
             <select
               value={sortOrder}
               onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
-              className="bg-transparent border-none text-xs text-gray-500 focus:outline-none cursor-pointer"
+              className="bg-transparent border-none text-xs text-gray-500 dark:text-gray-400 focus:outline-none cursor-pointer"
             >
               <option value="newest">{t('sort.newest')}</option>
               <option value="oldest">{t('sort.oldest')}</option>
