@@ -22,6 +22,7 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 /** 과목명 → 커스텀 썸네일 경로 매핑 */
 const COURSE_THUMBNAILS: Record<string, string> = {
   '생명과학의 세계': '/course_Thumbnail.png',
+  'The World of Life Science': '/course_Thumbnail.png',
 }
 
 export function HomeContainer() {
