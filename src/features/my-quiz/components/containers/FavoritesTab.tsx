@@ -336,102 +336,55 @@ export default function FavoritesTab({
     [allQuizzes, fetchQuizzes, showErrorToast, t],
   )
 
-  if (selectedLectureIds.length === 0) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400 px-6">
-        <p className="text-sm text-center">{t('selector.noCourses')}</p>
-      </div>
-    )
-  }
-
-  if (isLoading && allQuizzes.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-2">
-        <p className="text-sm text-red-500">{error}</p>
-        <button
-          type="button"
-          onClick={() => { setOffset(0); setHasMore(true); fetchQuizzes(0, false) }}
-          className="text-xs text-indigo-600 hover:underline"
-        >
-          {t('error.retry')}
-        </button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative p-4 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-full">
-      {/* Toast messages */}
-      {toasts.length > 0 && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
-          {toasts.map(toast => (
-            <div key={toast.id} className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white shadow-lg">
-              {toast.message}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="mx-auto max-w-2xl">
-      {/* 제목 + 설명 */}
-      <div className="mb-4">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">{t('favorites.title')}</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('favorites.description')}</p>
-      </div>
-
-      {/* 드롭다운 + 정렬 */}
-      <div className="flex items-center gap-3 mb-6">
-        <BottomDropdown
-          value={selectedCourseId}
-          options={courseOptions}
-          placeholder={t('selector.selectCourse')}
-          onChange={onCourseChange}
-          isLoading={selectorLoading}
-          loadingLabel={t('selector.loading')}
-          emptyLabel={t('selector.noCourses')}
-        />
-        <MultiSelectDropdown
-          options={lectureOptions}
-          selectedIds={selectedLectureIds_multi}
-          placeholder={t('selector.selectLecture')}
-          onToggle={onLectureToggle}
-          onSelectAll={onSelectAllLectures}
-          onClearAll={onClearLectureIds}
-          disabled={!selectedCourseId}
-          selectAllLabel={t('selector.selectAll')}
-          clearAllLabel={t('selector.clearAll')}
-          countLabel={(count) => t('selector.lectureCount', { count })}
-        />
-        <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <ArrowUpDown className="h-3.5 w-3.5" />
-          <select
-            value={sortOrder}
-            onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
-            className="bg-transparent border-none text-xs text-gray-500 dark:text-gray-400 focus:outline-none cursor-pointer"
-          >
-            <option value="newest">{t('sort.newest')}</option>
-            <option value="oldest">{t('sort.oldest')}</option>
-          </select>
-        </div>
-      </div>
-
-      {courseGroups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-20 text-gray-400">
+  const renderContent = () => {
+    if (selectedLectureIds.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
             <Star className="h-7 w-7 stroke-[1.5] text-amber-400" />
           </div>
           <p className="text-sm">{t('empty.noFavorites')}</p>
           <p className="text-xs text-gray-300">{t('empty.favoritesGuide')}</p>
         </div>
-      ) : (
+      )
+    }
+
+    if (isLoading && allQuizzes.length === 0) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        </div>
+      )
+    }
+
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <p className="text-sm text-red-500">{error}</p>
+          <button
+            type="button"
+            onClick={() => { setOffset(0); setHasMore(true); fetchQuizzes(0, false) }}
+            className="text-xs text-indigo-600 hover:underline"
+          >
+            {t('error.retry')}
+          </button>
+        </div>
+      )
+    }
+
+    if (courseGroups.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+            <Star className="h-7 w-7 stroke-[1.5] text-amber-400" />
+          </div>
+          <p className="text-sm">{t('empty.noFavorites')}</p>
+          <p className="text-xs text-gray-300">{t('empty.favoritesGuide')}</p>
+        </div>
+      )
+    }
+
+    return (
       <div className="space-y-6">
       {courseGroups.map(courseGroup => (
         <section key={courseGroup.course_id} className="space-y-4">
@@ -505,12 +458,69 @@ export default function FavoritesTab({
 
       {/* 무한 스크롤 센티넬 */}
       {hasMore && (
-        <div ref={sentinelRef} className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-gray-300" />
-        </div>
+        <div ref={sentinelRef} className="h-1" />
       )}
       </div>
+    )
+  }
+
+  return (
+    <div className="relative p-4 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-full">
+      {/* Toast messages */}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-1">
+          {toasts.map(toast => (
+            <div key={toast.id} className="rounded-lg bg-red-600 px-4 py-2 text-xs text-white shadow-lg">
+              {toast.message}
+            </div>
+          ))}
+        </div>
       )}
+
+      <div className="mx-auto max-w-2xl">
+      {/* 제목 + 설명 */}
+      <div className="mb-4">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-50">{t('favorites.title')}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{t('favorites.description')}</p>
+      </div>
+
+      {/* 드롭다운 + 정렬 */}
+      <div className="flex items-center gap-3 mb-6">
+        <BottomDropdown
+          value={selectedCourseId}
+          options={courseOptions}
+          placeholder={t('selector.selectCourse')}
+          onChange={onCourseChange}
+          isLoading={selectorLoading}
+          loadingLabel={t('selector.loading')}
+          emptyLabel={t('selector.noCourses')}
+        />
+        <MultiSelectDropdown
+          options={lectureOptions}
+          selectedIds={selectedLectureIds_multi}
+          placeholder={t('selector.selectLecture')}
+          onToggle={onLectureToggle}
+          onSelectAll={onSelectAllLectures}
+          onClearAll={onClearLectureIds}
+          disabled={!selectedCourseId}
+          selectAllLabel={t('selector.selectAll')}
+          clearAllLabel={t('selector.clearAll')}
+          countLabel={(count) => t('selector.lectureCount', { count })}
+        />
+        <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <ArrowUpDown className="h-3.5 w-3.5" />
+          <select
+            value={sortOrder}
+            onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
+            className="bg-transparent border-none text-xs text-gray-500 dark:text-gray-400 focus:outline-none cursor-pointer"
+          >
+            <option value="newest">{t('sort.newest')}</option>
+            <option value="oldest">{t('sort.oldest')}</option>
+          </select>
+        </div>
+      </div>
+
+      {renderContent()}
       </div>
     </div>
   )
