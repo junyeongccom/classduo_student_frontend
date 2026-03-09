@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, ExternalLink } from 'lucide-react'
+import { useAuthStore } from '@/features/auth/store/authStore'
 
 const SURVEY_URL =
   'https://forms.office.com/pages/responsepage.aspx?id=BI6Km1cMUUee2la_YE4FxlBp7ANRiWhCmKTD8AKQjGNURDJDTVNDQjRBWEczVVVDQzc2UVlLU0tLMC4u&route=shorturl'
@@ -22,14 +23,17 @@ function isDismissedToday(): boolean {
 }
 
 export function SurveyPopup() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const [isOpen, setIsOpen] = useState(false)
   const [dontShowToday, setDontShowToday] = useState(false)
 
   useEffect(() => {
-    if (!isDismissedToday()) {
+    if (isAuthenticated && !isDismissedToday()) {
       setIsOpen(true)
+    } else {
+      setIsOpen(false)
     }
-  }, [])
+  }, [isAuthenticated])
 
   const handleClose = () => {
     if (dontShowToday) {
