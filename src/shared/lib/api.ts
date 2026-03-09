@@ -34,7 +34,7 @@ export async function apiRequest<T>(
   const { method = 'GET', body, headers = {}, auth = false } = options
 
   // 언어 설정 읽기 (Accept-Language 헤더용)
-  const locale = typeof window !== 'undefined' 
+  const locale = typeof window !== 'undefined'
     ? localStorage.getItem('classduo_locale') || 'ko'
     : 'ko'
 
@@ -48,6 +48,7 @@ export async function apiRequest<T>(
   if (auth) {
     const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
     if (!token) {
+      // 토큰 없으면 불필요한 401 요청을 보내지 않고 즉시 반환
       return {
         data: null,
         error: { error_code: 'NO_TOKEN', message: '인증 토큰이 없습니다. 로그인이 필요합니다.' },
@@ -112,12 +113,12 @@ export async function apiRequest<T>(
     }
   } catch (error) {
     // CORS 에러 또는 네트워크 에러
-    const errorMessage = error instanceof TypeError 
+    const errorMessage = error instanceof TypeError
       ? 'CORS 오류: 백엔드 서버에 접근할 수 없습니다. 서버가 실행 중인지 확인해주세요.'
       : '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.'
-    
+
     console.error('API Request Error:', error)
-    
+
     return {
       data: null,
       error: {
@@ -128,5 +129,3 @@ export async function apiRequest<T>(
     }
   }
 }
-
-
