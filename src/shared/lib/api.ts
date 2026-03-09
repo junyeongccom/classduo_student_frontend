@@ -47,9 +47,14 @@ export async function apiRequest<T>(
   // 인증 토큰 추가
   if (auth) {
     const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
-    if (token) {
-      requestHeaders['Authorization'] = `Bearer ${token}`
+    if (!token) {
+      return {
+        data: null,
+        error: { error_code: 'NO_TOKEN', message: '인증 토큰이 없습니다. 로그인이 필요합니다.' },
+        status: 401,
+      }
     }
+    requestHeaders['Authorization'] = `Bearer ${token}`
   }
 
   try {

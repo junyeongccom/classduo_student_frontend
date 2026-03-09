@@ -15,9 +15,10 @@ interface SignupModalProps {
   isOpen: boolean
   onClose: () => void
   onSwitchToLogin: () => void
+  embedded?: boolean // AuthGuard 탭 내부 렌더링 시 true
 }
 
-export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) {
+export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false }: SignupModalProps) {
   const t = useTranslations('auth.signup')
   const tm = useTranslations('auth.signupModal')
   const tv = useTranslations('auth.validation')
@@ -96,26 +97,11 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
 
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center">
-      {/* 배경 오버레이 */}
-      <div
-        className="absolute inset-0 bg-black/30"
-        onClick={onClose}
-      />
-
-      {/* 모달 컨텐츠 */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-        {/* 닫기 버튼 */}
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        {/* Step 3: 회원가입 완료 */}
-        {step === 'success' ? (
+  // embedded/standalone 공통 콘텐츠
+  const renderInnerContent = () => (
+    <>
+      {/* Step 3: 회원가입 완료 */}
+      {step === 'success' ? (
           <div className="text-center">
             <div className="mb-6 flex justify-center">
               <div className="rounded-full bg-green-100 p-4">
@@ -123,8 +109,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
               </div>
             </div>
 
-            <h2 className="mb-2 text-xl font-bold text-gray-900">{t('signupCompleteTitle')}</h2>
-            <p className="mb-6 text-sm text-gray-500">
+            <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">{t('signupCompleteTitle')}</h2>
+            <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
               {t('signupCompleteMessage')}
             </p>
 
@@ -141,8 +127,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
         ) : step === 'verification' ? (
           <div>
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-gray-900">{tm('title')}</h1>
-              <p className="mt-2 text-sm text-gray-500">{t('verificationTitle')}</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{tm('title')}</h1>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('verificationTitle')}</p>
             </div>
 
             {/* 에러 메시지 */}
@@ -161,7 +147,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 mb-3 text-center">
+                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-3 text-center">
                   {t('enterCodeLabel')}
                 </label>
                 <VerificationCodeInput
@@ -197,15 +183,17 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
               </p>
             </div>
 
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <span>{t('hasAccount')}</span>
-              <button
-                onClick={onSwitchToLogin}
-                className="font-medium text-gray-900 hover:underline"
-              >
-                {t('loginLink')}
-              </button>
-            </div>
+            {!embedded && (
+              <div className="mt-6 text-center text-sm text-gray-500">
+                <span>{t('hasAccount')}</span>
+                <button
+                  onClick={onSwitchToLogin}
+                  className="font-medium text-gray-900 dark:text-gray-100 hover:underline"
+                >
+                  {t('loginLink')}
+                </button>
+              </div>
+            )}
           </div>
 
         /* Step 1: 회원가입 폼 */
@@ -213,8 +201,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
           <>
             {/* 로고 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-gray-900">{tm('title')}</h1>
-              <p className="mt-2 text-sm text-gray-500">{tm('subtitle')}</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{tm('title')}</h1>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{tm('subtitle')}</p>
             </div>
 
             {/* 에러 메시지 */}
@@ -300,18 +288,47 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
               </Button>
             </form>
 
-            {/* 로그인 링크 */}
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <span>{t('hasAccount')}</span>
-              <button
-                onClick={onSwitchToLogin}
-                className="font-medium text-gray-900 hover:underline"
-              >
-                {t('loginLink')}
-              </button>
-            </div>
+            {/* 로그인 링크 — embedded 모드에서는 탭이 대체하므로 숨김 */}
+            {!embedded && (
+              <div className="mt-6 text-center text-sm text-gray-500">
+                <span>{t('hasAccount')}</span>
+                <button
+                  onClick={onSwitchToLogin}
+                  className="font-medium text-gray-900 dark:text-gray-100 hover:underline"
+                >
+                  {t('loginLink')}
+                </button>
+              </div>
+            )}
           </>
         )}
+    </>
+  )
+
+  // embedded 모드: 내부 콘텐츠만 렌더링
+  if (embedded) {
+    return renderInnerContent()
+  }
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center">
+      {/* 배경 오버레이 */}
+      <div
+        className="absolute inset-0 bg-black/30"
+        onClick={onClose}
+      />
+
+      {/* 모달 컨텐츠 */}
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-xl">
+        {/* 닫기 버튼 */}
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {renderInnerContent()}
       </div>
     </div>
   )
