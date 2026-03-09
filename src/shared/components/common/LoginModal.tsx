@@ -50,9 +50,10 @@ interface LoginModalProps {
   onClose: () => void
   canClose?: boolean // 닫기 가능 여부 (기본값: true)
   onSwitchToSignup?: () => void // 회원가입 모달로 전환
+  embedded?: boolean // AuthGuard 탭 내부 렌더링 시 true
 }
 
-export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup, embedded = false }: LoginModalProps) {
   const t = useTranslations('loginModal')
   const tv = useTranslations('auth.validation')
   const { handleLogin, isLoading } = useLogin()
@@ -217,6 +218,118 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
   }
 
   if (!isOpen) return null
+
+  // embedded 모드: 내부 콘텐츠만 렌더링 (모달 래퍼 없음)
+  const renderContent = () => (
+    <>
+      {showResetPassword ? (
+        renderResetPasswordContent()
+      ) : (
+        <>
+          {/* 로고 */}
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('loginTitle')}</h1>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('chooseAccount')}</p>
+          </div>
+
+          {/* 저장된 계정 목록 */}
+          {!showForm && savedAccounts.length > 0 && (
+            <div className="mb-6 space-y-3">
+              {savedAccounts.map((account) => {
+                const initial = account.email.charAt(0).toUpperCase()
+                return (
+                  <button
+                    key={account.email}
+                    onClick={() => handleSavedAccountClick(account.email)}
+                    className="flex w-full items-center gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 transition-colors hover:border-gray-900 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-400 dark:hover:bg-gray-700"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 dark:bg-gray-100">
+                      <span className="text-sm font-bold text-white dark:text-gray-900">{initial}</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{account.email}</p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* 로그인 폼 */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <Input
+                  {...register('email')}
+                  type="email"
+                  placeholder={t('emailPlaceholder')}
+                  className={`pl-12 ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                />
+              </div>
+              {errors.email?.message && (
+                <p className="mt-1.5 text-xs text-red-500">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <Input
+                  {...register('password')}
+                  type="password"
+                  placeholder={t('passwordPlaceholder')}
+                  className={`pl-12 ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                />
+              </div>
+              {errors.password?.message && (
+                <p className="mt-1.5 text-xs text-red-500">{errors.password.message}</p>
+              )}
+
+              {/* 에러 메시지 - 비밀번호 입력 칸 아래 */}
+              {error && (
+                <div className="mt-2">
+                  <p className="text-sm text-red-600">{error.message}</p>
+                  {onSwitchToSignup && (
+                    <button
+                      type="button"
+                      onClick={onSwitchToSignup}
+                      className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:underline"
+                    >
+                      계정이 없으신가요? 회원가입하기
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-gray-900"
+              size="lg"
+              isLoading={isLoading}
+            >
+              {t('loginTitle')}
+            </Button>
+          </form>
+
+          {/* 비밀번호 찾기 링크 (embedded 모드에서는 회원가입 링크 불필요 — 탭이 대체) */}
+          <div className="mt-6 flex items-center justify-center gap-4 text-center">
+            <button
+              onClick={handleShowResetPassword}
+              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {t('findPassword')}
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  )
+
+  if (embedded) {
+    return renderContent()
+  }
 
   // 비밀번호 재설정 섹션 렌더링
   const renderResetPasswordContent = () => {
@@ -415,7 +528,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
       />
 
       {/* 모달 컨텐츠 */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-xl">
         {/* 닫기 버튼 - canClose가 true일 때만 표시 */}
         {canClose && (
           <button
@@ -433,8 +546,8 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
           <>
             {/* 로고 */}
             <div className="mb-8 text-center">
-              <h1 className="text-2xl font-bold text-gray-900">{t('loginTitle')}</h1>
-              <p className="mt-2 text-sm text-gray-500">{t('chooseAccount')}</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('loginTitle')}</h1>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('chooseAccount')}</p>
             </div>
 
             {/* 저장된 계정 목록 */}
@@ -448,13 +561,13 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
                     <button
                       key={account.email}
                       onClick={() => handleSavedAccountClick(account.email)}
-                      className="flex w-full items-center gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 transition-colors hover:border-gray-900 hover:bg-gray-50"
+                      className="flex w-full items-center gap-3 rounded-xl border-2 border-gray-200 bg-white p-3 transition-colors hover:border-gray-900 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-400 dark:hover:bg-gray-700"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900">
-                        <span className="text-sm font-bold text-white">{initial}</span>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-900 dark:bg-gray-100">
+                        <span className="text-sm font-bold text-white dark:text-gray-900">{initial}</span>
                       </div>
                       <div className="flex-1 text-left">
-                        <p className="text-sm text-gray-900">{account.email}</p>
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{account.email}</p>
                       </div>
                     </button>
                   )
@@ -495,7 +608,18 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
 
                 {/* 에러 메시지 - 비밀번호 입력 칸 아래 */}
                 {error && (
-                  <p className="mt-2 text-sm text-red-600">{error.message}</p>
+                  <div className="mt-2">
+                    <p className="text-sm text-red-600">{error.message}</p>
+                    {onSwitchToSignup && (
+                      <button
+                        type="button"
+                        onClick={onSwitchToSignup}
+                        className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:underline"
+                      >
+                        계정이 없으신가요? 회원가입하기
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -514,24 +638,24 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup 
               {onSwitchToSignup ? (
                 <button
                   onClick={onSwitchToSignup}
-                  className="text-sm text-gray-600 hover:text-gray-900"
+                  className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
                 >
                   {t('signup')}
                 </button>
               ) : (
                 <Link
                   href="/signup"
-                  className="text-sm text-gray-600 hover:text-gray-900"
+                  className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
                 >
                   {t('signup')}
                 </Link>
               )}
 
-              <span className="text-gray-300">|</span>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
 
               <button
                 onClick={handleShowResetPassword}
-                className="text-sm text-gray-600 hover:text-gray-900"
+                className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 {t('findPassword')}
               </button>
