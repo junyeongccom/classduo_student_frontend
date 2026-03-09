@@ -14,6 +14,7 @@ import { Loader2, X, ChevronRight, FileText, Bot } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { trackTabView } from '@/shared/hooks/useAnalytics'
+import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
@@ -66,6 +67,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const setTargetChunkIndex = useLectureStudyStore(s => s.setTargetChunkIndex)
   const resetNavigationState = useLectureStudyStore(s => s.resetNavigationState)
   const setTotalRecordingChunks = useLectureStudyStore(s => s.setTotalRecordingChunks)
+
+  // Analytics: 페이지 체류시간 추적
+  useEffect(() => {
+    trackPageEnter('lecture_study', { lectureId, courseId })
+    return () => { trackPageLeave('lecture_study', { lectureId, courseId }) }
+  }, [lectureId, courseId])
 
   useEffect(() => {
     setStoreLectureId(lectureId)

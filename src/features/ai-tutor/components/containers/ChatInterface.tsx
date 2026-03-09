@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
+import { chatAnalytics } from '@/shared/lib/analytics'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
@@ -730,6 +731,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             chat_mode: chatMode,
             course_id: selectedCourseId ?? '',
           })
+          chatAnalytics.message(selectedLectureIds[0] ?? '', { message_length: question.length })
 
           const assistantMessage: ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null } = {
             role: 'assistant',

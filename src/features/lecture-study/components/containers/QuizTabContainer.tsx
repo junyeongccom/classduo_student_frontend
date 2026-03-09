@@ -13,6 +13,7 @@ import { Loader2, HelpCircle, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { trackQuizAttempt } from '@/shared/hooks/useAnalytics'
+import { quizAnalytics } from '@/shared/lib/analytics'
 import {
   getInstructorQuizzes,
   type InstructorQuizItem,
@@ -177,6 +178,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         lecture_id: lectureId,
         course_id: courseId,
       })
+      quizAnalytics.answer(lectureId, { question_index: quizzes.findIndex(q => q.quiz_id === quizId), correct: isCorrect, duration_ms: 0 })
 
       const current = statusMap.get(quizId)
 

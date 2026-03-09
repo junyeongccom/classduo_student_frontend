@@ -7,9 +7,10 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { trackQuizSelfStart } from '@/shared/hooks/useAnalytics'
+import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/Tabs'
 import type { TabType } from '../../types'
 import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
@@ -38,6 +39,11 @@ export default function MyQuizContainer() {
     hasCourses,
     lectureInfoMap,
   } = useCourseAndLecture()
+
+  useEffect(() => {
+    trackPageEnter('my_quizzes')
+    return () => { trackPageLeave('my_quizzes') }
+  }, [])
 
   const effectiveLectureIds = selectedLectureIds.length > 0
     ? selectedLectureIds
