@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { Loader2 } from 'lucide-react'
@@ -18,6 +18,7 @@ import { assignCourseVisuals } from '../../domain/assignCourseVisual'
 import { CourseCard } from '../ui/CourseCard'
 import { EmptyState } from '../ui/EmptyState'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 
 /** 과목명 → 커스텀 썸네일 경로 매핑 */
 const COURSE_THUMBNAILS: Record<string, string> = {
@@ -32,6 +33,11 @@ export function HomeContainer() {
   const dateLocale = locale === 'en' ? 'en-US' : 'ko-KR'
   const { courses, isLoading, error, refresh } = useCourses()
   const user = useAuthStore((s) => s.user)
+
+  useEffect(() => {
+    trackPageEnter('home')
+    return () => { trackPageLeave('home') }
+  }, [])
 
   const groups = useMemo(() => groupCoursesByTerm(courses), [courses])
   const visuals = useMemo(

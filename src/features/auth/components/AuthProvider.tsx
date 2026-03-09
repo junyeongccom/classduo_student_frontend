@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { TOKEN_KEY } from '@/shared/lib/utils'
 import { startTokenRefreshTimer, stopTokenRefreshTimer } from '@/shared/lib/supabase'
 import { setAnalyticsUser, setUserProperties } from '@/shared/hooks/useAnalytics'
+import { initAnalytics } from '@/shared/lib/analytics'
 
 /**
  * 앱 시작 시 인증 상태를 초기화하는 Provider
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     initAuth()
+    initAnalytics()
 
     // 컴포넌트 언마운트 시 타이머 정리
     return () => {
