@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/features/auth'
 import { Sidebar, LoginModal, SignupModal } from '@/shared/components/common'
 
@@ -10,6 +11,7 @@ export function AuthGuard({
   children: React.ReactNode
 }) {
   const { isAuthenticated, isLoading, clearError } = useAuthStore()
+  const t = useTranslations('auth.guard')
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup')
   const [showAuthModal, setShowAuthModal] = useState(false)
 
@@ -64,7 +66,8 @@ export function AuthGuard({
             {/* 안내 문구 — 로그인 탭에서만 표시 */}
             {activeTab === 'login' && (
               <div className="mx-6 mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 text-center dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300">
-                고려대학교 포털 계정과 별도로 회원가입이 필요합니다
+                {t('loginNoticeLine1')}<br />
+                {t('loginNoticeLine2')}
               </div>
             )}
 

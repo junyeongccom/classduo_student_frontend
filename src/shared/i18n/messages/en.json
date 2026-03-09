@@ -920,6 +920,10 @@
       "title": "Sign up",
       "subtitle": "Enter your information"
     },
+    "guard": {
+      "loginNoticeLine1": "New here?",
+      "loginNoticeLine2": "A separate sign-up is required. Please use your @korea.ac.kr email — the same one linked to the Korea University portal!"
+    },
     "validation": {
       "emailRequired": "Please enter your email",
       "emailInvalid": "Invalid email format",

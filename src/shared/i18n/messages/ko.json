@@ -920,6 +920,10 @@
       "title": "회원가입",
       "subtitle": "회원 정보를 입력하세요"
     },
+    "guard": {
+      "loginNoticeLine1": "처음 이용하시나요?",
+      "loginNoticeLine2": "별도의 회원가입이 필요하며, 고려대학교 포털과 동일한 @korea.ac.kr 이메일을 사용해 주세요!"
+    },
     "validation": {
       "emailRequired": "이메일을 입력해주세요",
       "emailInvalid": "올바른 이메일 형식이 아닙니다",
