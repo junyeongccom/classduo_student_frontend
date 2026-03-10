@@ -14,6 +14,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { lectureService } from '../../services/lectureService'
 import { trackSummaryViewed } from '@/shared/hooks/useAnalytics'
+import { sourceAnalytics } from '@/shared/lib/analytics'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { useIsMobile } from '../../hooks/useMediaQuery'
 import type { ContentSummary, ContentSummarySection } from '../../types'
@@ -171,6 +172,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
           if (!isLeftPanelOpen) toggleLeftPanel()
           setLeftTab('materials')
           setTargetPage(targetIdx)
+          sourceAnalytics.click(lectureId, { source_type: 'material', section_key: sectionKey })
           return
         }
         current = (current + 1) % sourcePages.length
@@ -199,6 +201,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
           if (!isLeftPanelOpen) toggleLeftPanel()
           setLeftTab('recordings')
           setTargetChunkIndex(chunkIdx)
+          sourceAnalytics.click(lectureId, { source_type: 'recording', section_key: sectionKey })
           return
         }
         current = (current + 1) % sourceChunks.length

@@ -731,7 +731,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             chat_mode: chatMode,
             course_id: selectedCourseId ?? '',
           })
-          chatAnalytics.message(selectedLectureIds[0] ?? '', { message_length: question.length })
+          chatAnalytics.message(selectedLectureIds[0] ?? '', { message_length: question.length, question_type: options?.question_type || 'direct' })
 
           const assistantMessage: ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null } = {
             role: 'assistant',

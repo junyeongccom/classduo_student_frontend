@@ -13,7 +13,7 @@ import { Loader2, HelpCircle, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { trackQuizAttempt } from '@/shared/hooks/useAnalytics'
-import { quizAnalytics } from '@/shared/lib/analytics'
+import { quizAnalytics, bookmarkAnalytics } from '@/shared/lib/analytics'
 import {
   getInstructorQuizzes,
   type InstructorQuizItem,
@@ -140,6 +140,8 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       const isCurrentlyBookmarked = bookmarkSet.has(quizId)
       const newBookmark = !isCurrentlyBookmarked
 
+      bookmarkAnalytics.toggle(lectureId, { quiz_id: quizId, bookmarked: newBookmark })
+
       // 낙관적 업데이트
       setBookmarkSet((prev) => {
         const next = new Set(prev)
@@ -178,7 +180,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         lecture_id: lectureId,
         course_id: courseId,
       })
-      quizAnalytics.answer(lectureId, { question_index: quizzes.findIndex(q => q.quiz_id === quizId), correct: isCorrect, duration_ms: 0 })
+      quizAnalytics.answer(lectureId, { question_index: quizzes.findIndex(q => q.quiz_id === quizId), correct: isCorrect, duration_ms: 0, quiz_type: quiz?.quiz_type ?? '' })
 
       const current = statusMap.get(quizId)
 
