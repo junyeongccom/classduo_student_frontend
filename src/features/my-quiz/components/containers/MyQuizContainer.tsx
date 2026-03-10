@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { trackQuizSelfStart } from '@/shared/hooks/useAnalytics'
-import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
+import { trackPageEnter, trackPageLeave, myQuizAnalytics } from '@/shared/lib/analytics'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui/Tabs'
 import type { TabType } from '../../types'
 import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
@@ -54,6 +54,7 @@ export default function MyQuizContainer() {
       value={activeTab}
       onValueChange={v => {
         setActiveTab(v as TabType)
+        myQuizAnalytics.tabView(v)
         trackQuizSelfStart({
           lecture_id: selectedLectureId ?? '',
           course_id: selectedCourseId ?? '',
