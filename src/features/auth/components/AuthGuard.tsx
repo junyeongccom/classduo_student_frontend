@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/features/auth'
 import { Sidebar, LoginModal, SignupModal } from '@/shared/components/common'
+import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 
 export function AuthGuard({
   children,
@@ -47,7 +48,7 @@ export function AuthGuard({
                   : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
               }`}
             >
-              회원가입
+              {t('signupTab')}
             </button>
             <button
               onClick={() => handleTabChange('login')}
@@ -57,7 +58,7 @@ export function AuthGuard({
                   : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
               }`}
             >
-              로그인
+              {t('loginTab')}
             </button>
           </div>
 
@@ -87,6 +88,11 @@ export function AuthGuard({
                 onSwitchToLogin={() => handleTabChange('login')}
               />
             )}
+          </div>
+
+          {/* 언어 전환 */}
+          <div className="flex justify-center pb-4">
+            <LanguageToggle size="sm" />
           </div>
         </div>
       </div>

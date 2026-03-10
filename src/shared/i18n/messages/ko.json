@@ -789,7 +789,8 @@
     "goToLogin": "로그인하기",
     "passwordMismatch": "비밀번호가 일치하지 않습니다",
     "signup": "회원가입",
-    "findPassword": "비밀번호 찾기"
+    "findPassword": "비밀번호 찾기",
+    "noAccountSignup": "계정이 없으신가요? 회원가입하기"
   },
   "profile": {
     "title": "프로필",
@@ -922,7 +923,9 @@
     },
     "guard": {
       "loginNoticeLine1": "처음 이용하시나요?",
-      "loginNoticeLine2": "별도의 회원가입이 필요하며, 고려대학교 포털과 동일한 @korea.ac.kr 이메일을 사용해 주세요!"
+      "loginNoticeLine2": "별도의 회원가입이 필요하며, 고려대학교 포털과 동일한 @korea.ac.kr 이메일을 사용해 주세요!",
+      "signupTab": "회원가입",
+      "loginTab": "로그인"
     },
     "validation": {
       "emailRequired": "이메일을 입력해주세요",
@@ -934,8 +937,13 @@
       "passwordMin": "비밀번호는 8자 이상이어야 합니다",
       "passwordLetter": "영문자를 포함해야 합니다",
       "passwordNumber": "숫자를 포함해야 합니다",
+      "passwordSymbol": "특수문자를 포함해야 합니다",
       "passwordConfirmRequired": "비밀번호 확인을 입력해주세요",
-      "passwordMismatch": "비밀번호가 일치하지 않습니다"
+      "passwordMismatch": "비밀번호가 일치하지 않습니다",
+      "strengthMinLength": "8자 이상",
+      "strengthLetters": "문자 포함",
+      "strengthNumbers": "숫자 포함",
+      "strengthSymbols": "기호 포함"
     },
     "messages": {
       "profileUpdated": "프로필이 수정되었습니다.",
