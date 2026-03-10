@@ -407,6 +407,69 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </div>
         )}
 
+        {/* Mobile: 강의자료/녹음본 패널 (전체 폭 오버레이) */}
+        {isMobile && isLeftPanelOpen && (
+          <section className="absolute inset-0 z-20 flex flex-col bg-white dark:bg-gray-900">
+            <Tabs
+              value={leftTab}
+              onValueChange={v => setLeftTab(v as LeftPanelTab)}
+              className="flex h-full flex-col"
+            >
+              <div className="flex items-center shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
+                <TabsList className="h-auto flex-1 gap-4 rounded-none bg-transparent p-0">
+                  {(['materials', 'recordings'] as const).map(tab => (
+                    <TabsTrigger
+                      key={tab}
+                      value={tab}
+                      className="flex-1 rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {t(`lectureStudy.leftPanel.${tab}Tab`)}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <button
+                  onClick={toggleLeftPanel}
+                  className="ml-2 mb-2 rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <TabsContent value="materials" className="flex-1 min-h-0 mt-0">
+                <LeftPanelMaterials />
+              </TabsContent>
+              <TabsContent value="recordings" className="flex-1 min-h-0 mt-0">
+                <LeftPanelRecordings
+                  recordings={recordings}
+                  essence7Words={currentLecture?.essence_7words}
+                  targetChunkIndex={targetChunkIndex}
+                  onTargetConsumed={() => setTargetChunkIndex(null)}
+                />
+              </TabsContent>
+            </Tabs>
+          </section>
+        )}
+
+        {/* Mobile: 채팅 패널 (전체 폭 오버레이) */}
+        {isMobile && isChatPanelOpen && (
+          <section className="absolute inset-0 z-20 flex flex-col bg-white dark:bg-gray-900">
+            <div className="flex items-center justify-between shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 py-2">
+              <div className="flex items-center gap-1.5">
+                <Bot className="h-3.5 w-3.5 text-gray-500" />
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">AI Chat</span>
+              </div>
+              <button
+                onClick={toggleChatPanel}
+                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ContentsChatPanel lectureId={lectureId} />
+            </div>
+          </section>
+        )}
+
         {/* Desktop: 강의자료/녹음본 패널 (열린 상태) */}
         {!isMobile && isLeftPanelOpen && (
           <section
@@ -465,19 +528,17 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </div>
         )}
 
-        {/* 중앙 패널 (회차제목 + 버튼 + 요약/퀴즈/게임) — 모바일+데스크톱 공통 */}
-        {(!isMobile || (!isLeftPanelOpen && !isChatPanelOpen)) && (
-          <section className={`flex h-full min-h-0 flex-1 flex-col ${isCenterOnly ? 'max-w-2xl mx-auto' : ''}`}>
-            {/* 회차 제목 (항상 표시) */}
-            <div className="shrink-0 px-4 pt-4 pb-1">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50 truncate">
-                {resolveLectureLabel()}
-              </h2>
-            </div>
+        {/* 중앙 패널 (회차제목 + 버튼 + 요약/퀴즈/게임) — 항상 렌더링 (모바일 패널은 위에 오버레이) */}
+        <section className={`flex h-full min-h-0 flex-1 flex-col ${isCenterOnly ? 'max-w-2xl mx-auto' : ''}`}>
+          {/* 회차 제목 (항상 표시) */}
+          <div className="shrink-0 px-4 pt-4 pb-1">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50 truncate">
+              {resolveLectureLabel()}
+            </h2>
+          </div>
 
-            {rightPanelContent}
-          </section>
-        )}
+          {rightPanelContent}
+        </section>
 
         {/* Desktop: 우측 리사이저 */}
         {!isMobile && isChatPanelOpen && (
