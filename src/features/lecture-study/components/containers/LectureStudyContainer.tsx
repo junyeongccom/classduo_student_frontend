@@ -323,7 +323,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         />
       </TabsContent>
       <TabsContent value="game" className="flex-1 min-h-0 mt-0">
-        <GameTabContainer lectureId={lectureId} />
+        <GameTabContainer lectureId={lectureId} accessSource={searchParams.get('from') === 'game_menu' ? 'game_menu' : 'content'} />
       </TabsContent>
     </Tabs>
   )

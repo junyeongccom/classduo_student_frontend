@@ -173,11 +173,20 @@ export const quizAnalytics = {
  * 게임 이벤트 트래킹 헬퍼
  */
 export const gameAnalytics = {
-  start(lectureId: string, data: { game_type: string }) {
+  start(lectureId: string, data: { game_type: string; access_source?: string }) {
     trackEvent('game_start', 'game', { lectureId, data })
   },
-  complete(lectureId: string, data: { game_type: string; score: number; duration_ms: number }) {
+  complete(lectureId: string, data: { game_type: string; score: number; duration_ms: number; access_source?: string }) {
     trackEvent('game_complete', 'game', { lectureId, data })
+  },
+}
+
+/**
+ * 내 퀴즈 탭 이벤트 트래킹 헬퍼
+ */
+export const myQuizAnalytics = {
+  tabView(tab: string) {
+    trackEvent('myquiz_tab_view', 'my_quizzes', { data: { tab } })
   },
 }
 

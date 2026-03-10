@@ -115,9 +115,10 @@ function buildDefBuilderFromLocal(
 
 interface GameTabContainerProps {
   lectureId: string
+  accessSource?: 'content' | 'game_menu'
 }
 
-export function GameTabContainer({ lectureId }: GameTabContainerProps) {
+export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTabContainerProps) {
   const t = useTranslations()
   const locale = useLocale()
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
@@ -445,7 +446,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   const handleStartGame = useCallback(() => {
     setShowWordModal(false)
     gameStartTime.current = Date.now()
-    if (selectedGame) gameAnalytics.start(lectureId, { game_type: selectedGame })
+    if (selectedGame) gameAnalytics.start(lectureId, { game_type: selectedGame, access_source: accessSource })
 
     // Running game: open overlay (gameMode already set by the flow that opened this modal)
     if (selectedGame === 'running') {
@@ -485,7 +486,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
       <GameOverlay
         isOpen
         onClose={() => {
-          gameAnalytics.complete(lectureId, { game_type: 'running', score: 0, duration_ms: Date.now() - gameStartTime.current })
+          gameAnalytics.complete(lectureId, { game_type: 'running', score: 0, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource })
           setShowRunningOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
@@ -503,7 +504,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   // Card matching overlay
   if (showMatchingOverlay) {
     const handleCloseMatching = () => {
-      gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: Date.now() - gameStartTime.current })
+      gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource })
       setShowMatchingOverlay(false)
       setSelectedGame(null)
       setGameMode(null)
@@ -558,7 +559,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
     const currentDefBuilderItems = gameMode === 'rank' ? rankReviewItems : reviewItems
     const retryDefBuilder = () => loadDefBuilderDataFrom(currentDefBuilderItems)
     const handleCloseDefBuilder = () => {
-      gameAnalytics.complete(lectureId, { game_type: 'definitionBuilder', score: defBuilderScore, duration_ms: Date.now() - gameStartTime.current })
+      gameAnalytics.complete(lectureId, { game_type: 'definitionBuilder', score: defBuilderScore, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource })
       setShowDefBuilderOverlay(false)
       setSelectedGame(null)
       setGameMode(null)
@@ -649,7 +650,7 @@ export function GameTabContainer({ lectureId }: GameTabContainerProps) {
   // Deck overlay
   if (showDeckOverlay) {
     const handleCloseDeck = () => {
-      gameAnalytics.complete(lectureId, { game_type: 'deck', score: 0, duration_ms: Date.now() - gameStartTime.current })
+      gameAnalytics.complete(lectureId, { game_type: 'deck', score: 0, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource })
       setShowDeckOverlay(false)
       setSelectedGame(null)
     }

@@ -82,7 +82,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
   }, [open, fetchCourses])
 
   const handleSelectLecture = (courseId: string, lectureId: string) => {
-    router.push(`/studyspace/course/${courseId}/lecture/${lectureId}?tab=game`)
+    router.push(`/studyspace/course/${courseId}/lecture/${lectureId}?tab=game&from=game_menu`)
     onClose()
   }
 
