@@ -485,8 +485,8 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     return (
       <GameOverlay
         isOpen
-        onClose={() => {
-          gameAnalytics.complete(lectureId, { game_type: 'running', score: 0, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource })
+        onClose={(score) => {
+          gameAnalytics.complete(lectureId, { game_type: 'running', score: score ?? 0, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource })
           setShowRunningOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
