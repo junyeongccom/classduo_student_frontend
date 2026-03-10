@@ -940,7 +940,7 @@
       "passwordSymbol": "Must include symbols",
       "passwordConfirmRequired": "Please confirm your password",
       "passwordMismatch": "Passwords do not match",
-      "strengthMinLength": "8+ characters",
+      "strengthMinLength": "8+ chars",
       "strengthLetters": "Letters",
       "strengthNumbers": "Numbers",
       "strengthSymbols": "Symbols"

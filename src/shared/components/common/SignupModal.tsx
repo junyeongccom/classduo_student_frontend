@@ -53,7 +53,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
       .string()
       .min(8, tv('passwordMin'))
       .regex(/[A-Za-z]/, tv('passwordLetter'))
-      .regex(/[0-9]/, tv('passwordNumber')),
+      .regex(/[0-9]/, tv('passwordNumber'))
+      .regex(/[^A-Za-z0-9]/, tv('passwordSymbol')),
     password_confirm: z
       .string()
       .min(1, tv('passwordConfirmRequired')),
