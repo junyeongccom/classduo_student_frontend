@@ -9,7 +9,7 @@ import { useI18n } from '@/shared/i18n/I18nProvider'
 
 interface GameOverlayProps {
   isOpen: boolean
-  onClose: () => void
+  onClose: (score?: number) => void
   triggerPosition: { top: number; left: number; width: number; height: number } | null
   lectureId?: string
   courseId?: string
@@ -133,7 +133,8 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   }, [isOpen])
 
   const handleClose = useCallback(() => {
-    onClose()
+    const finalScore = gameRef.current?.registry?.get('finalScore') as number | undefined
+    onClose(finalScore ?? 0)
   }, [onClose])
 
   if (!isOpen && animationState === 'exiting') {

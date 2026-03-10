@@ -72,6 +72,9 @@ export class GameOverScene extends Phaser.Scene {
     this.lectureId = data.lectureId ?? "";
     this.courseId = data.courseId ?? "";
     this.obstacleHit = data.obstacleHit ?? 0;
+
+    // Analytics용: 부모 컴포넌트에서 최종 점수를 읽을 수 있도록 registry에 저장
+    this.game.registry.set('finalScore', this.score);
   }
 
   create(): void {
