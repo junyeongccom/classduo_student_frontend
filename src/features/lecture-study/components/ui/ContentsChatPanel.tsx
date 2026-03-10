@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, Send } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
@@ -26,9 +26,42 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const prevLectureIdRef = useRef<string>('')
   const t = useTranslations('lectureStudy.contentsChat')
+
+  // 페이지 진입 시 최근 대화 이력 로드
+  useEffect(() => {
+    if (!lectureId || lectureId === prevLectureIdRef.current) return
+    prevLectureIdRef.current = lectureId
+    setHistoryLoaded(false)
+    setMessages([])
+
+    lectureService.contentsStudyChatHistory(lectureId).then((result) => {
+      if (result.data?.messages?.length) {
+        setMessages(
+          result.data.messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          }))
+        )
+      }
+      setHistoryLoaded(true)
+    }).catch(() => {
+      setHistoryLoaded(true)
+    })
+  }, [lectureId])
+
+  // 히스토리 로드 후 스크롤
+  useEffect(() => {
+    if (historyLoaded && messages.length > 0) {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current!.scrollHeight })
+      })
+    }
+  }, [historyLoaded, messages.length])
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
