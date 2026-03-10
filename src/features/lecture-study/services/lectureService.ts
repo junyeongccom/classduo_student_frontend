@@ -80,6 +80,17 @@ export interface ContentsStudyChatResponse {
   answer: string
 }
 
+export interface ChatMessageItem {
+  id?: string
+  role: 'user' | 'assistant'
+  content: string
+  created_at?: string
+}
+
+export interface ContentsStudyChatHistoryResponse {
+  messages: ChatMessageItem[]
+}
+
 /** GET /content/lectures/{lectureId}/content-summary 응답 */
 export interface ContentSummaryApiResponse {
   lecture_id: string
@@ -172,6 +183,16 @@ export const lectureService = {
       method: 'POST',
       auth: true,
       body: { question, lecture_id: lectureId },
+    })
+  },
+
+  contentsStudyChatHistory: (lectureId: string) => {
+    if (!isUUID(lectureId)) {
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+    }
+    return apiRequest<ContentsStudyChatHistoryResponse>(`/contents-study/chat/history/${lectureId}`, {
+      method: 'GET',
+      auth: true,
     })
   },
 
