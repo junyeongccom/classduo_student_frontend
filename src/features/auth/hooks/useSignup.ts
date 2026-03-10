@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { authService } from '../services/authService'
@@ -55,8 +55,13 @@ export function useSignup() {
     }
   }
 
+  // 더블 서브밋 방지 (React 상태 업데이트 지연 대응)
+  const sendingRef = useRef(false)
+
   // New verification code-based signup flow
   const handleSendSignupCode = useCallback(async (data: SendSignupCodeRequest) => {
+    if (sendingRef.current) return { success: false }
+    sendingRef.current = true
     setIsLoading(true)
     setError(null)
 
@@ -92,6 +97,7 @@ export function useSignup() {
       return { success: false, error: authError }
     } finally {
       setIsLoading(false)
+      sendingRef.current = false
     }
   }, [setError, t])
 

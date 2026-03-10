@@ -941,7 +941,7 @@
       "passwordConfirmRequired": "비밀번호 확인을 입력해주세요",
       "passwordMismatch": "비밀번호가 일치하지 않습니다",
       "strengthMinLength": "8자 이상",
-      "strengthLetters": "문자 포함",
+      "strengthLetters": "영문 포함",
       "strengthNumbers": "숫자 포함",
       "strengthSymbols": "기호 포함"
     },
