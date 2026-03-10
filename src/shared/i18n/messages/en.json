@@ -789,7 +789,8 @@
     "goToLogin": "Go to login",
     "passwordMismatch": "Passwords do not match",
     "signup": "Sign up",
-    "findPassword": "Find password"
+    "findPassword": "Find password",
+    "noAccountSignup": "Don't have an account? Sign up"
   },
   "profile": {
     "title": "Profile",
@@ -922,7 +923,9 @@
     },
     "guard": {
       "loginNoticeLine1": "New here?",
-      "loginNoticeLine2": "A separate sign-up is required. Please use your @korea.ac.kr email — the same one linked to the Korea University portal!"
+      "loginNoticeLine2": "A separate sign-up is required. Please use your @korea.ac.kr email — the same one linked to the Korea University portal!",
+      "signupTab": "Sign up",
+      "loginTab": "Log in"
     },
     "validation": {
       "emailRequired": "Please enter your email",
@@ -934,8 +937,13 @@
       "passwordMin": "Password must be at least 8 characters",
       "passwordLetter": "Must include letters",
       "passwordNumber": "Must include numbers",
+      "passwordSymbol": "Must include symbols",
       "passwordConfirmRequired": "Please confirm your password",
-      "passwordMismatch": "Passwords do not match"
+      "passwordMismatch": "Passwords do not match",
+      "strengthMinLength": "8+ characters",
+      "strengthLetters": "Letters",
+      "strengthNumbers": "Numbers",
+      "strengthSymbols": "Symbols"
     },
     "messages": {
       "profileUpdated": "Profile has been updated.",

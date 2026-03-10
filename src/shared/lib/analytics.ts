@@ -158,7 +158,7 @@ export const quizAnalytics = {
   start(lectureId: string, data: { quiz_type: string; question_count: number }) {
     trackEvent('quiz_start', 'quiz', { lectureId, data })
   },
-  answer(lectureId: string, data: { question_index: number; correct: boolean; duration_ms: number }) {
+  answer(lectureId: string, data: { question_index: number; correct: boolean; duration_ms: number; quiz_type?: string }) {
     trackEvent('quiz_answer', 'quiz', { lectureId, data })
   },
   complete(lectureId: string, data: { total_duration_ms: number; accuracy: number; question_count: number }) {
@@ -173,10 +173,10 @@ export const quizAnalytics = {
  * 게임 이벤트 트래킹 헬퍼
  */
 export const gameAnalytics = {
-  start(lectureId: string, data: { game_type: string; access_source?: string }) {
+  start(lectureId: string, data: { game_type: string; access_source?: string; game_mode?: string }) {
     trackEvent('game_start', 'game', { lectureId, data })
   },
-  complete(lectureId: string, data: { game_type: string; score: number; duration_ms: number; access_source?: string }) {
+  complete(lectureId: string, data: { game_type: string; score: number; duration_ms: number; access_source?: string; game_mode?: string }) {
     trackEvent('game_complete', 'game', { lectureId, data })
   },
 }
@@ -194,7 +194,35 @@ export const myQuizAnalytics = {
  * AI 튜터 이벤트 트래킹 헬퍼
  */
 export const chatAnalytics = {
-  message(lectureId: string, data: { message_length: number }) {
+  message(lectureId: string, data: { message_length: number; question_type?: string }) {
     trackEvent('chat_message', 'ai-tutor', { lectureId, data })
+  },
+}
+
+/** lecture_study 탭 전환 트래킹 — 탭별 체류시간 포함 */
+export const lectureStudyAnalytics = {
+  tabSwitch(lectureId: string, data: { from_tab: string; to_tab: string; duration_ms: number }) {
+    trackEvent('tab_switch', 'lecture_study', { lectureId, data })
+  },
+}
+
+/** 출처 버튼 클릭 트래킹 */
+export const sourceAnalytics = {
+  click(lectureId: string, data: { source_type: 'material' | 'recording'; section_key: string }) {
+    trackEvent('source_click', 'lecture_study', { lectureId, data })
+  },
+}
+
+/** AI 튜터 출처탭 트래킹 */
+export const aiTutorAnalytics = {
+  sourceTabView(lectureId: string, data: { tab: 'notes' | 'materials' }) {
+    trackEvent('source_tab_view', 'ai_tutor', { lectureId, data })
+  },
+}
+
+/** 퀴즈 즐겨찾기 토글 트래킹 */
+export const bookmarkAnalytics = {
+  toggle(lectureId: string, data: { quiz_id: string; bookmarked: boolean }) {
+    trackEvent('quiz_bookmark_toggle', 'quiz', { lectureId, data })
   },
 }

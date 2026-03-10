@@ -11,7 +11,7 @@ import { useLogin } from '@/features/auth/hooks/useLogin'
 import { useResetPassword } from '@/features/auth/hooks/useResetPassword'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { VerificationCodeInput } from '@/features/auth/components/ui/VerificationCodeInput'
-import { Mail, Lock, AlertCircle, X, ArrowLeft, CheckCircle } from 'lucide-react'
+import { Mail, Lock, AlertCircle, X, ArrowLeft, CheckCircle, Check } from 'lucide-react'
 
 const SAVED_ACCOUNTS_KEY = 'classduo_saved_accounts'
 
@@ -296,7 +296,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
                       onClick={onSwitchToSignup}
                       className="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100 hover:underline"
                     >
-                      계정이 없으신가요? 회원가입하기
+                      {t('noAccountSignup')}
                     </button>
                   )}
                 </div>
@@ -413,7 +413,22 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
                 className="pl-12"
               />
             </div>
-            <p className="mt-1 text-xs text-gray-400">{t('passwordRequirements')}</p>
+            {/* 비밀번호 강도 표시 */}
+            {newPassword && (
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs">
+                {[
+                  { met: newPassword.length >= 8, label: tv('strengthMinLength') },
+                  { met: /[A-Za-z]/.test(newPassword), label: tv('strengthLetters') },
+                  { met: /[0-9]/.test(newPassword), label: tv('strengthNumbers') },
+                  { met: /[^A-Za-z0-9]/.test(newPassword), label: tv('strengthSymbols') },
+                ].map(({ met, label }) => (
+                  <span key={label} className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-gray-400'}`}>
+                    <Check className={`h-3 w-3 ${met ? '' : 'opacity-40'}`} />
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 비밀번호 확인 */}

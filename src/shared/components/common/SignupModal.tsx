@@ -9,7 +9,7 @@ import { Button, Input } from '@/shared/components/ui'
 import { useSignup } from '@/features/auth/hooks/useSignup'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { VerificationCodeInput } from '@/features/auth/components/ui/VerificationCodeInput'
-import { Mail, Lock, User, AlertCircle, CheckCircle, X } from 'lucide-react'
+import { Mail, Lock, User, AlertCircle, CheckCircle, X, Check } from 'lucide-react'
 
 interface SignupModalProps {
   isOpen: boolean
@@ -69,9 +69,12 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   })
+
+  const watchedPassword = watch('password', '')
 
   // 모달이 닫힐 때 폼 초기화
   useEffect(() => {
@@ -266,6 +269,23 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
                   error={errors.password?.message}
                 />
               </div>
+
+              {/* 비밀번호 강도 표시 */}
+              {watchedPassword && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs">
+                  {[
+                    { met: watchedPassword.length >= 8, label: tv('strengthMinLength') },
+                    { met: /[A-Za-z]/.test(watchedPassword), label: tv('strengthLetters') },
+                    { met: /[0-9]/.test(watchedPassword), label: tv('strengthNumbers') },
+                    { met: /[^A-Za-z0-9]/.test(watchedPassword), label: tv('strengthSymbols') },
+                  ].map(({ met, label }) => (
+                    <span key={label} className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-gray-400'}`}>
+                      <Check className={`h-3 w-3 ${met ? '' : 'opacity-40'}`} />
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               <div className="relative">
                 <Lock className="absolute left-4 top-[21px] h-5 w-5 -translate-y-1/2 text-gray-400" />

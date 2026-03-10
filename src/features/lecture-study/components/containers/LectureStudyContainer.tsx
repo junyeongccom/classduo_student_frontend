@@ -14,7 +14,7 @@ import { Loader2, X, ChevronRight, FileText, Bot } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { trackTabView } from '@/shared/hooks/useAnalytics'
-import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
+import { trackPageEnter, trackPageLeave, lectureStudyAnalytics } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
@@ -263,6 +263,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     if (isChatPanelOpen) setHasUserResizedChat(false)
   }, [isChatPanelOpen])
 
+  // Analytics: 탭 전환 체류시간 추적
+  const rightTabEnterTime = useRef(Date.now())
+  const prevRightTab = useRef(rightTab)
+
   // 양쪽 패널 모두 닫혀있을 때만 중앙 배치
   const isCenterOnly = !isLeftPanelOpen && !isChatPanelOpen
 
@@ -292,6 +296,15 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     <Tabs
       value={rightTab}
       onValueChange={v => {
+        const now = Date.now()
+        const durationMs = now - rightTabEnterTime.current
+        lectureStudyAnalytics.tabSwitch(lectureId, {
+          from_tab: prevRightTab.current,
+          to_tab: v,
+          duration_ms: durationMs,
+        })
+        prevRightTab.current = v as LectureStudyTab
+        rightTabEnterTime.current = now
         setRightTab(v as LectureStudyTab)
         trackTabView({ tab: v, lecture_id: lectureId, course_id: courseId ?? '' })
       }}
