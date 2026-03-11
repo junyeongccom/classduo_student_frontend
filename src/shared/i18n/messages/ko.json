@@ -916,11 +916,19 @@
       "resendCodeButton": "인증 코드 재전송",
       "signupCompleteTitle": "회원가입이 완료되었습니다!",
       "signupCompleteMessage": "CLASSDUO에 오신 것을 환영합니다. 이제 모든 기능을 사용하실 수 있습니다.",
-      "goToHomeButton": "시작하기"
+      "goToHomeButton": "시작하기",
+      "goToLoginButton": "로그인 페이지로 이동",
+      "adminApprovalTitle": "승인 요청이 전송되었습니다",
+      "adminApprovalMessage": "관리자에게 회원가입 승인 요청이 전송되었습니다. 승인이 완료되면 입력하신 이메일과 비밀번호로 로그인하실 수 있습니다. 12시간 내로 처리됩니다.",
+      "adminApprovalEmailGuide": "빠른 본인 확인을 위해, 회원가입을 요청한 학교 메일({email})로 아래 관리자 이메일에 회원가입 승인 요청 메일을 보내주세요."
     },
     "signupModal": {
       "title": "회원가입",
-      "subtitle": "회원 정보를 입력하세요"
+      "subtitle": "회원 정보를 입력하세요",
+      "adminApprovalTitle": "승인 요청이 전송되었습니다",
+      "adminApprovalMessage": "관리자에게 회원가입 승인 요청이 전송되었습니다. 승인이 완료되면 입력하신 이메일과 비밀번호로 로그인하실 수 있습니다. 12시간 내로 처리됩니다.",
+      "adminApprovalEmailGuide": "빠른 본인 확인을 위해, 회원가입을 요청한 학교 메일({email})로 아래 관리자 이메일에 회원가입 승인 요청 메일을 보내주세요.",
+      "closeButton": "확인"
     },
     "guard": {
       "loginNoticeLine1": "처음 이용하시나요?",
@@ -1028,7 +1036,8 @@
     "NO_TOKEN": "로그인이 필요합니다",
     "UNKNOWN_ERROR": "알 수 없는 오류가 발생했습니다",
     "CORS_ERROR": "CORS 오류: 백엔드 서버에 접근할 수 없습니다. 서버가 실행 중인지 확인해주세요.",
-    "NETWORK_ERROR": "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요."
+    "NETWORK_ERROR": "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.",
+    "adminApprovalButton": "관리자에게 회원가입 승인 요청하기"
   },
   "myQuiz": {
     "title": "내 퀴즈",

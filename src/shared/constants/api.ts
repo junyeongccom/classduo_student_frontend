@@ -24,6 +24,8 @@ export const API_ENDPOINTS = {
     // Signup with verification code (legacy)
     SIGNUP_SEND_CODE: '/auth/signup/send-code',
     SIGNUP_VERIFY_CODE: '/auth/signup/verify-code',
+    // Admin approval signup (bounce/suppressed)
+    SIGNUP_REQUEST_ADMIN_APPROVAL: '/auth/signup/request-admin-approval',
     // Reset password with verification code
     RESET_PASSWORD_SEND_CODE: '/auth/reset-password/send-code',
     RESET_PASSWORD_VERIFY_CODE: '/auth/reset-password/verify-code',

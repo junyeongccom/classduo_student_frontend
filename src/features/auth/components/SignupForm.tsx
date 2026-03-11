@@ -19,6 +19,7 @@ export function SignupForm() {
     handleVerifySignupCode,
     handleVerificationCodeChange,
     handleResendCode,
+    handleRequestAdminApproval,
     handleResendVerification,
     goToLogin,
     goToHome,
@@ -28,6 +29,7 @@ export function SignupForm() {
     expiresIn,
     verificationCode,
     registeredEmail,
+    formData,
   } = useSignup()
   const { error, clearError } = useAuthStore()
 
@@ -79,6 +81,42 @@ export function SignupForm() {
   }
 
   const isCodeComplete = verificationCode.every(digit => digit !== '')
+
+  // Step: Admin approval pending — API 호출 완료 후 안내 화면
+  if (step === 'admin_approval_pending') {
+    const studentEmail = formData?.email || ''
+
+    return (
+      <div className="w-full max-w-md text-center">
+        <div className="mb-6 flex justify-center">
+          <div className="rounded-full bg-blue-100 p-4">
+            <Mail className="h-12 w-12 text-blue-600" />
+          </div>
+        </div>
+
+        <h2 className="mb-2 text-xl font-bold text-gray-900">{t('adminApprovalTitle')}</h2>
+        <p className="mb-4 text-sm text-gray-500 leading-relaxed">
+          {t('adminApprovalMessage')}
+        </p>
+
+        {/* 학교 메일로 관리자에게 직접 메일 보내기 안내 */}
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-left">
+          <p className="text-sm text-amber-800 leading-relaxed">
+            {t('adminApprovalEmailGuide', { email: studentEmail })}
+          </p>
+          <p className="mt-2 text-sm font-semibold text-amber-900">admin@aplus.io.kr</p>
+        </div>
+
+        <Button
+          onClick={goToLogin}
+          className="w-full"
+          size="lg"
+        >
+          {t('goToLoginButton')}
+        </Button>
+      </div>
+    )
+  }
 
   // Step 3: Success - show completion message
   if (step === 'success') {
@@ -202,6 +240,8 @@ export function SignupForm() {
                         goToLogin()
                       } else if (action.type === 'resend_verification' && action.email) {
                         handleResendVerification(action.email)
+                      } else if (action.type === 'request_admin_approval') {
+                        handleRequestAdminApproval()
                       }
                     }}
                     className="text-red-700 underline hover:no-underline"

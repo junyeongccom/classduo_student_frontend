@@ -76,10 +76,22 @@ export function useSignup() {
         const message = result.status >= 400 && result.status < 500
           ? (code && t.has(code) ? t(code) : result.error.message)
           : t('general')
+
+        // bounce/suppressed 에러 시 관리자 승인 요청 액션 추가
+        const actions = result.error.actions || []
+        if (code === 'EMAIL_BOUNCED' || code === 'EMAIL_SUPPRESSED') {
+          actions.push({
+            type: 'request_admin_approval',
+            label: t.has('adminApprovalButton') ? t('adminApprovalButton') : '관리자에게 회원가입 승인 요청하기',
+          })
+          // formData를 저장해야 승인 요청 시 사용 가능
+          setFormData(data)
+        }
+
         const authError: AuthError = {
           error_code: code || 'API_ERROR',
           message,
-          actions: result.error.actions,
+          actions,
         }
         setError(authError)
         return { success: false, error: authError }
@@ -201,6 +213,44 @@ export function useSignup() {
     setError(null)
   }, [setError])
 
+  // 관리자 승인 회원가입 요청 — 바로 API 호출 후 안내 화면 전환
+  const handleRequestAdminApproval = useCallback(async () => {
+    if (!formData) return { success: false }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const result = await authService.requestAdminApproval(formData)
+
+      if (result.error) {
+        const code = result.error.error_code
+        const message = result.status >= 400 && result.status < 500
+          ? (code && t.has(code) ? t(code) : result.error.message)
+          : t('general')
+        const authError: AuthError = {
+          error_code: code || 'API_ERROR',
+          message,
+          actions: result.error.actions,
+        }
+        setError(authError)
+        return { success: false, error: authError }
+      }
+
+      setStep('admin_approval_pending')
+      return { success: true }
+    } catch (error) {
+      const authError: AuthError = {
+        error_code: 'UNEXPECTED_ERROR',
+        message: t('general'),
+      }
+      setError(authError)
+      return { success: false, error: authError }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [formData, setError, t])
+
   const handleResendVerification = async (email: string) => {
     setIsLoading(true)
 
@@ -248,6 +298,8 @@ export function useSignup() {
     handleVerifySignupCode,
     handleVerificationCodeChange,
     handleResendCode,
+    handleRequestAdminApproval,
+    formData,
     resetSignupFlow,
     goToHome,
   }

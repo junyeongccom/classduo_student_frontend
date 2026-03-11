@@ -916,11 +916,19 @@
       "resendCodeButton": "Resend Code",
       "signupCompleteTitle": "Sign up complete!",
       "signupCompleteMessage": "Welcome to CLASSDUO. You can now access all features.",
-      "goToHomeButton": "Get Started"
+      "goToHomeButton": "Get Started",
+      "goToLoginButton": "Go to Login",
+      "adminApprovalTitle": "Approval Request Sent",
+      "adminApprovalMessage": "Your registration approval request has been sent to the administrator. Once approved, you can log in with your email and password. This may take up to 12 hours.",
+      "adminApprovalEmailGuide": "For faster identity verification, please send a registration approval request email to the admin address below from your school email ({email})."
     },
     "signupModal": {
       "title": "Sign up",
-      "subtitle": "Enter your information"
+      "subtitle": "Enter your information",
+      "adminApprovalTitle": "Approval Request Sent",
+      "adminApprovalMessage": "Your registration approval request has been sent to the administrator. Once approved, you can log in with your email and password. This may take up to 12 hours.",
+      "adminApprovalEmailGuide": "For faster identity verification, please send a registration approval request email to the admin address below from your school email ({email}).",
+      "closeButton": "OK"
     },
     "guard": {
       "loginNoticeLine1": "New here?",
@@ -1028,7 +1036,8 @@
     "NO_TOKEN": "Please log in to continue",
     "UNKNOWN_ERROR": "An unknown error occurred",
     "CORS_ERROR": "CORS error: Cannot access backend server. Please check if the server is running.",
-    "NETWORK_ERROR": "Network error occurred. Please check your internet connection."
+    "NETWORK_ERROR": "Network error occurred. Please check your internet connection.",
+    "adminApprovalButton": "Request admin approval for registration"
   },
   "myQuiz": {
     "title": "My Quiz",

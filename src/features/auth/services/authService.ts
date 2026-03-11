@@ -22,6 +22,8 @@ import {
   SendResetPasswordCodeResponse,
   VerifyResetPasswordCodeRequest,
   VerifyResetPasswordCodeResponse,
+  RequestAdminApprovalRequest,
+  RequestAdminApprovalResponse,
 } from '../types'
 
 /**
@@ -135,6 +137,15 @@ export const authService = {
    */
   verifySignupCode: (data: VerifySignupCodeRequest) =>
     apiRequest<VerifySignupCodeResponse>(API_ENDPOINTS.AUTH.SIGNUP_VERIFY_CODE, {
+      method: 'POST',
+      body: data,
+    }),
+
+  /**
+   * 관리자 승인 회원가입 요청 (bounce/suppressed 케이스)
+   */
+  requestAdminApproval: (data: RequestAdminApprovalRequest) =>
+    apiRequest<RequestAdminApprovalResponse>(API_ENDPOINTS.AUTH.SIGNUP_REQUEST_ADMIN_APPROVAL, {
       method: 'POST',
       body: data,
     }),
