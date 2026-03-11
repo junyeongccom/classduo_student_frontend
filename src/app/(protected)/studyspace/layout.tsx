@@ -221,16 +221,15 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                       </span>
                     </button>
 
-                    {/* 비밀번호 변경 (비활성화 — admin@aplus.io.kr 문의 안내) */}
+                    {/* 비밀번호 변경 */}
                     <button
-                      disabled
-                      className="group flex items-center gap-3 px-4 py-2.5 cursor-not-allowed opacity-50"
-                      title={locale === 'ko' ? '비밀번호 변경은 admin@aplus.io.kr로 문의해주세요' : 'Please contact admin@aplus.io.kr to change your password'}
+                      onClick={() => { setIsProfileOpen(false); setIsPasswordModalOpen(true) }}
+                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-500 group-hover:text-white">
                         <KeyRound className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-medium text-gray-400 dark:text-gray-500">
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {locale === 'ko' ? '비밀번호 변경' : 'Change Password'}
                       </span>
                     </button>
