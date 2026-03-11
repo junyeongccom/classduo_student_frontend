@@ -893,7 +893,7 @@
       "title": "Create New Account",
       "namePlaceholder": "Name",
       "emailPlaceholder": "School email (@korea.ac.kr)",
-      "emailPlaceholderModal": "School email (e.g. classduo@korea.ac.kr)",
+      "emailPlaceholderModal": "School email (e.g. aplus@korea.ac.kr)",
       "passwordPlaceholder": "Password (8+ chars, letters + numbers)",
       "passwordPlaceholderModal": "Password (8+ chars, letters/numbers/symbols)",
       "passwordConfirmPlaceholder": "Confirm password",
@@ -925,7 +925,14 @@
       "loginNoticeLine1": "New here?",
       "loginNoticeLine2": "A separate sign-up is required. Please use your @korea.ac.kr email — the same one linked to the Korea University portal!",
       "signupTab": "Sign up",
-      "loginTab": "Log in"
+      "loginTab": "Log in",
+      "noticeTitle": "Sign-up Process Update",
+      "noticeLine1": "Thank you for using Aplus.",
+      "noticeLine2": "For those who previously had difficulty signing up due to verification emails not being delivered:",
+      "noticeLine3": "The email verification step has been simplified — you can now sign up without waiting for a verification email.",
+      "noticeLine4": "If you were unable to sign up before, please try again.",
+      "noticeSchoolEmail": "A Korea University email (@korea.ac.kr) is still required for sign-up.",
+      "noticeClose": "OK"
     },
     "validation": {
       "emailRequired": "Please enter your email",

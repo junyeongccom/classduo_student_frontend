@@ -108,6 +108,16 @@ export interface AuthActions {
   clearError: () => void
 }
 
+// ============ Direct Signup (no email verification) ============
+
+export interface DirectSignupResponse {
+  message: string
+  access_token: string
+  refresh_token: string | null
+  token_type: string
+  expires_in: number
+}
+
 // ============ Signup with Verification Code ============
 
 export type SignupStep = 'form' | 'verification' | 'success'
