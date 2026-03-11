@@ -231,7 +231,7 @@ export function SignupForm() {
           <div>
             <p className="font-medium">{error.message}</p>
             {error.actions && error.actions.length > 0 && (
-              <div className="mt-2 space-y-1">
+              <div className="mt-3 space-y-2">
                 {error.actions.map((action, index) => (
                   <button
                     key={index}
@@ -244,7 +244,10 @@ export function SignupForm() {
                         handleRequestAdminApproval()
                       }
                     }}
-                    className="text-red-700 underline hover:no-underline"
+                    className={action.type === 'request_admin_approval'
+                      ? "w-full px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                      : "text-red-700 underline hover:no-underline"
+                    }
                   >
                     {action.label}
                   </button>

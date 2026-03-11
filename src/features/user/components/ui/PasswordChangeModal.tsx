@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react'
 import { X, Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+
 import type { PasswordChangeModalStep } from '../../types'
 
 interface PasswordChangeModalProps {
@@ -65,6 +66,7 @@ export function PasswordChangeModal({
   onCancel,
 }: PasswordChangeModalProps) {
   const t = useTranslations('profile.passwordChange')
+  const tv = useTranslations('auth.validation')
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
@@ -298,9 +300,22 @@ export function PasswordChangeModal({
                     {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  {t('passwordRequirements')}
-                </p>
+                {/* 비밀번호 강도 실시간 체크 */}
+                {newPassword && (
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs">
+                    {[
+                      { met: newPassword.length >= 8, label: tv('strengthMinLength') },
+                      { met: /[A-Za-z]/.test(newPassword), label: tv('strengthLetters') },
+                      { met: /[0-9]/.test(newPassword), label: tv('strengthNumbers') },
+                      { met: /[^A-Za-z0-9]/.test(newPassword), label: tv('strengthSymbols') },
+                    ].map(({ met, label }) => (
+                      <span key={label} className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-gray-400'}`}>
+                        <Check className={`h-3 w-3 ${met ? '' : 'opacity-40'}`} />
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
