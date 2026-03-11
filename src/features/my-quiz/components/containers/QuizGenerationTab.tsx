@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Plus, Loader2, ArrowLeft, ChevronDown } from 'lucide-react'
 import * as myQuizService from '../../services/myQuizService'
+import { customQuizAnalytics } from '@/shared/lib/analytics'
 import * as statusService from '../../services/myQuizStatusService'
 import type { SessionSolvingStats } from '../../services/myQuizStatusService'
 import type { QuizSession } from '../../types'
@@ -198,6 +199,8 @@ export default function QuizGenerationTab() {
       setIsCreating(false)
       return
     }
+
+    customQuizAnalytics.generate({ lecture_id: selectedLectureId, type_counts: safeCounts, course_id: selectedCourseId ?? undefined })
 
     const result = await myQuizService.createSession(selectedLectureId, safeCounts, locale)
     if (result.error || !result.data) {

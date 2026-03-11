@@ -936,12 +936,12 @@
       "signupTab": "회원가입",
       "loginTab": "로그인",
       "noticeTitle": "회원가입 인증 메일 관련 안내",
-      "noticeLine1": "안녕하세요, Aplus를 이용해 주셔서 감사합니다.",
-      "noticeLine2": "현재 몇몇 이메일에 대해 메일 발송 대상으로 인식되지 않아 인증메일이 수신되지 않는 문제가 발견되고 있습니다.",
-      "noticeLine3": "회원가입 인증 메일 요청을 한 뒤 메일이 도착하지 않으신 학생분들께서는 번거로우시겠지만 admin@aplus.io.kr로 문의 메일을 주시면 회원가입 인증 완료 처리를 해드리겠습니다.",
-      "noticeLine4": "문의 시에 반드시 회원가입에 사용한 학교 이메일 계정으로 본인의 성명과 함께 문의주시길 바랍니다.",
+      "noticeLine1": "일부 이메일에서 인증메일이 수신되지 않는 문제가 발견되고 있습니다.",
+      "noticeLine2": "인증 메일이 도착하지 않은 경우, 회원가입에 사용한 학교 이메일로 본인 성명과 함께 admin@aplus.io.kr로 문의해 주세요.",
+      "noticeLine3": "",
+      "noticeLine4": "",
       "noticeSchoolEmail": "",
-      "noticeEmailEvent": "감사합니다.",
+      "noticeEmailEvent": "",
       "noticeClose": "확인"
     },
     "validation": {
