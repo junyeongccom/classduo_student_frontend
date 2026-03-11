@@ -61,7 +61,7 @@ export function useSignup() {
   // 더블 서브밋 방지 (React 상태 업데이트 지연 대응)
   const sendingRef = useRef(false)
 
-  // Direct signup (인증 메일 없이 바로 가입)
+  // 회원가입 인증 코드 전송
   const handleSendSignupCode = useCallback(async (data: SendSignupCodeRequest) => {
     if (sendingRef.current) return { success: false }
     sendingRef.current = true
@@ -69,7 +69,7 @@ export function useSignup() {
     setError(null)
 
     try {
-      const result = await authService.directSignup(data)
+      const result = await authService.sendSignupCode(data)
 
       if (result.error) {
         const code = result.error.error_code
@@ -86,23 +86,12 @@ export function useSignup() {
       }
 
       if (result.data) {
-        // 바로 토큰 저장 + 자동 로그인
-        if (result.data.access_token) {
-          localStorage.setItem(TOKEN_KEY, result.data.access_token)
-          if (result.data.refresh_token) {
-            localStorage.setItem(REFRESH_TOKEN_KEY, result.data.refresh_token)
-          }
-          login({
-            access_token: result.data.access_token,
-            refresh_token: result.data.refresh_token || '',
-            expires_in: result.data.expires_in,
-            token_type: result.data.token_type,
-          })
-        }
-
+        // 인증 코드 전송 성공 → 코드 입력 단계로 전환
+        setFormData(data)
         setRegisteredEmail(data.email)
-        setStep('success')
-        setSignupSuccess(true)
+        setMaskedEmail(result.data.email_masked)
+        setExpiresIn(result.data.expires_in)
+        setStep('verification')
         return { success: true, data: result.data }
       }
 
@@ -118,7 +107,7 @@ export function useSignup() {
       setIsLoading(false)
       sendingRef.current = false
     }
-  }, [setError, login, t])
+  }, [setError, t])
 
   const handleVerifySignupCode = useCallback(async () => {
     if (!registeredEmail) {
