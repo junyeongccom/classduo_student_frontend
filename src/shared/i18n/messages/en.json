@@ -936,12 +936,12 @@
       "signupTab": "Sign up",
       "loginTab": "Log in",
       "noticeTitle": "Verification Email Notice",
-      "noticeLine1": "Thank you for using Aplus.",
-      "noticeLine2": "We have identified an issue where some emails are not recognized as valid recipients, preventing verification emails from being delivered.",
-      "noticeLine3": "If you did not receive the verification email after requesting sign-up, please contact us at admin@aplus.io.kr and we will complete the verification for you.",
-      "noticeLine4": "Please make sure to send your inquiry from the school email used for sign-up, along with your full name.",
+      "noticeLine1": "Some emails may not receive the verification email.",
+      "noticeLine2": "If you did not receive it, please contact admin@aplus.io.kr from your school email with your full name.",
+      "noticeLine3": "",
+      "noticeLine4": "",
       "noticeSchoolEmail": "",
-      "noticeEmailEvent": "Thank you.",
+      "noticeEmailEvent": "",
       "noticeClose": "OK"
     },
     "validation": {
