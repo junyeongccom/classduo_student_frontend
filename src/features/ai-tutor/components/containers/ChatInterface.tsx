@@ -151,6 +151,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // lecture_ids/locale 변경 시 후킹 질문과 PQM 질문 로드 (단일 선택 시에만)
   useEffect(() => {
+    setShowSuggestionsPanel(false)
     if (selectedLectureIds.length !== 1) {
       setHookingQuestions([])
       setPQMQuestions([])
