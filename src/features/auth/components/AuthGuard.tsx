@@ -67,14 +67,18 @@ export function AuthGuard({
               <p>{t('noticeLine4')}</p>
             </div>
 
-            <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 p-3 space-y-2">
-              <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
-                {t('noticeSchoolEmail')}
-              </p>
-              <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
-                {t('noticeEmailEvent')}
-              </p>
-            </div>
+            {t('noticeEmailEvent') && (
+              <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 p-3 space-y-2">
+                {t('noticeSchoolEmail') && (
+                  <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+                    {t('noticeSchoolEmail')}
+                  </p>
+                )}
+                <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+                  {t('noticeEmailEvent')}
+                </p>
+              </div>
+            )}
 
             <div className="mt-4 flex items-center justify-between">
               <LanguageToggle size="sm" />
