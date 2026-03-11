@@ -893,7 +893,7 @@
       "title": "새로운 계정 만들기",
       "namePlaceholder": "이름",
       "emailPlaceholder": "학교 이메일 (@korea.ac.kr)",
-      "emailPlaceholderModal": "학교 이메일 (ex. classduo@korea.ac.kr)",
+      "emailPlaceholderModal": "학교 이메일 (ex. aplus@korea.ac.kr)",
       "passwordPlaceholder": "비밀번호 (8자 이상, 영문+숫자)",
       "passwordPlaceholderModal": "비밀번호 (8자 이상, 문자/숫자/기호 조합)",
       "passwordConfirmPlaceholder": "비밀번호 확인",
@@ -925,7 +925,14 @@
       "loginNoticeLine1": "처음 이용하시나요?",
       "loginNoticeLine2": "별도의 회원가입이 필요하며, 고려대학교 포털과 동일한 @korea.ac.kr 이메일을 사용해 주세요!",
       "signupTab": "회원가입",
-      "loginTab": "로그인"
+      "loginTab": "로그인",
+      "noticeTitle": "회원가입 방식 변경 안내",
+      "noticeLine1": "안녕하세요, Aplus를 이용해 주셔서 감사합니다.",
+      "noticeLine2": "기존에 인증 메일이 도착하지 않아 회원가입에 어려움을 겪으셨던 분들께 안내드립니다.",
+      "noticeLine3": "현재 이메일 인증 절차가 간소화되어, 더 이상 인증 메일 확인 없이 바로 회원가입이 가능합니다.",
+      "noticeLine4": "이전에 가입이 되지 않았던 분들은 다시 시도해 주시기 바랍니다.",
+      "noticeSchoolEmail": "회원가입 시 고려대학교 이메일(@korea.ac.kr)은 기존과 동일하게 필요합니다.",
+      "noticeClose": "확인"
     },
     "validation": {
       "emailRequired": "이메일을 입력해주세요",

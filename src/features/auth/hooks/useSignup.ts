@@ -58,7 +58,7 @@ export function useSignup() {
   // 더블 서브밋 방지 (React 상태 업데이트 지연 대응)
   const sendingRef = useRef(false)
 
-  // New verification code-based signup flow
+  // Direct signup (인증 메일 없이 바로 가입)
   const handleSendSignupCode = useCallback(async (data: SendSignupCodeRequest) => {
     if (sendingRef.current) return { success: false }
     sendingRef.current = true
@@ -66,11 +66,9 @@ export function useSignup() {
     setError(null)
 
     try {
-      const result = await authService.sendSignupCode(data)
+      const result = await authService.directSignup(data)
 
       if (result.error) {
-        // 4xx: 사용자 에러 (이미 가입된 이메일 등) → 실제 메시지 표시
-        // 5xx: 서버 에러 → 일반 메시지 표시
         const authError: AuthError = result.status >= 400 && result.status < 500
           ? { error_code: result.error.error_code, message: result.error.message }
           : { error_code: 'API_ERROR', message: t('general') }
@@ -79,11 +77,23 @@ export function useSignup() {
       }
 
       if (result.data) {
-        setFormData(data)
+        // 바로 토큰 저장 + 자동 로그인
+        if (result.data.access_token) {
+          localStorage.setItem(TOKEN_KEY, result.data.access_token)
+          if (result.data.refresh_token) {
+            localStorage.setItem(REFRESH_TOKEN_KEY, result.data.refresh_token)
+          }
+          login({
+            access_token: result.data.access_token,
+            refresh_token: result.data.refresh_token || '',
+            expires_in: result.data.expires_in,
+            token_type: result.data.token_type,
+          })
+        }
+
         setRegisteredEmail(data.email)
-        setMaskedEmail(result.data.email_masked)
-        setExpiresIn(result.data.expires_in)
-        setStep('verification')
+        setStep('success')
+        setSignupSuccess(true)
         return { success: true, data: result.data }
       }
 
@@ -99,7 +109,7 @@ export function useSignup() {
       setIsLoading(false)
       sendingRef.current = false
     }
-  }, [setError, t])
+  }, [setError, login, t])
 
   const handleVerifySignupCode = useCallback(async () => {
     if (!registeredEmail) {

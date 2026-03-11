@@ -19,7 +19,9 @@ export const API_ENDPOINTS = {
     PASSWORD_CHANGE_SEND_CODE: '/auth/password-change/send-code',
     PASSWORD_CHANGE_VERIFY_CODE: '/auth/password-change/verify-code',
     PASSWORD_CHANGE_VERIFY: '/auth/password-change/verify',
-    // Signup with verification code
+    // Direct signup (no email verification)
+    SIGNUP_DIRECT: '/auth/signup/direct',
+    // Signup with verification code (legacy)
     SIGNUP_SEND_CODE: '/auth/signup/send-code',
     SIGNUP_VERIFY_CODE: '/auth/signup/verify-code',
     // Reset password with verification code

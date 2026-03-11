@@ -13,6 +13,7 @@ import {
   UpdateProfileResponse,
   DeleteAccountRequest,
   DeleteAccountResponse,
+  DirectSignupResponse,
   SendSignupCodeRequest,
   SendSignupCodeResponse,
   VerifySignupCodeRequest,
@@ -112,7 +113,16 @@ export const authService = {
     }),
 
   /**
-   * 회원가입 인증 코드 전송
+   * 다이렉트 회원가입 (인증 메일 없이 바로 가입)
+   */
+  directSignup: (data: SendSignupCodeRequest) =>
+    apiRequest<DirectSignupResponse>(API_ENDPOINTS.AUTH.SIGNUP_DIRECT, {
+      method: 'POST',
+      body: data,
+    }),
+
+  /**
+   * 회원가입 인증 코드 전송 (legacy)
    */
   sendSignupCode: (data: SendSignupCodeRequest) =>
     apiRequest<SendSignupCodeResponse>(API_ENDPOINTS.AUTH.SIGNUP_SEND_CODE, {
