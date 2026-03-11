@@ -1488,16 +1488,16 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         <div className="mx-auto max-w-[680px] 2xl:max-w-[820px]">
           {/* DEEP 모드 안내 말풍선 — 세션 내 타이핑 전까지만 표시 */}
           {!hasTypedInSession && chatMode !== 'deep' && (
-            <div className="mb-2 flex justify-end animate-fade-in-up">
-              <div className="relative bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-xl px-4 py-2 shadow-sm">
+            <div className="mb-2 flex justify-start animate-fade-in-up">
+              <div className="relative ml-12 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-xl px-4 py-2 shadow-sm">
                 <div className="flex items-center gap-2">
                   <Brain className="h-4 w-4 text-indigo-500 flex-shrink-0" />
                   <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
                     {t('deepModeHint')}
                   </span>
                 </div>
-                {/* 말풍선 꼬리 */}
-                <div className="absolute -bottom-1.5 right-6 w-3 h-3 bg-indigo-50 dark:bg-indigo-900/30 border-r border-b border-indigo-200 dark:border-indigo-700 rotate-45" />
+                {/* 말풍선 꼬리 — DEEP 토글 버튼 위 */}
+                <div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-indigo-50 dark:bg-indigo-900/30 border-r border-b border-indigo-200 dark:border-indigo-700 rotate-45" />
               </div>
             </div>
           )}
