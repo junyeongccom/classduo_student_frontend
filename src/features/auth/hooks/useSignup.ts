@@ -34,8 +34,11 @@ export function useSignup() {
       const result = await authService.signup(data)
 
       if (result.error) {
-        setError(result.error as AuthError)
-        return { success: false, error: result.error }
+        const err = result.error as AuthError
+        const localizedMessage = err.error_code && t.has(err.error_code) ? t(err.error_code) : err.message
+        const localizedError: AuthError = { ...err, message: localizedMessage }
+        setError(localizedError)
+        return { success: false, error: localizedError }
       }
 
       // 회원가입 성공 - 이메일 인증 안내 페이지로 이동하거나 상태 업데이트
@@ -69,9 +72,15 @@ export function useSignup() {
       const result = await authService.directSignup(data)
 
       if (result.error) {
-        const authError: AuthError = result.status >= 400 && result.status < 500
-          ? { error_code: result.error.error_code, message: result.error.message }
-          : { error_code: 'API_ERROR', message: t('general') }
+        const code = result.error.error_code
+        const message = result.status >= 400 && result.status < 500
+          ? (code && t.has(code) ? t(code) : result.error.message)
+          : t('general')
+        const authError: AuthError = {
+          error_code: code || 'API_ERROR',
+          message,
+          actions: result.error.actions,
+        }
         setError(authError)
         return { success: false, error: authError }
       }
@@ -133,11 +142,15 @@ export function useSignup() {
       })
 
       if (result.error) {
-        // 4xx: 사용자 에러 (잘못된 인증 코드 등) → 실제 메시지 표시
-        // 5xx: 서버 에러 → 일반 메시지 표시
-        const authError: AuthError = result.status >= 400 && result.status < 500
-          ? { error_code: result.error.error_code, message: result.error.message }
-          : { error_code: 'API_ERROR', message: t('general') }
+        const code = result.error.error_code
+        const message = result.status >= 400 && result.status < 500
+          ? (code && t.has(code) ? t(code) : result.error.message)
+          : t('general')
+        const authError: AuthError = {
+          error_code: code || 'API_ERROR',
+          message,
+          actions: result.error.actions,
+        }
         setError(authError)
         return { success: false, error: authError }
       }

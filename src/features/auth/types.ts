@@ -83,7 +83,7 @@ export interface AuthError {
 }
 
 export interface AuthErrorAction {
-  type: 'login' | 'resend_verification'
+  type: string
   label: string
   description?: string
   endpoint?: string
