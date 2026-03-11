@@ -34,6 +34,8 @@
     "sendLabel": "Send",
     "simpleLabel": "SIMPLE",
     "deepLabel": "DEEP",
+    "suggestionsGuide": "Click me to see the key questions AI generated from this lecture!",
+    "deepModeHint": "Try DEEP mode for more detailed and thorough answers!",
     "referenceHint": "Check recording and material sources to better understand the answer",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",
