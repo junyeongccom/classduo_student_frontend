@@ -77,14 +77,9 @@ export function useSignup() {
           ? (code && t.has(code) ? t(code) : result.error.message)
           : t('general')
 
-        // bounce/suppressed 에러 시 관리자 승인 요청 액션 추가
+        // bounce/suppressed 에러 시 formData 저장 (관리자 승인 요청에 필요)
         const actions = result.error.actions || []
         if (code === 'EMAIL_BOUNCED' || code === 'EMAIL_SUPPRESSED') {
-          actions.push({
-            type: 'request_admin_approval',
-            label: t.has('adminApprovalButton') ? t('adminApprovalButton') : '관리자에게 회원가입 승인 요청하기',
-          })
-          // formData를 저장해야 승인 요청 시 사용 가능
           setFormData(data)
         }
 
