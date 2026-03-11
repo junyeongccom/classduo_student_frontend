@@ -839,6 +839,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
     if (hooking.answer) {
+      // 후킹 클릭 트래킹
+      chatAnalytics.questionClick(selectedLectureIds[0] ?? '', { question_type: 'hooking', question_id: hooking.id })
+
       // 현재 locale에 따라 summary_keywords 선택
       const summaryKeywords = locale === 'en' 
         ? (hooking.summary_keywords_eng || hooking.summary_keywords || null)
@@ -969,6 +972,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // PQM 질문 클릭 핸들러
   const handlePQMQuestionClick = async (pqmQuestion: PQMQuestion) => {
+    // PQM 클릭 트래킹
+    chatAnalytics.questionClick(selectedLectureIds[0] ?? '', { question_type: 'pqm', question_id: pqmQuestion.id })
+
     // PQM 질문은 항상 미리 준비된 답변이 있음
     // 사용자 메시지 추가
     const userMessage: ChatMessage = {

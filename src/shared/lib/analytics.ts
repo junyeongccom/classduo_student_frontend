@@ -197,6 +197,10 @@ export const chatAnalytics = {
   message(lectureId: string, data: { message_length: number; question_type?: string }) {
     trackEvent('chat_message', 'ai-tutor', { lectureId, data })
   },
+  /** 후킹/PQM/후속질문 클릭 트래킹 (sendMessage를 거치지 않는 미리 준비된 답변용) */
+  questionClick(lectureId: string, data: { question_type: 'hooking' | 'pqm'; question_id?: string }) {
+    trackEvent('ai_question_click', 'ai-tutor', { lectureId, data })
+  },
 }
 
 /** lecture_study 탭 전환 트래킹 — 탭별 체류시간 포함 */
@@ -224,5 +228,19 @@ export const aiTutorAnalytics = {
 export const bookmarkAnalytics = {
   toggle(lectureId: string, data: { quiz_id: string; bookmarked: boolean }) {
     trackEvent('quiz_bookmark_toggle', 'quiz', { lectureId, data })
+  },
+}
+
+/** 자료 페이지 네비게이션 트래킹 (사용자가 prev/next 클릭) */
+export const materialAnalytics = {
+  pageNavigate(lectureId: string, data: { page: number; direction: 'prev' | 'next'; total_pages: number }) {
+    trackEvent('material_page_navigate', 'lecture_study', { lectureId, data })
+  },
+}
+
+/** 커스텀 퀴즈 생성 버튼 클릭 트래킹 */
+export const customQuizAnalytics = {
+  generate(data: { lecture_id: string; type_counts: Record<string, number>; course_id?: string }) {
+    trackEvent('custom_quiz_generate', 'my_quizzes', { data })
   },
 }

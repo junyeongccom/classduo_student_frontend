@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, FileText, Loader2, AlertTriangle } from 'luc
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { lectureService } from '../../services/lectureService'
 import type { MaterialPageItem } from '../../services/lectureService'
+import { materialAnalytics } from '@/shared/lib/analytics'
 
 /** 성공적으로 로딩된 페이지 */
 interface LoadedPage {
@@ -277,15 +278,17 @@ export function LeftPanelMaterials() {
 
   const handlePrevPage = useCallback(() => {
     if (currentPage > 1) {
+      materialAnalytics.pageNavigate(lectureId ?? '', { page: currentPage - 1, direction: 'prev', total_pages: allPages.length })
       scrollToPage(currentPage - 2) // 0-indexed
     }
-  }, [currentPage, scrollToPage])
+  }, [currentPage, scrollToPage, lectureId, allPages.length])
 
   const handleNextPage = useCallback(() => {
     if (currentPage < allPages.length) {
+      materialAnalytics.pageNavigate(lectureId ?? '', { page: currentPage + 1, direction: 'next', total_pages: allPages.length })
       scrollToPage(currentPage) // currentPage는 1-indexed, 다음 = currentPage (0-indexed)
     }
-  }, [currentPage, allPages.length, scrollToPage])
+  }, [currentPage, allPages.length, scrollToPage, lectureId])
 
   // ─── Store targetPage 소비 (Task 782) ───
   useEffect(() => {
