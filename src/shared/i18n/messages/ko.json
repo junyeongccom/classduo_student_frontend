@@ -765,6 +765,7 @@
     "chooseAccount": "계정을 선택하세요",
     "resetPasswordTitle": "비밀번호 찾기",
     "resetPasswordSubtitle": "가입한 이메일을 입력하세요",
+    "resetPasswordGuide": "비밀번호를 잊으셨나요?\n아래 이메일로 문의해 주시면 비밀번호 재설정을 도와드리겠습니다.\n\n문의 시 가입한 이메일과 성명을 꼭 포함해 주세요.",
     "backToLogin": "로그인으로 돌아가기",
     "emailPlaceholder": "학교 이메일 (ex. @korea.ac.kr)",
     "passwordPlaceholder": "비밀번호",
@@ -932,6 +933,7 @@
       "noticeLine3": "현재 이메일 인증 절차가 간소화되어, 더 이상 인증 메일 확인 없이 바로 회원가입이 가능합니다.",
       "noticeLine4": "이전에 가입이 되지 않았던 분들은 다시 시도해 주시기 바랍니다.",
       "noticeSchoolEmail": "회원가입 시 고려대학교 이메일(@korea.ac.kr)은 기존과 동일하게 필요합니다.",
+      "noticeEmailEvent": "추후 이메일을 통한 서비스 안내 및 이벤트 공지가 있을 예정이니 반드시 자신이 고려대학교 포털에 등록한 이메일로 회원가입 해주시기 바랍니다.",
       "noticeClose": "확인"
     },
     "validation": {

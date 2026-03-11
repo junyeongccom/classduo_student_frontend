@@ -65,6 +65,7 @@ export function useResetPassword() {
         email,
         code,
         new_password: newPassword,
+        new_password_confirm: newPassword,
       })
 
       if (result.error) {
