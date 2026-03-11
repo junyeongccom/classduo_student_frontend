@@ -34,8 +34,11 @@ export function useSignup() {
       const result = await authService.signup(data)
 
       if (result.error) {
-        setError(result.error as AuthError)
-        return { success: false, error: result.error }
+        const err = result.error as AuthError
+        const localizedMessage = err.error_code && t.has(err.error_code) ? t(err.error_code) : err.message
+        const localizedError: AuthError = { ...err, message: localizedMessage }
+        setError(localizedError)
+        return { success: false, error: localizedError }
       }
 
       // 회원가입 성공 - 이메일 인증 안내 페이지로 이동하거나 상태 업데이트
@@ -58,7 +61,7 @@ export function useSignup() {
   // 더블 서브밋 방지 (React 상태 업데이트 지연 대응)
   const sendingRef = useRef(false)
 
-  // Direct signup (인증 메일 없이 바로 가입)
+  // 회원가입 인증 코드 전송
   const handleSendSignupCode = useCallback(async (data: SendSignupCodeRequest) => {
     if (sendingRef.current) return { success: false }
     sendingRef.current = true
@@ -66,34 +69,36 @@ export function useSignup() {
     setError(null)
 
     try {
-      const result = await authService.directSignup(data)
+      const result = await authService.sendSignupCode(data)
 
       if (result.error) {
-        const authError: AuthError = result.status >= 400 && result.status < 500
-          ? { error_code: result.error.error_code, message: result.error.message }
-          : { error_code: 'API_ERROR', message: t('general') }
+        const code = result.error.error_code
+        const message = result.status >= 400 && result.status < 500
+          ? (code && t.has(code) ? t(code) : result.error.message)
+          : t('general')
+
+        // bounce/suppressed 에러 시 formData 저장 (관리자 승인 요청에 필요)
+        const actions = result.error.actions || []
+        if (code === 'EMAIL_BOUNCED' || code === 'EMAIL_SUPPRESSED') {
+          setFormData(data)
+        }
+
+        const authError: AuthError = {
+          error_code: code || 'API_ERROR',
+          message,
+          actions,
+        }
         setError(authError)
         return { success: false, error: authError }
       }
 
       if (result.data) {
-        // 바로 토큰 저장 + 자동 로그인
-        if (result.data.access_token) {
-          localStorage.setItem(TOKEN_KEY, result.data.access_token)
-          if (result.data.refresh_token) {
-            localStorage.setItem(REFRESH_TOKEN_KEY, result.data.refresh_token)
-          }
-          login({
-            access_token: result.data.access_token,
-            refresh_token: result.data.refresh_token || '',
-            expires_in: result.data.expires_in,
-            token_type: result.data.token_type,
-          })
-        }
-
+        // 인증 코드 전송 성공 → 코드 입력 단계로 전환
+        setFormData(data)
         setRegisteredEmail(data.email)
-        setStep('success')
-        setSignupSuccess(true)
+        setMaskedEmail(result.data.email_masked)
+        setExpiresIn(result.data.expires_in)
+        setStep('verification')
         return { success: true, data: result.data }
       }
 
@@ -109,7 +114,7 @@ export function useSignup() {
       setIsLoading(false)
       sendingRef.current = false
     }
-  }, [setError, login, t])
+  }, [setError, t])
 
   const handleVerifySignupCode = useCallback(async () => {
     if (!registeredEmail) {
@@ -133,11 +138,15 @@ export function useSignup() {
       })
 
       if (result.error) {
-        // 4xx: 사용자 에러 (잘못된 인증 코드 등) → 실제 메시지 표시
-        // 5xx: 서버 에러 → 일반 메시지 표시
-        const authError: AuthError = result.status >= 400 && result.status < 500
-          ? { error_code: result.error.error_code, message: result.error.message }
-          : { error_code: 'API_ERROR', message: t('general') }
+        const code = result.error.error_code
+        const message = result.status >= 400 && result.status < 500
+          ? (code && t.has(code) ? t(code) : result.error.message)
+          : t('general')
+        const authError: AuthError = {
+          error_code: code || 'API_ERROR',
+          message,
+          actions: result.error.actions,
+        }
         setError(authError)
         return { success: false, error: authError }
       }
@@ -199,6 +208,44 @@ export function useSignup() {
     setError(null)
   }, [setError])
 
+  // 관리자 승인 회원가입 요청 — 바로 API 호출 후 안내 화면 전환
+  const handleRequestAdminApproval = useCallback(async () => {
+    if (!formData) return { success: false }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const result = await authService.requestAdminApproval(formData)
+
+      if (result.error) {
+        const code = result.error.error_code
+        const message = result.status >= 400 && result.status < 500
+          ? (code && t.has(code) ? t(code) : result.error.message)
+          : t('general')
+        const authError: AuthError = {
+          error_code: code || 'API_ERROR',
+          message,
+          actions: result.error.actions,
+        }
+        setError(authError)
+        return { success: false, error: authError }
+      }
+
+      setStep('admin_approval_pending')
+      return { success: true }
+    } catch (error) {
+      const authError: AuthError = {
+        error_code: 'UNEXPECTED_ERROR',
+        message: t('general'),
+      }
+      setError(authError)
+      return { success: false, error: authError }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [formData, setError, t])
+
   const handleResendVerification = async (email: string) => {
     setIsLoading(true)
 
@@ -246,6 +293,8 @@ export function useSignup() {
     handleVerifySignupCode,
     handleVerificationCodeChange,
     handleResendCode,
+    handleRequestAdminApproval,
+    formData,
     resetSignupFlow,
     goToHome,
   }

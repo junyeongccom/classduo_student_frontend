@@ -83,7 +83,7 @@ export interface AuthError {
 }
 
 export interface AuthErrorAction {
-  type: 'login' | 'resend_verification'
+  type: string
   label: string
   description?: string
   endpoint?: string
@@ -120,7 +120,7 @@ export interface DirectSignupResponse {
 
 // ============ Signup with Verification Code ============
 
-export type SignupStep = 'form' | 'verification' | 'success'
+export type SignupStep = 'form' | 'verification' | 'success' | 'admin_approval_pending'
 
 export interface SendSignupCodeRequest {
   email: string
@@ -146,6 +146,19 @@ export interface VerifySignupCodeResponse {
   refresh_token: string | null
   token_type: string
   expires_in: number
+}
+
+// ============ Admin Approval Signup (bounce/suppressed) ============
+
+export interface RequestAdminApprovalRequest {
+  email: string
+  password: string
+  password_confirm: string
+  full_name: string
+}
+
+export interface RequestAdminApprovalResponse {
+  message: string
 }
 
 // ============ Password Reset with Verification Code ============

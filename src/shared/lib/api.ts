@@ -51,7 +51,7 @@ export async function apiRequest<T>(
       // 토큰 없으면 불필요한 401 요청을 보내지 않고 즉시 반환
       return {
         data: null,
-        error: { error_code: 'NO_TOKEN', message: '인증 토큰이 없습니다. 로그인이 필요합니다.' },
+        error: { error_code: 'NO_TOKEN', message: 'NO_TOKEN' },
         status: 401,
       }
     }
@@ -101,7 +101,7 @@ export async function apiRequest<T>(
     if (!response.ok) {
       return {
         data: null,
-        error: data.detail || { error_code: 'UNKNOWN_ERROR', message: '알 수 없는 오류가 발생했습니다' },
+        error: data.detail || { error_code: 'UNKNOWN_ERROR', message: 'UNKNOWN_ERROR' },
         status: response.status,
       }
     }
@@ -112,18 +112,16 @@ export async function apiRequest<T>(
       status: response.status,
     }
   } catch (error) {
-    // CORS 에러 또는 네트워크 에러
-    const errorMessage = error instanceof TypeError
-      ? 'CORS 오류: 백엔드 서버에 접근할 수 없습니다. 서버가 실행 중인지 확인해주세요.'
-      : '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.'
+    // CORS 에러 또는 네트워크 에러 — error_code로 전달, i18n 번역은 UI 레이어에서 처리
+    const errorCode = error instanceof TypeError ? 'CORS_ERROR' : 'NETWORK_ERROR'
 
     console.error('API Request Error:', error)
 
     return {
       data: null,
       error: {
-        error_code: 'NETWORK_ERROR',
-        message: errorMessage,
+        error_code: errorCode,
+        message: errorCode,
       },
       status: 0,
     }

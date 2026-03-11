@@ -27,6 +27,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
     handleVerifySignupCode,
     handleVerificationCodeChange,
     handleResendCode,
+    handleRequestAdminApproval,
+    formData,
     resetSignupFlow,
     isLoading,
     step,
@@ -104,8 +106,43 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
   // embedded/standalone 공통 콘텐츠
   const renderInnerContent = () => (
     <>
-      {/* Step 3: 회원가입 완료 */}
-      {step === 'success' ? (
+      {/* Step: 관리자 승인 대기 — API 호출 완료 후 안내 */}
+      {step === 'admin_approval_pending' ? (() => {
+        const studentEmail = formData?.email || ''
+        return (
+          <div className="text-center">
+            <div className="mb-6 flex justify-center">
+              <div className="rounded-full bg-blue-100 p-4">
+                <Mail className="h-12 w-12 text-blue-600" />
+              </div>
+            </div>
+
+            <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">{tm('adminApprovalTitle')}</h2>
+            <p className="mb-4 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              {tm('adminApprovalMessage')}
+            </p>
+
+            {/* 학교 메일로 관리자에게 직접 메일 보내기 안내 */}
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-left">
+              <p className="text-sm text-amber-800 leading-relaxed">
+                {tm('adminApprovalEmailGuide', { email: studentEmail })}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-amber-900">admin@aplus.io.kr</p>
+            </div>
+
+            <Button
+              onClick={onClose}
+              className="w-full"
+              size="lg"
+            >
+              {tm('closeButton')}
+            </Button>
+          </div>
+        )
+      })()
+
+      /* Step 3: 회원가입 완료 */
+      : step === 'success' ? (
           <div className="text-center">
             <div className="mb-6 flex justify-center">
               <div className="rounded-full bg-green-100 p-4">
@@ -216,16 +253,21 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
                 <div>
                   <p className="font-medium">{error.message}</p>
                   {error.actions && error.actions.length > 0 && (
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-3 space-y-2">
                       {error.actions.map((action, index) => (
                         <button
                           key={index}
                           onClick={() => {
                             if (action.type === 'login') {
                               onSwitchToLogin()
+                            } else if (action.type === 'request_admin_approval') {
+                              handleRequestAdminApproval()
                             }
                           }}
-                          className="text-red-700 underline hover:no-underline"
+                          className={action.type === 'request_admin_approval'
+                            ? "w-full px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                            : "text-red-700 underline hover:no-underline"
+                          }
                         >
                           {action.label}
                         </button>

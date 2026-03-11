@@ -916,11 +916,19 @@
       "resendCodeButton": "Resend Code",
       "signupCompleteTitle": "Sign up complete!",
       "signupCompleteMessage": "Welcome to CLASSDUO. You can now access all features.",
-      "goToHomeButton": "Get Started"
+      "goToHomeButton": "Get Started",
+      "goToLoginButton": "Go to Login",
+      "adminApprovalTitle": "Approval Request Sent",
+      "adminApprovalMessage": "Your registration approval request has been sent to the administrator. Once approved, you can log in with your email and password. This may take up to 12 hours.",
+      "adminApprovalEmailGuide": "For faster identity verification, please send a registration approval request email to the admin address below from your school email ({email})."
     },
     "signupModal": {
       "title": "Sign up",
-      "subtitle": "Enter your information"
+      "subtitle": "Enter your information",
+      "adminApprovalTitle": "Approval Request Sent",
+      "adminApprovalMessage": "Your registration approval request has been sent to the administrator. Once approved, you can log in with your email and password. This may take up to 12 hours.",
+      "adminApprovalEmailGuide": "For faster identity verification, please send a registration approval request email to the admin address below from your school email ({email}).",
+      "closeButton": "OK"
     },
     "guard": {
       "loginNoticeLine1": "New here?",
@@ -1004,7 +1012,32 @@
     "emailResendError": "An error occurred while resending the email.",
     "profileUpdate": "An error occurred while updating profile.",
     "passwordChange": "An error occurred while changing password.",
-    "deleteAccount": "An error occurred while deleting account."
+    "deleteAccount": "An error occurred while deleting account.",
+    "INVALID_EMAIL_DOMAIN": "Only school email addresses are allowed",
+    "EMAIL_ALREADY_EXISTS": "This email is already registered. Please log in",
+    "EMAIL_EXISTS_NOT_VERIFIED": "This email is already registered. Please complete email verification",
+    "EMAIL_SEND_FAILED": "Failed to send email. Please contact the administrator",
+    "EMAIL_NOT_EXISTS": "Email does not exist",
+    "INVALID_PASSWORD": "Incorrect password",
+    "EMAIL_NOT_VERIFIED": "Email verification is required",
+    "ACCOUNT_DISABLED": "Your account has been disabled. Please contact the administrator",
+    "LOGIN_SERVER_ERROR": "A temporary error occurred. Please try again later",
+    "VERIFICATION_CODE_EXPIRED": "Verification code has expired. Please request a new code",
+    "VERIFICATION_CODE_INVALID": "Incorrect verification code",
+    "TOO_MANY_VERIFICATION_ATTEMPTS": "Too many verification attempts. Please request a new code",
+    "VERIFICATION_CODE_SEND_FAILED": "Failed to send verification code. Please try again later",
+    "EMAIL_BOUNCED": "This email does not exist. Please check if your email has been created on the Korea University portal and try again.",
+    "EMAIL_SUPPRESSED": "Email delivery has been blocked due to a previous bounce. Please contact admin@aplus.io.kr for assistance with your registration.",
+    "CURRENT_PASSWORD_INCORRECT": "Current password is incorrect",
+    "PASSWORD_CHANGE_FAILED": "Failed to change password. Please try again later",
+    "ACCOUNT_DELETION_FAILED": "Failed to delete account. Please contact the administrator",
+    "PROFILE_UPDATE_FAILED": "Failed to update profile. Please try again later",
+    "PASSWORD_POLICY_VIOLATION": "Password does not meet the requirements",
+    "NO_TOKEN": "Please log in to continue",
+    "UNKNOWN_ERROR": "An unknown error occurred",
+    "CORS_ERROR": "CORS error: Cannot access backend server. Please check if the server is running.",
+    "NETWORK_ERROR": "Network error occurred. Please check your internet connection.",
+    "adminApprovalButton": "Request admin approval for registration"
   },
   "myQuiz": {
     "title": "My Quiz",

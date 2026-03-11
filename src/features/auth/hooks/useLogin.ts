@@ -28,8 +28,12 @@ export function useLogin() {
 
       if (loginResult.error) {
         console.log('[로그인] 실패 - 에러:', loginResult.error)
-        setError(loginResult.error as AuthError)
-        return { success: false, error: loginResult.error }
+        const err = loginResult.error as AuthError
+        // error_code에 해당하는 i18n 번역이 있으면 사용, 없으면 백엔드 원문 유지
+        const localizedMessage = err.error_code ? (t.has(err.error_code) ? t(err.error_code) : err.message) : err.message
+        const localizedError: AuthError = { ...err, message: localizedMessage }
+        setError(localizedError)
+        return { success: false, error: localizedError }
       }
 
       console.log('[로그인] 성공 - 토큰 저장')
