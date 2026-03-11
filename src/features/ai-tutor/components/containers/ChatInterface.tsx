@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, Search, ArrowUp } from 'lucide-react'
+import { Loader2, Search, ArrowUp, Sparkles } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { chatAnalytics } from '@/shared/lib/analytics'
@@ -78,6 +78,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>([])
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
+  const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false) // 질문 리스트 표시 상태
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
@@ -1159,7 +1160,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     )
   }
 
-  const showSuggestions = isInputFocused && selectedLectureIds.length === 1 && (hookingQuestions.length > 0 || pqmQuestions.length > 0)
+  const hasSuggestions = selectedLectureIds.length === 1 && (hookingQuestions.length > 0 || pqmQuestions.length > 0)
 
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
   if (messages.length === 0 && !isLoading) {
@@ -1167,6 +1168,22 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       <div className="flex h-full flex-col">
         {/* 중앙 컨텐츠 */}
         <div className="flex flex-1 flex-col items-center justify-center px-8 py-6 max-w-full">
+
+          {/* 안내 문구 — 질문이 있고 리스트가 아직 안 열린 상태 */}
+          {hasSuggestions && !showSuggestionsPanel && (
+            <button
+              onClick={() => setShowSuggestionsPanel(true)}
+              className="mb-6 animate-bounce-slow cursor-pointer"
+            >
+              <div className="flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 px-5 py-2.5 shadow-sm hover:shadow-md transition-shadow">
+                <Sparkles className="h-4 w-4 text-indigo-500" />
+                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                  {t('suggestionsGuide')}
+                </span>
+              </div>
+            </button>
+          )}
+
           {/* 중앙 입력창 */}
           <div className="w-full max-w-[680px] 2xl:max-w-[820px] mx-auto">
             <ChatComposer
@@ -1182,7 +1199,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               deepLabel={t('deepLabel')}
               simpleHelpText={t('simpleHelpText')}
               deepHelpText={t('deepHelpText')}
-              onFocus={() => setIsInputFocused(true)}
+              onFocus={() => {
+                setIsInputFocused(true)
+                if (hasSuggestions) setShowSuggestionsPanel(true)
+              }}
               onBlur={() => {
                 setTimeout(() => {
                   setIsInputFocused(false)
@@ -1191,8 +1211,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             />
           </div>
 
-          {/* 입력창 포커스 시 나타나는 제안 질문 목록 (단일 선택 시에만 표시) */}
-          {showSuggestions && (
+          {/* 제안 질문 목록 — 안내 문구 클릭 또는 입력바 포커스 시 표시 */}
+          {showSuggestionsPanel && hasSuggestions && (
           <div className="mt-6 w-full max-w-[680px] 2xl:max-w-[820px] space-y-2 animate-fade-in-up">
               {/* 후킹 질문 (1개) */}
               {hookingQuestions.length > 0 && (
@@ -1201,7 +1221,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                     <button
                       key={`hooking-${index}`}
                       onClick={() => handleSuggestionClick(hooking)}
-                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md"
+                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 transition-all hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md"
                     >
                       <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
                       <span>{hooking.question}</span>
@@ -1210,14 +1230,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 </>
               )}
 
-              {/* PQM 질문 (4개) */}
+              {/* PQM 질문 */}
               {pqmQuestions.length > 0 && (
                 <>
                   {pqmQuestions.map((pqmQuestion) => (
                     <button
                       key={pqmQuestion.id}
                       onClick={() => handlePQMQuestionClick(pqmQuestion)}
-                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-md"
+                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 transition-all hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md"
                     >
                       <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
                       <span>{pqmQuestion.question}</span>
