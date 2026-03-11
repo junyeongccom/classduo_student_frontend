@@ -8,10 +8,8 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { Button, Input } from '@/shared/components/ui'
 import { useLogin } from '@/features/auth/hooks/useLogin'
-import { useResetPassword } from '@/features/auth/hooks/useResetPassword'
 import { useAuthStore } from '@/features/auth/store/authStore'
-import { VerificationCodeInput } from '@/features/auth/components/ui/VerificationCodeInput'
-import { Mail, Lock, AlertCircle, X, ArrowLeft, CheckCircle, Check } from 'lucide-react'
+import { Mail, Lock, X, ArrowLeft } from 'lucide-react'
 
 const SAVED_ACCOUNTS_KEY = 'classduo_saved_accounts'
 
@@ -33,17 +31,7 @@ function createLoginSchema(tv: ReturnType<typeof useTranslations<'auth.validatio
   })
 }
 
-function createResetPasswordSchema(tv: ReturnType<typeof useTranslations<'auth.validation'>>) {
-  return z.object({
-    email: z
-      .string()
-      .min(1, tv('emailRequired'))
-      .email(tv('emailInvalid')),
-  })
-}
-
 type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>
-type ResetPasswordFormData = z.infer<ReturnType<typeof createResetPasswordSchema>>
 
 interface LoginModalProps {
   isOpen: boolean
@@ -58,18 +46,11 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
   const tv = useTranslations('auth.validation')
   const { handleLogin, isLoading } = useLogin()
   const { error, clearError, user } = useAuthStore()
-  const resetPassword = useResetPassword()
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([])
   const [showForm, setShowForm] = useState(false)
   const [showResetPassword, setShowResetPassword] = useState(false)
 
-  // 비밀번호 재설정 verify step용 로컬 state
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-
   const loginSchema = createLoginSchema(tv)
-  const resetPasswordSchema = createResetPasswordSchema(tv)
 
   const {
     register,
@@ -79,15 +60,6 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
     setValue,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-  })
-
-  const {
-    register: registerReset,
-    handleSubmit: handleSubmitReset,
-    formState: { errors: resetErrors },
-    reset: resetResetForm,
-  } = useForm<ResetPasswordFormData>({
-    resolver: zodResolver(resetPasswordSchema),
   })
 
   // 저장된 계정 불러오기
@@ -111,15 +83,9 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
   useEffect(() => {
     if (!isOpen) {
       reset()
-      resetResetForm()
       clearError()
-      resetPassword.clearError()
-      resetPassword.resetFlow()
       setShowForm(false)
       setShowResetPassword(false)
-      setNewPassword('')
-      setConfirmPassword('')
-      setPasswordError(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
@@ -171,53 +137,64 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
     setShowForm(true)
   }
 
-  // 비밀번호 재설정: 이메일 입력 후 코드 전송
-  const onSubmitResetEmail = async (data: ResetPasswordFormData) => {
-    resetPassword.clearError()
-    await resetPassword.handleSendCode(data.email)
-  }
-
-  // 비밀번호 재설정: 코드 검증 + 비밀번호 변경
-  const onSubmitResetVerify = async () => {
-    setPasswordError(null)
-    resetPassword.clearError()
-
-    if (!newPassword) {
-      setPasswordError(tv('passwordRequired'))
-      return
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError(t('passwordMismatch'))
-      return
-    }
-
-    await resetPassword.handleVerifyCode(newPassword)
-  }
-
   // 비밀번호 찾기 화면으로 전환
   const handleShowResetPassword = () => {
     clearError()
-    resetPassword.clearError()
-    resetPassword.resetFlow()
     setShowResetPassword(true)
     setShowForm(false)
-    setNewPassword('')
-    setConfirmPassword('')
-    setPasswordError(null)
   }
 
   // 로그인 화면으로 돌아가기
   const handleBackToLogin = () => {
-    resetPassword.clearError()
-    resetPassword.resetFlow()
     setShowResetPassword(false)
     setShowForm(false)
-    setNewPassword('')
-    setConfirmPassword('')
-    setPasswordError(null)
   }
 
   if (!isOpen) return null
+
+  // 비밀번호 찾기 안내 렌더링
+  const renderResetPasswordContent = () => (
+    <>
+      {/* 뒤로가기 버튼 */}
+      <button
+        onClick={handleBackToLogin}
+        className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {t('backToLogin')}
+      </button>
+
+      {/* 제목 */}
+      <div className="mb-6 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+          <Lock className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('resetPasswordTitle')}</h1>
+      </div>
+
+      {/* 안내 메시지 */}
+      <div className="mb-6 rounded-lg bg-gray-50 dark:bg-gray-800 p-5 text-center">
+        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+          {t('resetPasswordGuide')}
+        </p>
+        <a
+          href="mailto:admin@aplus.io.kr"
+          className="mt-3 inline-block text-sm font-semibold text-gray-900 dark:text-gray-100 hover:underline"
+        >
+          admin@aplus.io.kr
+        </a>
+      </div>
+
+      <Button
+        type="button"
+        className="w-full bg-gray-900"
+        size="lg"
+        onClick={handleBackToLogin}
+      >
+        {t('backToLogin')}
+      </Button>
+    </>
+  )
 
   // embedded 모드: 내부 콘텐츠만 렌더링 (모달 래퍼 없음)
   const renderContent = () => (
@@ -329,209 +306,6 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
 
   if (embedded) {
     return renderContent()
-  }
-
-  // 비밀번호 재설정 섹션 렌더링
-  const renderResetPasswordContent = () => {
-    // Step: success
-    if (resetPassword.step === 'success') {
-      return (
-        <>
-          <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('successTitle')}</h1>
-            <p className="mt-2 text-sm text-gray-500">{t('successMessage')}</p>
-          </div>
-
-          <Button
-            type="button"
-            className="w-full bg-gray-900"
-            size="lg"
-            onClick={handleBackToLogin}
-          >
-            {t('goToLogin')}
-          </Button>
-        </>
-      )
-    }
-
-    // Step: verify
-    if (resetPassword.step === 'verify') {
-      return (
-        <>
-          {/* 뒤로가기 버튼 */}
-          <button
-            onClick={handleBackToLogin}
-            className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t('backToLogin')}
-          </button>
-
-          {/* 제목 */}
-          <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold text-gray-900">{t('verifyStepTitle')}</h1>
-            <p className="mt-2 text-sm text-gray-500">{t('verifyStepSubtitle')}</p>
-          </div>
-
-          {/* 마스킹된 이메일 + 유효 시간 */}
-          <div className="mb-6 rounded-lg bg-gray-50 p-3 text-center text-sm text-gray-700">
-            <span className="font-medium">{resetPassword.maskedEmail}</span>
-            {t('codeSentTo')}
-            <br />
-            <span className="text-xs text-gray-500">
-              {t('validFor')}: {Math.floor(resetPassword.expiresIn / 60)}{t('minutesUnit')}
-            </span>
-          </div>
-
-          {/* 인증 코드 입력 */}
-          <div className="mb-6">
-            <label className="mb-2 block text-sm font-medium text-gray-700">
-              {t('enterCode')}
-            </label>
-            <VerificationCodeInput
-              value={resetPassword.verificationCode}
-              onChange={resetPassword.handleCodeChange}
-              disabled={resetPassword.isLoading}
-            />
-          </div>
-
-          {/* 새 비밀번호 */}
-          <div className="mb-4">
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t('newPasswordLabel')}
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="password"
-                placeholder={t('newPasswordPlaceholder')}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="pl-12"
-              />
-            </div>
-            {/* 비밀번호 강도 표시 */}
-            {newPassword && (
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs">
-                {[
-                  { met: newPassword.length >= 8, label: tv('strengthMinLength') },
-                  { met: /[A-Za-z]/.test(newPassword), label: tv('strengthLetters') },
-                  { met: /[0-9]/.test(newPassword), label: tv('strengthNumbers') },
-                  { met: /[^A-Za-z0-9]/.test(newPassword), label: tv('strengthSymbols') },
-                ].map(({ met, label }) => (
-                  <span key={label} className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-gray-400'}`}>
-                    <Check className={`h-3 w-3 ${met ? '' : 'opacity-40'}`} />
-                    {label}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 비밀번호 확인 */}
-          <div className="mb-6">
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              {t('confirmPasswordLabel')}
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <Input
-                type="password"
-                placeholder={t('confirmPasswordPlaceholder')}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="pl-12"
-              />
-            </div>
-          </div>
-
-          {/* 에러 메시지 */}
-          {(resetPassword.error || passwordError) && (
-            <p className="mb-4 text-sm text-red-600">
-              {resetPassword.error || passwordError}
-            </p>
-          )}
-
-          {/* 비밀번호 재설정 버튼 */}
-          <Button
-            type="button"
-            className="w-full bg-gray-900"
-            size="lg"
-            isLoading={resetPassword.isLoading}
-            onClick={onSubmitResetVerify}
-          >
-            {resetPassword.isLoading ? t('resettingPassword') : t('resetPasswordButton')}
-          </Button>
-
-          {/* 인증 코드 재전송 */}
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={resetPassword.handleResendCode}
-              disabled={resetPassword.isLoading}
-              className="text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
-            >
-              {t('resendCode')}
-            </button>
-          </div>
-        </>
-      )
-    }
-
-    // Step: email (기본)
-    return (
-      <>
-        {/* 뒤로가기 버튼 */}
-        <button
-          onClick={handleBackToLogin}
-          className="mb-4 flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('backToLogin')}
-        </button>
-
-        {/* 제목 */}
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">{t('resetPasswordTitle')}</h1>
-          <p className="mt-2 text-sm text-gray-500">{t('resetPasswordSubtitle')}</p>
-        </div>
-
-        {/* 비밀번호 재설정 폼 */}
-        <form onSubmit={handleSubmitReset(onSubmitResetEmail)} className="space-y-5">
-          <div>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-              <Input
-                {...registerReset('email')}
-                type="email"
-                placeholder={t('emailPlaceholder')}
-                className={`pl-12 ${resetErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
-              />
-            </div>
-            {resetErrors.email?.message && (
-              <p className="mt-1.5 text-xs text-red-500">{resetErrors.email.message}</p>
-            )}
-          </div>
-
-          {/* 에러 메시지 */}
-          {resetPassword.error && (
-            <p className="text-sm text-red-600">{resetPassword.error}</p>
-          )}
-
-          <Button
-            type="submit"
-            className="w-full bg-gray-900"
-            size="lg"
-            isLoading={resetPassword.isLoading}
-          >
-            {resetPassword.isLoading ? t('sendingCode') : t('sendResetCode')}
-          </Button>
-        </form>
-      </>
-    )
   }
 
   return (

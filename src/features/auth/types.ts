@@ -166,6 +166,7 @@ export interface VerifyResetPasswordCodeRequest {
   email: string
   code: string
   new_password: string
+  new_password_confirm: string
 }
 
 export interface VerifyResetPasswordCodeResponse {
