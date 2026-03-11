@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, Search, ArrowUp, Sparkles } from 'lucide-react'
+import { Loader2, Search, ArrowUp, Sparkles, Brain } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { chatAnalytics } from '@/shared/lib/analytics'
@@ -79,6 +79,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false) // 질문 리스트 표시 상태
+  const [hasTypedInSession, setHasTypedInSession] = useState(false) // 세션 내 타이핑 여부
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
@@ -1481,13 +1482,33 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
       {/* 하단 입력 영역 */}
       <div
-        className="border-t border-gray-200 px-8 pt-3 pb-0"
+        className="border-t border-gray-200 dark:border-gray-700 px-8 pt-3 pb-0"
         style={{ transform: 'translateY(0px)' }}
       >
         <div className="mx-auto max-w-[680px] 2xl:max-w-[820px]">
+          {/* DEEP 모드 안내 말풍선 — 세션 내 타이핑 전까지만 표시 */}
+          {!hasTypedInSession && chatMode !== 'deep' && (
+            <div className="mb-2 flex justify-end animate-fade-in-up">
+              <div className="relative bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-xl px-4 py-2 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-indigo-500 flex-shrink-0" />
+                  <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                    {t('deepModeHint')}
+                  </span>
+                </div>
+                {/* 말풍선 꼬리 */}
+                <div className="absolute -bottom-1.5 right-6 w-3 h-3 bg-indigo-50 dark:bg-indigo-900/30 border-r border-b border-indigo-200 dark:border-indigo-700 rotate-45" />
+              </div>
+            </div>
+          )}
           <ChatComposer
             value={input}
-            onChange={setInput}
+            onChange={(value) => {
+              setInput(value)
+              if (value.length > 0 && !hasTypedInSession) {
+                setHasTypedInSession(true)
+              }
+            }}
             onSubmit={handleSubmit}
             disabled={isLoading}
             placeholder={t('askAnythingPlaceholder')}

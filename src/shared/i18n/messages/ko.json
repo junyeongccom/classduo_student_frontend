@@ -35,6 +35,7 @@
     "simpleLabel": "SIMPLE",
     "deepLabel": "DEEP",
     "suggestionsGuide": "AI가 이번 회차 자료를 학습하여 도출한 핵심 질문을 클릭해보세요!",
+    "deepModeHint": "DEEP 모드를 통해 더 친절하고 깊이있는 답변을 받아보세요!",
     "referenceHint": "수업녹음본, 강의자료 출처를 확인하면 답변을 더 잘 이해할 수 있어요",
     "searchingSources": "관련 자료를 검색하는 중...",
     "chatError": "채팅 중 오류가 발생했습니다",
