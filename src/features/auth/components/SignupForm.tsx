@@ -14,6 +14,7 @@ import { Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react'
 export function SignupForm() {
   const t = useTranslations('auth.signup')
   const tv = useTranslations('auth.validation')
+  const tErr = useTranslations('errors')
   const {
     handleSendSignupCode,
     handleVerifySignupCode,
@@ -249,7 +250,7 @@ export function SignupForm() {
                       : "text-red-700 underline hover:no-underline"
                     }
                   >
-                    {action.label}
+                    {action.type === 'request_admin_approval' ? tErr('adminApprovalButton') : action.label}
                   </button>
                 ))}
               </div>
