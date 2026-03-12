@@ -22,6 +22,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
   const t = useTranslations('auth.signup')
   const tm = useTranslations('auth.signupModal')
   const tv = useTranslations('auth.validation')
+  const tErr = useTranslations('errors')
   const {
     handleSendSignupCode,
     handleVerifySignupCode,
@@ -269,7 +270,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
                             : "text-red-700 underline hover:no-underline"
                           }
                         >
-                          {action.label}
+                          {action.type === 'request_admin_approval' ? tErr('adminApprovalButton') : action.label}
                         </button>
                       ))}
                     </div>
