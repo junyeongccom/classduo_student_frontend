@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, BookOpen, Gamepad2, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
+import { trackPageEnter, trackPageLeave, navigationAnalytics } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '../../hooks/useLectures'
 import { LectureRow } from '../ui/LectureRow'
@@ -51,6 +52,12 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
 
   const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
+
+  // Analytics: 페이지 체류시간 추적
+  useEffect(() => {
+    trackPageEnter('course_select', { courseId })
+    return () => { trackPageLeave('course_select', { courseId }) }
+  }, [courseId])
 
   // 보상(불꽃) 획득 회차 조회
   const [rewardedLectureIds, setRewardedLectureIds] = useState<Set<string>>(new Set())
@@ -232,12 +239,14 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                           lecture={lecture}
                           status={status}
                           hasReward={rewardedLectureIds.has(lecture.id)}
-                          onClick={() =>
+                          onClick={() => {
+                            navigationAnalytics.lectureSelect(lecture.id, courseId)
                             router.push(`/studyspace/course/${courseId}/lecture/${lecture.id}`)
-                          }
-                          onDialogueClick={() =>
+                          }}
+                          onDialogueClick={() => {
+                            navigationAnalytics.lectureSelect(lecture.id, courseId)
                             router.push(`/studyspace/course/${courseId}/lecture/${lecture.id}/dialogue`)
-                          }
+                          }}
                           onMicClick={() => handleMicClick(lecture)}
                           onPdfClick={() => handlePdfClick(lecture)}
                         />
@@ -275,12 +284,12 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
 
         {/* Floating Game CTA — fixed bottom */}
         {!isCtaDismissed && (
-          <div className="fixed bottom-3 right-0 z-20 px-8 transition-[left] duration-300 ease-in-out" style={{ left: sidebarWidth }}>
+          <div className="fixed bottom-3 right-0 z-20 px-4 md:px-8 transition-[left] duration-300 ease-in-out" style={{ left: sidebarWidth }}>
             <div className="mx-auto max-w-5xl">
               <div className="relative overflow-hidden rounded-2xl bg-gray-900 px-8 py-4 text-white shadow-2xl">
                 <button
                   onClick={() => setIsCtaDismissed(true)}
-                  className="absolute right-3 top-3 z-20 flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                  className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
                   aria-label="Close"
                 >
                   <X className="h-4 w-4" />

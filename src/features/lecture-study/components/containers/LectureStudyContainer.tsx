@@ -14,7 +14,7 @@ import { Loader2, X, ChevronRight, FileText, Bot } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { trackTabView } from '@/shared/hooks/useAnalytics'
-import { trackPageEnter, trackPageLeave, lectureStudyAnalytics } from '@/shared/lib/analytics'
+import { trackPageEnter, trackPageLeave, lectureStudyAnalytics, panelAnalytics, createFocusLossTracker } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
@@ -57,8 +57,18 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const isChatPanelOpen = useLectureStudyStore(s => s.isChatPanelOpen)
   const leftTab = useLectureStudyStore(s => s.leftTab)
   const rightTab = useLectureStudyStore(s => s.rightTab)
-  const toggleLeftPanel = useLectureStudyStore(s => s.toggleLeftPanel)
-  const toggleChatPanel = useLectureStudyStore(s => s.toggleChatPanel)
+  const _toggleLeftPanel = useLectureStudyStore(s => s.toggleLeftPanel)
+  const _toggleChatPanel = useLectureStudyStore(s => s.toggleChatPanel)
+
+  const toggleLeftPanel = useCallback(() => {
+    _toggleLeftPanel()
+    panelAnalytics.toggle('left', !isLeftPanelOpen, lectureId)
+  }, [_toggleLeftPanel, isLeftPanelOpen, lectureId])
+
+  const toggleChatPanel = useCallback(() => {
+    _toggleChatPanel()
+    panelAnalytics.toggle('chat', !isChatPanelOpen, lectureId)
+  }, [_toggleChatPanel, isChatPanelOpen, lectureId])
   const setLeftTab = useLectureStudyStore(s => s.setLeftTab)
   const setRightTab = useLectureStudyStore(s => s.setRightTab)
   const setStoreLectureId = useLectureStudyStore(s => s.setLectureId)
@@ -73,6 +83,11 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     trackPageEnter('lecture_study', { lectureId, courseId })
     return () => { trackPageLeave('lecture_study', { lectureId, courseId }) }
   }, [lectureId, courseId])
+
+  // Analytics: 포커스 이탈 감지
+  useEffect(() => {
+    return createFocusLossTracker('lecture_study', lectureId)
+  }, [lectureId])
 
   useEffect(() => {
     setStoreLectureId(lectureId)

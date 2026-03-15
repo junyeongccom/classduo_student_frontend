@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { PasswordChangeModal } from '../ui/PasswordChangeModal'
 import { sendVerificationCode, verifyCode, verifyAndChangePassword } from '../../services/profileService'
+import { mypageAnalytics } from '@/shared/lib/analytics'
 import type { PasswordChangeModalStep } from '../../types'
 
 interface PasswordChangeModalContainerProps {
@@ -144,8 +145,10 @@ export function PasswordChangeModalContainer({
         return
       }
 
+      mypageAnalytics.passwordChangeAttempt(true)
       setStep('success')
     } catch (err) {
+      mypageAnalytics.passwordChangeAttempt(false)
       setError('오류가 발생했습니다.')
     } finally {
       setIsLoading(false)

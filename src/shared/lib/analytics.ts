@@ -200,6 +200,12 @@ export const chatAnalytics = {
   /** 후킹/PQM/후속질문 클릭 트래킹 (sendMessage를 거치지 않는 미리 준비된 답변용) */
   questionClick(lectureId: string, data: { question_type: 'hooking' | 'pqm'; question_id?: string }) {
     trackEvent('ai_question_click', 'ai-tutor', { lectureId, data })
+    // 신규: 실제 사용자 클릭 이벤트 (ai_question_click과 분리)
+    trackEvent('ai_tutor_click', 'ai-tutor', { lectureId, data })
+  },
+  /** PQM/Hooking API fetch 완료 시 자동 발화 — 노출 카운트 */
+  exposure(lectureId: string, data: { question_type: 'hooking' | 'pqm'; count: number }) {
+    trackEvent('ai_tutor_exposure', 'ai-tutor', { lectureId, data })
   },
 }
 
@@ -243,4 +249,120 @@ export const customQuizAnalytics = {
   generate(data: { lecture_id: string; type_counts: Record<string, number>; course_id?: string }) {
     trackEvent('custom_quiz_generate', 'my_quizzes', { data })
   },
+}
+
+/** 마이페이지 이벤트 트래킹 */
+export const mypageAnalytics = {
+  logout() {
+    trackEvent('logout', 'mypage')
+  },
+  passwordChangeAttempt(success: boolean) {
+    trackEvent('password_change_attempt', 'mypage', { data: { success } })
+  },
+  errorReportSubmit(data: { error_type: string; page?: string }) {
+    trackEvent('error_report_submit', 'mypage', { data })
+  },
+}
+
+/** 과목·회차 선택 트래킹 */
+export const navigationAnalytics = {
+  courseSelect(courseId: string) {
+    trackEvent('course_select', 'studyspace', { courseId })
+  },
+  lectureSelect(lectureId: string, courseId: string) {
+    trackEvent('lecture_select', 'studyspace', { lectureId, courseId })
+  },
+}
+
+/** 패널 열기/닫기 트래킹 */
+export const panelAnalytics = {
+  toggle(panel: 'left' | 'chat', isOpen: boolean, lectureId?: string) {
+    trackEvent('panel_toggle', 'lecture_study', { lectureId, data: { panel, is_open: isOpen } })
+  },
+}
+
+/** 게임 포기 트래킹 */
+export const gameAbandonAnalytics = {
+  abandon(lectureId: string, data: { game_type: string; elapsed_ms: number; progress_pct?: number }) {
+    trackEvent('game_abandon', 'game', { lectureId, data })
+  },
+}
+
+/** AI 튜터 피드백 (좋아요/싫어요) 트래킹 */
+export const aiFeedbackAnalytics = {
+  feedback(lectureId: string, data: { feedback_type: 'like' | 'dislike' | 'cancel'; message_id: string; session_id?: string }) {
+    trackEvent('ai_feedback', 'ai-tutor', { lectureId, data })
+  },
+}
+
+/** 스크롤 깊이 트래킹 — 25/50/75/100% 도달 시 발생 */
+export const scrollAnalytics = {
+  depth(source: string, depthPct: number, lectureId?: string) {
+    trackEvent('scroll_depth', source, { lectureId, data: { depth_pct: depthPct } })
+  },
+}
+
+/** 포커스 이탈 트래킹 — 탭 전환/최소화 감지 */
+export const focusAnalytics = {
+  loss(source: string, awayDurationMs: number, lectureId?: string) {
+    trackEvent('focus_loss', source, { lectureId, data: { away_duration_ms: awayDurationMs } })
+  },
+}
+
+/**
+ * 스크롤 깊이 옵저버 — 컴포넌트에서 useEffect로 호출
+ * 반환값의 cleanup 함수를 useEffect return에 전달
+ */
+export function createScrollDepthObserver(
+  containerRef: { current: HTMLElement | null },
+  source: string,
+  lectureId?: string,
+) {
+  const reported = new Set<number>()
+  const thresholds = [25, 50, 75, 100]
+
+  const handleScroll = () => {
+    const el = containerRef.current
+    if (!el) return
+    const scrollPct = Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100)
+    for (const t of thresholds) {
+      if (scrollPct >= t && !reported.has(t)) {
+        reported.add(t)
+        scrollAnalytics.depth(source, t, lectureId)
+      }
+    }
+  }
+
+  const el = containerRef.current
+  el?.addEventListener('scroll', handleScroll, { passive: true })
+
+  return () => {
+    el?.removeEventListener('scroll', handleScroll)
+  }
+}
+
+/**
+ * 포커스 이탈 감지 — initAnalytics에서 자동 등록되지 않으므로 별도 호출
+ * 반환값의 cleanup 함수를 useEffect return에 전달
+ */
+export function createFocusLossTracker(source: string, lectureId?: string) {
+  let hiddenAt: number | null = null
+
+  const handleVisibility = () => {
+    if (document.visibilityState === 'hidden') {
+      hiddenAt = Date.now()
+    } else if (hiddenAt !== null) {
+      const awayMs = Date.now() - hiddenAt
+      if (awayMs > 3000) {
+        focusAnalytics.loss(source, awayMs, lectureId)
+      }
+      hiddenAt = null
+    }
+  }
+
+  document.addEventListener('visibilitychange', handleVisibility)
+
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibility)
+  }
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/shared/hooks/useToast';
 import { useAuthStore } from '@/features/auth';
 import { createErrorReport } from '../../services/errorReportService';
+import { mypageAnalytics } from '@/shared/lib/analytics';
 import { uploadErrorReportAttachment } from '../../services/uploadAttachment';
 import { ErrorReportModal, ErrorReportFormData, ErrorReportPrefillData } from '../ui/ErrorReportModal';
 
@@ -70,6 +71,7 @@ export function ErrorReportModalContainer({
       });
 
       // 성공 시 모달 닫기
+      mypageAnalytics.errorReportSubmit({ error_type: formData.occurrence_context ?? 'general' });
       onClose();
       showSuccess('소중한 의견 감사합니다! 빠르게 검토하겠습니다.');
     } catch (err) {
