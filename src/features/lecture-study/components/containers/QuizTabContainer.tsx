@@ -107,7 +107,12 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         return
       }
 
-      setQuizzes(quizResult.data ?? [])
+      const loadedQuizzes = quizResult.data ?? []
+      setQuizzes(loadedQuizzes)
+
+      if (loadedQuizzes.length > 0) {
+        quizAnalytics.start(lectureId, { quiz_type: 'content', question_count: loadedQuizzes.length })
+      }
 
       if (statusResult.data) {
         const map = new Map<string, QuizStatus>()
@@ -226,6 +231,8 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
           quizzes.every((q) => updatedMap.get(q.quiz_id)?.correct != null)
 
         if (allAnswered) {
+          const correctCount = Array.from(updatedMap.values()).filter(s => s.correct === true).length
+          quizAnalytics.complete(lectureId, { total_duration_ms: 0, accuracy: correctCount / quizzes.length, question_count: quizzes.length })
           rewardCheckingRef.current = true
           const rewardResult = await grantReward(lectureId, 'content')
           rewardCheckingRef.current = false
