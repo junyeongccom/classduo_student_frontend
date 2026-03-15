@@ -7,9 +7,10 @@
 
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { ExamPrepContainer, useExamPrepCourses, useExamPrepMaterials } from '@/features/exam_prep'
+import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 import { Breadcrumb } from '@/features/lecture-study'
 
 interface MaterialStudyContainerProps {
@@ -31,6 +32,14 @@ export function MaterialStudyContainer({ courseId, materialId }: MaterialStudyCo
     () => materials.find(m => m.id === materialId)?.title ?? null,
     [materials, materialId],
   )
+
+  // Analytics: 자료 열람 페이지 체류시간 추적
+  useEffect(() => {
+    if (courseId && materialId) {
+      trackPageEnter('material_study', { courseId })
+      return () => { trackPageLeave('material_study', { courseId }) }
+    }
+  }, [courseId, materialId])
 
   // materialId가 있으면 상세 페이지 → breadcrumb 표시
   const showBreadcrumb = !!courseId && !!materialId

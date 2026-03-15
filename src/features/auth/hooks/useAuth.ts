@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { TOKEN_KEY } from '@/shared/lib/utils'
+import { mypageAnalytics } from '@/shared/lib/analytics'
 
 /**
  * 인증 상태 체크 및 관리 훅
@@ -14,6 +15,7 @@ export function useAuth() {
   const { user, isAuthenticated, isLoading, logout } = useAuthStore()
 
   const handleLogout = () => {
+    mypageAnalytics.logout()
     logout()
     // 로그아웃 후 메인 페이지로 이동 (protected layout에서 로그인 모달 자동 표시)
     router.push('/')

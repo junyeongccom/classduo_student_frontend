@@ -10,6 +10,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { ThumbsUp, ThumbsDown } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
+import { aiFeedbackAnalytics } from '@/shared/lib/analytics'
 
 interface FeedbackButtonsProps {
   messageId?: string
@@ -49,6 +50,13 @@ export function FeedbackButtons({
       feedback_type: newFeedback === null ? 'cancel' : newFeedback,
       chat_session_id: sessionId || '',
       message_id: messageId,
+    })
+
+    // 자체 analytics 이벤트
+    aiFeedbackAnalytics.feedback('', {
+      feedback_type: newFeedback === null ? 'cancel' : newFeedback,
+      message_id: messageId,
+      session_id: sessionId,
     })
 
     // 토스트 (취소 시에는 표시 안 함)

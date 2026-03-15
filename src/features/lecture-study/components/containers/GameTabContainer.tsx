@@ -33,7 +33,7 @@ import {
   DialogDescription,
 } from '@/shared/components/ui'
 import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
-import { gameAnalytics } from '@/shared/lib/analytics'
+import { gameAnalytics, gameAbandonAnalytics } from '@/shared/lib/analytics'
 
 const GameOverlay = dynamic(
   () => import('@/features/ai-tutor').then(m => ({ default: m.GameOverlay })),
@@ -486,7 +486,11 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       <GameOverlay
         isOpen
         onClose={(score) => {
-          gameAnalytics.complete(lectureId, { game_type: 'running', score: score ?? 0, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource, game_mode: gameMode ?? 'normal' })
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null || score === undefined) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'running', elapsed_ms: elapsed })
+          }
+          gameAnalytics.complete(lectureId, { game_type: 'running', score: score ?? 0, duration_ms: elapsed, access_source: accessSource, game_mode: gameMode ?? 'normal' })
           setShowRunningOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
@@ -504,7 +508,11 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   // Card matching overlay
   if (showMatchingOverlay) {
     const handleCloseMatching = () => {
-      gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource, game_mode: gameMode ?? 'normal' })
+      const elapsed = Date.now() - gameStartTime.current
+      if (elapsed < 10000) {
+        gameAbandonAnalytics.abandon(lectureId, { game_type: 'cardMatch', elapsed_ms: elapsed })
+      }
+      gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: elapsed, access_source: accessSource, game_mode: gameMode ?? 'normal' })
       setShowMatchingOverlay(false)
       setSelectedGame(null)
       setGameMode(null)
