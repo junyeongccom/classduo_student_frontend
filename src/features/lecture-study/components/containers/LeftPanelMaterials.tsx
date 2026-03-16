@@ -201,6 +201,8 @@ export function LeftPanelMaterials() {
       const el = pageRefs.current[pageIdx]
       if (!el || !scrollContainerRef.current) return
 
+      // 새 스크롤 시작 → 이전 스크롤의 settle을 무효화
+      const mySettleId = ++settleIdRef.current
       isScrollingRef.current = true
       setCurrentPage(pageIdx + 1)
 
@@ -211,7 +213,7 @@ export function LeftPanelMaterials() {
         // 이미지 로드로 높이 변경 시 위치 보정 (최대 3회)
         let retries = 0
         const correctPosition = () => {
-          if (retries >= 3 || !pageRefs.current[pageIdx]) return
+          if (retries >= 3 || !pageRefs.current[pageIdx] || mySettleId !== settleIdRef.current) return
           retries++
           requestAnimationFrame(() => {
             pageRefs.current[pageIdx]?.scrollIntoView({ behavior: 'instant', block: 'start' })
@@ -221,15 +223,16 @@ export function LeftPanelMaterials() {
         setTimeout(correctPosition, 300)
         setTimeout(correctPosition, 600)
 
-        // instant는 scrollend 이벤트가 안 날 수 있으므로 즉시 해제
+        // settle ID 기반 해제: 더 새로운 스크롤이 시작되었으면 해제하지 않음
         requestAnimationFrame(() => {
-          isScrollingRef.current = false
+          if (mySettleId === settleIdRef.current) {
+            isScrollingRef.current = false
+          }
         })
       } else {
         // 화살표: smooth scroll (1페이지 이동)
         el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-        const mySettleId = ++settleIdRef.current
         const container = scrollContainerRef.current
         let settled = false
         const settle = () => {
@@ -294,14 +297,12 @@ export function LeftPanelMaterials() {
   useEffect(() => {
     if (targetPage == null || allPages.length === 0) return
 
+    // 즉시 소비하여 다음 클릭이 새로운 targetPage를 설정할 수 있게 함
+    setTargetPage(null)
+
     // targetPage는 0-indexed 배열 인덱스
     if (targetPage >= 0 && targetPage < allPages.length) {
-      requestAnimationFrame(() => {
-        scrollToPage(targetPage, true)
-        setTargetPage(null)
-      })
-    } else {
-      setTargetPage(null)
+      scrollToPage(targetPage, true)
     }
   }, [targetPage, allPages.length, scrollToPage, setTargetPage])
 
