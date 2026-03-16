@@ -87,8 +87,21 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
         }
       : undefined
 
+    // 퀴즈 컨텍스트가 있으면 배지 텍스트를 질문 앞에 붙여 표시
+    const badgePrefix = quizChatContext
+      ? `[${t('quizChatBadge', {
+          courseTitle: quizChatContext.courseTitle,
+          weekNumber: quizChatContext.weekNumber,
+          sessionNumber: String(quizChatContext.sessionNumber).padStart(2, '0'),
+          quizNumber: quizChatContext.quizIndex + 1,
+        })}] `
+      : ''
+    const displayQuestion = badgePrefix + question
+
     setInput('')
-    setMessages(prev => [...prev, { role: 'user', content: question }])
+    setMessages(prev => [...prev, { role: 'user', content: displayQuestion }])
+    // 전송 후 배지 제거 (1회성)
+    if (quizChatContext) onClearQuizContext()
     setIsLoading(true)
     scrollToBottom()
 
@@ -105,7 +118,7 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
       setIsLoading(false)
       scrollToBottom()
     }
-  }, [input, isLoading, lectureId, quizChatContext, scrollToBottom, t])
+  }, [input, isLoading, lectureId, quizChatContext, onClearQuizContext, scrollToBottom, t])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
