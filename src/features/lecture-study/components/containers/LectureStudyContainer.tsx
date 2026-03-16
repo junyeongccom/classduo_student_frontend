@@ -458,6 +458,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                   essence7Words={currentLecture?.essence_7words}
                   targetChunkIndex={targetChunkIndex}
                   onTargetConsumed={() => setTargetChunkIndex(null)}
+                  lectureId={lectureId}
                 />
               </TabsContent>
             </Tabs>
@@ -524,6 +525,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                   essence7Words={currentLecture?.essence_7words}
                   targetChunkIndex={targetChunkIndex}
                   onTargetConsumed={() => setTargetChunkIndex(null)}
+                  lectureId={lectureId}
                 />
               </TabsContent>
             </Tabs>

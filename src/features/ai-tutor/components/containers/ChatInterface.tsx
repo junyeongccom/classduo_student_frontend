@@ -202,6 +202,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               summary_keywords: data.summary_keywords || null,
               summary_keywords_eng: data.summary_keywords_eng || null
             }])
+            chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: 1 })
           }
         } else {
           setHookingCache(targetLocale, lectureId, null)
@@ -221,6 +222,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           setPqmCache(targetLocale, lectureId, data)
           if (updateState) {
             setPQMQuestions(data)
+            chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: data.length })
           }
         } else {
           setPqmCache(targetLocale, lectureId, [])
@@ -660,6 +662,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         selfCreatedSessionId.current = sessionIdToUse
         setCurrentSessionId(sessionIdToUse)
         onSessionCreated?.(sessionIdToUse)
+        chatAnalytics.sessionCreate(selectedLectureIds[0], { trigger: 'direct_question', session_id: sessionIdToUse })
       }
 
       // SSE 스트리밍으로 채팅 (question_type 전달: 직접 질문은 'direct', 후속질문은 'followup')
@@ -898,7 +901,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             selfCreatedSessionId.current = newSessionId
             setCurrentSessionId(newSessionId)
             onSessionCreated?.(newSessionId)
-            
+            chatAnalytics.sessionCreate(selectedLectureIds[0], { trigger: 'hooking', session_id: newSessionId })
+
             // 세션 생성 완료 후 메시지 저장 (await 사용)
             try {
               const saveResult = await chatService.saveHookingMessage(newSessionId, {
@@ -1080,6 +1084,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           selfCreatedSessionId.current = newSessionId
           setCurrentSessionId(newSessionId)
           onSessionCreated?.(newSessionId)
+          chatAnalytics.sessionCreate(selectedLectureIds[0], { trigger: 'pqm', session_id: newSessionId })
 
           // 세션 생성 완료 후 메시지 저장 (await 사용)
           try {
@@ -1195,7 +1200,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               disabled={isLoading}
               placeholder={t('askAnythingPlaceholder')}
               chatMode={chatMode}
-              onChatModeChange={setChatMode}
+              onChatModeChange={(mode: ChatMode) => {
+                setChatMode(mode)
+                chatAnalytics.modeSwitch({ mode })
+              }}
               sendLabel={t('sendLabel')}
               simpleLabel={t('simpleLabel')}
               deepLabel={t('deepLabel')}
@@ -1204,6 +1212,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               onFocus={() => {
                 setIsInputFocused(true)
                 if (hasSuggestions) setShowSuggestionsPanel(true)
+                chatAnalytics.inputFocus(selectedLectureIds[0])
               }}
               onBlur={() => {
                 setTimeout(() => {
@@ -1336,6 +1345,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                         <button
                           onClick={() => {
                             if (!isLoading) {
+                              chatAnalytics.followupClick(selectedLectureIds[0], { question_text: followUpQuestion.substring(0, 50) })
                               // 후속질문 클릭 시 question_type: 'followup' 전달
                               sendMessage(followUpQuestion, { question_type: 'followup' })
                             }
