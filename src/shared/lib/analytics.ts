@@ -124,7 +124,8 @@ export function initAnalytics() {
       session_id: getSessionId(),
     })
     eventQueue = []
-    navigator.sendBeacon?.(`${API_BASE_URL}/analytics/events`, payload)
+    const blob = new Blob([payload], { type: 'application/json' })
+    navigator.sendBeacon?.(`${API_BASE_URL}/analytics/events`, blob)
   })
 }
 
