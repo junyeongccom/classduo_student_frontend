@@ -65,6 +65,8 @@ export interface StudentQuizCardProps {
   wrongNoteMode?: boolean
   /** 오답노트 삭제 콜백 */
   onDismissWrongNote?: (quizId: string) => void
+  /** 해설 영역 하단에 삽입할 추가 콘텐츠 (출처 버튼 등) */
+  renderAnswerExtra?: React.ReactNode
 }
 
 /* ───────────── 상수 ───────────── */
@@ -100,6 +102,7 @@ export function StudentQuizCard({
   onResetAnswer,
   wrongNoteMode,
   onDismissWrongNote,
+  renderAnswerExtra,
 }: StudentQuizCardProps) {
   const isMultipleChoice =
     quiz.quiz_type === 'MISCONCEPTION' ||
@@ -394,6 +397,9 @@ export function StudentQuizCard({
                   </div>
                 </div>
               )}
+
+            {/* 추가 콘텐츠 (출처 버튼 등) */}
+            {renderAnswerExtra}
           </div>
         )}
       </div>

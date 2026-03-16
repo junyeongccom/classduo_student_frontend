@@ -1179,7 +1179,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           {/* 안내 문구 — 질문이 있고 리스트가 아직 안 열린 상태 */}
           {hasSuggestions && !showSuggestionsPanel && (
             <button
-              onClick={() => setShowSuggestionsPanel(true)}
+              onClick={() => {
+                setShowSuggestionsPanel(true)
+                chatAnalytics.bannerClick(selectedLectureIds[0], { banner_type: 'suggestion_guide' })
+              }}
               className="mb-6 animate-bounce-slow cursor-pointer"
             >
               <div className="flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 px-5 py-2.5 shadow-sm hover:shadow-md transition-shadow">

@@ -19,6 +19,8 @@ import {
   type InstructorQuizItem,
   type InstructorQuizType,
 } from '../../services/instructorQuizService'
+import { SourceButton } from '../ui/SourceButton'
+import { useSourceNavigation } from '../../hooks/useSourceNavigation'
 import {
   getQuizStatusByLecture,
   toggleBookmark,
@@ -72,7 +74,16 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   const [error, setError] = useState<string | null>(null)
   const [showRewardModal, setShowRewardModal] = useState(false)
   const t = useTranslations('lectureStudy.quiz')
+  const tSummary = useTranslations('lectureStudy.summary')
   const { locale } = useI18n()
+
+  const {
+    isMobile,
+    handleMaterialSourceClick,
+    handleRecordingSourceClick,
+    totalMaterialPages,
+    totalRecordingChunks,
+  } = useSourceNavigation(lectureId)
 
   // 보상 판정이 중복 호출되지 않도록 ref로 관리
   const rewardCheckingRef = useRef(false)
@@ -364,6 +375,49 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                   onBookmarkToggle={handleBookmarkToggle}
                   onCorrectUpdate={handleCorrectUpdate}
                   onResetAnswer={handleResetAnswer}
+                  renderAnswerExtra={
+                    quiz.source &&
+                    ((quiz.source.source_pages?.length ?? 0) > 0 || (quiz.source.source_chunks?.length ?? 0) > 0) ? (
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        <SourceButton
+                          label={tSummary('sourceButtonMaterials')}
+                          tooltipId={`quiz-material-source-${quiz.quiz_id}`}
+                          tooltipContent={
+                            (quiz.source.source_pages?.length ?? 0) > 0
+                              ? tSummary('sourceTooltipPages', { pages: quiz.source.source_pages!.join(', ') })
+                              : tSummary('sourceEmptyTooltip')
+                          }
+                          disabled={!(quiz.source.source_pages?.length ?? 0)}
+                          disabledClick={isMobile}
+                          onClick={() =>
+                            handleMaterialSourceClick(
+                              `quiz-${quiz.quiz_id}`,
+                              quiz.source?.source_pages ?? [],
+                              totalMaterialPages,
+                            )
+                          }
+                        />
+                        <SourceButton
+                          label={tSummary('sourceButtonRecordings')}
+                          tooltipId={`quiz-recording-source-${quiz.quiz_id}`}
+                          tooltipContent={
+                            (quiz.source.source_chunks?.length ?? 0) > 0
+                              ? tSummary('sourceTooltipChunks', { chunks: quiz.source.source_chunks!.join(', ') })
+                              : tSummary('sourceEmptyTooltip')
+                          }
+                          disabled={!(quiz.source.source_chunks?.length ?? 0)}
+                          disabledClick={isMobile}
+                          onClick={() =>
+                            handleRecordingSourceClick(
+                              `quiz-${quiz.quiz_id}`,
+                              quiz.source?.source_chunks ?? [],
+                              totalRecordingChunks,
+                            )
+                          }
+                        />
+                      </div>
+                    ) : undefined
+                  }
                 />
               )
             })}

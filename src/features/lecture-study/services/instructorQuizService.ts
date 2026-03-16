@@ -39,6 +39,7 @@ export interface InstructorQuizItem {
   difficulty: string | null
   created_at: string
   choices: InstructorQuizChoice[]
+  source?: { source_pages?: number[]; source_chunks?: number[] }
 }
 
 // ── Service ──
@@ -65,6 +66,7 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
         explanation_eng,
         difficulty,
         created_at,
+        source,
         content_quiz_choices (
           choice_id,
           quiz_id,
@@ -101,6 +103,7 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
       explanation: pick(row.explanation, row.explanation_eng) || null,
       difficulty: row.difficulty ?? null,
       created_at: row.created_at,
+      source: row.source ?? {},
       choices: (row.content_quiz_choices ?? [])
         .sort((a: any, b: any) => a.choice_order - b.choice_order)
         .map((c: any) => ({

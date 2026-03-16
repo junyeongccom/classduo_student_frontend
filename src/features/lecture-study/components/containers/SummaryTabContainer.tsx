@@ -9,14 +9,13 @@
 
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { lectureService } from '../../services/lectureService'
 import { trackSummaryViewed } from '@/shared/hooks/useAnalytics'
-import { sourceAnalytics } from '@/shared/lib/analytics'
-import { useLectureStudyStore } from '../../store/useLectureStudyStore'
-import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useSourceNavigation } from '../../hooks/useSourceNavigation'
+import { SourceButton } from '../ui/SourceButton'
 import type { ContentSummary, ContentSummarySection } from '../../types'
 
 interface SummaryTabContainerProps {
@@ -79,25 +78,21 @@ function isSummaryEmpty(summary: ContentSummary): boolean {
 export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainerProps) {
   const t = useTranslations('lectureStudy')
   const locale = useLocale()
-  const isMobile = useIsMobile()
 
   const [summary, setSummary] = useState<ContentSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const summaryViewedRef = useRef(false)
 
-  // 출처 cycling 커서 (Task 779)
-  const materialsCursorRef = useRef<Record<string, number>>({})
-  const recordingsCursorRef = useRef<Record<string, number>>({})
-
-  // Store actions
-  const setTargetPage = useLectureStudyStore((s) => s.setTargetPage)
-  const setTargetChunkIndex = useLectureStudyStore((s) => s.setTargetChunkIndex)
-  const setLeftTab = useLectureStudyStore((s) => s.setLeftTab)
-  const isLeftPanelOpen = useLectureStudyStore((s) => s.isLeftPanelOpen)
-  const toggleLeftPanel = useLectureStudyStore((s) => s.toggleLeftPanel)
-  const totalMaterialPages = useLectureStudyStore((s) => s.totalMaterialPages)
-  const totalRecordingChunks = useLectureStudyStore((s) => s.totalRecordingChunks)
+  // 출처 네비게이션 훅
+  const {
+    isMobile,
+    handleMaterialSourceClick,
+    handleRecordingSourceClick,
+    totalMaterialPages,
+    totalRecordingChunks,
+    resetCursors,
+  } = useSourceNavigation(lectureId)
 
   // ─── API 호출 (Task 773) ───
   useEffect(() => {
@@ -108,8 +103,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
       setError(null)
       setSummary(null)
       summaryViewedRef.current = false
-      materialsCursorRef.current = {}
-      recordingsCursorRef.current = {}
+      resetCursors()
 
       try {
         const result = await lectureService.getContentSummary(lectureId)
@@ -147,70 +141,6 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
     fetchSummary()
     return () => { cancelled = true }
   }, [lectureId, locale])
-
-  // ─── 출처 클릭 핸들러 (Task 780, 781, 787) ───
-  const handleMaterialSourceClick = useCallback(
-    (sectionKey: string, sourcePages: number[], totalPageCount: number) => {
-      if (isMobile || sourcePages.length === 0) return
-
-      // cycling
-      const cursor = materialsCursorRef.current[sectionKey] ?? 0
-      const safeCursor = cursor >= 0 && cursor < sourcePages.length ? cursor : 0
-
-      // 유효한 페이지 찾기 (범위 초과 건너뛰기)
-      // Q-AC1 fix: totalPageCount <= 0 (material 미로딩)이면 범위 검증 건너뛰기
-      const shouldSkipRangeCheck = totalPageCount <= 0
-      let attempts = 0
-      let current = safeCursor
-      while (attempts < sourcePages.length) {
-        const page = sourcePages[current]
-        const targetIdx = page - 1 // 1-indexed → 0-indexed
-        if (shouldSkipRangeCheck || (targetIdx >= 0 && targetIdx < totalPageCount)) {
-          materialsCursorRef.current[sectionKey] = (current + 1) % sourcePages.length
-
-          // 좌측 패널 열기 + 강의자료 탭 전환 + 타겟 설정
-          if (!isLeftPanelOpen) toggleLeftPanel()
-          setLeftTab('materials')
-          setTargetPage(targetIdx)
-          sourceAnalytics.click(lectureId, { source_type: 'material', section_key: sectionKey })
-          return
-        }
-        current = (current + 1) % sourcePages.length
-        attempts++
-      }
-      // 모든 페이지가 범위 초과 → 무시
-      materialsCursorRef.current[sectionKey] = (safeCursor + 1) % sourcePages.length
-    },
-    [isMobile, isLeftPanelOpen, toggleLeftPanel, setLeftTab, setTargetPage],
-  )
-
-  const handleRecordingSourceClick = useCallback(
-    (sectionKey: string, sourceChunks: number[], totalChunkCount: number) => {
-      if (isMobile || sourceChunks.length === 0) return
-
-      const cursor = recordingsCursorRef.current[sectionKey] ?? 0
-      const safeCursor = cursor >= 0 && cursor < sourceChunks.length ? cursor : 0
-
-      let attempts = 0
-      let current = safeCursor
-      while (attempts < sourceChunks.length) {
-        const chunkIdx = sourceChunks[current]
-        if (chunkIdx >= 0 && chunkIdx < totalChunkCount) {
-          recordingsCursorRef.current[sectionKey] = (current + 1) % sourceChunks.length
-
-          if (!isLeftPanelOpen) toggleLeftPanel()
-          setLeftTab('recordings')
-          setTargetChunkIndex(chunkIdx)
-          sourceAnalytics.click(lectureId, { source_type: 'recording', section_key: sectionKey })
-          return
-        }
-        current = (current + 1) % sourceChunks.length
-        attempts++
-      }
-      recordingsCursorRef.current[sectionKey] = (safeCursor + 1) % sourceChunks.length
-    },
-    [isMobile, isLeftPanelOpen, toggleLeftPanel, setLeftTab, setTargetChunkIndex],
-  )
 
   // ─── 렌더링 ───
 
@@ -370,51 +300,3 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
   )
 }
 
-// ─── 출처 버튼 컴포넌트 (Task 777, 778) ───
-
-interface SourceButtonProps {
-  label: string
-  tooltipId: string
-  tooltipContent: string
-  disabled: boolean
-  /** 모바일에서 클릭 비활성화 (툴팁만 제공) */
-  disabledClick: boolean
-  onClick: () => void
-}
-
-function SourceButton({ label, tooltipId, tooltipContent, disabled, disabledClick, onClick }: SourceButtonProps) {
-  return (
-    <div className="group relative inline-flex items-center">
-      <button
-        type="button"
-        aria-describedby={tooltipId}
-        aria-disabled={disabled || undefined}
-        tabIndex={disabled ? -1 : undefined}
-        className={[
-          'rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors',
-          disabled
-            ? 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-400 cursor-default'
-            : disabledClick
-              ? 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 cursor-default'
-              : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer',
-        ].join(' ')}
-        onClick={() => {
-          if (!disabled && !disabledClick) onClick()
-        }}
-      >
-        {label}
-      </button>
-      {/* 툴팁 (Task 778) */}
-      <div
-        id={tooltipId}
-        role="tooltip"
-        className="pointer-events-none absolute left-1/2 top-0 z-20 w-max max-w-[240px] -translate-x-1/2 -translate-y-[calc(100%+10px)] opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
-      >
-        <div className="rounded-md bg-gray-900 px-2 py-1 text-[11px] text-white shadow-sm">
-          {tooltipContent}
-        </div>
-        <div className="mx-auto mt-1 h-2 w-2 rotate-45 bg-gray-900" />
-      </div>
-    </div>
-  )
-}

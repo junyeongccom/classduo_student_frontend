@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, Send } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { trackEvent } from '@/shared/lib/analytics'
 import { lectureService } from '../../services/lectureService'
 
 interface ChatMessage {
@@ -77,6 +78,9 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
     setMessages(prev => [...prev, { role: 'user', content: question }])
     setIsLoading(true)
     scrollToBottom()
+
+    // Analytics: 콘텐츠형 학습 채팅 메시지 트래킹
+    trackEvent('chat_message', 'lecture_study', { lectureId, data: { message_length: question.length, question_type: 'content_study_chat' } })
 
     try {
       const result = await lectureService.contentsStudyChat(question, lectureId)
