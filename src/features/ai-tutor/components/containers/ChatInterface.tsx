@@ -172,12 +172,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         summary_keywords: cachedHooking.summary_keywords || null,
         summary_keywords_eng: cachedHooking.summary_keywords_eng || null
       }])
+      chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: 1 })
     } else if (cachedHooking === null) {
       setHookingQuestions([])
     }
 
     if (cachedPqm) {
       setPQMQuestions(cachedPqm)
+      chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: cachedPqm.length })
     } else if (cachedPqm === undefined) {
       setPQMQuestions([])
     }
