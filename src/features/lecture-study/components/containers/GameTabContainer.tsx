@@ -33,7 +33,7 @@ import {
   DialogDescription,
 } from '@/shared/components/ui'
 import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
-import { gameAnalytics, gameAbandonAnalytics } from '@/shared/lib/analytics'
+import { gameAnalytics, gameAbandonAnalytics, gameExtraAnalytics } from '@/shared/lib/analytics'
 
 const GameOverlay = dynamic(
   () => import('@/features/ai-tutor').then(m => ({ default: m.GameOverlay })),
@@ -350,6 +350,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
 
   const handleViewRanking = useCallback(async () => {
     if (!selectedGame) return
+    gameExtraAnalytics.rankView(lectureId, { game_type: selectedGame })
     const gameName = t(`lectureStudy.game.${selectedGame}` as Parameters<typeof t>[0])
     setRankingPreviewGameName(gameName)
     setRankingPreviewData([])
@@ -424,6 +425,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     const { data } = await reviewService.createLectureReviewItem(lectureId, { keyword, description })
     if (data?.item_id) {
       setWords([...words, { id: data.item_id, keyword, description }])
+      gameExtraAnalytics.wordEdit(lectureId, { action: 'add', word: keyword })
     }
   }, [lectureId, words, setWords])
 
@@ -431,6 +433,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     const { data } = await reviewService.updateLectureReviewItem(id, { keyword, description })
     if (data?.success) {
       setWords(words.map(w => w.id === id ? { ...w, keyword, description } : w))
+      gameExtraAnalytics.wordEdit(lectureId, { action: 'edit', word: keyword })
     }
   }, [words, setWords])
 
@@ -438,6 +441,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     const { data } = await reviewService.deleteLectureReviewItem(id)
     if (data?.success) {
       setWords(words.filter(w => w.id !== id))
+      gameExtraAnalytics.wordEdit(lectureId, { action: 'delete' })
     }
   }, [words, setWords])
 

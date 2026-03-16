@@ -22,7 +22,7 @@ import {
   AI_TUTOR_NEW_CHAT_FLAG,
   AI_TUTOR_NEW_CHAT_PARAM,
 } from '@/shared/constants/aiTutor'
-import { aiTutorAnalytics } from '@/shared/lib/analytics'
+import { dialogueSourceAnalytics } from '@/shared/lib/analytics'
 import { areLectureIdsEqual } from '@/shared/lib/studyspaceSelection'
 import { useStudyspaceSelectionSync } from '@/shared/hooks/useStudyspaceSelectionSync'
 import { useStudyspaceSelectionStore } from '@/shared/store/useStudyspaceSelectionStore'
@@ -512,7 +512,7 @@ export function AITutorContainer() {
                       toggleNotesPanel(nextState)
                       if (nextState) {
                         setActiveTab('notes')
-                        aiTutorAnalytics.sourceTabView(selectedLectureIds[0] ?? '', { tab: 'notes' })
+                        dialogueSourceAnalytics.sourceTabView(selectedLectureIds[0] ?? '', { tab: 'notes' })
                       } else if (isMaterialsPanelOpen) {
                         setActiveTab('materials')
                       } else {
@@ -538,7 +538,7 @@ export function AITutorContainer() {
                       toggleMaterialsPanel(nextState)
                       if (nextState) {
                         setActiveTab('materials')
-                        aiTutorAnalytics.sourceTabView(selectedLectureIds[0] ?? '', { tab: 'materials' })
+                        dialogueSourceAnalytics.sourceTabView(selectedLectureIds[0] ?? '', { tab: 'materials' })
                       } else if (isNotesPanelOpen) {
                         setActiveTab('notes')
                       } else {
@@ -575,13 +575,13 @@ export function AITutorContainer() {
                         toggleNotesPanel(true)
                       }
                       setActiveTab('notes')
-                      aiTutorAnalytics.sourceTabView(selectedLectureIds[0] ?? '', { tab: 'notes' })
+                      dialogueSourceAnalytics.sourceTabView(selectedLectureIds[0] ?? '', { tab: 'notes' })
                     } else {
                       if (!isMaterialsPanelOpen) {
                         toggleMaterialsPanel(true)
                       }
                       setActiveTab('materials')
-                      aiTutorAnalytics.sourceTabView(selectedLectureIds[0] ?? '', { tab: 'materials' })
+                      dialogueSourceAnalytics.sourceTabView(selectedLectureIds[0] ?? '', { tab: 'materials' })
                     }
                   }}
                 />

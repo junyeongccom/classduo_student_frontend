@@ -11,6 +11,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useTranslations, useFormatter } from 'next-intl'
 import { Loader2, CheckCircle2, AlertTriangle, Clock, Trash2, Calendar } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
+import { myQuizSessionAnalytics } from '@/shared/lib/analytics'
 import type { QuizSession, SessionStatus } from '../../types'
 import type { SessionSolvingStats } from '../../services/myQuizStatusService'
 
@@ -94,7 +95,12 @@ export default function SessionCard({
         isClickable && 'cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-sm',
         !isClickable && !isFailed && 'opacity-75',
       )}
-      onClick={() => isClickable && !isEditing && onSelect(session.session_id)}
+      onClick={() => {
+        if (isClickable && !isEditing) {
+          myQuizSessionAnalytics.sessionClick({ session_id: session.session_id, lecture_id: session.lecture_id })
+          onSelect(session.session_id)
+        }
+      }}
     >
       {/* 상단: 제목 + 점수/상태 */}
       <div className="flex items-start justify-between gap-3">
@@ -234,7 +240,11 @@ export default function SessionCard({
         <div className="mt-3">
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onSelect(session.session_id) }}
+            onClick={(e) => {
+              e.stopPropagation()
+              myQuizSessionAnalytics.sessionClick({ session_id: session.session_id, lecture_id: session.lecture_id })
+              onSelect(session.session_id)
+            }}
             className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
           >
             {isSolvingComplete ? t('viewResult') : t('continueSession')}
