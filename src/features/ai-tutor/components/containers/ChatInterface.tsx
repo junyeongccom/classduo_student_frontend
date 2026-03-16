@@ -172,14 +172,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         summary_keywords: cachedHooking.summary_keywords || null,
         summary_keywords_eng: cachedHooking.summary_keywords_eng || null
       }])
-      chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: 1 })
     } else if (cachedHooking === null) {
       setHookingQuestions([])
     }
 
     if (cachedPqm) {
       setPQMQuestions(cachedPqm)
-      chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: cachedPqm.length })
     } else if (cachedPqm === undefined) {
       setPQMQuestions([])
     }
@@ -204,7 +202,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               summary_keywords: data.summary_keywords || null,
               summary_keywords_eng: data.summary_keywords_eng || null
             }])
-            chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: 1 })
           }
         } else {
           setHookingCache(targetLocale, lectureId, null)
@@ -224,7 +221,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           setPqmCache(targetLocale, lectureId, data)
           if (updateState) {
             setPQMQuestions(data)
-            chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: data.length })
           }
         } else {
           setPqmCache(targetLocale, lectureId, [])
@@ -1184,6 +1180,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               onClick={() => {
                 setShowSuggestionsPanel(true)
                 chatAnalytics.bannerClick(selectedLectureIds[0], { banner_type: 'suggestion_guide' })
+                const lectureId = selectedLectureIds[0]
+                if (hookingQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: hookingQuestions.length })
+                if (pqmQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: pqmQuestions.length })
               }}
               className="mb-6 animate-bounce-slow cursor-pointer"
             >
@@ -1216,7 +1215,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               deepHelpText={t('deepHelpText')}
               onFocus={() => {
                 setIsInputFocused(true)
-                if (hasSuggestions) setShowSuggestionsPanel(true)
+                if (hasSuggestions && !showSuggestionsPanel) {
+                  setShowSuggestionsPanel(true)
+                  const lectureId = selectedLectureIds[0]
+                  if (hookingQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: hookingQuestions.length })
+                  if (pqmQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: pqmQuestions.length })
+                }
                 chatAnalytics.inputFocus(selectedLectureIds[0])
               }}
               onBlur={() => {
