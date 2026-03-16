@@ -211,6 +211,7 @@ export function LeftPanelMaterials() {
         el.scrollIntoView({ behavior: 'instant', block: 'start' })
 
         // 이미지 로드로 높이 변경 시 위치 보정 (최대 3회)
+        // isScrollingRef는 모든 보정이 끝날 때까지 true 유지
         let retries = 0
         const correctPosition = () => {
           if (retries >= 3 || !pageRefs.current[pageIdx] || mySettleId !== settleIdRef.current) return
@@ -223,12 +224,12 @@ export function LeftPanelMaterials() {
         setTimeout(correctPosition, 300)
         setTimeout(correctPosition, 600)
 
-        // settle ID 기반 해제: 더 새로운 스크롤이 시작되었으면 해제하지 않음
-        requestAnimationFrame(() => {
+        // 마지막 보정(600ms) + 여유 후 해제 — 보정 중 observer가 잘못된 페이지를 감지하지 않도록
+        setTimeout(() => {
           if (mySettleId === settleIdRef.current) {
             isScrollingRef.current = false
           }
-        })
+        }, 750)
       } else {
         // 화살표: smooth scroll (1페이지 이동)
         el.scrollIntoView({ behavior: 'smooth', block: 'start' })
