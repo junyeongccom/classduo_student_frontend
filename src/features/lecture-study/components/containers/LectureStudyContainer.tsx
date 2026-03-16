@@ -14,7 +14,7 @@ import { Loader2, X, ChevronRight, FileText, Bot } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { trackTabView } from '@/shared/hooks/useAnalytics'
-import { trackPageEnter, trackPageLeave, lectureStudyAnalytics, panelAnalytics, createFocusLossTracker } from '@/shared/lib/analytics'
+import { trackPageEnter, trackPageLeave, lectureStudyAnalytics, panelAnalytics, materialViewAnalytics, createFocusLossTracker } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
@@ -392,7 +392,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         {!isLeftPanelOpen && (
           <div className="absolute bottom-4 left-4 z-10 flex items-end gap-2">
             <button
-              onClick={toggleLeftPanel}
+              onClick={() => {
+                toggleLeftPanel()
+                materialViewAnalytics.iconClick(lectureId)
+              }}
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#6366F1]/30 bg-white dark:bg-gray-800 shadow-md text-[#6366F1] hover:bg-[#6366F1]/5 dark:hover:bg-[#6366F1]/10 transition-colors"
               title={t('lectureStudy.leftPanel.materialsTab')}
             >
