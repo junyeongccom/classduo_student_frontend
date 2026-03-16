@@ -442,10 +442,12 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   }, [words, setWords])
 
   const gameStartTime = useRef<number>(0)
+  const gameCompleted = useRef<boolean>(false)
 
   const handleStartGame = useCallback(() => {
     setShowWordModal(false)
     gameStartTime.current = Date.now()
+    gameCompleted.current = false
     if (selectedGame) gameAnalytics.start(lectureId, { game_type: selectedGame, access_source: accessSource, game_mode: gameMode ?? 'normal' })
 
     // Running game: open overlay (gameMode already set by the flow that opened this modal)
@@ -509,10 +511,13 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   if (showMatchingOverlay) {
     const handleCloseMatching = () => {
       const elapsed = Date.now() - gameStartTime.current
-      if (elapsed < 10000) {
-        gameAbandonAnalytics.abandon(lectureId, { game_type: 'cardMatch', elapsed_ms: elapsed })
+      if (!gameCompleted.current) {
+        gameCompleted.current = true
+        if (elapsed < 10000) {
+          gameAbandonAnalytics.abandon(lectureId, { game_type: 'cardMatch', elapsed_ms: elapsed })
+        }
+        gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: elapsed, access_source: accessSource, game_mode: gameMode ?? 'normal' })
       }
-      gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: elapsed, access_source: accessSource, game_mode: gameMode ?? 'normal' })
       setShowMatchingOverlay(false)
       setSelectedGame(null)
       setGameMode(null)
