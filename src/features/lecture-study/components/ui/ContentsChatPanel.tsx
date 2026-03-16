@@ -8,10 +8,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Loader2, Send } from 'lucide-react'
+import { Loader2, Send, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { lectureService } from '../../services/lectureService'
+import type { QuizContextPayload } from '../../services/lectureService'
+import type { QuizChatContext } from '../../store/useLectureStudyStore'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -20,9 +22,11 @@ interface ChatMessage {
 
 interface ContentsChatPanelProps {
   lectureId: string
+  quizChatContext: QuizChatContext | null
+  onClearQuizContext: () => void
 }
 
-export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
+export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizContext }: ContentsChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -73,13 +77,23 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
     const question = input.trim()
     if (!question || isLoading) return
 
+    const quizPayload: QuizContextPayload | undefined = quizChatContext
+      ? {
+          quiz_id: quizChatContext.quizId,
+          question: quizChatContext.question,
+          explanation: quizChatContext.explanation,
+          choices: quizChatContext.choices,
+          source: quizChatContext.source,
+        }
+      : undefined
+
     setInput('')
     setMessages(prev => [...prev, { role: 'user', content: question }])
     setIsLoading(true)
     scrollToBottom()
 
     try {
-      const result = await lectureService.contentsStudyChat(question, lectureId)
+      const result = await lectureService.contentsStudyChat(question, lectureId, quizPayload)
       if (result.data?.answer) {
         setMessages(prev => [...prev, { role: 'assistant', content: result.data!.answer }])
       } else {
@@ -91,7 +105,7 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
       setIsLoading(false)
       scrollToBottom()
     }
-  }, [input, isLoading, lectureId, scrollToBottom, t])
+  }, [input, isLoading, lectureId, quizChatContext, scrollToBottom, t])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -138,13 +152,34 @@ export function ContentsChatPanel({ lectureId }: ContentsChatPanelProps) {
 
       {/* Input */}
       <div className="shrink-0 border-t border-gray-200 dark:border-gray-700 p-3">
+        {/* Quiz context badge */}
+        {quizChatContext && (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 text-xs font-medium">
+              {t('quizChatBadge', {
+                courseTitle: quizChatContext.courseTitle,
+                weekNumber: quizChatContext.weekNumber,
+                sessionNumber: String(quizChatContext.sessionNumber).padStart(2, '0'),
+                quizNumber: quizChatContext.quizIndex + 1,
+              })}
+              <button
+                type="button"
+                onClick={onClearQuizContext}
+                className="ml-1 rounded-full hover:bg-indigo-200 dark:hover:bg-indigo-800 p-0.5 transition-colors"
+                aria-label="close"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          </div>
+        )}
         <div className="flex items-end gap-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2">
           <textarea
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={t('inputPlaceholder')}
+            placeholder={quizChatContext ? t('quizChatPlaceholder') : t('inputPlaceholder')}
             rows={1}
             className="flex-1 resize-none bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 outline-none max-h-24 overflow-y-auto"
             style={{ minHeight: '1.5rem' }}

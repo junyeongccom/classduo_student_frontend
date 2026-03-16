@@ -77,6 +77,8 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const setTargetChunkIndex = useLectureStudyStore(s => s.setTargetChunkIndex)
   const resetNavigationState = useLectureStudyStore(s => s.resetNavigationState)
   const setTotalRecordingChunks = useLectureStudyStore(s => s.setTotalRecordingChunks)
+  const quizChatContext = useLectureStudyStore(s => s.quizChatContext)
+  const clearQuizChatContext = useLectureStudyStore(s => s.clearQuizChatContext)
 
   // Analytics: 페이지 체류시간 추적
   useEffect(() => {
@@ -481,7 +483,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               </button>
             </div>
             <div className="flex-1 min-h-0">
-              <ContentsChatPanel lectureId={lectureId} />
+              <ContentsChatPanel lectureId={lectureId} quizChatContext={quizChatContext} onClearQuizContext={clearQuizChatContext} />
             </div>
           </section>
         )}
@@ -589,7 +591,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               </button>
             </div>
             <div className="flex-1 min-h-0">
-              <ContentsChatPanel lectureId={lectureId} />
+              <ContentsChatPanel lectureId={lectureId} quizChatContext={quizChatContext} onClearQuizContext={clearQuizChatContext} />
             </div>
           </section>
         )}
