@@ -242,7 +242,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors group-hover:bg-gray-700 group-hover:text-white">
                         <Moon className="h-4 w-4" />
                       </div>
-                      <span className="flex-1 text-sm font-medium text-gray-900">
+                      <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">
                         {locale === 'ko' ? '다크 모드' : 'Dark Mode'}
                       </span>
                       <div

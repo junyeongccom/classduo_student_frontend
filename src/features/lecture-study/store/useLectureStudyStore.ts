@@ -15,6 +15,25 @@ interface WordItem {
   description: string
 }
 
+export interface QuizChatChoice {
+  choice_order: number
+  choice_text: string
+  is_correct: boolean
+  choice_explanation: string | null
+}
+
+export interface QuizChatContext {
+  quizId: string
+  quizIndex: number
+  courseTitle: string
+  weekNumber: number
+  sessionNumber: number
+  question: string
+  explanation: string | null
+  choices: QuizChatChoice[]
+  source: { source_pages?: number[]; source_chunks?: number[] }
+}
+
 interface LectureStudyState {
   courseId: string | null
   lectureId: string | null
@@ -33,6 +52,8 @@ interface LectureStudyState {
   totalMaterialPages: number
   /** 녹음본 전체 청크 수 (출처 범위 검증용) */
   totalRecordingChunks: number
+  /** 퀴즈→챗봇 질문 컨텍스트 (persist 제외) */
+  quizChatContext: QuizChatContext | null
 }
 
 interface LectureStudyActions {
@@ -50,6 +71,8 @@ interface LectureStudyActions {
   setTotalMaterialPages: (count: number) => void
   setTotalRecordingChunks: (count: number) => void
   resetNavigationState: () => void
+  setQuizChatContext: (ctx: QuizChatContext) => void
+  clearQuizChatContext: () => void
   reset: () => void
 }
 
@@ -67,6 +90,7 @@ const initialState: LectureStudyState = {
   targetChunkIndex: null,
   totalMaterialPages: 0,
   totalRecordingChunks: 0,
+  quizChatContext: null,
 }
 
 export const useLectureStudyStore = create<LectureStudyState & LectureStudyActions>()(
@@ -74,7 +98,7 @@ export const useLectureStudyStore = create<LectureStudyState & LectureStudyActio
     (set) => ({
       ...initialState,
       setCourseId: (courseId) => set({ courseId }),
-      setLectureId: (lectureId) => set({ lectureId }),
+      setLectureId: (lectureId) => set({ lectureId, quizChatContext: null }),
       toggleLeftPanel: () => set((s) => ({ isLeftPanelOpen: !s.isLeftPanelOpen })),
       toggleChatPanel: () => set((s) => ({ isChatPanelOpen: !s.isChatPanelOpen })),
       setLeftTab: (leftTab) => set({ leftTab }),
@@ -87,11 +111,29 @@ export const useLectureStudyStore = create<LectureStudyState & LectureStudyActio
       setTotalMaterialPages: (totalMaterialPages) => set({ totalMaterialPages }),
       setTotalRecordingChunks: (totalRecordingChunks) => set({ totalRecordingChunks }),
       resetNavigationState: () => set({ targetPage: null, targetChunkIndex: null }),
+      setQuizChatContext: (quizChatContext) => set({ quizChatContext, isChatPanelOpen: true }),
+      clearQuizChatContext: () => set({ quizChatContext: null }),
       reset: () => set(initialState),
     }),
     {
       name: 'lecture-study-state',
-      version: 6,
+      version: 7,
+      partialize: (state) => ({
+        courseId: state.courseId,
+        lectureId: state.lectureId,
+        isLeftPanelOpen: state.isLeftPanelOpen,
+        isChatPanelOpen: state.isChatPanelOpen,
+        leftTab: state.leftTab,
+        rightTab: state.rightTab,
+        leftPanelWidth: state.leftPanelWidth,
+        chatPanelWidth: state.chatPanelWidth,
+        gameWords: state.gameWords,
+        targetPage: state.targetPage,
+        targetChunkIndex: state.targetChunkIndex,
+        totalMaterialPages: state.totalMaterialPages,
+        totalRecordingChunks: state.totalRecordingChunks,
+        // quizChatContext는 의도적으로 제외 (세션 간 유지 불필요)
+      }),
       migrate: (persisted, version) => {
         if (version < 5) {
           const old = persisted as Record<string, unknown>

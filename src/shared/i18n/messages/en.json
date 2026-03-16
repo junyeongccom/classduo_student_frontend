@@ -456,14 +456,17 @@
         "title": "Congratulations!",
         "message": "You have completed all quizzes for {courseName} {weekSession}",
         "confirm": "OK"
-      }
+      },
+      "askAiChatbot": "Ask AI Chatbot"
     },
     "contentsChat": {
       "errorGenerate": "Failed to generate a response. Please try again.",
       "errorGeneral": "An error occurred. Please try again.",
       "emptyHint": "Ask anything about\nthe lecture content",
       "generating": "Generating response...",
-      "inputPlaceholder": "Type your question..."
+      "inputPlaceholder": "Type your question...",
+      "quizChatBadge": "{courseTitle} W{weekNumber} S{sessionNumber} Q{quizNumber} Question",
+      "quizChatPlaceholder": "Ask more about this question"
     },
     "buttons": {
       "startTest": "Start Test",

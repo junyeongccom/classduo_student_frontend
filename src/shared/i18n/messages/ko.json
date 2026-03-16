@@ -456,14 +456,17 @@
         "title": "축하합니다!",
         "message": "{courseName} {weekSession} 퀴즈 풀이를 완료했습니다",
         "confirm": "확인"
-      }
+      },
+      "askAiChatbot": "AI 챗봇에게 질문하기"
     },
     "contentsChat": {
       "errorGenerate": "답변을 생성하지 못했습니다. 다시 시도해주세요.",
       "errorGeneral": "오류가 발생했습니다. 다시 시도해주세요.",
       "emptyHint": "강의 내용에 대해\n궁금한 점을 물어보세요",
       "generating": "답변 생성 중...",
-      "inputPlaceholder": "질문을 입력하세요..."
+      "inputPlaceholder": "질문을 입력하세요...",
+      "quizChatBadge": "{courseTitle} {weekNumber}주차 {sessionNumber}차시 Q{quizNumber} 문제 질문",
+      "quizChatPlaceholder": "이 문제에 대해 더 물어보세요"
     },
     "buttons": {
       "startTest": "테스트 시작하기",

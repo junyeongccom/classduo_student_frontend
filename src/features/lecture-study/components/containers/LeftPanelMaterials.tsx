@@ -201,6 +201,8 @@ export function LeftPanelMaterials() {
       const el = pageRefs.current[pageIdx]
       if (!el || !scrollContainerRef.current) return
 
+      // 새 스크롤 시작 → 이전 스크롤의 settle을 무효화
+      const mySettleId = ++settleIdRef.current
       isScrollingRef.current = true
       setCurrentPage(pageIdx + 1)
 
@@ -209,9 +211,10 @@ export function LeftPanelMaterials() {
         el.scrollIntoView({ behavior: 'instant', block: 'start' })
 
         // 이미지 로드로 높이 변경 시 위치 보정 (최대 3회)
+        // isScrollingRef는 모든 보정이 끝날 때까지 true 유지
         let retries = 0
         const correctPosition = () => {
-          if (retries >= 3 || !pageRefs.current[pageIdx]) return
+          if (retries >= 3 || !pageRefs.current[pageIdx] || mySettleId !== settleIdRef.current) return
           retries++
           requestAnimationFrame(() => {
             pageRefs.current[pageIdx]?.scrollIntoView({ behavior: 'instant', block: 'start' })
@@ -221,15 +224,16 @@ export function LeftPanelMaterials() {
         setTimeout(correctPosition, 300)
         setTimeout(correctPosition, 600)
 
-        // instant는 scrollend 이벤트가 안 날 수 있으므로 즉시 해제
-        requestAnimationFrame(() => {
-          isScrollingRef.current = false
-        })
+        // 마지막 보정(600ms) + 여유 후 해제 — 보정 중 observer가 잘못된 페이지를 감지하지 않도록
+        setTimeout(() => {
+          if (mySettleId === settleIdRef.current) {
+            isScrollingRef.current = false
+          }
+        }, 750)
       } else {
         // 화살표: smooth scroll (1페이지 이동)
         el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-        const mySettleId = ++settleIdRef.current
         const container = scrollContainerRef.current
         let settled = false
         const settle = () => {
@@ -294,14 +298,12 @@ export function LeftPanelMaterials() {
   useEffect(() => {
     if (targetPage == null || allPages.length === 0) return
 
+    // 즉시 소비하여 다음 클릭이 새로운 targetPage를 설정할 수 있게 함
+    setTargetPage(null)
+
     // targetPage는 0-indexed 배열 인덱스
     if (targetPage >= 0 && targetPage < allPages.length) {
-      requestAnimationFrame(() => {
-        scrollToPage(targetPage, true)
-        setTargetPage(null)
-      })
-    } else {
-      setTargetPage(null)
+      scrollToPage(targetPage, true)
     }
   }, [targetPage, allPages.length, scrollToPage, setTargetPage])
 

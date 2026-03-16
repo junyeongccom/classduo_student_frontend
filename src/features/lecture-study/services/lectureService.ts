@@ -80,6 +80,19 @@ export interface ContentsStudyChatResponse {
   answer: string
 }
 
+export interface QuizContextPayload {
+  quiz_id: string
+  question: string
+  explanation: string | null
+  choices: {
+    choice_order: number
+    choice_text: string
+    is_correct: boolean
+    choice_explanation: string | null
+  }[]
+  source: { source_pages?: number[]; source_chunks?: number[] }
+}
+
 export interface ChatMessageItem {
   id?: string
   role: 'user' | 'assistant'
@@ -178,11 +191,15 @@ export const lectureService = {
     })
   },
 
-  contentsStudyChat: (question: string, lectureId: string) => {
+  contentsStudyChat: (question: string, lectureId: string, quizContext?: QuizContextPayload) => {
     return apiRequest<ContentsStudyChatResponse>('/contents-study/chat', {
       method: 'POST',
       auth: true,
-      body: { question, lecture_id: lectureId },
+      body: {
+        question,
+        lecture_id: lectureId,
+        ...(quizContext && { quiz_context: quizContext }),
+      },
     })
   },
 
