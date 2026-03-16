@@ -102,10 +102,15 @@ async function flushEvents() {
 
 /**
  * 타이머 시작 (앱 마운트 시 1회 호출)
+ * session_start 이벤트를 즉시 전송하여 DAU 누락 방지
  */
 export function initAnalytics() {
   if (typeof window === 'undefined') return
   if (flushTimer) return
+
+  // 접속 즉시 session_start 전송 → DAU 즉시 반영 (5초 대기 없음)
+  trackEvent('session_start', 'app')
+  flushEvents()
 
   flushTimer = setInterval(flushEvents, FLUSH_INTERVAL_MS)
 
@@ -192,21 +197,44 @@ export const myQuizAnalytics = {
 }
 
 /**
- * AI 튜터 이벤트 트래킹 헬퍼
+ * 대화형 학습 이벤트 트래킹 헬퍼
  */
 export const chatAnalytics = {
+  /** 사용자 직접 질문 */
   message(lectureId: string, data: { message_length: number; question_type?: string }) {
-    trackEvent('chat_message', 'ai-tutor', { lectureId, data })
+    trackEvent('chat_message', 'dialogue', { lectureId, data })
   },
-  /** 후킹/PQM/후속질문 클릭 트래킹 (sendMessage를 거치지 않는 미리 준비된 답변용) */
+  /** PQM/Hooking 클릭 */
   questionClick(lectureId: string, data: { question_type: 'hooking' | 'pqm'; question_id?: string }) {
-    trackEvent('ai_question_click', 'ai-tutor', { lectureId, data })
-    // 신규: 실제 사용자 클릭 이벤트 (ai_question_click과 분리)
-    trackEvent('ai_tutor_click', 'ai-tutor', { lectureId, data })
+    trackEvent('ai_question_click', 'dialogue', { lectureId, data })
+  },
+  /** 채팅 세션 생성 (PQM/Hooking 클릭 또는 직접 질문으로 새 세션이 생성될 때) */
+  sessionCreate(lectureId: string, data: { trigger: 'hooking' | 'pqm' | 'direct_question'; session_id?: string }) {
+    trackEvent('chat_session_create', 'dialogue', { lectureId, data })
+  },
+  /** 후속질문 클릭 */
+  followupClick(lectureId: string, data: { question_text?: string }) {
+    trackEvent('followup_click', 'dialogue', { lectureId, data })
+  },
+  /** simple/deep 모드 전환 */
+  modeSwitch(data: { mode: 'simple' | 'deep' }) {
+    trackEvent('chat_mode_switch', 'dialogue', { data })
+  },
+  /** 채팅 입력바 포커스 */
+  inputFocus(lectureId?: string) {
+    trackEvent('chat_input_focus', 'dialogue', { lectureId })
+  },
+  /** 핵심질문 유도 배너 클릭 */
+  bannerClick(lectureId: string, data: { banner_type?: string }) {
+    trackEvent('chat_banner_click', 'dialogue', { lectureId, data })
+  },
+  /** 대화형 학습 내 회차 선택 */
+  lectureSelect(lectureId: string, courseId?: string) {
+    trackEvent('lecture_select', 'dialogue', { lectureId, courseId })
   },
   /** PQM/Hooking API fetch 완료 시 자동 발화 — 노출 카운트 */
   exposure(lectureId: string, data: { question_type: 'hooking' | 'pqm'; count: number }) {
-    trackEvent('ai_tutor_exposure', 'ai-tutor', { lectureId, data })
+    trackEvent('ai_tutor_exposure', 'dialogue', { lectureId, data })
   },
 }
 
@@ -224,10 +252,10 @@ export const sourceAnalytics = {
   },
 }
 
-/** AI 튜터 출처탭 트래킹 */
-export const aiTutorAnalytics = {
+/** 대화형 학습 출처탭 트래킹 */
+export const dialogueSourceAnalytics = {
   sourceTabView(lectureId: string, data: { tab: 'notes' | 'materials' }) {
-    trackEvent('source_tab_view', 'ai_tutor', { lectureId, data })
+    trackEvent('source_tab_view', 'dialogue', { lectureId, data })
   },
 }
 
@@ -289,10 +317,41 @@ export const gameAbandonAnalytics = {
   },
 }
 
-/** AI 튜터 피드백 (좋아요/싫어요) 트래킹 */
+/** 대화형 학습 피드백 (좋아요/싫어요) 트래킹 */
 export const aiFeedbackAnalytics = {
   feedback(lectureId: string, data: { feedback_type: 'like' | 'dislike' | 'cancel'; message_id: string; session_id?: string }) {
-    trackEvent('ai_feedback', 'ai-tutor', { lectureId, data })
+    trackEvent('ai_feedback', 'dialogue', { lectureId, data })
+  },
+}
+
+/** 강의자료/녹음본 트래킹 */
+export const materialViewAnalytics = {
+  /** 강의자료 보기 아이콘 클릭 */
+  iconClick(lectureId: string) {
+    trackEvent('material_icon_click', 'lecture_study', { lectureId })
+  },
+  /** 녹음본 토글 열기/닫기 */
+  recordingToggle(lectureId: string, data: { recording_index: number; action: 'open' | 'close' }) {
+    trackEvent('recording_toggle', 'lecture_study', { lectureId, data })
+  },
+}
+
+/** 게임 추가 트래킹 */
+export const gameExtraAnalytics = {
+  /** 랭크보기 클릭 */
+  rankView(lectureId: string, data: { game_type: string }) {
+    trackEvent('game_rank_view', 'game', { lectureId, data })
+  },
+  /** 일반플레이 단어 추가/편집/삭제 */
+  wordEdit(lectureId: string, data: { action: 'add' | 'edit' | 'delete'; word?: string }) {
+    trackEvent('game_word_edit', 'game', { lectureId, data })
+  },
+}
+
+/** 내 퀴즈 세션 클릭 트래킹 */
+export const myQuizSessionAnalytics = {
+  sessionClick(data: { session_id: string; lecture_id?: string }) {
+    trackEvent('myquiz_session_click', 'my_quizzes', { data })
   },
 }
 

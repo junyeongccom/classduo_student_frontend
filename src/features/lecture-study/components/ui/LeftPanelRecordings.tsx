@@ -10,6 +10,7 @@ import { Mic, Sparkles, Clock } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/shared/components/ui'
 import type { Recording, RecordingChunkSummary } from '../../types'
+import { materialViewAnalytics } from '@/shared/lib/analytics'
 
 interface LeftPanelRecordingsProps {
   recordings: Recording[]
@@ -19,6 +20,8 @@ interface LeftPanelRecordingsProps {
   targetChunkIndex?: number | null
   /** targetChunkIndex 소비 완료 콜백 */
   onTargetConsumed?: () => void
+  /** 트래킹용 lectureId */
+  lectureId?: string
 }
 
 function formatTime(seconds: number | null): string {
@@ -99,6 +102,7 @@ export function LeftPanelRecordings({
   essence7Words,
   targetChunkIndex,
   onTargetConsumed,
+  lectureId,
 }: LeftPanelRecordingsProps) {
   const t = useTranslations()
 
@@ -226,6 +230,19 @@ export function LeftPanelRecordings({
                   type="multiple"
                   value={recOpenItems}
                   onValueChange={(newValues: string[]) => {
+                    // 트래킹: 새로 열리거나 닫힌 항목 감지
+                    if (lectureId) {
+                      const added = newValues.filter((v) => !recOpenItems.includes(v))
+                      const removed = recOpenItems.filter((v) => !newValues.includes(v))
+                      for (const vk of added) {
+                        const idx = parseInt(vk.split('-').pop() ?? '0', 10)
+                        materialViewAnalytics.recordingToggle(lectureId, { recording_index: globalOffset + idx, action: 'open' })
+                      }
+                      for (const vk of removed) {
+                        const idx = parseInt(vk.split('-').pop() ?? '0', 10)
+                        materialViewAnalytics.recordingToggle(lectureId, { recording_index: globalOffset + idx, action: 'close' })
+                      }
+                    }
                     setOpenItems((prev) => {
                       const otherItems = prev.filter((v) => !v.startsWith(recPrefix))
                       return [...otherItems, ...newValues]
@@ -257,7 +274,21 @@ export function LeftPanelRecordings({
         <Accordion
           type="multiple"
           value={openItems}
-          onValueChange={setOpenItems}
+          onValueChange={(newValues: string[]) => {
+            if (lectureId) {
+              const added = newValues.filter((v) => !openItems.includes(v))
+              const removed = openItems.filter((v) => !newValues.includes(v))
+              for (const vk of added) {
+                const idx = parseInt(vk.replace('chunk-', ''), 10)
+                materialViewAnalytics.recordingToggle(lectureId, { recording_index: idx, action: 'open' })
+              }
+              for (const vk of removed) {
+                const idx = parseInt(vk.replace('chunk-', ''), 10)
+                materialViewAnalytics.recordingToggle(lectureId, { recording_index: idx, action: 'close' })
+              }
+            }
+            setOpenItems(newValues)
+          }}
         >
           {allChunks.map((chunk, i) => {
             const vk = `chunk-${i}`
