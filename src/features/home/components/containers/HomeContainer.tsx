@@ -96,7 +96,7 @@ export function HomeContainer() {
                     : t('home.etcGroup')}
                 </h2>
               </div>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {group.courses.map((course) => (
                   <CourseCard
                     key={course.id}

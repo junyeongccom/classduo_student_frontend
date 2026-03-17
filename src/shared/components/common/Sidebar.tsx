@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/shared/components/ui/Tooltip'
-import { useSidebarStore } from '@/shared/store/useSidebarStore'
+import { useSidebarStore, useTabletDetector } from '@/shared/store/useSidebarStore'
 import { useFeedbackStore } from '@/features/error-report'
 import { ChevronsLeft, Menu } from 'lucide-react'
 import { GameSelectionModal } from './GameSelectionModal'
@@ -39,29 +39,69 @@ export function Sidebar() {
 function NewSidebar() {
   const t = useTranslations()
   const pathname = usePathname()
-  const { isCollapsed, toggle } = useSidebarStore()
+  const { isCollapsed, toggle, setCollapsed, isOverlayOpen, openOverlay, closeOverlay, isTablet } = useSidebarStore()
   const openFeedback = useFeedbackStore((s) => s.open)
   const [isGameModalOpen, setIsGameModalOpen] = useState(false)
+  const wasTabletRef = useRef(false)
+
+  // 태블릿 감지 (store.isTablet 동기화)
+  useTabletDetector()
 
   const menuItems = useMemo(() => [...NEW_SIDEBAR_MENU], [])
 
+  // 태블릿 진입/이탈 시 자동 collapse/expand
+  useEffect(() => {
+    if (isTablet && !wasTabletRef.current) {
+      setCollapsed(true)
+      closeOverlay()
+    } else if (!isTablet && wasTabletRef.current) {
+      setCollapsed(false)
+    }
+    wasTabletRef.current = isTablet
+  }, [isTablet, setCollapsed, closeOverlay])
+
+  // 태블릿에서 아이콘 클릭 시 오버레이 토글
+  const handleSidebarToggle = () => {
+    if (isTablet) {
+      if (isOverlayOpen) {
+        closeOverlay()
+      } else {
+        openOverlay()
+      }
+    } else {
+      toggle()
+    }
+  }
+
+  // 실제 렌더 상태: 태블릿 오버레이 열림이면 확장 표시
+  const visualCollapsed = isTablet ? !isOverlayOpen : isCollapsed
+
   return (
     <TooltipProvider delayDuration={300}>
+      {/* 태블릿 오버레이 딤 배경 */}
+      {isTablet && isOverlayOpen && (
+        <div
+          className="fixed inset-0 z-[49] bg-black/40 backdrop-blur-[2px] transition-opacity"
+          onClick={closeOverlay}
+        />
+      )}
+
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden',
+          'fixed left-0 top-0 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden',
           'transition-[width,padding] duration-300 ease-in-out',
-          isCollapsed ? 'w-[72px] px-3 py-4 gap-4' : 'w-[240px] px-6 py-6 gap-8',
+          isTablet && isOverlayOpen ? 'z-[51]' : 'z-50',
+          visualCollapsed ? 'w-[72px] px-3 py-4 gap-4' : 'w-[240px] px-6 py-6 gap-8',
         )}
       >
         {/* Header */}
         <div className="relative flex h-10 shrink-0 items-center">
           {/* 햄버거 — 닫힌 상태에서 보임 */}
           <button
-            onClick={toggle}
+            onClick={handleSidebarToggle}
             className={cn(
-              'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200',
-              isCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none',
+              'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200',
+              visualCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none',
             )}
             aria-label="Open sidebar"
           >
@@ -72,7 +112,7 @@ function NewSidebar() {
           <div
             className={cn(
               'flex w-full items-center justify-between px-2 transition-all duration-300',
-              isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100',
+              visualCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100',
             )}
           >
             <Link href="/studyspace/home" className="flex items-center gap-3">
@@ -80,8 +120,8 @@ function NewSidebar() {
               <h2 className="whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Aplus</h2>
             </Link>
             <button
-              onClick={toggle}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300"
+              onClick={handleSidebarToggle}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300"
               aria-label="Collapse sidebar"
             >
               <ChevronsLeft className="h-5 w-5" />
@@ -110,10 +150,14 @@ function NewSidebar() {
                     event.preventDefault()
                     setIsGameModalOpen(true)
                   }
+                  // 태블릿에서 네비게이션 후 오버레이 닫기
+                  if (isTablet && isOverlayOpen) {
+                    closeOverlay()
+                  }
                 }}
                 className={cn(
                   'flex items-center rounded-xl font-medium transition-all duration-300',
-                  isCollapsed ? 'justify-center px-0 py-3' : 'gap-4 px-4 py-3',
+                  visualCollapsed ? 'justify-center px-0 py-3' : 'gap-4 px-4 py-3',
                   isActive
                     ? 'font-semibold'
                     : 'hover:bg-gray-100 dark:hover:bg-gray-800',
@@ -127,7 +171,7 @@ function NewSidebar() {
                 <span
                   className={cn(
                     'whitespace-nowrap transition-all duration-300',
-                    isCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100',
+                    visualCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100',
                     isActive ? 'text-gray-900 dark:text-gray-50' : 'text-gray-500 dark:text-gray-400',
                   )}
                 >
@@ -136,7 +180,7 @@ function NewSidebar() {
               </Link>
             )
 
-            if (isCollapsed) {
+            if (visualCollapsed) {
               return (
                 <Tooltip key={item.id}>
                   <TooltipTrigger asChild>{linkContent}</TooltipTrigger>

@@ -174,7 +174,7 @@ export function FeedbackModal({
           )}
 
           {/* Row: 발생 항목 + 발생시각 */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* 발생 항목 */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('category')}</label>

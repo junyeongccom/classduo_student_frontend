@@ -152,7 +152,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
             </div>
 
             {/* Game Mode Cards — 균등 분할 */}
-            <div className="mt-4 grid grid-cols-4 gap-3">
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
               {GAME_MODES.map(game => (
                 <div
                   key={game.id}
