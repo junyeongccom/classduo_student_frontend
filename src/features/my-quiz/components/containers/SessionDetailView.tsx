@@ -14,6 +14,7 @@ import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { cn } from '@/shared/lib/utils'
 import { useToast } from '@/shared/hooks/useToast'
+import { quizAnalytics } from '@/shared/lib/analytics'
 import * as myQuizService from '../../services/myQuizService'
 import * as statusService from '../../services/myQuizStatusService'
 import { TYPE_ORDER } from '../../types'
@@ -138,6 +139,8 @@ export default function SessionDetailView({
 
   const handleCorrectUpdate = useCallback(
     async (quizId: string, isCorrect: boolean, answer: number) => {
+      quizAnalytics.answer(lectureId, { question_index: -1, correct: isCorrect, duration_ms: 0, quiz_type: 'customize' })
+
       const key = `customize:${quizId}`
       const current = statusMap.get(key)
 

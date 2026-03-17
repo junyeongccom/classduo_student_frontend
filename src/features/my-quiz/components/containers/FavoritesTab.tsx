@@ -13,6 +13,7 @@ import { Loader2, Star, BookOpen, ArrowUpDown } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { useToast } from '@/shared/hooks/useToast'
+import { quizAnalytics } from '@/shared/lib/analytics'
 import * as statusService from '../../services/myQuizStatusService'
 import type { QuizBookmarkEntry } from '../../types'
 import { groupQuizzesByCourseAndLecture } from '../../domain/groupQuizzes'
@@ -285,6 +286,8 @@ export default function FavoritesTab({
     async (quizId: string, isCorrect: boolean, answer: number) => {
       const quiz = allQuizzes.find(q => q.quiz_id === quizId)
       if (!quiz) return
+
+      quizAnalytics.answer(quiz.lecture_id ?? '', { question_index: -1, correct: isCorrect, duration_ms: 0, quiz_type: quiz.quiz_source ?? 'bookmark' })
 
       // Optimistic update
       const updated = allQuizzes.map(q =>
