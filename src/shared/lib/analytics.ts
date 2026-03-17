@@ -150,11 +150,13 @@ export function trackPageEnter(source: string, options?: { lectureId?: string; c
 /**
  * 페이지 이탈 기록 — 체류시간 자동 계산
  */
-export function trackPageLeave(source: string, options?: { lectureId?: string; courseId?: string }) {
+export function trackPageLeave(source: string, options?: { lectureId?: string; courseId?: string; lastTab?: string }) {
   const enterTime = pageEnterTimes.get(source)
   const durationMs = enterTime ? Date.now() - enterTime : 0
   pageEnterTimes.delete(source)
-  trackEvent('page_leave', source, { ...options, data: { duration_ms: durationMs } })
+  const data: Record<string, unknown> = { duration_ms: durationMs }
+  if (options?.lastTab) data.last_tab = options.lastTab
+  trackEvent('page_leave', source, { ...options, data })
 }
 
 /**
