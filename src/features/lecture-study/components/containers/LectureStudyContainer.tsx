@@ -80,10 +80,12 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const quizChatContext = useLectureStudyStore(s => s.quizChatContext)
   const clearQuizChatContext = useLectureStudyStore(s => s.clearQuizChatContext)
 
-  // Analytics: 페이지 체류시간 추적
+  // Analytics: 페이지 체류시간 추적 (이탈 시 마지막 탭 정보 포함)
+  const rightTabRef = useRef(rightTab)
+  useEffect(() => { rightTabRef.current = rightTab }, [rightTab])
   useEffect(() => {
     trackPageEnter('lecture_study', { lectureId, courseId })
-    return () => { trackPageLeave('lecture_study', { lectureId, courseId }) }
+    return () => { trackPageLeave('lecture_study', { lectureId, courseId, lastTab: rightTabRef.current }) }
   }, [lectureId, courseId])
 
   // Analytics: 포커스 이탈 감지
