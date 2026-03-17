@@ -100,7 +100,7 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
       <div className="mb-5 h-px bg-gray-100" />
 
       {/* 게임 카드 그리드 */}
-      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
         {GAME_LIST.map((game, i) => {
           const theme = CARD_THEMES[i]
           return (
