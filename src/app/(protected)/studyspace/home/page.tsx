@@ -2,8 +2,6 @@
 
 import { useNewStudyspace } from '@/shared/lib/featureFlags'
 import { HomeContainer } from '@/features/home'
-import { SurveyPopup } from '@/shared/components/common'
-
 export default function StudyspaceHomePage() {
   const isNewUI = useNewStudyspace()
 
@@ -15,11 +13,6 @@ export default function StudyspaceHomePage() {
     )
   }
 
-  return (
-    <>
-      <SurveyPopup />
-      <HomeContainer />
-    </>
-  )
+  return <HomeContainer />
 }
 
