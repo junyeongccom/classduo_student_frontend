@@ -50,9 +50,10 @@ interface ReviewMatchingGameProps {
   lectureId?: string | null
   courseId?: string
   gameMode?: 'rank' | 'normal'
+  onRankSubmitSuccess?: (score: number, durationMs: number) => void
 }
 
-export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, courseId, gameMode }: ReviewMatchingGameProps) {
+export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, courseId, gameMode, onRankSubmitSuccess }: ReviewMatchingGameProps) {
   const t = useTranslations('review.ui')
   const [selectedSize, setSelectedSize] = useState<SizeOption | null>(null)
   const [cards, setCards] = useState<MatchCard[]>([])
@@ -214,6 +215,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
         )
         if (!cancelled && submitData) {
           setSubmissionRank(submitData.rank)
+          onRankSubmitSuccess?.(0, elapsedMs)
         }
       } catch {
         // 제출 실패는 무시

@@ -491,12 +491,20 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     return (
       <GameOverlay
         isOpen
-        onClose={(score) => {
+        onClose={(score, rankSubmitted) => {
           const elapsed = Date.now() - gameStartTime.current
-          if (score === null || score === undefined) {
+          const isAbandon = score === null || score === undefined
+          if (isAbandon) {
             gameAbandonAnalytics.abandon(lectureId, { game_type: 'running', elapsed_ms: elapsed })
+          } else if (gameMode === 'rank') {
+            // rank 모드: DB 제출 성공 시에만 game_complete 발화 (rankSubmitted 플래그)
+            if (rankSubmitted) {
+              gameAnalytics.complete(lectureId, { game_type: 'running', score: score ?? 0, duration_ms: elapsed, access_source: accessSource, game_mode: 'rank' })
+            }
+          } else {
+            // normal 모드: 모달 닫기 시 game_complete 발화
+            gameAnalytics.complete(lectureId, { game_type: 'running', score: score ?? 0, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
           }
-          gameAnalytics.complete(lectureId, { game_type: 'running', score: score ?? 0, duration_ms: elapsed, access_source: accessSource, game_mode: gameMode ?? 'normal' })
           setShowRunningOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
@@ -517,10 +525,14 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       const elapsed = Date.now() - gameStartTime.current
       if (!gameCompleted.current) {
         gameCompleted.current = true
-        if (elapsed < 10000) {
+        const isAbandon = elapsed < 10000
+        if (isAbandon) {
           gameAbandonAnalytics.abandon(lectureId, { game_type: 'cardMatch', elapsed_ms: elapsed })
         }
-        gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: elapsed, access_source: accessSource, game_mode: gameMode ?? 'normal' })
+        // abandon이면 complete 발화하지 않음. rank 모드는 onRankSubmitSuccess에서 처리.
+        if (!isAbandon && gameMode !== 'rank') {
+          gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: elapsed, access_source: accessSource, game_mode: gameMode ?? 'normal' })
+        }
       }
       setShowMatchingOverlay(false)
       setSelectedGame(null)
@@ -563,6 +575,12 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
                 lectureId={lectureId}
                 courseId={courseId}
                 gameMode={gameMode ?? undefined}
+                onRankSubmitSuccess={(_score, durationMs) => {
+                  if (!gameCompleted.current) {
+                    gameCompleted.current = true
+                  }
+                  gameAnalytics.complete(lectureId, { game_type: 'cardMatch', score: 0, duration_ms: durationMs, access_source: accessSource, game_mode: 'rank' })
+                }}
               />
             </div>
           </div>
@@ -576,7 +594,11 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     const currentDefBuilderItems = gameMode === 'rank' ? rankReviewItems : reviewItems
     const retryDefBuilder = () => loadDefBuilderDataFrom(currentDefBuilderItems)
     const handleCloseDefBuilder = () => {
-      gameAnalytics.complete(lectureId, { game_type: 'definitionBuilder', score: defBuilderScore, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource, game_mode: gameMode ?? 'normal' })
+      // rank 모드: onRankSubmitSuccess에서 이미 game_complete 발화됨 → 여기서는 발화하지 않음
+      // normal 모드: 모달 닫기 시 game_complete 발화
+      if (gameMode !== 'rank') {
+        gameAnalytics.complete(lectureId, { game_type: 'definitionBuilder', score: defBuilderScore, duration_ms: Date.now() - gameStartTime.current, access_source: accessSource, game_mode: gameMode ?? 'normal' })
+      }
       setShowDefBuilderOverlay(false)
       setSelectedGame(null)
       setGameMode(null)
@@ -646,6 +668,9 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
                 lectureId={lectureId}
                 courseId={courseId}
                 gameMode={gameMode ?? undefined}
+                onRankSubmitSuccess={(score, durationMs) => {
+                  gameAnalytics.complete(lectureId, { game_type: 'definitionBuilder', score, duration_ms: durationMs, access_source: accessSource, game_mode: 'rank' })
+                }}
                 onScoreDelta={(delta) => {
                   setDefBuilderScore(s => s + delta)
                   setScoreDelta(delta)
