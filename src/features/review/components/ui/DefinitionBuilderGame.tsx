@@ -19,6 +19,7 @@ interface DefinitionBuilderGameProps {
   lectureId?: string | null
   courseId?: string
   gameMode?: 'rank' | 'normal'
+  onRankSubmitSuccess?: (score: number, durationMs: number) => void
 }
 
 const formatTime = (valueMs: number) => {
@@ -50,6 +51,7 @@ export function DefinitionBuilderGame({
   lectureId,
   courseId,
   gameMode,
+  onRankSubmitSuccess,
 }: DefinitionBuilderGameProps) {
   const t = useTranslations('review.ui')
   const questions = data?.questions ?? []
@@ -164,6 +166,7 @@ export function DefinitionBuilderGame({
         )
         if (!cancelled && submitData) {
           setSubmissionRank(submitData.rank)
+          onRankSubmitSuccess?.(currentScore, elapsedMs)
         }
       } catch {
         // 제출 실패는 무시

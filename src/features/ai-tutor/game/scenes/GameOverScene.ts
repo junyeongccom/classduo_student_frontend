@@ -262,6 +262,8 @@ export class GameOverScene extends Phaser.Scene {
       if (data?.rank) {
         statusText.setText(this.t.rankResult.replace("{rank}", String(data.rank)));
         statusText.setColor("#f1c40f");
+        // 부모(GameOverlay)가 rank 제출 성공 여부를 판별할 수 있도록 registry에 플래그 설정
+        this.game.registry.set('rankSubmitted', true);
       } else {
         statusText.setText(this.t.submitFailed);
         statusText.setColor("#e74c3c");
