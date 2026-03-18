@@ -24,6 +24,8 @@ interface AnalyticsEvent {
 
 const FLUSH_INTERVAL_MS = 5_000 // 5초마다 배치 전송
 const MAX_QUEUE_SIZE = 50       // 큐가 이만큼 차면 즉시 전송
+const IDLE_TIMEOUT_MS = 5 * 60 * 1_000  // 5분 비활동 → idle
+const ACTIVITY_THROTTLE_MS = 1_000       // activity 감지 throttle
 
 // ─── 상태 ───
 
@@ -121,8 +123,22 @@ export function initAnalytics() {
     }
   })
 
-  // 브라우저 닫기 전 전송 (sendBeacon fallback)
+  // 브라우저 닫기 전 — 미정리 tracker flush + 남은 이벤트 전송
   window.addEventListener('beforeunload', () => {
+    // 아직 열려있는 페이지의 tracker를 모두 flush
+    for (const [source, tracker] of pageIdleTrackers) {
+      const timing = finalizeTracker(tracker)
+      trackEvent('page_leave', source, {
+        data: {
+          duration_ms: timing.duration_ms,
+          idle_ms: timing.idle_ms,
+          total_elapsed_ms: timing.total_elapsed_ms,
+          auto_flush: true,
+        },
+      })
+    }
+    pageIdleTrackers.clear()
+
     if (eventQueue.length === 0) return
     const payload = JSON.stringify({
       events: eventQueue,
@@ -134,27 +150,141 @@ export function initAnalytics() {
   })
 }
 
-// ─── 편의 함수 ───
+// ─── 유휴 감지 기반 체류시간 ───
 
-/** 페이지/탭 진입 시간 기록용 */
-const pageEnterTimes = new Map<string, number>()
+interface IdleTracker {
+  enterTime: number
+  activeTime: number          // 누적 활성 시간 (ms)
+  lastActivityTime: number
+  isIdle: boolean
+  idleTimeout: ReturnType<typeof setTimeout> | null
+  cleanupListeners: () => void
+}
+
+const pageIdleTrackers = new Map<string, IdleTracker>()
+
+function createIdleTracker(): IdleTracker {
+  const now = Date.now()
+  const tracker: IdleTracker = {
+    enterTime: now,
+    activeTime: 0,
+    lastActivityTime: now,
+    isIdle: false,
+    idleTimeout: null,
+    cleanupListeners: () => {},
+  }
+
+  let lastThrottled = 0
+
+  const onActivity = () => {
+    const current = Date.now()
+    if (current - lastThrottled < ACTIVITY_THROTTLE_MS) return
+    lastThrottled = current
+
+    if (tracker.isIdle) {
+      // idle → active 복귀
+      tracker.isIdle = false
+      tracker.lastActivityTime = current
+    }
+
+    // 타임아웃 리셋
+    if (tracker.idleTimeout) clearTimeout(tracker.idleTimeout)
+    tracker.idleTimeout = setTimeout(() => {
+      if (!tracker.isIdle) {
+        // active → idle 전환: 활성 시간 누적
+        tracker.activeTime += Date.now() - tracker.lastActivityTime
+        tracker.isIdle = true
+      }
+    }, IDLE_TIMEOUT_MS)
+  }
+
+  const onVisibility = () => {
+    if (document.visibilityState === 'hidden') {
+      // 탭 숨김 → 즉시 idle 처리
+      if (!tracker.isIdle) {
+        tracker.activeTime += Date.now() - tracker.lastActivityTime
+        tracker.isIdle = true
+      }
+      if (tracker.idleTimeout) {
+        clearTimeout(tracker.idleTimeout)
+        tracker.idleTimeout = null
+      }
+    } else {
+      // 탭 복귀 → active 복귀
+      tracker.isIdle = false
+      tracker.lastActivityTime = Date.now()
+      onActivity() // 타임아웃 재시작
+    }
+  }
+
+  const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'] as const
+  events.forEach((evt) => window.addEventListener(evt, onActivity, { passive: true }))
+  document.addEventListener('visibilitychange', onVisibility)
+
+  // 최초 idle 타임아웃 시작
+  tracker.idleTimeout = setTimeout(() => {
+    if (!tracker.isIdle) {
+      tracker.activeTime += Date.now() - tracker.lastActivityTime
+      tracker.isIdle = true
+    }
+  }, IDLE_TIMEOUT_MS)
+
+  tracker.cleanupListeners = () => {
+    events.forEach((evt) => window.removeEventListener(evt, onActivity))
+    document.removeEventListener('visibilitychange', onVisibility)
+    if (tracker.idleTimeout) clearTimeout(tracker.idleTimeout)
+  }
+
+  return tracker
+}
+
+function finalizeTracker(tracker: IdleTracker): { duration_ms: number; idle_ms: number; total_elapsed_ms: number } {
+  const now = Date.now()
+  const totalElapsed = now - tracker.enterTime
+
+  // 아직 active 상태면 마지막 활성 구간 누적
+  let activeTime = tracker.activeTime
+  if (!tracker.isIdle) {
+    activeTime += now - tracker.lastActivityTime
+  }
+
+  tracker.cleanupListeners()
+
+  return {
+    duration_ms: activeTime,
+    idle_ms: totalElapsed - activeTime,
+    total_elapsed_ms: totalElapsed,
+  }
+}
+
+// ─── 편의 함수 ───
 
 /**
  * 페이지 진입 기록 — 이탈 시 trackPageLeave와 짝으로 사용
+ * 유휴 감지 tracker를 자동 시작
  */
 export function trackPageEnter(source: string, options?: { lectureId?: string; courseId?: string }) {
-  pageEnterTimes.set(source, Date.now())
+  // 기존 tracker가 있으면 정리
+  const existing = pageIdleTrackers.get(source)
+  if (existing) existing.cleanupListeners()
+
+  pageIdleTrackers.set(source, createIdleTracker())
   trackEvent('page_view', source, { ...options, data: { action: 'enter' } })
 }
 
 /**
- * 페이지 이탈 기록 — 체류시간 자동 계산
+ * 페이지 이탈 기록 — 활성 체류시간 자동 계산 (유휴 시간 제외)
  */
 export function trackPageLeave(source: string, options?: { lectureId?: string; courseId?: string; lastTab?: string }) {
-  const enterTime = pageEnterTimes.get(source)
-  const durationMs = enterTime ? Date.now() - enterTime : 0
-  pageEnterTimes.delete(source)
-  const data: Record<string, unknown> = { duration_ms: durationMs }
+  const tracker = pageIdleTrackers.get(source)
+  const timing = tracker ? finalizeTracker(tracker) : { duration_ms: 0, idle_ms: 0, total_elapsed_ms: 0 }
+  pageIdleTrackers.delete(source)
+
+  const data: Record<string, unknown> = {
+    duration_ms: timing.duration_ms,
+    idle_ms: timing.idle_ms,
+    total_elapsed_ms: timing.total_elapsed_ms,
+  }
   if (options?.lastTab) data.last_tab = options.lastTab
   trackEvent('page_leave', source, { ...options, data })
 }

@@ -56,7 +56,9 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const { topbar } = useStudyspaceLayoutSlots()
   const pathname = usePathname()
   const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
-  const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
+  const isTablet = useSidebarStore((s) => s.isTablet)
+  // 태블릿에서는 사이드바가 항상 72px collapse 상태 (오버레이는 콘텐츠를 밀지 않음)
+  const sidebarWidth = isTablet ? SIDEBAR_WIDTH_COLLAPSED : (sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED)
   const isFeedbackOpen = useFeedbackStore((s) => s.isOpen)
   const closeFeedback = useFeedbackStore((s) => s.close)
   const openFeedback = useFeedbackStore((s) => s.open)
@@ -141,7 +143,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
         style={{ paddingLeft: sidebarWidth }}
       >
         {/* Top Header Bar */}
-        <header className="relative z-[40] flex shrink-0 items-center justify-between border-b border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-900/80 py-3 pl-8 pr-4 backdrop-blur-md">
+        <header className="relative z-[40] flex shrink-0 items-center justify-between border-b border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-900/80 py-3 pl-4 pr-4 md:pl-8 backdrop-blur-md">
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <NewLanguageToggle />
             {topbar && (
@@ -153,7 +155,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               <button
                 id="flame-badge"
                 onClick={() => setIsFlamePopupOpen(v => !v)}
-                className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3 py-2 text-[#6366F1] transition-colors hover:bg-[#6366F1]/20"
+                className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3.5 py-2.5 text-[#6366F1] transition-colors hover:bg-[#6366F1]/20"
               >
                 <Flame className="h-5 w-5 fill-current" />
                 <span className="text-sm font-bold">{flameCount}</span>
@@ -197,7 +199,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               </div>
               <button
                 onClick={() => setIsProfileOpen((v) => !v)}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
                   isProfileOpen ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300'
                 }`}
               >

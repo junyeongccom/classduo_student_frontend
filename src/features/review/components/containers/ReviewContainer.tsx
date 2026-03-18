@@ -70,8 +70,8 @@ export function ReviewContainer() {
         <div
           className="mx-auto flex min-h-0 w-full flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-sm overflow-hidden"
           style={{
-            width: 'min(70vw)',
-            height: 'min(94vh)'
+            width: 'clamp(320px, 90vw, 900px)',
+            height: 'min(94vh)',
           }}
         >
           <SmartReviewContent

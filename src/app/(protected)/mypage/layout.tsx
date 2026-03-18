@@ -5,9 +5,19 @@ import {
   StudyspaceLayoutProvider,
   useStudyspaceLayoutSlots,
 } from '@/shared/components/layouts/studyspace'
+import { useSidebarStore, SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '@/shared/store/useSidebarStore'
+import { useNewStudyspace } from '@/shared/lib/featureFlags'
 
 function MyPageLayoutShell({ children }: { children: React.ReactNode }) {
   const { topbar } = useStudyspaceLayoutSlots()
+  const isNewUI = useNewStudyspace()
+  const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
+  const isTablet = useSidebarStore((s) => s.isTablet)
+
+  // NewUI: 동적 사이드바 너비, Legacy: 88px 고정
+  const sidebarPx = isNewUI
+    ? (isTablet ? SIDEBAR_WIDTH_COLLAPSED : (sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED))
+    : 88
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900">
@@ -26,7 +36,10 @@ function MyPageLayoutShell({ children }: { children: React.ReactNode }) {
             </header>
           )}
 
-          <div className={`flex flex-1 overflow-hidden pl-[88px] ${topbar ? 'pt-14' : ''}`}>
+          <div
+            className={`flex flex-1 overflow-hidden ${topbar ? 'pt-14' : ''}`}
+            style={{ paddingLeft: sidebarPx }}
+          >
             <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white">
               <div className="flex h-full flex-col">{children}</div>
             </main>
