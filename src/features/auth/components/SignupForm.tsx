@@ -11,11 +11,13 @@ import { useSignup } from '../hooks/useSignup'
 import { useAuthStore } from '../store/authStore'
 import { VerificationCodeInput } from './ui/VerificationCodeInput'
 import { Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react'
+import { EmailNoticeCard } from './ui/EmailNoticeCard'
 
 export function SignupForm() {
   const t = useTranslations('auth.signup')
   const tv = useTranslations('auth.validation')
   const tErr = useTranslations('errors')
+  const tPopup = useTranslations('auth.approvalPopup')
   const {
     handleSendSignupCode,
     handleVerifySignupCode,
@@ -264,6 +266,9 @@ export function SignupForm() {
         </div>
       )}
 
+      {/* 이메일 수신 안내 카드 */}
+      <EmailNoticeCard />
+
       {/* 회원가입 폼 */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="relative">
@@ -334,14 +339,14 @@ export function SignupForm() {
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative z-10 w-full max-w-sm mx-4 rounded-2xl bg-white dark:bg-gray-900 p-6 shadow-xl text-center">
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-              회원가입 승인 요청이 12시간 내로 처리됩니다. 승인 완료 메일이 발송되지 않을 수 있으므로 12시간 뒤에 입력한 이메일과 비밀번호로 로그인을 시도해주시기 바랍니다.
+              {tPopup('message')}
             </p>
             <Button
               onClick={() => setShowApprovalPopup(false)}
               className="mt-5 w-full"
               size="lg"
             >
-              확인
+              {tPopup('confirm')}
             </Button>
           </div>
         </div>

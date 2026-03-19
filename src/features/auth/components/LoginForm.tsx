@@ -9,6 +9,7 @@ import { Button, Input } from '@/shared/components/ui'
 import { useLogin } from '../hooks/useLogin'
 import { useAuthStore } from '../store/authStore'
 import { Mail, Lock, AlertCircle } from 'lucide-react'
+import { EmailNoticeCard } from './ui/EmailNoticeCard'
 
 export function LoginForm() {
   const t = useTranslations('auth.login')
@@ -76,6 +77,9 @@ export function LoginForm() {
           </div>
         </div>
       )}
+
+      {/* 이메일 수신 안내 카드 */}
+      <EmailNoticeCard />
 
       {/* 로그인 폼 */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

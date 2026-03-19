@@ -941,8 +941,8 @@
       "signupTab": "Sign up",
       "loginTab": "Log in",
       "noticeTitle": "Verification Email Notice",
-      "noticeLine1": "Some emails may not receive the verification email.",
-      "noticeLine2": "If you did not receive it, please contact admin@aplus.io.kr from your school email with your full name.",
+      "noticeLine1": "If you don't receive the verification email, click the signup button and then press the 'Request admin approval for registration' button that appears.",
+      "noticeLine2": "We process all approval requests within 12 hours. After that, you can log in with the email and password you registered with.",
       "noticeLine3": "",
       "noticeLine4": "",
       "noticeSchoolEmail": "",
@@ -966,6 +966,18 @@
       "strengthLetters": "Letters",
       "strengthNumbers": "Numbers",
       "strengthSymbols": "Symbols"
+    },
+    "emailNotice": {
+      "title": "Not receiving the verification email?",
+      "workspaceTitle": "Google Workspace activation required",
+      "workspaceDesc": "For @korea.ac.kr email, after creating your account on the university portal, you must separately activate your Google Workspace account to receive emails. Without activation, all incoming emails including verification emails will bounce.",
+      "approvalTitle": "Sent an admin approval request?",
+      "approvalDesc": "All students who sent admin approval requests have been approved. However, if your Google Workspace is not activated, the approval notification email cannot reach you.",
+      "loginGuide": "We process all approval requests within 12 hours. Even if you haven't received a notification, you can log in with the email and password you registered with."
+    },
+    "approvalPopup": {
+      "message": "Your registration approval request will be processed within 12 hours. You may not receive a confirmation email, so please try logging in with your registered email and password after 12 hours.",
+      "confirm": "OK"
     },
     "messages": {
       "profileUpdated": "Profile has been updated.",
@@ -1031,7 +1043,7 @@
     "VERIFICATION_CODE_INVALID": "Incorrect verification code",
     "TOO_MANY_VERIFICATION_ATTEMPTS": "Too many verification attempts. Please request a new code",
     "VERIFICATION_CODE_SEND_FAILED": "Failed to send verification code. Please try again later",
-    "EMAIL_BOUNCED": "This email does not exist. Please check if your email has been created on the Korea University portal and try again.",
+    "EMAIL_BOUNCED": "This email address does not exist. Please verify that your email has been created on the Korea University portal and try again.",
     "EMAIL_SUPPRESSED": "Email delivery has been blocked due to a previous bounce. Please contact admin@aplus.io.kr for assistance with your registration.",
     "CURRENT_PASSWORD_INCORRECT": "Current password is incorrect",
     "PASSWORD_CHANGE_FAILED": "Failed to change password. Please try again later",
