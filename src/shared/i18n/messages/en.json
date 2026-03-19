@@ -967,6 +967,18 @@
       "strengthNumbers": "Numbers",
       "strengthSymbols": "Symbols"
     },
+    "emailNotice": {
+      "title": "Not receiving the verification email?",
+      "workspaceTitle": "Google Workspace activation required",
+      "workspaceDesc": "For @korea.ac.kr email, after creating your account on the university portal, you must separately activate your Google Workspace account to receive emails. Without activation, all incoming emails including verification emails will bounce.",
+      "approvalTitle": "Sent an admin approval request?",
+      "approvalDesc": "All students who sent admin approval requests have been approved. However, if your Google Workspace is not activated, the approval notification email cannot reach you.",
+      "loginGuide": "We process all approval requests within 12 hours. Even if you haven't received a notification, you can log in with the email and password you registered with."
+    },
+    "approvalPopup": {
+      "message": "Your registration approval request will be processed within 12 hours. You may not receive a confirmation email, so please try logging in with your registered email and password after 12 hours.",
+      "confirm": "OK"
+    },
     "messages": {
       "profileUpdated": "Profile has been updated.",
       "passwordChanged": "Password has been changed.",

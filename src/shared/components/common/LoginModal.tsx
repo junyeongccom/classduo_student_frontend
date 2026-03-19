@@ -12,6 +12,7 @@ import { useResetPassword } from '@/features/auth/hooks/useResetPassword'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { VerificationCodeInput } from '@/features/auth/components/ui/VerificationCodeInput'
 import { Mail, Lock, AlertCircle, X, ArrowLeft, CheckCircle, Check } from 'lucide-react'
+import { EmailNoticeCard } from '@/features/auth/components/ui/EmailNoticeCard'
 
 const SAVED_ACCOUNTS_KEY = 'classduo_saved_accounts'
 
@@ -338,6 +339,9 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('chooseAccount')}</p>
           </div>
 
+          {/* 이메일 수신 안내 카드 */}
+          <EmailNoticeCard />
+
           {!showForm && savedAccounts.length > 0 && (
             <div className="mb-6 space-y-3">
               {savedAccounts.map((account) => {
@@ -437,6 +441,9 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('loginTitle')}</h1>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('chooseAccount')}</p>
             </div>
+
+            {/* 이메일 수신 안내 카드 */}
+            <EmailNoticeCard />
 
             {!showForm && savedAccounts.length > 0 && (
               <div className="mb-6 space-y-3">
