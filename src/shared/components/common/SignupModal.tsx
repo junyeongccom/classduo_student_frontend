@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -38,6 +38,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
     verificationCode,
   } = useSignup()
   const { error, clearError } = useAuthStore()
+  const [showApprovalPopup, setShowApprovalPopup] = useState(false)
 
   const signupSchema = z.object({
     email: z
@@ -104,10 +105,35 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
 
   if (!isOpen) return null
 
+  // 승인 요청 팝업 렌더링
+  const renderApprovalPopup = () => {
+    if (!showApprovalPopup) return null
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative z-10 w-full max-w-sm mx-4 rounded-2xl bg-white dark:bg-gray-900 p-6 shadow-xl text-center">
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            회원가입 승인 요청이 12시간 내로 처리됩니다. 승인 완료 메일이 발송되지 않을 수 있으므로 12시간 뒤에 입력한 이메일과 비밀번호로 로그인을 시도해주시기 바랍니다.
+          </p>
+          <Button
+            onClick={() => {
+              setShowApprovalPopup(false)
+              onClose()
+            }}
+            className="mt-5 w-full"
+            size="lg"
+          >
+            확인
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   // embedded/standalone 공통 콘텐츠
   const renderInnerContent = () => (
     <>
-      {/* Step: 관리자 승인 대기 — API 호출 완료 후 안내 */}
+      {/* Step: 관리자 승인 대기 — 더 이상 사용하지 않지만 호환성 유지 */}
       {step === 'admin_approval_pending' ? (() => {
         const studentEmail = formData?.email || ''
         return (
@@ -258,11 +284,14 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
                       {error.actions.map((action, index) => (
                         <button
                           key={index}
-                          onClick={() => {
+                          onClick={async () => {
                             if (action.type === 'login') {
                               onSwitchToLogin()
                             } else if (action.type === 'request_admin_approval') {
-                              handleRequestAdminApproval()
+                              const result = await handleRequestAdminApproval()
+                              if (result.success) {
+                                setShowApprovalPopup(true)
+                              }
                             }
                           }}
                           className={action.type === 'request_admin_approval'
@@ -371,29 +400,37 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
 
   // embedded 모드: 내부 콘텐츠만 렌더링
   if (embedded) {
-    return renderInnerContent()
+    return (
+      <>
+        {renderInnerContent()}
+        {renderApprovalPopup()}
+      </>
+    )
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center">
-      {/* 배경 오버레이 */}
-      <div
-        className="absolute inset-0 bg-black/30"
-        onClick={onClose}
-      />
-
-      {/* 모달 컨텐츠 */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-xl">
-        {/* 닫기 버튼 */}
-        <button
+    <>
+      <div className="fixed inset-0 z-[80] flex items-center justify-center">
+        {/* 배경 오버레이 */}
+        <div
+          className="absolute inset-0 bg-black/30"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        />
 
-        {renderInnerContent()}
+        {/* 모달 컨텐츠 */}
+        <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-xl">
+          {/* 닫기 버튼 */}
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          {renderInnerContent()}
+        </div>
       </div>
-    </div>
+      {renderApprovalPopup()}
+    </>
   )
 }

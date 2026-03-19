@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -33,6 +34,7 @@ export function SignupForm() {
     formData,
   } = useSignup()
   const { error, clearError } = useAuthStore()
+  const [showApprovalPopup, setShowApprovalPopup] = useState(false)
 
   const signupSchema = z.object({
     email: z
@@ -236,13 +238,16 @@ export function SignupForm() {
                 {error.actions.map((action, index) => (
                   <button
                     key={index}
-                    onClick={() => {
+                    onClick={async () => {
                       if (action.type === 'login') {
                         goToLogin()
                       } else if (action.type === 'resend_verification' && action.email) {
                         handleResendVerification(action.email)
                       } else if (action.type === 'request_admin_approval') {
-                        handleRequestAdminApproval()
+                        const result = await handleRequestAdminApproval()
+                        if (result.success) {
+                          setShowApprovalPopup(true)
+                        }
                       }
                     }}
                     className={action.type === 'request_admin_approval'
@@ -322,6 +327,25 @@ export function SignupForm() {
           {t('loginLink')}
         </Link>
       </div>
+
+      {/* 관리자 승인 요청 완료 팝업 */}
+      {showApprovalPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative z-10 w-full max-w-sm mx-4 rounded-2xl bg-white dark:bg-gray-900 p-6 shadow-xl text-center">
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              회원가입 승인 요청이 12시간 내로 처리됩니다. 승인 완료 메일이 발송되지 않을 수 있으므로 12시간 뒤에 입력한 이메일과 비밀번호로 로그인을 시도해주시기 바랍니다.
+            </p>
+            <Button
+              onClick={() => setShowApprovalPopup(false)}
+              className="mt-5 w-full"
+              size="lg"
+            >
+              확인
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
