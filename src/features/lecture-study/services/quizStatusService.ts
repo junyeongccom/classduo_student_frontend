@@ -145,13 +145,14 @@ export async function updateCorrect(
   lectureId: string,
   correct: boolean | null,
   answer?: number | null,
+  durationMs?: number | null,
 ) {
   return apiRequest<CorrectResponse>(
     `/quiz-status/${quizSource}/${quizId}/correct`,
     {
       method: 'PATCH',
       auth: true,
-      body: { lecture_id: lectureId, correct, answer },
+      body: { lecture_id: lectureId, correct, answer, duration_ms: durationMs ?? null },
     },
   )
 }

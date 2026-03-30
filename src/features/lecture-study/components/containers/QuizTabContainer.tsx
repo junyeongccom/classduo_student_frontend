@@ -91,6 +91,9 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   // 보상 판정이 중복 호출되지 않도록 ref로 관리
   const rewardCheckingRef = useRef(false)
 
+  // 퀴즈별 풀이 시작 시점 기록 (duration_ms 계산용)
+  const quizStartTimeRef = useRef<Map<string, number>>(new Map())
+
   const weekSessionLabel = weekNumber != null && sessionNumber != null
     ? locale === 'ko'
       ? `${weekNumber}주차 ${String(sessionNumber).padStart(2, '0')}차시`
@@ -144,6 +147,12 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         setBookmarkSet(bSet)
       }
 
+      // 모든 퀴즈의 풀이 시작 시간 기록 (재풀이 시에도 duration_ms 측정)
+      const now = Date.now()
+      for (const q of loadedQuizzes) {
+        quizStartTimeRef.current.set(q.quiz_id, now)
+      }
+
       setIsLoading(false)
     }
 
@@ -192,6 +201,12 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   const handleCorrectUpdate = useCallback(
     async (quizId: string, isCorrect: boolean, answer: number) => {
       const quiz = quizzes.find(q => q.quiz_id === quizId)
+
+      // duration_ms 계산 후 시작 시간 갱신 (재풀이 대비)
+      const startTime = quizStartTimeRef.current.get(quizId)
+      const durationMs = startTime ? Math.round(Date.now() - startTime) : 0
+      quizStartTimeRef.current.set(quizId, Date.now())
+
       trackQuizAttempt({
         quiz_id: quizId,
         correct: isCorrect,
@@ -199,7 +214,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         lecture_id: lectureId,
         course_id: courseId,
       })
-      quizAnalytics.answer(lectureId, { question_index: quizzes.findIndex(q => q.quiz_id === quizId), correct: isCorrect, duration_ms: 0, quiz_type: quiz?.quiz_type ?? '' })
+      quizAnalytics.answer(lectureId, { question_index: quizzes.findIndex(q => q.quiz_id === quizId), correct: isCorrect, duration_ms: durationMs, quiz_type: quiz?.quiz_type ?? '' })
 
       const current = statusMap.get(quizId)
 
@@ -215,7 +230,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         return next
       })
 
-      const result = await updateCorrect('content', quizId, lectureId, isCorrect, answer)
+      const result = await updateCorrect('content', quizId, lectureId, isCorrect, answer, durationMs)
       if (result.error) {
         // 실패 시 롤백
         setStatusMap((prev) => {
@@ -262,6 +277,8 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   // 선택 해제(리셋)
   const handleResetAnswer = useCallback(
     async (quizId: string) => {
+      // 리셋 시 풀이 시작 시간 갱신
+      quizStartTimeRef.current.set(quizId, Date.now())
       const current = statusMap.get(quizId)
 
       setStatusMap((prev) => {
