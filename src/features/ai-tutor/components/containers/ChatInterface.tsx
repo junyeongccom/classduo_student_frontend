@@ -265,15 +265,21 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   }
                 }
               }
-              
+
               return {
                 role: m.role,
                 content: m.content,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
+                id: m.id,
+                // v1.0: elaboration 렌더링에 필요한 필드
+                case_type: m.case_type ?? null,
+                message_kind: (m.message_kind as any) ?? undefined,
+                source_message_id: m.source_message_id ?? null,
+                references: (m.reference_data as Reference[]) ?? undefined,
               }
             })
-            
+
             setMessages(loadedMessages)
             
             // 타이핑 완료 상태 설정
@@ -330,12 +336,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   }
                 }
               }
-              
+
               return {
                 role: m.role,
                 content: m.content,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
+                id: m.id,
+                // v1.0
+                case_type: m.case_type ?? null,
+                message_kind: (m.message_kind as any) ?? undefined,
+                source_message_id: m.source_message_id ?? null,
+                references: (m.reference_data as Reference[]) ?? undefined,
               }
             })
             
@@ -408,7 +420,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         try {
           const { data, error } = await chatService.getSession(sessionId)
           if (data && !error) {
-            // 메시지 로드 (summary_keywords, follow_up_question 포함)
+            // 메시지 로드 (summary_keywords, follow_up_question, v1.0 필드 포함)
             const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
               // reference_data에서 follow_up_question 추출 (첫 번째 reference의 _meta에서)
               let followUpQuestion: string | null = null
@@ -429,6 +441,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 follow_up_question: followUpQuestion,
                 id: m.id,
                 feedback: m.feedback || null,
+                // v1.0: Case A/B/C 및 elaboration 메시지 렌더에 필요
+                case_type: m.case_type ?? null,
+                message_kind: (m.message_kind as any) ?? undefined,
+                source_message_id: m.source_message_id ?? null,
+                references: (m.reference_data as Reference[]) ?? undefined,
               }
             })
             setMessages(loadedMessages)
@@ -871,6 +888,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       const material_pages = refs.filter(r => r.type === 'material')
 
       const { data, error } = await chatService.requestElaboration({
+        session_id: currentSessionId || undefined,  // v1.0: DB 저장을 위해 세션 ID 전달
         original_question: target.original_question,
         simple_answer: target.content,
         reference_data: { recording_chunks, material_pages },
@@ -895,8 +913,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         source_message_id: target.id || null,
         references: (data.referenced_sources || []) as Reference[],
         follow_up_question: data.follow_up_question ?? null,
-        // 부연설명에도 원 질문을 보존 (후속 follow-up 버튼이 referencing용으로 쓸 수 있음)
+        // 부연설명에도 원 질문을 보존
         original_question: target.original_question,
+        // v1.0: DB에 저장된 message_id (feedback 등에 사용)
+        id: data.message_id ?? undefined,
       }
 
       setMessages(prev => {
