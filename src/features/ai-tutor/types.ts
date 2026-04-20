@@ -7,8 +7,19 @@ export interface ChatMessage {
   retryQuestion?: string  // 재시도할 원본 질문
   id?: string  // DB 메시지 ID (피드백용)
   feedback?: 'like' | 'dislike' | null  // 피드백 상태
+  // v1.0: Case A/B/C 판정 (assistant 메시지만)
+  case_type?: 'A' | 'B' | 'C' | null
+  // v1.0: message_kind ('simple' | 'elaboration' | 'followup')
+  message_kind?: 'simple' | 'elaboration' | 'followup'
+  // v1.0: 부연설명이 참조하는 원 SIMPLE 메시지 ID
+  source_message_id?: string | null
+  // v1.0: 답변 렌더링에 사용할 references (각 메시지가 자기 자신의 출처 유지)
+  references?: Reference[]
+  // v1.0: 원 질문 (부연설명 엔드포인트 호출용)
+  original_question?: string
 }
 
+// v1.0: DEEP 모드 제거. 'deep'은 deprecated alias. 내부에서 simple로 처리.
 export type ChatMode = 'simple' | 'deep'
 
 export interface Reference {
@@ -33,6 +44,10 @@ export interface Reference {
     text: string
     start_index: number
     end_index: number
+    // v1.0: answer 측 위치 (선택적; 없으면 undefined)
+    answer_quote?: string
+    answer_start?: number
+    answer_end?: number
   }>
   keywords?: string[]
   summary?: {
@@ -57,6 +72,23 @@ export interface ChatResponse {
   references: Reference[]
   chat_history: ChatMessage[]
   summary_keywords?: string | null
+  // v1.0
+  case_type?: 'A' | 'B' | 'C' | null
+  removed_orphan_tags?: string[]
+}
+
+// v1.0 Sprint 3: 부연설명 API
+export interface ElaborationRequest {
+  original_question: string
+  simple_answer: string
+  reference_data?: { recording_chunks?: Reference[]; material_pages?: Reference[] } | Reference[] | null
+  language?: 'ko' | 'en'
+  source_message_id?: string
+}
+
+export interface ElaborationResponse {
+  elaboration_text: string
+  referenced_sources: Reference[]
 }
 
 export interface HookingResponse {
