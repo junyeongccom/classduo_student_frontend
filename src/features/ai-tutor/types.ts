@@ -85,6 +85,8 @@ export interface ElaborationRequest {
   reference_data?: { recording_chunks?: Reference[]; material_pages?: Reference[] } | Reference[] | null
   language?: 'ko' | 'en'
   source_message_id?: string
+  // v1.0: 원 SIMPLE 답변의 follow_up을 그대로 넘겨서 재생성 없이 echo 받음
+  source_follow_up_question?: string | null
 }
 
 export interface ElaborationResponse {
