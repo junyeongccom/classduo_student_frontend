@@ -893,6 +893,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         simple_answer: target.content,
         reference_data: { recording_chunks, material_pages },
         source_message_id: target.id,
+        // v1.0: 원 SIMPLE의 follow-up을 그대로 재사용 (부연설명에서 재생성 안 함)
+        source_follow_up_question: (target as any).follow_up_question ?? null,
       })
 
       if (error || !data) {
