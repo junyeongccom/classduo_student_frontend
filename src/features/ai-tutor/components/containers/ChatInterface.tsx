@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, Search, ArrowUp, Sparkles, Brain, X } from 'lucide-react'
+import { Loader2, Search, ArrowUp, Sparkles } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { chatAnalytics } from '@/shared/lib/analytics'
@@ -80,7 +80,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false) // 질문 리스트 표시 상태
   const [hasTypedInSession, setHasTypedInSession] = useState(false) // 세션 내 타이핑 여부
-  const [isDeepHintDismissed, setIsDeepHintDismissed] = useState(false) // DEEP 모드 안내 닫기
+  // v1.0: DEEP 모드 안내 배너 제거 — 관련 state 삭제
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
@@ -1605,28 +1605,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         style={{ transform: 'translateY(0px)' }}
       >
         <div className="mx-auto max-w-[680px] 2xl:max-w-[820px]">
-          {/* DEEP 모드 안내 말풍선 — 세션 내 타이핑 전까지만 표시, X로 닫기 가능 */}
-          {!hasTypedInSession && chatMode !== 'deep' && !isDeepHintDismissed && (
-            <div className="mb-2 flex justify-start animate-fade-in-up">
-              <div className="relative ml-12 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-xl px-4 py-2 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-indigo-500 flex-shrink-0" />
-                  <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                    {t('deepModeHint')}
-                  </span>
-                  <button
-                    onClick={() => setIsDeepHintDismissed(true)}
-                    className="ml-1 p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 rounded transition-colors"
-                    aria-label="닫기"
-                  >
-                    <X className="h-3 w-3 text-indigo-400 dark:text-indigo-500" />
-                  </button>
-                </div>
-                {/* 말풍선 꼬리 — DEEP 토글 버튼 위 */}
-                <div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-indigo-50 dark:bg-indigo-900/30 border-r border-b border-indigo-200 dark:border-indigo-700 rotate-45" />
-              </div>
-            </div>
-          )}
+          {/* v1.0: DEEP 모드 안내 말풍선 제거 (DEEP 모드가 없어짐) */}
           <ChatComposer
             value={input}
             onChange={(value) => {
