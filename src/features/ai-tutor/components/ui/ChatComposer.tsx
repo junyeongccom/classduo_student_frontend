@@ -122,49 +122,8 @@ export function ChatComposer({
             }}
           />
 
-          {/* Bottom half: controls */}
-          <div className="flex items-center justify-between gap-3 px-4 py-1" style={{ minHeight: '34px' }}>
-            <div className="flex items-center gap-2">
-              <div className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-1 py-1">
-                <button
-                  type="button"
-                  ref={simpleButtonRef}
-                  onClick={() => onChatModeChange('simple')}
-                  onMouseEnter={() => setActiveTooltip('simple')}
-                  onMouseLeave={() => setActiveTooltip(null)}
-                  onFocus={() => setActiveTooltip('simple')}
-                  onBlur={() => setActiveTooltip(null)}
-                  className={`flex h-6 w-8 items-center justify-center rounded-md border text-gray-600 transition-colors ${
-                    chatMode === 'simple'
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                  aria-pressed={chatMode === 'simple'}
-                  aria-label={simpleLabel}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
-                  ref={deepButtonRef}
-                  onClick={() => onChatModeChange('deep')}
-                  onMouseEnter={() => setActiveTooltip('deep')}
-                  onMouseLeave={() => setActiveTooltip(null)}
-                  onFocus={() => setActiveTooltip('deep')}
-                  onBlur={() => setActiveTooltip(null)}
-                  className={`flex h-6 w-8 items-center justify-center rounded-md border text-gray-600 transition-colors ${
-                    chatMode === 'deep'
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-transparent hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                  aria-pressed={chatMode === 'deep'}
-                  aria-label={deepLabel}
-                >
-                  <Brain className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-
+          {/* Bottom half: controls (v1.0: SIMPLE/DEEP 토글 제거. SIMPLE 전용) */}
+          <div className="flex items-center justify-end gap-3 px-4 py-1" style={{ minHeight: '34px' }}>
             <button
               type="submit"
               disabled={!canSend}

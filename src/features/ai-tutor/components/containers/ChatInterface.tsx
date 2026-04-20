@@ -743,6 +743,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             content: result.answer,
             summary_keywords: result.summary_keywords || null,
             follow_up_question: result.follow_up_question || null,
+            // v1.0 Sprint 3: case_type 저장 + 부연설명 요청 시 재사용할 원 질문/출처 보관
+            case_type: (result as any).case_type ?? null,
+            message_kind: 'simple',
+            references: (result.references as Reference[]) || [],
+            original_question: question,
           }
           setMessages(prev => {
             const updated = [...prev, assistantMessage]
@@ -840,6 +845,65 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     // 재시도
     sendMessage(retryQuestion)
   }, [sendMessage])
+
+  // v1.0 Sprint 3: 부연설명 요청
+  // SIMPLE 답변 아래 [부연설명 요청] 버튼 클릭 시 호출.
+  // Case C 메시지에서는 이 버튼을 렌더하지 않음 (아래 조건부 렌더 참조).
+  const [elaboratingIndex, setElaboratingIndex] = useState<number | null>(null)
+  const handleRequestElaboration = useCallback(async (assistantIndex: number) => {
+    const target = messages[assistantIndex] as ChatMessage & {
+      original_question?: string
+      references?: Reference[]
+      case_type?: 'A' | 'B' | 'C' | null
+    }
+    if (!target || target.role !== 'assistant') return
+    if (target.case_type === 'C') return
+    if (!target.original_question) {
+      console.warn('Elaboration: original_question missing for index', assistantIndex)
+      return
+    }
+
+    setElaboratingIndex(assistantIndex)
+    try {
+      // reference_data 재구성: recording과 material을 분리하여 전달
+      const refs = target.references || []
+      const recording_chunks = refs.filter(r => r.type === 'recording')
+      const material_pages = refs.filter(r => r.type === 'material')
+
+      const { data, error } = await chatService.requestElaboration({
+        original_question: target.original_question,
+        simple_answer: target.content,
+        reference_data: { recording_chunks, material_pages },
+        source_message_id: target.id,
+      })
+
+      if (error || !data) {
+        console.error('Elaboration failed:', error)
+        return
+      }
+
+      // 원 SIMPLE 메시지 바로 아래에 elaboration 메시지 삽입
+      const elaborationMessage: ChatMessage & {
+        message_kind?: 'elaboration'
+        source_message_id?: string | null
+        references?: Reference[]
+      } = {
+        role: 'assistant',
+        content: data.elaboration_text,
+        message_kind: 'elaboration',
+        source_message_id: target.id || null,
+        references: (data.referenced_sources || []) as Reference[],
+      }
+
+      setMessages(prev => {
+        const next = [...prev]
+        next.splice(assistantIndex + 1, 0, elaborationMessage)
+        return next
+      })
+    } finally {
+      setElaboratingIndex(null)
+    }
+  }, [messages])
 
   const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
@@ -1349,25 +1413,50 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                         <MarkdownMessage markdown={message.content} className="markdown-content" />
                       )}
                     </div>
-                    {/* 후속 질문 버튼 - 가장 마지막 답변에만 표시 */}
-                    {isTypingComplete && typingLength >= message.content.length && followUpQuestion && isLastAssistantMessage && (
-                      <div className="mt-4 flex justify-start animate-fade-in-up">
-                        <button
-                          onClick={() => {
-                            if (!isLoading) {
-                              chatAnalytics.followupClick(selectedLectureIds[0], { question_text: followUpQuestion.substring(0, 50) })
-                              // 후속질문 클릭 시 question_type: 'followup' 전달
-                              sendMessage(followUpQuestion, { question_type: 'followup' })
-                            }
-                          }}
-                          disabled={isLoading}
-                          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <span>💡</span>
-                          <span>{followUpQuestion}</span>
-                        </button>
-                      </div>
-                    )}
+                    {/* 후속 질문 + 부연설명 버튼 — 가장 마지막 SIMPLE 답변에만 표시 */}
+                    {(() => {
+                      if (!isTypingComplete || typingLength < message.content.length) return null
+                      if (!isLastAssistantMessage) return null
+                      // v1.0: elaboration 메시지에는 버튼을 중복 렌더하지 않음
+                      if ((assistantMessage as any).message_kind === 'elaboration') return null
+
+                      const isCaseC = (assistantMessage as any).case_type === 'C'
+                      const canElaborate = !isCaseC // Case C면 [부연설명 요청] 버튼 숨김
+                      const isElaborating = elaboratingIndex === index
+
+                      if (!followUpQuestion && !canElaborate) return null
+
+                      return (
+                        <div className="mt-4 flex flex-wrap items-center justify-start gap-2 animate-fade-in-up">
+                          {followUpQuestion && (
+                            <button
+                              onClick={() => {
+                                if (!isLoading) {
+                                  chatAnalytics.followupClick(selectedLectureIds[0], { question_text: followUpQuestion.substring(0, 50) })
+                                  sendMessage(followUpQuestion, { question_type: 'followup' })
+                                }
+                              }}
+                              disabled={isLoading}
+                              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <span>💡</span>
+                              <span>{followUpQuestion}</span>
+                            </button>
+                          )}
+                          {canElaborate && (
+                            <button
+                              onClick={() => handleRequestElaboration(index)}
+                              disabled={isLoading || isElaborating}
+                              className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-left text-sm font-medium text-indigo-700 shadow-sm transition-all duration-200 hover:bg-indigo-100 hover:border-indigo-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="이 답변을 강의 자료 범위 내에서 더 자세히 풀어서 설명받기"
+                            >
+                              <span>📖</span>
+                              <span>{isElaborating ? '부연설명 생성 중…' : '부연설명 요청'}</span>
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })()}
                     {/* 피드백 버튼 - 타이핑 완료된 AI 메시지에만 표시 */}
                     {isTypingComplete && typingLength >= message.content.length && (
                       <FeedbackButtons
