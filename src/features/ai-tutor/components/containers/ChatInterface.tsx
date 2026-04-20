@@ -887,12 +887,16 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         message_kind?: 'elaboration'
         source_message_id?: string | null
         references?: Reference[]
+        follow_up_question?: string | null
       } = {
         role: 'assistant',
         content: data.elaboration_text,
         message_kind: 'elaboration',
         source_message_id: target.id || null,
         references: (data.referenced_sources || []) as Reference[],
+        follow_up_question: data.follow_up_question ?? null,
+        // 부연설명에도 원 질문을 보존 (후속 follow-up 버튼이 referencing용으로 쓸 수 있음)
+        original_question: target.original_question,
       }
 
       setMessages(prev => {
@@ -1413,22 +1417,27 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                         <MarkdownMessage markdown={message.content} className="markdown-content" />
                       )}
                     </div>
-                    {/* 후속 질문 + 부연설명 버튼 — 가장 마지막 SIMPLE 답변에만 표시 */}
+                    {/* 후속 질문 + 부연설명 버튼 — 가장 마지막 답변에만 표시 */}
                     {(() => {
                       if (!isTypingComplete || typingLength < message.content.length) return null
                       if (!isLastAssistantMessage) return null
-                      // v1.0: elaboration 메시지에는 버튼을 중복 렌더하지 않음
-                      if ((assistantMessage as any).message_kind === 'elaboration') return null
 
+                      const messageKind = (assistantMessage as any).message_kind as
+                        | 'simple' | 'elaboration' | 'followup' | undefined
+                      const isElaborationMsg = messageKind === 'elaboration'
                       const isCaseC = (assistantMessage as any).case_type === 'C'
-                      const canElaborate = !isCaseC // Case C면 [부연설명 요청] 버튼 숨김
+
+                      // [부연설명 요청] 버튼 — 부연설명 메시지에는 중복 노출 금지, Case C 숨김
+                      const canElaborate = !isElaborationMsg && !isCaseC
+                      // follow-up 버튼 — 부연설명 메시지에도 허용 (elaboration 응답에 follow_up_question 들어옴)
+                      const hasFollowUp = Boolean(followUpQuestion)
                       const isElaborating = elaboratingIndex === index
 
-                      if (!followUpQuestion && !canElaborate) return null
+                      if (!hasFollowUp && !canElaborate) return null
 
                       return (
                         <div className="mt-4 flex flex-wrap items-center justify-start gap-2 animate-fade-in-up">
-                          {followUpQuestion && (
+                          {hasFollowUp && followUpQuestion && (
                             <button
                               onClick={() => {
                                 if (!isLoading) {

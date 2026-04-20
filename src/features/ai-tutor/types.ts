@@ -89,6 +89,8 @@ export interface ElaborationRequest {
 export interface ElaborationResponse {
   elaboration_text: string
   referenced_sources: Reference[]
+  follow_up_question?: string | null
+  removed_orphan_tags?: string[]
 }
 
 export interface HookingResponse {
