@@ -79,6 +79,7 @@ export interface ChatResponse {
 
 // v1.0 Sprint 3: 부연설명 API
 export interface ElaborationRequest {
+  session_id?: string  // 있으면 DB 저장 + message_id 반환
   original_question: string
   simple_answer: string
   reference_data?: { recording_chunks?: Reference[]; material_pages?: Reference[] } | Reference[] | null
@@ -91,6 +92,7 @@ export interface ElaborationResponse {
   referenced_sources: Reference[]
   follow_up_question?: string | null
   removed_orphan_tags?: string[]
+  message_id?: string | null  // 저장된 chat_messages.id
 }
 
 export interface HookingResponse {
@@ -167,6 +169,11 @@ export interface StoredMessage {
   summary_keywords: string | null
   feedback?: 'like' | 'dislike' | null
   created_at: string
+  // v1.0 (chat_messages 확장 필드)
+  tutor_version?: string | null
+  case_type?: 'A' | 'B' | 'C' | null
+  message_kind?: 'simple' | 'elaboration' | 'followup' | null
+  source_message_id?: string | null
 }
 
 export interface SessionWithMessages {
