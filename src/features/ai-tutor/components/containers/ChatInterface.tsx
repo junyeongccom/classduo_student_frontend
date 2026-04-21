@@ -1464,7 +1464,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                       const messageKind = (assistantMessage as any).message_kind as
                         | 'simple' | 'elaboration' | 'followup' | undefined
                       const isElaborationMsg = messageKind === 'elaboration'
-                      const isCaseC = (assistantMessage as any).case_type === 'C'
+                      // v1.0: case_type이 DB에 null로 저장되는 경우가 있어 텍스트 기반 보조 판정 추가
+                      const contentHead = (message.content || '').trim()
+                      const CASE_C_PREFIX_KO = '제공된 강의자료에서는 해당 내용에 대한 구체적인 설명을 찾을 수 없습니다'
+                      const CASE_C_PREFIX_EN = 'The provided lecture materials do not contain specific information'
+                      const isCaseC =
+                        (assistantMessage as any).case_type === 'C' ||
+                        contentHead.startsWith(CASE_C_PREFIX_KO) ||
+                        contentHead.startsWith(CASE_C_PREFIX_EN)
 
                       // [부연설명 요청] 버튼 — 부연설명 메시지에는 중복 노출 금지, Case C 숨김
                       const canElaborate = !isElaborationMsg && !isCaseC
