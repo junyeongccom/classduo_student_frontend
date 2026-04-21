@@ -1463,7 +1463,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
                       const messageKind = (assistantMessage as any).message_kind as
                         | 'simple' | 'elaboration' | 'followup' | undefined
-                      const isElaborationMsg = messageKind === 'elaboration'
+                      // v1.0 guard: message_kind가 누락돼도 source_message_id 가 있으면 elaboration.
+                      //   - 신규 세션 insert 경로: message_kind='elaboration' (L928) + source_message_id 동시 주입
+                      //   - DB reload 경로: message_kind, source_message_id 모두 조회
+                      // 둘 중 하나만 있어도 elaboration 으로 간주하여 중복 버튼 노출 방지.
+                      const hasSourceMessageId = Boolean((assistantMessage as any).source_message_id)
+                      const isElaborationMsg = messageKind === 'elaboration' || hasSourceMessageId
                       // v1.0: case_type이 DB에 null로 저장되는 경우가 있어 텍스트 기반 보조 판정 추가
                       const contentHead = (message.content || '').trim()
                       const CASE_C_PREFIX_KO = '제공된 강의자료에서는 해당 내용에 대한 구체적인 설명을 찾을 수 없습니다'
