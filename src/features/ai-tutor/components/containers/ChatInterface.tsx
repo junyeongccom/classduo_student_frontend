@@ -881,6 +881,20 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
 
     setElaboratingIndex(assistantIndex)
+
+    // v1.0: 부연설명도 SIMPLE 모드와 동일한 로딩 UI 재활용 (자료 검색은 생략)
+    // 자료 검색 없이 LLM 단일 호출이므로 2단계 정도로 체감 UX만 나타낸다.
+    setIsLoading(true)
+    setLoadingStatusItems([
+      { step: 'preparing_elaboration', message: locale === 'en' ? 'Organizing key points...' : '핵심 포인트 정리 중...', sources: [] }
+    ])
+    const stage2Timer = window.setTimeout(() => {
+      setLoadingStatusItems(prev => [
+        ...prev,
+        { step: 'generating_elaboration', message: locale === 'en' ? 'Expanding the explanation based on the lecture materials...' : '강의자료 기반으로 자세히 풀어 쓰는 중...', sources: [] },
+      ])
+    }, 800)
+
     try {
       // reference_data 재구성: recording과 material을 분리하여 전달
       const refs = target.references || []
@@ -927,9 +941,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         return next
       })
     } finally {
+      window.clearTimeout(stage2Timer)
+      setLoadingStatusItems([])
+      setIsLoading(false)
       setElaboratingIndex(null)
     }
-  }, [messages])
+  }, [messages, currentSessionId, locale])
 
   const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
