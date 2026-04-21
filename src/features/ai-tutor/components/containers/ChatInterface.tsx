@@ -254,7 +254,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         try {
           const { data, error } = await chatService.getSession(currentSessionId)
           if (data && !error && data.messages.length > 0) {
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
@@ -262,6 +262,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   const meta = (firstRef as any)._meta
                   if (meta && meta.follow_up_question) {
                     followUpQuestion = meta.follow_up_question
+                  }
+                }
+              }
+
+              // v1.0: DB 로드 시 assistant 메시지의 original_question 복원
+              // 직전의 user 메시지를 원 질문으로 간주 (elaboration도 SIMPLE의 직전 user 질문을 공유)
+              let originalQuestion: string | undefined = undefined
+              if (m.role === 'assistant') {
+                for (let i = idx - 1; i >= 0; i--) {
+                  if (arr[i].role === 'user') {
+                    originalQuestion = arr[i].content
+                    break
                   }
                 }
               }
@@ -277,6 +289,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 message_kind: (m.message_kind as any) ?? undefined,
                 source_message_id: m.source_message_id ?? null,
                 references: (m.reference_data as Reference[]) ?? undefined,
+                original_question: originalQuestion,
               }
             })
 
@@ -325,7 +338,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           const { data, error } = await chatService.getSession(currentSessionId)
           if (data && !error) {
             // 현재 메시지 수와 로드된 메시지 수 비교
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
@@ -333,6 +346,17 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   const meta = (firstRef as any)._meta
                   if (meta && meta.follow_up_question) {
                     followUpQuestion = meta.follow_up_question
+                  }
+                }
+              }
+
+              // v1.0: DB 로드 시 assistant 메시지의 original_question 복원
+              let originalQuestion: string | undefined = undefined
+              if (m.role === 'assistant') {
+                for (let i = idx - 1; i >= 0; i--) {
+                  if (arr[i].role === 'user') {
+                    originalQuestion = arr[i].content
+                    break
                   }
                 }
               }
@@ -348,6 +372,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 message_kind: (m.message_kind as any) ?? undefined,
                 source_message_id: m.source_message_id ?? null,
                 references: (m.reference_data as Reference[]) ?? undefined,
+                original_question: originalQuestion,
               }
             })
             
@@ -421,7 +446,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           const { data, error } = await chatService.getSession(sessionId)
           if (data && !error) {
             // 메시지 로드 (summary_keywords, follow_up_question, v1.0 필드 포함)
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
               // reference_data에서 follow_up_question 추출 (첫 번째 reference의 _meta에서)
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
@@ -430,6 +455,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   const meta = (firstRef as any)._meta
                   if (meta && meta.follow_up_question) {
                     followUpQuestion = meta.follow_up_question
+                  }
+                }
+              }
+
+              // v1.0: DB 로드 시 assistant 메시지의 original_question 복원
+              // 직전 user 메시지를 원 질문으로 간주 (elaboration도 SIMPLE의 직전 user 질문 공유)
+              let originalQuestion: string | undefined = undefined
+              if (m.role === 'assistant') {
+                for (let i = idx - 1; i >= 0; i--) {
+                  if (arr[i].role === 'user') {
+                    originalQuestion = arr[i].content
+                    break
                   }
                 }
               }
@@ -446,6 +483,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 message_kind: (m.message_kind as any) ?? undefined,
                 source_message_id: m.source_message_id ?? null,
                 references: (m.reference_data as Reference[]) ?? undefined,
+                original_question: originalQuestion,
               }
             })
             setMessages(loadedMessages)
