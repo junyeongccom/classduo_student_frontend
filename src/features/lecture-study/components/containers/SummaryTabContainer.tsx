@@ -236,10 +236,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
                 }
                 disabled={!hasSourcePages}
                 disabledClick={isMobile}
-                onClick={() => {
-                  summaryTabAnalytics.sourceClick(lectureId, { source_type: 'material', section_key: sectionKey })
-                  handleMaterialSourceClick(sectionKey, section.source_pages, totalMaterialPages)
-                }}
+                onClick={() => handleMaterialSourceClick(sectionKey, section.source_pages, totalMaterialPages)}
               />
 
               {/* 녹음본 출처 버튼 (Task 777) */}
@@ -253,10 +250,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
                 }
                 disabled={!hasSourceChunks}
                 disabledClick={isMobile}
-                onClick={() => {
-                  summaryTabAnalytics.sourceClick(lectureId, { source_type: 'recording', section_key: sectionKey })
-                  handleRecordingSourceClick(sectionKey, section.source_chunks, totalRecordingChunks)
-                }}
+                onClick={() => handleRecordingSourceClick(sectionKey, section.source_chunks, totalRecordingChunks)}
               />
             </div>
 

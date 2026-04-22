@@ -480,10 +480,6 @@ export const summaryTabAnalytics = {
   scrollDepth(lectureId: string, depthPct: number) {
     trackEvent('summary_scroll_depth', 'lecture_study', { lectureId, data: { depth_pct: depthPct, tab: 'summary' } })
   },
-  /** 요약 탭 내 강의자료/녹음본 출처 아이콘 클릭 */
-  sourceClick(lectureId: string, data: { source_type: 'material' | 'recording'; section_key: string }) {
-    trackEvent('summary_source_click', 'lecture_study', { lectureId, data })
-  },
 }
 
 /** 퀴즈 탭 해설 토글 / AI 질문 버튼 트래킹 */
@@ -491,10 +487,6 @@ export const quizExtraAnalytics = {
   /** '정답 및 해설 보기' 토글 클릭 */
   revealToggle(lectureId: string, data: { quiz_id: string; shown: boolean; quiz_source?: string }) {
     trackEvent('quiz_reveal_toggle', 'lecture_study', { lectureId, data })
-  },
-  /** 해설 내부 강의자료/녹음본 출처 아이콘 클릭 (퀴즈 컨텍스트) */
-  revealSourceClick(lectureId: string, data: { quiz_id: string; source_type: 'material' | 'recording' }) {
-    trackEvent('quiz_reveal_source_click', 'lecture_study', { lectureId, data })
   },
   /** 'AI 챗봇에게 질문하기' 버튼 클릭 */
   askAiClick(lectureId: string, data: { quiz_id: string; quiz_type?: string }) {
