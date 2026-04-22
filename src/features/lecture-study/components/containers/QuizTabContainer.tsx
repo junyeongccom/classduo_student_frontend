@@ -407,14 +407,13 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                           tooltipContent={tSummary('sourceTooltipPages', { pages: quiz.source.source_pages!.join(', ') })}
                           disabled={false}
                           disabledClick={isMobile}
-                          onClick={() => {
-                            quizExtraAnalytics.revealSourceClick(lectureId, { quiz_id: quiz.quiz_id, source_type: 'material' })
+                          onClick={() =>
                             handleMaterialSourceClick(
                               `quiz-${quiz.quiz_id}`,
                               quiz.source?.source_pages ?? [],
                               totalMaterialPages,
                             )
-                          }}
+                          }
                         />
                       )}
                       {quiz.source && (quiz.source.source_chunks?.length ?? 0) > 0 && (
@@ -424,14 +423,13 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                           tooltipContent={tSummary('sourceTooltipChunks', { chunks: quiz.source.source_chunks!.join(', ') })}
                           disabled={false}
                           disabledClick={isMobile}
-                          onClick={() => {
-                            quizExtraAnalytics.revealSourceClick(lectureId, { quiz_id: quiz.quiz_id, source_type: 'recording' })
+                          onClick={() =>
                             handleRecordingSourceClick(
                               `quiz-${quiz.quiz_id}`,
                               quiz.source?.source_chunks ?? [],
                               totalRecordingChunks,
                             )
-                          }}
+                          }
                         />
                       )}
                       <button
