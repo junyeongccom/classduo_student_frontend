@@ -437,8 +437,68 @@ export const navigationAnalytics = {
 
 /** 패널 열기/닫기 트래킹 */
 export const panelAnalytics = {
-  toggle(panel: 'left' | 'chat', isOpen: boolean, lectureId?: string) {
+  toggle(panel: 'material' | 'chat', isOpen: boolean, lectureId?: string) {
     trackEvent('panel_toggle', 'lecture_study', { lectureId, data: { panel, is_open: isOpen } })
+  },
+}
+
+/** 과목페이지 회차박스 아이콘 클릭 + 모달 다운로드 트래킹 */
+export const courseLectureAnalytics = {
+  /** 회차박스 내 녹음본 아이콘 클릭 (모달 열기) */
+  recordingIconClick(courseId: string, lectureId: string) {
+    trackEvent('lecture_recording_icon_click', 'course_select', { courseId, lectureId })
+  },
+  /** 회차박스 내 강의자료 아이콘 클릭 (모달 열기) */
+  materialIconClick(courseId: string, lectureId: string) {
+    trackEvent('lecture_material_icon_click', 'course_select', { courseId, lectureId })
+  },
+  /** 녹음본 모달 내 개별/일괄 다운로드 버튼 클릭 */
+  recordingDownload(lectureId: string, data: { scope: 'single' | 'all'; chunk_index?: number; recording_id?: string }) {
+    trackEvent('recording_download', 'course_select', { lectureId, data })
+  },
+  /** 강의자료 모달 내 다운로드 버튼 클릭 */
+  materialDownload(lectureId: string, data: { material_id: string; filename?: string }) {
+    trackEvent('material_download', 'course_select', { lectureId, data })
+  },
+}
+
+/** 강의자료 패널 직접 상호작용 트래킹 (요약/퀴즈 출처 경유 X) */
+export const materialPanelAnalytics = {
+  /** 강의자료 패널 내 PDF 페이지 직접 클릭 */
+  pdfPageClick(lectureId: string, data: { page: number; total_pages: number }) {
+    trackEvent('material_panel_pdf_click', 'lecture_study', { lectureId, data: { ...data, via: 'direct' } })
+  },
+  /** 강의자료 패널 내 녹음본 청크 직접 클릭 */
+  recordingChunkClick(lectureId: string, data: { recording_index: number; action: 'open' | 'close' }) {
+    trackEvent('material_panel_recording_click', 'lecture_study', { lectureId, data: { ...data, via: 'direct' } })
+  },
+}
+
+/** 요약 탭 전용 트래킹 */
+export const summaryTabAnalytics = {
+  /** 요약 탭 내부 스크롤 깊이 (25/50/75/100%) */
+  scrollDepth(lectureId: string, depthPct: number) {
+    trackEvent('summary_scroll_depth', 'lecture_study', { lectureId, data: { depth_pct: depthPct, tab: 'summary' } })
+  },
+}
+
+/** 퀴즈 탭 해설 토글 / AI 질문 버튼 트래킹 */
+export const quizExtraAnalytics = {
+  /** '정답 및 해설 보기' 토글 클릭 */
+  revealToggle(lectureId: string, data: { quiz_id: string; shown: boolean; quiz_source?: string }) {
+    trackEvent('quiz_reveal_toggle', 'lecture_study', { lectureId, data })
+  },
+  /** 'AI 챗봇에게 질문하기' 버튼 클릭 */
+  askAiClick(lectureId: string, data: { quiz_id: string; quiz_type?: string }) {
+    trackEvent('quiz_ask_ai_click', 'lecture_study', { lectureId, data })
+  },
+}
+
+/** 달리기 게임 내 퀴즈 풀이 이벤트 */
+export const runningGameAnalytics = {
+  /** 달리기 게임 중 풀이한 퀴즈 정오답 기록 */
+  quizAnswer(lectureId: string, data: { correct: boolean; keyword?: string; course_id?: string }) {
+    trackEvent('game_quiz_answer', 'game', { lectureId, data: { ...data, game_type: 'running' } })
   },
 }
 
