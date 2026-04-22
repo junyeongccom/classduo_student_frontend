@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, BookOpen, Gamepad2, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
-import { trackPageEnter, trackPageLeave, navigationAnalytics } from '@/shared/lib/analytics'
+import { trackPageEnter, trackPageLeave, navigationAnalytics, courseLectureAnalytics } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '../../hooks/useLectures'
 import { LectureRow } from '../ui/LectureRow'
@@ -80,12 +80,14 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const [materialsModalLecture, setMaterialsModalLecture] = useState<Lecture | null>(null)
 
   const handleMicClick = useCallback((lecture: Lecture) => {
+    courseLectureAnalytics.recordingIconClick(courseId, lecture.id)
     setRecordingModalLecture(lecture)
-  }, [])
+  }, [courseId])
 
   const handlePdfClick = useCallback((lecture: Lecture) => {
+    courseLectureAnalytics.materialIconClick(courseId, lecture.id)
     setMaterialsModalLecture(lecture)
-  }, [])
+  }, [courseId])
 
   const lectureStatuses = useMemo(() => {
     const statuses = new Map<string, LectureStatus>()

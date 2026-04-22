@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { trackInGameQuizAttempt } from '@/shared/hooks/useAnalytics'
+import { runningGameAnalytics } from '@/shared/lib/analytics'
 import { QuizQuestion, ChoiceType, ActiveAbilityType } from "./quizTypes";
 import { QuizPanelUI } from "./QuizPanelUI";
 import { RewardCardUI } from "./RewardCardUI";
@@ -158,10 +159,19 @@ export class QuizManager {
   }
 
   private handleQuizResult(isCorrect: boolean): void {
+    const lectureId = (this.scene.game.registry.get('lectureId') as string) || ''
+    const courseId = (this.scene.game.registry.get('courseId') as string) || ''
+
     trackInGameQuizAttempt({
       correct: isCorrect,
-      lecture_id: (this.scene.game.registry.get('lectureId') as string) || '',
-      course_id: (this.scene.game.registry.get('courseId') as string) || '',
+      lecture_id: lectureId,
+      course_id: courseId,
+    });
+
+    runningGameAnalytics.quizAnswer(lectureId, {
+      correct: isCorrect,
+      keyword: this.currentCorrectAnswer || undefined,
+      course_id: courseId || undefined,
     });
 
     if (this.pendingRewardType) {

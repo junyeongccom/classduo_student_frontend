@@ -14,6 +14,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { Loader2 } from 'lucide-react'
 import { lectureService } from '../../services/lectureService'
 import { trackSummaryViewed } from '@/shared/hooks/useAnalytics'
+import { summaryTabAnalytics } from '@/shared/lib/analytics'
 import { useSourceNavigation } from '../../hooks/useSourceNavigation'
 import { SourceButton } from '../ui/SourceButton'
 import type { ContentSummary, ContentSummarySection } from '../../types'
@@ -83,6 +84,8 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const summaryViewedRef = useRef(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const reportedDepthsRef = useRef<Set<number>>(new Set())
 
   // 출처 네비게이션 훅
   const {
@@ -142,6 +145,32 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
     return () => { cancelled = true }
   }, [lectureId, locale])
 
+  // lectureId 변경 시 스크롤 깊이 보고 상태 초기화
+  useEffect(() => {
+    reportedDepthsRef.current = new Set()
+  }, [lectureId])
+
+  // 요약 탭 내부 스크롤 깊이 트래킹 (25/50/75/100%)
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el || !summary) return
+
+    const thresholds = [25, 50, 75, 100]
+    const handleScroll = () => {
+      const scrollable = el.scrollHeight - el.clientHeight
+      if (scrollable <= 0) return
+      const pct = Math.round((el.scrollTop / scrollable) * 100)
+      for (const t of thresholds) {
+        if (pct >= t && !reportedDepthsRef.current.has(t)) {
+          reportedDepthsRef.current.add(t)
+          summaryTabAnalytics.scrollDepth(lectureId, t)
+        }
+      }
+    }
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [summary, lectureId])
+
   // ─── 렌더링 ───
 
   if (isLoading) {
@@ -170,7 +199,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
   }
 
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24 text-sm text-gray-700 dark:text-gray-300">
+    <div ref={scrollContainerRef} className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24 text-sm text-gray-700 dark:text-gray-300">
       {/* 요약 타이틀 + overview */}
       <section>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
@@ -207,7 +236,10 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
                 }
                 disabled={!hasSourcePages}
                 disabledClick={isMobile}
-                onClick={() => handleMaterialSourceClick(sectionKey, section.source_pages, totalMaterialPages)}
+                onClick={() => {
+                  summaryTabAnalytics.sourceClick(lectureId, { source_type: 'material', section_key: sectionKey })
+                  handleMaterialSourceClick(sectionKey, section.source_pages, totalMaterialPages)
+                }}
               />
 
               {/* 녹음본 출처 버튼 (Task 777) */}
@@ -221,7 +253,10 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
                 }
                 disabled={!hasSourceChunks}
                 disabledClick={isMobile}
-                onClick={() => handleRecordingSourceClick(sectionKey, section.source_chunks, totalRecordingChunks)}
+                onClick={() => {
+                  summaryTabAnalytics.sourceClick(lectureId, { source_type: 'recording', section_key: sectionKey })
+                  handleRecordingSourceClick(sectionKey, section.source_chunks, totalRecordingChunks)
+                }}
               />
             </div>
 

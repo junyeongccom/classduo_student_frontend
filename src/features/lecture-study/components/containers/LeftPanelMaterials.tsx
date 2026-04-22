@@ -13,7 +13,7 @@ import { ChevronLeft, ChevronRight, FileText, Loader2, AlertTriangle } from 'luc
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { lectureService } from '../../services/lectureService'
 import type { MaterialPageItem } from '../../services/lectureService'
-import { materialAnalytics } from '@/shared/lib/analytics'
+import { materialAnalytics, materialPanelAnalytics } from '@/shared/lib/analytics'
 
 /** 성공적으로 로딩된 페이지 */
 interface LoadedPage {
@@ -393,6 +393,12 @@ export function LeftPanelMaterials() {
               key={idx}
               ref={(el) => { pageRefs.current[idx] = el }}
               data-page-index={idx}
+              onClick={() => {
+                materialPanelAnalytics.pdfPageClick(lectureId ?? '', {
+                  page: idx + 1,
+                  total_pages: allPages.length,
+                })
+              }}
               className="relative w-full"
               style={{ minHeight: 200 }}
             >

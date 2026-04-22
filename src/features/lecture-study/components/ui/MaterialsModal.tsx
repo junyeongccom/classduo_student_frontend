@@ -14,6 +14,7 @@ import {
   lectureService,
   type SnapshotMaterialItem,
 } from '../../services/lectureService'
+import { courseLectureAnalytics } from '@/shared/lib/analytics'
 
 interface MaterialsModalProps {
   open: boolean
@@ -72,6 +73,10 @@ export function MaterialsModal({
   }, [open, fetchData])
 
   const handleDownload = async (material: SnapshotMaterialItem) => {
+    courseLectureAnalytics.materialDownload(lectureId, {
+      material_id: material.material_id,
+      filename: material.original_filename ?? undefined,
+    })
     setDownloadingId(material.material_id)
     try {
       await downloadMaterial(material)
