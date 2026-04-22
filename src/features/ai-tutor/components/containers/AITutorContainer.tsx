@@ -22,7 +22,7 @@ import {
   AI_TUTOR_NEW_CHAT_FLAG,
   AI_TUTOR_NEW_CHAT_PARAM,
 } from '@/shared/constants/aiTutor'
-import { dialogueSourceAnalytics } from '@/shared/lib/analytics'
+import { dialogueSourceAnalytics, trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 import { areLectureIdsEqual } from '@/shared/lib/studyspaceSelection'
 import { useStudyspaceSelectionSync } from '@/shared/hooks/useStudyspaceSelectionSync'
 import { useStudyspaceSelectionStore } from '@/shared/store/useStudyspaceSelectionStore'
@@ -119,6 +119,12 @@ export function AITutorContainer() {
 
   useStudyspaceSelectionSync(userId)
   const syncingFromSharedRef = useRef<number | null>(null)
+
+  // Analytics: 대화형 학습 페이지 체류시간 추적
+  useEffect(() => {
+    trackPageEnter('dialogue')
+    return () => { trackPageLeave('dialogue') }
+  }, [])
 
   useEffect(() => {
     if (!isSharedHydrated) return
