@@ -365,11 +365,7 @@ export function CoreTestSolveContainer({
         return next
       })
     }
-
-    // 자동 다음 문항 이동 (1.5초 후 — 결과를 잠시 보여주기)
-    setTimeout(() => {
-      goNextOrComplete()
-    }, 1500)
+    // 자동 이동 없음 — 사용자가 [다음] 버튼을 눌러야 이동.
   }, [
     attemptId,
     isGrading,

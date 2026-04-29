@@ -76,12 +76,15 @@ export function SolveQuestionPanel({
   const t = useTranslations()
   // 힌트 버튼 타이머 — currentSeq 가 바뀌면 리셋
   const [hintRemainingSec, setHintRemainingSec] = useState(HINT_DELAY_SEC)
+  // 해설보기 토글 — currentSeq 가 바뀌면 자동 닫힘
+  const [showExplanation, setShowExplanation] = useState(false)
   const seqRef = useRef(currentSeq)
 
   useEffect(() => {
     if (seqRef.current !== currentSeq) {
       seqRef.current = currentSeq
       setHintRemainingSec(HINT_DELAY_SEC)
+      setShowExplanation(false)
     }
   }, [currentSeq])
 
@@ -226,8 +229,8 @@ export function SolveQuestionPanel({
           })}
         </div>
 
-        {/* 해설 (채점 후) */}
-        {graded?.explanation && (
+        {/* 해설 (채점 후 + [해설보기] 토글 켜진 경우) */}
+        {graded?.explanation && showExplanation && (
           <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
               해설
@@ -297,14 +300,25 @@ export function SolveQuestionPanel({
               <Lightbulb className="h-4 w-4" />
               {hintTimerActive ? `${hintRemainingSec}s` : t('examPrepFinal.hint')}
             </button>
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={selectedChoice === null || isLocked || isGrading}
-              className="rounded-lg bg-[#6366F1] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#5558E6] disabled:opacity-40"
-            >
-              {isGrading ? '채점 중...' : t('examPrepFinal.submit')}
-            </button>
+            {/* 채점 전: [제출] / 채점 후: [해설보기] 토글 */}
+            {graded ? (
+              <button
+                type="button"
+                onClick={() => setShowExplanation((v) => !v)}
+                className="rounded-lg bg-[#6366F1] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#5558E6]"
+              >
+                {showExplanation ? '해설 닫기' : '해설보기'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={selectedChoice === null || isLocked || isGrading}
+                className="rounded-lg bg-[#6366F1] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#5558E6] disabled:opacity-40"
+              >
+                {isGrading ? '채점 중...' : t('examPrepFinal.submit')}
+              </button>
+            )}
           </div>
         </div>
 
