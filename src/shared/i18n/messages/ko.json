@@ -85,7 +85,13 @@
     "finalDescription": "각 세트별 총 3개의 중간 테스트를 모두 마스터해야 열리는 테스트입니다.",
     "selectedTestNumber": "{number}",
     "weekSession": "{week}주차 {session}차시",
-    "finalLabel": "Final"
+    "finalLabel": "Final",
+    "singleChoice": "단일 선택",
+    "hint": "힌트",
+    "submit": "제출",
+    "exit": "나가기",
+    "elapsedTime": "경과 시간",
+    "solveLoadError": "문항을 불러오지 못했습니다."
   },
   "aiTutorTopbar": {
     "newChat": "새 채팅",

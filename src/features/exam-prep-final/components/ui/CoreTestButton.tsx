@@ -6,7 +6,6 @@
 
 'use client'
 
-import Image from 'next/image'
 import { cn } from '@/shared/lib/utils'
 import type { CoreTest } from '../../types'
 
@@ -65,58 +64,59 @@ export function CoreTestButton({
         className="flex h-36 w-36 cursor-not-allowed items-center justify-center rounded-3xl bg-gray-100 dark:bg-gray-800"
         aria-label={`Test ${test.number} locked`}
       >
-        <Image
+        {/* 네이티브 img — Next/Image placeholder 단계 없음 → 즉시 표시 */}
+        <img
           src="/자물쇠.png"
           alt=""
           width={56}
           height={56}
           className="opacity-60"
+          draggable={false}
         />
       </button>
     )
   }
 
-  // 활성 + 선택됨 → 불꽃 (마스터=보라, 미마스터=회색)
-  if (isSelected) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          'flex h-36 w-36 items-center justify-center rounded-3xl transition-all hover:opacity-90 active:translate-y-1 active:shadow-none',
-          cfg.bg,
-          cfg.selectedShadow,
-        )}
-        aria-label={`Test ${test.number} selected`}
-      >
-        <Image
-          src={
-            isMastered
-              ? '/마스터 불꽃 보라.png'
-              : '/마스터 불꽃 비활성.png'
-          }
-          alt=""
-          width={80}
-          height={80}
-        />
-      </button>
-    )
-  }
-
-  // 평소 — 번호 (마스터/미마스터 무관)
+  // 활성 버튼 — 단일 button 안에서 번호/불꽃을 둘 다 렌더링하고 isSelected 로 표시 토글
+  // → 첫 마운트 시 불꽃 이미지가 미리 다운로드되어 클릭 즉시 swap (딜레이 0)
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-36 w-36 items-center justify-center rounded-3xl text-5xl font-black tracking-tight transition-all hover:opacity-90 active:translate-y-1 active:shadow-none',
+        'relative flex h-36 w-36 items-center justify-center rounded-3xl transition-shadow hover:opacity-90 active:translate-y-1 active:shadow-none',
         cfg.bg,
-        cfg.text,
-        'shadow-[0_8px_0_rgba(0,0,0,0.10)]',
+        isSelected
+          ? cfg.selectedShadow
+          : 'shadow-[0_8px_0_rgba(0,0,0,0.10)]',
       )}
-      aria-label={`Test ${test.number}`}
+      aria-label={`Test ${test.number}${isSelected ? ' selected' : ''}`}
     >
-      {numberLabel}
+      {/* 번호 — 비선택 시만 보임 */}
+      <span
+        className={cn(
+          'text-5xl font-black tracking-tight',
+          cfg.text,
+          isSelected && 'hidden',
+        )}
+      >
+        {numberLabel}
+      </span>
+
+      {/* 불꽃 — 마운트 시점부터 항상 DOM에 존재 (브라우저가 미리 로드),
+          선택 안됐을 때만 hidden 으로 시각만 가림 */}
+      <img
+        src={
+          isMastered
+            ? '/마스터 불꽃 보라.png'
+            : '/마스터 불꽃 비활성.png'
+        }
+        alt=""
+        width={80}
+        height={80}
+        draggable={false}
+        className={cn(!isSelected && 'hidden')}
+      />
     </button>
   )
 }

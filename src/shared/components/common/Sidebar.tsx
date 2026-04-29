@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import { SIDEBAR_MENU, NEW_SIDEBAR_MENU, PROFILE_MENU, COURSE_SIDEBAR_MENU } from '@/shared/constants/nav'
+import { computeDdaysToExam } from '@/shared/constants/examPrep'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
   AI_TUTOR_NEW_CHAT_FLAG,
@@ -168,7 +169,7 @@ function NewSidebar() {
                       event.preventDefault()
                       openFeedback()
                     }
-                    if (item.id === 'games') {
+                    if ((item.id as string) === 'games') {
                       event.preventDefault()
                       setIsGameModalOpen(true)
                     }
@@ -313,10 +314,10 @@ function CourseContextNav({
             >
               {label}
             </span>
-            {/* D-Day 배지 — 임시 D-14 하드코딩, 추후 prop 으로 분리 */}
+            {/* D-Day 배지 — EXAM_DATE_ISO 기반 동적 계산. 색은 주황 유지 */}
             {item.showDdayBadge && (
               <span className="rounded-full bg-[#F97316] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
-                D-14
+                D-{computeDdaysToExam()}
               </span>
             )}
           </>

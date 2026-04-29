@@ -14,7 +14,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useI18n, type AppLocale } from '@/shared/i18n/I18nProvider'
 import { getCourseRewardCounts } from '@/shared/services/progressService'
-import { getStudentCourseState, type StudentCourseState } from '@/features/exam-prep-final/services/gamificationService'
+import { fetchMyCourseState, type StudentCourseStateDto } from '@/shared/services/gamificationService'
 import { ExamPrepRewardWidget } from '@/features/exam-prep-final/components/ui/ExamPrepRewardWidget'
 import { useSidebarStore, SIDEBAR_WIDTH_EXPANDED, SIDEBAR_WIDTH_COLLAPSED } from '@/shared/store/useSidebarStore'
 import { useThemeStore } from '@/shared/store/useThemeStore'
@@ -81,6 +81,9 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   // 콘텐츠형 학습 페이지 진입 시에만 불꽃 팝업 자동 표시 (대화형 학습 제외)
   const isDialoguePage = pathname.includes('/dialogue')
 
+  // 풀이 모드 — 글로벌 사이드바 + 헤더 숨김 (자체 레이아웃 사용)
+  const isSolveMode = /\/exam-prep\/test\//.test(pathname)
+
   useEffect(() => {
     if (!currentLectureId || isDialoguePage) {
       setIsFlamePopupOpen(false)
@@ -143,14 +146,14 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const examPrepCourseId = examPrepMatch?.[1] ?? null
   const isExamPrepPage = !!examPrepCourseId
 
-  const [gamificationState, setGamificationState] = useState<StudentCourseState | null>(null)
+  const [gamificationState, setGamificationState] = useState<StudentCourseStateDto | null>(null)
   const [gamificationLoading, setGamificationLoading] = useState(false)
 
   const refreshGamification = useCallback(async () => {
     if (!examPrepCourseId || !user) return
     setGamificationLoading(true)
     try {
-      const { data } = await getStudentCourseState(examPrepCourseId)
+      const { data } = await fetchMyCourseState(examPrepCourseId)
       setGamificationState(data)
     } finally {
       setGamificationLoading(false)
@@ -173,6 +176,25 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     window.addEventListener('exam-prep-rewards-refresh', handler)
     return () => window.removeEventListener('exam-prep-rewards-refresh', handler)
   }, [isExamPrepPage, refreshGamification])
+
+  // 풀이 모드 — 사이드바·헤더 없이 children만 풀스크린으로 표시
+  // (모든 hook 호출 뒤에 early return 두어 React Hook 규칙 준수)
+  if (isSolveMode) {
+    return (
+      <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F5F7F8] dark:bg-gray-950">
+          {children}
+        </main>
+        {/* Feedback / Password 모달은 풀이 모드에서도 가능 */}
+        <FeedbackModalContainer isOpen={isFeedbackOpen} onClose={closeFeedback} />
+        <PasswordChangeModalContainer
+          isOpen={isPasswordModalOpen}
+          onClose={() => setIsPasswordModalOpen(false)}
+          onLogout={logout}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">

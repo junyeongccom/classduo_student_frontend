@@ -1,14 +1,20 @@
 /**
  * @file examPrepService.ts
- * @description exam_prep 백엔드 API 클라이언트 (core test 조회 + attempt 라이프사이클)
+ * @description exam-prep 백엔드 API 호출 서비스 (read + attempt 라이프사이클)
  * @module features/exam-prep-final/services
  * @dependencies shared/lib/api
+ *
+ * 명명: 51713의 Dto / fetch* 패턴을 정식 채택. attempt 라이프사이클은 r3.1 (HEAD).
  */
+
 import { apiRequest } from '@/shared/lib/api'
 
-// ─── core test 조회 ───
+// ─────────────────────────────────────────
+// read API — core test 메타·상세
+// ─────────────────────────────────────────
 
-export interface CoreTestSummary {
+/** 백엔드 응답 — core test 메타 (목록용) */
+export interface CoreTestSummaryDto {
   test_id: string
   lecture_session_id: string
   lecture_no: number
@@ -17,16 +23,17 @@ export interface CoreTestSummary {
   question_count: number
 }
 
-export interface CoreTestListResponse {
+export interface CoreTestListResponseDto {
   course_id: string
-  tests: CoreTestSummary[]
+  tests: CoreTestSummaryDto[]
 }
 
-export interface CoreTestQuestionItem {
+/** 백엔드 응답 — core test 단일 문항 (정답·해설·hint 포함) */
+export interface CoreTestQuestionItemDto {
   seq: number
   stem: string
   options: string[]
-  /** "0"~"3" */
+  /** "0"~"3" 문자열 인덱스 */
   answer: string
   explanation: Record<string, string>
   hint?: string | null
@@ -34,40 +41,49 @@ export interface CoreTestQuestionItem {
   difficulty?: number | null
 }
 
-export interface CoreTestDetailResponse {
+/** 백엔드 응답 — core test 상세 (메타 + 문항) */
+export interface CoreTestDetailDto {
   test_id: string
   lecture_session_id: string
   lecture_no: number
   lecture_date: string | null
   title: string | null
-  questions: CoreTestQuestionItem[]
+  questions: CoreTestQuestionItemDto[]
 }
 
-export async function listCoreTests(
+/** 과목 내 모든 core test 목록 조회 */
+export async function fetchCoreTestsByCourse(
   courseId: string,
-): Promise<{ data: CoreTestListResponse | null; error: string | null }> {
-  const result = await apiRequest<CoreTestListResponse>(
+): Promise<{ data: CoreTestListResponseDto | null; error: string | null }> {
+  const result = await apiRequest<CoreTestListResponseDto>(
     `/exam-prep/courses/${courseId}/core-tests`,
-    { method: 'GET', auth: true },
+    { auth: true },
   )
-  if (result.error) return { data: null, error: result.error.message }
-  return { data: result.data, error: null }
+  if (result.error) {
+    return { data: null, error: result.error.message }
+  }
+  return { data: result.data ?? null, error: null }
 }
 
-export async function getCoreTestDetail(
+/** 단일 core test 상세 조회 */
+export async function fetchCoreTestDetail(
   testId: string,
-): Promise<{ data: CoreTestDetailResponse | null; error: string | null }> {
-  const result = await apiRequest<CoreTestDetailResponse>(
+): Promise<{ data: CoreTestDetailDto | null; error: string | null }> {
+  const result = await apiRequest<CoreTestDetailDto>(
     `/exam-prep/core-tests/${testId}`,
-    { method: 'GET', auth: true },
+    { auth: true },
   )
-  if (result.error) return { data: null, error: result.error.message }
-  return { data: result.data, error: null }
+  if (result.error) {
+    return { data: null, error: result.error.message }
+  }
+  return { data: result.data ?? null, error: null }
 }
 
-// ─── attempt 라이프사이클 ───
+// ─────────────────────────────────────────
+// attempt 라이프사이클 (r3.1)
+// ─────────────────────────────────────────
 
-export interface AttemptStartResponse {
+export interface AttemptStartResponseDto {
   attempt_id: string
   test_id: string
   status: 'in_progress' | 'submitted'
@@ -76,24 +92,24 @@ export interface AttemptStartResponse {
   resumed: boolean
 }
 
-export interface AttemptResponseItem {
+export interface AttemptResponseItemDto {
   question_id: string
   selected: string
   is_correct: boolean | null
   answered_at: string | null
 }
 
-export interface AttemptDetailResponse {
+export interface AttemptDetailResponseDto {
   attempt_id: string
   test_id: string
   status: string
   question_ids: string[]
   started_at: string | null
   submitted_at: string | null
-  responses: AttemptResponseItem[]
+  responses: AttemptResponseItemDto[]
 }
 
-export interface GradedQuestionItem {
+export interface GradedQuestionItemDto {
   question_id: string
   selected: string
   is_correct: boolean
@@ -104,38 +120,41 @@ export interface GradedQuestionItem {
   first_master_transition: boolean
 }
 
-export interface SubmitAttemptResponse {
+export interface SubmitAttemptResponseDto {
   attempt_id: string
   test_id: string
   course_id: string | null
   submitted_at: string | null
-  graded: GradedQuestionItem[]
+  graded: GradedQuestionItemDto[]
   test_mastered_now: boolean
   test_mastered_at: string | null
 }
 
+/** 응시 시작 또는 이어풀기 */
 export async function startOrResumeAttempt(
   testId: string,
-): Promise<{ data: AttemptStartResponse | null; error: string | null }> {
-  const result = await apiRequest<AttemptStartResponse>(
+): Promise<{ data: AttemptStartResponseDto | null; error: string | null }> {
+  const result = await apiRequest<AttemptStartResponseDto>(
     `/exam-prep/tests/${testId}/attempts`,
     { method: 'POST', auth: true },
   )
   if (result.error) return { data: null, error: result.error.message }
-  return { data: result.data, error: null }
+  return { data: result.data ?? null, error: null }
 }
 
+/** attempt 상태 + 임시저장된 응답 조회 (이어풀기 복원용) */
 export async function getAttempt(
   attemptId: string,
-): Promise<{ data: AttemptDetailResponse | null; error: string | null }> {
-  const result = await apiRequest<AttemptDetailResponse>(
+): Promise<{ data: AttemptDetailResponseDto | null; error: string | null }> {
+  const result = await apiRequest<AttemptDetailResponseDto>(
     `/exam-prep/attempts/${attemptId}`,
-    { method: 'GET', auth: true },
+    { auth: true },
   )
   if (result.error) return { data: null, error: result.error.message }
-  return { data: result.data, error: null }
+  return { data: result.data ?? null, error: null }
 }
 
+/** 단일 응답 임시저장 (is_correct=NULL) */
 export async function saveAttemptResponse(
   attemptId: string,
   questionId: string,
@@ -153,13 +172,14 @@ export async function saveAttemptResponse(
   return { ok: true, error: null }
 }
 
+/** 제출 + 채점 + 마스터리 갱신 + 보상 이벤트 */
 export async function submitAttempt(
   attemptId: string,
-): Promise<{ data: SubmitAttemptResponse | null; error: string | null }> {
-  const result = await apiRequest<SubmitAttemptResponse>(
+): Promise<{ data: SubmitAttemptResponseDto | null; error: string | null }> {
+  const result = await apiRequest<SubmitAttemptResponseDto>(
     `/exam-prep/attempts/${attemptId}/submit`,
     { method: 'POST', auth: true },
   )
   if (result.error) return { data: null, error: result.error.message }
-  return { data: result.data, error: null }
+  return { data: result.data ?? null, error: null }
 }

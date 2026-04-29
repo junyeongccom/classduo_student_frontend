@@ -7,6 +7,18 @@
 import type { CoreTest, ExamPrepData } from '../types'
 import { SET_RANGES } from '../domain/testSetGroups'
 
+/** 오늘부터 target 까지 일수 (자정 기준, 음수면 0) */
+function computeDdayToTarget(targetIso: string): number {
+  const target = new Date(targetIso)
+  if (Number.isNaN(target.getTime())) return 0
+  target.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const ms = target.getTime() - today.getTime()
+  const days = Math.floor(ms / (24 * 60 * 60 * 1000))
+  return Math.max(0, days)
+}
+
 /** 1~26 핵심테스트 mock 생성 */
 function buildCoreTests(): CoreTest[] {
   const tests: CoreTest[] = []
@@ -46,9 +58,13 @@ export function getMockExamPrepData(): ExamPrepData {
   const coreTests = buildCoreTests()
   const masteredCount = coreTests.filter((t) => t.status === 'mastered').length
 
+  // 기말고사 D-day 계산 — 2026-06-22 기준
+  const examDate = '2026-06-22'
+  const ddays = computeDdayToTarget(examDate)
+
   return {
-    examDate: '2026-05-24',
-    ddays: 14,
+    examDate,
+    ddays,
     totalCoreTests: 26,
     masteredCount,
     recommendedTest:
