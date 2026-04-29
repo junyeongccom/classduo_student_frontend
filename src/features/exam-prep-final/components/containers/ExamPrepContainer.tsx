@@ -9,6 +9,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
@@ -22,6 +23,7 @@ import { MidTestBox } from '../ui/MidTestBox'
 import { FinalTestPanel } from '../ui/FinalTestPanel'
 import { getMockExamPrepData } from '../../mocks/mockExamPrepData'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
+import { useCoreTests } from '../../hooks/useCoreTests'
 import type { CoreTest, TestSetTab } from '../../types'
 
 /** 세트별 컨텐츠 박스 배경색 (Figma) */
@@ -37,11 +39,17 @@ interface ExamPrepContainerProps {
 
 export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   const t = useTranslations()
+  const router = useRouter()
   const { courseTitle } = useLectures(courseId)
   const data = useMemo(() => getMockExamPrepData(), [])
 
+  // 백엔드 core-tests 목록 (회차번호 → test_id 매핑용).
+  // mock 카드의 number 필드는 시간순 회차 번호와 일치하므로 lecture_no 매핑 가능.
+  const { findTestIdByLectureNo, error: coreTestsError } = useCoreTests(courseId)
+
   const [activeTab, setActiveTab] = useState<TestSetTab>(1)
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null)
+  const [startError, setStartError] = useState<string | null>(null)
 
   const selectedTest: CoreTest | null = useMemo(
     () => data.coreTests.find((t) => t.id === selectedTestId) ?? null,
@@ -52,11 +60,22 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   const handleTabChange = (tab: TestSetTab) => {
     setActiveTab(tab)
     setSelectedTestId(null)
+    setStartError(null)
   }
 
   const handleStartTest = (test: CoreTest) => {
-    // TODO: 실제 핵심테스트 풀이 진입 라우트 연결
-    console.log('Start core test:', test.id)
+    // 회차 번호(test.number = lecture_no)로 백엔드 test_id 매핑
+    const backendTestId = findTestIdByLectureNo(test.number)
+    if (!backendTestId) {
+      setStartError(
+        `해당 회차의 핵심 테스트가 아직 생성되지 않았어요. (${test.number}회차)`,
+      )
+      return
+    }
+    setStartError(null)
+    router.push(
+      `/studyspace/course/${courseId}/exam-prep/tests/${backendTestId}`,
+    )
   }
 
   return (
@@ -85,6 +104,11 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
 
       <div className="h-full overflow-y-auto">
         <div className="mx-auto max-w-5xl px-10 py-10">
+          {(startError || coreTestsError) && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {startError ?? coreTestsError}
+            </div>
+          )}
           {/* 상단 영역: 선택된 테스트 있으면 정보 카드, 없으면 3박스 헤더 */}
           {selectedTest ? (
             <SelectedTestInfoCard

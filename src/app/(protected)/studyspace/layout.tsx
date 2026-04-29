@@ -14,6 +14,8 @@ import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useI18n, type AppLocale } from '@/shared/i18n/I18nProvider'
 import { getCourseRewardCounts } from '@/shared/services/progressService'
+import { getStudentCourseState, type StudentCourseState } from '@/features/exam-prep-final/services/gamificationService'
+import { ExamPrepRewardWidget } from '@/features/exam-prep-final/components/ui/ExamPrepRewardWidget'
 import { useSidebarStore, SIDEBAR_WIDTH_EXPANDED, SIDEBAR_WIDTH_COLLAPSED } from '@/shared/store/useSidebarStore'
 import { useThemeStore } from '@/shared/store/useThemeStore'
 import { FeedbackModalContainer, useFeedbackStore } from '@/features/error-report'
@@ -135,6 +137,43 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('flame-increment', handler)
   }, [])
 
+  // 기말 대비 학습 페이지 감지: /studyspace/course/[courseId]/exam-prep[/...]
+  // 이 페이지에서는 보라색 불꽃 대신 도장/XP/계급 위젯을 표시한다.
+  const examPrepMatch = pathname.match(/^\/studyspace\/course\/([^/]+)\/exam-prep(?:\/|$)/)
+  const examPrepCourseId = examPrepMatch?.[1] ?? null
+  const isExamPrepPage = !!examPrepCourseId
+
+  const [gamificationState, setGamificationState] = useState<StudentCourseState | null>(null)
+  const [gamificationLoading, setGamificationLoading] = useState(false)
+
+  const refreshGamification = useCallback(async () => {
+    if (!examPrepCourseId || !user) return
+    setGamificationLoading(true)
+    try {
+      const { data } = await getStudentCourseState(examPrepCourseId)
+      setGamificationState(data)
+    } finally {
+      setGamificationLoading(false)
+    }
+  }, [examPrepCourseId, user])
+
+  // 기말 대비 페이지 진입 / courseId 변경 시 fetch
+  useEffect(() => {
+    if (!isExamPrepPage) {
+      setGamificationState(null)
+      return
+    }
+    refreshGamification()
+  }, [isExamPrepPage, examPrepCourseId, refreshGamification])
+
+  // 풀이 제출 등 외부 트리거 시 재조회
+  useEffect(() => {
+    if (!isExamPrepPage) return
+    const handler = () => { refreshGamification() }
+    window.addEventListener('exam-prep-rewards-refresh', handler)
+    return () => window.removeEventListener('exam-prep-rewards-refresh', handler)
+  }, [isExamPrepPage, refreshGamification])
+
   return (
     <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
       <Sidebar />
@@ -151,46 +190,53 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-3 pl-6">
-            <div ref={flameRef} className="relative">
-              <button
-                id="flame-badge"
-                onClick={() => setIsFlamePopupOpen(v => !v)}
-                className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3.5 py-2.5 text-[#6366F1] transition-colors hover:bg-[#6366F1]/20"
-              >
-                <Flame className="h-5 w-5 fill-current" />
-                <span className="text-sm font-bold">{flameCount}</span>
-              </button>
-              {isFlamePopupOpen && (
-                <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-2xl">
-                  <div className="mb-3">
-                    <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
-                      {locale === 'ko'
-                        ? '퀴즈 20개를 모두 풀고 불꽃을 얻으세요!'
-                        : 'Complete all 20 quizzes to earn flames!'}
-                    </p>
-                    <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
-                      {locale === 'ko'
-                        ? '추첨 이벤트 예정!'
-                        : 'Raffle event coming soon!'}
-                    </p>
+            {isExamPrepPage ? (
+              <ExamPrepRewardWidget
+                state={gamificationState}
+                loading={gamificationLoading}
+              />
+            ) : (
+              <div ref={flameRef} className="relative">
+                <button
+                  id="flame-badge"
+                  onClick={() => setIsFlamePopupOpen(v => !v)}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3.5 py-2.5 text-[#6366F1] transition-colors hover:bg-[#6366F1]/20"
+                >
+                  <Flame className="h-5 w-5 fill-current" />
+                  <span className="text-sm font-bold">{flameCount}</span>
+                </button>
+                {isFlamePopupOpen && (
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-2xl">
+                    <div className="mb-3">
+                      <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                        {locale === 'ko'
+                          ? '퀴즈 20개를 모두 풀고 불꽃을 얻으세요!'
+                          : 'Complete all 20 quizzes to earn flames!'}
+                      </p>
+                      <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                        {locale === 'ko'
+                          ? '추첨 이벤트 예정!'
+                          : 'Raffle event coming soon!'}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
+                      <button
+                        onClick={() => {
+                          if (currentLectureId) {
+                            localStorage.setItem(`flamePopup_dismissed_${currentLectureId}`, '1')
+                          }
+                          setIsFlamePopupOpen(false)
+                        }}
+                        className="rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#5558E6]"
+                      >
+                        {locale === 'ko' ? '확인' : 'OK'}
+                      </button>
+                    </div>
+                    <div className="absolute -top-2 right-6 h-0 w-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-white dark:border-b-gray-900" />
                   </div>
-                  <div className="flex items-center justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
-                    <button
-                      onClick={() => {
-                        if (currentLectureId) {
-                          localStorage.setItem(`flamePopup_dismissed_${currentLectureId}`, '1')
-                        }
-                        setIsFlamePopupOpen(false)
-                      }}
-                      className="rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#5558E6]"
-                    >
-                      {locale === 'ko' ? '확인' : 'OK'}
-                    </button>
-                  </div>
-                  <div className="absolute -top-2 right-6 h-0 w-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-white dark:border-b-gray-900" />
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
             <div ref={profileRef} className="relative flex items-center gap-3 border-l border-gray-200 dark:border-gray-700 pl-3">
               <img src="/KU_logo.png" alt="" className="h-9 shrink-0 object-contain" />
               <div>
