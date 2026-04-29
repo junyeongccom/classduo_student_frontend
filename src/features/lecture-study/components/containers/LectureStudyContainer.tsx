@@ -62,7 +62,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
 
   const toggleLeftPanel = useCallback(() => {
     _toggleLeftPanel()
-    panelAnalytics.toggle('left', !isLeftPanelOpen, lectureId)
+    panelAnalytics.toggle('material', !isLeftPanelOpen, lectureId)
   }, [_toggleLeftPanel, isLeftPanelOpen, lectureId])
 
   const toggleChatPanel = useCallback(() => {

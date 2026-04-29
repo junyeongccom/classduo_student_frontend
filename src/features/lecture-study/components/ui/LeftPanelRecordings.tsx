@@ -10,7 +10,7 @@ import { Mic, Sparkles, Clock } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/shared/components/ui'
 import type { Recording, RecordingChunkSummary } from '../../types'
-import { materialViewAnalytics } from '@/shared/lib/analytics'
+import { materialViewAnalytics, materialPanelAnalytics } from '@/shared/lib/analytics'
 
 interface LeftPanelRecordingsProps {
   recordings: Recording[]
@@ -230,17 +230,19 @@ export function LeftPanelRecordings({
                   type="multiple"
                   value={recOpenItems}
                   onValueChange={(newValues: string[]) => {
-                    // 트래킹: 새로 열리거나 닫힌 항목 감지
+                    // 트래킹: 새로 열리거나 닫힌 항목 감지 (출처 경유가 아닌 직접 클릭)
                     if (lectureId) {
                       const added = newValues.filter((v) => !recOpenItems.includes(v))
                       const removed = recOpenItems.filter((v) => !newValues.includes(v))
                       for (const vk of added) {
                         const idx = parseInt(vk.split('-').pop() ?? '0', 10)
                         materialViewAnalytics.recordingToggle(lectureId, { recording_index: globalOffset + idx, action: 'open' })
+                        materialPanelAnalytics.recordingChunkClick(lectureId, { recording_index: globalOffset + idx, action: 'open' })
                       }
                       for (const vk of removed) {
                         const idx = parseInt(vk.split('-').pop() ?? '0', 10)
                         materialViewAnalytics.recordingToggle(lectureId, { recording_index: globalOffset + idx, action: 'close' })
+                        materialPanelAnalytics.recordingChunkClick(lectureId, { recording_index: globalOffset + idx, action: 'close' })
                       }
                     }
                     setOpenItems((prev) => {
@@ -281,10 +283,12 @@ export function LeftPanelRecordings({
               for (const vk of added) {
                 const idx = parseInt(vk.replace('chunk-', ''), 10)
                 materialViewAnalytics.recordingToggle(lectureId, { recording_index: idx, action: 'open' })
+                materialPanelAnalytics.recordingChunkClick(lectureId, { recording_index: idx, action: 'open' })
               }
               for (const vk of removed) {
                 const idx = parseInt(vk.replace('chunk-', ''), 10)
                 materialViewAnalytics.recordingToggle(lectureId, { recording_index: idx, action: 'close' })
+                materialPanelAnalytics.recordingChunkClick(lectureId, { recording_index: idx, action: 'close' })
               }
             }
             setOpenItems(newValues)

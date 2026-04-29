@@ -13,6 +13,80 @@
     "games": "Game",
     "feedback": "Feedback"
   },
+  "courseNav": {
+    "dashboard": "Course Dashboard",
+    "lectureStudy": "By Lecture",
+    "examPrep": "Final Exam Prep",
+    "dialogue": "Dialogue Mode",
+    "myQuizzes": "My Quiz Library",
+    "createQuestion": "Create Question",
+    "home": "Home",
+    "feedback": "Feedback",
+    "sectionResources": "Resources",
+    "sectionGlobal": "All"
+  },
+  "courseDashboard": {
+    "currentWeek": "Current Week",
+    "weekUnit": "W",
+    "examDday": "To Final",
+    "continueTitle": "Continue Learning",
+    "continueAction": "Continue",
+    "continueEmpty": "No lessons started yet. Begin from By-Lecture mode!",
+    "studyModes": "Study Modes",
+    "studyModesSubtitle": "4 study modes for this semester",
+    "modeWeekly": {
+      "eyebrow": "WEEKLY · NOTES · QUIZ · GAME",
+      "title": "By Lecture",
+      "description": "Practice quizzes that match each week's lecture",
+      "footer": "Week {week} uploaded",
+      "cta": "Enter"
+    },
+    "modeExam": {
+      "eyebrow": "EXAM · 30 TESTS · LOCK-ON",
+      "title": "Final Exam Prep",
+      "description": "Prepare for the final with 26 core, 3 mid, and 1 final test",
+      "footer": "Set 1 · In progress",
+      "cta": "Enter"
+    },
+    "modeDialogue": {
+      "eyebrow": "AI · FREE CHAT",
+      "title": "Dialogue Mode",
+      "description": "Learn freely with an AI tutor grounded on your lecture materials",
+      "footer": "",
+      "cta": "Enter"
+    },
+    "modeResources": {
+      "eyebrow": "RESOURCES · MY QUIZ / CREATE",
+      "title": "Study Resources",
+      "description": "Create and manage your own questions in one place",
+      "footer": "",
+      "cta": "Enter"
+    },
+    "examPrepPlaceholderTitle": "Final Exam Prep (Coming soon)",
+    "examPrepPlaceholderDescription": "A focused mode with 26 core tests to maximize mastery before exam day.",
+    "courseDialoguePlaceholderTitle": "Dialogue Mode",
+    "courseDialoguePlaceholderDescription": "Select a lecture to chat freely with the AI tutor."
+  },
+  "examPrepFinal": {
+    "ddayCardTitle": "Final Exam",
+    "masteryCardTitle": "Mastery Progress",
+    "masteryReached": "Master reached",
+    "completedSuffix": "% complete",
+    "recommendedTitle": "Recommended",
+    "recommendedStart": "Start now",
+    "testSets": "Test Sets",
+    "midTestTitle": "Mid Test",
+    "midTestMeta": "{minutes} min  {questions} questions",
+    "midTestDescription": "A diagnostic test based on items you missed in core tests {start}~{end}.",
+    "finalTitle": "Final\nExam Prep",
+    "finalMeta": "{minutes} min",
+    "finalQuestions": "{questions} questions",
+    "finalUnlockHint": "Unlocks D-3 before exam",
+    "finalDescription": "Unlocks once you've mastered all 3 mid tests across the sets.",
+    "selectedTestNumber": "{number}",
+    "weekSession": "W{week} S{session}",
+    "finalLabel": "Final"
+  },
   "aiTutorTopbar": {
     "newChat": "New chat",
     "chatHistory": "Chat history",
@@ -35,7 +109,6 @@
     "simpleLabel": "SIMPLE",
     "deepLabel": "DEEP",
     "suggestionsGuide": "Click me to see the key questions AI generated from this lecture!",
-    "deepModeHint": "Try DEEP mode for more detailed and thorough answers!",
     "referenceHint": "Check recording and material sources to better understand the answer",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",

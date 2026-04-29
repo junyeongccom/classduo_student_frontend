@@ -13,7 +13,7 @@ import { Loader2, HelpCircle, Sparkles, Bot } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { trackQuizAttempt } from '@/shared/hooks/useAnalytics'
-import { quizAnalytics, bookmarkAnalytics } from '@/shared/lib/analytics'
+import { quizAnalytics, bookmarkAnalytics, quizExtraAnalytics } from '@/shared/lib/analytics'
 import {
   getInstructorQuizzes,
   type InstructorQuizItem,
@@ -395,6 +395,9 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                   onBookmarkToggle={handleBookmarkToggle}
                   onCorrectUpdate={handleCorrectUpdate}
                   onResetAnswer={handleResetAnswer}
+                  onRevealToggle={(quizId, shown) => {
+                    quizExtraAnalytics.revealToggle(lectureId, { quiz_id: quizId, shown, quiz_source: 'content' })
+                  }}
                   renderAnswerExtra={
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                       {quiz.source && (quiz.source.source_pages?.length ?? 0) > 0 && (
@@ -431,22 +434,25 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                       )}
                       <button
                         type="button"
-                        onClick={() => setQuizChatContext({
-                          quizId: quiz.quiz_id,
-                          quizIndex: idx,
-                          courseTitle: courseTitle ?? '',
-                          weekNumber: weekNumber ?? 0,
-                          sessionNumber: sessionNumber ?? 0,
-                          question: quiz.question,
-                          explanation: quiz.explanation,
-                          choices: quiz.choices.map(c => ({
-                            choice_order: c.choice_order,
-                            choice_text: c.choice_text,
-                            is_correct: c.is_correct,
-                            choice_explanation: c.choice_explanation,
-                          })),
-                          source: quiz.source ?? {},
-                        })}
+                        onClick={() => {
+                          quizExtraAnalytics.askAiClick(lectureId, { quiz_id: quiz.quiz_id, quiz_type: quiz.quiz_type })
+                          setQuizChatContext({
+                            quizId: quiz.quiz_id,
+                            quizIndex: idx,
+                            courseTitle: courseTitle ?? '',
+                            weekNumber: weekNumber ?? 0,
+                            sessionNumber: sessionNumber ?? 0,
+                            question: quiz.question,
+                            explanation: quiz.explanation,
+                            choices: quiz.choices.map(c => ({
+                              choice_order: c.choice_order,
+                              choice_text: c.choice_text,
+                              is_correct: c.is_correct,
+                              choice_explanation: c.choice_explanation,
+                            })),
+                            source: quiz.source ?? {},
+                          })
+                        }}
                         className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors cursor-pointer"
                       >
                         <Bot className="h-3 w-3" />

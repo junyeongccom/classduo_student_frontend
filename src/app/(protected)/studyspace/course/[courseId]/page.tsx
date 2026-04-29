@@ -1,21 +1,21 @@
 /**
  * @file page.tsx
- * @description 과목 내부 페이지 — 회차별/강의자료별 탭
+ * @description 과목 대시보드 — 학습 모드 4종 + 이어서 학습하기
  * @module app/(protected)/studyspace/course/[courseId]
- * @dependencies features/lecture-study
+ * @dependencies features/course-dashboard
  */
 
 'use client'
 
 import { use } from 'react'
-import { LectureSelectContainer } from '@/features/lecture-study'
+import { CourseDashboardContainer } from '@/features/course-dashboard'
 
-export default function CoursePage({
+export default function CourseDashboardPage({
   params,
 }: {
   params: Promise<{ courseId: string }>
 }) {
   const { courseId } = use(params)
 
-  return <LectureSelectContainer courseId={courseId} />
+  return <CourseDashboardContainer courseId={courseId} />
 }

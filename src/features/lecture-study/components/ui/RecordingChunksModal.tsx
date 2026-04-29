@@ -15,6 +15,7 @@ import {
   type SnapshotRecordingItem,
   type SnapshotChunkSummary,
 } from '../../services/lectureService'
+import { courseLectureAnalytics } from '@/shared/lib/analytics'
 
 interface RecordingChunksModalProps {
   open: boolean
@@ -104,6 +105,11 @@ export function RecordingChunksModal({
       : `${lectureLabel} - Part ${chunk.chunk_index + 1}`)
 
   const handleDownloadOne = (chunk: FlatChunk) => {
+    courseLectureAnalytics.recordingDownload(lectureId, {
+      scope: 'single',
+      chunk_index: chunk.chunk_index,
+      recording_id: chunk.recording.recording_id,
+    })
     const label = getChunkLabel(chunk)
     const text = buildChunkText(chunk, label, tChunks('segment'))
     const safeFilename = label.replace(/[/\\?%*:|"<>]/g, '_')
@@ -111,7 +117,13 @@ export function RecordingChunksModal({
   }
 
   const handleDownloadAll = () => {
-    allChunks.forEach(chunk => handleDownloadOne(chunk))
+    courseLectureAnalytics.recordingDownload(lectureId, { scope: 'all' })
+    allChunks.forEach(chunk => {
+      const label = getChunkLabel(chunk)
+      const text = buildChunkText(chunk, label, tChunks('segment'))
+      const safeFilename = label.replace(/[/\\?%*:|"<>]/g, '_')
+      downloadTextFile(`${safeFilename}.txt`, text)
+    })
   }
 
   return (

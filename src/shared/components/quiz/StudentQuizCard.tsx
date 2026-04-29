@@ -67,6 +67,8 @@ export interface StudentQuizCardProps {
   onDismissWrongNote?: (quizId: string) => void
   /** 해설 영역 하단에 삽입할 추가 콘텐츠 (출처 버튼 등) */
   renderAnswerExtra?: React.ReactNode
+  /** 해설 토글 클릭 콜백 — 트래킹용 */
+  onRevealToggle?: (quizId: string, shown: boolean) => void
 }
 
 /* ───────────── 상수 ───────────── */
@@ -103,6 +105,7 @@ export function StudentQuizCard({
   wrongNoteMode,
   onDismissWrongNote,
   renderAnswerExtra,
+  onRevealToggle,
 }: StudentQuizCardProps) {
   const isMultipleChoice =
     quiz.quiz_type === 'MISCONCEPTION' ||
@@ -149,8 +152,12 @@ export function StudentQuizCard({
   )
 
   const handleToggleAnswer = useCallback(() => {
-    setShowAnswer((prev) => !prev)
-  }, [])
+    setShowAnswer((prev) => {
+      const next = !prev
+      onRevealToggle?.(quiz.quiz_id, next)
+      return next
+    })
+  }, [onRevealToggle, quiz.quiz_id])
 
   const handleBookmarkClick = useCallback(
     (e: React.MouseEvent) => {
