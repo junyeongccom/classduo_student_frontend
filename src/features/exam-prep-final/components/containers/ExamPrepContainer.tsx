@@ -43,9 +43,13 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   const { courseTitle } = useLectures(courseId)
   const data = useMemo(() => getMockExamPrepData(), [])
 
-  // 백엔드 core-tests 목록 (회차번호 → test_id 매핑용).
-  // mock 카드의 number 필드는 시간순 회차 번호와 일치하므로 lecture_no 매핑 가능.
-  const { findTestIdByLectureNo, error: coreTestsError } = useCoreTests(courseId)
+  // 백엔드 core-tests 목록 — mock 카드 번호(1~26) → 백엔드 test_id 매핑.
+  // 1순위: lecture_no 정확 매칭, 2순위: 인덱스 기반 fallback.
+  const {
+    tests: backendTests,
+    resolveTestIdForCard,
+    error: coreTestsError,
+  } = useCoreTests(courseId)
 
   const [activeTab, setActiveTab] = useState<TestSetTab>(1)
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null)
@@ -64,12 +68,18 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   }
 
   const handleStartTest = (test: CoreTest) => {
-    // 회차 번호(test.number = lecture_no)로 백엔드 test_id 매핑
-    const backendTestId = findTestIdByLectureNo(test.number)
+    // 1순위: lecture_no 매칭, 2순위: 인덱스 기반 fallback
+    const backendTestId = resolveTestIdForCard(test.number)
     if (!backendTestId) {
-      setStartError(
-        `해당 회차의 핵심 테스트가 아직 생성되지 않았어요. (${test.number}회차)`,
-      )
+      const available = backendTests.length
+      const lectureNos = backendTests
+        .map((t) => t.lecture_no)
+        .filter((n) => n != null)
+      const detail =
+        available === 0
+          ? '이 과목에는 아직 생성된 핵심 테스트가 없습니다.'
+          : `현재 사용 가능한 회차 ${available}개 (lecture_no: ${lectureNos.join(', ') || '미지정'}). ${test.number}번 카드와 연결되는 회차를 찾지 못했어요.`
+      setStartError(detail)
       return
     }
     setStartError(null)
