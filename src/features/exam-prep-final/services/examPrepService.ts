@@ -98,6 +98,7 @@ export interface AttemptResponseItemDto {
   question_id: string
   selected: string
   is_correct: boolean | null
+  hint_used: boolean | null
   answered_at: string | null
 }
 

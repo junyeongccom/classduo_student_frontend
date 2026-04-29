@@ -49,6 +49,7 @@ function buildCoreTests(): CoreTest[] {
         cyan: status === 'locked' ? 0 : 3,
         green: status === 'mastered' ? 1 : 0,
       },
+      isTestMastered: status === 'mastered',
     })
   }
   return tests

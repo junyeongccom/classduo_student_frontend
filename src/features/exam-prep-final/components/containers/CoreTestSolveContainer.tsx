@@ -186,23 +186,53 @@ export function CoreTestSolveContainer({
   useEffect(() => {
     if (seqToQuestionId.size === 0) return
     const resumeResponses = (window as any).__examPrepResumeMap__ as
-      | Array<{ question_id: string; selected: string; is_correct: boolean | null }>
+      | Array<{
+          question_id: string
+          selected: string
+          is_correct: boolean | null
+          hint_used: boolean | null
+        }>
       | null
     if (!resumeResponses) return
     const restoredSelected: Record<number, number> = {}
     const restoredGraded: Record<number, GradeSingleResponseDto> = {}
+    const restoredHintUsed = new Set<number>()
+    const restoredHintDisabled: Record<number, number> = {}
+
     seqToQuestionId.forEach((qid, seq) => {
       const r = resumeResponses.find((x) => x.question_id === qid)
       if (!r) return
+
       restoredSelected[seq] = Number(r.selected)
-      // is_correct 가 not null 이면 채점된 응답 — 결과 패널 표시용 placeholder
-      // (정확한 mastery 변동은 알 수 없지만, 선택과 정오답만 보존)
+
+      // 힌트 사용 여부 복원
+      if (r.hint_used) {
+        restoredHintUsed.add(seq)
+        // 힌트로 제거된 선지: 현재 어떤 선지인지 알 수 없으므로
+        // data.questions 에서 정답을 제외한 선지 중 선택하지 않은 것 하나를 disable
+        // (정확히 어떤 선지였는지는 서버가 내려주지 않으므로 최선 근사)
+        if (data) {
+          const q = data.questions.find((x) => x.seq === seq)
+          if (q) {
+            const correctIdx = parseInt(q.answer, 10)
+            const selectedIdx = Number(r.selected)
+            const candidates = q.options
+              .map((_, i) => i)
+              .filter((i) => i !== correctIdx && i !== selectedIdx)
+            if (candidates.length > 0) {
+              restoredHintDisabled[seq] = candidates[0]
+            }
+          }
+        }
+      }
+
+      // 채점된 응답 복원 — data.questions 에서 correct_answer·explanation 직접 채움
       if (r.is_correct !== null && r.is_correct !== undefined) {
-        // 채점된 응답 placeholder. 다음 문제로 이동 가능하도록 graded 마킹
+        const questionData = data?.questions.find((q) => q.seq === seq)
         restoredGraded[seq] = {
           is_correct: r.is_correct,
-          correct_answer: '',  // 알 수 없음 — UI 에서 처리
-          explanation: null,
+          correct_answer: questionData?.answer ?? '',
+          explanation: questionData?.explanation ?? null,
           mastery: {
             question_id: qid,
             previous_state: 'learning',
@@ -211,7 +241,7 @@ export function CoreTestSolveContainer({
             incorrect_count: 0,
             first_master_transition: false,
           },
-          hint_used: false,
+          hint_used: r.hint_used ?? false,
           graded_count: 0,
           total_count: 0,
           attempt_completed: false,
@@ -220,9 +250,14 @@ export function CoreTestSolveContainer({
         }
       }
     })
+
     setSelectedBySeq(restoredSelected)
     setGradedBySeq(restoredGraded)
+    setHintUsedSeqs(restoredHintUsed)
+    setHintDisabledBySeq(restoredHintDisabled)
     ;(window as any).__examPrepResumeMap__ = null
+  // data 도 의존성에 포함 — questions 로 correct_answer·explanation 채우기 위함
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seqToQuestionId])
 
   // 회차 메타
