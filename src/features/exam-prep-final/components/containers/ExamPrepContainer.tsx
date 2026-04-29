@@ -7,10 +7,11 @@
 
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Loader2 } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
@@ -20,9 +21,9 @@ import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
 import { FinalTestPanel } from '../ui/FinalTestPanel'
-import { getMockExamPrepData } from '../../mocks/mockExamPrepData'
+import { useExamPrepData } from '../../hooks/useExamPrepData'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
-import type { CoreTest, TestSetTab } from '../../types'
+import type { CoreTest, ExamPrepData, TestSetTab } from '../../types'
 
 /** 세트별 컨텐츠 박스 배경색 (Figma) */
 const SET_PANEL_BG: Record<1 | 2 | 3, string> = {
@@ -35,18 +36,34 @@ interface ExamPrepContainerProps {
   courseId: string
 }
 
+/** 핵심테스트 PNG 자산 — 페이지 진입 즉시 브라우저 캐시에 prefetch */
+const PRELOAD_ASSETS = [
+  '/마스터 불꽃 보라.png',
+  '/마스터 불꽃 비활성.png',
+  '/자물쇠.png',
+]
+
 export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   const t = useTranslations()
+  const router = useRouter()
   const { courseTitle } = useLectures(courseId)
-  const data = useMemo(() => getMockExamPrepData(), [])
+  const { data, isLoading, error } = useExamPrepData(courseId)
+
+  // 페이지 마운트 시 PNG 자산 prefetch — 첫 클릭 딜레이 방지
+  useEffect(() => {
+    PRELOAD_ASSETS.forEach((src) => {
+      const img = new window.Image()
+      img.src = src
+    })
+  }, [])
 
   const [activeTab, setActiveTab] = useState<TestSetTab>(1)
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null)
 
-  const selectedTest: CoreTest | null = useMemo(
-    () => data.coreTests.find((t) => t.id === selectedTestId) ?? null,
-    [data.coreTests, selectedTestId],
-  )
+  const selectedTest: CoreTest | null = useMemo(() => {
+    if (!data) return null
+    return data.coreTests.find((t) => t.id === selectedTestId) ?? null
+  }, [data, selectedTestId])
 
   // 탭 변경 시 선택 해제
   const handleTabChange = (tab: TestSetTab) => {
@@ -54,33 +71,50 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     setSelectedTestId(null)
   }
 
+  /** 핵심테스트 풀이 페이지 라우팅 — testId가 있으면 그걸로, 없으면 lecture-* fallback */
   const handleStartTest = (test: CoreTest) => {
-    // TODO: 실제 핵심테스트 풀이 진입 라우트 연결
-    console.log('Start core test:', test.id)
+    // test.id 형식: 백엔드 매칭됐으면 uuid, 아니면 "lecture-{lectureId}"
+    if (test.id.startsWith('lecture-')) {
+      // backend 매칭 실패 — 풀이 페이지 진입 불가 (안내 또는 무시)
+      console.warn('[ExamPrep] core test not yet generated, lectureId-based id:', test.id)
+      return
+    }
+    router.push(
+      `/studyspace/course/${courseId}/exam-prep/test/${test.id}`,
+    )
+  }
+
+  // 데이터 로딩 / 에러 처리
+  if (isLoading || !data) {
+    return (
+      <>
+        <StudyspaceTopbarSlot>
+          <ExamPrepBreadcrumb t={t} courseId={courseId} courseTitle={courseTitle} />
+        </StudyspaceTopbarSlot>
+        <div className="flex h-full items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <StudyspaceTopbarSlot>
+          <ExamPrepBreadcrumb t={t} courseId={courseId} courseTitle={courseTitle} />
+        </StudyspaceTopbarSlot>
+        <div className="flex h-full items-center justify-center">
+          <p className="text-sm text-gray-500">{error}</p>
+        </div>
+      </>
+    )
   }
 
   return (
     <>
       <StudyspaceTopbarSlot>
-        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
-          <Link
-            href="/studyspace/home"
-            className="transition-colors hover:text-[#6366F1]"
-          >
-            {t('courseNav.home')}
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <Link
-            href={`/studyspace/course/${courseId}`}
-            className="truncate transition-colors hover:text-[#6366F1]"
-          >
-            {courseTitle ?? '...'}
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="truncate font-semibold text-gray-900 dark:text-gray-100">
-            {t('courseNav.examPrep')}
-          </span>
-        </nav>
+        <ExamPrepBreadcrumb t={t} courseId={courseId} courseTitle={courseTitle} />
       </StudyspaceTopbarSlot>
 
       <div className="h-full overflow-y-auto">
@@ -137,6 +171,39 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   )
 }
 
+/** Breadcrumb 컴포넌트 — 로딩/에러/정상 상태 모두에서 재사용 */
+function ExamPrepBreadcrumb({
+  t,
+  courseId,
+  courseTitle,
+}: {
+  t: ReturnType<typeof useTranslations>
+  courseId: string
+  courseTitle: string | null
+}) {
+  return (
+    <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
+      <Link
+        href="/studyspace/home"
+        className="transition-colors hover:text-[#6366F1]"
+      >
+        {t('courseNav.home')}
+      </Link>
+      <ChevronRight className="h-3.5 w-3.5" />
+      <Link
+        href={`/studyspace/course/${courseId}`}
+        className="truncate transition-colors hover:text-[#6366F1]"
+      >
+        {courseTitle ?? '...'}
+      </Link>
+      <ChevronRight className="h-3.5 w-3.5" />
+      <span className="truncate font-semibold text-gray-900 dark:text-gray-100">
+        {t('courseNav.examPrep')}
+      </span>
+    </nav>
+  )
+}
+
 /** 5개씩 row 단위로 분할 — 마지막 row가 자동으로 가운데 정렬됨 */
 function chunkInto<T>(arr: T[], size: number): T[][] {
   const rows: T[][] = []
@@ -154,7 +221,7 @@ function CoreSetContent({
   onSelect,
 }: {
   setNumber: 1 | 2 | 3
-  data: ReturnType<typeof getMockExamPrepData>
+  data: ExamPrepData
   selectedTestId: string | null
   onSelect: (id: string | null) => void
 }) {

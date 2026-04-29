@@ -85,7 +85,13 @@
     "finalDescription": "Unlocks once you've mastered all 3 mid tests across the sets.",
     "selectedTestNumber": "{number}",
     "weekSession": "W{week} S{session}",
-    "finalLabel": "Final"
+    "finalLabel": "Final",
+    "singleChoice": "Single choice",
+    "hint": "Hint",
+    "submit": "Submit",
+    "exit": "Exit",
+    "elapsedTime": "Elapsed",
+    "solveLoadError": "Failed to load questions."
   },
   "aiTutorTopbar": {
     "newChat": "New chat",

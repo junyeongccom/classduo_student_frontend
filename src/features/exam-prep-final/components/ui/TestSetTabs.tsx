@@ -69,7 +69,8 @@ const TAB_CONFIG: Array<{
 
 export function TestSetTabs({ active, onChange }: TestSetTabsProps) {
   return (
-    <div className="flex items-end gap-1">
+    // h-16 고정 — 어떤 탭이 active이든 컨테이너 높이 불변, 컨텐츠 박스 들썩임 방지
+    <div className="flex h-16 items-end gap-1">
       {TAB_CONFIG.map((cfg, index) => {
         const isActive = active === cfg.id
         return (
@@ -78,10 +79,10 @@ export function TestSetTabs({ active, onChange }: TestSetTabsProps) {
             type="button"
             onClick={() => onChange(cfg.id)}
             className={cn(
-              'relative h-14 min-w-[88px] rounded-t-2xl px-7 text-lg font-bold transition-all',
+              'relative min-w-[88px] rounded-t-2xl px-7 text-lg font-bold transition-colors',
               isActive
                 ? `${cfg.activeBg} ${cfg.activeText} ${cfg.activeBorder ?? ''} z-10 -mb-px h-16`
-                : `${cfg.inactiveBg} ${cfg.inactiveText} hover:opacity-90`,
+                : `${cfg.inactiveBg} ${cfg.inactiveText} h-14 hover:opacity-90`,
             )}
             style={{
               // 비활성 탭은 살짝 뒤로 들어간 느낌

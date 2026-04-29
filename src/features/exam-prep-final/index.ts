@@ -5,6 +5,9 @@
  */
 
 export { ExamPrepContainer } from './components/containers/ExamPrepContainer'
+export { CoreTestSolveContainer } from './components/containers/CoreTestSolveContainer'
+export { useExamPrepData } from './hooks/useExamPrepData'
+export { useCoreTestDetail } from './hooks/useCoreTestDetail'
 export { getMockExamPrepData } from './mocks/mockExamPrepData'
 export { getCoreTestsBySet, isCoreSetTab, SET_RANGES } from './domain/testSetGroups'
 export type {

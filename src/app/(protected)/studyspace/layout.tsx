@@ -79,6 +79,9 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   // 콘텐츠형 학습 페이지 진입 시에만 불꽃 팝업 자동 표시 (대화형 학습 제외)
   const isDialoguePage = pathname.includes('/dialogue')
 
+  // 풀이 모드 — 글로벌 사이드바 + 헤더 숨김 (자체 레이아웃 사용)
+  const isSolveMode = /\/exam-prep\/test\//.test(pathname)
+
   useEffect(() => {
     if (!currentLectureId || isDialoguePage) {
       setIsFlamePopupOpen(false)
@@ -134,6 +137,24 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     window.addEventListener('flame-increment', handler)
     return () => window.removeEventListener('flame-increment', handler)
   }, [])
+
+  // 풀이 모드 — 사이드바·헤더 없이 children만 풀스크린으로 표시
+  if (isSolveMode) {
+    return (
+      <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F5F7F8] dark:bg-gray-950">
+          {children}
+        </main>
+        {/* Feedback / Password 모달은 풀이 모드에서도 가능 */}
+        <FeedbackModalContainer isOpen={isFeedbackOpen} onClose={closeFeedback} />
+        <PasswordChangeModalContainer
+          isOpen={isPasswordModalOpen}
+          onClose={() => setIsPasswordModalOpen(false)}
+          onLogout={logout}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
