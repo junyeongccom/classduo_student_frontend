@@ -14,9 +14,10 @@ export const SET_RANGES: Record<1 | 2 | 3, { start: number; end: number }> = {
 }
 
 export function getCoreTestsBySet(coreTests: CoreTest[], setNumber: 1 | 2 | 3): CoreTest[] {
-  const range = SET_RANGES[setNumber]
+  // CoreTest.setNumber 가 useExamPrepData 에서 lectures 수에 따라 동적 분배되어 있음.
+  // (예: 17개 → 1=6, 2=6, 3=5 / 26개 → 1=9, 2=9, 3=8)
   return coreTests
-    .filter((t) => t.number >= range.start && t.number <= range.end)
+    .filter((t) => t.setNumber === setNumber)
     .sort((a, b) => a.number - b.number)
 }
 

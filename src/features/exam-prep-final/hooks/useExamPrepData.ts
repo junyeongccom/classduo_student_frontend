@@ -55,12 +55,17 @@ function lectureToCoreTest(args: {
     essence_7words: string | null
   }
   number: number  // 1-based 순번 (lectures 정렬 후 인덱스)
+  totalCount: number  // 전체 lecture 수 — 동적 세트 분배에 사용
   apiTestId: string | null  // exam_prep_test.id (백엔드 매칭 결과)
   apiQuestionCount: number  // 백엔드 question_count (없으면 0)
 }): CoreTest {
-  const { lecture, number, apiTestId, apiQuestionCount } = args
+  const { lecture, number, totalCount, apiTestId, apiQuestionCount } = args
+  // 동적 분배: lectures 수에 비례하여 3세트로 분할
+  // 26개 정원 가정의 SET_RANGES 는 미사용 (실제 회차가 26개 미만/초과여도 균등 분배)
+  // 예: 17개 → set1=6, set2=6, set3=5 / 26개 → set1=9, set2=9, set3=8
+  const per = Math.ceil(totalCount / 3)
   const setNumber: 1 | 2 | 3 =
-    number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
+    number <= per ? 1 : number <= 2 * per ? 2 : 3
 
   // 정책 (Q2 답변 = B):
   // - has_content && api 문항 존재 → available
@@ -169,12 +174,14 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     const apiByLecture = new Map<string, CoreTestSummaryDto>()
     apiTests.forEach((t) => apiByLecture.set(t.lecture_session_id, t))
 
-    // CoreTest 26개 매핑 (lecture 수만큼 — 26 미만/초과 가능)
+    // CoreTest 매핑 (lecture 수만큼 — totalCount 기반 동적 세트 분배)
+    const total = sortedLectures.length
     const coreTests: CoreTest[] = sortedLectures.map((lec, i) => {
       const api = apiByLecture.get(lec.id)
       return lectureToCoreTest({
         lecture: lec,
         number: i + 1,
+        totalCount: total,
         apiTestId: api?.test_id ?? null,
         apiQuestionCount: api?.question_count ?? 0,
       })
