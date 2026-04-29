@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
-import { SIDEBAR_MENU, NEW_SIDEBAR_MENU, PROFILE_MENU } from '@/shared/constants/nav'
+import { SIDEBAR_MENU, NEW_SIDEBAR_MENU, PROFILE_MENU, COURSE_SIDEBAR_MENU } from '@/shared/constants/nav'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
   AI_TUTOR_NEW_CHAT_FLAG,
@@ -36,6 +36,12 @@ export function Sidebar() {
 
 /* ───── New UI: 접이식 사이드바 (240px ↔ 72px) ───── */
 
+/** 현재 pathname에서 courseId 추출 (없으면 null) */
+function extractCourseId(pathname: string): string | null {
+  const match = pathname.match(/^\/studyspace\/course\/([^/]+)/)
+  return match?.[1] ?? null
+}
+
 function NewSidebar() {
   const t = useTranslations()
   const pathname = usePathname()
@@ -46,6 +52,10 @@ function NewSidebar() {
 
   // 태블릿 감지 (store.isTablet 동기화)
   useTabletDetector()
+
+  // 과목 컨텍스트 진입 여부 — courseId가 추출되면 과목 메뉴로 전환
+  const courseId = extractCourseId(pathname)
+  const isCourseContext = courseId !== null
 
   const menuItems = useMemo(() => [...NEW_SIDEBAR_MENU], [])
 
@@ -131,68 +141,81 @@ function NewSidebar() {
 
         {/* Navigation */}
         <nav className="flex flex-1 flex-col gap-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = pathname.startsWith(item.href)
-            const label = t(item.labelKey)
-            const color = item.color
+          {isCourseContext && courseId ? (
+            <CourseContextNav
+              courseId={courseId}
+              pathname={pathname}
+              visualCollapsed={visualCollapsed}
+              onItemClick={() => {
+                if (isTablet && isOverlayOpen) closeOverlay()
+              }}
+              openFeedback={openFeedback}
+              t={t}
+            />
+          ) : (
+            menuItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname.startsWith(item.href)
+              const label = t(item.labelKey)
+              const color = item.color
 
-            const linkContent = (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={(event) => {
-                  if (item.id === 'feedback') {
-                    event.preventDefault()
-                    openFeedback()
-                  }
-                  if (item.id === 'games') {
-                    event.preventDefault()
-                    setIsGameModalOpen(true)
-                  }
-                  // 태블릿에서 네비게이션 후 오버레이 닫기
-                  if (isTablet && isOverlayOpen) {
-                    closeOverlay()
-                  }
-                }}
-                className={cn(
-                  'flex items-center rounded-xl font-medium transition-all duration-300',
-                  visualCollapsed ? 'justify-center px-0 py-3' : 'gap-4 px-4 py-3',
-                  isActive
-                    ? 'font-semibold'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800',
-                )}
-                style={isActive ? { backgroundColor: `${color}10` } : undefined}
-              >
-                <Icon
-                  className="h-5 w-5 shrink-0"
-                  style={{ color }}
-                />
-                <span
+              const linkContent = (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={(event) => {
+                    if (item.id === 'feedback') {
+                      event.preventDefault()
+                      openFeedback()
+                    }
+                    if (item.id === 'games') {
+                      event.preventDefault()
+                      setIsGameModalOpen(true)
+                    }
+                    // 태블릿에서 네비게이션 후 오버레이 닫기
+                    if (isTablet && isOverlayOpen) {
+                      closeOverlay()
+                    }
+                  }}
                   className={cn(
-                    'whitespace-nowrap transition-all duration-300',
-                    visualCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100',
-                    isActive ? 'text-gray-900 dark:text-gray-50' : 'text-gray-500 dark:text-gray-400',
+                    'flex items-center rounded-xl font-medium transition-all duration-300',
+                    visualCollapsed ? 'justify-center px-0 py-3' : 'gap-4 px-4 py-3',
+                    isActive
+                      ? 'font-semibold'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-800',
                   )}
+                  style={isActive ? { backgroundColor: `${color}10` } : undefined}
                 >
-                  {label}
-                </span>
-              </Link>
-            )
-
-            if (visualCollapsed) {
-              return (
-                <Tooltip key={item.id}>
-                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={8}>
+                  <Icon
+                    className="h-5 w-5 shrink-0"
+                    style={{ color }}
+                  />
+                  <span
+                    className={cn(
+                      'whitespace-nowrap transition-all duration-300',
+                      visualCollapsed ? 'w-0 opacity-0 overflow-hidden' : 'w-auto opacity-100',
+                      isActive ? 'text-gray-900 dark:text-gray-50' : 'text-gray-500 dark:text-gray-400',
+                    )}
+                  >
                     {label}
-                  </TooltipContent>
-                </Tooltip>
+                  </span>
+                </Link>
               )
-            }
 
-            return linkContent
-          })}
+              if (visualCollapsed) {
+                return (
+                  <Tooltip key={item.id}>
+                    <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={8}>
+                      {label}
+                    </TooltipContent>
+                  </Tooltip>
+                )
+              }
+
+              return linkContent
+            })
+          )}
         </nav>
       </aside>
 
@@ -201,6 +224,154 @@ function NewSidebar() {
         onClose={() => setIsGameModalOpen(false)}
       />
     </TooltipProvider>
+  )
+}
+
+/* ───── 과목 컨텍스트 네비게이션 (Figma: 과목 대시보드 사이드바) ───── */
+
+interface CourseContextNavProps {
+  courseId: string
+  pathname: string
+  visualCollapsed: boolean
+  onItemClick: () => void
+  openFeedback: () => void
+  t: ReturnType<typeof useTranslations>
+}
+
+function CourseContextNav({
+  courseId,
+  pathname,
+  visualCollapsed,
+  onItemClick,
+  openFeedback,
+  t,
+}: CourseContextNavProps) {
+  // 그룹별로 묶기
+  const groups = useMemo(() => {
+    const result: Record<'course' | 'resources' | 'global', typeof COURSE_SIDEBAR_MENU[number][]> = {
+      course: [],
+      resources: [],
+      global: [],
+    }
+    COURSE_SIDEBAR_MENU.forEach((item) => result[item.group].push(item))
+    return result
+  }, [])
+
+  const renderItem = (item: typeof COURSE_SIDEBAR_MENU[number]) => {
+    const Icon = item.icon
+    const href = item.hrefFor(courseId)
+    const matchPath = item.matchFor(courseId)
+
+    // dashboard는 정확 일치, dialogue는 lecture/[id]/dialogue 까지 포함, 그 외는 startsWith
+    const isActive =
+      item.id === 'course-dashboard'
+        ? pathname === matchPath
+        : item.action === 'feedback-modal'
+          ? false
+          : item.id === 'course-dialogue'
+            ? pathname.includes('/dialogue')
+            : pathname.startsWith(matchPath)
+
+    const label = t(item.labelKey)
+    const color = item.color
+
+    const linkContent = (
+      <Link
+        key={item.id}
+        href={href}
+        onClick={(event) => {
+          if (item.action === 'feedback-modal') {
+            event.preventDefault()
+            openFeedback()
+          }
+          onItemClick()
+        }}
+        className={cn(
+          'group/menuitem relative flex items-center rounded-xl font-medium transition-all duration-300',
+          visualCollapsed
+            ? 'h-10 w-10 justify-center self-center p-0'
+            : 'gap-3 px-3 py-2',
+          isActive
+            ? 'font-semibold'
+            : 'hover:bg-gray-100 dark:hover:bg-gray-800',
+        )}
+        style={isActive ? { backgroundColor: `${color}15` } : undefined}
+      >
+        <Icon
+          className="h-[18px] w-[18px] shrink-0"
+          style={{ color: isActive ? color : '#6B7280' }}
+        />
+        {!visualCollapsed && (
+          <>
+            <span
+              className={cn(
+                'flex-1 whitespace-nowrap text-[13px] transition-colors',
+                isActive
+                  ? 'text-gray-900 dark:text-gray-50'
+                  : 'text-gray-600 dark:text-gray-400',
+              )}
+            >
+              {label}
+            </span>
+            {/* D-Day 배지 — 임시 D-14 하드코딩, 추후 prop 으로 분리 */}
+            {item.showDdayBadge && (
+              <span className="rounded-full bg-[#F97316] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                D-14
+              </span>
+            )}
+          </>
+        )}
+      </Link>
+    )
+
+    if (visualCollapsed) {
+      return (
+        <Tooltip key={item.id}>
+          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {label}
+          </TooltipContent>
+        </Tooltip>
+      )
+    }
+
+    return linkContent
+  }
+
+  const renderSectionLabel = (labelKey: string) => {
+    if (visualCollapsed) {
+      return <div className="my-2 mx-3 h-px bg-gray-200 dark:bg-gray-700" />
+    }
+    return (
+      <div className="mt-3 mb-1 px-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        {t(labelKey)}
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {/* course 그룹 — 라벨 없음 (최상단) */}
+      <div className="flex flex-col gap-1">
+        {groups.course.map(renderItem)}
+      </div>
+
+      {/* resources 그룹 */}
+      {groups.resources.length > 0 && (
+        <div className="flex flex-col gap-1">
+          {renderSectionLabel('courseNav.sectionResources')}
+          {groups.resources.map(renderItem)}
+        </div>
+      )}
+
+      {/* global 그룹 — 하단 고정 */}
+      {groups.global.length > 0 && (
+        <div className="mt-auto flex flex-col gap-1">
+          {renderSectionLabel('courseNav.sectionGlobal')}
+          {groups.global.map(renderItem)}
+        </div>
+      )}
+    </>
   )
 }
 

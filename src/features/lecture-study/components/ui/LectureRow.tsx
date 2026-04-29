@@ -16,7 +16,6 @@ interface LectureRowProps {
   status: LectureStatus
   hasReward?: boolean
   onClick: () => void
-  onDialogueClick: () => void
   onMicClick: () => void
   onPdfClick: () => void
 }
@@ -25,12 +24,14 @@ const STATUS_CONFIG = {
   completed: {
     label: 'Completed',
     labelKo: '완료',
-    badgeClass: 'bg-blue-50 text-blue-600',
+    // Figma: 옅은 민트 배경 + 진녹색 텍스트
+    badgeClass: 'bg-[#D1FAE5] text-[#047857]',
   },
   'in-progress': {
     label: 'In Progress',
-    labelKo: '학습 중',
-    badgeClass: 'bg-[#6366F1] text-white',
+    labelKo: '학습중',
+    // Figma: 옅은 라벤더 배경 + 진보라 텍스트
+    badgeClass: 'bg-[#EDE9FE] text-[#6D28D9]',
   },
   upcoming: {
     label: 'Upcoming',
@@ -39,7 +40,7 @@ const STATUS_CONFIG = {
   },
 } as const
 
-export function LectureRow({ lecture, status, hasReward = false, onClick, onDialogueClick, onMicClick, onPdfClick }: LectureRowProps) {
+export function LectureRow({ lecture, status, hasReward = false, onClick, onMicClick, onPdfClick }: LectureRowProps) {
   const locale = useLocale()
   const t = useTranslations()
   const isAvailable = status !== 'upcoming'
@@ -71,20 +72,20 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onDial
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-6 rounded-2xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 p-5 transition-all',
+        'flex flex-wrap items-center gap-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 transition-all',
         status === 'in-progress' && 'border-l-4 border-l-[#6366F1] shadow-sm',
         status === 'upcoming' && 'opacity-70',
         isAvailable && 'hover:-translate-y-0.5 hover:shadow-md',
       )}
     >
-      {/* Flame Icon */}
+      {/* Reward Icon (활성 시 녹색 톤 — Figma 카테고리 컬러) */}
       <div className={cn(
         'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm',
-        hasReward ? 'bg-[#6366F1]/10' : 'bg-gray-100 dark:bg-gray-800',
+        hasReward ? 'bg-[#D1FAE5]' : 'bg-gray-100 dark:bg-gray-800',
       )}>
         <Flame className={cn(
           'h-6 w-6',
-          hasReward ? 'fill-[#6366F1] text-[#6366F1]' : 'fill-gray-300 text-gray-300',
+          hasReward ? 'fill-[#047857] text-[#047857]' : 'fill-gray-300 text-gray-300',
         )} />
       </div>
 
@@ -129,7 +130,7 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onDial
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
                 hasRecording
-                  ? 'bg-[#6366F1]/10 text-[#6366F1] hover:bg-[#6366F1]/20'
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                   : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600',
               )}
               title={locale === 'ko' ? '녹음' : 'Recording'}
@@ -141,27 +142,19 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onDial
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
                 hasMaterial
-                  ? 'bg-rose-50 text-rose-500 hover:bg-rose-100'
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                   : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600',
               )}
               title={locale === 'ko' ? '강의자료' : 'PDF'}
             >
               <FileText className="h-5 w-5" />
             </button>
-            <div className="ml-4 flex flex-col gap-2">
-              <button
-                onClick={onClick}
-                className="rounded-xl bg-[#6366F1] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105 active:scale-95"
-              >
-                {locale === 'ko' ? '콘텐츠형 학습' : 'Content'}
-              </button>
-              <button
-                onClick={onDialogueClick}
-                className="rounded-xl bg-[#D1FAE5] px-6 py-2.5 text-sm font-bold text-[#065F46] shadow-lg shadow-[#D1FAE5]/40 transition-all hover:scale-105 active:scale-95"
-              >
-                {locale === 'ko' ? '대화형 학습' : 'Dialogue'}
-              </button>
-            </div>
+            <button
+              onClick={onClick}
+              className="ml-4 rounded-xl bg-[#6366F1] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105 active:scale-95"
+            >
+              {locale === 'ko' ? '학습하기' : 'Study'}
+            </button>
           </>
         ) : (
           <>
