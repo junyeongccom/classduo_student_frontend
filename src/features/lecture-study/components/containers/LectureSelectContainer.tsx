@@ -2,7 +2,7 @@
  * @file LectureSelectContainer.tsx
  * @description 과목 내부 — 히어로 카드 + 회차/자료 탭 + 회차 행 리스트 + 플로팅 게임 CTA + 녹음본/자료 모달
  * @module features/lecture-study/components/containers
- * @dependencies useLectures, LectureRow, MaterialCard, StudyspaceTopbarSlot, RecordingChunksModal, MaterialsModal
+ * @dependencies useLectures, LectureRow, StudyspaceTopbarSlot, RecordingChunksModal, MaterialsModal
  */
 
 'use client'
