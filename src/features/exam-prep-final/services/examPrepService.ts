@@ -183,3 +183,60 @@ export async function submitAttempt(
   if (result.error) return { data: null, error: result.error.message }
   return { data: result.data ?? null, error: null }
 }
+
+// ─────────────────────────────────────────
+// 즉시 채점 (b2b20260429 r4)
+// ─────────────────────────────────────────
+
+export interface MasteryChangeDto {
+  question_id: string
+  previous_state: 'learning' | 'skilled' | 'master' | string
+  new_state: 'learning' | 'skilled' | 'master' | string
+  correct_count: number
+  incorrect_count: number
+  first_master_transition: boolean
+}
+
+export interface GradeSingleResponseDto {
+  is_correct: boolean
+  correct_answer: string  // "0"~"3"
+  explanation: Record<string, string> | null
+  mastery: MasteryChangeDto
+  hint_used: boolean
+  graded_count: number
+  total_count: number
+  attempt_completed: boolean
+  test_mastered_now: boolean
+  test_mastered_at: string | null
+}
+
+/** 단일 문항 즉시 채점.
+ *
+ * 사용자 정책 (b2b20260429 r4):
+ *  - 한 attempt 내 같은 문항은 한 번만 채점 (이미 채점 시 409 RESPONSE_ALREADY_GRADED)
+ *  - hint_used=true 면 mastery 카운트 미증가 (응답 행은 저장)
+ *  - attempt_completed=true 면 백엔드가 자동 submit 처리 → 결과 화면 진입
+ */
+export async function gradeAttemptResponse(
+  attemptId: string,
+  questionId: string,
+  selected: string,
+  hintUsed: boolean,
+): Promise<{ data: GradeSingleResponseDto | null; error: string | null; errorCode: string | null }> {
+  const result = await apiRequest<GradeSingleResponseDto>(
+    `/exam-prep/attempts/${attemptId}/responses/${questionId}/grade`,
+    {
+      method: 'POST',
+      auth: true,
+      body: { selected, hint_used: hintUsed },
+    },
+  )
+  if (result.error) {
+    return {
+      data: null,
+      error: result.error.message,
+      errorCode: result.error.error_code ?? null,
+    }
+  }
+  return { data: result.data ?? null, error: null, errorCode: null }
+}
