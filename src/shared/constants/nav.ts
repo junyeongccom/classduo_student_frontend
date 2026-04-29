@@ -9,7 +9,42 @@ import {
   HelpCircle,
   Puzzle,
   MessageSquare,
+  BookMarked,
+  Leaf,
+  GraduationCap,
+  MessageCircle,
+  Bookmark,
+  PencilLine,
 } from 'lucide-react'
+
+import type { ComponentType, SVGProps } from 'react'
+
+export type CourseMenuId =
+  | 'course-dashboard'
+  | 'lecture-study'
+  | 'exam-prep'
+  | 'course-dialogue'
+  | 'my-quizzes'
+  | 'create-question'
+  | 'home'
+  | 'feedback'
+
+export interface CourseMenuItem {
+  id: CourseMenuId
+  labelKey: string
+  icon: ComponentType<SVGProps<SVGSVGElement>>
+  /** href 빌더 — courseId 주입 */
+  hrefFor: (courseId: string) => string
+  /** active 매칭 패턴 빌더 */
+  matchFor: (courseId: string) => string
+  color: string
+  /** 그룹 (siderbar 섹션 라벨) */
+  group: 'course' | 'resources' | 'global'
+  /** 특수 액션 (예: feedback modal trigger) */
+  action?: 'feedback-modal'
+  /** D-Day 배지 표시 여부 (외부 데이터로 제어) */
+  showDdayBadge?: boolean
+}
 
 /**
  * 사이드바 메뉴 아이템 정의
@@ -78,6 +113,86 @@ export const NEW_SIDEBAR_MENU = [
     icon: MessageSquare,
     href: '/studyspace/feedback',
     color: '#7C3AED',    // violet
+  },
+] as const
+
+/**
+ * 과목 컨텍스트 사이드바 메뉴 — `/studyspace/course/[id]/...` 진입 시 표시
+ */
+export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
+  {
+    id: 'course-dashboard',
+    labelKey: 'courseNav.dashboard',
+    icon: LayoutGrid,
+    hrefFor: (id) => `/studyspace/course/${id}`,
+    matchFor: (id) => `/studyspace/course/${id}`,
+    color: '#6366F1',
+    group: 'course',
+  },
+  {
+    id: 'lecture-study',
+    labelKey: 'courseNav.lectureStudy',
+    icon: Leaf,
+    hrefFor: (id) => `/studyspace/course/${id}/lectures`,
+    matchFor: (id) => `/studyspace/course/${id}/lectures`,
+    color: '#8B5CF6',
+    group: 'course',
+  },
+  {
+    id: 'exam-prep',
+    labelKey: 'courseNav.examPrep',
+    icon: GraduationCap,
+    hrefFor: (id) => `/studyspace/course/${id}/exam-prep`,
+    matchFor: (id) => `/studyspace/course/${id}/exam-prep`,
+    color: '#F97316',
+    group: 'course',
+    showDdayBadge: true,
+  },
+  {
+    id: 'course-dialogue',
+    labelKey: 'courseNav.dialogue',
+    icon: MessageCircle,
+    hrefFor: (id) => `/studyspace/course/${id}/dialogue`,
+    matchFor: (id) => `/studyspace/course/${id}/dialogue`,
+    color: '#7C3AED',
+    group: 'course',
+  },
+  {
+    id: 'my-quizzes',
+    labelKey: 'courseNav.myQuizzes',
+    icon: Bookmark,
+    hrefFor: () => `/studyspace/my-quizzes`,
+    matchFor: () => `/studyspace/my-quizzes`,
+    color: '#F97316',
+    group: 'resources',
+  },
+  {
+    id: 'create-question',
+    labelKey: 'courseNav.createQuestion',
+    icon: PencilLine,
+    hrefFor: () => `/studyspace/my-quizzes?tab=create`,
+    matchFor: () => `/studyspace/my-quizzes?tab=create`,
+    color: '#22C55E',
+    group: 'resources',
+  },
+  {
+    id: 'home',
+    labelKey: 'courseNav.home',
+    icon: Home,
+    hrefFor: () => `/studyspace/home`,
+    matchFor: () => `/studyspace/home`,
+    color: '#6B7280',
+    group: 'global',
+  },
+  {
+    id: 'feedback',
+    labelKey: 'courseNav.feedback',
+    icon: MessageSquare,
+    hrefFor: () => `/studyspace/home`,
+    matchFor: () => `__feedback_modal__`,
+    color: '#6B7280',
+    group: 'global',
+    action: 'feedback-modal',
   },
 ] as const
 

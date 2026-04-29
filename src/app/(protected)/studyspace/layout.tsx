@@ -276,7 +276,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-900">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F5F7F8] dark:bg-gray-950">
           {children}
         </main>
       </div>
