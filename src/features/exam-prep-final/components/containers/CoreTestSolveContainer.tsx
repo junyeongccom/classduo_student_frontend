@@ -255,6 +255,15 @@ export function CoreTestSolveContainer({
     setGradedBySeq(restoredGraded)
     setHintUsedSeqs(restoredHintUsed)
     setHintDisabledBySeq(restoredHintDisabled)
+
+    // 첫 미채점 문항으로 자동 이동 — 복원 후 1번 고정 버그 방지
+    const totalSeqs = seqToQuestionId.size  // attempt 스냅샷 내 총 문항 수
+    const firstUnanswered = Array.from({ length: totalSeqs }, (_, i) => i + 1)
+      .find((s) => !restoredGraded[s])
+    if (firstUnanswered != null) {
+      setCurrentSeq(firstUnanswered)
+    }
+
     ;(window as any).__examPrepResumeMap__ = null
   // data 도 의존성에 포함 — questions 로 correct_answer·explanation 채우기 위함
   // eslint-disable-next-line react-hooks/exhaustive-deps
