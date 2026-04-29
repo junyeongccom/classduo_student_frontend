@@ -207,8 +207,10 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     )
 
     const totalCoreTests = coreTests.length
-    // mastered count: gamification API 의 mastered_problem_count (Q4 답변)
-    const masteredCount = gamification?.mastered_problem_count ?? 0
+    // masteredCount: isTestMastered === true 인 테스트 수
+    // (모든 문항이 master 상태인 테스트에만 ★ 배지 + 여기서 카운트)
+    // gamification.mastered_problem_count 는 개별 문항 카운트라 기준 불일치 → 미사용
+    const masteredCount = coreTests.filter((t) => t.isTestMastered).length
 
     // 추천 학습: "이어서 학습하기"와 동일 로직 (Q4 답변)
     // - has_content 회차 중 가장 최근 lecture_date
