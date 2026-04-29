@@ -21,6 +21,8 @@ export interface CoreTestSummaryDto {
   lecture_date: string | null
   title: string | null
   question_count: number
+  /** 학생-test 단위 master 도달 여부 (test_user_state.mastered_at) */
+  is_mastered: boolean
 }
 
 export interface CoreTestListResponseDto {
@@ -208,6 +210,40 @@ export interface GradeSingleResponseDto {
   attempt_completed: boolean
   test_mastered_now: boolean
   test_mastered_at: string | null
+}
+
+// ─────────────────────────────────────────
+// Mastery summary (풀이 페이지 진입 시 초기 동기화)
+// ─────────────────────────────────────────
+
+export interface MasteryStateCountDto {
+  learning: number
+  skilled: number
+  master: number
+}
+
+export interface TestMasterySummaryDto {
+  test_id: string
+  total: number
+  summary: MasteryStateCountDto
+  /** question_id → state ("learning"/"skilled"/"master") */
+  by_question: Record<string, string>
+}
+
+/** test 내 모든 문항에 대한 학생 mastery 카운트 + state map.
+ * 풀이 페이지에서 mount 시 호출하여 백엔드 누적 mastery 를 초기 카운트로 표시.
+ */
+export async function fetchTestMasterySummary(
+  testId: string,
+): Promise<{ data: TestMasterySummaryDto | null; error: string | null }> {
+  const result = await apiRequest<TestMasterySummaryDto>(
+    `/exam-prep/tests/${testId}/mastery-summary`,
+    { auth: true },
+  )
+  if (result.error) {
+    return { data: null, error: result.error.message }
+  }
+  return { data: result.data ?? null, error: null }
 }
 
 /** 단일 문항 즉시 채점.

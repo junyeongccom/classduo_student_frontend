@@ -25,6 +25,7 @@ import {
   startOrResumeAttempt,
   getAttempt,
   gradeAttemptResponse,
+  fetchTestMasterySummary,
   type CoreTestQuestionItemDto,
   type GradeSingleResponseDto,
 } from '../../services/examPrepService'
@@ -95,6 +96,31 @@ export function CoreTestSolveContainer({
     const id = setInterval(() => setElapsedSec((s) => s + 1), 1000)
     return () => clearInterval(id)
   }, [])
+
+  // ─── 풀이 페이지 진입 시 mastery summary 초기 동기화 (b2b20260429 r4) ───
+  // 백엔드의 누적 mastery 카운트를 가져와 초기 Learning/Skilled/Master 값으로 설정.
+  // 이번 attempt 의 채점 변동분은 grade endpoint 응답으로 prev→new 상태 차이만큼 +/-.
+  // restartTrigger 가 변경될 때(다시풀기) 다시 fetch 하여 누적 mastery 가 반영되도록.
+  useEffect(() => {
+    let cancelled = false
+    fetchTestMasterySummary(testId).then(({ data, error }) => {
+      if (cancelled) return
+      if (error) {
+        console.warn('[Solve] mastery summary fetch failed:', error)
+        return
+      }
+      if (data) {
+        setMasterySummary({
+          learning: data.summary.learning,
+          skilled: data.summary.skilled,
+          master: data.summary.master,
+        })
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [testId, restartTrigger])
 
   // ─── attempt 시작 / 이어풀기 / 다시풀기 ───
   useEffect(() => {

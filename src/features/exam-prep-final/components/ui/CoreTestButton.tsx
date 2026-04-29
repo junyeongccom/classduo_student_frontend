@@ -54,6 +54,7 @@ export function CoreTestButton({
   const isMastered = test.status === 'mastered'
   const cfg = SET_BUTTON_STYLES[setTone]
   const numberLabel = String(test.number).padStart(2, '0')
+  const showMasterBadge = test.isTestMastered
 
   // 잠긴 상태 — 자물쇠 (선택 불가)
   if (isLocked) {
@@ -61,10 +62,9 @@ export function CoreTestButton({
       <button
         type="button"
         disabled
-        className="flex h-36 w-36 cursor-not-allowed items-center justify-center rounded-3xl bg-gray-100 dark:bg-gray-800"
+        className="relative flex h-36 w-36 cursor-not-allowed items-center justify-center rounded-3xl bg-gray-100 dark:bg-gray-800"
         aria-label={`Test ${test.number} locked`}
       >
-        {/* 네이티브 img — Next/Image placeholder 단계 없음 → 즉시 표시 */}
         <img
           src="/자물쇠.png"
           alt=""
@@ -73,12 +73,12 @@ export function CoreTestButton({
           className="opacity-60"
           draggable={false}
         />
+        {showMasterBadge && <MasterBadge />}
       </button>
     )
   }
 
-  // 활성 버튼 — 단일 button 안에서 번호/불꽃을 둘 다 렌더링하고 isSelected 로 표시 토글
-  // → 첫 마운트 시 불꽃 이미지가 미리 다운로드되어 클릭 즉시 swap (딜레이 0)
+  // 활성 버튼 — 번호/불꽃 토글
   return (
     <button
       type="button"
@@ -90,7 +90,7 @@ export function CoreTestButton({
           ? cfg.selectedShadow
           : 'shadow-[0_8px_0_rgba(0,0,0,0.10)]',
       )}
-      aria-label={`Test ${test.number}${isSelected ? ' selected' : ''}`}
+      aria-label={`Test ${test.number}${isSelected ? ' selected' : ''}${showMasterBadge ? ' mastered' : ''}`}
     >
       {/* 번호 — 비선택 시만 보임 */}
       <span
@@ -103,8 +103,7 @@ export function CoreTestButton({
         {numberLabel}
       </span>
 
-      {/* 불꽃 — 마운트 시점부터 항상 DOM에 존재 (브라우저가 미리 로드),
-          선택 안됐을 때만 hidden 으로 시각만 가림 */}
+      {/* 불꽃 — 항상 DOM에 존재, 선택 시 시각 노출 */}
       <img
         src={
           isMastered
@@ -117,6 +116,22 @@ export function CoreTestButton({
         draggable={false}
         className={cn(!isSelected && 'hidden')}
       />
+
+      {/* test 단위 master 배지 (우상단) — 모든 문항을 master 한 학생에게 표시 */}
+      {showMasterBadge && <MasterBadge />}
     </button>
+  )
+}
+
+/** test 자체의 master 도달 시 우상단 배지 — 보라 원 + 별/체크 */
+function MasterBadge() {
+  return (
+    <span
+      className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#A78BFA] to-[#6D28D9] text-base shadow-[0_4px_12px_rgba(124,58,237,0.45)] ring-2 ring-white"
+      aria-label="Master"
+      title="Master 도달"
+    >
+      <span className="leading-none">★</span>
+    </span>
   )
 }

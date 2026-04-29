@@ -50,8 +50,9 @@ function lectureToCoreTest(args: {
   number: number  // 1~26 (SET_RANGES 기반 고정)
   apiTestId: string | null  // exam_prep_test.id (백엔드 매칭 결과)
   apiQuestionCount: number  // 백엔드 question_count (없으면 0)
+  apiIsMastered: boolean  // 백엔드 is_mastered (test_user_state.mastered_at)
 }): CoreTest {
-  const { lecture, number, apiTestId, apiQuestionCount } = args
+  const { lecture, number, apiTestId, apiQuestionCount, apiIsMastered } = args
   // 26개 정원 고정 분배 (set1=9, set2=9, set3=8) — SET_RANGES 기준
   const setNumber: 1 | 2 | 3 =
     number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
@@ -81,6 +82,7 @@ function lectureToCoreTest(args: {
       cyan: 0,
       green: 0,
     },
+    isTestMastered: apiIsMastered,
   }
 }
 
@@ -190,6 +192,7 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
             masteryLevel: 0,
             status: 'locked' as const,
             metaCounts: { gray: 0, cyan: 0, green: 0 },
+            isTestMastered: false,
           }
         }
         const api = apiByLecture.get(lec.id)
@@ -198,6 +201,7 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
           number,
           apiTestId: api?.test_id ?? null,
           apiQuestionCount: api?.question_count ?? 0,
+          apiIsMastered: api?.is_mastered ?? false,
         })
       },
     )

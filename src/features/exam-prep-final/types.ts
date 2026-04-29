@@ -21,6 +21,8 @@ export interface CoreTest {
   status: CoreTestStatus
   /** 우측 미터링 도트 카운트 (gray=틀림 / cyan=시도 / green=정답 같은 의미) */
   metaCounts: { gray: number; cyan: number; green: number }
+  /** 학생-test 단위 master 도달 여부 (모든 문항 master 후 잠금) — 우상단 배지 표시용 */
+  isTestMastered: boolean
 }
 
 export interface MidTest {
