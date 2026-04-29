@@ -265,13 +265,18 @@ export function CoreTestSolveContainer({
     [gradedBySeq],
   )
 
-  // 모든 문항 채점 시 자동 결과 화면 전환
+  // 모든 문항 채점 완료 — 자동 전환 X. [다음] 버튼 클릭 시에만 결과 화면으로.
+  // gamification 위젯은 마지막 채점 시점에 한 번만 새로고침 신호.
+  const allGradedRef = useRef(false)
   useEffect(() => {
     if (phase !== 'solving') return
-    if (total > 0 && Object.keys(gradedBySeq).length >= total) {
-      setPhase('completed')
-      // gamification 위젯 갱신 트리거
+    const allGraded = total > 0 && Object.keys(gradedBySeq).length >= total
+    if (allGraded && !allGradedRef.current) {
+      allGradedRef.current = true
       window.dispatchEvent(new Event('exam-prep-rewards-refresh'))
+    }
+    if (!allGraded) {
+      allGradedRef.current = false
     }
   }, [gradedBySeq, total, phase])
 
@@ -380,21 +385,27 @@ export function CoreTestSolveContainer({
     setCurrentSeq((s) => Math.min(total, s + 1))
   }, [total])
 
-  const goNextOrComplete = useCallback(() => {
-    // 다음 미채점 문항으로 이동. 모두 채점됐으면 결과 화면
-    const allSeqs = Array.from({ length: total }, (_, i) => i + 1)
-    const remaining = allSeqs.filter(
-      (s) => !gradedBySeq[s] && s !== currentSeq,
-    )
-    if (remaining.length === 0) {
-      setPhase('completed')
+  /** [다음] 버튼 동작:
+   *  - 다음 문항(seq+1) 이 있으면 단순 이동
+   *  - 마지막 문항이고 모든 문항이 채점됐으면 결과 화면으로 전환
+   *  - 그 외 (마지막 문항이지만 미채점 문항 남아있음) → 미채점 문항으로 이동
+   */
+  const handleNext = useCallback(() => {
+    const allGraded = Object.keys(gradedBySeq).length >= total
+    // 마지막 문항이면 결과 또는 미채점 문항 점프
+    if (currentSeq >= total) {
+      if (allGraded) {
+        setPhase('completed')
+        return
+      }
+      // 미채점 문항이 있으면 그쪽으로
+      const allSeqs = Array.from({ length: total }, (_, i) => i + 1)
+      const remaining = allSeqs.filter((s) => !gradedBySeq[s])
+      if (remaining.length > 0) setCurrentSeq(remaining[0])
       return
     }
-    // 현재 seq 보다 큰 것 우선
-    const next =
-      remaining.find((s) => s > currentSeq) ?? remaining[0]
-    setCurrentSeq(next)
-  }, [total, gradedBySeq, currentSeq])
+    setCurrentSeq((s) => Math.min(total, s + 1))
+  }, [currentSeq, total, gradedBySeq])
 
   const handleExit = useCallback(() => {
     router.push(`/studyspace/course/${courseId}/exam-prep`)
@@ -505,9 +516,13 @@ export function CoreTestSolveContainer({
             onSubmit={handleSubmit}
             onHint={handleHintClick}
             onPrev={() => setCurrentSeq((s) => Math.max(1, s - 1))}
-            onNext={() => setCurrentSeq((s) => Math.min(total, s + 1))}
+            onNext={handleNext}
             hasPrev={currentSeq > 1}
-            hasNext={currentSeq < total}
+            // 마지막 문항 + 모두 채점됨 → 결과 화면으로 갈 수 있으므로 활성화
+            hasNext={
+              currentSeq < total ||
+              Object.keys(gradedBySeq).length >= total
+            }
           />
         )}
       </div>
