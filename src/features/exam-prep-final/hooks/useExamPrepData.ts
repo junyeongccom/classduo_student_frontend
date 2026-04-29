@@ -27,6 +27,10 @@ import type {
 } from '../types'
 import { SET_RANGES } from '../domain/testSetGroups'
 import {
+  CORE_TEST_TOTAL,
+  getLectureNoForCoreTest,
+} from '../domain/coreTestLectureMap'
+import {
   EXAM_DATE_ISO,
   computeDdaysToExam,
 } from '@/shared/constants/examPrep'
@@ -145,51 +149,58 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
   const data = useMemo<ExamPrepData | null>(() => {
     if (lectures.length === 0) return null
 
-    // lectures 정렬 (lecture_no asc)
-    const sortedLectures = [...lectures].sort((a, b) => {
-      const an = a.lecture_number ?? 9999
-      const bn = b.lecture_number ?? 9999
-      return an - bn
+    // lecture_no → Lecture 인덱스 (sortedLectures 대신)
+    // CORE_TEST_TO_LECTURE_NO 매핑이 비선형(14·15회차 skip)이라 인덱스 매핑 불가
+    const lectureByNo = new Map<number, (typeof lectures)[number]>()
+    lectures.forEach((l) => {
+      if (l.lecture_number != null) {
+        lectureByNo.set(l.lecture_number, l)
+      }
     })
 
     // api test_id 매핑 (lecture_session_id 기준)
     const apiByLecture = new Map<string, CoreTestSummaryDto>()
     apiTests.forEach((t) => apiByLecture.set(t.lecture_session_id, t))
 
-    // 핵심테스트는 26개 슬롯 고정 — 사용자가 추후 lectures 와 1:1 매핑 예정
-    // lectures 가 26개 미만이면 부족분은 placeholder(빈 슬롯, locked)로 채움
-    const FIXED_TOTAL = 26
-    const coreTests: CoreTest[] = Array.from({ length: FIXED_TOTAL }, (_, i) => {
-      const number = i + 1
-      const lec = sortedLectures[i]
-      if (!lec) {
-        // placeholder — 매핑된 lecture 없음
-        const setNumber: 1 | 2 | 3 =
-          number <= SET_RANGES[1].end
-            ? 1
-            : number <= SET_RANGES[2].end
-              ? 2
-              : 3
-        return {
-          id: `placeholder-${number}`,
-          number,
-          setNumber,
-          weekNo: 0,
-          sessionNo: 0,
-          lectureTitle: '',
-          masteryLevel: 0,
-          status: 'locked' as const,
-          metaCounts: { gray: 0, cyan: 0, green: 0 },
+    // 핵심테스트 26개 슬롯 — 각 슬롯은 매핑 테이블의 lecture_no 로 lookup
+    //   1~12 → 2~13회차, 13~26 → 16~29회차 (1주차/14·15주차 제외)
+    const coreTests: CoreTest[] = Array.from(
+      { length: CORE_TEST_TOTAL },
+      (_, i) => {
+        const number = i + 1
+        const targetLectureNo = getLectureNoForCoreTest(number)
+        const lec =
+          targetLectureNo != null ? lectureByNo.get(targetLectureNo) : undefined
+
+        if (!lec) {
+          // 매핑된 회차가 lectures 에 없음 → placeholder (locked)
+          const setNumber: 1 | 2 | 3 =
+            number <= SET_RANGES[1].end
+              ? 1
+              : number <= SET_RANGES[2].end
+                ? 2
+                : 3
+          return {
+            id: `placeholder-${number}`,
+            number,
+            setNumber,
+            weekNo: 0,
+            sessionNo: 0,
+            lectureTitle: '',
+            masteryLevel: 0,
+            status: 'locked' as const,
+            metaCounts: { gray: 0, cyan: 0, green: 0 },
+          }
         }
-      }
-      const api = apiByLecture.get(lec.id)
-      return lectureToCoreTest({
-        lecture: lec,
-        number,
-        apiTestId: api?.test_id ?? null,
-        apiQuestionCount: api?.question_count ?? 0,
-      })
-    })
+        const api = apiByLecture.get(lec.id)
+        return lectureToCoreTest({
+          lecture: lec,
+          number,
+          apiTestId: api?.test_id ?? null,
+          apiQuestionCount: api?.question_count ?? 0,
+        })
+      },
+    )
 
     const totalCoreTests = coreTests.length
     // mastered count: gamification API 의 mastered_problem_count (Q4 답변)
