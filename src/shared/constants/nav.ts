@@ -128,9 +128,11 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     id: 'exam-prep',
     labelKey: 'courseNav.examPrep',
     icon: GraduationCap,
+    // 메뉴 active 배경/아이콘 색은 보라(다른 메뉴와 일관)
+    // D-Day 배지 자체 색은 별도 (bg-[#F97316] 유지)
     hrefFor: (id) => `/studyspace/course/${id}/exam-prep`,
     matchFor: (id) => `/studyspace/course/${id}/exam-prep`,
-    color: '#F97316',
+    color: '#7C3AED',
     group: 'course',
     showDdayBadge: true,
   },

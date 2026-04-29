@@ -14,10 +14,10 @@ import { useCourses } from '@/features/home/hooks/useCourses'
 import { formatTermLabel } from '@/features/home/domain/formatTermLabel'
 import {
   computeCurrentWeek,
-  computeDdayToExam,
   inferCurrentWeekFromLectures,
 } from '../domain/computeWeekAndDday'
 import { pickContinueLecture } from '../domain/pickContinueLecture'
+import { computeDdaysToExam } from '@/shared/constants/examPrep'
 
 interface UseCourseDashboardResult {
   isLoading: boolean
@@ -91,8 +91,8 @@ export function useCourseDashboard(courseId: string): UseCourseDashboardResult {
     // 학기 라벨 — useCourses 에서 매칭한 academic_term 사용
     const termLabel = termLabelComputed
 
-    // D-day — 임시 placeholder (백엔드 컬럼 추가 후 수정)
-    const examDday: number | null = computeDdayToExam(null)
+    // D-day — 공통 EXAM_DATE_ISO 기반 (사이드바 / 기말대비 페이지 모두 동일)
+    const examDday: number | null = computeDdaysToExam()
 
     const totalLectures = lectures.length
     const activeLectures = lectures.filter((l) => l.has_content).length

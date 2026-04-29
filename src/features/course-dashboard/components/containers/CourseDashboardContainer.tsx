@@ -64,8 +64,8 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     )
   }
 
-  // D-14 임시값 (백엔드 컬럼 추가 전): 사이드바와 동일
-  const examBadgeDays = examDday ?? 14
+  // D-day — useCourseDashboard 가 EXAM_DATE_ISO 로 계산. 0 이상 보장됨.
+  const examBadgeDays = examDday ?? 0
 
   // "회차별 학습" footer
   const weeklyFooter =

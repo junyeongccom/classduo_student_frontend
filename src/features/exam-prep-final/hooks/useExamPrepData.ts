@@ -26,21 +26,10 @@ import type {
   FinalTest,
 } from '../types'
 import { SET_RANGES } from '../domain/testSetGroups'
-
-/** 기말고사 일자 (하드코딩 — 추후 courses 테이블에 컬럼 추가) */
-const HARDCODED_EXAM_DATE = '2026-06-22'
-
-/** 오늘부터 target 까지 일수 */
-function computeDdayToTarget(targetIso: string): number {
-  const target = new Date(targetIso)
-  if (Number.isNaN(target.getTime())) return 0
-  target.setHours(0, 0, 0, 0)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const ms = target.getTime() - today.getTime()
-  const days = Math.floor(ms / (24 * 60 * 60 * 1000))
-  return Math.max(0, days)
-}
+import {
+  EXAM_DATE_ISO,
+  computeDdaysToExam,
+} from '@/shared/constants/examPrep'
 
 /** lecture 1 row → CoreTest 형태로 매핑 */
 function lectureToCoreTest(args: {
@@ -240,8 +229,8 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     }
 
     return {
-      examDate: HARDCODED_EXAM_DATE,
-      ddays: computeDdayToTarget(HARDCODED_EXAM_DATE),
+      examDate: EXAM_DATE_ISO,
+      ddays: computeDdaysToExam(),
       totalCoreTests,
       masteredCount,
       recommendedTest,
