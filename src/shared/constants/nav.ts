@@ -94,20 +94,6 @@ export const NEW_SIDEBAR_MENU = [
     color: '#3B82F6',    // blue
   },
   {
-    id: 'my-quizzes',
-    labelKey: 'newNav.myQuizzes',
-    icon: HelpCircle,
-    href: '/studyspace/my-quizzes',
-    color: '#F97316',    // orange
-  },
-  {
-    id: 'games',
-    labelKey: 'newNav.games',
-    icon: Puzzle,
-    href: '/studyspace/games',
-    color: '#22C55E',    // green
-  },
-  {
     id: 'feedback',
     labelKey: 'newNav.feedback',
     icon: MessageSquare,
@@ -161,8 +147,8 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     id: 'my-quizzes',
     labelKey: 'courseNav.myQuizzes',
     icon: Bookmark,
-    hrefFor: () => `/studyspace/my-quizzes`,
-    matchFor: () => `/studyspace/my-quizzes`,
+    hrefFor: (id) => `/studyspace/course/${id}/my-quizzes`,
+    matchFor: (id) => `/studyspace/course/${id}/my-quizzes`,
     color: '#F97316',
     group: 'resources',
   },
@@ -170,8 +156,8 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     id: 'create-question',
     labelKey: 'courseNav.createQuestion',
     icon: PencilLine,
-    hrefFor: () => `/studyspace/my-quizzes?tab=create`,
-    matchFor: () => `/studyspace/my-quizzes?tab=create`,
+    hrefFor: (id) => `/studyspace/course/${id}/my-quizzes?tab=create`,
+    matchFor: (id) => `/studyspace/course/${id}/my-quizzes?tab=create`,
     color: '#22C55E',
     group: 'resources',
   },

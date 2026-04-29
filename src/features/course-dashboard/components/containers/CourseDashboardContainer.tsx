@@ -171,7 +171,9 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
               description={t('courseDashboard.modeResources.description')}
               ctaLabel={t('courseDashboard.modeResources.cta')}
               iconColor="#6B7280"
-              onClick={() => router.push(`/studyspace/my-quizzes`)}
+              onClick={() =>
+                router.push(`/studyspace/course/${courseId}/my-quizzes`)
+              }
             />
           </div>
         </div>
