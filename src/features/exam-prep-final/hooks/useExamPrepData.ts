@@ -63,16 +63,13 @@ function lectureToCoreTest(args: {
   const setNumber: 1 | 2 | 3 =
     number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
 
-  // 정책 (Q2 답변 = B):
-  // - has_content && api 문항 존재 → available
-  // - has_content && api 문항 없음 → locked (백엔드 생성 미완료)
-  // - has_content == false → locked
-  let status: CoreTestStatus
-  if (lecture.has_content && apiQuestionCount > 0) {
-    status = 'available'
-  } else {
-    status = 'locked'
-  }
+  // 정책 (Q2 답변 = B 의 완화):
+  // - apiQuestionCount > 0 (핵심테스트 문항 존재) → available
+  // - 그 외 → locked (백엔드 핵심테스트 미생성)
+  // has_content(=lecture 콘텐츠 파이프라인 완료) 조건은 제거 — 사용자가 임의로 매핑한
+  // 핵심테스트도 풀이 가능해야 하므로 문항 존재 여부로만 판단.
+  const status: CoreTestStatus =
+    apiQuestionCount > 0 ? 'available' : 'locked'
 
   return {
     id: apiTestId ?? `lecture-${lecture.id}`,
