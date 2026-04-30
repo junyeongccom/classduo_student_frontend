@@ -323,10 +323,17 @@ export function CoreTestSolveContainer({
     setIsGrading(false)
 
     if (error || !result) {
-      // 이미 채점된 응답이라면 페이지 새로고침으로 복구 가능
       if (errorCode === 'RESPONSE_ALREADY_GRADED') {
-        // 이 문항을 graded로 마킹 (재시도 방지)
+        // 동일 attempt 안에서 이미 채점된 문항은 백엔드가 ever_mastered=True 일 때만
+        // 거부하므로, 사실상 마스터 도달한 문항. 무시.
         console.warn('[Solve] response already graded — skipping')
+      } else if (errorCode === 'ATTEMPT_NOT_IN_PROGRESS') {
+        // 이전 grade 호출에서 attempt 가 auto-submit 되었거나, 다른 탭에서 이미 종료된
+        // attempt — 새 attempt 시작 (다시풀기 와 동일 흐름). 사용자가 답변하지 않은
+        // 문항을 다시 풀 수 있게 됨.
+        console.warn('[Solve] attempt already submitted — auto-restarting')
+        setPhaseError('이전 응시가 완료되어 새 응시를 시작합니다.')
+        setRestartTrigger((r) => r + 1)
       } else {
         console.error('[Solve] grade failed:', error)
         setPhaseError(error || '채점 중 오류가 발생했습니다')
