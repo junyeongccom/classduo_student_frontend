@@ -1,6 +1,6 @@
 /**
  * @file CoreTestSolveContainer.tsx
- * @description 핵심 테스트 풀이 컨테이너 — 즉시 채점 + 마스터리 + 힌트 + 결과 화면
+ * @description core/mid/final 풀이 공용 컨테이너 — 명칭은 historical naming. test_type 분기 코드 추가 금지 (b2b20260430 §FR-5)
  * @module features/exam-prep-final/components/containers
  * @dependencies useCoreTestDetail, examPrepService, useLectures
  *
@@ -11,6 +11,9 @@
  *   4) [다시풀기] = 새 attempt 자동 생성 (start_or_resume 가 in_progress 없으면 신규)
  *   5) 힌트: 20초 후 활성, 클릭 시 오답 1개 disable, hint_used=true 응답은 mastery 동결
  *   6) 한 번 master 도달한 문항은 강등 없음 (백엔드 derive_state ever_mastered 잠금)
+ *
+ * b2b20260430 §G18: 본 컨테이너는 mid/final 풀이도 공용으로 사용된다 (test_id 만으로 동작).
+ *   분기 코드 추가 금지. attempt.submit 응답의 gate 결과는 ExamPrepRewardWidget 으로 전달.
  */
 
 'use client'
