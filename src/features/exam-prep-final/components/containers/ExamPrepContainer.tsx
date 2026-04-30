@@ -21,8 +21,11 @@ import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
 import { FinalTestPanel } from '../ui/FinalTestPanel'
-import { MidFinalSlots } from './MidFinalSlots'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
+import {
+  debugTriggerFinalTest,
+  debugTriggerMidTest,
+} from '../../services/midFinalService'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
 import type { CoreTest, ExamPrepData, TestSetTab } from '../../types'
 
@@ -48,7 +51,29 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   const t = useTranslations()
   const router = useRouter()
   const { courseTitle } = useLectures(courseId)
-  const { data, isLoading, error } = useExamPrepData(courseId)
+  const { data, isLoading, error, refresh } = useExamPrepData(courseId)
+  // === DEBUG START — 출시 전 삭제 ===
+  const [isDebugTriggering, setIsDebugTriggering] = useState(false)
+  const [debugError, setDebugError] = useState<string | null>(null)
+  const handleDebugTrigger = async (target: 1 | 2 | 3 | 'final') => {
+    if (isDebugTriggering) return
+    setIsDebugTriggering(true)
+    setDebugError(null)
+    try {
+      const r =
+        target === 'final'
+          ? await debugTriggerFinalTest(courseId)
+          : await debugTriggerMidTest(courseId, target)
+      if (!r.ok) {
+        setDebugError(r.error || '[DEBUG] 강제 트리거 실패')
+        return
+      }
+      refresh()
+    } finally {
+      setIsDebugTriggering(false)
+    }
+  }
+  // === DEBUG END ===
 
   // 페이지 마운트 시 PNG 자산 prefetch — 첫 클릭 딜레이 방지
   useEffect(() => {
@@ -174,7 +199,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
             {/* 컨텐츠 박스 (탭과 이어짐 — 상단 좌측 모서리만 라운드 제거) */}
             <div
               className={cn(
-                'rounded-3xl rounded-tl-none px-12 py-16',
+                'relative rounded-3xl rounded-tl-none px-12 py-16',
                 isCoreSetTab(activeTab)
                   ? SET_PANEL_BG[activeTab]
                   : 'bg-[#383698]',
@@ -191,11 +216,25 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
               ) : (
                 <FinalTestPanel finalTest={data.finalTest} />
               )}
+              {/* === DEBUG START — 출시 전 삭제 === */}
+              <button
+                type="button"
+                aria-label="[DEBUG] 강제 생성"
+                title="[DEBUG] 강제 트리거 (출시 전 삭제 예정)"
+                onClick={() => void handleDebugTrigger(activeTab)}
+                disabled={isDebugTriggering}
+                className="absolute bottom-3 right-3 h-3 w-3 rounded-full bg-red-500 ring-1 ring-white shadow-sm hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-wait disabled:opacity-50"
+              />
+              {/* === DEBUG END === */}
             </div>
+            {/* === DEBUG START — 출시 전 삭제 === */}
+            {debugError && (
+              <div role="alert" className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {debugError}
+              </div>
+            )}
+            {/* === DEBUG END === */}
           </div>
-
-          {/* 백엔드 연동 mid/final 슬롯 (b2b20260430) — 본문 폭(max-w-5xl) 안에 정렬 */}
-          <MidFinalSlots courseId={courseId} />
         </div>
       </div>
     </>

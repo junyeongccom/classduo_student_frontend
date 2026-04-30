@@ -152,3 +152,15 @@ export async function debugTriggerMidTest(
   if (result.error) return { ok: false, error: result.error.message }
   return { ok: true, error: null }
 }
+
+export async function debugTriggerFinalTest(
+  courseId: string,
+): Promise<{ ok: boolean; error: string | null }> {
+  const result = await apiRequest<unknown>(`/exam-prep/final-test/debug-trigger`, {
+    method: 'POST',
+    auth: true,
+    body: { course_id: courseId },
+  })
+  if (result.error) return { ok: false, error: result.error.message }
+  return { ok: true, error: null }
+}
