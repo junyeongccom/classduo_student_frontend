@@ -81,6 +81,7 @@ export function getMockExamPrepData(): ExamPrepData {
           (t) => t.setNumber === 1 && t.status === 'mastered',
         ).length,
         unlocked: false,
+        testId: null,
       },
       {
         setNumber: 2,
@@ -89,6 +90,7 @@ export function getMockExamPrepData(): ExamPrepData {
         totalCoreInSet: 9,
         masteredCount: 0,
         unlocked: false,
+        testId: null,
       },
       {
         setNumber: 3,
@@ -97,6 +99,7 @@ export function getMockExamPrepData(): ExamPrepData {
         totalCoreInSet: 8,
         masteredCount: 0,
         unlocked: false,
+        testId: null,
       },
     ],
     finalTest: {

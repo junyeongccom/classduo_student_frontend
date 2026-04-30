@@ -19,6 +19,7 @@ import { TopHeaderCards } from '../ui/TopHeaderCards'
 import { SelectedTestInfoCard } from '../ui/SelectedTestInfoCard'
 import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
+import { MidTestBox } from '../ui/MidTestBox'
 import { FinalTestPanel } from '../ui/FinalTestPanel'
 import { MidFinalSlots } from './MidFinalSlots'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
@@ -96,6 +97,13 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     router.push(
       `/studyspace/course/${courseId}/exam-prep/test/${test.id}`,
     )
+  }
+
+  /** 중간 테스트 박스 클릭 — testId 가 있을 때만 풀이 페이지로 라우팅 */
+  const handleStartMid = (testId: string | null) => {
+    if (!testId) return
+    setStartError(null)
+    router.push(`/studyspace/course/${courseId}/exam-prep/test/${testId}`)
   }
 
   // 데이터 로딩 / 에러 처리
@@ -178,6 +186,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
                   data={data}
                   selectedTestId={selectedTestId}
                   onSelect={setSelectedTestId}
+                  onStartMid={handleStartMid}
                 />
               ) : (
                 <FinalTestPanel finalTest={data.finalTest} />
@@ -235,24 +244,27 @@ function chunkInto<T>(arr: T[], size: number): T[][] {
   return rows
 }
 
-/** 1/2/3 세트 컨텐츠 — 핵심테스트 그리드.
+/** 1/2/3 세트 컨텐츠 — 핵심테스트 그리드 + 세트별 중간 테스트 검은 배너.
  *
- * b2b20260430 이전에는 세트별 mid 테스트 박스(MidTestBox 검은 배너)가 하단에 함께
- * 렌더되었으나, 백엔드 미연동 mock(`unlocked: false` 하드코딩) 이라 영구 잠금으로
- * 표시되었음. mid/final 활성화 UI 는 페이지 하단의 MidFinalSlots(4슬롯) 로 단일화.
+ * MidTestBox 의 unlocked / testId / masteredCount 는 useExamPrepData 에서 백엔드
+ * mid status (b2b20260430 GET /exam-prep/courses/{id}/mid-tests) 와 coreTests 의
+ * isTestMastered 로 산출됨. 클릭 시 onStartMid(testId) 로 풀이 페이지 라우팅.
  */
 function CoreSetContent({
   setNumber,
   data,
   selectedTestId,
   onSelect,
+  onStartMid,
 }: {
   setNumber: 1 | 2 | 3
   data: ExamPrepData
   selectedTestId: string | null
   onSelect: (id: string | null) => void
+  onStartMid: (testId: string | null) => void
 }) {
   const tests = getCoreTestsBySet(data.coreTests, setNumber)
+  const midTest = data.midTests.find((m) => m.setNumber === setNumber)
   const rows = chunkInto(tests, 5)
 
   return (
@@ -275,6 +287,16 @@ function CoreSetContent({
           </div>
         ))}
       </div>
+
+      {/* 중간 테스트 박스 (검은 배너) — 백엔드 mid status 연동 */}
+      {midTest && (
+        <div className="mt-6">
+          <MidTestBox
+            midTest={midTest}
+            onClick={() => onStartMid(midTest.testId)}
+          />
+        </div>
+      )}
     </div>
   )
 }

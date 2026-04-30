@@ -34,6 +34,8 @@ export interface MidTest {
   /** 마스터된 핵심 테스트 수 (앞에서부터 보라 불꽃) */
   masteredCount: number
   unlocked: boolean
+  /** 백엔드 published mid test_id — null 이면 미생성. 클릭 시 풀이 페이지 라우팅 키. */
+  testId: string | null
 }
 
 export interface FinalTest {

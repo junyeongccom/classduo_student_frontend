@@ -15,6 +15,10 @@ import {
   type CoreTestSummaryDto,
 } from '../services/examPrepService'
 import {
+  getMidTests,
+  type MidTestListResponseDto,
+} from '../services/midFinalService'
+import {
   fetchMyCourseState,
   type StudentCourseStateDto,
 } from '@/shared/services/gamificationService'
@@ -104,6 +108,7 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
 
   const [apiTests, setApiTests] = useState<CoreTestSummaryDto[]>([])
   const [apiTestsLoading, setApiTestsLoading] = useState(true)
+  const [midApi, setMidApi] = useState<MidTestListResponseDto | null>(null)
   const [gamification, setGamification] = useState<StudentCourseStateDto | null>(
     null,
   )
@@ -123,6 +128,24 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
         setApiTests(data?.tests ?? [])
       }
       setApiTestsLoading(false)
+    })
+    return () => {
+      alive = false
+    }
+  }, [courseId])
+
+  // mid tests fetch — MidTestBox 잠금 해제 + testId 라우팅용 (b2b20260430).
+  // 폴링은 MidFinalSlots 측에서 처리하므로 여기서는 mount + refresh 시 1회.
+  useEffect(() => {
+    let alive = true
+    getMidTests(courseId).then(({ data, error }) => {
+      if (!alive) return
+      if (error) {
+        console.warn('[useExamPrepData] mid-tests fetch failed:', error)
+        setMidApi(null)
+      } else {
+        setMidApi(data ?? null)
+      }
     })
     return () => {
       alive = false
@@ -222,19 +245,36 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       coreTests[0] ??
       null
 
-    // mid / final — v1 백엔드 미구현 → mock 유지 (Q3 답변 = A)
+    // mid — b2b20260430 백엔드 연동. midApi.items 의 status / test_id 를 병합.
+    //   unlocked = status ∈ {available, mastered}
+    //   masteredCount = 해당 setNumber 의 isTestMastered=true 핵심테스트 개수
+    type MidApiItem = NonNullable<typeof midApi>['items'][number]
+    const midApiBySegment = new Map<number, MidApiItem>()
+    if (midApi?.items) {
+      for (const item of midApi.items) {
+        midApiBySegment.set(item.segment_index, item)
+      }
+    }
+
     const midTests: MidTest[] = [1, 2, 3].map((setNumber) => {
       const range = SET_RANGES[setNumber as 1 | 2 | 3]
       const totalCoreInSet = coreTests.filter(
         (t) => t.setNumber === setNumber,
       ).length
+      const masteredCountInSet = coreTests.filter(
+        (t) => t.setNumber === setNumber && t.isTestMastered,
+      ).length
+      const apiItem = midApiBySegment.get(setNumber)
+      const unlocked =
+        apiItem?.status === 'available' || apiItem?.status === 'mastered'
       return {
         setNumber: setNumber as 1 | 2 | 3,
         minutes: 15,
         questions: 20,
         totalCoreInSet: totalCoreInSet || range.end - range.start + 1,
-        masteredCount: 0,  // v1 mastery 없음
-        unlocked: false,
+        masteredCount: masteredCountInSet,
+        unlocked,
+        testId: apiItem?.test_id ?? null,
       }
     })
 
@@ -265,6 +305,9 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     fetchCoreTestsByCourse(courseId).then(({ data, error }) => {
       if (!error) setApiTests(data?.tests ?? [])
       setApiTestsLoading(false)
+    })
+    getMidTests(courseId).then(({ data, error }) => {
+      if (!error) setMidApi(data ?? null)
     })
     setGamificationLoading(true)
     fetchMyCourseState(courseId).then(({ data }) => {
