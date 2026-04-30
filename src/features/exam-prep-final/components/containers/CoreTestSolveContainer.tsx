@@ -103,6 +103,10 @@ export function CoreTestSolveContainer({
   const [byQuestionState, setByQuestionState] = useState<Record<string, string>>(
     {},
   )
+  /** 백엔드 attempt 가 모든 문항 채점 완료 상태인지. resume 시 응답 수 / question_ids 수
+   *  비교, grade 응답의 attempt_completed=true 시 갱신. local gradedBySeq 가 부족해도
+   *  hasNext / handleNext 가 결과 화면 전환을 허용하도록 보조. */
+  const [attemptCompletedFromBackend, setAttemptCompletedFromBackend] = useState(false)
 
   // 경과 시간 타이머
   useEffect(() => {
@@ -148,6 +152,7 @@ export function CoreTestSolveContainer({
       setHintUsedSeqs(new Set())
       setHintDisabledBySeq({})
       setResumeResponses(null)
+      setAttemptCompletedFromBackend(false)
       setCurrentSeq(1)
       setElapsedSec(0)
 
@@ -161,12 +166,21 @@ export function CoreTestSolveContainer({
       setAttemptId(a.attempt_id)
       setAttemptQuestionIds(a.question_ids)
 
-      // resume 시 기존 채점된 응답 복원 — 사이드채널(window) 대신 state 로 보관해
-      // seq 매핑 + data 로드 완료 시점과의 race 를 effect 의존성으로 해소.
+      // resume 시 응답 복원은 비활성화. 다만 attempt 의 채점 완료 여부는 추적해서
+      // 마지막 문항의 [다음] 버튼이 결과 화면으로 갈 수 있게 허용한다.
       if (a.resumed) {
         const { data: full } = await getAttempt(a.attempt_id)
         if (cancelled) return
-        if (full) setResumeResponses(full.responses)
+        if (full) {
+          setResumeResponses(full.responses)
+          const gradedCount = (full.responses ?? []).filter(
+            (r) => r.is_correct !== null && r.is_correct !== undefined,
+          ).length
+          const totalAttemptQs = (full.question_ids ?? []).length
+          if (totalAttemptQs > 0 && gradedCount >= totalAttemptQs) {
+            setAttemptCompletedFromBackend(true)
+          }
+        }
       }
 
       // 이미 submitted 상태라면 결과 화면으로
@@ -343,6 +357,13 @@ export function CoreTestSolveContainer({
 
     setGradedBySeq((prev) => ({ ...prev, [currentSeq]: result }))
 
+    // 백엔드가 attempt 자동 submit 처리한 경우 신호 보존 — hasNext / handleNext 에서
+    // 결과 화면 전환 허용용. (이번 grade 가 마지막 미채점 문항을 채워 graded_count 가
+    // total_count 도달했을 때 발화.)
+    if (result.attempt_completed) {
+      setAttemptCompletedFromBackend(true)
+    }
+
     // 문항별 mastery state 갱신 — Issue 2/3 의 현재 문항 상태 표시 데이터 소스
     if (qid) {
       setByQuestionState((prev) => ({
@@ -385,11 +406,12 @@ export function CoreTestSolveContainer({
 
   /** [다음] 버튼 동작:
    *  - 다음 문항(seq+1) 이 있으면 단순 이동
-   *  - 마지막 문항이고 모든 문항이 채점됐으면 결과 화면으로 전환
+   *  - 마지막 문항이고 모든 문항이 채점됐으면(local 또는 backend 신호) 결과 화면으로 전환
    *  - 그 외 (마지막 문항이지만 미채점 문항 남아있음) → 미채점 문항으로 이동
    */
   const handleNext = useCallback(() => {
-    const allGraded = Object.keys(gradedBySeq).length >= total
+    const allGradedLocal = Object.keys(gradedBySeq).length >= total
+    const allGraded = allGradedLocal || attemptCompletedFromBackend
     // 마지막 문항이면 결과 또는 미채점 문항 점프
     if (currentSeq >= total) {
       if (allGraded) {
@@ -403,7 +425,7 @@ export function CoreTestSolveContainer({
       return
     }
     setCurrentSeq((s) => Math.min(total, s + 1))
-  }, [currentSeq, total, gradedBySeq])
+  }, [currentSeq, total, gradedBySeq, attemptCompletedFromBackend])
 
   const handleExit = useCallback(() => {
     router.push(`/studyspace/course/${courseId}/exam-prep`)
@@ -523,10 +545,11 @@ export function CoreTestSolveContainer({
             onPrev={() => setCurrentSeq((s) => Math.max(1, s - 1))}
             onNext={handleNext}
             hasPrev={currentSeq > 1}
-            // 마지막 문항 + 모두 채점됨 → 결과 화면으로 갈 수 있으므로 활성화
+            // 마지막 문항 + 모두 채점됨(local 또는 backend) → 결과 화면 진입 허용
             hasNext={
               currentSeq < total ||
-              Object.keys(gradedBySeq).length >= total
+              Object.keys(gradedBySeq).length >= total ||
+              attemptCompletedFromBackend
             }
           />
         )}
