@@ -43,14 +43,28 @@ export interface LectureOption {
   label: string
 }
 
-export function useCourseAndLecture() {
+/**
+ * @param initialCourseId URL 등에서 이미 알고 있는 강좌 id. 전달되면 자동 첫 강좌 선택을 건너뛴다.
+ *                        (없으면 기존 동작 유지: 첫 강좌 자동 선택)
+ */
+export function useCourseAndLecture(initialCourseId?: string | null) {
   const t = useTranslations('myQuiz')
   const [courses, setCourses] = useState<CourseItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null)
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(
+    initialCourseId ?? null,
+  )
   const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
   const [selectedLectureIds, setSelectedLectureIds] = useState<string[]>([])
+
+  // initialCourseId 가 사후에 도착할 수도 있으므로 한 번 동기화
+  useEffect(() => {
+    if (initialCourseId && initialCourseId !== selectedCourseId) {
+      setSelectedCourseId(initialCourseId)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCourseId])
 
   const fetchCourses = useCallback(async () => {
     setIsLoading(true)
@@ -69,12 +83,13 @@ export function useCourseAndLecture() {
 
     const list = result.data.courses ?? []
     setCourses(list)
-    // 첫 진입 시 강좌가 선택되지 않았으면 첫 번째 강좌 자동 선택
-    if (!selectedCourseId && list.length > 0) {
-      setSelectedCourseId(list[0].course_id)
+    // 자동 첫 강좌 선택은 initialCourseId 가 없을 때만. 있으면 그대로 유지.
+    // 함수형 setState 로 closure 의 stale selectedCourseId 가 아닌 최신 값을 사용 (깜빡임 방지)
+    if (!initialCourseId) {
+      setSelectedCourseId((prev) => prev ?? (list.length > 0 ? list[0].course_id : null))
     }
     setIsLoading(false)
-  }, [t]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [t, initialCourseId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchCourses()
