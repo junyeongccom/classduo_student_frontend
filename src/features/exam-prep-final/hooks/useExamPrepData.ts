@@ -15,7 +15,9 @@ import {
   type CoreTestSummaryDto,
 } from '../services/examPrepService'
 import {
+  getFinalTest,
   getMidTests,
+  type FinalTestMetaDto,
   type MidTestListResponseDto,
 } from '../services/midFinalService'
 import {
@@ -109,6 +111,7 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
   const [apiTests, setApiTests] = useState<CoreTestSummaryDto[]>([])
   const [apiTestsLoading, setApiTestsLoading] = useState(true)
   const [midApi, setMidApi] = useState<MidTestListResponseDto | null>(null)
+  const [finalApi, setFinalApi] = useState<FinalTestMetaDto | null>(null)
   const [gamification, setGamification] = useState<StudentCourseStateDto | null>(
     null,
   )
@@ -134,23 +137,60 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     }
   }, [courseId])
 
-  // mid tests fetch — MidTestBox 잠금 해제 + testId 라우팅용 (b2b20260430).
-  // 폴링은 MidFinalSlots 측에서 처리하므로 여기서는 mount + refresh 시 1회.
+  // mid / final tests fetch — MidTestBox·FinalTestPanel 잠금 해제 + testId 라우팅 +
+  // 디버그 트리거의 점/스피너/숨김 분기 입력 (b2b20260430).
   useEffect(() => {
     let alive = true
-    getMidTests(courseId).then(({ data, error }) => {
-      if (!alive) return
-      if (error) {
-        console.warn('[useExamPrepData] mid-tests fetch failed:', error)
-        setMidApi(null)
-      } else {
-        setMidApi(data ?? null)
-      }
-    })
+    Promise.all([getMidTests(courseId), getFinalTest(courseId)]).then(
+      ([midResult, finalResult]) => {
+        if (!alive) return
+        if (midResult.error) {
+          console.warn('[useExamPrepData] mid-tests fetch failed:', midResult.error)
+          setMidApi(null)
+        } else {
+          setMidApi(midResult.data ?? null)
+        }
+        if (finalResult.error) {
+          console.warn(
+            '[useExamPrepData] final-test fetch failed:',
+            finalResult.error,
+          )
+          setFinalApi(null)
+        } else {
+          setFinalApi(finalResult.data ?? null)
+        }
+      },
+    )
     return () => {
       alive = false
     }
   }, [courseId])
+
+  // 생성 중(generating) 인 mid/final 이 있으면 5초 간격 폴링 — status 가 available/
+  // mastered/failed 로 전환되면 자동 종료. 디버그 트리거 클릭 후 backend 워커 완료
+  // (~30~120s) 시점을 자동 감지해 UI 갱신.
+  useEffect(() => {
+    const hasGenerating =
+      (midApi?.items ?? []).some((i) => i.status === 'generating') ||
+      finalApi?.status === 'generating'
+    if (!hasGenerating) return
+    let alive = true
+    const id = setInterval(() => {
+      if (!alive) return
+      getMidTests(courseId).then(({ data, error }) => {
+        if (!alive) return
+        if (!error) setMidApi(data ?? null)
+      })
+      getFinalTest(courseId).then(({ data, error }) => {
+        if (!alive) return
+        if (!error) setFinalApi(data ?? null)
+      })
+    }, 5000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [midApi, finalApi, courseId])
 
   // gamification state fetch
   useEffect(() => {
@@ -265,8 +305,8 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
         (t) => t.setNumber === setNumber && t.isTestMastered,
       ).length
       const apiItem = midApiBySegment.get(setNumber)
-      const unlocked =
-        apiItem?.status === 'available' || apiItem?.status === 'mastered'
+      const status = apiItem?.status ?? 'locked'
+      const unlocked = status === 'available' || status === 'mastered'
       return {
         setNumber: setNumber as 1 | 2 | 3,
         minutes: 15,
@@ -275,14 +315,27 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
         masteredCount: masteredCountInSet,
         unlocked,
         testId: apiItem?.test_id ?? null,
+        status,
       }
     })
 
+    // final — finalApi 의 status / test_id 를 병합. setMasterStates 는 mid 의 mastered
+    // 여부에서 도출.
+    const finalStatus = finalApi?.status ?? 'locked'
+    const finalUnlocked =
+      finalStatus === 'available' || finalStatus === 'mastered'
+    const setMasterStates: [boolean, boolean, boolean] = [
+      midApiBySegment.get(1)?.status === 'mastered',
+      midApiBySegment.get(2)?.status === 'mastered',
+      midApiBySegment.get(3)?.status === 'mastered',
+    ]
     const finalTest: FinalTest = {
       minutes: 15,
       questions: 20,
-      unlocked: false,
-      setMasterStates: [false, false, false],
+      unlocked: finalUnlocked,
+      setMasterStates,
+      testId: finalApi?.test_id ?? null,
+      status: finalStatus,
     }
 
     return {
@@ -297,7 +350,7 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     }
   // locale 변경 시 lectureTitle 등 재계산
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lectures, apiTests, gamification, locale])
+  }, [lectures, apiTests, midApi, finalApi, gamification, locale])
 
   const refresh = () => {
     refreshLectures()
@@ -308,6 +361,9 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     })
     getMidTests(courseId).then(({ data, error }) => {
       if (!error) setMidApi(data ?? null)
+    })
+    getFinalTest(courseId).then(({ data, error }) => {
+      if (!error) setFinalApi(data ?? null)
     })
     setGamificationLoading(true)
     fetchMyCourseState(courseId).then(({ data }) => {

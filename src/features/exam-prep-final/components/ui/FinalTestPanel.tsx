@@ -7,16 +7,18 @@
 'use client'
 
 import Image from 'next/image'
-import { Check } from 'lucide-react'
+import { Check, Play } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import type { FinalTest } from '../../types'
 
 interface FinalTestPanelProps {
   finalTest: FinalTest
+  /** unlocked 상태에서 클릭 시 풀이 페이지 라우팅 */
+  onStart?: () => void
 }
 
-export function FinalTestPanel({ finalTest }: FinalTestPanelProps) {
+export function FinalTestPanel({ finalTest, onStart }: FinalTestPanelProps) {
   const t = useTranslations()
 
   return (
@@ -56,10 +58,21 @@ export function FinalTestPanel({ finalTest }: FinalTestPanelProps) {
         ))}
       </div>
 
-      {/* 큰 자물쇠 */}
-      <div className="mt-10 flex h-20 w-72 items-center justify-center rounded-2xl bg-white/15">
-        <Image src="/자물쇠.png" alt="" width={40} height={40} />
-      </div>
+      {/* unlocked: 시작하기 버튼 / locked: 큰 자물쇠 */}
+      {finalTest.unlocked && finalTest.testId ? (
+        <button
+          type="button"
+          onClick={onStart}
+          className="mt-10 flex h-20 w-72 items-center justify-center gap-3 rounded-2xl bg-white text-[#383698] shadow-lg transition-transform hover:scale-[1.02]"
+        >
+          <Play className="h-6 w-6 fill-[#383698]" />
+          <span className="text-lg font-bold">{t('examPrepFinal.startCta')}</span>
+        </button>
+      ) : (
+        <div className="mt-10 flex h-20 w-72 items-center justify-center rounded-2xl bg-white/15">
+          <Image src="/자물쇠.png" alt="" width={40} height={40} />
+        </div>
+      )}
     </div>
   )
 }

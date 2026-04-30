@@ -82,6 +82,7 @@ export function getMockExamPrepData(): ExamPrepData {
         ).length,
         unlocked: false,
         testId: null,
+        status: 'locked',
       },
       {
         setNumber: 2,
@@ -91,6 +92,7 @@ export function getMockExamPrepData(): ExamPrepData {
         masteredCount: 0,
         unlocked: false,
         testId: null,
+        status: 'locked',
       },
       {
         setNumber: 3,
@@ -100,6 +102,7 @@ export function getMockExamPrepData(): ExamPrepData {
         masteredCount: 0,
         unlocked: false,
         testId: null,
+        status: 'locked',
       },
     ],
     finalTest: {
@@ -107,6 +110,8 @@ export function getMockExamPrepData(): ExamPrepData {
       questions: 20,
       unlocked: false,
       setMasterStates: [true, false, false],
+      testId: null,
+      status: 'locked',
     },
   }
 }

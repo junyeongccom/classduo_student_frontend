@@ -25,6 +25,14 @@ export interface CoreTest {
   isTestMastered: boolean
 }
 
+/** 백엔드 list-mid-tests / final-test 응답의 status — 디버그 트리거 분기에도 사용 */
+export type MidFinalStatus =
+  | 'locked'
+  | 'generating'
+  | 'available'
+  | 'mastered'
+  | 'failed'
+
 export interface MidTest {
   setNumber: 1 | 2 | 3
   minutes: number
@@ -36,6 +44,8 @@ export interface MidTest {
   unlocked: boolean
   /** 백엔드 published mid test_id — null 이면 미생성. 클릭 시 풀이 페이지 라우팅 키. */
   testId: string | null
+  /** 백엔드 raw status — 디버그 트리거 점/스피너/숨김 분기용. 미상이면 'locked' 로 간주. */
+  status: MidFinalStatus
 }
 
 export interface FinalTest {
@@ -44,6 +54,10 @@ export interface FinalTest {
   unlocked: boolean
   /** 1, 2, 3세트별 중간 테스트 마스터 여부 */
   setMasterStates: [boolean, boolean, boolean]
+  /** 백엔드 published final test_id — null 이면 미생성 */
+  testId: string | null
+  /** 백엔드 raw status */
+  status: MidFinalStatus
 }
 
 export interface ExamPrepData {

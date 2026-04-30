@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ChevronRight, Loader2 } from 'lucide-react'
+import { ChevronRight, Loader2 as LoaderIcon } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
@@ -131,6 +131,14 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     router.push(`/studyspace/course/${courseId}/exam-prep/test/${testId}`)
   }
 
+  /** 최종 테스트 클릭 — testId 가 있을 때만 풀이 페이지로 라우팅 */
+  const handleStartFinal = () => {
+    const tid = data?.finalTest.testId
+    if (!tid) return
+    setStartError(null)
+    router.push(`/studyspace/course/${courseId}/exam-prep/test/${tid}`)
+  }
+
   // 데이터 로딩 / 에러 처리
   if (isLoading || !data) {
     return (
@@ -139,7 +147,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
           <ExamPrepBreadcrumb t={t} courseId={courseId} courseTitle={courseTitle} />
         </StudyspaceTopbarSlot>
         <div className="flex h-full items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <LoaderIcon className="h-8 w-8 animate-spin text-gray-400" />
         </div>
       </>
     )
@@ -214,17 +222,48 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
                   onStartMid={handleStartMid}
                 />
               ) : (
-                <FinalTestPanel finalTest={data.finalTest} />
+                <FinalTestPanel
+                  finalTest={data.finalTest}
+                  onStart={handleStartFinal}
+                />
               )}
-              {/* === DEBUG START — 출시 전 삭제 === */}
-              <button
-                type="button"
-                aria-label="[DEBUG] 강제 생성"
-                title="[DEBUG] 강제 트리거 (출시 전 삭제 예정)"
-                onClick={() => void handleDebugTrigger(activeTab)}
-                disabled={isDebugTriggering}
-                className="absolute bottom-3 right-3 h-3 w-3 rounded-full bg-red-500 ring-1 ring-white shadow-sm hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-wait disabled:opacity-50"
-              />
+              {/* === DEBUG START — 출시 전 삭제 ===
+                * 현재 탭의 mid/final 상태에 따라 분기 렌더:
+                *   generating          → 빨간 회전 스피너 (dispatch 후 워커 진행 중)
+                *   available/mastered  → 숨김 (이미 생성됨, 트리거 불필요)
+                *   locked / failed     → 클릭 가능한 빨간 점
+                */}
+              {(() => {
+                const tabStatus =
+                  activeTab === 'final'
+                    ? data.finalTest.status
+                    : data.midTests[activeTab - 1]?.status ?? 'locked'
+                if (tabStatus === 'available' || tabStatus === 'mastered') {
+                  return null
+                }
+                if (tabStatus === 'generating') {
+                  return (
+                    <div
+                      role="status"
+                      aria-label="[DEBUG] 생성 중"
+                      title="[DEBUG] 생성 중"
+                      className="absolute bottom-3 right-3"
+                    >
+                      <LoaderIcon className="h-3 w-3 animate-spin text-red-500" />
+                    </div>
+                  )
+                }
+                return (
+                  <button
+                    type="button"
+                    aria-label="[DEBUG] 강제 생성"
+                    title="[DEBUG] 강제 트리거 (출시 전 삭제 예정)"
+                    onClick={() => void handleDebugTrigger(activeTab)}
+                    disabled={isDebugTriggering}
+                    className="absolute bottom-3 right-3 h-3 w-3 rounded-full bg-red-500 ring-1 ring-white shadow-sm hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-wait disabled:opacity-50"
+                  />
+                )
+              })()}
               {/* === DEBUG END === */}
             </div>
             {/* === DEBUG START — 출시 전 삭제 === */}
