@@ -19,7 +19,6 @@ import { TopHeaderCards } from '../ui/TopHeaderCards'
 import { SelectedTestInfoCard } from '../ui/SelectedTestInfoCard'
 import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
-import { MidTestBox } from '../ui/MidTestBox'
 import { FinalTestPanel } from '../ui/FinalTestPanel'
 import { MidFinalSlots } from './MidFinalSlots'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
@@ -236,7 +235,12 @@ function chunkInto<T>(arr: T[], size: number): T[][] {
   return rows
 }
 
-/** 1/2/3 세트 컨텐츠 — 핵심테스트 그리드 + 중간 테스트 박스 */
+/** 1/2/3 세트 컨텐츠 — 핵심테스트 그리드.
+ *
+ * b2b20260430 이전에는 세트별 mid 테스트 박스(MidTestBox 검은 배너)가 하단에 함께
+ * 렌더되었으나, 백엔드 미연동 mock(`unlocked: false` 하드코딩) 이라 영구 잠금으로
+ * 표시되었음. mid/final 활성화 UI 는 페이지 하단의 MidFinalSlots(4슬롯) 로 단일화.
+ */
 function CoreSetContent({
   setNumber,
   data,
@@ -249,7 +253,6 @@ function CoreSetContent({
   onSelect: (id: string | null) => void
 }) {
   const tests = getCoreTestsBySet(data.coreTests, setNumber)
-  const midTest = data.midTests.find((m) => m.setNumber === setNumber)
   const rows = chunkInto(tests, 5)
 
   return (
@@ -272,13 +275,6 @@ function CoreSetContent({
           </div>
         ))}
       </div>
-
-      {/* 중간 테스트 박스 */}
-      {midTest && (
-        <div className="mt-6">
-          <MidTestBox midTest={midTest} />
-        </div>
-      )}
     </div>
   )
 }
