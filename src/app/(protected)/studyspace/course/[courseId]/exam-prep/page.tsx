@@ -8,7 +8,7 @@
 'use client'
 
 import { use } from 'react'
-import { ExamPrepContainer, MidFinalSlots } from '@/features/exam-prep-final'
+import { ExamPrepContainer } from '@/features/exam-prep-final'
 
 export default function ExamPrepPage({
   params,
@@ -17,10 +17,5 @@ export default function ExamPrepPage({
 }) {
   const { courseId } = use(params)
 
-  return (
-    <>
-      <ExamPrepContainer courseId={courseId} />
-      <MidFinalSlots courseId={courseId} />
-    </>
-  )
+  return <ExamPrepContainer courseId={courseId} />
 }

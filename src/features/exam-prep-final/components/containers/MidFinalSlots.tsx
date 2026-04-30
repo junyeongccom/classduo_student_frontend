@@ -2,7 +2,7 @@
  * @file MidFinalSlots.tsx
  * @description mid 3슬롯 + final 1슬롯 컨테이너 — status 5종 분기 + 동적 툴팁 + retry 핸들러
  * @module features/exam-prep-final/components/containers
- * @dependencies useExamPrepGeneratingPolling, midFinalService
+ * @dependencies useExamPrepGeneratingPolling, midFinalService, next-intl, lucide-react
  *
  * 슬롯 상태 (b2b20260430 §FR-5):
  *   - locked     : 회색 + 자물쇠 + 동적 툴팁 (회차 X~Y번 마스터 시)
@@ -17,6 +17,15 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
+import {
+  AlertTriangle,
+  Flag,
+  Loader2,
+  Lock,
+  PenLine,
+  Star,
+} from 'lucide-react'
 
 import { useExamPrepGeneratingPolling } from '../../hooks/useExamPrepGeneratingPolling'
 import {
@@ -33,16 +42,22 @@ interface MidFinalSlotsProps {
   testRouteBase?: string
 }
 
+type Translator = ReturnType<typeof useTranslations>
+
+const SLOT_BASE_CLASSES =
+  'flex h-full min-h-[112px] flex-col items-center justify-center gap-1 rounded-2xl px-4 py-5 text-center transition-colors'
+
 function _statusLabel(status: MidFinalStatus, forceFailed: boolean): MidFinalStatus {
   if (forceFailed && status === 'generating') return 'failed'
   return status
 }
 
-function _rangeTooltip(range: [number, number]): string {
+function _rangeTooltip(t: Translator, range: [number, number]): string {
   const [start, end] = range
-  if (!start || !end) return '먼저 모든 회차를 마스터하세요'
-  if (start === end) return `회차 ${start}번을 마스터하면 열립니다`
-  return `회차 ${start}~${end}번까지 마스터하면 열립니다`
+  if (!start || !end) return t('examPrepFinal.lockedHintFallback')
+  if (start === end)
+    return t('examPrepFinal.lockedHintSingle', { start })
+  return t('examPrepFinal.lockedHintRange', { start, end })
 }
 
 function MidSlot({
@@ -50,27 +65,33 @@ function MidSlot({
   forceFailed,
   testRouteBase,
   onRetry,
+  t,
 }: {
   meta: MidTestMetaDto
   forceFailed: boolean
   testRouteBase: string
   onRetry: () => Promise<void>
+  t: Translator
 }) {
   const status = _statusLabel(meta.status, forceFailed)
-  const rangeText = _rangeTooltip(meta.range_session_nos)
+  const label = t('examPrepFinal.midSlotLabel', { index: meta.segment_index })
+  const rangeText = _rangeTooltip(t, meta.range_session_nos)
 
   if (status === 'locked') {
     return (
       <div
         role="button"
         aria-disabled="true"
-        aria-label={`중간 테스트 #${meta.segment_index} 잠김 — ${rangeText}`}
+        aria-label={t('examPrepFinal.midLockedAria', {
+          label,
+          hint: rangeText,
+        })}
         title={rangeText}
-        className="flex flex-col items-center justify-center rounded-lg bg-gray-200 p-4 text-gray-500 cursor-not-allowed"
+        className={`${SLOT_BASE_CLASSES} cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-500`}
       >
-        <span aria-hidden>🔒</span>
-        <span className="mt-1 text-sm">중간 테스트 #{meta.segment_index}</span>
-        <span className="mt-1 text-xs text-gray-500">{rangeText}</span>
+        <Lock className="h-5 w-5 text-gray-400" aria-hidden />
+        <span className="text-sm font-medium text-gray-700">{label}</span>
+        <span className="text-xs leading-snug text-gray-500">{rangeText}</span>
       </div>
     )
   }
@@ -79,38 +100,44 @@ function MidSlot({
       <div
         role="status"
         aria-live="polite"
-        aria-label={`중간 테스트 #${meta.segment_index} 생성 중`}
-        className="flex flex-col items-center justify-center rounded-lg bg-blue-50 p-4 text-blue-700"
+        aria-label={t('examPrepFinal.midGeneratingAria', { label })}
+        className={`${SLOT_BASE_CLASSES} border border-blue-200 bg-blue-50 text-blue-700`}
       >
-        <span aria-hidden className="animate-spin">⏳</span>
-        <span className="mt-1 text-sm">중간 테스트 #{meta.segment_index}</span>
-        <span className="mt-1 text-xs">잠시 후 자동으로 열립니다</span>
+        <Loader2 className="h-5 w-5 animate-spin text-blue-500" aria-hidden />
+        <span className="text-sm font-medium">{label}</span>
+        <span className="text-xs leading-snug text-blue-600">
+          {t('examPrepFinal.generatingHint')}
+        </span>
       </div>
     )
   }
   if (status === 'mastered') {
     return (
       <div
-        aria-label={`중간 테스트 #${meta.segment_index} 마스터 완료`}
-        className="flex flex-col items-center justify-center rounded-lg bg-yellow-50 p-4 text-yellow-700"
+        aria-label={t('examPrepFinal.midMasteredAria', { label })}
+        className={`${SLOT_BASE_CLASSES} border border-amber-200 bg-amber-50 text-amber-800`}
       >
-        <span aria-hidden>★</span>
-        <span className="mt-1 text-sm">중간 테스트 #{meta.segment_index}</span>
-        <span className="mt-1 text-xs">완료</span>
+        <Star className="h-5 w-5 fill-amber-400 text-amber-500" aria-hidden />
+        <span className="text-sm font-semibold">{label}</span>
+        <span className="text-xs font-medium text-amber-700">
+          {t('examPrepFinal.masteredLabel')}
+        </span>
       </div>
     )
   }
   if (status === 'failed') {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg bg-red-50 p-4 text-red-700">
-        <span aria-hidden>⚠️</span>
-        <span className="mt-1 text-sm">중간 테스트 #{meta.segment_index}</span>
+      <div
+        className={`${SLOT_BASE_CLASSES} border border-red-200 bg-red-50 text-red-700`}
+      >
+        <AlertTriangle className="h-5 w-5 text-red-500" aria-hidden />
+        <span className="text-sm font-medium">{label}</span>
         <button
           type="button"
           onClick={() => void onRetry()}
-          className="mt-2 rounded border border-red-400 bg-white px-2 py-1 text-xs text-red-700 hover:bg-red-100"
+          className="mt-1 inline-flex min-h-[44px] items-center rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
         >
-          재시도
+          {t('examPrepFinal.retryCta')}
         </button>
       </div>
     )
@@ -119,12 +146,14 @@ function MidSlot({
   return (
     <Link
       href={`${testRouteBase}/${meta.test_id}`}
-      className="flex flex-col items-center justify-center rounded-lg bg-emerald-50 p-4 text-emerald-700 hover:bg-emerald-100"
-      aria-label={`중간 테스트 #${meta.segment_index} 풀이 시작`}
+      aria-label={t('examPrepFinal.midStartAria', { label })}
+      className={`${SLOT_BASE_CLASSES} border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400`}
     >
-      <span aria-hidden>📝</span>
-      <span className="mt-1 text-sm">중간 테스트 #{meta.segment_index}</span>
-      <span className="mt-1 text-xs">시작하기</span>
+      <PenLine className="h-5 w-5 text-emerald-600" aria-hidden />
+      <span className="text-sm font-semibold">{label}</span>
+      <span className="text-xs font-medium text-emerald-700">
+        {t('examPrepFinal.startCta')}
+      </span>
     </Link>
   )
 }
@@ -134,26 +163,34 @@ function FinalSlot({
   forceFailed,
   testRouteBase,
   onRetry,
+  t,
 }: {
   meta: FinalTestMetaDto
   forceFailed: boolean
   testRouteBase: string
   onRetry: () => Promise<void>
+  t: Translator
 }) {
   const status = _statusLabel(meta.status, forceFailed)
+  const label = t('examPrepFinal.finalSlotLabel')
 
   if (status === 'locked') {
     return (
       <div
         role="button"
         aria-disabled="true"
-        aria-label="최종 테스트 잠김 — 모든 중간 테스트를 마스터하면 열립니다"
-        title="모든 중간 테스트를 마스터하면 열립니다"
-        className="flex flex-col items-center justify-center rounded-lg bg-gray-200 p-4 text-gray-500 cursor-not-allowed"
+        aria-label={t('examPrepFinal.midLockedAria', {
+          label,
+          hint: t('examPrepFinal.lockedHintFinal'),
+        })}
+        title={t('examPrepFinal.lockedHintFinal')}
+        className={`${SLOT_BASE_CLASSES} cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-500`}
       >
-        <span aria-hidden>🔒</span>
-        <span className="mt-1 text-sm">최종 테스트</span>
-        <span className="mt-1 text-xs">모든 중간 테스트 마스터 시 열림</span>
+        <Lock className="h-5 w-5 text-gray-400" aria-hidden />
+        <span className="text-sm font-medium text-gray-700">{label}</span>
+        <span className="text-xs leading-snug text-gray-500">
+          {t('examPrepFinal.lockedFinalShort')}
+        </span>
       </div>
     )
   }
@@ -162,38 +199,44 @@ function FinalSlot({
       <div
         role="status"
         aria-live="polite"
-        aria-label="최종 테스트 생성 중"
-        className="flex flex-col items-center justify-center rounded-lg bg-blue-50 p-4 text-blue-700"
+        aria-label={t('examPrepFinal.midGeneratingAria', { label })}
+        className={`${SLOT_BASE_CLASSES} border border-blue-200 bg-blue-50 text-blue-700`}
       >
-        <span aria-hidden className="animate-spin">⏳</span>
-        <span className="mt-1 text-sm">최종 테스트</span>
-        <span className="mt-1 text-xs">잠시 후 자동으로 열립니다</span>
+        <Loader2 className="h-5 w-5 animate-spin text-blue-500" aria-hidden />
+        <span className="text-sm font-medium">{label}</span>
+        <span className="text-xs leading-snug text-blue-600">
+          {t('examPrepFinal.generatingHint')}
+        </span>
       </div>
     )
   }
   if (status === 'mastered') {
     return (
       <div
-        aria-label="최종 테스트 마스터 완료"
-        className="flex flex-col items-center justify-center rounded-lg bg-yellow-50 p-4 text-yellow-700"
+        aria-label={t('examPrepFinal.midMasteredAria', { label })}
+        className={`${SLOT_BASE_CLASSES} border border-amber-200 bg-amber-50 text-amber-800`}
       >
-        <span aria-hidden>★</span>
-        <span className="mt-1 text-sm">최종 테스트</span>
-        <span className="mt-1 text-xs">완료</span>
+        <Star className="h-5 w-5 fill-amber-400 text-amber-500" aria-hidden />
+        <span className="text-sm font-semibold">{label}</span>
+        <span className="text-xs font-medium text-amber-700">
+          {t('examPrepFinal.masteredLabel')}
+        </span>
       </div>
     )
   }
   if (status === 'failed') {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg bg-red-50 p-4 text-red-700">
-        <span aria-hidden>⚠️</span>
-        <span className="mt-1 text-sm">최종 테스트</span>
+      <div
+        className={`${SLOT_BASE_CLASSES} border border-red-200 bg-red-50 text-red-700`}
+      >
+        <AlertTriangle className="h-5 w-5 text-red-500" aria-hidden />
+        <span className="text-sm font-medium">{label}</span>
         <button
           type="button"
           onClick={() => void onRetry()}
-          className="mt-2 rounded border border-red-400 bg-white px-2 py-1 text-xs text-red-700 hover:bg-red-100"
+          className="mt-1 inline-flex min-h-[44px] items-center rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
         >
-          재시도
+          {t('examPrepFinal.retryCta')}
         </button>
       </div>
     )
@@ -201,12 +244,14 @@ function FinalSlot({
   return (
     <Link
       href={`${testRouteBase}/${meta.test_id}`}
-      className="flex flex-col items-center justify-center rounded-lg bg-emerald-50 p-4 text-emerald-700 hover:bg-emerald-100"
-      aria-label="최종 테스트 풀이 시작"
+      aria-label={t('examPrepFinal.midStartAria', { label })}
+      className={`${SLOT_BASE_CLASSES} border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm hover:bg-emerald-100 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400`}
     >
-      <span aria-hidden>🏁</span>
-      <span className="mt-1 text-sm">최종 테스트</span>
-      <span className="mt-1 text-xs">시작하기</span>
+      <Flag className="h-5 w-5 text-emerald-600" aria-hidden />
+      <span className="text-sm font-semibold">{label}</span>
+      <span className="text-xs font-medium text-emerald-700">
+        {t('examPrepFinal.startCta')}
+      </span>
     </Link>
   )
 }
@@ -215,6 +260,7 @@ export function MidFinalSlots({
   courseId,
   testRouteBase,
 }: MidFinalSlotsProps) {
+  const t = useTranslations()
   const { midData, finalData, forceFailed, refresh } =
     useExamPrepGeneratingPolling(courseId)
   const router = useRouter()
@@ -228,7 +274,7 @@ export function MidFinalSlots({
     setRetryError(null)
     const r = await retryMidTest(courseId, segmentIndex)
     if (!r.ok) {
-      setRetryError(r.error || '재시도에 실패했습니다')
+      setRetryError(r.error || t('examPrepFinal.retryError'))
       return
     }
     await refresh()
@@ -239,7 +285,7 @@ export function MidFinalSlots({
     setRetryError(null)
     const r = await retryFinalTest(courseId)
     if (!r.ok) {
-      setRetryError(r.error || '재시도에 실패했습니다')
+      setRetryError(r.error || t('examPrepFinal.retryError'))
       return
     }
     await refresh()
@@ -267,16 +313,21 @@ export function MidFinalSlots({
 
   return (
     <section
-      aria-label="중간 테스트 / 최종 테스트 슬롯"
-      className="mt-6"
+      aria-label={t('examPrepFinal.slotsSectionTitle')}
+      className="mt-8"
     >
-      <h2 className="mb-3 text-base font-semibold">중간 / 최종 테스트</h2>
+      <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">
+        {t('examPrepFinal.slotsSectionTitle')}
+      </h2>
       {retryError && (
-        <div role="alert" className="mb-2 text-sm text-red-600">
+        <div
+          role="alert"
+          className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+        >
           {retryError}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-4">
         {midSlots.map((m) => (
           <MidSlot
             key={`mid-${m.segment_index}`}
@@ -284,6 +335,7 @@ export function MidFinalSlots({
             forceFailed={forceFailed}
             testRouteBase={baseRoute}
             onRetry={() => handleRetryMid(m.segment_index)}
+            t={t}
           />
         ))}
         <FinalSlot
@@ -291,6 +343,7 @@ export function MidFinalSlots({
           forceFailed={forceFailed}
           testRouteBase={baseRoute}
           onRetry={handleRetryFinal}
+          t={t}
         />
       </div>
     </section>

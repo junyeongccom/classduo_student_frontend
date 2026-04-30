@@ -21,6 +21,7 @@ import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
 import { FinalTestPanel } from '../ui/FinalTestPanel'
+import { MidFinalSlots } from './MidFinalSlots'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
 import type { CoreTest, ExamPrepData, TestSetTab } from '../../types'
@@ -184,6 +185,9 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
               )}
             </div>
           </div>
+
+          {/* 백엔드 연동 mid/final 슬롯 (b2b20260430) — 본문 폭(max-w-5xl) 안에 정렬 */}
+          <MidFinalSlots courseId={courseId} />
         </div>
       </div>
     </>
