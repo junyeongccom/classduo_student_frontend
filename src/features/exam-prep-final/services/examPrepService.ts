@@ -43,12 +43,19 @@ export interface CoreTestQuestionItemDto {
   difficulty?: number | null
 }
 
-/** 백엔드 응답 — core test 상세 (메타 + 문항) */
+/** 백엔드 응답 — test 상세 (메타 + 문항). core/mid/final 통합 shape (b2b20260430 §G18). */
 export interface CoreTestDetailDto {
   test_id: string
-  lecture_session_id: string
-  lecture_no: number
+  /** 'core' | 'mid' | 'final' — 통합 엔드포인트가 채움 */
+  test_type?: 'core' | 'mid' | 'final'
+  /** core 만 채움. mid/final 은 null */
+  lecture_session_id: string | null
+  /** core 만 채움 */
+  lecture_no: number | null
   lecture_date: string | null
+  /** mid 만 채움 (1~3) */
+  segment_index?: number | null
+  /** core: 회차 제목 / mid: "중간 테스트 N" / final: "최종 테스트" */
   title: string | null
   questions: CoreTestQuestionItemDto[]
 }
@@ -67,12 +74,16 @@ export async function fetchCoreTestsByCourse(
   return { data: result.data ?? null, error: null }
 }
 
-/** 단일 core test 상세 조회 */
+/** 단일 test 상세 조회 — core/mid/final 통합 (b2b20260430 §G18).
+ *
+ * 명칭은 historical naming 으로 유지 (CoreTestSolveContainer 와 동일 정책).
+ * 경로는 통합 엔드포인트 `/exam-prep/tests/{testId}` 를 사용한다.
+ */
 export async function fetchCoreTestDetail(
   testId: string,
 ): Promise<{ data: CoreTestDetailDto | null; error: string | null }> {
   const result = await apiRequest<CoreTestDetailDto>(
-    `/exam-prep/core-tests/${testId}`,
+    `/exam-prep/tests/${testId}`,
     { auth: true },
   )
   if (result.error) {
