@@ -93,6 +93,11 @@ export function CoreTestSolveContainer({
     skilled: 0,
     master: 0,
   })
+  /** 문항별 mastery state 맵 (question_id → 'learning'|'skilled'|'master'). 풀이 페이지 진입
+   *  시 mastery_summary.by_question 으로 초기화, grade 응답마다 new_state 로 갱신. */
+  const [byQuestionState, setByQuestionState] = useState<Record<string, string>>(
+    {},
+  )
 
   // 경과 시간 타이머
   useEffect(() => {
@@ -118,6 +123,7 @@ export function CoreTestSolveContainer({
           skilled: data.summary.skilled,
           master: data.summary.master,
         })
+        setByQuestionState(data.by_question ?? {})
       }
     })
     return () => {
@@ -400,6 +406,14 @@ export function CoreTestSolveContainer({
 
     setGradedBySeq((prev) => ({ ...prev, [currentSeq]: result }))
 
+    // 문항별 mastery state 갱신 — Issue 2/3 의 현재 문항 상태 표시 데이터 소스
+    if (qid) {
+      setByQuestionState((prev) => ({
+        ...prev,
+        [qid]: result.mastery.new_state,
+      }))
+    }
+
     // mastery summary 갱신 (백엔드 응답 기반 변동)
     const m = result.mastery
     if (!hintUsed) {
@@ -559,6 +573,13 @@ export function CoreTestSolveContainer({
             hintDisabledOption={hintDisabledBySeq[currentSeq] ?? null}
             isGrading={isGrading}
             masterySummary={masterySummary}
+            currentQuestionState={
+              (byQuestionState[seqToQuestionId.get(currentSeq) ?? ''] as
+                | 'learning'
+                | 'skilled'
+                | 'master'
+                | undefined) ?? null
+            }
             onSelectChoice={handleSelectChoice}
             onSubmit={handleSubmit}
             onHint={handleHintClick}

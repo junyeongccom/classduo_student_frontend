@@ -17,6 +17,7 @@ import {
   Flag,
   Lightbulb,
   Minus,
+  Star,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
@@ -44,6 +45,8 @@ interface SolveQuestionPanelProps {
   /** 채점 API 호출 중 — 제출 버튼 disable */
   isGrading: boolean
   masterySummary: MasterySummary
+  /** 현재 문항의 mastery state. 'master' 면 상단에 ★ 배지 영구 노출 + 진전도 배지에 보더. */
+  currentQuestionState: 'learning' | 'skilled' | 'master' | null
   onSelectChoice: (idx: number) => void
   onSubmit: () => void
   onHint: () => void
@@ -65,6 +68,7 @@ export function SolveQuestionPanel({
   hintDisabledOption,
   isGrading,
   masterySummary,
+  currentQuestionState,
   onSelectChoice,
   onSubmit,
   onHint,
@@ -111,28 +115,62 @@ export function SolveQuestionPanel({
   return (
     <div className="flex h-full flex-1 flex-col overflow-y-auto bg-[#F5F7F8] dark:bg-gray-950">
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-8 py-8">
-        {/* 상단 메타 — 단일 선택 + Learning/Skilled/Master 카운트 */}
+        {/* 상단 메타 — 단일 선택 (+ master 배지) + Learning/Skilled/Master 카운트
+              현재 문항이 master 면 단일선택 배지 옆에 ★ MASTER 배지 영구 표시.
+              현재 문항 진전도와 일치하는 카운트 배지에 ring 보더로 강조. */}
         <div className="mb-5 flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-gray-500 dark:border-gray-700 dark:text-gray-400">
-            <Minus className="h-3 w-3" />
-            {t('examPrepFinal.singleChoice')}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-gray-500 dark:border-gray-700 dark:text-gray-400">
+              <Minus className="h-3 w-3" />
+              {t('examPrepFinal.singleChoice')}
+            </span>
+            {currentQuestionState === 'master' && (
+              <span
+                aria-label="이 문항은 마스터 도달"
+                className="flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 font-bold text-violet-700"
+              >
+                <Star className="h-3 w-3 fill-violet-600 text-violet-600" />
+                MASTER
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-3 text-gray-500">
-            <span className="flex items-center gap-1">
+            <span
+              className={cn(
+                'flex items-center gap-1 rounded-full px-2 py-0.5',
+                currentQuestionState === 'learning'
+                  ? 'ring-2 ring-gray-400 ring-offset-1'
+                  : '',
+              )}
+            >
               <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
               <span className="font-semibold text-gray-700 dark:text-gray-300">
                 {masterySummary.learning}
               </span>
               <span>Learning</span>
             </span>
-            <span className="flex items-center gap-1">
+            <span
+              className={cn(
+                'flex items-center gap-1 rounded-full px-2 py-0.5',
+                currentQuestionState === 'skilled'
+                  ? 'ring-2 ring-cyan-400 ring-offset-1'
+                  : '',
+              )}
+            >
               <span className="inline-block h-2 w-2 rounded-full bg-cyan-400" />
               <span className="font-semibold text-cyan-600">
                 {masterySummary.skilled}
               </span>
               <span>Skilled</span>
             </span>
-            <span className="flex items-center gap-1">
+            <span
+              className={cn(
+                'flex items-center gap-1 rounded-full px-2 py-0.5',
+                currentQuestionState === 'master'
+                  ? 'ring-2 ring-emerald-500 ring-offset-1'
+                  : '',
+              )}
+            >
               <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
               <span className="font-semibold text-emerald-600">
                 {masterySummary.master}
