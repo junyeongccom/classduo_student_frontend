@@ -106,7 +106,9 @@ export function SolveQuestionPanel({
     return parseInt(question.answer, 10)
   })()
 
-  const isLocked = graded !== null
+  // 이미 마스터 도달한 문항 — 풀이 자체 차단 + 정답 영구 노출 (graded 와 별개로 락)
+  const isMasterLocked = currentQuestionState === 'master' && !graded
+  const isLocked = graded !== null || isMasterLocked
   const hintAvailable = !isLocked && hintRemainingSec === 0 && hintDisabledOption == null
   const hintTimerActive = !isLocked && hintRemainingSec > 0
   // 힌트 버튼 conic-gradient progress (0 → 100% 시계방향 채움)
@@ -210,13 +212,24 @@ export function SolveQuestionPanel({
           </div>
         )}
 
+        {/* 마스터 락 안내 (graded 가 아닌데도 풀이 차단된 상태) */}
+        {isMasterLocked && (
+          <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm leading-relaxed text-violet-800">
+            이 문항은 이미 <strong>마스터</strong>에 도달했습니다. 정답이 표시된 상태로
+            잠겨 있으며 다시 풀 수 없습니다.
+          </div>
+        )}
+
         {/* 선지 */}
         <div className="mt-6 flex flex-col gap-3">
           {question.options.map((opt, idx) => {
             const label = OPTION_LABELS[idx] ?? String.fromCharCode(65 + idx)
             const isSelected = selectedChoice === idx
             const isHintDisabled = hintDisabledOption === idx
-            const isCorrect = graded && idx === correctIdx
+            // master 락 시: 정답을 무조건 초록 강조 (graded 없이도 정답 노출)
+            const isCorrect =
+              (graded && idx === correctIdx) ||
+              (isMasterLocked && idx === correctIdx)
             const isWrongPick = graded && isSelected && !graded.is_correct
 
             // 시각 우선순위: 채점 후 정답 초록, 오답 선택 빨강, 힌트 disable 회색, 선택 보라
@@ -314,32 +327,43 @@ export function SolveQuestionPanel({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* 힌트 버튼 — 20초 타이머 + conic-gradient 애니메이션 */}
-            <button
-              type="button"
-              disabled={!hintAvailable}
-              onClick={onHint}
-              className={cn(
-                'relative flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold transition-colors',
-                hintAvailable
-                  ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200'
-                  : 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-700 dark:bg-gray-800',
-              )}
-              style={
-                hintTimerActive
-                  ? {
-                      backgroundImage: `conic-gradient(#6366F1 ${hintProgressPct}%, transparent ${hintProgressPct}%)`,
-                      backgroundOrigin: 'border-box',
-                      backgroundClip: 'border-box, padding-box',
-                    }
-                  : undefined
-              }
-            >
-              <Lightbulb className="h-4 w-4" />
-              {hintTimerActive ? `${hintRemainingSec}s` : t('examPrepFinal.hint')}
-            </button>
-            {/* 채점 전: [제출] / 채점 후: [해설보기] 토글 */}
-            {graded ? (
+            {/* 힌트 버튼 — master 락 상태에선 숨김 */}
+            {!isMasterLocked && (
+              <button
+                type="button"
+                disabled={!hintAvailable}
+                onClick={onHint}
+                className={cn(
+                  'relative flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold transition-colors',
+                  hintAvailable
+                    ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200'
+                    : 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-700 dark:bg-gray-800',
+                )}
+                style={
+                  hintTimerActive
+                    ? {
+                        backgroundImage: `conic-gradient(#6366F1 ${hintProgressPct}%, transparent ${hintProgressPct}%)`,
+                        backgroundOrigin: 'border-box',
+                        backgroundClip: 'border-box, padding-box',
+                      }
+                    : undefined
+                }
+              >
+                <Lightbulb className="h-4 w-4" />
+                {hintTimerActive ? `${hintRemainingSec}s` : t('examPrepFinal.hint')}
+              </button>
+            )}
+            {/* master 락: [다음] 으로 넘어가기만 / 채점 전: [제출] / 채점 후: [해설보기] 토글 */}
+            {isMasterLocked ? (
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={!hasNext}
+                className="rounded-lg bg-violet-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-40"
+              >
+                다음 문항
+              </button>
+            ) : graded ? (
               <button
                 type="button"
                 onClick={() => setShowExplanation((v) => !v)}

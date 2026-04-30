@@ -179,17 +179,18 @@ export function CoreTestSolveContainer({
     }
   }, [testId, restartTrigger])
 
-  // detail + attempt 모두 로드된 후 question_id ↔ seq 매핑
+  // detail 로 부터 seq → question_id 직접 매핑 (모든 15문항 — 마스터 포함).
+  // 이전 구현은 attemptQuestionIds(미마스터만) 와 인덱스 매칭하여 마스터 문항을 lookup
+  // 할 수 없었음. data.questions[].id 사용으로 마스터/미마스터 무관 mastery_summary
+  // 와 매핑 가능.
   const seqToQuestionId = useMemo(() => {
-    if (!data || attemptQuestionIds.length === 0) return new Map<number, string>()
-    const ordered = [...data.questions].sort((a, b) => a.seq - b.seq)
+    if (!data) return new Map<number, string>()
     const map = new Map<number, string>()
-    ordered.forEach((q, idx) => {
-      const qid = attemptQuestionIds[idx]
-      if (qid) map.set(q.seq, qid)
+    data.questions.forEach((q) => {
+      if (q.id) map.set(q.seq, q.id)
     })
     return map
-  }, [data, attemptQuestionIds])
+  }, [data])
 
   // resume 응답 복원 (seq 매핑 완료 후)
   useEffect(() => {

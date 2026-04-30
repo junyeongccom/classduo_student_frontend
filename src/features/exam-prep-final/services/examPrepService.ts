@@ -32,6 +32,8 @@ export interface CoreTestListResponseDto {
 
 /** 백엔드 응답 — core test 단일 문항 (정답·해설·hint 포함) */
 export interface CoreTestQuestionItemDto {
+  /** question_id (UUID) — mastery_summary.by_question 매핑 키 */
+  id: string
   seq: number
   stem: string
   options: string[]
