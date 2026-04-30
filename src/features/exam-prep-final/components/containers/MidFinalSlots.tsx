@@ -16,7 +16,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, type MouseEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   AlertTriangle,
@@ -29,6 +29,7 @@ import {
 
 import { useExamPrepGeneratingPolling } from '../../hooks/useExamPrepGeneratingPolling'
 import {
+  debugTriggerMidTest,
   retryFinalTest,
   retryMidTest,
   type FinalTestMetaDto,
@@ -65,17 +66,34 @@ function MidSlot({
   forceFailed,
   testRouteBase,
   onRetry,
+  onDebugTrigger,
   t,
 }: {
   meta: MidTestMetaDto
   forceFailed: boolean
   testRouteBase: string
   onRetry: () => Promise<void>
+  /** [DEBUG ONLY — 출시 전 삭제] locked 상태 빨간 점 클릭 시 호출 */
+  onDebugTrigger: () => Promise<void>
   t: Translator
 }) {
   const status = _statusLabel(meta.status, forceFailed)
   const label = t('examPrepFinal.midSlotLabel', { index: meta.segment_index })
   const rangeText = _rangeTooltip(t, meta.range_session_nos)
+  // === DEBUG START — 출시 전 삭제 ===
+  const [isDebugTriggering, setIsDebugTriggering] = useState(false)
+  const handleDebugClick = async (e: MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isDebugTriggering) return
+    setIsDebugTriggering(true)
+    try {
+      await onDebugTrigger()
+    } finally {
+      setIsDebugTriggering(false)
+    }
+  }
+  // === DEBUG END ===
 
   if (status === 'locked') {
     return (
@@ -87,8 +105,18 @@ function MidSlot({
           hint: rangeText,
         })}
         title={rangeText}
-        className={`${SLOT_BASE_CLASSES} cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-500`}
+        className={`${SLOT_BASE_CLASSES} relative cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-500`}
       >
+        {/* === DEBUG START — 출시 전 삭제 === */}
+        <button
+          type="button"
+          aria-label="[DEBUG] 중간 테스트 강제 생성"
+          title="[DEBUG] 강제 트리거 (출시 전 삭제 예정)"
+          onClick={handleDebugClick}
+          disabled={isDebugTriggering}
+          className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-red-500 ring-1 ring-white shadow-sm hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-wait disabled:opacity-50"
+        />
+        {/* === DEBUG END === */}
         <Lock className="h-5 w-5 text-gray-400" aria-hidden />
         <span className="text-sm font-medium text-gray-700">{label}</span>
         <span className="text-xs leading-snug text-gray-500">{rangeText}</span>
@@ -292,6 +320,19 @@ export function MidFinalSlots({
     router.refresh()
   }
 
+  // === DEBUG START — 출시 전 삭제 ===
+  const handleDebugTriggerMid = async (segmentIndex: 1 | 2 | 3) => {
+    setRetryError(null)
+    const r = await debugTriggerMidTest(courseId, segmentIndex)
+    if (!r.ok) {
+      setRetryError(r.error || '[DEBUG] 강제 트리거 실패')
+      return
+    }
+    await refresh()
+    router.refresh()
+  }
+  // === DEBUG END ===
+
   // 백엔드 응답이 도착하기 전 — locked 기본값으로 4슬롯 자리 잡아둠
   const midSlots: MidTestMetaDto[] =
     midData?.items
@@ -335,6 +376,7 @@ export function MidFinalSlots({
             forceFailed={forceFailed}
             testRouteBase={baseRoute}
             onRetry={() => handleRetryMid(m.segment_index)}
+            onDebugTrigger={() => handleDebugTriggerMid(m.segment_index)}
             t={t}
           />
         ))}

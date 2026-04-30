@@ -135,3 +135,20 @@ export async function retryFinalTest(
   if (result.error) return { ok: false, error: result.error.message }
   return { ok: true, error: null }
 }
+
+// ─────────────────────────────────────────
+// [DEBUG ONLY — 출시 전 삭제] mid 강제 트리거
+// ─────────────────────────────────────────
+
+export async function debugTriggerMidTest(
+  courseId: string,
+  segmentIndex: 1 | 2 | 3,
+): Promise<{ ok: boolean; error: string | null }> {
+  const result = await apiRequest<unknown>(`/exam-prep/mid-tests/debug-trigger`, {
+    method: 'POST',
+    auth: true,
+    body: { course_id: courseId, segment_index: segmentIndex },
+  })
+  if (result.error) return { ok: false, error: result.error.message }
+  return { ok: true, error: null }
+}
