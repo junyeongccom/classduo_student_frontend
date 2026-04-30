@@ -212,14 +212,6 @@ export function SolveQuestionPanel({
           </div>
         )}
 
-        {/* 마스터 락 안내 (graded 가 아닌데도 풀이 차단된 상태) */}
-        {isMasterLocked && (
-          <div className="mt-5 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm leading-relaxed text-violet-800">
-            이 문항은 이미 <strong>마스터</strong>에 도달했습니다. 정답이 표시된 상태로
-            잠겨 있으며 다시 풀 수 없습니다.
-          </div>
-        )}
-
         {/* 선지 */}
         <div className="mt-6 flex flex-col gap-3">
           {question.options.map((opt, idx) => {
