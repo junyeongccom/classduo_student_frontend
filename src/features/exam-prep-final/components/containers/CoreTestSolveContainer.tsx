@@ -29,6 +29,7 @@ import {
   getAttempt,
   gradeAttemptResponse,
   fetchTestMasterySummary,
+  type AttemptResponseItemDto,
   type CoreTestQuestionItemDto,
   type GradeSingleResponseDto,
 } from '../../services/examPrepService'
@@ -83,6 +84,10 @@ export function CoreTestSolveContainer({
   const [hintDisabledBySeq, setHintDisabledBySeq] = useState<
     Record<number, number>
   >({})
+  /** 이어풀기용 서버 응답 스냅샷 — seq 매핑 + data 로드 완료 시 1회 복원 후 null */
+  const [resumeResponses, setResumeResponses] = useState<
+    AttemptResponseItemDto[] | null
+  >(null)
 
   // ─── UI 상태 ───
   const [currentSeq, setCurrentSeq] = useState(1)
@@ -142,6 +147,7 @@ export function CoreTestSolveContainer({
       setGradedBySeq({})
       setHintUsedSeqs(new Set())
       setHintDisabledBySeq({})
+      setResumeResponses(null)
       setCurrentSeq(1)
       setElapsedSec(0)
 
@@ -155,15 +161,12 @@ export function CoreTestSolveContainer({
       setAttemptId(a.attempt_id)
       setAttemptQuestionIds(a.question_ids)
 
-      // resume 시 기존 채점된 응답 복원
+      // resume 시 기존 채점된 응답 복원 — 사이드채널(window) 대신 state 로 보관해
+      // seq 매핑 + data 로드 완료 시점과의 race 를 effect 의존성으로 해소.
       if (a.resumed) {
         const { data: full } = await getAttempt(a.attempt_id)
-        if (full && !cancelled) {
-          // question_id → seq 매핑은 detail 로드 후에 수행 (별도 effect)
-          ;(window as any).__examPrepResumeMap__ = full.responses
-        }
-      } else {
-        ;(window as any).__examPrepResumeMap__ = null
+        if (cancelled) return
+        if (full) setResumeResponses(full.responses)
       }
 
       // 이미 submitted 상태라면 결과 화면으로
@@ -192,17 +195,10 @@ export function CoreTestSolveContainer({
     return map
   }, [data])
 
-  // resume 응답 복원 (seq 매핑 완료 후)
+  // resume 응답 복원 (seq 매핑 + data + 서버응답 모두 갖춰진 시점에 1회)
   useEffect(() => {
     if (seqToQuestionId.size === 0) return
-    const resumeResponses = (window as any).__examPrepResumeMap__ as
-      | Array<{
-          question_id: string
-          selected: string
-          is_correct: boolean | null
-          hint_used: boolean | null
-        }>
-      | null
+    if (!data) return
     if (!resumeResponses) return
     const restoredSelected: Record<number, number> = {}
     const restoredGraded: Record<number, GradeSingleResponseDto> = {}
@@ -274,10 +270,9 @@ export function CoreTestSolveContainer({
       setCurrentSeq(firstUnanswered)
     }
 
-    ;(window as any).__examPrepResumeMap__ = null
-  // data 도 의존성에 포함 — questions 로 correct_answer·explanation 채우기 위함
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seqToQuestionId])
+    // 1회 소비 후 비워서 재발화 방지 (다시풀기 시 start() 가 다시 채움)
+    setResumeResponses(null)
+  }, [seqToQuestionId, data, resumeResponses])
 
   // 회차 메타
   const matchedLecture = useMemo(() => {
