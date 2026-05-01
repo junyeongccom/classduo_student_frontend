@@ -1,6 +1,6 @@
 /**
  * @file SolveSidebar.tsx
- * @description 풀이 페이지 좌측 사이드바 — 회차정보 + 문항 그리드 + 경과시간
+ * @description 풀이 페이지 좌측 사이드바 — 회차정보 + 숙련도 컬러 문항 그리드 + 경과시간
  * @module features/exam-prep-final/components/ui
  */
 
@@ -8,6 +8,14 @@
 
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
+
+type MasteryState = 'learning' | 'skilled' | 'master'
+
+interface MasterySummary {
+  learning: number
+  skilled: number
+  master: number
+}
 
 interface SolveSidebarProps {
   /** 회차 라벨 (예: "3주차 2차시") */
@@ -18,12 +26,28 @@ interface SolveSidebarProps {
   total: number
   /** 현재 1-based 문항 번호 */
   currentSeq: number
-  /** 답변한 문항 seq 집합 */
-  answeredSeqs: Set<number>
+  /** seq → mastery state. 없으면 미답(누적 mastery 없음) 처리 */
+  seqStateMap: Map<number, MasteryState>
+  /** 누적 숙련도 카운트 — Learning/Skilled/Master 합산 */
+  masterySummary: MasterySummary
+  /** 현재 문항의 mastery state — 해당 줄에 ring 강조 */
+  currentQuestionState: MasteryState | null
   /** 클릭으로 이동 */
   onSelectSeq: (seq: number) => void
   /** 경과 시간 (초) */
   elapsedSec: number
+}
+
+const STATE_BG: Record<MasteryState, string> = {
+  learning: 'bg-[#D9D9D9] text-gray-700',
+  skilled: 'bg-[#FFCD36] text-gray-900',
+  master: 'bg-[#C4B5FD] text-violet-700',
+}
+
+const STATE_RING: Record<MasteryState, string> = {
+  learning: 'ring-[#D9D9D9]',
+  skilled: 'ring-[#FFCD36]',
+  master: 'ring-[#C4B5FD]',
 }
 
 export function SolveSidebar({
@@ -31,12 +55,13 @@ export function SolveSidebar({
   lectureTitle,
   total,
   currentSeq,
-  answeredSeqs,
+  seqStateMap,
+  masterySummary,
+  currentQuestionState,
   onSelectSeq,
   elapsedSec,
 }: SolveSidebarProps) {
   const t = useTranslations()
-  // 5열 고정 그리드
   const seqs = Array.from({ length: total }, (_, i) => i + 1)
 
   return (
@@ -49,23 +74,49 @@ export function SolveSidebar({
         </h2>
       </div>
 
-      {/* 문항 그리드 */}
-      <div className="grid grid-cols-5 gap-1.5">
+      {/* 숙련도 카운트 — 현재 문항의 mastery 줄에 ring 강조 */}
+      <div className="flex flex-col gap-1">
+        <MasteryRow
+          color="#D9D9D9"
+          label="Learning"
+          count={masterySummary.learning}
+          ringColor="#9CA3AF"
+          highlighted={currentQuestionState === 'learning'}
+        />
+        <MasteryRow
+          color="#FFCD36"
+          label="Skilled"
+          count={masterySummary.skilled}
+          ringColor="#FFCD36"
+          highlighted={currentQuestionState === 'skilled'}
+        />
+        <MasteryRow
+          color="#A78BFA"
+          label="Master"
+          count={masterySummary.master}
+          ringColor="#A78BFA"
+          highlighted={currentQuestionState === 'master'}
+        />
+      </div>
+
+      {/* 문항 그리드 — 박스 크기 고정 + 현재 문항은 같은 색 ring + 폰트 키움 트릭 */}
+      <div className="grid grid-cols-5 gap-2">
         {seqs.map((seq) => {
           const isCurrent = seq === currentSeq
-          const isAnswered = answeredSeqs.has(seq)
+          const state = seqStateMap.get(seq)
+          const bgCls = state ? STATE_BG[state] : 'bg-gray-100 text-gray-500'
+          const ringCls = state ? STATE_RING[state] : 'ring-gray-200'
           return (
             <button
               key={seq}
               type="button"
               onClick={() => onSelectSeq(seq)}
               className={cn(
-                'flex h-7 w-7 items-center justify-center rounded text-[11px] font-semibold transition-colors',
+                'flex h-7 w-7 items-center justify-center rounded-full leading-none transition-all',
+                bgCls,
                 isCurrent
-                  ? 'bg-[#6366F1] text-white'
-                  : isAnswered
-                    ? 'bg-[#DBDAFB] text-[#383698] hover:bg-[#C5C3F8]'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400',
+                  ? cn('text-[13px] font-bold ring-2 ring-offset-1', ringCls)
+                  : 'text-[11px] font-semibold hover:brightness-95',
               )}
             >
               {seq}
@@ -74,8 +125,8 @@ export function SolveSidebar({
         })}
       </div>
 
-      {/* 경과 시간 */}
-      <div className="mt-auto flex items-center justify-between text-sm">
+      {/* 경과 시간 — 문항 그리드 바로 아래 */}
+      <div className="flex items-center justify-between text-sm">
         <span className="text-gray-500 dark:text-gray-400">
           {t('examPrepFinal.elapsedTime')}
         </span>
@@ -87,9 +138,33 @@ export function SolveSidebar({
   )
 }
 
-/** 초 → mm:ss */
 function formatElapsed(sec: number): string {
   const m = Math.floor(sec / 60)
   const s = sec % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+interface MasteryRowProps {
+  color: string
+  label: string
+  count: number
+  ringColor: string
+  highlighted: boolean
+}
+
+/** 숙련도 한 줄 — 점 + 라벨 + 카운트. highlighted 면 같은 톤 ring 으로 현재 문항 표시. */
+function MasteryRow({ color, label, count, ringColor, highlighted }: MasteryRowProps) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-md px-2 py-1 text-[13px] font-bold text-gray-800 transition-all"
+      style={highlighted ? { boxShadow: `inset 0 0 0 2px ${ringColor}` } : undefined}
+    >
+      <span
+        className="inline-block h-3 w-3 shrink-0 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      <span>{label}</span>
+      <span className="ml-auto tabular-nums">{count}</span>
+    </div>
+  )
 }

@@ -257,10 +257,19 @@ export function CoreTestSolveContainer({
   }, [data, currentSeq])
 
   const total = data?.questions.length ?? 0
-  const answeredSeqs = useMemo(
-    () => new Set(Object.keys(gradedBySeq).map((k) => Number(k))),
-    [gradedBySeq],
-  )
+
+  /** seq → mastery state. 사이드바 1~10 버튼의 숙련도 컬러 매핑 데이터 소스.
+   *  누적 mastery 그대로 표시 (b2b20260502 #3 — 한 번도 푼 적 없으면 미답, 이미 Master 면 보라). */
+  const seqStateMap = useMemo<Map<number, 'learning' | 'skilled' | 'master'>>(() => {
+    const m = new Map<number, 'learning' | 'skilled' | 'master'>()
+    seqToQuestionId.forEach((qid, seq) => {
+      const s = byQuestionState[qid]
+      if (s === 'learning' || s === 'skilled' || s === 'master') {
+        m.set(seq, s)
+      }
+    })
+    return m
+  }, [seqToQuestionId, byQuestionState])
 
   // 모든 문항 채점 완료 — 자동 전환 X. [다음] 버튼 클릭 시에만 결과 화면으로.
   // gamification 위젯은 마지막 채점 시점에 한 번만 새로고침 신호.
@@ -517,7 +526,15 @@ export function CoreTestSolveContainer({
           lectureTitle={lectureTitle}
           total={total}
           currentSeq={currentSeq}
-          answeredSeqs={answeredSeqs}
+          seqStateMap={seqStateMap}
+          masterySummary={masterySummary}
+          currentQuestionState={
+            (byQuestionState[seqToQuestionId.get(currentSeq) ?? ''] as
+              | 'learning'
+              | 'skilled'
+              | 'master'
+              | undefined) ?? null
+          }
           onSelectSeq={(seq) => setCurrentSeq(seq)}
           elapsedSec={elapsedSec}
         />
@@ -531,7 +548,6 @@ export function CoreTestSolveContainer({
             graded={gradedBySeq[currentSeq] ?? null}
             hintDisabledOption={hintDisabledBySeq[currentSeq] ?? null}
             isGrading={isGrading}
-            masterySummary={masterySummary}
             currentQuestionState={
               (byQuestionState[seqToQuestionId.get(currentSeq) ?? ''] as
                 | 'learning'

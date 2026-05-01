@@ -1,6 +1,6 @@
 /**
  * @file SolveQuestionPanel.tsx
- * @description 풀이 페이지 메인 — 즉시 채점 흐름 (정오답/해설 표시) + 힌트 버튼
+ * @description 풀이 페이지 메인 — 즉시 채점 흐름 (정오답/해설 표시) + 힌트 버튼 + 키보드 조작
  * @module features/exam-prep-final/components/ui
  */
 
@@ -16,8 +16,6 @@ import {
   FileText,
   Flag,
   Lightbulb,
-  Minus,
-  Star,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
@@ -25,12 +23,6 @@ import type {
   CoreTestQuestionItemDto,
   GradeSingleResponseDto,
 } from '../../services/examPrepService'
-
-interface MasterySummary {
-  learning: number
-  skilled: number
-  master: number
-}
 
 interface SolveQuestionPanelProps {
   question: CoreTestQuestionItemDto
@@ -44,8 +36,7 @@ interface SolveQuestionPanelProps {
   hintDisabledOption: number | null
   /** 채점 API 호출 중 — 제출 버튼 disable */
   isGrading: boolean
-  masterySummary: MasterySummary
-  /** 현재 문항의 mastery state. 'master' 면 상단에 ★ 배지 영구 노출 + 진전도 배지에 보더. */
+  /** 현재 문항의 mastery state. 'master' 면 풀이 락 + 정답 자동 노출 (사이드바에서 색으로 표시). */
   currentQuestionState: 'learning' | 'skilled' | 'master' | null
   onSelectChoice: (idx: number) => void
   onSubmit: () => void
@@ -58,6 +49,8 @@ interface SolveQuestionPanelProps {
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E']
 const HINT_DELAY_SEC = 20
+/** 오답 shake 지속시간 — 끝난 뒤 정답 강조 표시. tailwind keyframes shake-x 와 동기. */
+const SHAKE_MS = 420
 
 export function SolveQuestionPanel({
   question,
@@ -67,7 +60,6 @@ export function SolveQuestionPanel({
   graded,
   hintDisabledOption,
   isGrading,
-  masterySummary,
   currentQuestionState,
   onSelectChoice,
   onSubmit,
@@ -78,27 +70,25 @@ export function SolveQuestionPanel({
   hasNext,
 }: SolveQuestionPanelProps) {
   const t = useTranslations()
-  // 힌트 버튼 타이머 — currentSeq 가 바뀌면 리셋
-  const [hintRemainingSec, setHintRemainingSec] = useState(HINT_DELAY_SEC)
+  // 힌트 진행률 0~100 (% 단위) — RAF 로 매 프레임 갱신, 끊김 없음
+  const [hintProgressPct, setHintProgressPct] = useState(0)
+  const hintStartRef = useRef<number | null>(null)
   // 해설보기 토글 — currentSeq 가 바뀌면 자동 닫힘
   const [showExplanation, setShowExplanation] = useState(false)
+  // 오답 시 shake 모션 중 여부 — true 동안엔 정답 표시를 보류
+  const [shaking, setShaking] = useState(false)
   const seqRef = useRef(currentSeq)
 
+  // 문항 전환 시 힌트/해설/shake 리셋
   useEffect(() => {
     if (seqRef.current !== currentSeq) {
       seqRef.current = currentSeq
-      setHintRemainingSec(HINT_DELAY_SEC)
+      setHintProgressPct(0)
+      hintStartRef.current = null
       setShowExplanation(false)
+      setShaking(false)
     }
   }, [currentSeq])
-
-  useEffect(() => {
-    if (hintRemainingSec <= 0) return
-    const id = setInterval(() => {
-      setHintRemainingSec((s) => Math.max(0, s - 1))
-    }, 1000)
-    return () => clearInterval(id)
-  }, [hintRemainingSec])
 
   // 정답 인덱스 (백엔드 graded.correct_answer 또는 question.answer)
   const correctIdx = (() => {
@@ -106,83 +96,106 @@ export function SolveQuestionPanel({
     return parseInt(question.answer, 10)
   })()
 
-  // 이미 마스터 도달한 문항 — 풀이 자체 차단 + 정답 영구 노출 (graded 와 별개로 락)
+  // master 락 + 채점 락
   const isMasterLocked = currentQuestionState === 'master' && !graded
   const isLocked = graded !== null || isMasterLocked
-  const hintAvailable = !isLocked && hintRemainingSec === 0 && hintDisabledOption == null
-  const hintTimerActive = !isLocked && hintRemainingSec > 0
-  // 힌트 버튼 conic-gradient progress (0 → 100% 시계방향 채움)
-  const hintProgressPct = ((HINT_DELAY_SEC - hintRemainingSec) / HINT_DELAY_SEC) * 100
+
+  // 오답 채점 도착 시 shake 시작 → SHAKE_MS 후 종료 (정답 강조 노출 트리거)
+  useEffect(() => {
+    if (graded && !graded.is_correct) {
+      setShaking(true)
+      const id = setTimeout(() => setShaking(false), SHAKE_MS)
+      return () => clearTimeout(id)
+    }
+    setShaking(false)
+  }, [graded])
+
+  // 힌트 progress RAF — isLocked / 100% 도달 / 문항 전환 시 정지
+  useEffect(() => {
+    if (isLocked) return
+    if (hintProgressPct >= 100) return
+    let rafId = 0
+    const tick = (now: number) => {
+      if (hintStartRef.current === null) hintStartRef.current = now
+      const elapsed = (now - hintStartRef.current) / 1000
+      const pct = Math.min(100, (elapsed / HINT_DELAY_SEC) * 100)
+      setHintProgressPct(pct)
+      if (pct < 100) rafId = requestAnimationFrame(tick)
+    }
+    rafId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafId)
+  }, [currentSeq, isLocked, hintProgressPct])
+
+  const hintRemainingSec = Math.max(
+    0,
+    Math.ceil(HINT_DELAY_SEC - (hintProgressPct / 100) * HINT_DELAY_SEC),
+  )
+  const hintAvailable =
+    !isLocked && hintProgressPct >= 100 && hintDisabledOption == null
+  const hintTimerActive = !isLocked && hintProgressPct < 100
+
+  // 키보드 조작 — ↑/↓ 선지 이동, ←/→ 문제 이동.
+  // 첫 진입 시 ↓ 누르면 0번, ↑ 누르면 마지막. 채점/락 상태에서 ↑↓ 무시.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (isLocked || isGrading) return
+        e.preventDefault()
+        const max = question.options.length
+        if (max === 0) return
+        if (selectedChoice === null) {
+          onSelectChoice(e.key === 'ArrowDown' ? 0 : max - 1)
+          return
+        }
+        let next = selectedChoice + (e.key === 'ArrowDown' ? 1 : -1)
+        // 힌트로 disable된 옵션은 건너뛰기
+        const isBlocked = (i: number) => hintDisabledOption === i
+        let safety = max
+        while (isBlocked(next) && safety-- > 0) {
+          next += e.key === 'ArrowDown' ? 1 : -1
+        }
+        next = Math.max(0, Math.min(max - 1, next))
+        if (!isBlocked(next)) onSelectChoice(next)
+      } else if (e.key === 'ArrowLeft') {
+        if (hasPrev) {
+          e.preventDefault()
+          onPrev()
+        }
+      } else if (e.key === 'ArrowRight') {
+        if (hasNext) {
+          e.preventDefault()
+          onNext()
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [
+    selectedChoice,
+    question.options.length,
+    hintDisabledOption,
+    isLocked,
+    isGrading,
+    hasPrev,
+    hasNext,
+    onSelectChoice,
+    onPrev,
+    onNext,
+  ])
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-y-auto bg-[#F5F7F8] dark:bg-gray-950">
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-8 py-8">
-        {/* 상단 메타 — 단일 선택 (+ master 배지) + Learning/Skilled/Master 카운트
-              현재 문항이 master 면 단일선택 배지 옆에 ★ MASTER 배지 영구 표시.
-              현재 문항 진전도와 일치하는 카운트 배지에 ring 보더로 강조. */}
-        <div className="mb-5 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-gray-500 dark:border-gray-700 dark:text-gray-400">
-              <Minus className="h-3 w-3" />
-              {t('examPrepFinal.singleChoice')}
-            </span>
-            {currentQuestionState === 'master' && (
-              <span
-                aria-label="이 문항은 마스터 도달"
-                className="flex items-center gap-1 rounded-full bg-violet-100 px-2.5 py-1 font-bold text-violet-700"
-              >
-                <Star className="h-3 w-3 fill-violet-600 text-violet-600" />
-                MASTER
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 text-gray-500">
-            <span
-              className={cn(
-                'flex items-center gap-1 rounded-full px-2 py-0.5',
-                currentQuestionState === 'learning'
-                  ? 'ring-2 ring-gray-400 ring-offset-1'
-                  : '',
-              )}
-            >
-              <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
-              <span className="font-semibold text-gray-700 dark:text-gray-300">
-                {masterySummary.learning}
-              </span>
-              <span>Learning</span>
-            </span>
-            <span
-              className={cn(
-                'flex items-center gap-1 rounded-full px-2 py-0.5',
-                currentQuestionState === 'skilled'
-                  ? 'ring-2 ring-cyan-400 ring-offset-1'
-                  : '',
-              )}
-            >
-              <span className="inline-block h-2 w-2 rounded-full bg-cyan-400" />
-              <span className="font-semibold text-cyan-600">
-                {masterySummary.skilled}
-              </span>
-              <span>Skilled</span>
-            </span>
-            <span
-              className={cn(
-                'flex items-center gap-1 rounded-full px-2 py-0.5',
-                currentQuestionState === 'master'
-                  ? 'ring-2 ring-emerald-500 ring-offset-1'
-                  : '',
-              )}
-            >
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-              <span className="font-semibold text-emerald-600">
-                {masterySummary.master}
-              </span>
-              <span>Master</span>
-            </span>
-          </div>
-        </div>
-
-        {/* 문제 stem */}
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-8 py-8">
+        {/* 문제 stem — 상단 메타(단일선택/숙련도 카운트)는 사이드바로 통합 */}
         <h1 className="text-3xl font-bold leading-snug text-gray-900 dark:text-gray-50">
           {question.stem}
         </h1>
@@ -191,7 +204,7 @@ export function SolveQuestionPanel({
         {graded && (
           <div className="mt-5 flex items-center gap-2">
             {graded.is_correct ? (
-              <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
+              <span className="flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700">
                 <Check className="h-4 w-4" /> 정답
               </span>
             ) : (
@@ -212,19 +225,19 @@ export function SolveQuestionPanel({
           </div>
         )}
 
-        {/* 선지 */}
+        {/* 선지 — 그림자 추가, 정답=연보라 outline, 오답=빨강 + shake-then-reveal */}
         <div className="mt-6 flex flex-col gap-3">
           {question.options.map((opt, idx) => {
             const label = OPTION_LABELS[idx] ?? String.fromCharCode(65 + idx)
             const isSelected = selectedChoice === idx
             const isHintDisabled = hintDisabledOption === idx
-            // master 락 시: 정답을 무조건 초록 강조 (graded 없이도 정답 노출)
-            const isCorrect =
-              (graded && idx === correctIdx) ||
+            // 정답 강조: shake 진행 중에는 보류, master 락에선 즉시
+            const showCorrectHighlight =
+              (graded && idx === correctIdx && !shaking) ||
               (isMasterLocked && idx === correctIdx)
-            const isWrongPick = graded && isSelected && !graded.is_correct
+            const isWrongPick = !!(graded && isSelected && !graded.is_correct)
+            const shouldShake = isWrongPick && shaking
 
-            // 시각 우선순위: 채점 후 정답 초록, 오답 선택 빨강, 힌트 disable 회색, 선택 보라
             return (
               <button
                 key={idx}
@@ -232,28 +245,38 @@ export function SolveQuestionPanel({
                 disabled={isLocked || isHintDisabled || isGrading}
                 onClick={() => onSelectChoice(idx)}
                 className={cn(
-                  'group flex w-full items-center gap-4 rounded-xl border px-5 py-4 text-left transition-colors',
-                  isCorrect
-                    ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
-                    : isWrongPick
-                      ? 'border-rose-400 bg-rose-50 dark:bg-rose-950/30'
-                      : isHintDisabled
-                        ? 'border-gray-200 bg-gray-50 opacity-50 dark:border-gray-700 dark:bg-gray-900'
-                        : isSelected
-                          ? 'border-[#6366F1] bg-[#6366F1]/5 dark:border-[#6366F1] dark:bg-[#6366F1]/10'
-                          : 'border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800',
+                  'group relative flex w-full items-center gap-4 rounded-xl border bg-white px-5 py-4 text-left shadow-sm transition-all',
+                  // base / hover / select — violet 계열로 통일
+                  !isLocked &&
+                    !isHintDisabled &&
+                    'hover:bg-violet-50/50 hover:shadow-md dark:bg-gray-900 dark:hover:bg-gray-800',
+                  isSelected &&
+                    !graded &&
+                    !isHintDisabled &&
+                    'border-violet-400 bg-violet-50 shadow-md dark:border-violet-500 dark:bg-violet-950/30',
+                  !isSelected && !graded && 'border-gray-200 dark:border-gray-700',
+                  // 정답 강조 — outline 으로 박스 크기 영향 X
+                  showCorrectHighlight &&
+                    'outline outline-[3px] outline-offset-[-2px] outline-[#A78BFA] bg-[#F5F3FF] dark:bg-violet-950/30',
+                  // 오답 선택 — 빨강 (border 두께는 동일, 색만 변경)
+                  isWrongPick &&
+                    'border-rose-400 bg-rose-50 dark:border-rose-500 dark:bg-rose-950/30',
+                  // 힌트 disable
+                  isHintDisabled &&
+                    'border-gray-200 bg-gray-50 opacity-50 dark:border-gray-700 dark:bg-gray-900',
                   (isLocked || isHintDisabled) && 'cursor-not-allowed',
+                  shouldShake && 'animate-shake-x',
                 )}
               >
                 <span
                   className={cn(
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sm font-bold transition-colors',
-                    isCorrect
-                      ? 'bg-emerald-500 text-white'
+                    showCorrectHighlight
+                      ? 'bg-[#A78BFA] text-white'
                       : isWrongPick
                         ? 'bg-rose-500 text-white'
                         : isSelected
-                          ? 'bg-[#6366F1] text-white'
+                          ? 'bg-violet-500 text-white'
                           : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
                   )}
                 >
@@ -272,25 +295,30 @@ export function SolveQuestionPanel({
           })}
         </div>
 
-        {/* 해설 (채점 후 + [해설보기] 토글 켜진 경우) */}
-        {graded?.explanation && showExplanation && (
-          <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              해설
-            </p>
-            {Object.entries(graded.explanation).map(([key, val]) => (
-              <p key={key} className="mb-1 last:mb-0">
-                <span className="font-semibold">
-                  {key.startsWith('opt')
-                    ? OPTION_LABELS[parseInt(key.slice(3), 10)]
-                    : key}
-                  :
-                </span>{' '}
-                {val}
-              </p>
-            ))}
-          </div>
-        )}
+        {/* 해설 — 채점 후엔 graded.explanation, master 락이면 question.explanation 사용 */}
+        {showExplanation &&
+          (() => {
+            const explanation = graded?.explanation ?? question.explanation
+            if (!explanation || Object.keys(explanation).length === 0) return null
+            return (
+              <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  해설
+                </p>
+                {Object.entries(explanation).map(([key, val]) => (
+                  <p key={key} className="mb-1 last:mb-0">
+                    <span className="font-semibold">
+                      {key.startsWith('opt')
+                        ? OPTION_LABELS[parseInt(key.slice(3), 10)]
+                        : key}
+                      :
+                    </span>{' '}
+                    {val}
+                  </p>
+                ))}
+              </div>
+            )
+          })()}
 
         {/* 하단 액션 영역 */}
         <div className="mt-8 flex items-center justify-between">
@@ -319,22 +347,22 @@ export function SolveQuestionPanel({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* 힌트 버튼 — master 락 상태에선 숨김 */}
+            {/* 힌트/제출/해설/다음 — 동일 크기(h-10, min-w-[104px], px-5)로 통일 */}
             {!isMasterLocked && (
               <button
                 type="button"
                 disabled={!hintAvailable}
                 onClick={onHint}
                 className={cn(
-                  'relative flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold transition-colors',
+                  'relative flex h-10 min-w-[104px] items-center justify-center gap-1.5 rounded-lg border px-5 text-sm font-semibold transition-colors',
                   hintAvailable
-                    ? 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200'
-                    : 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-700 dark:bg-gray-800',
+                    ? 'border-violet-300 bg-white text-violet-700 hover:bg-violet-50 dark:border-violet-600 dark:bg-gray-800 dark:text-violet-200'
+                    : 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400 dark:border-gray-700 dark:bg-gray-800',
                 )}
                 style={
                   hintTimerActive
                     ? {
-                        backgroundImage: `conic-gradient(#6366F1 ${hintProgressPct}%, transparent ${hintProgressPct}%)`,
+                        backgroundImage: `conic-gradient(#DEDEF8 ${hintProgressPct}%, transparent ${hintProgressPct}%)`,
                         backgroundOrigin: 'border-box',
                         backgroundClip: 'border-box, padding-box',
                       }
@@ -342,24 +370,18 @@ export function SolveQuestionPanel({
                 }
               >
                 <Lightbulb className="h-4 w-4" />
-                {hintTimerActive ? `${hintRemainingSec}s` : t('examPrepFinal.hint')}
+                <span className="inline-block w-9 text-center tabular-nums">
+                  {hintTimerActive
+                    ? `${hintRemainingSec}s`
+                    : t('examPrepFinal.hint')}
+                </span>
               </button>
             )}
-            {/* master 락: [다음] 으로 넘어가기만 / 채점 전: [제출] / 채점 후: [해설보기] 토글 */}
-            {isMasterLocked ? (
-              <button
-                type="button"
-                onClick={onNext}
-                disabled={!hasNext}
-                className="rounded-lg bg-violet-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-40"
-              >
-                다음 문항
-              </button>
-            ) : graded ? (
+            {isMasterLocked || graded ? (
               <button
                 type="button"
                 onClick={() => setShowExplanation((v) => !v)}
-                className="rounded-lg bg-[#6366F1] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#5558E6]"
+                className="flex h-10 min-w-[104px] items-center justify-center rounded-lg bg-violet-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-violet-600"
               >
                 {showExplanation ? '해설 닫기' : '해설보기'}
               </button>
@@ -368,7 +390,7 @@ export function SolveQuestionPanel({
                 type="button"
                 onClick={onSubmit}
                 disabled={selectedChoice === null || isLocked || isGrading}
-                className="rounded-lg bg-[#6366F1] px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#5558E6] disabled:opacity-40"
+                className="flex h-10 min-w-[104px] items-center justify-center rounded-lg bg-violet-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-violet-600 disabled:opacity-40"
               >
                 {isGrading ? '채점 중...' : t('examPrepFinal.submit')}
               </button>
