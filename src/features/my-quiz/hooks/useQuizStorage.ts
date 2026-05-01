@@ -74,7 +74,10 @@ export function useQuizStorage({
     setError(null)
 
     try {
-      const [bookmarkRes, incorrectRes] = await Promise.all([
+      // 1) 즐겨찾기 + 오답노트 + 시도 로그를 동시에 조회.
+      //    quiz_attempt_log 는 누적 incorrect_count 산출용 (content/customize/instructor),
+      //    exam_prep 는 별도로 mastery 에서 가져온다 (아래 4단계).
+      const [bookmarkRes, incorrectRes, attemptRes] = await Promise.all([
         statusService.getBookmarksByLectureIds(lectureIds, {
           limit: PAGE_SIZE,
           offset: 0,
@@ -83,6 +86,7 @@ export function useQuizStorage({
           limit: PAGE_SIZE,
           offset: 0,
         }),
+        statusService.fetchAttemptLogsByLectureIds(lectureIds),
       ])
 
       if (myReq !== requestIdRef.current) return
@@ -97,11 +101,23 @@ export function useQuizStorage({
         setIsLoading(false)
         return
       }
+      // attemptRes 실패는 비치명적 — wrong_count fallback 으로 계속 진행.
 
       const bookmarks = bookmarkRes.data ?? []
       const incorrects = incorrectRes.data ?? []
+      const attempts = attemptRes.data ?? []
       setTotalBookmarks(bookmarks.length)
       setTotalWrongs(incorrects.length)
+
+      // (quiz_source, quiz_id) → 누적 incorrect_count.
+      // content / customize / instructor 만 — exam_prep 는 mastery 에서 별도로 합친다.
+      const wrongCountMap = new Map<string, number>()
+      for (const a of attempts) {
+        if (a.correct === false) {
+          const key = `${a.quiz_source}:${a.quiz_id}`
+          wrongCountMap.set(key, (wrongCountMap.get(key) ?? 0) + 1)
+        }
+      }
 
       // (quiz_source, quiz_id) → 머지 레코드
       type Acc = {
@@ -174,7 +190,7 @@ export function useQuizStorage({
         bySource[acc.quiz_source].push(acc.quiz_id)
       }
 
-      const [instr, cust, cont, exam] = await Promise.all([
+      const [instr, cust, cont, exam, mastery] = await Promise.all([
         bySource.instructor.length > 0
           ? statusService.fetchQuizContent(bySource.instructor, 'instructor')
           : { data: [], error: null },
@@ -187,6 +203,10 @@ export function useQuizStorage({
         bySource.exam_prep.length > 0
           ? statusService.fetchQuizContent(bySource.exam_prep, 'exam_prep')
           : { data: [], error: null },
+        // exam_prep 누적 incorrect_count 는 mastery 에서 직접. 실패 시 fallback.
+        bySource.exam_prep.length > 0
+          ? statusService.fetchExamPrepMasteryCounts(bySource.exam_prep)
+          : { data: [], error: null },
       ])
 
       if (myReq !== requestIdRef.current) return
@@ -196,6 +216,11 @@ export function useQuizStorage({
       for (const x of cust.data ?? []) contentMap.set(`customize:${x.quiz_id}`, x)
       for (const x of cont.data ?? []) contentMap.set(`content:${x.quiz_id}`, x)
       for (const x of exam.data ?? []) contentMap.set(`exam_prep:${x.quiz_id}`, x)
+
+      // exam_prep mastery 누적 카운트 → wrongCountMap 에 합치기.
+      for (const m of mastery.data ?? []) {
+        wrongCountMap.set(`exam_prep:${m.question_id}`, m.incorrect_count)
+      }
 
       const result: QuizStorageItem[] = []
       for (const acc of merged.values()) {
@@ -210,6 +235,15 @@ export function useQuizStorage({
               : acc.bookmark_at
             : (acc.last_wrong_at ?? acc.bookmark_at)
 
+        // 진짜 누적 오답 횟수 — quiz_attempt_log (content/customize/instructor) 또는
+        // exam_prep_mastery (exam_prep). is_wrong=true 인데 누적 데이터가 0인 경우는
+        // (예: 운영 DB 에 quiz_attempt_log 백필 전 user_quiz_incorrect 행만 있는 상황)
+        // is_wrong 플래그 자체로 최소 1회 보정.
+        const cumulativeWrong = wrongCountMap.get(key) ?? 0
+        const finalWrongCount = acc.is_wrong
+          ? Math.max(cumulativeWrong, 1)
+          : cumulativeWrong
+
         result.push({
           ...content,
           difficulty: content.difficulty ?? null,
@@ -223,7 +257,7 @@ export function useQuizStorage({
           lecture_name: info?.lecture_name,
           is_bookmark: acc.is_bookmark,
           is_wrong: acc.is_wrong,
-          wrong_count: acc.wrong_count,
+          wrong_count: finalWrongCount,
           last_activity_at: lastActivity,
           last_wrong_at: acc.last_wrong_at,
         })

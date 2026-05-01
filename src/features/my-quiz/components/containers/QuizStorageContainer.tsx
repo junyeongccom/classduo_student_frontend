@@ -20,7 +20,6 @@ import {
   List,
   MoreHorizontal,
   SlidersHorizontal,
-  Star,
   X,
   XCircle,
 } from 'lucide-react'
@@ -320,7 +319,7 @@ export default function QuizStorageContainer() {
                 active={segment === 'fav'}
                 onClick={() => setSegment('fav')}
               >
-                <Star className="h-3.5 w-3.5" />
+                <Bookmark className="h-3.5 w-3.5" />
                 즐겨찾기 <span className="text-xs text-gray-400">{totalCounts.fav}</span>
               </SegBtn>
               <SegBtn
@@ -642,15 +641,15 @@ function QuizCard({
           {item.is_wrong && (
             <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-[#C2410C]">
               <X className="h-3 w-3" />
-              오답{item.wrong_count > 1 ? ` ×${item.wrong_count}` : ''}
+              오답{item.wrong_count > 0 ? ` (${item.wrong_count}회 틀림)` : ''}
             </span>
           )}
           {item.is_bookmark && (
             <button
-              className="rounded-lg p-1.5 text-yellow-400 hover:bg-yellow-50"
+              className="rounded-lg p-1.5 text-blue-500 hover:bg-blue-50"
               title="즐겨찾기"
             >
-              <Star className="h-4 w-4 fill-current" />
+              <Bookmark className="h-4 w-4 fill-current" />
             </button>
           )}
           <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50">
@@ -733,11 +732,12 @@ function QuizListRow({
     >
       <div className="col-span-1 flex items-center gap-1">
         {item.is_bookmark && (
-          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+          <Bookmark className="h-4 w-4 fill-current text-blue-500" />
         )}
         {item.is_wrong && (
-          <span className="inline-flex h-5 items-center rounded-full bg-orange-50 px-1.5 text-[10px] font-bold text-[#C2410C]">
-            ×{item.wrong_count}
+          <span className="inline-flex h-5 items-center gap-0.5 rounded-full bg-orange-50 px-1.5 text-[10px] font-bold text-[#C2410C] whitespace-nowrap">
+            <X className="h-3 w-3" />
+            오답 ({item.wrong_count}회)
           </span>
         )}
       </div>

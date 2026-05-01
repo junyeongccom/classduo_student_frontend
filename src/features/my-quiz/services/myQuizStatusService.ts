@@ -583,6 +583,87 @@ export async function getIncorrectsByLectureIds(
   }
 }
 
+/* ── 누적 정/오답 카운트 Supabase 직접 집계 ── */
+
+/**
+ * 학생 본인의 quiz_attempt_log 시도 이력 일괄 조회 (own RLS 자동 적용).
+ * content / customize / instructor 출처 누적 카운트 산출용.
+ * exam_prep 는 quiz_attempt_log 에 안 들어가므로 별도 함수 사용.
+ */
+export async function fetchAttemptLogsByLectureIds(
+  lectureIds: string[],
+): Promise<{
+  data: Array<{ quiz_source: QuizSource; quiz_id: string; correct: boolean | null }> | null
+  error: Error | null
+}> {
+  if (lectureIds.length === 0) return { data: [], error: null }
+  try {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('quiz_attempt_log')
+      .select('quiz_source, quiz_id, correct')
+      .in('lecture_id', lectureIds)
+    if (error) {
+      if (isJWTExpiredError(error)) {
+        const ok = await handleJWTExpiration()
+        if (!ok) return { data: null, error: new Error('세션이 만료되었습니다.') }
+        return { data: null, error: new Error('세션이 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: new Error(getErrorMessage(error)) }
+    }
+    return {
+      data: (data ?? []) as Array<{
+        quiz_source: QuizSource
+        quiz_id: string
+        correct: boolean | null
+      }>,
+      error: null,
+    }
+  } catch (err) {
+    if (isJWTExpiredError(err)) { await handleJWTExpiration() }
+    return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
+/**
+ * 학생 본인의 exam_prep_mastery 누적 카운트 조회 (own RLS 자동 적용).
+ * exam_prep 는 mastery.correct_count / incorrect_count 가 SSOT.
+ */
+export async function fetchExamPrepMasteryCounts(
+  questionIds: string[],
+): Promise<{
+  data: Array<{ question_id: string; correct_count: number; incorrect_count: number }> | null
+  error: Error | null
+}> {
+  if (questionIds.length === 0) return { data: [], error: null }
+  try {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('exam_prep_mastery')
+      .select('question_id, correct_count, incorrect_count')
+      .in('question_id', questionIds)
+    if (error) {
+      if (isJWTExpiredError(error)) {
+        const ok = await handleJWTExpiration()
+        if (!ok) return { data: null, error: new Error('세션이 만료되었습니다.') }
+        return { data: null, error: new Error('세션이 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: new Error(getErrorMessage(error)) }
+    }
+    return {
+      data: (data ?? []) as Array<{
+        question_id: string
+        correct_count: number
+        incorrect_count: number
+      }>,
+      error: null,
+    }
+  } catch (err) {
+    if (isJWTExpiredError(err)) { await handleJWTExpiration() }
+    return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
 /* ── 오답노트 Backend API ── */
 
 /** 오답노트에서 제거 */
