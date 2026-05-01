@@ -12,7 +12,7 @@ import {
   handleJWTExpiration,
   getErrorMessage,
 } from '@/shared/lib/supabase'
-import type { QuizStatusEntry, QuizBookmarkEntry, QuizIncorrectEntry, QuizSource, QuizItem, QuizChoice } from '../types'
+import type { QuizStatusEntry, QuizBookmarkEntry, QuizSource, QuizItem, QuizChoice } from '../types'
 import type { StudentQuizType } from '@/shared/components/quiz'
 
 /* ───────────── Types ───────────── */
@@ -39,7 +39,37 @@ interface RewardGrantResponse {
 /* ───────────── Supabase 직접 조회 ───────────── */
 
 /**
- * 특정 lecture의 user_quiz_status 조회 (필터: correct)
+ * user_quiz_response 누적 행을 (quiz_source, quiz_id) 별 가장 최근 created_at 1행으로 reduce.
+ * 기존 user_quiz_status (UPSERT 1행) 와 동일한 QuizStatusEntry 형태를 만들어 호출처 시그니처 보존.
+ */
+type UqrRow = {
+  quiz_id: string
+  quiz_source: string
+  lecture_id: string
+  selected_answer: number | null
+  is_correct: boolean | null
+  created_at: string
+}
+
+function reduceLatestPerQuiz(rows: UqrRow[]): QuizStatusEntry[] {
+  const latestByKey = new Map<string, UqrRow>()
+  for (const r of rows) {
+    const key = `${r.quiz_source}:${r.quiz_id}`
+    const prev = latestByKey.get(key)
+    if (!prev || prev.created_at < r.created_at) latestByKey.set(key, r)
+  }
+  return Array.from(latestByKey.values()).map(r => ({
+    quiz_id: r.quiz_id,
+    quiz_source: r.quiz_source as QuizSource,
+    lecture_id: r.lecture_id,
+    correct: r.is_correct,
+    answer: r.selected_answer,
+  }))
+}
+
+/**
+ * 특정 lecture의 풀이 상태 조회 (필터: correct).
+ * user_quiz_response 누적 행을 quiz 별 latest 1행으로 reduce 후 반환 — 시그니처 보존.
  * RLS가 student_id 자동 필터링.
  */
 export async function getQuizStatusesByLecture(
@@ -50,16 +80,10 @@ export async function getQuizStatusesByLecture(
   try {
     const supabase = getSupabaseClient()
     let query = supabase
-      .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, correct, answer')
+      .from('user_quiz_response')
+      .select('quiz_id, quiz_source, lecture_id, selected_answer, is_correct, created_at')
       .eq('lecture_id', lectureId)
-
-    if (filter.correct !== undefined) {
-      query = query.eq('correct', filter.correct)
-    }
-
-    // ORDER BY 필수: offset 기반 무한스크롤에서 일관된 정렬 보장
-    query = query.order('id', { ascending: true })
+      .order('id', { ascending: true })
 
     if (options?.limit) {
       const offset = options.offset ?? 0
@@ -77,7 +101,11 @@ export async function getQuizStatusesByLecture(
       return { data: null, error: new Error(getErrorMessage(error)) }
     }
 
-    return { data: (data ?? []) as QuizStatusEntry[], error: null }
+    const reduced = reduceLatestPerQuiz((data ?? []) as UqrRow[])
+    const filtered = filter.correct === undefined
+      ? reduced
+      : reduced.filter(s => s.correct === filter.correct)
+    return { data: filtered, error: null }
   } catch (err) {
     if (isJWTExpiredError(err)) {
       await handleJWTExpiration()
@@ -91,7 +119,8 @@ export async function getQuizStatusesByLecture(
 }
 
 /**
- * 복수 lecture의 user_quiz_status 조회 (필터: correct)
+ * 복수 lecture의 풀이 상태 조회 (필터: correct).
+ * user_quiz_response 누적 행을 quiz 별 latest 1행으로 reduce 후 반환.
  * RLS가 student_id 자동 필터링.
  */
 export async function getQuizStatusesByLectureIds(
@@ -104,15 +133,10 @@ export async function getQuizStatusesByLectureIds(
   try {
     const supabase = getSupabaseClient()
     let query = supabase
-      .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, correct, answer')
+      .from('user_quiz_response')
+      .select('quiz_id, quiz_source, lecture_id, selected_answer, is_correct, created_at')
       .in('lecture_id', lectureIds)
-
-    if (filter.correct !== undefined) {
-      query = query.eq('correct', filter.correct)
-    }
-
-    query = query.order('id', { ascending: true })
+      .order('id', { ascending: true })
 
     if (options?.limit) {
       const offset = options.offset ?? 0
@@ -130,7 +154,11 @@ export async function getQuizStatusesByLectureIds(
       return { data: null, error: new Error(getErrorMessage(error)) }
     }
 
-    return { data: (data ?? []) as QuizStatusEntry[], error: null }
+    const reduced = reduceLatestPerQuiz((data ?? []) as UqrRow[])
+    const filtered = filter.correct === undefined
+      ? reduced
+      : reduced.filter(s => s.correct === filter.correct)
+    return { data: filtered, error: null }
   } catch (err) {
     if (isJWTExpiredError(err)) {
       await handleJWTExpiration()
@@ -144,7 +172,8 @@ export async function getQuizStatusesByLectureIds(
 }
 
 /**
- * 특정 lecture의 모든 instructor quiz status 조회 (보상 판정용)
+ * 특정 lecture의 모든 instructor quiz status 조회 (보상 판정용).
+ * NOTE: instructor 는 user_quiz_response 범위 외 (학생 UI 미노출 정책) — 기존 user_quiz_status 유지.
  */
 export async function getAllInstructorQuizStatuses(
   lectureId: string,
@@ -414,11 +443,14 @@ export async function getSessionSolvingStats(
       quizToSession.set(q.quiz_id, q.session_id)
     }
 
-    const { data: statuses, error: statusErr } = await supabase
-      .from('user_quiz_status')
-      .select('quiz_id, correct')
+    // user_quiz_response 누적 행을 created_at 오름차순으로 받고
+    // quiz_id 키로 덮어쓰면 최종적으로 latest 응답이 남는다.
+    const { data: rawResponses, error: statusErr } = await supabase
+      .from('user_quiz_response')
+      .select('quiz_id, is_correct, created_at')
       .eq('quiz_source', 'customize')
       .in('quiz_id', quizIds)
+      .order('created_at', { ascending: true })
 
     if (statusErr) {
       if (isJWTExpiredError(statusErr)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
@@ -426,8 +458,8 @@ export async function getSessionSolvingStats(
     }
 
     const statusByQuiz = new Map<string, boolean | null>()
-    for (const s of (statuses ?? [])) {
-      statusByQuiz.set(s.quiz_id, s.correct)
+    for (const r of (rawResponses ?? [])) {
+      statusByQuiz.set(r.quiz_id, r.is_correct)
     }
 
     const result = new Map<string, SessionSolvingStats>()
@@ -551,23 +583,38 @@ export async function getBookmarksByLectureIds(
 
 /* ── 오답노트 Supabase 조회 ── */
 
-export async function getIncorrectsByLectureIds(
+/**
+ * 오답 노트용 — 학생 본인이 한 번이라도 is_correct=false 로 응답한 (quiz_source, quiz_id, lecture_id) 묶음.
+ * dismiss 폐지 정책 (2026-05-01) — 한 번이라도 틀린 문제는 영구 보존.
+ *
+ * 반환 행은 첫 오답 created_at 오름차순 (기존 user_quiz_incorrect.created_at 정렬과 동일 UX).
+ * 같은 quiz 가 여러 번 틀렸어도 한 묶음 1행만 반환 (DISTINCT).
+ */
+export interface IncorrectQuizEntry {
+  quiz_source: QuizSource
+  quiz_id: string
+  lecture_id: string
+  /** 첫 오답 created_at — 오답 노트 정렬 기준 */
+  first_wrong_at: string
+  /** 마지막 오답 created_at — last_activity 산출용 */
+  last_wrong_at: string
+  /** 가장 최근 응답의 selected_answer */
+  latest_selected_answer: number | null
+  /** 가장 최근 응답의 is_correct */
+  latest_is_correct: boolean | null
+}
+
+export async function fetchIncorrectQuizIdsByLectureIds(
   lectureIds: string[],
-  options?: { limit?: number; offset?: number },
-): Promise<{ data: QuizIncorrectEntry[] | null; error: Error | null }> {
+): Promise<{ data: IncorrectQuizEntry[] | null; error: Error | null }> {
   if (lectureIds.length === 0) return { data: [], error: null }
   try {
     const supabase = getSupabaseClient()
-    let query = supabase
-      .from('user_quiz_incorrect')
-      .select('id, quiz_id, quiz_source, lecture_id, original_answer, retry_answer, retry_correct, created_at')
+    const { data, error } = await supabase
+      .from('user_quiz_response')
+      .select('quiz_source, quiz_id, lecture_id, selected_answer, is_correct, created_at')
       .in('lecture_id', lectureIds)
-      .order('id', { ascending: true })
-    if (options?.limit) {
-      const offset = options.offset ?? 0
-      query = query.range(offset, offset + options.limit - 1)
-    }
-    const { data, error } = await query
+      .order('created_at', { ascending: true })
     if (error) {
       if (isJWTExpiredError(error)) {
         const ok = await handleJWTExpiration()
@@ -576,7 +623,35 @@ export async function getIncorrectsByLectureIds(
       }
       return { data: null, error: new Error(getErrorMessage(error)) }
     }
-    return { data: (data ?? []) as QuizIncorrectEntry[], error: null }
+    // 같은 (quiz_source, quiz_id) 의 행을 묶어 first_wrong_at / last_wrong_at / latest 응답 산출.
+    // created_at 오름차순이라: 첫 false → first_wrong_at, 마지막 false → last_wrong_at, 마지막 행 → latest 응답.
+    const grouped = new Map<string, IncorrectQuizEntry>()
+    for (const r of (data ?? []) as UqrRow[]) {
+      const key = `${r.quiz_source}:${r.quiz_id}`
+      const existing = grouped.get(key)
+      if (!existing) {
+        if (r.is_correct === false) {
+          grouped.set(key, {
+            quiz_source: r.quiz_source as QuizSource,
+            quiz_id: r.quiz_id,
+            lecture_id: r.lecture_id,
+            first_wrong_at: r.created_at,
+            last_wrong_at: r.created_at,
+            latest_selected_answer: r.selected_answer,
+            latest_is_correct: r.is_correct,
+          })
+        }
+        // is_correct=true 가 먼저 오면 묶음 미생성 — 다음 false 가 오면 그때 first_wrong_at 결정
+        continue
+      }
+      // 이미 묶음 있음 — false 행이면 last_wrong_at 갱신, 모든 행에서 latest 응답 갱신
+      if (r.is_correct === false) {
+        existing.last_wrong_at = r.created_at
+      }
+      existing.latest_selected_answer = r.selected_answer
+      existing.latest_is_correct = r.is_correct
+    }
+    return { data: Array.from(grouped.values()), error: null }
   } catch (err) {
     if (isJWTExpiredError(err)) { await handleJWTExpiration() }
     return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
@@ -586,11 +661,11 @@ export async function getIncorrectsByLectureIds(
 /* ── 누적 정/오답 카운트 Supabase 직접 집계 ── */
 
 /**
- * 학생 본인의 quiz_attempt_log 시도 이력 일괄 조회 (own RLS 자동 적용).
- * content / customize / instructor 출처 누적 카운트 산출용.
- * exam_prep 는 quiz_attempt_log 에 안 들어가므로 별도 함수 사용.
+ * 학생 본인의 user_quiz_response 누적 응답 일괄 조회 (own RLS 자동 적용).
+ * content / customize 출처 누적 정/오답 카운트 산출용 — 매 풀이 시도 1행 = 1 카운트.
+ * exam_prep 는 user_quiz_response 에 안 들어가므로 fetchExamPrepMasteryCounts 사용.
  */
-export async function fetchAttemptLogsByLectureIds(
+export async function fetchQuizResponsesByLectureIds(
   lectureIds: string[],
 ): Promise<{
   data: Array<{ quiz_source: QuizSource; quiz_id: string; correct: boolean | null }> | null
@@ -600,8 +675,8 @@ export async function fetchAttemptLogsByLectureIds(
   try {
     const supabase = getSupabaseClient()
     const { data, error } = await supabase
-      .from('quiz_attempt_log')
-      .select('quiz_source, quiz_id, correct')
+      .from('user_quiz_response')
+      .select('quiz_source, quiz_id, is_correct')
       .in('lecture_id', lectureIds)
     if (error) {
       if (isJWTExpiredError(error)) {
@@ -612,11 +687,11 @@ export async function fetchAttemptLogsByLectureIds(
       return { data: null, error: new Error(getErrorMessage(error)) }
     }
     return {
-      data: (data ?? []) as Array<{
+      data: ((data ?? []) as Array<{
         quiz_source: QuizSource
         quiz_id: string
-        correct: boolean | null
-      }>,
+        is_correct: boolean | null
+      }>).map(r => ({ quiz_source: r.quiz_source, quiz_id: r.quiz_id, correct: r.is_correct })),
       error: null,
     }
   } catch (err) {
@@ -662,46 +737,6 @@ export async function fetchExamPrepMasteryCounts(
     if (isJWTExpiredError(err)) { await handleJWTExpiration() }
     return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
   }
-}
-
-/* ── 오답노트 Backend API ── */
-
-/** 오답노트에서 제거 */
-export async function dismissIncorrect(quizSource: QuizSource, quizId: string) {
-  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
-    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
-  }
-  return apiRequest<{ quiz_source: string; quiz_id: string; removed: boolean }>(
-    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/incorrect`,
-    { method: 'DELETE', auth: true },
-  )
-}
-
-/** 오답노트 다시풀기 */
-export async function retryIncorrect(
-  quizSource: QuizSource,
-  quizId: string,
-  retryAnswer: number | null,
-  retryCorrect: boolean | null,
-) {
-  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
-    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
-  }
-  return apiRequest<{ quiz_source: string; quiz_id: string; retry_answer: number | null; retry_correct: boolean | null }>(
-    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/incorrect/retry`,
-    { method: 'PATCH', auth: true, body: { retry_answer: retryAnswer, retry_correct: retryCorrect } },
-  )
-}
-
-/** 오답노트 다시풀기 초기화 */
-export async function resetRetryIncorrect(quizSource: QuizSource, quizId: string) {
-  if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
-    return { data: null, error: new Error('Invalid quiz source'), status: 400 }
-  }
-  return apiRequest<{ quiz_source: string; quiz_id: string; retry_answer: null; retry_correct: null }>(
-    `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/incorrect/reset`,
-    { method: 'PATCH', auth: true },
-  )
 }
 
 /** 즐겨찾기 내 독립 풀이 결과 업데이트 */

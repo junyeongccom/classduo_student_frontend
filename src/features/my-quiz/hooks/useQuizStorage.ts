@@ -45,7 +45,7 @@ interface UseQuizStorageReturn {
 }
 
 /**
- * 즐겨찾기(user_quiz_bookmarks) + 오답(user_quiz_incorrect)을 quiz_id 기준으로 머지.
+ * 즐겨찾기(user_quiz_bookmarks) + 오답(user_quiz_response 기반 추출)을 quiz_id 기준으로 머지.
  * 같은 문제가 양쪽에 있으면 둘 다 true로 표시.
  */
 export function useQuizStorage({
@@ -74,19 +74,16 @@ export function useQuizStorage({
     setError(null)
 
     try {
-      // 1) 즐겨찾기 + 오답노트 + 시도 로그를 동시에 조회.
-      //    quiz_attempt_log 는 누적 incorrect_count 산출용 (content/customize/instructor),
+      // 1) 즐겨찾기 + 오답 묶음 + 응답 로그를 동시에 조회.
+      //    user_quiz_response 는 누적 incorrect_count 산출용 (content/customize),
       //    exam_prep 는 별도로 mastery 에서 가져온다 (아래 4단계).
       const [bookmarkRes, incorrectRes, attemptRes] = await Promise.all([
         statusService.getBookmarksByLectureIds(lectureIds, {
           limit: PAGE_SIZE,
           offset: 0,
         }),
-        statusService.getIncorrectsByLectureIds(lectureIds, {
-          limit: PAGE_SIZE,
-          offset: 0,
-        }),
-        statusService.fetchAttemptLogsByLectureIds(lectureIds),
+        statusService.fetchIncorrectQuizIdsByLectureIds(lectureIds),
+        statusService.fetchQuizResponsesByLectureIds(lectureIds),
       ])
 
       if (myReq !== requestIdRef.current) return
@@ -155,13 +152,11 @@ export function useQuizStorage({
         const existing = merged.get(key)
         if (existing) {
           existing.is_wrong = true
-          existing.wrong_count += 1
           if (
             !existing.last_wrong_at ||
-            (w.created_at &&
-              new Date(w.created_at) > new Date(existing.last_wrong_at))
+            new Date(w.last_wrong_at) > new Date(existing.last_wrong_at)
           ) {
-            existing.last_wrong_at = w.created_at ?? null
+            existing.last_wrong_at = w.last_wrong_at
           }
         } else {
           merged.set(key, {
@@ -170,11 +165,11 @@ export function useQuizStorage({
             lecture_id: w.lecture_id,
             is_bookmark: false,
             is_wrong: true,
-            wrong_count: 1,
+            wrong_count: 0,
             bookmark_at: null,
-            last_wrong_at: w.created_at ?? null,
-            selected_answer: w.original_answer,
-            correct: false,
+            last_wrong_at: w.last_wrong_at,
+            selected_answer: w.latest_selected_answer,
+            correct: w.latest_is_correct,
           })
         }
       }
@@ -235,10 +230,9 @@ export function useQuizStorage({
               : acc.bookmark_at
             : (acc.last_wrong_at ?? acc.bookmark_at)
 
-        // 진짜 누적 오답 횟수 — quiz_attempt_log (content/customize/instructor) 또는
+        // 진짜 누적 오답 횟수 — user_quiz_response (content/customize) 또는
         // exam_prep_mastery (exam_prep). is_wrong=true 인데 누적 데이터가 0인 경우는
-        // (예: 운영 DB 에 quiz_attempt_log 백필 전 user_quiz_incorrect 행만 있는 상황)
-        // is_wrong 플래그 자체로 최소 1회 보정.
+        // is_wrong 플래그 자체로 최소 1회 보정 (백필 직후 created_at 단조증가 등 엣지 케이스).
         const cumulativeWrong = wrongCountMap.get(key) ?? 0
         const finalWrongCount = acc.is_wrong
           ? Math.max(cumulativeWrong, 1)

@@ -81,18 +81,6 @@ export interface QuizBookmarkEntry {
   created_at: string
 }
 
-/** 오답노트 (user_quiz_incorrect) */
-export interface QuizIncorrectEntry {
-  id: string
-  quiz_id: string
-  quiz_source: QuizSource
-  lecture_id: string
-  original_answer: number | null
-  retry_answer: number | null
-  retry_correct: boolean | null
-  created_at: string
-}
-
 /** 세션 상세 응답 (퀴즈 목록 포함) */
 export interface SessionDetailResponse {
   session: QuizSession
