@@ -37,6 +37,10 @@ import { SolveTopBar } from '../ui/SolveTopBar'
 import { SolveSidebar } from '../ui/SolveSidebar'
 import { SolveQuestionPanel } from '../ui/SolveQuestionPanel'
 import { SolveResultPanel } from '../ui/SolveResultPanel'
+import {
+  toggleBookmark,
+  getBookmarksByLectureIds,
+} from '@/features/my-quiz/services/myQuizStatusService'
 
 interface CoreTestSolveContainerProps {
   courseId: string
@@ -107,6 +111,10 @@ export function CoreTestSolveContainer({
    *  비교, grade 응답의 attempt_completed=true 시 갱신. local gradedBySeq 가 부족해도
    *  hasNext / handleNext 가 결과 화면 전환을 허용하도록 보조. */
   const [attemptCompletedFromBackend, setAttemptCompletedFromBackend] = useState(false)
+  /** 즐겨찾기된 question.id 집합 — exam_prep quiz_source 로 user_quiz_status 에 저장. */
+  const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(
+    new Set(),
+  )
 
   // 경과 시간 타이머
   useEffect(() => {
@@ -227,6 +235,62 @@ export function CoreTestSolveContainer({
     if (!data) return null
     return lectures.find((l) => l.id === data.lecture_session_id) ?? null
   }, [data, lectures])
+
+  // 북마크된 exam_prep 문항 초기 로드 — data 의 lecture_session_id 기준
+  useEffect(() => {
+    if (!data?.lecture_session_id) return
+    let cancelled = false
+    getBookmarksByLectureIds([data.lecture_session_id]).then(({ data: bookmarks, error }) => {
+      if (cancelled || error || !bookmarks) return
+      const examIds = bookmarks
+        .filter((b) => b.quiz_source === 'exam_prep')
+        .map((b) => b.quiz_id)
+      setBookmarkedQuestionIds(new Set(examIds))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [data?.lecture_session_id])
+
+  const handleBookmarkToggle = useCallback(async () => {
+    const qid = seqToQuestionId.get(currentSeq)
+    if (!qid || !data?.lecture_session_id) return
+    const currentlyBookmarked = bookmarkedQuestionIds.has(qid)
+    // 낙관적 업데이트
+    setBookmarkedQuestionIds((prev) => {
+      const next = new Set(prev)
+      if (currentlyBookmarked) next.delete(qid)
+      else next.add(qid)
+      return next
+    })
+    const grade = gradedBySeq[currentSeq] ?? null
+    const selected = selectedBySeq[currentSeq]
+    const result = await toggleBookmark(
+      'exam_prep',
+      qid,
+      data.lecture_session_id,
+      !currentlyBookmarked,
+      selected != null ? selected + 1 : null,
+      grade ? grade.is_correct : null,
+    )
+    if (result.error) {
+      // 실패 시 롤백
+      setBookmarkedQuestionIds((prev) => {
+        const next = new Set(prev)
+        if (currentlyBookmarked) next.add(qid)
+        else next.delete(qid)
+        return next
+      })
+      console.error('[Solve] bookmark toggle failed:', result.error)
+    }
+  }, [
+    currentSeq,
+    seqToQuestionId,
+    bookmarkedQuestionIds,
+    data?.lecture_session_id,
+    gradedBySeq,
+    selectedBySeq,
+  ])
 
   const sessionLabel = useMemo(() => {
     if (!matchedLecture) return ''
@@ -539,6 +603,8 @@ export function CoreTestSolveContainer({
                 | 'master'
                 | undefined) ?? null
             }
+            isBookmarked={bookmarkedQuestionIds.has(seqToQuestionId.get(currentSeq) ?? '')}
+            onBookmarkToggle={handleBookmarkToggle}
             onSelectChoice={handleSelectChoice}
             onSubmit={handleSubmit}
             onHint={handleHintClick}

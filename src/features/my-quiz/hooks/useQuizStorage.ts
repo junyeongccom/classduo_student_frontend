@@ -168,12 +168,13 @@ export function useQuizStorage({
         instructor: [],
         customize: [],
         content: [],
+        exam_prep: [],
       }
       for (const acc of merged.values()) {
         bySource[acc.quiz_source].push(acc.quiz_id)
       }
 
-      const [instr, cust, cont] = await Promise.all([
+      const [instr, cust, cont, exam] = await Promise.all([
         bySource.instructor.length > 0
           ? statusService.fetchQuizContent(bySource.instructor, 'instructor')
           : { data: [], error: null },
@@ -183,6 +184,9 @@ export function useQuizStorage({
         bySource.content.length > 0
           ? statusService.fetchQuizContent(bySource.content, 'content')
           : { data: [], error: null },
+        bySource.exam_prep.length > 0
+          ? statusService.fetchQuizContent(bySource.exam_prep, 'exam_prep')
+          : { data: [], error: null },
       ])
 
       if (myReq !== requestIdRef.current) return
@@ -191,6 +195,7 @@ export function useQuizStorage({
       for (const x of instr.data ?? []) contentMap.set(`instructor:${x.quiz_id}`, x)
       for (const x of cust.data ?? []) contentMap.set(`customize:${x.quiz_id}`, x)
       for (const x of cont.data ?? []) contentMap.set(`content:${x.quiz_id}`, x)
+      for (const x of exam.data ?? []) contentMap.set(`exam_prep:${x.quiz_id}`, x)
 
       const result: QuizStorageItem[] = []
       for (const acc of merged.values()) {

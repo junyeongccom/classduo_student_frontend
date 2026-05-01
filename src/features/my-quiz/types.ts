@@ -14,7 +14,7 @@ export type TabType = 'generation' | 'favorites' | 'wrong'
 export type SessionStatus = 'CREATING' | 'COMPLETED' | 'FAILED'
 
 /** 퀴즈 소스 */
-export type QuizSource = 'instructor' | 'customize' | 'content'
+export type QuizSource = 'instructor' | 'customize' | 'content' | 'exam_prep'
 
 /** 퀴즈 세션 */
 export interface QuizSession {

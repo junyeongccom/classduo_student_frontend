@@ -27,6 +27,7 @@ export type StudentQuizType =
   | 'MISCONCEPTION'
   | 'DEF_TO_TERM'
   | 'TERM_TO_DEF'
+  | 'EXAM_PREP'
 
 export interface StudentQuizChoice {
   choice_id: string
@@ -73,7 +74,9 @@ export interface StudentQuizCardProps {
 
 /* ───────────── 상수 ───────────── */
 
-const CHOICE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
+// 신규 생성 퀴즈는 4지선다(A~D) 이지만, 기존 5지선다 데이터(choices.length===5)도
+// 그대로 표시되어야 하므로 인덱스 기반으로 라벨을 동적 생성한다 (A~Z 자동 확장).
+const choiceLabel = (idx: number): string => String.fromCharCode(65 + idx)
 
 const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
   RECALL: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
@@ -82,6 +85,7 @@ const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
   MISCONCEPTION: 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
   DEF_TO_TERM: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   TERM_TO_DEF: 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+  EXAM_PREP: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
 }
 
 /** 풀이 상태에 따른 카드 테두리 스타일 */
@@ -302,7 +306,7 @@ export function StudentQuizCard({
               <span
                 className={`shrink-0 w-5 text-center ${getChoiceLabelStyle(choice, idx)}`}
               >
-                {CHOICE_LABELS[idx]}
+                {choiceLabel(idx)}
               </span>
               <span className="flex-1 text-gray-700 dark:text-gray-300">
                 {choice.choice_text}
@@ -394,7 +398,7 @@ export function StudentQuizCard({
                               : 'text-gray-500 dark:text-gray-400'
                           }`}
                         >
-                          {CHOICE_LABELS[idx]}:
+                          {choiceLabel(idx)}:
                         </span>
                         <span className="text-gray-600 dark:text-gray-300">
                           {choice.choice_explanation || '—'}

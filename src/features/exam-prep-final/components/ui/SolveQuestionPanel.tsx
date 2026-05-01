@@ -47,6 +47,10 @@ interface SolveQuestionPanelProps {
   masterySummary: MasterySummary
   /** 현재 문항의 mastery state. 'master' 면 상단에 ★ 배지 영구 노출 + 진전도 배지에 보더. */
   currentQuestionState: 'learning' | 'skilled' | 'master' | null
+  /** 현재 문항이 즐겨찾기 되어있는지 — 북마크 아이콘 채움 표시 */
+  isBookmarked: boolean
+  /** 북마크 토글 콜백 (질문 id 기준) */
+  onBookmarkToggle: () => void
   onSelectChoice: (idx: number) => void
   onSubmit: () => void
   onHint: () => void
@@ -56,7 +60,7 @@ interface SolveQuestionPanelProps {
   hasNext: boolean
 }
 
-const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E']
+const OPTION_LABELS = ['A', 'B', 'C', 'D']
 const HINT_DELAY_SEC = 20
 
 export function SolveQuestionPanel({
@@ -69,6 +73,8 @@ export function SolveQuestionPanel({
   isGrading,
   masterySummary,
   currentQuestionState,
+  isBookmarked,
+  onBookmarkToggle,
   onSelectChoice,
   onSubmit,
   onHint,
@@ -297,10 +303,18 @@ export function SolveQuestionPanel({
           <div className="flex items-center gap-2 text-gray-400">
             <button
               type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
-              aria-label="bookmark"
+              onClick={onBookmarkToggle}
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors',
+                isBookmarked
+                  ? 'text-blue-500 hover:text-blue-600'
+                  : 'hover:text-gray-700',
+              )}
+              aria-label={isBookmarked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
             >
-              <Bookmark className="h-4 w-4" />
+              <Bookmark
+                className={cn('h-4 w-4', isBookmarked && 'fill-current')}
+              />
             </button>
             <button
               type="button"

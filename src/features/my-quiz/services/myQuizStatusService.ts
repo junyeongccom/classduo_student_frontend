@@ -260,6 +260,51 @@ export async function fetchQuizContent(
         if (chErr) return { data: null, error: new Error(getErrorMessage(chErr)) }
         rawChoices = (ch ?? []) as RawChoice[]
       }
+    } else if (quizSource === 'exam_prep') {
+      // exam_prep_question 은 별도 스키마 — quiz_type/explanation/choices 컬럼이 없으므로
+      // 응답을 통합 QuizItem 모양으로 어댑트한다 (quiz_type='EXAM_PREP', choices 는 options 배열 변환).
+      interface ExamPrepRow {
+        id: string
+        stem: string
+        options: string[] | null
+        answer: string | null
+        explanation: Record<string, string> | null
+        difficulty: number | null
+      }
+      const { data, error: err } = await supabase
+        .from('exam_prep_question')
+        .select('id, stem, options, answer, explanation, difficulty')
+        .in('id', quizIds)
+      if (err) {
+        if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+        return { data: null, error: new Error(getErrorMessage(err)) }
+      }
+      const examRows = (data ?? []) as ExamPrepRow[]
+      rawItems = examRows.map(r => ({
+        quiz_id: r.id,
+        quiz_type: 'EXAM_PREP',
+        question: r.stem,
+        // 0-based answer index → options 배열에서 정답 텍스트 추출 (주관식 표시용)
+        answer: r.answer != null && r.options ? (r.options[parseInt(r.answer, 10)] ?? null) : null,
+        // explanation dict (opt_0/opt_1/...) 를 사람이 읽을 수 있는 한 덩어리로
+        explanation: r.explanation
+          ? Object.entries(r.explanation).map(([k, v]) => `${k}: ${v}`).join('\n')
+          : null,
+        difficulty: r.difficulty != null ? String(r.difficulty) : null,
+      }))
+      // exam_prep options[]를 QuizChoice 형태로 직접 만든다 (별도 _choices 테이블 없음).
+      rawChoices = examRows.flatMap(r => {
+        const opts = r.options ?? []
+        const correctIdx = r.answer != null ? parseInt(r.answer, 10) : -1
+        return opts.map((opt, i) => ({
+          quiz_id: r.id,
+          choice_id: `${r.id}:${i}`,
+          choice_order: i + 1,
+          choice_text: opt,
+          is_correct: i === correctIdx,
+          choice_explanation: r.explanation?.[`opt_${i}`] ?? null,
+        }))
+      })
     } else {
       const { data, error: err } = await supabase
         .from('user_customize_quiz_items')
@@ -413,7 +458,7 @@ export async function getSessionSolvingStats(
 
 /* ───────────── Backend API 호출 ───────────── */
 
-const VALID_QUIZ_SOURCES: QuizSource[] = ['instructor', 'customize', 'content']
+const VALID_QUIZ_SOURCES: QuizSource[] = ['instructor', 'customize', 'content', 'exam_prep']
 
 /** 즐겨찾기 토글 (추가 시 현재 풀이 상태 복사) */
 export async function toggleBookmark(

@@ -75,22 +75,25 @@ const SOURCE_META: Record<Exclude<SourceValue, 'all'>, SourceMeta> = {
 /**
  * raw quiz_source → 화면 표시용 카테고리.
  * 'instructor' 는 학생 UI 미노출이므로 null 반환 (필터에서 제거).
- * 'exam-prep' 는 별도 테이블 기반이며, 본 함수가 다루는 user_quiz_bookmarks/incorrect 에는 들어가지 않음.
+ * 'exam_prep' 은 user_quiz_status 에 함께 저장되며, 표시 카테고리는 'exam-prep'.
  */
 function toDisplaySource(
-  src: 'instructor' | 'content' | 'customize',
+  src: 'instructor' | 'content' | 'customize' | 'exam_prep',
 ): Exclude<SourceValue, 'all'> | null {
   if (src === 'content') return 'lecture-content'
   if (src === 'customize') return 'customize'
+  if (src === 'exam_prep') return 'exam-prep'
   return null
 }
 
+// 회상(RECALL) + 서술형 구조(STRUCTURE) 는 사용 중단. 객관식 구조(STRUCTURE_OBJ)는 실제로
+// 생성되므로 '구조' 라벨로 1회만 노출 (이전에 STRUCTURE + STRUCTURE_OBJ 둘 다 등재되어
+// 동일 라벨 "구조" 가 2번 보이던 문제 수정).
+// exam_prep 는 quiz_type 메타가 없어 유형 필터 적용 시 자동으로 결과에서 제외된다.
 const TYPE_LABELS: Partial<Record<StudentQuizType, string>> = {
   DEF_TO_TERM: '정의→용어',
   TERM_TO_DEF: '용어→정의',
   MISCONCEPTION: '오개념',
-  RECALL: '회상',
-  STRUCTURE: '구조',
   STRUCTURE_OBJ: '구조',
 }
 
