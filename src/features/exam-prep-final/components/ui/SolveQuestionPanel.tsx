@@ -283,7 +283,7 @@ export function SolveQuestionPanel({
                         ? 'bg-rose-500 text-white'
                         : isSelected
                           ? 'bg-violet-500 text-white'
-                          : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+                          : 'text-gray-500 dark:text-gray-400',
                   )}
                 >
                   {isHintDisabled ? <XIcon className="h-4 w-4" /> : label}

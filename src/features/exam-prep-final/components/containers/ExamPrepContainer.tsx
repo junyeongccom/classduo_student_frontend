@@ -29,11 +29,11 @@ import {
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
 import type { CoreTest, ExamPrepData, TestSetTab } from '../../types'
 
-/** 세트별 컨텐츠 박스 배경색 (Figma) */
+/** 세트별 컨텐츠 박스 배경색 (Figma) — 탭 배경과 동일하게 통일 */
 const SET_PANEL_BG: Record<1 | 2 | 3, string> = {
   1: 'bg-white border border-gray-200',
-  2: 'bg-[#EDECFD]',
-  3: 'bg-[#A5A2F4]',
+  2: 'bg-[#DEDEF8]',
+  3: 'bg-[#8F8DF0]',
 }
 
 interface ExamPrepContainerProps {

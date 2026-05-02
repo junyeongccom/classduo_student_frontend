@@ -39,9 +39,9 @@ interface SolveSidebarProps {
 }
 
 const STATE_BG: Record<MasteryState, string> = {
-  learning: 'bg-[#D9D9D9] text-gray-700',
+  learning: 'bg-[#D9D9D9] text-gray-900',
   skilled: 'bg-[#FFCD36] text-gray-900',
-  master: 'bg-[#C4B5FD] text-violet-700',
+  master: 'bg-[#C4B5FD] text-violet-900',
 }
 
 const STATE_RING: Record<MasteryState, string> = {
@@ -65,7 +65,7 @@ export function SolveSidebar({
   const seqs = Array.from({ length: total }, (_, i) => i + 1)
 
   return (
-    <aside className="flex h-full w-[200px] shrink-0 flex-col gap-6 border-r border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+    <aside className="flex h-full w-[260px] shrink-0 flex-col gap-6 border-r border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
       {/* 회차 정보 */}
       <div>
         <p className="text-xs text-gray-400">{sessionLabel}</p>
@@ -100,11 +100,11 @@ export function SolveSidebar({
       </div>
 
       {/* 문항 그리드 — 박스 크기 고정 + 현재 문항은 같은 색 ring + 폰트 키움 트릭 */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-2.5">
         {seqs.map((seq) => {
           const isCurrent = seq === currentSeq
           const state = seqStateMap.get(seq)
-          const bgCls = state ? STATE_BG[state] : 'bg-gray-100 text-gray-500'
+          const bgCls = state ? STATE_BG[state] : 'bg-gray-100 text-gray-800'
           const ringCls = state ? STATE_RING[state] : 'ring-gray-200'
           return (
             <button
@@ -112,11 +112,11 @@ export function SolveSidebar({
               type="button"
               onClick={() => onSelectSeq(seq)}
               className={cn(
-                'flex h-7 w-7 items-center justify-center rounded-full leading-none transition-all',
+                'flex h-9 w-9 items-center justify-center rounded-full font-black leading-none transition-all',
                 bgCls,
                 isCurrent
-                  ? cn('text-[13px] font-bold ring-2 ring-offset-1', ringCls)
-                  : 'text-[11px] font-semibold hover:brightness-95',
+                  ? cn('text-lg ring-2 ring-offset-1', ringCls)
+                  : 'text-base hover:brightness-95',
               )}
             >
               {seq}

@@ -15,13 +15,13 @@ interface TestSetTabsProps {
 }
 
 /**
- * 시각 변형:
+ * 시각 변형 — 탭 배경은 panel 배경과 동일 (이어진 폴더 라벨 효과):
  * - 1번: 흰배경 + 회색 보더
- * - 2번: 연보라 #DBDAFB 배경
- * - 3번: 중보라 #8F8DF0 배경 (흰 글자)
- * - Final: 진보라 #383698 배경 (흰 글자)
+ * - 2번: 연보라 #DEDEF8
+ * - 3번: 중보라 #8F8DF0 (흰 글자)
+ * - Final: 진보라 #383698 (흰 글자)
  *
- * Active 탭은 전면으로 부각되며 z-index가 가장 높음 + 하단 보더 제거 (컨텐츠 박스와 이어짐)
+ * Active 탭은 z-index 최상위 + 하단 보더 제거 (컨텐츠 박스와 이어짐)
  */
 const TAB_CONFIG: Array<{
   id: TestSetTab
@@ -44,9 +44,9 @@ const TAB_CONFIG: Array<{
   {
     id: 2,
     label: '2',
-    inactiveBg: 'bg-[#DBDAFB]',
+    inactiveBg: 'bg-[#DEDEF8]',
     inactiveText: 'text-[#6366F1]',
-    activeBg: 'bg-[#DBDAFB]',
+    activeBg: 'bg-[#DEDEF8]',
     activeText: 'text-[#383698]',
   },
   {
@@ -70,7 +70,8 @@ const TAB_CONFIG: Array<{
 export function TestSetTabs({ active, onChange }: TestSetTabsProps) {
   return (
     // h-16 고정 — 어떤 탭이 active이든 컨테이너 높이 불변, 컨텐츠 박스 들썩임 방지
-    <div className="flex h-16 items-end gap-1">
+    // gap-0 — 탭 사이 간격 제거 (폴더 라벨처럼 붙어있게)
+    <div className="flex h-16 items-end gap-0">
       {TAB_CONFIG.map((cfg, index) => {
         const isActive = active === cfg.id
         return (
@@ -79,7 +80,7 @@ export function TestSetTabs({ active, onChange }: TestSetTabsProps) {
             type="button"
             onClick={() => onChange(cfg.id)}
             className={cn(
-              'relative min-w-[88px] rounded-t-2xl px-7 text-lg font-bold transition-colors',
+              'relative min-w-[80px] rounded-t-2xl px-[26px] text-lg font-bold transition-colors',
               isActive
                 ? `${cfg.activeBg} ${cfg.activeText} ${cfg.activeBorder ?? ''} z-10 -mb-px h-16`
                 : `${cfg.inactiveBg} ${cfg.inactiveText} h-14 hover:opacity-90`,

@@ -1,6 +1,6 @@
 /**
  * @file CoreTestButton.tsx
- * @description 핵심 테스트 번호 버튼 — 평소 번호, 선택 시 불꽃(보라/회색), 잠긴 상태 자물쇠
+ * @description 핵심 테스트 번호 버튼 — 세트별 톤, 선택 시 pressed 고정, 잠긴 상태 자물쇠
  * @module features/exam-prep-final/components/ui
  */
 
@@ -18,29 +18,29 @@ interface CoreTestButtonProps {
 }
 
 /**
- * 세트별 활성 버튼 색상 (Figma)
- * - 1세트: 연보라 #DBDAFB + 진보라 텍스트
- * - 2세트: 중보라 #8F8DF0 + 흰 텍스트
- * - 3세트: 진보라 #383698 + 흰 텍스트
+ * 세트별 버튼 톤 (Figma)
+ * - bg: 버튼 상단(평면) 색
+ * - text: 숫자 텍스트 색
+ * - shadow: 비선택 시 하단 명암 색 (선택 시엔 사라지고 pressed 고정)
  */
 const SET_BUTTON_STYLES: Record<
   1 | 2 | 3,
-  { bg: string; text: string; selectedShadow: string }
+  { bg: string; text: string; shadow: string }
 > = {
   1: {
-    bg: 'bg-[#DBDAFB]',
-    text: 'text-[#1A1A1A]', // 거의 검정 (Figma)
-    selectedShadow: 'shadow-[0_8px_0_#6366F1]',
+    bg: 'bg-[#DEDEF8]',
+    text: 'text-[#1A1A1A]',
+    shadow: 'shadow-[0_8px_0_#8F8DF0]',
   },
   2: {
     bg: 'bg-[#8F8DF0]',
     text: 'text-white',
-    selectedShadow: 'shadow-[0_8px_0_#4F46E5]',
+    shadow: 'shadow-[0_8px_0_#383698]',
   },
   3: {
     bg: 'bg-[#383698]',
     text: 'text-white',
-    selectedShadow: 'shadow-[0_8px_0_#1E1B6E]',
+    shadow: 'shadow-[0_8px_0_#DEDEF8]',
   },
 }
 
@@ -51,7 +51,6 @@ export function CoreTestButton({
   onClick,
 }: CoreTestButtonProps) {
   const isLocked = test.status === 'locked'
-  const isMastered = test.status === 'mastered'
   const cfg = SET_BUTTON_STYLES[setTone]
   const numberLabel = String(test.number).padStart(2, '0')
   const showMasterBadge = test.isTestMastered
@@ -78,44 +77,29 @@ export function CoreTestButton({
     )
   }
 
-  // 활성 버튼 — 번호/불꽃 토글
+  // 활성 버튼 — 선택 시 pressed 고정(translate + shadow 제거), 비선택 시 set색 하단 명암
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'relative flex h-36 w-36 items-center justify-center rounded-3xl transition-shadow hover:opacity-90 active:translate-y-1 active:shadow-none',
+        'relative flex h-36 w-36 items-center justify-center rounded-3xl transition-all hover:opacity-90',
         cfg.bg,
         isSelected
-          ? cfg.selectedShadow
-          : 'shadow-[0_8px_0_rgba(0,0,0,0.10)]',
+          ? 'translate-y-2 shadow-none'
+          : `${cfg.shadow} active:translate-y-1 active:shadow-none`,
       )}
       aria-label={`Test ${test.number}${isSelected ? ' selected' : ''}${showMasterBadge ? ' mastered' : ''}`}
     >
-      {/* 번호 — 비선택 시만 보임 */}
       <span
         className={cn(
-          'text-5xl font-black tracking-tight',
+          'text-6xl font-black leading-none tracking-tight',
           cfg.text,
-          isSelected && 'hidden',
         )}
+        style={{ fontFamily: 'Pretendard, sans-serif' }}
       >
         {numberLabel}
       </span>
-
-      {/* 불꽃 — 항상 DOM에 존재, 선택 시 시각 노출 */}
-      <img
-        src={
-          isMastered
-            ? '/마스터 불꽃 보라.png'
-            : '/마스터 불꽃 비활성.png'
-        }
-        alt=""
-        width={80}
-        height={80}
-        draggable={false}
-        className={cn(!isSelected && 'hidden')}
-      />
 
       {/* test 단위 master 배지 (우상단) — 모든 문항을 master 한 학생에게 표시 */}
       {showMasterBadge && <MasterBadge />}
