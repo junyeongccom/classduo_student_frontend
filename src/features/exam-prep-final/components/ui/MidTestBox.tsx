@@ -63,7 +63,18 @@ const CHAINS = {
 const UNLOCK_MS = 1600
 const OPEN_MS = 1400
 
-const storageKey = (courseId: string, setNumber: number) =>
+/**
+ * 잠금 해제 모션은 "잠겨있던 상태에서 풀린 시점" 을 잡아서 한 번 재생한다.
+ *  방식: localStorage 에 직전에 본 unlocked 값을 저장 → 현재가 true 인데 이전이 false
+ *  였으면 motion 재생. 즉 false→true 전환 검출.
+ *  (구버전 'seen' 플래그는 한 번 재생 후 영원히 skip 되어, 마스터 후 잠금해제 이벤트
+ *  를 못 잡는 문제. prev 추적 방식으로 교체.)
+ */
+const PREV_UNLOCKED_KEY = (courseId: string, setNumber: number) =>
+  `aplus-mid-prev-unlocked-${courseId}-${setNumber}`
+
+/** 구 키 정리 — 한 번 마이그레이션 */
+const LEGACY_SEEN_KEY = (courseId: string, setNumber: number) =>
   `aplus-mid-unlock-seen-${courseId}-${setNumber}`
 
 export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
@@ -79,24 +90,43 @@ export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
       setStage('pages')
       return
     }
+    if (typeof window === 'undefined') return
+
+    // 구 키 정리 (1회성 마이그레이션) — 새 prev 키 로직만 신뢰
+    try {
+      window.localStorage.removeItem(LEGACY_SEEN_KEY(courseId, midTest.setNumber))
+    } catch {
+      // 무시
+    }
+
+    const prevKey = PREV_UNLOCKED_KEY(courseId, midTest.setNumber)
+    const prevUnlocked = window.localStorage.getItem(prevKey) === '1'
+
     if (!midTest.unlocked) {
+      // 잠금 상태 — 표시 + prev='0' 기록 (다음 unlock 시 motion 재생용)
       setStage('locked')
+      try {
+        window.localStorage.setItem(prevKey, '0')
+      } catch {
+        // 무시
+      }
       return
     }
-    // unlocked + 미마스터 — localStorage 확인해서 첫 진입이면 unlocking 재생
-    if (typeof window === 'undefined') return
-    const seen = window.localStorage.getItem(storageKey(courseId, midTest.setNumber))
-    if (seen) {
+
+    // unlocked=true. prev=true 면 이미 모션 본 상태 → pages 로 직행.
+    if (prevUnlocked) {
       setStage('pages')
       return
     }
+
+    // false→true 전환 감지 → unlocking 모션 재생 + prev='1' 기록
     setStage('unlocking')
     const t = setTimeout(() => {
       setStage('pages')
       try {
-        window.localStorage.setItem(storageKey(courseId, midTest.setNumber), '1')
+        window.localStorage.setItem(prevKey, '1')
       } catch {
-        // 사파리 시크릿 등 — 실패해도 무시
+        // 무시
       }
     }, UNLOCK_MS)
     return () => clearTimeout(t)
