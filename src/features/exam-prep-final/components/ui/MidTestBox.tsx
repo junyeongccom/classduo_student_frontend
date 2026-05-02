@@ -14,7 +14,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/shared/lib/utils'
 import type { MidTest } from '../../types'
 
@@ -83,6 +83,19 @@ export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
 
   // 초기 stage — 마운트 후 useEffect 에서 결정
   const [stage, setStage] = useState<Stage>('locked')
+  /** 잠금 해제 모션 재생 시 박스가 뷰포트 밖이면 자동 스크롤로 노출하기 위한 ref */
+  const buttonRef = useRef<HTMLButtonElement | null>(null)
+
+  // 잠금 해제 모션 트리거 시 — 박스가 뷰포트에 온전히 안 들어오면 가운데로 자동 스크롤.
+  useEffect(() => {
+    if (stage !== 'unlocking') return
+    const el = buttonRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const fullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
+    if (fullyVisible) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [stage])
 
   useEffect(() => {
     if (isMastered) {
@@ -163,6 +176,7 @@ export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
         />
       )}
     <button
+      ref={buttonRef}
       type="button"
       onClick={handleClick}
       disabled={!isClickable}
