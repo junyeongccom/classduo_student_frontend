@@ -287,7 +287,6 @@ function CourseContextNav({
                 : pathname.startsWith(matchPath)
 
     const label = t(item.labelKey)
-    const color = item.color
 
     const linkContent = (
       <Link
@@ -306,15 +305,24 @@ function CourseContextNav({
             ? 'h-10 w-10 justify-center self-center p-0'
             : 'gap-3 px-3 py-2',
           isActive
-            ? 'font-semibold'
+            ? 'bg-gray-100 font-bold dark:bg-gray-800'
             : 'hover:bg-gray-100 dark:hover:bg-gray-800',
         )}
-        style={isActive ? { backgroundColor: `${color}15` } : undefined}
       >
-        <Icon
-          className="h-[18px] w-[18px] shrink-0"
-          style={{ color: isActive ? color : '#6B7280' }}
-        />
+        {item.iconSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.iconSrc}
+            alt=""
+            className="h-[18px] w-[18px] shrink-0 object-contain"
+            draggable={false}
+          />
+        ) : (
+          <Icon
+            className="h-[18px] w-[18px] shrink-0"
+            style={{ color: isActive ? '#374151' : '#6B7280' }}
+          />
+        )}
         {!visualCollapsed && (
           <>
             <span

@@ -33,6 +33,8 @@ export interface CourseMenuItem {
   id: CourseMenuId
   labelKey: string
   icon: ComponentType<SVGProps<SVGSVGElement>>
+  /** SVG 아이콘 대신 사용할 이미지 src (있으면 우선). public/ 기준 절대 경로 */
+  iconSrc?: string
   /** href 빌더 — courseId 주입 */
   hrefFor: (courseId: string) => string
   /** active 매칭 패턴 빌더 */
@@ -104,6 +106,9 @@ export const NEW_SIDEBAR_MENU = [
 
 /**
  * 과목 컨텍스트 사이드바 메뉴 — `/studyspace/course/[id]/...` 진입 시 표시
+ *
+ * course 그룹 순서: 대시보드 → 기말대비 → 회차별 → 대화형
+ * resources 그룹 순서: 문제만들기 → 내 퀴즈 저장소
  */
 export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
   {
@@ -116,6 +121,19 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     group: 'course',
   },
   {
+    id: 'exam-prep',
+    labelKey: 'courseNav.examPrep',
+    icon: GraduationCap,
+    // 사이드바에서 fallback Icon 대신 PNG 사용
+    iconSrc: '/IMG_8435.png',
+    // D-Day 배지 자체 색은 별도 (bg-[#F97316] 유지)
+    hrefFor: (id) => `/studyspace/course/${id}/exam-prep`,
+    matchFor: (id) => `/studyspace/course/${id}/exam-prep`,
+    color: '#7C3AED',
+    group: 'course',
+    showDdayBadge: true,
+  },
+  {
     id: 'lecture-study',
     labelKey: 'courseNav.lectureStudy',
     icon: Leaf,
@@ -123,18 +141,6 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     matchFor: (id) => `/studyspace/course/${id}/lectures`,
     color: '#8B5CF6',
     group: 'course',
-  },
-  {
-    id: 'exam-prep',
-    labelKey: 'courseNav.examPrep',
-    icon: GraduationCap,
-    // 메뉴 active 배경/아이콘 색은 보라(다른 메뉴와 일관)
-    // D-Day 배지 자체 색은 별도 (bg-[#F97316] 유지)
-    hrefFor: (id) => `/studyspace/course/${id}/exam-prep`,
-    matchFor: (id) => `/studyspace/course/${id}/exam-prep`,
-    color: '#7C3AED',
-    group: 'course',
-    showDdayBadge: true,
   },
   {
     id: 'course-dialogue',
@@ -146,21 +152,21 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     group: 'course',
   },
   {
-    id: 'my-quizzes',
-    labelKey: 'courseNav.myQuizzes',
-    icon: Bookmark,
-    hrefFor: (id) => `/studyspace/course/${id}/my-quizzes`,
-    matchFor: (id) => `/studyspace/course/${id}/my-quizzes`,
-    color: '#F97316',
-    group: 'resources',
-  },
-  {
     id: 'create-question',
     labelKey: 'courseNav.createQuestion',
     icon: PencilLine,
     hrefFor: (id) => `/studyspace/course/${id}/my-quizzes?tab=create`,
     matchFor: (id) => `/studyspace/course/${id}/my-quizzes?tab=create`,
     color: '#22C55E',
+    group: 'resources',
+  },
+  {
+    id: 'my-quizzes',
+    labelKey: 'courseNav.myQuizzes',
+    icon: Bookmark,
+    hrefFor: (id) => `/studyspace/course/${id}/my-quizzes`,
+    matchFor: (id) => `/studyspace/course/${id}/my-quizzes`,
+    color: '#F97316',
     group: 'resources',
   },
   {
