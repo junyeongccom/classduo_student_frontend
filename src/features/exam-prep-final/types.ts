@@ -32,6 +32,7 @@ export type MidFinalStatus =
   | 'available'
   | 'mastered'
   | 'failed'
+  | 'empty'  // is_ready=true 이지만 question 행 0개 — 강제 재생성 필요
 
 export interface MidTest {
   setNumber: 1 | 2 | 3

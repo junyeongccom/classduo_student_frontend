@@ -95,16 +95,22 @@ function MidSlot({
   }
   // === DEBUG END ===
 
-  if (status === 'locked') {
+  // locked: 아직 생성 안 됨. empty: 생성됐지만 0문항 (재생성 필요).
+  // 두 상태 모두 학생 진입 차단 + 빨간 점 강제 트리거 버튼 노출.
+  if (status === 'locked' || status === 'empty') {
+    const isEmpty = status === 'empty'
+    const hintText = isEmpty
+      ? t('examPrepFinal.midEmptyHint', { fallback: '0문항으로 생성됨 — 재생성 필요' })
+      : rangeText
     return (
       <div
         role="button"
         aria-disabled="true"
         aria-label={t('examPrepFinal.midLockedAria', {
           label,
-          hint: rangeText,
+          hint: hintText,
         })}
-        title={rangeText}
+        title={hintText}
         className={`${SLOT_BASE_CLASSES} relative cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-500`}
       >
         {/* === DEBUG START — 출시 전 삭제 === */}
@@ -119,7 +125,7 @@ function MidSlot({
         {/* === DEBUG END === */}
         <Lock className="h-5 w-5 text-gray-400" aria-hidden />
         <span className="text-sm font-medium text-gray-700">{label}</span>
-        <span className="text-xs leading-snug text-gray-500">{rangeText}</span>
+        <span className="text-xs leading-snug text-gray-500">{hintText}</span>
       </div>
     )
   }
@@ -202,22 +208,31 @@ function FinalSlot({
   const status = _statusLabel(meta.status, forceFailed)
   const label = t('examPrepFinal.finalSlotLabel')
 
-  if (status === 'locked') {
+  // locked / empty 모두 진입 차단. empty 안내 문구는 별도 (final 빈 publish 복구는
+  // ExamPrepContainer 의 final debug 트리거로 처리).
+  if (status === 'locked' || status === 'empty') {
+    const isEmpty = status === 'empty'
+    const hintText = isEmpty
+      ? t('examPrepFinal.finalEmptyHint', { fallback: '0문항으로 생성됨 — 재생성 필요' })
+      : t('examPrepFinal.lockedHintFinal')
+    const shortText = isEmpty
+      ? t('examPrepFinal.finalEmptyShort', { fallback: '0문항' })
+      : t('examPrepFinal.lockedFinalShort')
     return (
       <div
         role="button"
         aria-disabled="true"
         aria-label={t('examPrepFinal.midLockedAria', {
           label,
-          hint: t('examPrepFinal.lockedHintFinal'),
+          hint: hintText,
         })}
-        title={t('examPrepFinal.lockedHintFinal')}
+        title={hintText}
         className={`${SLOT_BASE_CLASSES} cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-500`}
       >
         <Lock className="h-5 w-5 text-gray-400" aria-hidden />
         <span className="text-sm font-medium text-gray-700">{label}</span>
         <span className="text-xs leading-snug text-gray-500">
-          {t('examPrepFinal.lockedFinalShort')}
+          {shortText}
         </span>
       </div>
     )
