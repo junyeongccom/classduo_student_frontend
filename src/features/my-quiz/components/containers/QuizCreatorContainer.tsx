@@ -777,22 +777,31 @@ function SessionCard({
           </span>
           <span className="text-gray-300">·</span>
           <span className="text-gray-400">{session.quiz_count}문항</span>
+          {/* 진행도 배지 — 휴지통(우상단 absolute)과 겹치지 않게 문항 수 오른쪽으로 이동 */}
+          {!(isSolvingComplete && scorePercent != null) && (
+            stats && stats.answered > 0 ? (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="inline-flex items-center gap-1 text-blue-600">
+                  <Clock className="h-3 w-3" />
+                  진행 중
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-gray-300">·</span>
+                <span className="text-gray-500">미시작</span>
+              </>
+            )
+          )}
         </div>
-        {isSolvingComplete && scorePercent != null ? (
+        {/* 우상단: 점수% 만 (진행 중/미시작 배지는 좌측으로 이동했음) */}
+        {isSolvingComplete && scorePercent != null && (
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${scoreBadgeClass}`}
           >
             <CheckCircle2 className="h-3 w-3" />
             {scorePercent}%
-          </span>
-        ) : stats && stats.answered > 0 ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-600">
-            <Clock className="h-3 w-3" />
-            진행 중
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-gray-500">
-            미시작
           </span>
         )}
       </div>
