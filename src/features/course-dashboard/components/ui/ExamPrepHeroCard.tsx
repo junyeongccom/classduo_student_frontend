@@ -29,25 +29,25 @@ export function ExamPrepHeroCard({
       type="button"
       onClick={onClick}
       aria-label={ariaLabel ?? title}
-      className="exam-hero relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#7C7AEC] via-[#6361E0] to-[#4F4DD3] px-8 py-10 text-left text-white"
+      className="exam-hero relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#7C7AEC] via-[#6361E0] to-[#4F4DD3] px-10 py-7 text-left text-white"
     >
       <span className="exam-hero-shimmer" aria-hidden />
-      <div className="relative z-10 flex flex-col items-center gap-6">
-        <div className="flex h-20 w-20 items-center justify-center">
+      <div className="relative z-10 flex flex-col items-center gap-7">
+        <div className="flex h-24 w-24 items-center justify-center">
           <Image
             src={iconSrc}
             alt=""
-            width={64}
-            height={64}
-            className="h-16 w-16 object-contain"
+            width={80}
+            height={80}
+            className="h-20 w-20 object-contain"
             priority
           />
         </div>
-        <div className="flex w-full flex-col items-center gap-3">
-          <span className="rounded-full bg-white/25 px-10 py-3 text-2xl font-bold tracking-tight backdrop-blur-sm">
+        <div className="flex w-full flex-col items-center gap-4">
+          <span className="rounded-full bg-white/25 px-12 py-4 text-3xl font-bold tracking-tight backdrop-blur-sm">
             {title}
           </span>
-          <p className="text-sm font-medium text-white/90">{subtitle}</p>
+          <p className="text-base font-medium text-white/90">{subtitle}</p>
         </div>
       </div>
     </button>

@@ -181,8 +181,8 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   // (모든 hook 호출 뒤에 early return 두어 React Hook 규칙 준수)
   if (isSolveMode) {
     return (
-      <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F5F7F8] dark:bg-gray-950">
+      <div className="flex h-screen bg-[#F9F9FB] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F9F9FB] dark:bg-gray-950">
           {children}
         </main>
         {/* Feedback / Password 모달은 풀이 모드에서도 가능 */}
@@ -344,7 +344,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F5F7F8] dark:bg-gray-950">
+        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F9F9FB] dark:bg-gray-950">
           {children}
         </main>
       </div>

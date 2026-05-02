@@ -56,9 +56,8 @@ function isoOf(d: Date): string {
 }
 
 /**
- * 일요일을 0으로 두는 7열 캘린더 그리드를 만든다.
- * 첫 주 빈 칸은 이전 달 마지막 날짜를 next-month 톤으로 채우지 않고,
- * 디자인 시안과 동일하게 비워 둔다. 단 마지막 주 뒤쪽은 다음 달 1, 2... 회색으로 채운다.
+ * 7열 캘린더 그리드 — 디자인 시안 기준 요일 정렬 없이 1일부터 차례로 채움.
+ * 마지막 행 뒤쪽은 다음 달 1, 2... 회색으로 채워 전체 행을 균일 7칸으로 맞춘다.
  */
 export function buildMonthGrid(input: BuildMonthGridInput): MonthGrid {
   const { today, attendance } = input
@@ -69,24 +68,12 @@ export function buildMonthGrid(input: BuildMonthGridInput): MonthGrid {
   const attendanceMap = new Map<string, AttendanceRecord>()
   for (const rec of attendance) attendanceMap.set(rec.date, rec)
 
-  const firstDay = new Date(year, month, 1)
-  const firstWeekday = firstDay.getDay() // 0=Sun
   const lastDay = new Date(year, month + 1, 0)
   const totalDays = lastDay.getDate()
 
   const cells: CalendarDay[] = []
 
-  // 앞쪽 빈 칸 — 이전월 사용하지 않고 빈 placeholder (display=0)
-  for (let i = 0; i < firstWeekday; i += 1) {
-    cells.push({
-      display: 0,
-      isNextMonth: false,
-      iso: '',
-      state: { kind: 'next-month' },
-    })
-  }
-
-  // 이번 달 1~last
+  // 이번 달 1~last (앞쪽 빈 칸 없이 1일부터 시작)
   for (let d = 1; d <= totalDays; d += 1) {
     const cur = new Date(year, month, d)
     const iso = isoOf(cur)
@@ -106,7 +93,7 @@ export function buildMonthGrid(input: BuildMonthGridInput): MonthGrid {
     cells.push({ display: d, isNextMonth: false, iso, state })
   }
 
-  // 마지막 주 뒤쪽 → 다음 달 1, 2...
+  // 마지막 행 뒤쪽 → 다음 달 1, 2...
   const trailing = (7 - (cells.length % 7)) % 7
   let nextDay = 1
   for (let i = 0; i < trailing; i += 1) {

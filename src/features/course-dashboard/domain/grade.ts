@@ -29,7 +29,7 @@ export interface GradeTier {
 }
 
 export const GRADE_TIERS: readonly GradeTier[] = [
-  { key: 'F', min: 0, max: 999, color: '#9CA3AF', badgeSrc: '/grade/grade-badge-F.png' },
+  { key: 'F', min: 0, max: 999, color: '#EF4444', badgeSrc: '/grade/grade-badge-F.png' },
   { key: 'D', min: 1000, max: 1999, color: '#A16207', badgeSrc: '/grade/grade-badge-D.png' },
   { key: 'D+', min: 2000, max: 2999, color: '#CA8A04', badgeSrc: '/grade/grade-badge-D-plus.png' },
   { key: 'C', min: 3000, max: 3999, color: '#65A30D', badgeSrc: '/grade/grade-badge-C.png' },

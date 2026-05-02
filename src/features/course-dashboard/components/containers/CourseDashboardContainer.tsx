@@ -31,7 +31,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     refresh,
     courseTitle,
     examDday,
-    uploadedWeek,
   } = useCourseDashboard(courseId)
   const { user, streak, monthGrid } = useDashboardMock(courseId)
 
@@ -64,11 +63,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     )
   }
 
-  const weeklyFooter =
-    uploadedWeek != null
-      ? t('courseDashboard.modeWeekly.footer', { week: uploadedWeek })
-      : ''
-
   return (
     <>
       {/* Breadcrumb topbar — 기존 유지 */}
@@ -88,10 +82,10 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
       </StudyspaceTopbarSlot>
 
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
+        <div className="mx-auto max-w-6xl px-6 py-5 lg:px-10">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[5fr_6fr]">
             {/* ───── 좌측 컬럼 ───── */}
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-3">
               <ExamPrepHeroCard
                 title={t('courseDashboard.modeExam.title')}
                 subtitle="10문제 · 30세트 · 일일 참여 시 보상 UP"
@@ -104,7 +98,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
                 eyebrow={t('courseDashboard.modeWeekly.eyebrow')}
                 title={t('courseDashboard.modeWeekly.title')}
                 description="매주 진도를 복습할 수 있어요."
-                footer={weeklyFooter}
                 onClick={() =>
                   router.push(`/studyspace/course/${courseId}/lectures`)
                 }
@@ -140,7 +133,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
             </div>
 
             {/* ───── 우측 컬럼 ───── */}
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-3">
               <AttendanceCalendarCard
                 monthGrid={monthGrid}
                 examDday={examDday}

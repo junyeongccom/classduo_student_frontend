@@ -31,27 +31,27 @@ export function StudyModeMidCard({
       type="button"
       onClick={onClick}
       aria-label={ariaLabel ?? title}
-      className="group flex w-full items-center justify-between rounded-2xl border border-gray-100 bg-white px-6 py-6 text-left shadow-[0_2px_10px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#383698]/30 hover:shadow-[0_6px_20px_rgba(56,54,152,0.12)] active:translate-y-0 dark:border-gray-800 dark:bg-gray-900"
+      className="group flex w-full items-center justify-between rounded-2xl border border-gray-100 bg-white px-8 py-5 text-left shadow-[0_2px_10px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:border-[#383698]/30 hover:shadow-[0_6px_20px_rgba(56,54,152,0.12)] active:translate-y-0 dark:border-gray-800 dark:bg-gray-900"
     >
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-semibold uppercase tracking-wide text-gray-400">
           {eyebrow}
         </span>
-        <span className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+        <span className="text-3xl font-bold text-gray-900 dark:text-gray-50">
           {title}
         </span>
         {description && (
-          <span className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <span className="mt-1 text-base text-gray-500 dark:text-gray-400">
             {description}
           </span>
         )}
         {footer && (
-          <span className="mt-2 text-xs font-medium text-[#383698]">
+          <span className="mt-2 text-sm font-medium text-[#383698]">
             {footer}
           </span>
         )}
       </div>
-      <ChevronRight className="h-6 w-6 text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-[#383698]" />
+      <ChevronRight className="h-7 w-7 text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-[#383698]" />
     </button>
   )
 }
