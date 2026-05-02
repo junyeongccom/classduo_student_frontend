@@ -25,13 +25,15 @@ export interface QuizStorageItem extends QuizWithMeta {
   last_activity_at: string | null
   /** 오답 마지막 시점 (있을 때만) */
   last_wrong_at: string | null
+  /** 강의 회차 번호 (lecture_no). exam_prep 항목의 핵심테스트 번호 필터링에 사용. */
+  lecture_no?: number
 }
 
 interface UseQuizStorageOpts {
   lectureIds: string[]
   lectureInfoMap: Map<
     string,
-    { course_id: string; course_name: string; lecture_name: string }
+    { course_id: string; course_name: string; lecture_name: string; lecture_no: number }
   >
 }
 
@@ -249,6 +251,7 @@ export function useQuizStorage({
           course_id: info?.course_id,
           course_name: info?.course_name,
           lecture_name: info?.lecture_name,
+          lecture_no: info?.lecture_no,
           is_bookmark: acc.is_bookmark,
           is_wrong: acc.is_wrong,
           wrong_count: finalWrongCount,

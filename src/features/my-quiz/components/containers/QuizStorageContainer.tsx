@@ -26,6 +26,7 @@ import {
 import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
 import { useQuizStorage, type QuizStorageItem } from '../../hooks/useQuizStorage'
 import type { StudentQuizType } from '@/shared/components/quiz'
+import { CORE_TEST_TO_LECTURE_NO } from '@/features/exam-prep-final/domain/coreTestLectureMap'
 
 type SegmentValue = 'all' | 'fav' | 'wrong'
 /**
@@ -138,10 +139,12 @@ export default function QuizStorageContainer() {
     [courseLectures],
   )
 
-  // 회차 칩 다중 선택 상태 (빈 배열 = 전체)
+  // 회차 칩 다중 선택 상태 (빈 배열 = 전체) — content/customize 용
   const [lectureFilter, setLectureFilter] = useState<string[]>([])
-  // 유형 단일 선택 (null = 전체)
+  // 유형 단일 선택 (null = 전체) — content/customize 용
   const [typeFilter, setTypeFilter] = useState<StudentQuizType | null>(null)
+  // 핵심테스트 번호 다중 선택 (빈 배열 = 전체) — exam-prep 출처 전용
+  const [coreTestFilter, setCoreTestFilter] = useState<number[]>([])
   // segmented
   const [segment, setSegment] = useState<SegmentValue>('all')
   // 출처 칩 (single)
@@ -176,6 +179,16 @@ export default function QuizStorageContainer() {
     lectureInfoMap,
   })
 
+  // 핵심테스트 번호 → lecture_no 변환 (선택된 핵심테스트들의 lecture_no Set)
+  const coreTestLectureNoSet = useMemo(() => {
+    const s = new Set<number>()
+    for (const n of coreTestFilter) {
+      const ln = CORE_TEST_TO_LECTURE_NO[n]
+      if (ln != null) s.add(ln)
+    }
+    return s
+  }, [coreTestFilter])
+
   // 클라이언트 사이드 필터링
   const filtered = useMemo(() => {
     let list = items
@@ -185,7 +198,14 @@ export default function QuizStorageContainer() {
     list = list.filter((q) => toDisplaySource(q.quiz_source) !== null)
     if (sourceFilter !== 'all')
       list = list.filter((q) => toDisplaySource(q.quiz_source) === sourceFilter)
+    // 유형 필터 — content/customize 만 (exam_prep 는 quiz_type 메타 없음)
     if (typeFilter) list = list.filter((q) => q.quiz_type === typeFilter)
+    // 핵심테스트 번호 필터 — exam-prep 출처 선택 + 1개 이상 선택된 경우에만 적용
+    if (sourceFilter === 'exam-prep' && coreTestLectureNoSet.size > 0) {
+      list = list.filter(
+        (q) => q.lecture_no != null && coreTestLectureNoSet.has(q.lecture_no),
+      )
+    }
     // 정렬
     list = [...list].sort((a, b) => {
       const aT = a.last_activity_at ? new Date(a.last_activity_at).getTime() : 0
@@ -193,7 +213,7 @@ export default function QuizStorageContainer() {
       return sortOrder === 'newest' ? bT - aT : aT - bT
     })
     return list
-  }, [items, segment, sourceFilter, typeFilter, sortOrder])
+  }, [items, segment, sourceFilter, typeFilter, sortOrder, coreTestLectureNoSet])
 
   const totalCounts = useMemo(() => {
     let fav = 0,
@@ -210,6 +230,7 @@ export default function QuizStorageContainer() {
     setSourceFilter('all')
     setLectureFilter([])
     setTypeFilter(null)
+    setCoreTestFilter([])
   }
 
   const handleStudy = (q: QuizStorageItem) => {
@@ -347,9 +368,13 @@ export default function QuizStorageContainer() {
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 필터
-                {(lectureFilter.length > 0 || typeFilter !== null) && (
+                {(lectureFilter.length > 0 ||
+                  typeFilter !== null ||
+                  coreTestFilter.length > 0) && (
                   <span className="ml-1 rounded-full bg-[#6366F1] px-1.5 py-0.5 text-[10px] text-white">
-                    {(lectureFilter.length > 0 ? 1 : 0) + (typeFilter ? 1 : 0)}
+                    {(lectureFilter.length > 0 ? 1 : 0) +
+                      (typeFilter ? 1 : 0) +
+                      (coreTestFilter.length > 0 ? 1 : 0)}
                   </span>
                 )}
               </button>
@@ -380,49 +405,93 @@ export default function QuizStorageContainer() {
             })}
           </div>
 
-          {/* Advanced — 회차 + 유형 */}
+          {/* Advanced — 출처가 exam-prep 이면 핵심테스트 1~26 칩, 그 외엔 회차 + 유형 */}
           {advancedOpen && (
             <div className="mt-3 space-y-2.5 border-t border-gray-100 pt-3 dark:border-gray-800">
-              <div className="qs-no-scrollbar flex items-center gap-2 overflow-x-auto">
-                <span className="w-12 shrink-0 text-xs font-semibold text-gray-400">회차</span>
-                <Chip
-                  active={lectureFilter.length === 0}
-                  onClick={() => setLectureFilter([])}
-                >
-                  전체
-                </Chip>
-                {courseLectures.map((l) => (
-                  <Chip
-                    key={l.lecture_id}
-                    active={lectureFilter.includes(l.lecture_id)}
-                    onClick={() =>
-                      setLectureFilter((prev) =>
-                        prev.includes(l.lecture_id)
-                          ? prev.filter((x) => x !== l.lecture_id)
-                          : [...prev, l.lecture_id],
-                      )
-                    }
-                  >
-                    {l.lecture_no}주차
-                  </Chip>
-                ))}
-              </div>
+              {sourceFilter === 'exam-prep' ? (
+                <div className="space-y-1.5">
+                  {([
+                    [1, 9],
+                    [10, 18],
+                    [19, 26],
+                  ] as const).map(([start, end], rowIdx) => (
+                    <div key={rowIdx} className="flex flex-wrap items-center gap-2">
+                      <span className="w-16 shrink-0 text-xs font-semibold text-gray-400">
+                        {rowIdx === 0 ? '핵심테스트' : ''}
+                      </span>
+                      {rowIdx === 0 && (
+                        <Chip
+                          active={coreTestFilter.length === 0}
+                          onClick={() => setCoreTestFilter([])}
+                        >
+                          전체
+                        </Chip>
+                      )}
+                      {Array.from(
+                        { length: end - start + 1 },
+                        (_, i) => start + i,
+                      ).map((n) => (
+                        <Chip
+                          key={n}
+                          active={coreTestFilter.includes(n)}
+                          onClick={() =>
+                            setCoreTestFilter((prev) =>
+                              prev.includes(n)
+                                ? prev.filter((x) => x !== n)
+                                : [...prev, n],
+                            )
+                          }
+                        >
+                          {n}번
+                        </Chip>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="qs-no-scrollbar flex items-center gap-2 overflow-x-auto">
+                    <span className="w-12 shrink-0 text-xs font-semibold text-gray-400">회차</span>
+                    <Chip
+                      active={lectureFilter.length === 0}
+                      onClick={() => setLectureFilter([])}
+                    >
+                      전체
+                    </Chip>
+                    {courseLectures.map((l) => (
+                      <Chip
+                        key={l.lecture_id}
+                        active={lectureFilter.includes(l.lecture_id)}
+                        onClick={() =>
+                          setLectureFilter((prev) =>
+                            prev.includes(l.lecture_id)
+                              ? prev.filter((x) => x !== l.lecture_id)
+                              : [...prev, l.lecture_id],
+                          )
+                        }
+                      >
+                        {l.lecture_no}주차
+                      </Chip>
+                    ))}
+                  </div>
 
-              <div className="qs-no-scrollbar flex items-center gap-2 overflow-x-auto">
-                <span className="w-12 shrink-0 text-xs font-semibold text-gray-400">유형</span>
-                <Chip active={typeFilter === null} onClick={() => setTypeFilter(null)}>
-                  전체
-                </Chip>
-                {(Object.keys(TYPE_LABELS) as StudentQuizType[]).map((tp) => (
-                  <Chip
-                    key={tp}
-                    active={typeFilter === tp}
-                    onClick={() => setTypeFilter(tp)}
-                  >
-                    {TYPE_LABELS[tp]}
-                  </Chip>
-                ))}
-              </div>
+                  <div className="qs-no-scrollbar flex items-center gap-2 overflow-x-auto">
+                    <span className="w-12 shrink-0 text-xs font-semibold text-gray-400">유형</span>
+                    <Chip active={typeFilter === null} onClick={() => setTypeFilter(null)}>
+                      전체
+                    </Chip>
+                    {(Object.keys(TYPE_LABELS) as StudentQuizType[]).map((tp) => (
+                      <Chip
+                        key={tp}
+                        active={typeFilter === tp}
+                        onClick={() => setTypeFilter(tp)}
+                      >
+                        {TYPE_LABELS[tp]}
+                      </Chip>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-1">
                 <button

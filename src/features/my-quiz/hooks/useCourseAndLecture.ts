@@ -141,7 +141,7 @@ export function useCourseAndLecture(initialCourseId?: string | null) {
   )
 
   const lectureInfoMap = useMemo(() => {
-    const map = new Map<string, { course_id: string; course_name: string; lecture_name: string }>()
+    const map = new Map<string, { course_id: string; course_name: string; lecture_name: string; lecture_no: number }>()
     for (const c of courses) {
       const courseName = c.section ? `${c.title} (${c.section})` : c.title
       for (const l of c.lectures) {
@@ -151,6 +151,7 @@ export function useCourseAndLecture(initialCourseId?: string | null) {
           lecture_name: l.title
             ? t('selector.lectureLabelWithTitle', { no: l.lecture_no, title: l.title })
             : t('selector.lectureLabel', { no: l.lecture_no }),
+          lecture_no: l.lecture_no,
         })
       }
     }
