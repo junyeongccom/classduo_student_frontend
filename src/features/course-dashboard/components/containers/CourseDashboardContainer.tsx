@@ -1,8 +1,8 @@
 /**
  * @file CourseDashboardContainer.tsx
- * @description 과목 대시보드 메인 컨테이너 — Header + Continue + 4개 학습모드 카드
+ * @description 과목 대시보드 — 기말대비 hero + 회차별/대화형 + 캘린더 + 학점/XP
  * @module features/course-dashboard/components/containers
- * @dependencies useCourseDashboard, StudyspaceTopbarSlot, StudyModeCard, CourseHeader, ContinueLearningCard
+ * @dependencies useCourseDashboard, useDashboardMock, hero/mid/quick 카드, 캘린더, 학점 카드
  */
 
 'use client'
@@ -11,13 +11,16 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { ChevronRight, Loader2, Leaf, GraduationCap, MessageCircle, FolderOpen } from 'lucide-react'
+import { ChevronRight, Loader2, PencilLine, Bookmark } from 'lucide-react'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 import { useCourseDashboard } from '../../hooks/useCourseDashboard'
-import { CourseHeader } from '../ui/CourseHeader'
-import { ContinueLearningCard } from '../ui/ContinueLearningCard'
-import { StudyModeCard, DdayBadge } from '../ui/StudyModeCard'
+import { useDashboardMock } from '../../hooks/useDashboardMock'
+import { ExamPrepHeroCard } from '../ui/ExamPrepHeroCard'
+import { StudyModeMidCard } from '../ui/StudyModeMidCard'
+import { QuickActionLink } from '../ui/QuickActionLink'
+import { AttendanceCalendarCard } from '../ui/AttendanceCalendarCard'
+import { GradeProgressCard } from '../ui/GradeProgressCard'
 
 export function CourseDashboardContainer({ courseId }: { courseId: string }) {
   const t = useTranslations()
@@ -27,13 +30,10 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     error,
     refresh,
     courseTitle,
-    professorName,
-    termLabel,
-    currentWeek,
     examDday,
-    continueLecture,
     uploadedWeek,
   } = useCourseDashboard(courseId)
+  const { user, streak, monthGrid } = useDashboardMock(courseId)
 
   useEffect(() => {
     trackPageEnter('course_dashboard', { courseId })
@@ -64,10 +64,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     )
   }
 
-  // D-day — useCourseDashboard 가 EXAM_DATE_ISO 로 계산. 0 이상 보장됨.
-  const examBadgeDays = examDday ?? 0
-
-  // "회차별 학습" footer
   const weeklyFooter =
     uploadedWeek != null
       ? t('courseDashboard.modeWeekly.footer', { week: uploadedWeek })
@@ -75,7 +71,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
 
   return (
     <>
-      {/* Breadcrumb topbar */}
+      {/* Breadcrumb topbar — 기존 유지 */}
       <StudyspaceTopbarSlot>
         <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
           <Link
@@ -92,89 +88,69 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
       </StudyspaceTopbarSlot>
 
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-8">
-          <CourseHeader
-            professorName={professorName}
-            termLabel={termLabel}
-            courseTitle={courseTitle}
-            currentWeek={currentWeek}
-            examDday={examBadgeDays}
-          />
+        <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
+            {/* ───── 좌측 컬럼 ───── */}
+            <div className="flex flex-col gap-5">
+              <ExamPrepHeroCard
+                title={t('courseDashboard.modeExam.title')}
+                subtitle="10문제 · 30세트 · 일일 참여 시 보상 UP"
+                onClick={() =>
+                  router.push(`/studyspace/course/${courseId}/exam-prep`)
+                }
+              />
 
-          {continueLecture && (
-            <ContinueLearningCard
-              modeLabel={t('courseNav.lectureStudy')}
-              lectureTitle={
-                continueLecture.title ??
-                continueLecture.essence_7words ??
-                `${continueLecture.lecture_number ?? '?'}`
-              }
-              lectureDate={continueLecture.date}
-              onContinue={() => {
-                router.push(
-                  `/studyspace/course/${courseId}/lecture/${continueLecture.id}`,
-                )
-              }}
-            />
-          )}
+              <StudyModeMidCard
+                eyebrow={t('courseDashboard.modeWeekly.eyebrow')}
+                title={t('courseDashboard.modeWeekly.title')}
+                description="매주 진도를 복습할 수 있어요."
+                footer={weeklyFooter}
+                onClick={() =>
+                  router.push(`/studyspace/course/${courseId}/lectures`)
+                }
+              />
 
-          {/* 학습 모드 헤더 */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
-              {t('courseDashboard.studyModes')}
-            </h2>
-          </div>
+              <StudyModeMidCard
+                eyebrow={t('courseDashboard.modeDialogue.eyebrow')}
+                title={t('courseDashboard.modeDialogue.title')}
+                description="AI에게 모르는 것을 질문하세요."
+                onClick={() =>
+                  router.push(`/studyspace/course/${courseId}/dialogue`)
+                }
+              />
 
-          {/* 4 카드 그리드 (2x2) */}
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <StudyModeCard
-              icon={Leaf}
-              eyebrow={t('courseDashboard.modeWeekly.eyebrow')}
-              title={t('courseDashboard.modeWeekly.title')}
-              description={t('courseDashboard.modeWeekly.description')}
-              footer={weeklyFooter}
-              ctaLabel={t('courseDashboard.modeWeekly.cta')}
-              variant="highlight"
-              iconColor="#8B5CF6"
-              onClick={() =>
-                router.push(`/studyspace/course/${courseId}/lectures`)
-              }
-            />
-            <StudyModeCard
-              icon={GraduationCap}
-              eyebrow={t('courseDashboard.modeExam.eyebrow')}
-              title={t('courseDashboard.modeExam.title')}
-              description={t('courseDashboard.modeExam.description')}
-              footer={t('courseDashboard.modeExam.footer')}
-              badge={<DdayBadge days={examBadgeDays} />}
-              ctaLabel={t('courseDashboard.modeExam.cta')}
-              iconColor="#F97316"
-              onClick={() =>
-                router.push(`/studyspace/course/${courseId}/exam-prep`)
-              }
-            />
-            <StudyModeCard
-              icon={MessageCircle}
-              eyebrow={t('courseDashboard.modeDialogue.eyebrow')}
-              title={t('courseDashboard.modeDialogue.title')}
-              description={t('courseDashboard.modeDialogue.description')}
-              ctaLabel={t('courseDashboard.modeDialogue.cta')}
-              iconColor="#7C3AED"
-              onClick={() =>
-                router.push(`/studyspace/course/${courseId}/dialogue`)
-              }
-            />
-            <StudyModeCard
-              icon={FolderOpen}
-              eyebrow={t('courseDashboard.modeResources.eyebrow')}
-              title={t('courseDashboard.modeResources.title')}
-              description={t('courseDashboard.modeResources.description')}
-              ctaLabel={t('courseDashboard.modeResources.cta')}
-              iconColor="#6B7280"
-              onClick={() =>
-                router.push(`/studyspace/course/${courseId}/my-quizzes`)
-              }
-            />
+              <div className="grid grid-cols-2 gap-4">
+                <QuickActionLink
+                  icon={PencilLine}
+                  label={t('courseNav.createQuestion')}
+                  onClick={() =>
+                    router.push(
+                      `/studyspace/course/${courseId}/my-quizzes?tab=create`,
+                    )
+                  }
+                />
+                <QuickActionLink
+                  icon={Bookmark}
+                  label="내 퀴즈 저장소"
+                  onClick={() =>
+                    router.push(`/studyspace/course/${courseId}/my-quizzes`)
+                  }
+                />
+              </div>
+            </div>
+
+            {/* ───── 우측 컬럼 ───── */}
+            <div className="flex flex-col gap-5">
+              <AttendanceCalendarCard
+                monthGrid={monthGrid}
+                examDday={examDday}
+                currentStreak={streak.currentStreak}
+              />
+              <GradeProgressCard
+                displayName={user.displayName}
+                xp={user.xp}
+              />
+            </div>
           </div>
         </div>
       </div>

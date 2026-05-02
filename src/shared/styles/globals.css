@@ -348,6 +348,93 @@
     background-size: 200% 100%;
     animation: none;
   }
+
+  /* ─────────── 과목 대시보드 — 기말 대비 hero 카드 ─────────── */
+  /* 시머(반짝이는 광선이 사선으로 쓸고 지나감) + 아케이드 누름 효과.
+     디자인 사양: 9초 주기, 1.5s sweep / hover시 살짝 떠오름 / active시 4px 푹 들어감. */
+  .exam-hero {
+    --button-side-dark: #1F1E5C;
+    position: relative;
+    overflow: hidden;
+    border: 0;
+    cursor: pointer;
+    transition:
+      transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow:
+      0 6px 0 var(--button-side-dark),
+      0 14px 28px rgba(0, 0, 0, 0.18);
+  }
+
+  @media (hover: hover) {
+    .exam-hero:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 0 var(--button-side-dark),
+        0 22px 40px rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  .exam-hero:active {
+    transform: translateY(4px);
+    box-shadow:
+      0 2px 0 var(--button-side-dark),
+      0 4px 10px rgba(0, 0, 0, 0.20);
+    transition-duration: 0.08s;
+  }
+
+  .exam-hero:focus-visible {
+    outline: 2px solid #FFFFFF;
+    outline-offset: 3px;
+  }
+
+  .exam-hero-shimmer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    overflow: hidden;
+  }
+
+  .exam-hero-shimmer::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -120%;
+    width: 45%;
+    height: 200%;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.04) 45%,
+      rgba(255, 255, 255, 0.18) 50%,
+      rgba(255, 255, 255, 0.04) 55%,
+      transparent 70%
+    );
+    transform: skewX(-18deg);
+    animation: exam-hero-sweep 9s ease-in-out infinite;
+  }
+
+  @keyframes exam-hero-sweep {
+    0% {
+      transform: translateX(0) skewX(-18deg);
+    }
+    17% {
+      transform: translateX(420%) skewX(-18deg);
+    }
+    100% {
+      transform: translateX(420%) skewX(-18deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .exam-hero-shimmer::after {
+      animation: none !important;
+    }
+    .exam-hero {
+      transition: none !important;
+    }
+  }
 }
 
 
