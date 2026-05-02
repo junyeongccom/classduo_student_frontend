@@ -537,7 +537,7 @@ export default function QuizStorageContainer() {
           )}
 
           {filtered.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
               {filtered.map((q) => (
                 <QuizCard
                   key={`${q.quiz_source}:${q.quiz_id}`}
