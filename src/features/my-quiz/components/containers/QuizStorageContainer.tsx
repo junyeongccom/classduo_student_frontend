@@ -1,6 +1,6 @@
 /**
  * @file QuizStorageContainer.tsx
- * @description 내 퀴즈 저장소 — 즐겨찾기/오답 통합 + 출처/회차/유형 필터 + 카드/리스트 뷰 + 정답 가림 토글
+ * @description 내 퀴즈 저장소 — 즐겨찾기/오답 통합 + 출처/회차/유형 필터 + 카드 뷰 + 정답 가림 토글 (오답: 인라인 풀이 + 해설 expand)
  * @module features/my-quiz/components/containers
  * @dependencies useQuizStorage, useCourseAndLecture, lucide-react
  */
@@ -8,23 +8,23 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import {
-  ArrowRight,
   ArrowUpDown,
   Bookmark,
+  ChevronDown,
+  ChevronUp,
   Eye,
   EyeOff,
-  LayoutGrid,
-  List,
-  MoreHorizontal,
+  Lightbulb,
   SlidersHorizontal,
   X,
   XCircle,
 } from 'lucide-react'
 import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
 import { useQuizStorage, type QuizStorageItem } from '../../hooks/useQuizStorage'
+import { updateCorrect } from '@/features/lecture-study/services/quizStatusService'
 import type { StudentQuizType } from '@/shared/components/quiz'
 import { CORE_TEST_TO_LECTURE_NO } from '@/features/exam-prep-final/domain/coreTestLectureMap'
 
@@ -38,10 +38,8 @@ type SegmentValue = 'all' | 'fav' | 'wrong'
  *   raw quiz_source = 'instructor' 는 학생 UI 에 노출되지 않으므로 제외.
  */
 type SourceValue = 'all' | 'lecture-content' | 'exam-prep' | 'customize'
-type ViewMode = 'cards' | 'list'
 type AnswersMode = 'off' | 'on'
 
-const VIEW_KEY = 'quizStorage:view'
 const ANSWERS_KEY = 'quizStorage:answers'
 
 interface SourceMeta {
@@ -114,7 +112,6 @@ function formatRelative(iso: string | null): string {
 export default function QuizStorageContainer() {
   const params = useParams<{ courseId?: string }>()
   const courseIdParam = params?.courseId ?? null
-  const router = useRouter()
   const locale = useLocale()
 
   const {
@@ -153,20 +150,12 @@ export default function QuizStorageContainer() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   // advanced filters expanded
   const [advancedOpen, setAdvancedOpen] = useState(false)
-  // 뷰 모드, 정답 모드 — localStorage 복원 (lazy initializer로 첫 렌더부터 정확한 값 사용 → 깜빡임 방지)
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window === 'undefined') return 'cards'
-    const v = window.localStorage.getItem(VIEW_KEY)
-    return v === 'list' ? 'list' : 'cards'
-  })
+  // 정답 모드 — localStorage 복원 (lazy initializer로 첫 렌더부터 정확한 값 사용 → 깜빡임 방지)
   const [answersMode, setAnswersMode] = useState<AnswersMode>(() => {
     if (typeof window === 'undefined') return 'off'
     const a = window.localStorage.getItem(ANSWERS_KEY)
     return a === 'on' ? 'on' : 'off'
   })
-  useEffect(() => {
-    try { localStorage.setItem(VIEW_KEY, viewMode) } catch {}
-  }, [viewMode])
   useEffect(() => {
     try { localStorage.setItem(ANSWERS_KEY, answersMode) } catch {}
   }, [answersMode])
@@ -206,10 +195,13 @@ export default function QuizStorageContainer() {
         (q) => q.lecture_no != null && coreTestLectureNoSet.has(q.lecture_no),
       )
     }
-    // 정렬
+    // 정렬 — 오답 세그먼트는 last_wrong_at 기준 (오답이 발생한 시각으로 1번~20번 풀이 순서대로 정확히 정렬)
+    const sortKey = segment === 'wrong'
+      ? (q: QuizStorageItem) => q.last_wrong_at ?? q.last_activity_at
+      : (q: QuizStorageItem) => q.last_activity_at
     list = [...list].sort((a, b) => {
-      const aT = a.last_activity_at ? new Date(a.last_activity_at).getTime() : 0
-      const bT = b.last_activity_at ? new Date(b.last_activity_at).getTime() : 0
+      const aT = sortKey(a) ? new Date(sortKey(a) as string).getTime() : 0
+      const bT = sortKey(b) ? new Date(sortKey(b) as string).getTime() : 0
       return sortOrder === 'newest' ? bT - aT : aT - bT
     })
     return list
@@ -233,15 +225,7 @@ export default function QuizStorageContainer() {
     setCoreTestFilter([])
   }
 
-  const handleStudy = (q: QuizStorageItem) => {
-    if (!q.lecture_id || !q.course_id) return
-    // 단순 라우팅 — 회차 학습 페이지로 이동 (간이)
-    router.push(`/studyspace/course/${q.course_id}/lecture/${q.lecture_id}`)
-  }
-
-  const rootClass = `${viewMode === 'cards' ? 'view-cards' : 'view-list'} ${
-    answersMode === 'on' ? 'answers-on' : 'answers-off'
-  }`
+  const rootClass = answersMode === 'on' ? 'answers-on' : 'answers-off'
 
   return (
     <div className="h-full overflow-y-auto">
@@ -268,28 +252,32 @@ export default function QuizStorageContainer() {
           color: rgb(156 163 175); font-size: 10px; font-weight: 600;
         }
 
-        .answers-on .qs-choice-row[data-correct="true"] { color: rgb(4 120 87); font-weight: 600; }
-        .answers-on .qs-choice-row[data-correct="true"] .qs-choice-num {
+        /* 채점 결과 색상 — answers-on 전역 토글 또는 카드별 인라인 풀이 (data-show-results) 양쪽 모두 적용 */
+        .answers-on .qs-choice-row[data-correct="true"],
+        .qs-choice-row[data-show-results="true"][data-correct="true"] {
+          color: rgb(4 120 87); font-weight: 600;
+        }
+        .answers-on .qs-choice-row[data-correct="true"] .qs-choice-num,
+        .qs-choice-row[data-show-results="true"][data-correct="true"] .qs-choice-num {
           background: rgb(209 250 229); border-color: rgb(209 250 229); color: rgb(4 120 87);
         }
-        .answers-on .qs-choice-row[data-correct="true"] .qs-answer-badge {
+        .answers-on .qs-choice-row[data-correct="true"] .qs-answer-badge,
+        .qs-choice-row[data-show-results="true"][data-correct="true"] .qs-answer-badge {
           display: inline; margin-left: auto; color: rgb(5 150 105);
         }
 
-        .answers-on .qs-choice-row[data-mine="true"]:not([data-correct="true"]) {
+        .answers-on .qs-choice-row[data-mine="true"]:not([data-correct="true"]),
+        .qs-choice-row[data-show-results="true"][data-mine="true"]:not([data-correct="true"]) {
           color: rgb(225 29 72); font-weight: 600;
         }
-        .answers-on .qs-choice-row[data-mine="true"]:not([data-correct="true"]) .qs-choice-num {
+        .answers-on .qs-choice-row[data-mine="true"]:not([data-correct="true"]) .qs-choice-num,
+        .qs-choice-row[data-show-results="true"][data-mine="true"]:not([data-correct="true"]) .qs-choice-num {
           background: rgb(255 228 230); border-color: rgb(255 228 230); color: rgb(225 29 72);
         }
-        .answers-on .qs-choice-row[data-mine="true"]:not([data-correct="true"]) .qs-mine-badge {
+        .answers-on .qs-choice-row[data-mine="true"]:not([data-correct="true"]) .qs-mine-badge,
+        .qs-choice-row[data-show-results="true"][data-mine="true"]:not([data-correct="true"]) .qs-mine-badge {
           display: inline; margin-left: auto; color: rgb(244 63 94);
         }
-
-        .view-cards .qs-grid-cards { display: grid; }
-        .view-cards .qs-list-rows { display: none; }
-        .view-list .qs-grid-cards { display: none; }
-        .view-list .qs-list-rows { display: block; }
 
         .qs-no-scrollbar::-webkit-scrollbar { display: none; }
         .qs-no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
@@ -516,33 +504,6 @@ export default function QuizStorageContainer() {
 
           <div className="flex items-center gap-3">
             {/* View toggle */}
-            <div className="inline-flex items-center rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
-              <button
-                onClick={() => setViewMode('cards')}
-                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold ${
-                  viewMode === 'cards'
-                    ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
-                    : 'text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                카드
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold ${
-                  viewMode === 'list'
-                    ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
-                    : 'text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                <List className="h-3.5 w-3.5" />
-                리스트
-              </button>
-            </div>
-
-            <div className="h-5 w-px bg-gray-200" />
-
             {/* Answers toggle */}
             <button
               onClick={() => setAnswersMode((m) => (m === 'on' ? 'off' : 'on'))}
@@ -576,38 +537,17 @@ export default function QuizStorageContainer() {
           )}
 
           {filtered.length > 0 && (
-            <>
-              {/* CARD VIEW */}
-              <div className="qs-grid-cards grid-cols-1 gap-4 lg:grid-cols-2">
-                {filtered.map((q) => (
-                  <QuizCard
-                    key={`${q.quiz_source}:${q.quiz_id}`}
-                    item={q}
-                    locale={locale}
-                    onStudy={() => handleStudy(q)}
-                  />
-                ))}
-              </div>
-
-              {/* LIST VIEW */}
-              <div className="qs-list-rows overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-                <div className="grid grid-cols-12 gap-2 border-b border-gray-200 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:border-gray-700 dark:bg-gray-800">
-                  <div className="col-span-1">상태</div>
-                  <div className="col-span-3">출처</div>
-                  <div className="col-span-5">문제</div>
-                  <div className="col-span-2">시점</div>
-                  <div className="col-span-1 text-right" />
-                </div>
-                {filtered.map((q) => (
-                  <QuizListRow
-                    key={`${q.quiz_source}:${q.quiz_id}`}
-                    item={q}
-                    locale={locale}
-                    onStudy={() => handleStudy(q)}
-                  />
-                ))}
-              </div>
-            </>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {filtered.map((q) => (
+                <QuizCard
+                  key={`${q.quiz_source}:${q.quiz_id}`}
+                  item={q}
+                  locale={locale}
+                  isWrongTab={segment === 'wrong'}
+                  answersMode={answersMode}
+                />
+              ))}
+            </div>
           )}
         </div>
 
@@ -670,11 +610,13 @@ function Chip({
 function QuizCard({
   item,
   locale,
-  onStudy,
+  isWrongTab,
+  answersMode,
 }: {
   item: QuizStorageItem
   locale: string
-  onStudy: () => void
+  isWrongTab: boolean
+  answersMode: AnswersMode
 }) {
   const display = toDisplaySource(item.quiz_source)
   const meta = display ? SOURCE_META[display] : SOURCE_META['lecture-content']
@@ -682,13 +624,41 @@ function QuizCard({
   const typeLabel = TYPE_LABELS[item.quiz_type] ?? ''
   const question =
     locale === 'en' && item.question_eng ? item.question_eng : item.question
+  const explanation =
+    locale === 'en' && item.explanation_eng ? item.explanation_eng : item.explanation
   const sortedChoices = [...item.choices].sort(
     (a, b) => a.choice_order - b.choice_order,
   )
 
+  // 인라인 풀이 — 다시 들어오면 reset (component state). 오답 탭 + answersMode='off' 일 때만 가능.
+  const [attemptIdx, setAttemptIdx] = useState<number | null>(null)
+  const [explanationOpen, setExplanationOpen] = useState(false)
+
+  const canSolve = isWrongTab && answersMode === 'off' && attemptIdx == null
+  // 풀이 후 또는 정답표시 ON 이면 채점 결과 표시
+  const showResults = answersMode === 'on' || attemptIdx != null
+
+  const handleChoiceClick = async (idx: number, isCorrect: boolean) => {
+    if (!canSolve) return
+    setAttemptIdx(idx)
+    if (!item.lecture_id) return
+    try {
+      await updateCorrect(
+        'incorrect',
+        item.quiz_id,
+        item.lecture_id,
+        isCorrect,
+        idx + 1,  // 1-based
+        null,
+      )
+    } catch {
+      // silent — 활동 로그 적재 실패는 사용자에게 영향 없음
+    }
+  }
+
   return (
     <article className="group relative rounded-2xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-300 hover:shadow-sm dark:border-gray-700 dark:bg-gray-900">
-      {/* Top row */}
+      {/* Top row — 점 세개 메뉴 제거 (오답 삭제 차단) */}
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
           <span
@@ -714,16 +684,13 @@ function QuizCard({
             </span>
           )}
           {item.is_bookmark && (
-            <button
-              className="rounded-lg p-1.5 text-blue-500 hover:bg-blue-50"
+            <span
+              className="rounded-lg p-1.5 text-blue-500"
               title="즐겨찾기"
             >
               <Bookmark className="h-4 w-4 fill-current" />
-            </button>
+            </span>
           )}
-          <button className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-50">
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
         </div>
       </div>
 
@@ -732,19 +699,31 @@ function QuizCard({
         {question}
       </h3>
 
-      {/* Choices */}
+      {/* Choices — 오답 탭 정답표시 OFF 상태에서 클릭하면 채점 + 색상 표시 + INSERT */}
       <ol className="space-y-1">
         {sortedChoices.map((c, idx) => {
           const order = idx + 1
           const isCorrect = c.is_correct
-          const isMine = item.selected_answer === idx
+          // attempt 가 있으면 그 index, 없으면 stored selected (answersMode='on' 케이스용)
+          const isMine = attemptIdx != null
+            ? attemptIdx === idx
+            : (answersMode === 'on' && item.selected_answer === idx)
           const text = locale === 'en' && c.choice_text_eng ? c.choice_text_eng : c.choice_text
+
+          // 채점 결과 색상 (showResults 시) — answers-on / answers-off 클래스로 CSS 분기
+          // 단, attemptIdx 가 있을 때는 강제로 answers-on 처럼 보여야 하므로 inline 처리
+          const choiceClass = canSolve
+            ? 'qs-choice-row cursor-pointer hover:bg-gray-50'
+            : 'qs-choice-row'
+
           return (
             <li
               key={c.choice_id}
-              className="qs-choice-row"
+              className={choiceClass}
               data-correct={isCorrect ? 'true' : 'false'}
               data-mine={isMine ? 'true' : 'false'}
+              data-show-results={showResults ? 'true' : 'false'}
+              onClick={canSolve ? () => handleChoiceClick(idx, isCorrect) : undefined}
             >
               <span className="qs-choice-num">{order}</span>
               <span className="qs-choice-text">{text}</span>
@@ -758,10 +737,10 @@ function QuizCard({
         })}
       </ol>
 
-      {/* Footer */}
+      {/* Footer — 다시 풀기 → 해설 보기 (expand) */}
       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs dark:border-gray-800">
         <span className="text-gray-400">
-          {formatRelative(item.last_activity_at)}
+          {formatRelative(isWrongTab ? (item.last_wrong_at ?? item.last_activity_at) : item.last_activity_at)}
           {item.is_bookmark && item.is_wrong
             ? ' · 즐겨찾기 + 오답'
             : item.is_bookmark
@@ -769,66 +748,53 @@ function QuizCard({
               : ' 오답'}
         </span>
         <button
-          onClick={onStudy}
+          onClick={() => setExplanationOpen((o) => !o)}
           className="inline-flex items-center gap-1 font-semibold text-[#6366F1] hover:text-[#4F46E5]"
         >
-          다시 풀기
-          <ArrowRight className="h-3.5 w-3.5" />
+          <Lightbulb className="h-3.5 w-3.5" />
+          {explanationOpen ? '해설 닫기' : '해설 보기'}
+          {explanationOpen ? (
+            <ChevronUp className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5" />
+          )}
         </button>
       </div>
+
+      {/* Explanation — expand 시 카드 내부에 펼쳐짐 (아래 카드들이 자연스럽게 밀려남, grid layout 덕분) */}
+      {explanationOpen && (
+        <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-800">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">해설</p>
+          {explanation ? (
+            <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-200">
+              {explanation}
+            </p>
+          ) : (
+            <p className="text-gray-400">해설이 제공되지 않은 문제입니다.</p>
+          )}
+          {sortedChoices.some((c) => c.choice_explanation || c.choice_explanation_eng) && (
+            <ul className="mt-3 space-y-1.5 border-t border-gray-200 pt-2.5 dark:border-gray-700">
+              {sortedChoices.map((c, idx) => {
+                const exp =
+                  locale === 'en' && c.choice_explanation_eng
+                    ? c.choice_explanation_eng
+                    : c.choice_explanation
+                if (!exp) return null
+                return (
+                  <li key={c.choice_id} className="text-xs text-gray-600 dark:text-gray-300">
+                    <span className="font-semibold text-gray-700 dark:text-gray-200">
+                      {idx + 1}번
+                      {c.is_correct ? ' (정답)' : ''}:
+                    </span>{' '}
+                    {exp}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </article>
-  )
-}
-
-function QuizListRow({
-  item,
-  locale,
-  onStudy,
-}: {
-  item: QuizStorageItem
-  locale: string
-  onStudy: () => void
-}) {
-  const display = toDisplaySource(item.quiz_source)
-  const meta = display ? SOURCE_META[display] : SOURCE_META['lecture-content']
-  const question =
-    locale === 'en' && item.question_eng ? item.question_eng : item.question
-
-  return (
-    <button
-      onClick={onStudy}
-      className="grid w-full grid-cols-12 items-center gap-2 border-b border-gray-100 px-5 py-3 text-left hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800"
-    >
-      <div className="col-span-1 flex items-center gap-1">
-        {item.is_bookmark && (
-          <Bookmark className="h-4 w-4 fill-current text-blue-500" />
-        )}
-        {item.is_wrong && (
-          <span className="inline-flex h-5 items-center gap-0.5 rounded-full bg-orange-50 px-1.5 text-[10px] font-bold text-[#C2410C] whitespace-nowrap">
-            <X className="h-3 w-3" />
-            오답 ({item.wrong_count}회)
-          </span>
-        )}
-      </div>
-      <div className="col-span-3">
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${meta.pillBg} ${meta.pillText}`}
-        >
-          <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
-          {meta.label}
-          {item.lecture_name ? ` · ${item.lecture_name}` : ''}
-        </span>
-      </div>
-      <div className="col-span-5 truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-        {question}
-      </div>
-      <div className="col-span-2 text-xs text-gray-400">
-        {formatRelative(item.last_activity_at)}
-      </div>
-      <div className="col-span-1 flex justify-end">
-        <ArrowRight className="h-4 w-4 text-gray-400" />
-      </div>
-    </button>
   )
 }
 

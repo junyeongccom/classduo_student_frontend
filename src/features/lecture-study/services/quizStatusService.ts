@@ -15,7 +15,7 @@ import {
 
 /* ───────────── Types ───────────── */
 
-export type QuizSource = 'instructor' | 'customize' | 'content'
+export type QuizSource = 'instructor' | 'customize' | 'content' | 'incorrect'
 
 export interface QuizStatus {
   quiz_id: string
