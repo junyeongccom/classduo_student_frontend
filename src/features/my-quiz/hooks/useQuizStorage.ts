@@ -110,9 +110,11 @@ export function useQuizStorage({
 
       // (quiz_source, quiz_id) → 누적 incorrect_count.
       // content / customize / instructor 만 — exam_prep 는 mastery 에서 별도로 합친다.
+      // 'incorrect' source 는 오답노트에서 다시 풀이한 활동 로그이지 원본 quiz 의 오답이
+      // 아니므로 카운트에서 제외 (별도 quiz 본문도 없음).
       const wrongCountMap = new Map<string, number>()
       for (const a of attempts) {
-        if (a.correct === false) {
+        if (a.correct === false && a.quiz_source !== 'incorrect') {
           const key = `${a.quiz_source}:${a.quiz_id}`
           wrongCountMap.set(key, (wrongCountMap.get(key) ?? 0) + 1)
         }
@@ -150,6 +152,9 @@ export function useQuizStorage({
       }
 
       for (const w of incorrects) {
+        // 'incorrect' source 는 오답노트에서 다시 풀이한 활동 로그이지 별개 quiz 가 아님 — skip
+        // (bySource Record 에 'incorrect' 키가 없어 push 시 TypeError 도 방지)
+        if (w.quiz_source === 'incorrect') continue
         const key = `${w.quiz_source}:${w.quiz_id}`
         const existing = merged.get(key)
         if (existing) {
@@ -177,11 +182,13 @@ export function useQuizStorage({
       }
 
       // 출처별 분류 → 한 번에 조회
+      // 'incorrect' source 는 위 incorrects 처리에서 이미 skip 했으나, 타입 만족을 위해 빈 배열 유지.
       const bySource: Record<QuizSource, string[]> = {
         instructor: [],
         customize: [],
         content: [],
         exam_prep: [],
+        incorrect: [],
       }
       for (const acc of merged.values()) {
         bySource[acc.quiz_source].push(acc.quiz_id)

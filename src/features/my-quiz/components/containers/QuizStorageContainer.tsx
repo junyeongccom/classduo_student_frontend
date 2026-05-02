@@ -76,11 +76,12 @@ const SOURCE_META: Record<Exclude<SourceValue, 'all'>, SourceMeta> = {
  * 'exam_prep' 은 user_quiz_status 에 함께 저장되며, 표시 카테고리는 'exam-prep'.
  */
 function toDisplaySource(
-  src: 'instructor' | 'content' | 'customize' | 'exam_prep',
+  src: 'instructor' | 'content' | 'customize' | 'exam_prep' | 'incorrect',
 ): Exclude<SourceValue, 'all'> | null {
   if (src === 'content') return 'lecture-content'
   if (src === 'customize') return 'customize'
   if (src === 'exam_prep') return 'exam-prep'
+  // 'instructor' 는 학생 UI 미노출, 'incorrect' 는 활동 로그 source 라 별개 표시 카테고리 없음
   return null
 }
 
