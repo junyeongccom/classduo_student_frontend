@@ -172,41 +172,6 @@ export async function getQuizStatusesByLectureIds(
 }
 
 /**
- * 특정 lecture의 모든 instructor quiz status 조회 (보상 판정용).
- * NOTE: instructor 는 user_quiz_response 범위 외 (학생 UI 미노출 정책) — 기존 user_quiz_status 유지.
- */
-export async function getAllInstructorQuizStatuses(
-  lectureId: string,
-): Promise<{ data: QuizStatusEntry[] | null; error: Error | null }> {
-  try {
-    const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-      .from('user_quiz_status')
-      .select('quiz_id, quiz_source, lecture_id, correct, answer')
-      .eq('lecture_id', lectureId)
-      .eq('quiz_source', 'instructor')
-
-    if (error) {
-      if (isJWTExpiredError(error)) {
-        await handleJWTExpiration()
-        return { data: null, error: new Error('세션이 만료되었습니다.') }
-      }
-      return { data: null, error: new Error(getErrorMessage(error)) }
-    }
-
-    return { data: (data ?? []) as QuizStatusEntry[], error: null }
-  } catch (err) {
-    if (isJWTExpiredError(err)) {
-      await handleJWTExpiration()
-    }
-    return {
-      data: null,
-      error: err instanceof Error ? err : new Error(getErrorMessage(err)),
-    }
-  }
-}
-
-/**
  * quiz_source별 퀴즈 콘텐츠 조회 (instructor / customize)
  */
 export async function fetchQuizContent(
