@@ -120,9 +120,12 @@ export default function QuizCreatorContainer() {
   }, [])
 
   // ─── 세션 목록 ───
-  // 주의: selectedCourse 는 courses.find(...) 결과로 매 렌더마다 새 참조라
-  // useCallback deps 에 넣으면 매 렌더 새 fetchSessions 가 생성되어 useEffect 무한 재실행 → 깜빡임.
-  // courses 와 selectedCourseId 만 deps 로 두고 lectures 는 함수 내부에서 lookup.
+  // courses 는 fetchCourses 호출 시마다 새 참조로 변경되므로 useCallback deps 에 넣으면
+  // fetchSessions 가 매번 재생성되어 아래 useEffect 가 다회 발동 → setSessions([]) 깜빡임.
+  // courses 는 ref 로 우회하여 fetchSessions 의 안정적 참조를 보장한다.
+  const coursesRef = useRef(courses)
+  coursesRef.current = courses
+
   const fetchSessions = useCallback(async () => {
     if (!selectedCourseId) return
     setIsLoadingSessions(true)
@@ -131,7 +134,8 @@ export default function QuizCreatorContainer() {
       setIsLoadingSessions(false)
       return
     }
-    const lectures = courses.find((c) => c.course_id === selectedCourseId)?.lectures ?? []
+    const lectures =
+      coursesRef.current.find((c) => c.course_id === selectedCourseId)?.lectures ?? []
     const courseLectureIds = new Set(lectures.map((l) => l.lecture_id))
     const filtered = (result.data.sessions ?? [])
       .filter((s) => courseLectureIds.has(s.lecture_id))
@@ -142,10 +146,20 @@ export default function QuizCreatorContainer() {
     setSessions(filtered)
     setIsLoadingSessions(false)
     fetchSolvingStats(filtered)
-  }, [selectedCourseId, courses, fetchSolvingStats])
+  }, [selectedCourseId, fetchSolvingStats])
 
+  // selectedCourseId 가 실제로 변경된 경우에만 sessions 비움 (강좌 간 데이터 섞임 방지).
+  // 동일 selectedCourseId 로 fetchSessions 가 재호출되는 케이스(예: refresh)에서는 빈 상태
+  // 깜빡임을 만들지 않도록 setSessions([]) 호출 조건부.
+  const prevSelectedCourseIdRef = useRef<string | null>(null)
   useEffect(() => {
-    setSessions([])
+    if (
+      prevSelectedCourseIdRef.current !== null &&
+      prevSelectedCourseIdRef.current !== selectedCourseId
+    ) {
+      setSessions([])
+    }
+    prevSelectedCourseIdRef.current = selectedCourseId
     setPollingTimedOut(false)
     if (selectedCourseId) {
       fetchSessions()
@@ -159,25 +173,29 @@ export default function QuizCreatorContainer() {
   const hasCreatingRef = useRef(false)
   hasCreatingRef.current = sessions.some((s) => s.status === 'CREATING')
 
+  // CREATING 세션이 있을 때만 3초 폴링.
+  // sessions.length 와 courses 를 deps 에 두면 setSessions 호출마다 useEffect 재실행 →
+  // setInterval 이 매 polling 사이클마다 재생성되어 깜빡임 발생. ref 로 우회.
   useEffect(() => {
-    if (!hasCreatingRef.current || !selectedCourseId) return
-    if (pollStartTimeRef.current === null) pollStartTimeRef.current = Date.now()
-    setPollingTimedOut(false)
+    if (!selectedCourseId) return
+    if (pollStartTimeRef.current === null && hasCreatingRef.current) {
+      pollStartTimeRef.current = Date.now()
+    }
     const MAX_POLL_MS = 5 * 60 * 1000
 
-    const lectures = courses.find((c) => c.course_id === selectedCourseId)?.lectures ?? []
-    const courseLectureIds = new Set(lectures.map((l) => l.lecture_id))
-
     const interval = setInterval(async () => {
+      if (!hasCreatingRef.current) return  // CREATING 없으면 idle (interval 은 유지)
       if (
         pollStartTimeRef.current !== null &&
         Date.now() - pollStartTimeRef.current > MAX_POLL_MS
       ) {
-        clearInterval(interval)
         pollStartTimeRef.current = null
         setPollingTimedOut(true)
         return
       }
+      const lectures =
+        coursesRef.current.find((c) => c.course_id === selectedCourseId)?.lectures ?? []
+      const courseLectureIds = new Set(lectures.map((l) => l.lecture_id))
       const result = await myQuizService.getSessions()
       if (!result.data) return
       const filtered = (result.data.sessions ?? [])
@@ -197,13 +215,12 @@ export default function QuizCreatorContainer() {
       fetchSolvingStats(filtered)
       const stillCreating = filtered.some((s) => s.status === 'CREATING')
       if (!stillCreating) {
-        clearInterval(interval)
         pollStartTimeRef.current = null
       }
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [selectedCourseId, courses, sessions.length, fetchSolvingStats])
+  }, [selectedCourseId, fetchSolvingStats])
 
   // ─── 세션 액션 ───
   const handleDelete = useCallback(

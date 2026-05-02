@@ -22,10 +22,6 @@ import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
 import { FinalTestPanel } from '../ui/FinalTestPanel'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
-import {
-  debugTriggerFinalTest,
-  debugTriggerMidTest,
-} from '../../services/midFinalService'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
 import type { CoreTest, ExamPrepData, TestSetTab } from '../../types'
 
@@ -52,29 +48,6 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   const router = useRouter()
   const { courseTitle } = useLectures(courseId)
   const { data, isLoading, error, refresh } = useExamPrepData(courseId)
-  // === DEBUG START — 출시 전 삭제 ===
-  const [isDebugTriggering, setIsDebugTriggering] = useState(false)
-  const [debugError, setDebugError] = useState<string | null>(null)
-  const handleDebugTrigger = async (target: 1 | 2 | 3 | 'final') => {
-    if (isDebugTriggering) return
-    setIsDebugTriggering(true)
-    setDebugError(null)
-    try {
-      const r =
-        target === 'final'
-          ? await debugTriggerFinalTest(courseId)
-          : await debugTriggerMidTest(courseId, target)
-      if (!r.ok) {
-        setDebugError(r.error || '[DEBUG] 강제 트리거 실패')
-        return
-      }
-      refresh()
-    } finally {
-      setIsDebugTriggering(false)
-    }
-  }
-  // === DEBUG END ===
-
   // 페이지 마운트 시 PNG 자산 prefetch — 첫 클릭 딜레이 방지
   useEffect(() => {
     PRELOAD_ASSETS.forEach((src) => {
@@ -218,6 +191,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
                   setNumber={activeTab}
                   data={data}
                   selectedTestId={selectedTestId}
+                  courseId={courseId}
                   onSelect={setSelectedTestId}
                   onStartMid={handleStartMid}
                 />
@@ -227,52 +201,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
                   onStart={handleStartFinal}
                 />
               )}
-              {/* === DEBUG START — 출시 전 삭제 ===
-                * 현재 탭의 mid/final 상태에 따라 분기 렌더:
-                *   generating          → 빨간 회전 스피너 (dispatch 후 워커 진행 중)
-                *   available/mastered  → 숨김 (이미 생성됨, 트리거 불필요)
-                *   locked / failed     → 클릭 가능한 빨간 점
-                */}
-              {(() => {
-                const tabStatus =
-                  activeTab === 'final'
-                    ? data.finalTest.status
-                    : data.midTests[activeTab - 1]?.status ?? 'locked'
-                if (tabStatus === 'available' || tabStatus === 'mastered') {
-                  return null
-                }
-                if (tabStatus === 'generating') {
-                  return (
-                    <div
-                      role="status"
-                      aria-label="[DEBUG] 생성 중"
-                      title="[DEBUG] 생성 중"
-                      className="absolute bottom-3 right-3"
-                    >
-                      <LoaderIcon className="h-3 w-3 animate-spin text-red-500" />
-                    </div>
-                  )
-                }
-                return (
-                  <button
-                    type="button"
-                    aria-label="[DEBUG] 강제 생성"
-                    title="[DEBUG] 강제 트리거 (출시 전 삭제 예정)"
-                    onClick={() => void handleDebugTrigger(activeTab)}
-                    disabled={isDebugTriggering}
-                    className="absolute bottom-3 right-3 h-3 w-3 rounded-full bg-red-500 ring-1 ring-white shadow-sm hover:bg-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-wait disabled:opacity-50"
-                  />
-                )
-              })()}
-              {/* === DEBUG END === */}
             </div>
-            {/* === DEBUG START — 출시 전 삭제 === */}
-            {debugError && (
-              <div role="alert" className="mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                {debugError}
-              </div>
-            )}
-            {/* === DEBUG END === */}
           </div>
         </div>
       </div>
@@ -322,59 +251,66 @@ function chunkInto<T>(arr: T[], size: number): T[][] {
   return rows
 }
 
-/** 1/2/3 세트 컨텐츠 — 핵심테스트 그리드 + 세트별 중간 테스트 검은 배너.
+/** 1/2/3 세트 컨텐츠 — 핵심테스트 + 중간 테스트 책 (그리드 마지막 셀)
  *
- * MidTestBox 의 unlocked / testId / masteredCount 는 useExamPrepData 에서 백엔드
- * mid status (b2b20260430 GET /exam-prep/courses/{id}/mid-tests) 와 coreTests 의
- * isTestMastered 로 산출됨. 클릭 시 onStartMid(testId) 로 풀이 페이지 라우팅.
+ * MidTestBox(책 일러스트)는 핵심테스트 그리드의 마지막 셀로 자연스럽게 들어감.
+ * unlocked / testId / status 는 useExamPrepData 에서 백엔드 mid status 와 coreTests 의
+ * isTestMastered 로 산출됨. 잠금해제 시만 클릭 가능 → onStartMid(testId).
  */
 function CoreSetContent({
   setNumber,
   data,
   selectedTestId,
+  courseId,
   onSelect,
   onStartMid,
 }: {
   setNumber: 1 | 2 | 3
   data: ExamPrepData
   selectedTestId: string | null
+  courseId: string
   onSelect: (id: string | null) => void
   onStartMid: (testId: string | null) => void
 }) {
   const tests = getCoreTestsBySet(data.coreTests, setNumber)
   const midTest = data.midTests.find((m) => m.setNumber === setNumber)
-  const rows = chunkInto(tests, 5)
+
+  // 핵심테스트 + 중간테스트(있으면)를 하나의 시퀀스로 합쳐 그리드에 흘림
+  type GridItem =
+    | { kind: 'core'; test: (typeof tests)[number] }
+    | { kind: 'mid'; mid: NonNullable<typeof midTest> }
+  const items: GridItem[] = [
+    ...tests.map((t) => ({ kind: 'core' as const, test: t })),
+    ...(midTest ? [{ kind: 'mid' as const, mid: midTest }] : []),
+  ]
+  const rows = chunkInto(items, 5)
 
   return (
-    <div>
-      {/* 핵심테스트 — 5개씩 한 줄, 마지막 줄 중앙정렬 */}
-      <div className="flex flex-col gap-6">
-        {rows.map((row, ri) => (
-          <div key={ri} className="flex justify-center gap-6">
-            {row.map((test) => (
+    <div className="flex flex-col gap-6">
+      {rows.map((row, ri) => (
+        <div key={ri} className="flex items-center justify-center gap-6">
+          {row.map((item) =>
+            item.kind === 'core' ? (
               <CoreTestButton
-                key={test.id}
-                test={test}
+                key={item.test.id}
+                test={item.test}
                 setTone={setNumber}
-                isSelected={selectedTestId === test.id}
+                isSelected={selectedTestId === item.test.id}
                 onClick={() =>
-                  onSelect(selectedTestId === test.id ? null : test.id)
+                  onSelect(selectedTestId === item.test.id ? null : item.test.id)
                 }
               />
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* 중간 테스트 박스 (검은 배너) — 백엔드 mid status 연동 */}
-      {midTest && (
-        <div className="mt-6">
-          <MidTestBox
-            midTest={midTest}
-            onClick={() => onStartMid(midTest.testId)}
-          />
+            ) : (
+              <MidTestBox
+                key={`mid-${item.mid.setNumber}`}
+                midTest={item.mid}
+                courseId={courseId}
+                onClick={() => onStartMid(item.mid.testId)}
+              />
+            ),
+          )}
         </div>
-      )}
+      ))}
     </div>
   )
 }

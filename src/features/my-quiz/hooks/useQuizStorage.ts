@@ -78,14 +78,15 @@ export function useQuizStorage({
     try {
       // 1) 즐겨찾기 + 오답 묶음 + 응답 로그를 동시에 조회.
       //    user_quiz_response 는 누적 incorrect_count 산출용 (content/customize),
-      //    exam_prep 는 별도로 mastery 에서 가져온다 (아래 4단계).
-      const [bookmarkRes, incorrectRes, attemptRes] = await Promise.all([
+      //    exam_prep 는 별도로 exam_prep_response (오답 묶음) + mastery (누적 카운트) 사용.
+      const [bookmarkRes, incorrectRes, attemptRes, examPrepIncorrectRes] = await Promise.all([
         statusService.getBookmarksByLectureIds(lectureIds, {
           limit: PAGE_SIZE,
           offset: 0,
         }),
         statusService.fetchIncorrectQuizIdsByLectureIds(lectureIds),
         statusService.fetchQuizResponsesByLectureIds(lectureIds),
+        statusService.fetchExamPrepIncorrectsByLectureIds(lectureIds),
       ])
 
       if (myReq !== requestIdRef.current) return
@@ -100,10 +101,14 @@ export function useQuizStorage({
         setIsLoading(false)
         return
       }
-      // attemptRes 실패는 비치명적 — wrong_count fallback 으로 계속 진행.
+      // attemptRes / examPrepIncorrectRes 실패는 비치명적 — fallback 으로 계속 진행.
 
       const bookmarks = bookmarkRes.data ?? []
-      const incorrects = incorrectRes.data ?? []
+      // exam_prep 오답 묶음을 user_quiz_response 기반 묶음과 병합 (같은 IncorrectQuizEntry shape)
+      const incorrects = [
+        ...(incorrectRes.data ?? []),
+        ...(examPrepIncorrectRes.data ?? []),
+      ]
       const attempts = attemptRes.data ?? []
       setTotalBookmarks(bookmarks.length)
       setTotalWrongs(incorrects.length)

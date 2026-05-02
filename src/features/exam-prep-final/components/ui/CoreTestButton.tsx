@@ -1,6 +1,6 @@
 /**
  * @file CoreTestButton.tsx
- * @description 핵심 테스트 번호 버튼 — 세트별 톤, 선택 시 pressed 고정, 잠긴 상태 자물쇠
+ * @description 핵심 테스트 번호 버튼 — 세트별 톤, 선택 시 pressed 고정, MASTER 도장
  * @module features/exam-prep-final/components/ui
  */
 
@@ -15,6 +15,15 @@ interface CoreTestButtonProps {
   setTone: 1 | 2 | 3
   isSelected: boolean
   onClick: () => void
+}
+
+/**
+ * 핵심테스트 버튼용 MASTER 도장 src 선택
+ * - 세트 3: 진보라 배경이라 밝은 톤 도장(set3) 필요
+ * - 세트 1, 2: 기본 도장
+ */
+function getCoreMasterSrc(setTone: 1 | 2 | 3): string {
+  return setTone === 3 ? '/master-set3.png' : '/master.png'
 }
 
 /**
@@ -55,6 +64,8 @@ export function CoreTestButton({
   const numberLabel = String(test.number).padStart(2, '0')
   const showMasterBadge = test.isTestMastered
 
+  const masterSrc = getCoreMasterSrc(setTone)
+
   // 잠긴 상태 — 자물쇠 (선택 불가)
   if (isLocked) {
     return (
@@ -72,7 +83,7 @@ export function CoreTestButton({
           className="opacity-60"
           draggable={false}
         />
-        {showMasterBadge && <MasterBadge />}
+        {showMasterBadge && <MasterStamp src={masterSrc} />}
       </button>
     )
   }
@@ -93,7 +104,7 @@ export function CoreTestButton({
     >
       <span
         className={cn(
-          'text-6xl font-black leading-none tracking-tight',
+          'relative z-0 text-6xl font-black leading-none tracking-tight',
           cfg.text,
         )}
         style={{ fontFamily: 'Pretendard, sans-serif' }}
@@ -101,21 +112,22 @@ export function CoreTestButton({
         {numberLabel}
       </span>
 
-      {/* test 단위 master 배지 (우상단) — 모든 문항을 master 한 학생에게 표시 */}
-      {showMasterBadge && <MasterBadge />}
+      {/* MASTER 도장 — 숫자 위로 (z-10), 버튼 내부라 pressed 시 같이 translate */}
+      {showMasterBadge && <MasterStamp src={masterSrc} />}
     </button>
   )
 }
 
-/** test 자체의 master 도달 시 우상단 배지 — 보라 원 + 별/체크 */
-function MasterBadge() {
+/** Master 도장 — 버튼 안 absolute 배치, 숫자보다 살짝 아래로 (가독성 향상) */
+function MasterStamp({ src }: { src: string }) {
   return (
-    <span
-      className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#A78BFA] to-[#6D28D9] text-base shadow-[0_4px_12px_rgba(124,58,237,0.45)] ring-2 ring-white"
+    <img
+      src={src}
+      alt="MASTER"
       aria-label="Master"
       title="Master 도달"
-    >
-      <span className="leading-none">★</span>
-    </span>
+      className="pointer-events-none absolute left-1/2 top-1/2 z-10 w-[90%] max-w-none -translate-x-1/2 -translate-y-[10%] select-none object-contain"
+      draggable={false}
+    />
   )
 }

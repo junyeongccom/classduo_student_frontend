@@ -280,13 +280,22 @@ export async function fetchQuizContent(
         question: r.stem,
         // 0-based answer index → options 배열에서 정답 텍스트 추출 (주관식 표시용)
         answer: r.answer != null && r.options ? (r.options[parseInt(r.answer, 10)] ?? null) : null,
-        // explanation dict (opt_0/opt_1/...) 를 사람이 읽을 수 있는 한 덩어리로
+        // explanation dict (opt0/opt1/opt2/opt3) 를 사람이 읽을 수 있는 한 덩어리로.
+        //   "opt0:" → "1번:" 형식으로 변환 (인덱스 1-based 표기).
         explanation: r.explanation
-          ? Object.entries(r.explanation).map(([k, v]) => `${k}: ${v}`).join('\n')
+          ? Object.entries(r.explanation)
+              .map(([k, v]) => {
+                const m = /^opt(\d+)$/.exec(k)
+                return m
+                  ? `${parseInt(m[1], 10) + 1}번: ${v}`
+                  : `${k}: ${v}`
+              })
+              .join('\n')
           : null,
         difficulty: r.difficulty != null ? String(r.difficulty) : null,
       }))
       // exam_prep options[]를 QuizChoice 형태로 직접 만든다 (별도 _choices 테이블 없음).
+      // choice_explanation 은 explanation.opt{i} 에서 추출 (DB 키는 opt0~opt3, 언더스코어 없음).
       rawChoices = examRows.flatMap(r => {
         const opts = r.options ?? []
         const correctIdx = r.answer != null ? parseInt(r.answer, 10) : -1
@@ -296,7 +305,7 @@ export async function fetchQuizContent(
           choice_order: i + 1,
           choice_text: opt,
           is_correct: i === correctIdx,
-          choice_explanation: r.explanation?.[`opt_${i}`] ?? null,
+          choice_explanation: r.explanation?.[`opt${i}`] ?? null,
         }))
       })
     } else {
@@ -614,6 +623,94 @@ export async function fetchIncorrectQuizIdsByLectureIds(
         existing.last_wrong_at = r.created_at
       }
       existing.latest_selected_answer = r.selected_answer
+      existing.latest_is_correct = r.is_correct
+    }
+    return { data: Array.from(grouped.values()), error: null }
+  } catch (err) {
+    if (isJWTExpiredError(err)) { await handleJWTExpiration() }
+    return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
+/**
+ * 학생 본인의 exam_prep 오답 일괄 조회 (own RLS 자동 적용).
+ * exam_prep 응답은 exam_prep_response (별도 테이블) 에 저장되므로
+ * fetchIncorrectQuizIdsByLectureIds (user_quiz_response 전용) 와 별개로 fetch + merge 한다.
+ *
+ * lecture_id 결정:
+ *   - core: exam_prep_test.lecture_session_id
+ *   - mid/final: exam_prep_question.source_lecture_id (core 출처 lecture)
+ *
+ * lecture_id 가 lectureIds 에 없으면 결과에서 제외 (수강 중 강좌 범위 필터).
+ */
+export async function fetchExamPrepIncorrectsByLectureIds(
+  lectureIds: string[],
+): Promise<{ data: IncorrectQuizEntry[] | null; error: Error | null }> {
+  if (lectureIds.length === 0) return { data: [], error: null }
+  try {
+    const supabase = getSupabaseClient()
+    // 천준영 본인 attempt 만 RLS 통과 — service_role 아님. 본인 user_id 자동 필터.
+    const { data, error } = await supabase
+      .from('exam_prep_response')
+      .select(
+        'question_id, selected, is_correct, answered_at, ' +
+        'exam_prep_question(source_lecture_id, exam_prep_test(lecture_session_id))'
+      )
+      .order('answered_at', { ascending: true })
+    if (error) {
+      if (isJWTExpiredError(error)) {
+        const ok = await handleJWTExpiration()
+        if (!ok) return { data: null, error: new Error('세션이 만료되었습니다.') }
+        return { data: null, error: new Error('세션이 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: new Error(getErrorMessage(error)) }
+    }
+
+    interface EpRow {
+      question_id: string
+      selected: string | null
+      is_correct: boolean | null
+      answered_at: string
+      exam_prep_question: {
+        source_lecture_id: string | null
+        exam_prep_test: { lecture_session_id: string | null } | null
+      } | null
+    }
+
+    const lectureSet = new Set(lectureIds)
+    const grouped = new Map<string, IncorrectQuizEntry>()
+
+    for (const r of ((data ?? []) as unknown) as EpRow[]) {
+      const q = r.exam_prep_question
+      if (!q) continue
+      const lectureId =
+        q.exam_prep_test?.lecture_session_id ?? q.source_lecture_id ?? null
+      if (!lectureId || !lectureSet.has(lectureId)) continue
+
+      const key = `exam_prep:${r.question_id}`
+      const selectedNum =
+        r.selected != null && r.selected !== '' ? parseInt(r.selected, 10) : null
+      const existing = grouped.get(key)
+      if (!existing) {
+        if (r.is_correct === false) {
+          grouped.set(key, {
+            quiz_source: 'exam_prep' as QuizSource,
+            quiz_id: r.question_id,
+            lecture_id: lectureId,
+            first_wrong_at: r.answered_at,
+            last_wrong_at: r.answered_at,
+            latest_selected_answer:
+              selectedNum != null && !Number.isNaN(selectedNum) ? selectedNum + 1 : null,
+            latest_is_correct: r.is_correct,
+          })
+        }
+        continue
+      }
+      if (r.is_correct === false) {
+        existing.last_wrong_at = r.answered_at
+      }
+      existing.latest_selected_answer =
+        selectedNum != null && !Number.isNaN(selectedNum) ? selectedNum + 1 : null
       existing.latest_is_correct = r.is_correct
     }
     return { data: Array.from(grouped.values()), error: null }

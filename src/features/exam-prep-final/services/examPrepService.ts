@@ -41,7 +41,9 @@ export interface CoreTestQuestionItemDto {
   answer: string
   explanation: Record<string, string>
   hint?: string | null
-  source_ref?: Record<string, unknown> | null
+  source_ref?: { source_pages?: number[]; source_chunks?: number[] } | null
+  /** 강의자료 패널 점프 대상 lecture_id (core: 부모 test 의 lecture, mid: 원본 question lecture, final: LLM 추론) */
+  source_lecture_id?: string | null
   difficulty?: number | null
 }
 

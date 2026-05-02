@@ -70,16 +70,25 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
           {t('examPrepFinal.recommendedTitle')}
         </p>
-        {data.recommendedTest && (
-          <p className="mt-3 flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-gray-50">
-            <Zap className="h-5 w-5 shrink-0 fill-[#6366F1] text-[#6366F1]" />
-            <span className="truncate">
-              {data.recommendedTest.weekNo}주차{' '}
-              {String(data.recommendedTest.sessionNo).padStart(2, '0')}차시 ·{' '}
-              {data.recommendedTest.lectureTitle}
-            </span>
-          </p>
-        )}
+        {data.recommendedTest && (() => {
+          const r = data.recommendedTest
+          const sessionLabel = `${r.weekNo}주차 ${String(r.sessionNo).padStart(2, '0')}차시`
+          // lectureTitle 이 의미있는 값일 때만 ' · {title}' 덧붙임.
+          // (useExamPrepData lectureToCoreTest 의 fallback 이 "{wk}주차 {ss}차시" 형태라
+          //  그대로 표시하면 "6주차 02차시 · 6주차 2차시" 식의 중복 노출 발생)
+          const title = (r.lectureTitle || '').trim()
+          const looksLikeSessionLabel =
+            !title || /^\d+주차\s+\d+차시$/.test(title)
+          return (
+            <p className="mt-3 flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-gray-50">
+              <Zap className="h-5 w-5 shrink-0 fill-[#6366F1] text-[#6366F1]" />
+              <span className="truncate">
+                {sessionLabel}
+                {!looksLikeSessionLabel && ` · ${title}`}
+              </span>
+            </p>
+          )
+        })()}
         <button
           type="button"
           onClick={onRecommendedClick}

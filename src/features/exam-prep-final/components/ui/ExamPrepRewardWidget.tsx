@@ -31,25 +31,25 @@ function getKstTodayIso(): string {
 
 /**
  * 계급 진급까지 필요한 XP / 추가 조건 안내.
- * 백엔드 RANK_BRACKETS (b2b20260429 r3.2) 와 동일한 임계값을 미러링한다.
+ * 백엔드 RANK_BRACKETS (rank_schema.py) 미러. 핵심테스트 15→10문항 변경에 따라 ×2/3.
  *
  * 진급 임계 (총 XP):
- *   F→D 150 / D→D+ 450 / D+→C 950 / C→C+ 1650 / C+→B 2500 /
- *   B→B+ 3450 / B+→A 4500 / A→A+ 5600
+ *   F→D 100 / D→D+ 300 / D+→C 650 / C→C+ 1100 / C+→B 1700 /
+ *   B→B+ 2300 / B+→A 3000 / A→A+ 3750
  *
  * A / A+ 추가 조건 (master/stamp XP 하한):
- *   A  : master_xp ≥ 4500
- *   A+ : master_xp ≥ 4500, stamp_xp ≥ 1100
+ *   A  : master_xp ≥ 3000
+ *   A+ : master_xp ≥ 3000, stamp_xp ≥ 1100
  */
 const RANK_THRESHOLDS: Array<{ from: string; to: string; total: number }> = [
-  { from: 'F',  to: 'D',  total: 150 },
-  { from: 'D',  to: 'D+', total: 450 },
-  { from: 'D+', to: 'C',  total: 950 },
-  { from: 'C',  to: 'C+', total: 1650 },
-  { from: 'C+', to: 'B',  total: 2500 },
-  { from: 'B',  to: 'B+', total: 3450 },
-  { from: 'B+', to: 'A',  total: 4500 },
-  { from: 'A',  to: 'A+', total: 5600 },
+  { from: 'F',  to: 'D',  total: 100 },
+  { from: 'D',  to: 'D+', total: 300 },
+  { from: 'D+', to: 'C',  total: 650 },
+  { from: 'C',  to: 'C+', total: 1100 },
+  { from: 'C+', to: 'B',  total: 1700 },
+  { from: 'B',  to: 'B+', total: 2300 },
+  { from: 'B+', to: 'A',  total: 3000 },
+  { from: 'A',  to: 'A+', total: 3750 },
 ]
 
 interface NextRankProgress {

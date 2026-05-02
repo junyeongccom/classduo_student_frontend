@@ -7,7 +7,7 @@
  * 사용자 정책 (b2b20260429 r4):
  *   1) 매 문항 [제출] → 즉시 채점 (백엔드 grade endpoint) → 정오답 즉시 표시 → 자동 다음 문항
  *   2) 같은 문항 두 번 풀이 불가 (백엔드 409로 거부, 프론트도 disable)
- *   3) 15문항 모두 채점 완료 시 결과 화면 → [다시풀기] / [나가기]
+ *   3) 전 문항 채점 완료 시 결과 화면 → [다시풀기] / [나가기] (core=10, mid=가변, final=15)
  *   4) [다시풀기] = 새 attempt 자동 생성 (start_or_resume 가 in_progress 없으면 신규)
  *   5) 힌트: 20초 후 활성, 클릭 시 오답 1개 disable, hint_used=true 응답은 mastery 동결
  *   6) 한 번 master 도달한 문항은 강등 없음 (백엔드 derive_state ever_mastered 잠금)
@@ -21,8 +21,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { Loader2 } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
+import { cn } from '@/shared/lib/utils'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
+import { useLectureDetail } from '@/features/lecture-study/hooks/useLectureDetail'
 import { useCoreTestDetail } from '../../hooks/useCoreTestDetail'
 import {
   startOrResumeAttempt,
@@ -36,7 +38,22 @@ import {
 import { SolveTopBar } from '../ui/SolveTopBar'
 import { SolveSidebar } from '../ui/SolveSidebar'
 import { SolveQuestionPanel } from '../ui/SolveQuestionPanel'
-import { SolveResultPanel } from '../ui/SolveResultPanel'
+import { ExamPrepChatPanel } from '../ui/ExamPrepChatPanel'
+import { TestEndOverlay } from '../result-overlay/TestEndOverlay'
+import { Phase5FinalResult } from '../result-overlay/Phase5FinalResult'
+import type { FinalResultData, MasteryState, PreSnapshot } from '../result-overlay/types'
+import {
+  getKstTodayIso,
+  incrementTodayTestCount,
+  getTodayTestCount,
+  getCalendarTestCounts,
+  deriveRankFromXp,
+} from '../result-overlay/utils'
+import { fetchMyCourseState } from '@/shared/services/gamificationService'
+import { LeftPanelMaterials } from '@/features/lecture-study/components/containers/LeftPanelMaterials'
+import { LeftPanelRecordings } from '@/features/lecture-study/components/ui/LeftPanelRecordings'
+import { useExamPrepSolveStore } from '../../store/useExamPrepSolveStore'
+import { useLectureStudyStore } from '@/features/lecture-study/store/useLectureStudyStore'
 import {
   toggleBookmark,
   getBookmarksByLectureIds,
@@ -65,6 +82,34 @@ export function CoreTestSolveContainer({
   const router = useRouter()
   const { courseTitle, lectures } = useLectures(courseId)
   const { data, isLoading: detailLoading, error: detailError } = useCoreTestDetail(testId)
+
+  // ─── 챗봇 store (testId 단위 키잉) ───
+  const isChatPanelOpen = useExamPrepSolveStore((s) => s.isChatPanelOpen)
+  const toggleChatPanel = useExamPrepSolveStore((s) => s.toggleChatPanel)
+  const setStoreTestId = useExamPrepSolveStore((s) => s.setTestId)
+  const quizChatContext = useExamPrepSolveStore((s) => s.quizChatContext)
+  const setQuizChatContext = useExamPrepSolveStore((s) => s.setQuizChatContext)
+  const clearQuizChatContext = useExamPrepSolveStore((s) => s.clearQuizChatContext)
+
+  // ─── 좌측 자료 패널 store (콘텐츠 학습과 공유 — LeftPanelMaterials/Recordings 재사용) ───
+  const isLeftPanelOpen = useLectureStudyStore((s) => s.isLeftPanelOpen)
+  const leftTab = useLectureStudyStore((s) => s.leftTab)
+  const setLeftTab = useLectureStudyStore((s) => s.setLeftTab)
+  const toggleLeftPanel = useLectureStudyStore((s) => s.toggleLeftPanel)
+  const setLectureStudyLectureId = useLectureStudyStore((s) => s.setLectureId)
+  const setTargetPage = useLectureStudyStore((s) => s.setTargetPage)
+  const setTargetChunkIndex = useLectureStudyStore((s) => s.setTargetChunkIndex)
+
+  // testId 변경 시 챗봇 store 동기화 (testId 가 다르면 quizChatContext 자동 리셋)
+  useEffect(() => {
+    setStoreTestId(testId)
+  }, [testId, setStoreTestId])
+
+  // 페이지 진입 시 두 패널 닫힘 + 코스/lecture id 초기화
+  useEffect(() => {
+    useLectureStudyStore.setState({ isLeftPanelOpen: false })
+    useExamPrepSolveStore.setState({ isChatPanelOpen: false })
+  }, [testId])
 
   // ─── attempt 라이프사이클 ───
   const [phase, setPhase] = useState<Phase>('loading')
@@ -116,11 +161,27 @@ export function CoreTestSolveContainer({
     new Set(),
   )
 
-  // 경과 시간 타이머
+  // ─── 테스트 종료 오버레이용 사전 스냅샷 ───
+  /** 풀이 시작 시점의 mastery + gamification 스냅샷. Phase1 모션 출발점 / Phase3·4 분기 / Phase5 비교. */
+  const [preSnapshot, setPreSnapshot] = useState<PreSnapshot | null>(null)
+  /** 풀이 종료 시점의 누적 상태 — fetchMyCourseState 결과 */
+  const [postState, setPostState] = useState<{
+    totalXp: number
+    rankCode: string
+    currentStreak: number
+  } | null>(null)
+  /** Phase1~4 모션 완료 여부. true 가 되면 Phase5 본 패널로 진입. */
+  const [animationDone, setAnimationDone] = useState(false)
+  /** 오늘 테스트 카운터 — 풀이 종료 시 incrementTodayTestCount 결과 캐시. */
+  const [todayTestCount, setTodayTestCount] = useState(0)
+
+  // 경과 시간 타이머 — 풀이 중에만 동작. completed/error 시 정지 (마지막 [다음] 클릭 시점 고정).
+  // 부수효과: 결과 화면 진입 후 컨테이너 재렌더가 멈춰 result-overlay 의 useEffect cleanup 도 안전.
   useEffect(() => {
+    if (phase !== 'solving') return
     const id = setInterval(() => setElapsedSec((s) => s + 1), 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [phase])
 
   // ─── 풀이 페이지 진입 시 mastery summary 초기 동기화 (b2b20260429 r4) ───
   // 백엔드의 누적 mastery 카운트를 가져와 초기 Learning/Skilled/Master 값으로 설정.
@@ -128,25 +189,53 @@ export function CoreTestSolveContainer({
   // restartTrigger 가 변경될 때(다시풀기) 다시 fetch 하여 누적 mastery 가 반영되도록.
   useEffect(() => {
     let cancelled = false
-    fetchTestMasterySummary(testId).then(({ data, error }) => {
+    Promise.all([
+      fetchTestMasterySummary(testId),
+      fetchMyCourseState(courseId),
+    ]).then(([masteryRes, gamRes]) => {
       if (cancelled) return
-      if (error) {
-        console.warn('[Solve] mastery summary fetch failed:', error)
-        return
+      if (masteryRes.error) {
+        console.warn('[Solve] mastery summary fetch failed:', masteryRes.error)
       }
-      if (data) {
+      const masteryData = masteryRes.data
+      const gamData = gamRes.data
+      if (masteryData) {
         setMasterySummary({
-          learning: data.summary.learning,
-          skilled: data.summary.skilled,
-          master: data.summary.master,
+          learning: masteryData.summary.learning,
+          skilled: masteryData.summary.skilled,
+          master: masteryData.summary.master,
         })
-        setByQuestionState(data.by_question ?? {})
+        setByQuestionState(masteryData.by_question ?? {})
       }
+      // ── 사전 스냅샷 (풀이 종료 후 결과 화면 모션 출발점) ──
+      // restartTrigger 가 변경될 때마다 새 풀이 시작이므로 매번 새로 동결.
+      const byQ: Record<string, MasteryState> = {}
+      if (masteryData?.by_question) {
+        Object.entries(masteryData.by_question).forEach(([qid, state]) => {
+          if (state === 'learning' || state === 'skilled' || state === 'master') {
+            byQ[qid] = state as MasteryState
+          }
+        })
+      }
+      setPreSnapshot({
+        byQuestionMastery: byQ,
+        lastStudyDateKst: gamData?.last_study_date ?? null,
+        totalXp: gamData?.total_xp ?? 0,
+        rankCode: gamData?.rank?.code ?? 'F',
+        currentStreak: gamData?.current_streak ?? 0,
+        masterySummary: masteryData
+          ? {
+              learning: masteryData.summary.learning,
+              skilled: masteryData.summary.skilled,
+              master: masteryData.summary.master,
+            }
+          : { learning: 0, skilled: 0, master: 0 },
+      })
     })
     return () => {
       cancelled = true
     }
-  }, [testId, restartTrigger])
+  }, [testId, courseId, restartTrigger])
 
   // ─── attempt 시작 / 이어풀기 / 다시풀기 ───
   useEffect(() => {
@@ -164,8 +253,18 @@ export function CoreTestSolveContainer({
       setCurrentSeq(1)
       setElapsedSec(0)
 
-      const { data: a, error: aerr } = await startOrResumeAttempt(testId)
+      // 첫 호출 실패 시 자동 1회 재시도 (대부분 race / 일시적 backend 실패).
+      // 새로고침 흉내 — 사용자가 직접 새로고침 안 해도 두 번째 시도로 자연스럽게 복구.
+      let attemptRes = await startOrResumeAttempt(testId)
       if (cancelled) return
+      if (attemptRes.error || !attemptRes.data) {
+        await new Promise((r) => setTimeout(r, 350))
+        if (cancelled) return
+        attemptRes = await startOrResumeAttempt(testId)
+        if (cancelled) return
+      }
+      const a = attemptRes.data
+      const aerr = attemptRes.error
       if (aerr || !a) {
         setPhaseError(aerr || '응시를 시작하지 못했습니다.')
         setPhase('error')
@@ -204,7 +303,7 @@ export function CoreTestSolveContainer({
     }
   }, [testId, restartTrigger])
 
-  // detail 로 부터 seq → question_id 직접 매핑 (모든 15문항 — 마스터 포함).
+  // detail 로 부터 seq → question_id 직접 매핑 (전 문항 — 마스터 포함).
   // 이전 구현은 attemptQuestionIds(미마스터만) 와 인덱스 매칭하여 마스터 문항을 lookup
   // 할 수 없었음. data.questions[].id 사용으로 마스터/미마스터 무관 mastery_summary
   // 와 매핑 가능.
@@ -322,6 +421,97 @@ export function CoreTestSolveContainer({
 
   const total = data?.questions.length ?? 0
 
+  // ─── 현재 풀이 중 문항 → 좌측 자료 패널 lectureId 결정 ───
+  // core: data.lecture_session_id (부모 test 의 lecture)
+  // mid/final: 문항별 source_lecture_id (LLM/복제 시 채워진 출처)
+  const currentLectureId: string | null = useMemo(() => {
+    if (data?.test_type === 'core') return data.lecture_session_id ?? null
+    return currentQuestion?.source_lecture_id ?? data?.lecture_session_id ?? null
+  }, [data, currentQuestion])
+
+  // currentLectureId 가 바뀌면 콘텐츠 학습 store 의 lectureId 도 동기화 →
+  // LeftPanelMaterials/LeftPanelRecordings 가 새 회차 자료를 fetch 하도록.
+  useEffect(() => {
+    if (currentLectureId) {
+      setLectureStudyLectureId(currentLectureId)
+    }
+  }, [currentLectureId, setLectureStudyLectureId])
+
+  // 좌측 녹음본 패널용 recordings — currentLectureId 기준으로 직접 fetch.
+  // (LeftPanelRecordings 는 recordings props 를 직접 받는 구조)
+  const { recordings: leftPanelRecordings } = useLectureDetail(currentLectureId ?? '')
+  const targetChunkIndex = useLectureStudyStore((s) => s.targetChunkIndex)
+  const resetNavigationState = useLectureStudyStore((s) => s.resetNavigationState)
+
+  // ─── 테스트 라벨 (챗봇 배지/프롬프트용) ───
+  const testLabel = useMemo<string>(() => {
+    if (!data) return ''
+    if (data.test_type === 'mid') return `중간테스트${data.segment_index ?? ''}`
+    if (data.test_type === 'final') return '최종테스트'
+    // core: lecture_no 우선, 없으면 시즌 라벨
+    return matchedLecture?.lecture_number != null
+      ? `핵심${matchedLecture.lecture_number}`
+      : (sessionLabel || '핵심테스트')
+  }, [data, matchedLecture, sessionLabel])
+
+  // ─── 출처 클릭 → 좌측 자료 패널 점프 ───
+  const handleSourceClick = useCallback(
+    (kind: 'materials' | 'recordings') => {
+      const sr = (currentQuestion?.source_ref ?? null) as
+        | { source_pages?: number[]; source_chunks?: number[] }
+        | null
+      if (!sr) return
+      // 좌측 패널 자동 열기 + 탭 전환
+      if (!isLeftPanelOpen) toggleLeftPanel()
+      setLeftTab(kind)
+      if (kind === 'materials') {
+        const page = sr.source_pages?.[0]
+        if (page != null) setTargetPage(page)
+      } else {
+        const chunk = sr.source_chunks?.[0]
+        if (chunk != null) setTargetChunkIndex(chunk)
+      }
+    },
+    [
+      currentQuestion,
+      isLeftPanelOpen,
+      toggleLeftPanel,
+      setLeftTab,
+      setTargetPage,
+      setTargetChunkIndex,
+    ],
+  )
+
+  // ─── 챗봇 트리거 → 우측 패널 열림 + 문항 컨텍스트 주입 ───
+  const handleAskChatbot = useCallback(() => {
+    if (!currentQuestion) return
+    const qid = seqToQuestionId.get(currentSeq) ?? currentQuestion.id ?? ''
+    setQuizChatContext({
+      testId,
+      testLabel,
+      questionId: qid,
+      seq: currentSeq,
+      stem: currentQuestion.stem,
+      options: currentQuestion.options,
+      answer: currentQuestion.answer,
+      explanation: currentQuestion.explanation as Record<string, string>,
+      hint: currentQuestion.hint ?? null,
+      sourceRef: (currentQuestion.source_ref ?? null) as
+        | { source_pages?: number[]; source_chunks?: number[] }
+        | null,
+      sourceLectureId: currentQuestion.source_lecture_id ?? null,
+      courseTitle: courseTitle ?? '',
+    })
+  }, [
+    currentQuestion,
+    currentSeq,
+    seqToQuestionId,
+    setQuizChatContext,
+    testId,
+    testLabel,
+    courseTitle,
+  ])
+
   /** seq → mastery state. 사이드바 1~10 버튼의 숙련도 컬러 매핑 데이터 소스.
    *  누적 mastery 그대로 표시 (b2b20260502 #3 — 한 번도 푼 적 없으면 미답, 이미 Master 면 보라). */
   const seqStateMap = useMemo<Map<number, 'learning' | 'skilled' | 'master'>>(() => {
@@ -334,6 +524,44 @@ export function CoreTestSolveContainer({
     })
     return m
   }, [seqToQuestionId, byQuestionState])
+
+  // ─── 풀이 종료 시 (phase=completed) post-state fetch + today count 증가 ───
+  // restartTrigger 가 바뀌면 (다시풀기) animationDone / postState / todayTestCount 리셋.
+  const incrementedRef = useRef(false)
+  useEffect(() => {
+    setAnimationDone(false)
+    setPostState(null)
+    setTodayTestCount(0)
+    incrementedRef.current = false
+  }, [restartTrigger])
+
+  useEffect(() => {
+    // phase 가 completed 가 아니면 가드 해제 (재시작/재진입 대비)
+    if (phase !== 'completed') {
+      incrementedRef.current = false
+      return
+    }
+    // 이미 한 번 증가했으면 skip — StrictMode dev 더블마운트 / 재렌더 케이스 방어
+    if (incrementedRef.current) return
+    incrementedRef.current = true
+
+    // 1) 오늘 카운터 +1 (localStorage 기반, 누적)
+    const next = incrementTodayTestCount()
+    setTodayTestCount(next)
+    // 2) 백엔드 누적 상태 갱신 (XP/streak/rank 새로고침)
+    let cancelled = false
+    fetchMyCourseState(courseId).then(({ data }) => {
+      if (cancelled || !data) return
+      setPostState({
+        totalXp: data.total_xp,
+        rankCode: data.rank?.code ?? 'F',
+        currentStreak: data.current_streak,
+      })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [phase, courseId])
 
   // 모든 문항 채점 완료 — 자동 전환 X. [다음] 버튼 클릭 시에만 결과 화면으로.
   // gamification 위젯은 마지막 채점 시점에 한 번만 새로고침 신호.
@@ -510,23 +738,12 @@ export function CoreTestSolveContainer({
   }, [])
 
   // ─── 렌더 ───
-  if (phase === 'loading' || detailLoading) {
-    return (
-      <div className="flex h-full flex-col">
-        <SolveTopBar
-          courseId={courseId}
-          courseTitle={courseTitle}
-          currentLectureLabel="..."
-          onExit={handleExit}
-        />
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      </div>
-    )
-  }
-
-  if (phase === 'error' || detailError || !data) {
+  // 분기 순서 주의 (b2c20260503 race fix):
+  //   진짜 에러 (phase='error' 또는 detailError) 를 먼저 검사하고,
+  //   그 외에 데이터 미도착(!data) 인 경우는 항상 로딩으로 간주한다.
+  //   과거엔 `!data` 만으로 error UI 로 빠져, 첫 진입 시 attempt API 가 detail API 보다
+  //   먼저 끝나면 phase='solving' + data=null 짧은 순간에 "오류" 메시지가 깜빡였음.
+  if (phase === 'error' || detailError) {
     return (
       <div className="flex h-full flex-col">
         <SolveTopBar
@@ -544,11 +761,110 @@ export function CoreTestSolveContainer({
     )
   }
 
-  // ─── 결과 화면 ───
+  if (phase === 'loading' || detailLoading || !data) {
+    return (
+      <div className="flex h-full flex-col">
+        <SolveTopBar
+          courseId={courseId}
+          courseTitle={courseTitle}
+          currentLectureLabel="..."
+          onExit={handleExit}
+        />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      </div>
+    )
+  }
+
+  // ─── 결과 화면 (Phase 1~4 풀화면 오버레이 + Phase 5 본 패널) ───
   if (phase === 'completed') {
     const correctCount = Object.values(gradedBySeq).filter(
       (g) => g.is_correct,
     ).length
+
+    // 사전 스냅샷 미도착 시 안전 fallback
+    const safePre: PreSnapshot = preSnapshot ?? {
+      byQuestionMastery: {},
+      lastStudyDateKst: null,
+      totalXp: 0,
+      rankCode: 'F',
+      currentStreak: 0,
+      masterySummary: { learning: 0, skilled: 0, master: 0 },
+    }
+
+    // QuestionDelta 산출 — seq.asc, before/after mastery + 채점 결과
+    const questionDeltas = data.questions
+      .slice()
+      .sort((a, b) => a.seq - b.seq)
+      .map((q) => {
+        const before = (safePre.byQuestionMastery[q.id] ?? 'learning') as MasteryState
+        const after = ((byQuestionState[q.id] as MasteryState | undefined) ?? before)
+        const graded = gradedBySeq[q.seq] ?? null
+        return {
+          seq: q.seq,
+          questionId: q.id,
+          before,
+          after,
+          isCorrect: graded ? graded.is_correct : null,
+          hintUsed: graded ? graded.hint_used : false,
+        }
+      })
+
+    // 마스터 XP — 이번 풀이의 first_master_transition 합산 × 10
+    const newMasters = Object.values(gradedBySeq).filter(
+      (g) => g.mastery.first_master_transition,
+    ).length
+    const masterXpEarned = newMasters * 10
+
+    // 오늘 첫 학습 여부
+    const todayKst = getKstTodayIso()
+    const isFirstTestToday = safePre.lastStudyDateKst !== todayKst
+
+    // 일일 참여 XP — 첫 학습이면 streak 기반, 아니면 0. 백엔드 STAMP_XP_DAY_* 와 동일.
+    const postStreak = postState?.currentStreak ?? safePre.currentStreak
+    const streakForDailyTier = isFirstTestToday ? postStreak : safePre.currentStreak
+    const dailyXpEarned = isFirstTestToday
+      ? streakForDailyTier <= 1
+        ? 20
+        : streakForDailyTier <= 4
+          ? 30
+          : 40
+      : 0
+
+    // 등급은 totalXp 로부터 직접 derive — 백엔드 rank.code stale 시에도 일관성 보장.
+    // pre 등급도 동일하게 derive 해서 leveup 판정 로직과 디스플레이가 같은 룰을 따르게.
+    const postTotalXpResolved = postState?.totalXp ?? safePre.totalXp
+    const postRankResolved = deriveRankFromXp(postTotalXpResolved)
+    const preRankResolved = deriveRankFromXp(safePre.totalXp)
+
+    const finalData: FinalResultData = {
+      pre: { ...safePre, rankCode: preRankResolved },
+      postTotalXp: postTotalXpResolved,
+      postRankCode: postRankResolved,
+      postCurrentStreak: postStreak,
+      postMasterySummary: masterySummary,
+      questionDeltas,
+      masterXpEarned,
+      isFirstTestToday,
+      dailyXpEarned,
+      todayTestCount: todayTestCount || getTodayTestCount() || 1,
+      calendarTestCounts: getCalendarTestCounts(),
+      totalTimeSec: elapsedSec,
+      correctCount,
+      total,
+      testType: data.test_type ?? 'core',
+      testNumber:
+        data.test_type === 'mid'
+          ? data.segment_index ?? null
+          : data.test_type === 'final'
+            ? null
+            : matchedLecture?.lecture_number ?? data.lecture_no ?? null,
+      testTitle: data.title ?? lectureTitle,
+      sessionLabel,
+      lectureTitle,
+    }
+
     return (
       <div className="flex h-full flex-col">
         <SolveTopBar
@@ -559,15 +875,30 @@ export function CoreTestSolveContainer({
           }
           onExit={handleExit}
         />
-        <SolveResultPanel
-          total={total}
-          correctCount={correctCount}
-          masterySummary={masterySummary}
-          gradedBySeq={gradedBySeq}
-          questions={data.questions}
-          onRestart={handleRestart}
-          onExit={handleExit}
-        />
+        <div className="flex min-h-0 flex-1">
+          <SolveSidebar
+            sessionLabel={sessionLabel}
+            lectureTitle={lectureTitle}
+            total={total}
+            currentSeq={currentSeq}
+            seqStateMap={seqStateMap}
+            masterySummary={masterySummary}
+            currentQuestionState={null}
+            onSelectSeq={() => {}}
+            elapsedSec={elapsedSec}
+          />
+          <Phase5FinalResult
+            data={finalData}
+            onRestart={handleRestart}
+            onExit={handleExit}
+          />
+        </div>
+        {!animationDone && preSnapshot && (
+          <TestEndOverlay
+            data={finalData}
+            onAnimationComplete={() => setAnimationDone(true)}
+          />
+        )}
       </div>
     )
   }
@@ -603,6 +934,61 @@ export function CoreTestSolveContainer({
           elapsedSec={elapsedSec}
         />
 
+        {/* 강의자료/녹음본 패널 (출처 클릭 시 자동 열림) — 사이드바 와 문제 영역 사이에 삽입.
+            사이드바는 항상 가장 왼쪽 고정, 본 패널은 사이드바 오른쪽에 떠야 함. */}
+        {isLeftPanelOpen && currentLectureId && (
+          <div className="flex h-full w-[360px] shrink-0 flex-col border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setLeftTab('materials')}
+                  className={cn(
+                    'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
+                    leftTab === 'materials'
+                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
+                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
+                  )}
+                >
+                  강의자료
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLeftTab('recordings')}
+                  className={cn(
+                    'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
+                    leftTab === 'recordings'
+                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
+                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
+                  )}
+                >
+                  녹음본
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={toggleLeftPanel}
+                aria-label="자료 패널 닫기"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              {leftTab === 'materials' ? (
+                <LeftPanelMaterials />
+              ) : (
+                <LeftPanelRecordings
+                  recordings={leftPanelRecordings ?? []}
+                  targetChunkIndex={targetChunkIndex}
+                  onTargetConsumed={resetNavigationState}
+                  lectureId={currentLectureId ?? undefined}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         {currentQuestion && (
           <SolveQuestionPanel
             question={currentQuestion}
@@ -633,7 +1019,36 @@ export function CoreTestSolveContainer({
               Object.keys(gradedBySeq).length >= total ||
               attemptCompletedFromBackend
             }
+            onSourceClick={handleSourceClick}
+            onAskChatbot={handleAskChatbot}
           />
+        )}
+
+        {/* 우측: AI 챗봇 패널 (챗봇 아이콘 클릭 시 자동 열림). */}
+        {isChatPanelOpen && (
+          <div className="flex h-full w-[360px] shrink-0 flex-col border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                AI 챗봇
+              </span>
+              <button
+                type="button"
+                onClick={toggleChatPanel}
+                aria-label="챗봇 패널 닫기"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <ExamPrepChatPanel
+                testId={testId}
+                currentLectureId={currentLectureId}
+                quizChatContext={quizChatContext}
+                onClearQuizContext={clearQuizChatContext}
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -63,11 +63,8 @@ function lectureToCoreTest(args: {
   const setNumber: 1 | 2 | 3 =
     number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
 
-  // 정책 (Q2 답변 = B 의 완화):
-  // - apiQuestionCount > 0 (핵심테스트 문항 존재) → available
-  // - 그 외 → locked (백엔드 핵심테스트 미생성)
-  // has_content(=lecture 콘텐츠 파이프라인 완료) 조건은 제거 — 사용자가 임의로 매핑한
-  // 핵심테스트도 풀이 가능해야 하므로 문항 존재 여부로만 판단.
+  // 1차 status — 백엔드 문항 존재 여부만 반영. 최종 status 는 useMemo 내 sequential
+  // 잠금 패스(직전 핵심 master 여부)로 재계산되므로, 여기서는 "후보 available" 의미.
   const status: CoreTestStatus =
     apiQuestionCount > 0 ? 'available' : 'locked'
 
@@ -269,6 +266,58 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       },
     )
 
+    // mid api 매핑 — sequential 잠금 패스 보다 먼저 빌드 (set 경계 mid master 검사용)
+    type MidApiItem = NonNullable<typeof midApi>['items'][number]
+    const midApiBySegment = new Map<number, MidApiItem>()
+    if (midApi?.items) {
+      for (const item of midApi.items) {
+        midApiBySegment.set(item.segment_index, item)
+      }
+    }
+    // 세트 완성 검사 — frontend 자체 정책 (backend mid placeholder 가 잘못 만들어진 케이스 방어).
+    //   세트 N 의 모든 핵심테스트가 isTestMastered=true 일 때만 mid 활성/master 가능.
+    //   레거시 데이터 (master 0건인데 mid placeholder 가 미리 만들어진 경우) 차단.
+    const isSetComplete = (setNumber: 1 | 2 | 3): boolean => {
+      const totalCoreInSet = coreTests.filter((t) => t.setNumber === setNumber).length
+      const masteredCountInSet = coreTests.filter(
+        (t) => t.setNumber === setNumber && t.isTestMastered,
+      ).length
+      return totalCoreInSet > 0 && masteredCountInSet === totalCoreInSet
+    }
+    // 'empty' (오답 0건이라 빈 mid) 는 "복습할 게 없을 만큼 잘 풀었다"로 간주하여 master 동급 처리.
+    // 단 세트 완성(모든 핵심 master) 조건도 함께 충족해야 함.
+    const isMidMastered = (setNumber: 1 | 2 | 3): boolean => {
+      if (!isSetComplete(setNumber)) return false
+      const s = midApiBySegment.get(setNumber)?.status
+      return s === 'mastered' || s === 'empty'
+    }
+
+    // ─── 핵심테스트 sequential 잠금 정책 (b2c20260503 + set 경계 강화) ───
+    //   1번: 항상 시작점 (단, 백엔드 문항 미생성이면 자동 locked)
+    //   같은 set 내 N번(>1): 직전 핵심테스트(N-1) master 시 unlock
+    //   set 경계 첫 핵심(예: 핵심10/19): 직전 핵심 master + 직전 set 의 중간테스트 master 추가 조건
+    //   apiQuestionCount === 0 인 슬롯(placeholder/문항 미생성)은 그대로 locked 유지
+    //   체인이 한 번 끊기면(이전이 master 미달이거나 mid 미달) 그 뒤로는 모두 locked
+    for (let i = 1; i < coreTests.length; i++) {
+      const t = coreTests[i]
+      if (t.status === 'locked') continue  // 이미 백엔드 미생성으로 locked
+      const prev = coreTests[i - 1]
+      let allowed = prev.isTestMastered
+      // set 경계 검사: 직전 핵심과 set 이 다르면 직전 set 의 mid 도 master 여야 함
+      if (allowed && t.setNumber !== prev.setNumber) {
+        if (!isMidMastered(prev.setNumber)) {
+          allowed = false
+        }
+      }
+      if (!allowed) {
+        coreTests[i] = {
+          ...t,
+          status: 'locked',
+          metaCounts: { ...t.metaCounts, gray: 0 },
+        }
+      }
+    }
+
     const totalCoreTests = coreTests.length
     // masteredCount: isTestMastered === true 인 테스트 수
     // (모든 문항이 master 상태인 테스트에만 ★ 배지 + 여기서 카운트)
@@ -286,29 +335,35 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       null
 
     // mid — b2b20260430 백엔드 연동. midApi.items 의 status / test_id 를 병합.
-    //   unlocked = status ∈ {available, mastered}
+    //   unlocked = status ∈ {available, mastered, empty}
     //   masteredCount = 해당 setNumber 의 isTestMastered=true 핵심테스트 개수
-    type MidApiItem = NonNullable<typeof midApi>['items'][number]
-    const midApiBySegment = new Map<number, MidApiItem>()
-    if (midApi?.items) {
-      for (const item of midApi.items) {
-        midApiBySegment.set(item.segment_index, item)
-      }
-    }
+    //   'empty' 정책 (b2c20260503): 오답 0건이라 빈 mid 가 publish 된 경우 → 자동 mastered 동급.
+    //     "복습할 게 없을 만큼 잘 풀었음" 으로 처리하여 다음 set 의 첫 핵심을 unlock 시킨다.
 
     const midTests: MidTest[] = [1, 2, 3].map((setNumber) => {
-      const range = SET_RANGES[setNumber as 1 | 2 | 3]
+      const set = setNumber as 1 | 2 | 3
+      const range = SET_RANGES[set]
       const totalCoreInSet = coreTests.filter(
-        (t) => t.setNumber === setNumber,
+        (t) => t.setNumber === set,
       ).length
       const masteredCountInSet = coreTests.filter(
-        (t) => t.setNumber === setNumber && t.isTestMastered,
+        (t) => t.setNumber === set && t.isTestMastered,
       ).length
-      const apiItem = midApiBySegment.get(setNumber)
-      const status = apiItem?.status ?? 'locked'
-      const unlocked = status === 'available' || status === 'mastered'
+      const apiItem = midApiBySegment.get(set)
+      const rawStatus = apiItem?.status ?? 'locked'
+      // 1) 세트 미완성 → backend status 무관하게 무조건 lock (레거시 mid placeholder 방어)
+      // 2) 세트 완성 → backend status 사용 (단 'empty' → 'mastered' 변환)
+      let status: typeof rawStatus
+      let unlocked: boolean
+      if (!isSetComplete(set)) {
+        status = 'locked'
+        unlocked = false
+      } else {
+        status = rawStatus === 'empty' ? 'mastered' : rawStatus
+        unlocked = status === 'available' || status === 'mastered'
+      }
       return {
-        setNumber: setNumber as 1 | 2 | 3,
+        setNumber: set,
         minutes: 15,
         questions: 20,
         totalCoreInSet: totalCoreInSet || range.end - range.start + 1,
@@ -324,10 +379,11 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     const finalStatus = finalApi?.status ?? 'locked'
     const finalUnlocked =
       finalStatus === 'available' || finalStatus === 'mastered'
+    // 'empty' 도 mastered 동급 처리 (위 isMidMastered 와 동일 정책)
     const setMasterStates: [boolean, boolean, boolean] = [
-      midApiBySegment.get(1)?.status === 'mastered',
-      midApiBySegment.get(2)?.status === 'mastered',
-      midApiBySegment.get(3)?.status === 'mastered',
+      isMidMastered(1),
+      isMidMastered(2),
+      isMidMastered(3),
     ]
     const finalTest: FinalTest = {
       minutes: 15,

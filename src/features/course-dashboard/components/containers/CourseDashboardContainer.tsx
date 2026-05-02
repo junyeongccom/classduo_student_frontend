@@ -32,7 +32,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     courseTitle,
     examDday,
   } = useCourseDashboard(courseId)
-  const { user, streak, monthGrid } = useDashboardMock(courseId)
+  const { user, streak, monthGrid, rankCode } = useDashboardMock(courseId)
 
   useEffect(() => {
     trackPageEnter('course_dashboard', { courseId })
@@ -142,6 +142,8 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
               <GradeProgressCard
                 displayName={user.displayName}
                 xp={user.xp}
+                rankCode={rankCode}
+                courseTitle={courseTitle ?? undefined}
               />
             </div>
           </div>

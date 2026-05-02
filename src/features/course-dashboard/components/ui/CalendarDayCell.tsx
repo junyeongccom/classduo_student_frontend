@@ -16,7 +16,7 @@ interface CalendarDayCellProps {
 export function CalendarDayCell({ cell }: CalendarDayCellProps) {
   // 빈 placeholder (이번 달 시작 전 빈 칸)
   if (cell.display === 0) {
-    return <div className="mx-auto aspect-square w-full max-w-[42px]" aria-hidden />
+    return <div className="mx-auto aspect-square w-full max-w-[52px]" aria-hidden />
   }
 
   const tone = resolveDayTone(cell.state)
@@ -25,7 +25,7 @@ export function CalendarDayCell({ cell }: CalendarDayCellProps) {
 
   return (
     <div
-      className="relative mx-auto flex aspect-square w-full max-w-[42px] items-center justify-center overflow-hidden rounded-[12px]"
+      className="relative mx-auto flex aspect-square w-full max-w-[52px] items-center justify-center overflow-hidden rounded-[14px]"
       style={{
         backgroundColor: tone.bg,
         color: tone.text,
@@ -49,9 +49,9 @@ export function CalendarDayCell({ cell }: CalendarDayCellProps) {
         </div>
       )}
 
-      {/* day 텍스트 — Pretendard Bold */}
+      {/* day 텍스트 — Pretendard Bold. 모든 셀 동일 중앙 정렬 (Today 라벨은 absolute 라 영향 X). */}
       <span
-        className={`relative z-10 text-xs font-bold ${isToday ? 'mt-[-10px]' : ''}`}
+        className="relative z-10 text-sm font-bold"
         style={{ fontFamily: 'Pretendard, sans-serif' }}
       >
         {cell.display}
@@ -59,8 +59,8 @@ export function CalendarDayCell({ cell }: CalendarDayCellProps) {
 
       {isToday && (
         <span
-          className="absolute -top-2.5 right-0 z-10 text-[9px] font-bold"
-          style={{ color: '#383698' }}
+          className="absolute right-1 top-0.5 z-10 text-[8px] font-bold"
+          style={{ color: tone.bookColor === '#FFFFFF' ? '#FFFFFF' : '#383698' }}
         >
           Today
         </span>

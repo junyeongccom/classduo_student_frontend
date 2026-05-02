@@ -15,7 +15,7 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 import { useI18n, type AppLocale } from '@/shared/i18n/I18nProvider'
 import { getCourseRewardCounts } from '@/shared/services/progressService'
 import { fetchMyCourseState, type StudentCourseStateDto } from '@/shared/services/gamificationService'
-import { ExamPrepRewardWidget } from '@/features/exam-prep-final/components/ui/ExamPrepRewardWidget'
+import { ExamPrepHeaderBar } from '@/features/exam-prep-final/components/ui/ExamPrepHeaderBar'
 import { useSidebarStore, SIDEBAR_WIDTH_EXPANDED, SIDEBAR_WIDTH_COLLAPSED } from '@/shared/store/useSidebarStore'
 import { useThemeStore } from '@/shared/store/useThemeStore'
 import { FeedbackModalContainer, useFeedbackStore } from '@/features/error-report'
@@ -213,7 +213,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex shrink-0 items-center gap-3 pl-6">
             {isExamPrepPage ? (
-              <ExamPrepRewardWidget
+              <ExamPrepHeaderBar
                 state={gamificationState}
                 loading={gamificationLoading}
               />

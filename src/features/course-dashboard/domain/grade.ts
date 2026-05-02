@@ -63,3 +63,11 @@ export function resolveGradeProgress(xp: number): GradeProgress {
       : 0
   return { tier, xpToNext, tierSpan, progressRatio }
 }
+
+/**
+ * 백엔드 등급 코드(F~A+) → tier (badgeSrc / color) 룩업.
+ * 진행률은 백엔드 RANK_THRESHOLDS 로 별도 계산 — 본 헬퍼는 시각 자산만 반환.
+ */
+export function resolveGradeTier(rankCode: string): GradeTier {
+  return GRADE_TIERS.find((t) => t.key === rankCode) ?? GRADE_TIERS[0]
+}

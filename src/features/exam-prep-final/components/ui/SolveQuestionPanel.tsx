@@ -14,7 +14,8 @@ import {
   Check,
   X as XIcon,
   FileText,
-  Flag,
+  Mic,
+  Bot,
   Lightbulb,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -49,6 +50,10 @@ interface SolveQuestionPanelProps {
   onNext: () => void
   hasPrev: boolean
   hasNext: boolean
+  /** 출처(강의자료/녹음본) 클릭 — 좌측 자료 패널 열고 해당 페이지/청크로 점프. kind 미정시 source_ref 자동 분기. */
+  onSourceClick?: (kind: 'materials' | 'recordings') => void
+  /** AI 챗봇 호출 — 우측 패널 열고 현재 문항 컨텍스트 주입 */
+  onAskChatbot?: () => void
 }
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D']
@@ -74,6 +79,8 @@ export function SolveQuestionPanel({
   onNext,
   hasPrev,
   hasNext,
+  onSourceClick,
+  onAskChatbot,
 }: SolveQuestionPanelProps) {
   const t = useTranslations()
   // 힌트 진행률 0~100 (% 단위) — RAF 로 매 프레임 갱신, 끊김 없음
@@ -181,6 +188,14 @@ export function SolveQuestionPanel({
           e.preventDefault()
           onNext()
         }
+      } else if (e.key === 'Enter') {
+        // 포커스된 [다음] chevron 버튼이 브라우저 기본 동작으로 click 되는 것을 차단하고
+        // 항상 [제출] 동작으로 통일. 이미 채점됐거나 락/채점 중이면 no-op.
+        e.preventDefault()
+        if (isLocked || isGrading) return
+        if (graded) return
+        if (selectedChoice === null) return
+        onSubmit()
       }
     }
     window.addEventListener('keydown', handler)
@@ -193,9 +208,11 @@ export function SolveQuestionPanel({
     isGrading,
     hasPrev,
     hasNext,
+    graded,
     onSelectChoice,
     onPrev,
     onNext,
+    onSubmit,
   ])
 
   return (
@@ -344,19 +361,78 @@ export function SolveQuestionPanel({
                 className={cn('h-4 w-4', isBookmarked && 'fill-current')}
               />
             </button>
+            {(() => {
+              const sr = (question.source_ref ?? null) as
+                | { source_pages?: number[]; source_chunks?: number[] }
+                | null
+              const pages = sr?.source_pages ?? []
+              const chunks = sr?.source_chunks ?? []
+              const hasMaterial = pages.length > 0
+              const hasRecording = chunks.length > 0
+              const sourceClickable = !!onSourceClick && (hasMaterial || hasRecording)
+              const tooltipLines: string[] = []
+              if (hasMaterial) {
+                tooltipLines.push(
+                  `강의자료 ${pages.map((p) => `p.${p}`).join(', ')}`,
+                )
+              }
+              if (hasRecording) {
+                tooltipLines.push(
+                  `녹음본 청크 ${chunks.map((c) => `#${c}`).join(', ')}`,
+                )
+              }
+              return (
+                <div className="group/source relative inline-flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!sourceClickable) return
+                      onSourceClick(hasMaterial ? 'materials' : 'recordings')
+                    }}
+                    disabled={!sourceClickable}
+                    className={cn(
+                      'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+                      sourceClickable
+                        ? 'hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800'
+                        : 'opacity-40 cursor-not-allowed',
+                    )}
+                    aria-label="강의자료 출처 보기"
+                  >
+                    {hasRecording && !hasMaterial ? (
+                      <Mic className="h-4 w-4" />
+                    ) : (
+                      <FileText className="h-4 w-4" />
+                    )}
+                  </button>
+                  {/* hover 툴팁 — 출처 페이지/청크 번호 표시 */}
+                  <div
+                    role="tooltip"
+                    className="pointer-events-none absolute left-1/2 top-0 z-20 w-max max-w-[260px] -translate-x-1/2 -translate-y-[calc(100%+8px)] opacity-0 transition-opacity duration-150 group-hover/source:opacity-100"
+                  >
+                    <div className="whitespace-pre-line rounded-md bg-gray-900 px-2 py-1 text-[11px] leading-snug text-white shadow-sm">
+                      {tooltipLines.length > 0
+                        ? tooltipLines.join('\n')
+                        : '출처 정보가 없습니다'}
+                    </div>
+                    <div className="mx-auto mt-1 h-2 w-2 rotate-45 bg-gray-900" />
+                  </div>
+                </div>
+              )
+            })()}
             <button
               type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
-              aria-label="memo"
+              onClick={onAskChatbot}
+              disabled={!onAskChatbot}
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+                onAskChatbot
+                  ? 'hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800'
+                  : 'opacity-40 cursor-not-allowed',
+              )}
+              aria-label="AI 챗봇에게 물어보기"
+              title="AI 챗봇에게 이 문제 물어보기"
             >
-              <FileText className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
-              aria-label="flag"
-            >
-              <Flag className="h-4 w-4" />
+              <Bot className="h-4 w-4" />
             </button>
           </div>
 

@@ -1,6 +1,6 @@
 /**
  * @file useCoreTestDetail.ts
- * @description 단일 core test 상세(메타+15문항) fetch 훅
+ * @description 단일 core test 상세(메타+문항) fetch 훅 — core 10 / mid 가변 / final 15
  * @module features/exam-prep-final/hooks
  * @dependencies examPrepService
  */
