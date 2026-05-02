@@ -131,7 +131,7 @@ export default function SessionCard({
           )}
         </div>
 
-        {/* 우측: 점수 또는 상태 */}
+        {/* 우측: 점수 / 생성 중 / 실패 — 진행도 배지(미시작/진행 중)는 하단 문항 수 옆으로 이동 */}
         <div className="shrink-0 flex items-center gap-2">
           {isCreating ? (
             <span className="inline-flex items-center gap-1 text-sm font-medium text-blue-500">
@@ -147,14 +147,6 @@ export default function SessionCard({
             <span className="inline-flex items-center gap-1 text-sm font-bold text-green-600">
               <CheckCircle2 className="h-4 w-4" />
               {scorePercent}%
-            </span>
-          ) : solvingStats && solvingStats.answered > 0 ? (
-            <span className="text-sm font-medium text-gray-400">
-              {t('solvingInProgress')}
-            </span>
-          ) : isClickable ? (
-            <span className="text-sm font-medium text-gray-400">
-              {t('solvingNotStarted')}
             </span>
           ) : null}
 
@@ -212,25 +204,37 @@ export default function SessionCard({
             </span>
           </div>
         ) : solvingStats ? (
-          <p className="text-xs text-gray-500 flex items-center gap-1">
+          <p className="text-xs text-gray-500 flex items-center gap-1.5">
+            <span>{t('quizCount', { count: session.quiz_count })}</span>
+            <span className="text-gray-300">·</span>
             {isSolvingComplete ? (
               <>
                 <CheckCircle2 className="h-3 w-3 text-blue-500" />
-                {t('solvingStatusComplete')}
+                <span>{t('solvingStatusComplete')}</span>
               </>
-            ) : (
+            ) : solvingStats.answered > 0 ? (
               <>
                 <Clock className="h-3 w-3 text-gray-400" />
-                {t('solvingStatusProgress', {
+                <span>{t('solvingInProgress')}</span>
+                <span className="text-gray-300">·</span>
+                <span>{t('solvingStatusProgress', {
                   answered: solvingStats.answered,
                   total: solvingStats.total,
-                })}
+                })}</span>
               </>
+            ) : (
+              <span className="text-gray-400">{t('solvingNotStarted')}</span>
             )}
           </p>
         ) : (
-          <p className="text-xs text-gray-400">
-            {t('quizCount', { count: session.quiz_count })}
+          <p className="text-xs text-gray-400 flex items-center gap-1.5">
+            <span>{t('quizCount', { count: session.quiz_count })}</span>
+            {isClickable && (
+              <>
+                <span className="text-gray-300">·</span>
+                <span>{t('solvingNotStarted')}</span>
+              </>
+            )}
           </p>
         )}
       </div>
