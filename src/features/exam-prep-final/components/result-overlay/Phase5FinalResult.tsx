@@ -159,8 +159,18 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit }: Phase5Pro
     >
       {/* ──────── 상단 row: [번호+회차] | [XP + bar (with grade pinned to end)] ──────── */}
       <div className="grid grid-cols-[auto_1fr] items-center gap-10">
-        {/* 좌상단 — 큰 번호 / 주차차시 / 회차제목 (3행) */}
-        <div className="flex flex-col gap-2">
+        {/* 좌상단 — 큰 번호 / 주차차시 / 회차제목 (3행). 테스트 마스터 시 챕터제목 위에 도장(이슈 12-2). */}
+        <div className="relative flex flex-col gap-2">
+          {allMaster && (
+            <img
+              src="/master-big.png"
+              alt="테스트 마스터!"
+              aria-hidden
+              draggable={false}
+              className="master-stamp-pop pointer-events-none absolute -right-12 -top-6 z-10 h-28 w-28 select-none"
+              style={{ animationDelay: '180ms' }}
+            />
+          )}
           <span className="text-7xl font-black leading-none text-gray-900">{headlineLabel}</span>
           {sessionLine && (
             <span className="text-base font-bold text-gray-500">{sessionLine}</span>
@@ -252,16 +262,18 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit }: Phase5Pro
           </div>
         </div>
 
-        {/* 우측 — 문항별 OX */}
+        {/* 우측 — 문항별 OX (이슈 12-3 사각 round 30 + 12-4 좁은 gap + 12-1 안 푼 마스터 도장) */}
         <div className="te-fade-up flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5" style={{ animationDelay: '160ms' }}>
           <span className="text-base font-extrabold text-gray-900">OX</span>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-1.5">
             {questionDeltas
               .slice(0, 10)
               .sort((a, b) => a.seq - b.seq)
               .map((d) => {
                 const ok = d.isCorrect === true
                 const wrong = d.isCorrect === false
+                // 안 푼 문항 (isCorrect===null) + 마스터 도달 상태(after==='master') → master 도장 (이슈 12-1)
+                const skippedMaster = d.isCorrect === null && d.after === 'master'
                 let bg = '#ECECEE'
                 let textColor = '#1C1C1E'
                 if (ok && d.hintUsed) {
@@ -277,10 +289,20 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit }: Phase5Pro
                 return (
                   <div
                     key={d.seq}
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold"
+                    className="relative flex h-10 w-10 items-center justify-center rounded-[30px] text-sm font-extrabold"
                     style={{ backgroundColor: bg, color: textColor }}
                   >
-                    {d.seq}
+                    {skippedMaster ? (
+                      <img
+                        src="/master.png"
+                        alt={`${d.seq}번 마스터`}
+                        aria-hidden
+                        draggable={false}
+                        className="absolute inset-0 h-full w-full select-none object-contain"
+                      />
+                    ) : (
+                      d.seq
+                    )}
                   </div>
                 )
               })}

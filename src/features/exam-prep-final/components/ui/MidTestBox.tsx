@@ -126,13 +126,26 @@ export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
       return
     }
 
-    // unlocked=true. prev=true 면 이미 모션 본 상태 → pages 로 직행.
-    if (prevUnlocked) {
+    // 풀이 종료 직후 신호 (이슈 4) — CoreTestSolveContainer handleExit 가 저장한 hint 가 있으면
+    // prev 값과 무관하게 unlocking 모션 한 번 재생. 신호는 동일 set 의 첫 MidTestBox 가 소비.
+    let consumedUnlockHint = false
+    try {
+      const hintRaw = window.sessionStorage.getItem(`examPrep:unlockHint:${courseId}`)
+      if (hintRaw) {
+        consumedUnlockHint = true
+        window.sessionStorage.removeItem(`examPrep:unlockHint:${courseId}`)
+      }
+    } catch {
+      // 무시
+    }
+
+    // unlocked=true. prev=true 이고 hint 도 없으면 이미 모션 본 상태 → pages 로 직행.
+    if (prevUnlocked && !consumedUnlockHint) {
       setStage('pages')
       return
     }
 
-    // false→true 전환 감지 → unlocking 모션 재생 + prev='1' 기록
+    // (false→true 전환) 또는 (hint consumed) → unlocking 모션 재생 + prev='1' 기록
     setStage('unlocking')
     const t = setTimeout(() => {
       setStage('pages')

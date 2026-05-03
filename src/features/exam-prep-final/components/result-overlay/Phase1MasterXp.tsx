@@ -59,13 +59,14 @@ function deriveEvents(d: QuestionDelta): XpEvent[] {
   return []
 }
 
-/** 이벤트 간 지터 (handoff doc: 220~420ms × 1.5 = 330~630ms) */
-const STEP_MIN = 330
-const STEP_MAX = 630
-const FIRST_DELAY = 480
-const DROPLET_AFTER_PURPLE = 540
-const DROPLET_DUR = 2100
-const FINAL_DELAY = 800
+/** 이벤트 간 지터 — 사용자 요청: 한 문제 색상 전환 후 다음 문제 전환까지 2~3배 빠르게.
+ *  기존 330~630ms → 110~210ms (3x). FINAL_DELAY 와 DROPLET_AFTER_PURPLE 도 단축. */
+const STEP_MIN = 110
+const STEP_MAX = 210
+const FIRST_DELAY = 200
+const DROPLET_AFTER_PURPLE = 220
+const DROPLET_DUR = 1100
+const FINAL_DELAY = 320
 
 /** 풀이 전체 droplet 도착 좌표 — counter ref 기반으로 매번 측정 */
 interface Droplet {
@@ -236,14 +237,15 @@ export function Phase1MasterXp({ deltas, onDone }: Phase1Props) {
         })}
       </div>
 
-      {/* 우측: 카운터 — "마스터 달성 경험치" 라벨 + N XP. grid 와 좌우 대칭 배치 */}
-      <div className="ml-[140px] flex flex-col items-end gap-4">
+      {/* 우측: 카운터 — 라벨 + N XP. 카운터 영역은 고정 너비 (w-[360px]) 로 자릿수 변동에도
+          중앙 위치/그리드 좌표가 흔들리지 않게 한다 (사용자 요청 7번). */}
+      <div className="ml-[140px] flex w-[360px] shrink-0 flex-col items-end gap-4">
         <span className="text-xl font-bold text-gray-900">마스터 달성 경험치</span>
-        <div className="text-right">
+        <div className="flex h-20 w-full items-center justify-end overflow-hidden text-right">
           <span
             ref={counterRef}
             key={counterPulse}
-            className="te-counter-bump text-6xl font-black text-gray-900"
+            className="te-counter-bump tabular-nums text-6xl font-black leading-none text-gray-900"
           >
             {xpCount} XP
           </span>

@@ -773,7 +773,10 @@ function QuizCard({
           ) : (
             <p className="text-gray-400">해설이 제공되지 않은 문제입니다.</p>
           )}
-          {sortedChoices.some((c) => c.choice_explanation || c.choice_explanation_eng) && (
+          {/* exam_prep 출처는 explanation 필드에 이미 "1번:, 2번:..." 형식 전체 분석이 들어있어
+              choice_explanation 까지 출력하면 동일 내용이 두 번 나옴 → 선지별 분석 섹션 생략 */}
+          {item.quiz_source !== 'exam_prep' &&
+            sortedChoices.some((c) => c.choice_explanation || c.choice_explanation_eng) && (
             <ul className="mt-3 space-y-1.5 border-t border-gray-200 pt-2.5 dark:border-gray-700">
               {sortedChoices.map((c, idx) => {
                 const exp =

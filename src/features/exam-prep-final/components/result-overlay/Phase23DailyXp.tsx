@@ -209,13 +209,15 @@ interface DayCardsRowProps {
 }
 
 function DayCardsRow({ currentTier }: DayCardsRowProps) {
-  const cards: { label: string; xp: number; bg: string; text: string; delay: number }[] = [
-    { label: 'DAY 1', xp: 20, bg: '#ECE7FB', text: '#2D2461', delay: 60 },
-    { label: 'DAY 2~4', xp: 30, bg: '#B2A4F0', text: '#FFFFFF', delay: 180 },
-    { label: 'DAY 5~', xp: 40, bg: '#2D2461', text: '#FFFFFF', delay: 300 },
+  // 카드 가로 길이는 **날짜 범위(폭)** 에 정확히 비례 (사용자 요청: DAY 1 박스의 3배 = DAY 2~4).
+  //   - DAY 1     → 1일   → 80px  (기준)
+  //   - DAY 2~4   → 3일   → 240px (1일 × 3)
+  //   - DAY 5~    → 무한  → 400px (2~4 의 약 1.7배 — ∞ 시각적 강조)
+  const cards: { label: string; xp: number; bg: string; text: string; delay: number; width: number }[] = [
+    { label: 'DAY 1', xp: 20, bg: '#ECE7FB', text: '#2D2461', delay: 60, width: 80 },
+    { label: 'DAY 2~4', xp: 30, bg: '#B2A4F0', text: '#FFFFFF', delay: 180, width: 240 },
+    { label: 'DAY 5~', xp: 40, bg: '#2D2461', text: '#FFFFFF', delay: 300, width: 400 },
   ]
-  // 박스 가로 길이 — XP 값에 비례 (20→120 / 30→160 / 40→200)
-  const widthForXp = (xp: number) => 40 + xp * 4
   return (
     <div className="flex items-end gap-4">
       {cards.map((c) => {
@@ -232,7 +234,7 @@ function DayCardsRow({ currentTier }: DayCardsRowProps) {
             <div
               className="dar-day-card is-in flex h-14 items-center justify-center rounded-2xl text-xl font-extrabold"
               style={{
-                width: `${widthForXp(c.xp)}px`,
+                width: `${c.width}px`,
                 backgroundColor: c.bg,
                 color: c.text,
                 boxShadow: isCurrent ? '0 0 0 2px rgba(110, 91, 226, 0.35)' : 'none',

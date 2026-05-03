@@ -273,8 +273,8 @@ export function CoreTestSolveContainer({
       setAttemptId(a.attempt_id)
       setAttemptQuestionIds(a.question_ids)
 
-      // resume 시 응답 복원은 비활성화. 다만 attempt 의 채점 완료 여부는 추적해서
-      // 마지막 문항의 [다음] 버튼이 결과 화면으로 갈 수 있게 허용한다.
+      // resume 시 백엔드 임시저장/채점 결과를 받아와 아래 useEffect 에서 UI 상태로 복원.
+      // 이전 정책(빈 상태 시작) 뒤집힘 — 사용자가 이어풀기 진입 시 이전 선택/채점이 그대로 보여야 한다.
       if (a.resumed) {
         const { data: full } = await getAttempt(a.attempt_id)
         if (cancelled) return
@@ -316,18 +316,66 @@ export function CoreTestSolveContainer({
     return map
   }, [data])
 
-  // resume 응답 복원: 비활성화 (사용자 정책 변경 — Master 가 아닌 문항은 매 진입 시
-  // 빈 상태로 다시 풀 수 있어야 한다). Master 문항은 SolveQuestionPanel 의 isMasterLocked
-  // 분기가 graded === null + currentQuestionState === 'master' 조건만으로 정답을
-  // 노출하므로 별도 복원 불필요. 이전 응답 효과 차감은 백엔드 grading_service 가
-  // apply_single_grading_with_replacement 헬퍼로 처리.
+  // resume 응답 복원: 백엔드 saveAttemptResponse(임시저장) + gradeAttemptResponse(채점) 결과를
+  // selectedBySeq / gradedBySeq / hintUsedSeqs 로 UI 에 그대로 복원. data(question 메타) 가
+  // 로드된 뒤 1회 실행 후 resumeResponses 폐기.
+  // mastery 변동 효과는 이전 grade 시점에 이미 적용되었으므로 first_master_transition=false 로
+  // 채워 복원 시점에 보상 모션이 다시 트리거되지 않도록 한다. 사용자가 다른 선지로 재시도하면
+  // 백엔드 grading_service.apply_single_grading_with_replacement 가 이전 효과 차감 + 새 효과 적용.
   useEffect(() => {
-    // resumeResponses 가 도착하면 즉시 폐기 — 향후 grade 호출 시 백엔드가 이전 응답을
-    // 기준으로 mastery 차감 후 재적용하므로 프론트는 빈 상태로 시작.
-    if (resumeResponses) {
-      setResumeResponses(null)
+    if (!resumeResponses || !data) return
+    const qidToSeq = new Map<string, number>()
+    data.questions.forEach((q) => {
+      if (q.id) qidToSeq.set(q.id, q.seq)
+    })
+
+    const newSelected: Record<number, number> = {}
+    const newGraded: Record<number, GradeSingleResponseDto> = {}
+    const newHintUsed = new Set<number>()
+
+    for (const r of resumeResponses) {
+      const seq = qidToSeq.get(r.question_id)
+      if (seq == null) continue
+      const question = data.questions.find((q) => q.seq === seq)
+      if (!question) continue
+
+      // selected 는 백엔드에 0-indexed string 으로 저장 ("0"~"3")
+      const selectedIdx = parseInt(r.selected, 10)
+      if (Number.isInteger(selectedIdx)) {
+        newSelected[seq] = selectedIdx
+      }
+
+      if (r.is_correct === true || r.is_correct === false) {
+        newGraded[seq] = {
+          is_correct: r.is_correct,
+          correct_answer: question.answer ?? '',
+          explanation: question.explanation,
+          mastery: {
+            question_id: r.question_id,
+            previous_state: 'learning',
+            new_state: 'learning',
+            correct_count: 0,
+            incorrect_count: 0,
+            first_master_transition: false,
+          },
+          hint_used: r.hint_used ?? false,
+          graded_count: 0,
+          total_count: data.questions.length,
+          attempt_completed: false,
+          test_mastered_now: false,
+          test_mastered_at: null,
+        }
+      }
+
+      if (r.hint_used === true) newHintUsed.add(seq)
     }
-  }, [resumeResponses])
+
+    if (Object.keys(newSelected).length > 0) setSelectedBySeq(newSelected)
+    if (Object.keys(newGraded).length > 0) setGradedBySeq(newGraded)
+    if (newHintUsed.size > 0) setHintUsedSeqs(newHintUsed)
+
+    setResumeResponses(null)
+  }, [resumeResponses, data])
 
   // 회차 메타
   const matchedLecture = useMemo(() => {
@@ -454,26 +502,47 @@ export function CoreTestSolveContainer({
       : (sessionLabel || '핵심테스트')
   }, [data, matchedLecture, sessionLabel])
 
-  // ─── 출처 클릭 → 좌측 자료 패널 점프 ───
+  // ─── 출처 클릭 → 좌측 자료 패널 점프 (cycling + page 1→0 indexed) ───
+  // 출처가 여러 개면 클릭마다 다음 인덱스로 순환. 페이지 번호는 백엔드 1-indexed
+  // → LeftPanelMaterials targetPage 규약(0-indexed)으로 -1 변환. 청크는 이미 0-indexed.
+  const materialsCursorRef = useRef<Record<string, number>>({})
+  const recordingsCursorRef = useRef<Record<string, number>>({})
+  // 새 attempt(다시풀기) 또는 새 testId 진입 시 cursor 초기화 — 누적 메모리 방지
+  useEffect(() => {
+    materialsCursorRef.current = {}
+    recordingsCursorRef.current = {}
+  }, [testId, restartTrigger])
   const handleSourceClick = useCallback(
     (kind: 'materials' | 'recordings') => {
       const sr = (currentQuestion?.source_ref ?? null) as
         | { source_pages?: number[]; source_chunks?: number[] }
         | null
       if (!sr) return
+      const sectionKey = `q-${currentSeq}`
       // 좌측 패널 자동 열기 + 탭 전환
       if (!isLeftPanelOpen) toggleLeftPanel()
       setLeftTab(kind)
       if (kind === 'materials') {
-        const page = sr.source_pages?.[0]
-        if (page != null) setTargetPage(page)
+        const pages = sr.source_pages ?? []
+        if (pages.length === 0) return
+        const prev = materialsCursorRef.current[sectionKey] ?? 0
+        const cursor = prev >= 0 && prev < pages.length ? prev : 0
+        const page = pages[cursor]
+        if (page != null) setTargetPage(page - 1)
+        materialsCursorRef.current[sectionKey] = (cursor + 1) % pages.length
       } else {
-        const chunk = sr.source_chunks?.[0]
+        const chunks = sr.source_chunks ?? []
+        if (chunks.length === 0) return
+        const prev = recordingsCursorRef.current[sectionKey] ?? 0
+        const cursor = prev >= 0 && prev < chunks.length ? prev : 0
+        const chunk = chunks[cursor]
         if (chunk != null) setTargetChunkIndex(chunk)
+        recordingsCursorRef.current[sectionKey] = (cursor + 1) % chunks.length
       }
     },
     [
       currentQuestion,
+      currentSeq,
       isLeftPanelOpen,
       toggleLeftPanel,
       setLeftTab,
@@ -729,8 +798,19 @@ export function CoreTestSolveContainer({
   }, [currentSeq, total, gradedBySeq, attemptCompletedFromBackend])
 
   const handleExit = useCallback(() => {
+    // 마지막 핵심테스트를 마스터한 직후 종료라면 ExamPrepContainer 가 진입 시 mid 잠금해제 모션을
+    // 자동 재생하도록 신호 저장 (이슈 4). 보수적으로 항상 저장 — 실제 mid 잠금해제 여부는
+    // ExamPrepContainer 의 useExamPrepData 가 산출한 mid status 가 unlocked 인지로 판정.
+    try {
+      sessionStorage.setItem(
+        `examPrep:unlockHint:${courseId}`,
+        JSON.stringify({ at: Date.now(), fromTestId: testId }),
+      )
+    } catch {
+      // sessionStorage 차단 시 다음 진입에 모션이 안 보일 뿐 — 사용자 영향 없음
+    }
     router.push(`/studyspace/course/${courseId}/exam-prep`)
-  }, [router, courseId])
+  }, [router, courseId, testId])
 
   const handleRestart = useCallback(() => {
     // restart 트리거 — startOrResumeAttempt 가 새 attempt 생성 (이전이 submitted 상태이므로)
@@ -1021,6 +1101,17 @@ export function CoreTestSolveContainer({
             }
             onSourceClick={handleSourceClick}
             onAskChatbot={handleAskChatbot}
+            // 모든 채점 가능한 문항이 채점됐거나 backend 가 attempt_completed 신호 또는
+            // 모든 문항이 master 상태(다시풀 필요 없음) → 퀴즈 종료 버튼 활성화 (이슈 8)
+            canFinish={
+              total > 0 &&
+              (Object.keys(gradedBySeq).length >= total ||
+                attemptCompletedFromBackend ||
+                Array.from(seqToQuestionId.values()).every(
+                  (qid) => byQuestionState[qid] === 'master',
+                ))
+            }
+            onFinish={() => setPhase('completed')}
           />
         )}
 

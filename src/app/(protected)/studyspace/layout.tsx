@@ -216,6 +216,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               <ExamPrepHeaderBar
                 state={gamificationState}
                 loading={gamificationLoading}
+                courseId={examPrepCourseId}
               />
             ) : (
               <div ref={flameRef} className="relative">

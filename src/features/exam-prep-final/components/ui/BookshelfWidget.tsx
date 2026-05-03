@@ -80,9 +80,10 @@ export function BookshelfWidget({ currentStreak, size = 64, className }: Bookshe
 
   const handleClick = () => {
     if (tier.bookCount === 0) return // 빈 책장은 흔들림 없음
+    // 양념감자 섞듯 — 더 큰 회전/이동 모션 (이슈 5). 새 키프레임 bookshelf-shuffle 사용.
     setBooks(generateBooks(tier.bookCount))
     setShaking(true)
-    window.setTimeout(() => setShaking(false), 460)
+    window.setTimeout(() => setShaking(false), 860)
   }
 
   return (
@@ -105,8 +106,8 @@ export function BookshelfWidget({ currentStreak, size = 64, className }: Bookshe
         draggable={false}
         className="pointer-events-none absolute inset-0 h-full w-full object-contain"
       />
-      {/* 책들 — 책장 위에 랜덤 배치. shake 애니메이션은 .bookshelf-shake .bookshelf-book */}
-      <div className={cn('pointer-events-none absolute inset-0', shaking && 'bookshelf-shake')}>
+      {/* 책들 — 책장 위에 랜덤 배치. shuffle 애니메이션 (양념감자 섞기) */}
+      <div className={cn('pointer-events-none absolute inset-0', shaking && 'bookshelf-shuffle')}>
         {books.map((book, i) => (
           <img
             key={`${book.src}-${i}-${book.left.toFixed(3)}`}

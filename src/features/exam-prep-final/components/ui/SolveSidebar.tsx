@@ -44,12 +44,6 @@ const STATE_BG: Record<MasteryState, string> = {
   master: 'bg-[#C4B5FD] text-violet-900',
 }
 
-const STATE_RING: Record<MasteryState, string> = {
-  learning: 'ring-[#D9D9D9]',
-  skilled: 'ring-[#FFCD36]',
-  master: 'ring-[#C4B5FD]',
-}
-
 export function SolveSidebar({
   sessionLabel,
   lectureTitle,
@@ -99,23 +93,22 @@ export function SolveSidebar({
         />
       </div>
 
-      {/* 문항 그리드 — 박스 크기 고정 + 현재 문항은 같은 색 ring + 폰트 키움 트릭 */}
+      {/* 문항 그리드 — 사각 (round 30) + 현재 문항은 폰트 키움 + 짙은 그림자 (흰 링 제거) */}
       <div className="grid grid-cols-5 gap-2.5">
         {seqs.map((seq) => {
           const isCurrent = seq === currentSeq
           const state = seqStateMap.get(seq)
           const bgCls = state ? STATE_BG[state] : 'bg-gray-100 text-gray-800'
-          const ringCls = state ? STATE_RING[state] : 'ring-gray-200'
           return (
             <button
               key={seq}
               type="button"
               onClick={() => onSelectSeq(seq)}
               className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-full font-black leading-none transition-all',
+                'flex h-9 w-9 items-center justify-center rounded-[30px] font-black leading-none transition-all',
                 bgCls,
                 isCurrent
-                  ? cn('text-lg ring-2 ring-offset-1', ringCls)
+                  ? 'text-lg shadow-[0_3px_8px_rgba(15,23,42,0.18)] scale-[1.06]'
                   : 'text-base hover:brightness-95',
               )}
             >

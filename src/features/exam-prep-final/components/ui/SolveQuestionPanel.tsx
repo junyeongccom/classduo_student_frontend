@@ -16,10 +16,10 @@ import {
   FileText,
   Mic,
   Bot,
-  Lightbulb,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
+import { HintBulbButton } from './HintBulbButton'
 import type {
   CoreTestQuestionItemDto,
   GradeSingleResponseDto,
@@ -54,6 +54,10 @@ interface SolveQuestionPanelProps {
   onSourceClick?: (kind: 'materials' | 'recordings') => void
   /** AI 챗봇 호출 — 우측 패널 열고 현재 문항 컨텍스트 주입 */
   onAskChatbot?: () => void
+  /** 모든 문항(채점 가능한 모든) 채점 완료 → "퀴즈 종료" 버튼 활성화 */
+  canFinish: boolean
+  /** "퀴즈 종료" 클릭 — 결과 화면 전환 */
+  onFinish: () => void
 }
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D']
@@ -81,6 +85,8 @@ export function SolveQuestionPanel({
   hasNext,
   onSourceClick,
   onAskChatbot,
+  canFinish,
+  onFinish,
 }: SolveQuestionPanelProps) {
   const t = useTranslations()
   // 힌트 진행률 0~100 (% 단위) — RAF 로 매 프레임 갱신, 끊김 없음
@@ -217,36 +223,44 @@ export function SolveQuestionPanel({
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-y-auto bg-[#F5F7F8] dark:bg-gray-950">
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-8 py-8">
+      <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-8 py-8">
+        {/* 마스터 도달 도장 — 첫 마스터 시 문제 우상단에 absolute 로 쾅 찍힘 (스케일 인 + 살짝 회전) */}
+        {graded?.mastery.first_master_transition && (
+          <img
+            src="/master.png"
+            alt="Master 도달!"
+            aria-hidden
+            draggable={false}
+            className="master-stamp-pop pointer-events-none absolute right-4 top-2 z-10 h-24 w-24 select-none"
+          />
+        )}
+
         {/* 문제 stem — 상단 메타(단일선택/숙련도 카운트)는 사이드바로 통합 */}
         <h1 className="text-3xl font-bold leading-snug text-gray-900 dark:text-gray-50">
           {question.stem}
         </h1>
 
-        {/* 채점 결과 배지 (graded 시) */}
-        {graded && (
-          <div className="mt-5 flex items-center gap-2">
-            {graded.is_correct ? (
-              <span className="flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700">
-                <Check className="h-4 w-4" /> 정답
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">
-                <XIcon className="h-4 w-4" /> 오답
-              </span>
-            )}
-            {graded.hint_used && (
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                힌트 사용 (숙련도 미반영)
-              </span>
-            )}
-            {graded.mastery.first_master_transition && (
-              <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
-                🔥 Master 도달!
-              </span>
-            )}
-          </div>
-        )}
+        {/* 채점 결과 배지 영역 — 항상 고정 높이 (h-9 mt-5) 로 비워둬서 채점 후 높낮이 변동 방지 */}
+        <div className="mt-5 flex h-9 items-center gap-2">
+          {graded && (
+            <>
+              {graded.is_correct ? (
+                <span className="flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700">
+                  <Check className="h-4 w-4" /> 정답
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">
+                  <XIcon className="h-4 w-4" /> 오답
+                </span>
+              )}
+              {graded.hint_used && (
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                  힌트 사용 (숙련도 미반영)
+                </span>
+              )}
+            </>
+          )}
+        </div>
 
         {/* 선지 — 그림자 추가, 정답=연보라 outline, 오답=빨강 + shake-then-reveal */}
         <div className="mt-6 flex flex-col gap-3">
@@ -254,9 +268,9 @@ export function SolveQuestionPanel({
             const label = OPTION_LABELS[idx] ?? String.fromCharCode(65 + idx)
             const isSelected = selectedChoice === idx
             const isHintDisabled = hintDisabledOption === idx
-            // 정답 강조: shake 진행 중에는 보류, master 락에선 즉시
+            // 정답 강조: 채점되면 즉시 표시 (오답 흔들림과 동시).
             const showCorrectHighlight =
-              (graded && idx === correctIdx && !shaking) ||
+              (graded && idx === correctIdx) ||
               (isMasterLocked && idx === correctIdx)
             const isWrongPick = !!(graded && isSelected && !graded.is_correct)
             const shouldShake = isWrongPick && shaking
@@ -436,36 +450,15 @@ export function SolveQuestionPanel({
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* 힌트/제출/해설/다음 — 동일 크기(h-10, min-w-[104px], px-5)로 통일 */}
+          <div className="flex items-center gap-3">
+            {/* 힌트 — 노란 전구 버튼. 20초 동안 시계방향 conic-gradient 채움. */}
             {!isMasterLocked && (
-              <button
-                type="button"
-                disabled={!hintAvailable}
+              <HintBulbButton
+                progressPct={hintProgressPct}
                 onClick={onHint}
-                className={cn(
-                  'relative flex h-10 min-w-[104px] items-center justify-center gap-1.5 rounded-lg border px-5 text-sm font-semibold transition-colors',
-                  hintAvailable
-                    ? 'border-violet-300 bg-white text-violet-700 hover:bg-violet-50 dark:border-violet-600 dark:bg-gray-800 dark:text-violet-200'
-                    : 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400 dark:border-gray-700 dark:bg-gray-800',
-                )}
-                style={
-                  hintTimerActive
-                    ? {
-                        backgroundImage: `conic-gradient(#DEDEF8 ${hintProgressPct}%, transparent ${hintProgressPct}%)`,
-                        backgroundOrigin: 'border-box',
-                        backgroundClip: 'border-box, padding-box',
-                      }
-                    : undefined
-                }
-              >
-                <Lightbulb className="h-4 w-4" />
-                <span className="inline-block w-9 text-center tabular-nums">
-                  {hintTimerActive
-                    ? `${hintRemainingSec}s`
-                    : t('examPrepFinal.hint')}
-                </span>
-              </button>
+                available={hintAvailable}
+                inactive={!!graded || hintDisabledOption != null}
+              />
             )}
             {isMasterLocked || graded ? (
               <button
@@ -495,7 +488,7 @@ export function SolveQuestionPanel({
             <span className="mx-1.5 text-gray-300">/</span>
             <span className="text-gray-400">{total}</span>
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onPrev}
@@ -505,15 +498,26 @@ export function SolveQuestionPanel({
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!hasNext}
-              aria-label="next"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            {canFinish ? (
+              <button
+                type="button"
+                onClick={onFinish}
+                aria-label="퀴즈 종료"
+                className="flex h-9 items-center justify-center rounded-lg bg-violet-600 px-4 text-sm font-bold text-white transition-colors hover:bg-violet-700"
+              >
+                퀴즈 종료
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={!hasNext}
+                aria-label="next"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

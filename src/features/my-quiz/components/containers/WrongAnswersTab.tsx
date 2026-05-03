@@ -80,9 +80,11 @@ export default function WrongAnswersTab({
     setError(null)
 
     // user_quiz_response 기반 — 한 번이라도 is_correct=false 였던 (quiz_source, quiz_id) DISTINCT 묶음
-    const incorrectResult = await statusService.fetchIncorrectQuizIdsByLectureIds(
-      selectedLectureIds,
-    )
+    // exam_prep 은 별도 테이블(exam_prep_response) 에 저장되므로 별도 fetch 후 merge.
+    const [incorrectResult, examPrepIncorrectResult] = await Promise.all([
+      statusService.fetchIncorrectQuizIdsByLectureIds(selectedLectureIds),
+      statusService.fetchExamPrepIncorrectsByLectureIds(selectedLectureIds),
+    ])
 
     if (incorrectResult.error || !incorrectResult.data) {
       if (process.env.NODE_ENV === 'development') console.error('[WrongAnswersTab] fetchQuizzes error:', incorrectResult.error)
@@ -91,7 +93,10 @@ export default function WrongAnswersTab({
       return
     }
 
-    const incorrects = incorrectResult.data
+    const incorrects = [
+      ...(incorrectResult.data ?? []),
+      ...(examPrepIncorrectResult.data ?? []),
+    ]
 
     if (incorrects.length === 0) {
       setAllQuizzes([])
@@ -102,8 +107,9 @@ export default function WrongAnswersTab({
     const instructorIds = incorrects.filter(s => s.quiz_source === 'instructor').map(s => s.quiz_id)
     const customizeIds = incorrects.filter(s => s.quiz_source === 'customize').map(s => s.quiz_id)
     const contentIds = incorrects.filter(s => s.quiz_source === 'content').map(s => s.quiz_id)
+    const examPrepIds = incorrects.filter(s => s.quiz_source === 'exam_prep').map(s => s.quiz_id)
 
-    const [instructorResult, customizeResult, contentResult] = await Promise.all([
+    const [instructorResult, customizeResult, contentResult, examPrepResult] = await Promise.all([
       instructorIds.length > 0
         ? statusService.fetchQuizContent(instructorIds, 'instructor')
         : { data: [], error: null },
@@ -113,11 +119,25 @@ export default function WrongAnswersTab({
       contentIds.length > 0
         ? statusService.fetchQuizContent(contentIds, 'content')
         : { data: [], error: null },
+      examPrepIds.length > 0
+        ? statusService.fetchQuizContent(examPrepIds, 'exam_prep')
+        : { data: [], error: null },
     ])
 
-    if (instructorResult.error || customizeResult.error || contentResult.error) {
+    if (
+      instructorResult.error ||
+      customizeResult.error ||
+      contentResult.error ||
+      examPrepResult.error
+    ) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('[WrongAnswersTab] fetchQuizContent error:', instructorResult.error, customizeResult.error, contentResult.error)
+        console.error(
+          '[WrongAnswersTab] fetchQuizContent error:',
+          instructorResult.error,
+          customizeResult.error,
+          contentResult.error,
+          examPrepResult.error,
+        )
       }
       showErrorToast(t('error.loadFailed'))
     }
@@ -129,10 +149,14 @@ export default function WrongAnswersTab({
     }
 
     const quizzesWithMeta: QuizWithMeta[] = []
-    const sources: Array<{ source: 'instructor' | 'customize' | 'content'; data: typeof instructorResult.data }> = [
+    const sources: Array<{
+      source: 'instructor' | 'customize' | 'content' | 'exam_prep'
+      data: typeof instructorResult.data
+    }> = [
       { source: 'instructor', data: instructorResult.data },
       { source: 'content', data: contentResult.data },
       { source: 'customize', data: customizeResult.data },
+      { source: 'exam_prep', data: examPrepResult.data },
     ]
 
     for (const { source, data } of sources) {

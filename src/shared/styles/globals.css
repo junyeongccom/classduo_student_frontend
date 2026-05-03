@@ -412,18 +412,17 @@
       transparent 70%
     );
     transform: skewX(-18deg);
-    animation: exam-hero-sweep 9s ease-in-out infinite;
+    /* 광이 끝까지 가서 사라진 뒤 자연스럽게 다시 루프 (이슈 9). 8s sweep + 2s rest 가 아닌
+       단순 5s linear 무한 루프 — duration 끝나는 시점에 화면 밖이라 reset 이 보이지 않음. */
+    animation: exam-hero-sweep 5s linear infinite;
   }
 
   @keyframes exam-hero-sweep {
     0% {
       transform: translateX(0) skewX(-18deg);
     }
-    17% {
-      transform: translateX(420%) skewX(-18deg);
-    }
     100% {
-      transform: translateX(420%) skewX(-18deg);
+      transform: translateX(540%) skewX(-18deg);
     }
   }
 
@@ -861,5 +860,57 @@
     animation: none !important;
   }
   .xp-drop, .dar-falling-book { opacity: 0; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Master 도장 — first_master_transition 시 문제 우상단 쾅
+   ───────────────────────────────────────────────────────── */
+@keyframes master-stamp-pop {
+  0%   { transform: scale(2.4) rotate(-22deg); opacity: 0; }
+  55%  { transform: scale(0.86) rotate(-22deg); opacity: 1; }
+  78%  { transform: scale(1.12) rotate(-22deg); }
+  100% { transform: scale(1) rotate(-22deg); opacity: 1; }
+}
+.master-stamp-pop {
+  transform-origin: 50% 50%;
+  animation: master-stamp-pop 540ms cubic-bezier(.34,1.5,.5,1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .master-stamp-pop { animation: none !important; transform: rotate(-22deg); }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Bookshelf 양념감자 흔들기 — 클릭 시 통 안에서 책들이 확 섞임
+   ───────────────────────────────────────────────────────── */
+@keyframes bookshelf-shuffle {
+  0%   { transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg)); }
+  10%  { transform: translate(calc(var(--book-x, 0px) - 4px), -3px) rotate(calc(var(--book-rot, 0deg) - 25deg)); }
+  22%  { transform: translate(calc(var(--book-x, 0px) + 5px), -5px) rotate(calc(var(--book-rot, 0deg) + 35deg)); }
+  35%  { transform: translate(calc(var(--book-x, 0px) - 5px), -2px) rotate(calc(var(--book-rot, 0deg) - 45deg)); }
+  48%  { transform: translate(calc(var(--book-x, 0px) + 6px), -7px) rotate(calc(var(--book-rot, 0deg) + 55deg)); }
+  62%  { transform: translate(calc(var(--book-x, 0px) - 4px), -3px) rotate(calc(var(--book-rot, 0deg) - 30deg)); }
+  76%  { transform: translate(calc(var(--book-x, 0px) + 3px), -1px) rotate(calc(var(--book-rot, 0deg) + 18deg)); }
+  88%  { transform: translate(calc(var(--book-x, 0px) - 1px), 0) rotate(calc(var(--book-rot, 0deg) - 8deg)); }
+  100% { transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg)); }
+}
+.bookshelf-shuffle .bookshelf-book {
+  animation: bookshelf-shuffle 0.85s cubic-bezier(.34,1.2,.5,1);
+}
+
+/* ─────────────────────────────────────────────────────────
+   책 떨어짐 (수직→가로 누움) — Phase 2 회전 모션
+   세로(rotate -90deg) → 안착 시 가로(rotate 0)
+   ───────────────────────────────────────────────────────── */
+@keyframes dar-book-fall-vertical {
+  0%   { transform: translate(-50%, -130px) rotate(-90deg); opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { transform: translate(-50%, calc(var(--book-rest-y, 0px) - 8px)) rotate(-90deg); opacity: 1; }
+  100% { transform: translate(-50%, var(--book-rest-y, 0px)) rotate(0deg); opacity: 1; }
+}
+.dar-falling-book.is-falling-vertical {
+  animation: dar-book-fall-vertical 1000ms cubic-bezier(.5,0,.85,1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dar-falling-book.is-falling-vertical { animation: none !important; opacity: 0; }
 }
 

@@ -683,8 +683,10 @@ export async function fetchExamPrepIncorrectsByLectureIds(
     for (const r of ((data ?? []) as unknown) as EpRow[]) {
       const q = r.exam_prep_question
       if (!q) continue
+      // mid/final 은 문항별 source_lecture_id 가 정확한 출처 강의(여러 회차에서 추출).
+      // core 는 source_lecture_id 가 보통 null → exam_prep_test.lecture_session_id 로 fallback.
       const lectureId =
-        q.exam_prep_test?.lecture_session_id ?? q.source_lecture_id ?? null
+        q.source_lecture_id ?? q.exam_prep_test?.lecture_session_id ?? null
       if (!lectureId || !lectureSet.has(lectureId)) continue
 
       const key = `exam_prep:${r.question_id}`

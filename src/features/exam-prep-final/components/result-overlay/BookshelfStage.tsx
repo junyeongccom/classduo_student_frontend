@@ -49,11 +49,11 @@ const FALL_DUR = 1000
 const REST_DELAY = 200
 const REST_DUR = 600
 
-/** 셀 안에서 책 한 권의 두께 / 사이 갭. 정사각형 셀 안에 책을 더 많이 쌓을 수 있게 작게. */
+/** 셀 안에서 책 한 권의 두께 / 사이 갭. */
 const BOOK_BAR_HEIGHT = 3
 const BOOK_BAR_GAP = 1
-/** 셀에 시각적으로 쌓을 수 있는 책 최대 개수. 이를 넘으면 떨어지는 모션만 보여주고 스택은 유지. */
-const MAX_VISIBLE_BOOKS = 7
+/** 책 무제한 누적 — 셀 위로 넘쳐서 쌓이게 (사용자 요청 2-4번).
+ *  수직 안착 좌표 산출 시에만 사용 (overflow-visible 로 셀 위로 자연스럽게 솟음). */
 
 export function BookshelfStage({
   preStreak,
@@ -84,6 +84,12 @@ export function BookshelfStage({
   onShelfFilledRef.current = onShelfFilled
   onSequenceDoneRef.current = onSequenceDone
 
+  // 책 두 번 떨어지는 잔상 방지(이슈 6) — autoPlay 가 처음 true 가 된 시점에 한 번만 실행.
+  // calendarCounts 새 객체 참조로 인한 effect 재실행을 막기 위해 deps 에서 제외하고 ref 로 stale 값 방어.
+  const calendarCountsRef = useRef(calendarCounts)
+  calendarCountsRef.current = calendarCounts
+  const isFirstTestTodayRef = useRef(isFirstTestToday)
+  isFirstTestTodayRef.current = isFirstTestToday
   useEffect(() => {
     if (!autoPlay || initialFilled) return
     if (doneRef.current) return
@@ -92,9 +98,9 @@ export function BookshelfStage({
     timeouts.push(setTimeout(() => setBookFalling(true), FALL_DELAY))
     timeouts.push(
       setTimeout(() => {
-        if (isFirstTestToday) setIsFilled(true)
+        if (isFirstTestTodayRef.current) setIsFilled(true)
         // 책이 도착하는 순간 today 셀 책 스택 +1 (떨어지는 책이 스택의 일원이 됨)
-        setTodayBooks(calendarCounts[0] ?? 0)
+        setTodayBooks(calendarCountsRef.current[0] ?? 0)
         onShelfFilledRef.current?.()
       }, FALL_DELAY + FALL_DUR),
     )
@@ -107,7 +113,7 @@ export function BookshelfStage({
       }, FALL_DELAY + FALL_DUR + REST_DELAY + REST_DUR),
     )
     return () => timeouts.forEach((t) => clearTimeout(t))
-  }, [autoPlay, initialFilled, isFirstTestToday, calendarCounts])
+  }, [autoPlay, initialFilled])
 
   const cellFillColor = postTier.color
 
@@ -124,21 +130,21 @@ export function BookshelfStage({
 
   return (
     <div className="relative flex h-full w-full items-center justify-center">
-      <div className="relative flex gap-3">
+      <div className="relative flex items-end gap-3">
         {cells.map((c) => {
           const filled = isFilled
             ? isWithinStreak(c.offset, postStreak)
             : isWithinStreak(c.offset, preStreak)
-          // 셀별 책 개수: 오늘은 동적 (todayBooks), 나머지는 calendarCounts 그대로.
-          // 시각 표시는 MAX_VISIBLE_BOOKS 까지만 — 그 이상은 떨어지는 모션만 보여주고 스택 유지.
-          const rawBookCount = c.isToday ? todayBooks : calendarCounts[c.offset] ?? 0
-          const bookCount = Math.min(rawBookCount, MAX_VISIBLE_BOOKS)
+          // 셀별 책 개수: 오늘은 동적 (todayBooks), 나머지는 calendarCounts 그대로. (이슈 2-4: 무제한)
+          const bookCount = c.isToday ? todayBooks : calendarCounts[c.offset] ?? 0
           // 책 색: 채워진 셀(짙은 배경)은 흰 책, 흰 셀은 짙은 보라 책
           const bookColor = filled ? '#FFFFFF' : '#6E5BE2'
+          // 셀 가로세로비 7:6 — w-16(64) × h-[3.43rem](≈55) → 64:55 ≈ 7:6 (이슈 2-6)
+          // overflow-visible 로 책이 셀 위로 자연스럽게 넘쳐 쌓이게 (이슈 2-4)
           return (
             <div
               key={c.offset}
-              className={`dar-cell relative flex h-14 w-14 flex-col items-start justify-between rounded-xl p-1.5 ${
+              className={`dar-cell relative flex h-[55px] w-16 flex-col items-start justify-between overflow-visible rounded-xl p-1.5 ${
                 filled ? 'is-filled' : ''
               }`}
               style={{
@@ -147,10 +153,10 @@ export function BookshelfStage({
                 fontFamily: 'Pretendard, sans-serif',
               }}
             >
-              {/* 날짜 라벨 — 좌상단 */}
-              <span className="text-[11px] font-extrabold leading-none">{c.label}</span>
-              {/* 책 스택 — 셀 하단에서 위로 쌓임. flex-col-reverse 로 아래→위. */}
-              <div className="flex w-full flex-col-reverse items-center gap-[1px]">
+              {/* 날짜 라벨 — 좌상단, 더 큰 폰트 (이슈 2-5) */}
+              <span className="text-[15px] font-extrabold leading-none">{c.label}</span>
+              {/* 책 스택 — 셀 하단에서 위로. 무제한 누적 시 셀 위로 자연스럽게 넘침 (overflow-visible). */}
+              <div className="absolute inset-x-0 bottom-1.5 flex flex-col-reverse items-center gap-[1px]">
                 {Array.from({ length: bookCount }).map((_, i) => (
                   <span
                     key={i}
@@ -165,28 +171,22 @@ export function BookshelfStage({
             </div>
           )
         })}
-        {/* 떨어지는 책 — 가로 바 형태로, 오늘 셀의 책 스택 가장 위 자리에 안착.
-         *  cell 높이 56 (h-14), padding 6 (p-1.5) → bottom of stack = 50px (from cell top).
-         *  N번째 책의 top 위치 = 50 - (N*BAR_H + (N-1)*GAP) = 50 - 4N + 1 = 51 - 4N.
-         *  N = calendarCounts[0] (이번 attempt 후 today 풀이 수).
-         *  날짜 라벨 영역(상단 ~14px) 보호 위해 최저 16px clamp. */}
+        {/* 떨어지는 책 — 수직(rotate -90deg) 으로 떨어져 안착 시 가로 (rotate 0).
+            안착 좌표 = 셀 안 책 스택 바닥 + N×(높이+갭) — 무제한이므로 셀 위로 솟아도 OK.
+            min clamp 제거 — 셀 위로 넘쳐도 자연스럽게 보이게. */}
         <div
-          className={`dar-falling-book ${bookFalling && !bookResting ? 'is-falling' : ''} ${
-            bookResting ? 'is-resting' : ''
-          }`}
+          className={`dar-falling-book ${
+            bookFalling && !bookResting ? 'is-falling-vertical' : ''
+          } ${bookResting ? 'is-resting' : ''}`}
           style={{
             width: '32px',
             height: `${BOOK_BAR_HEIGHT}px`,
             borderRadius: '1px',
             backgroundColor: '#FFFFFF',
-            // 책이 7권 초과시에도 가장 윗 위치(=7번째 자리) 위에서 페이드 — 셀 위로 튀지 않게 clamp.
+            // 셀 안 책 스택 위치 — N번째 책의 top = (cellHeight - p) - N*(BAR+GAP)
+            // 셀 위로 넘치면 음수도 허용 (overflow-visible).
             // @ts-expect-error CSS variable
-            '--book-rest-y': `${Math.max(
-              16,
-              51 -
-                Math.min(calendarCounts[0] ?? 1, MAX_VISIBLE_BOOKS) *
-                  (BOOK_BAR_HEIGHT + BOOK_BAR_GAP),
-            )}px`,
+            '--book-rest-y': `${49 - (calendarCounts[0] ?? 1) * (BOOK_BAR_HEIGHT + BOOK_BAR_GAP)}px`,
           }}
         />
       </div>

@@ -41,7 +41,7 @@ export function GradeProgressCard({
   const tier = resolveGradeTier(rankCode)
 
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] dark:bg-gray-900">
+    <section className="rounded-2xl bg-white px-8 py-5 shadow-[0_4px_20px_rgba(15,23,42,0.06)] dark:bg-gray-900">
       <header className="mb-3">
         <h2
           className="text-xl font-bold text-gray-900 dark:text-gray-50"
@@ -90,8 +90,8 @@ export function GradeProgressCard({
             {isMax ? '최고 등급 도달!' : `다음 등급까지 ${xpToNext.toLocaleString()} XP`}
           </span>
 
-          {/* progress bar */}
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+          {/* progress bar — 너무 길어 보이지 않게 max-width 로 제한 (이슈 13) */}
+          <div className="h-2.5 w-full max-w-[260px] overflow-hidden rounded-full bg-gray-100">
             <div
               className="h-full rounded-full transition-[width] duration-500"
               style={{
