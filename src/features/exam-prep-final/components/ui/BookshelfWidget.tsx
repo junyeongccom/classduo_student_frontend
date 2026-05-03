@@ -162,7 +162,7 @@ export function BookshelfWidget({ currentStreak, size = 64, className }: Bookshe
               ['--fly-delay' as string]: `${book.flyDelay}ms`,
               ['--fly-dur' as string]: `${book.flyDur}ms`,
               transform: `translate(-${size * 0.11}px, 0) rotate(${book.rotate}deg)`,
-              transformOrigin: '50% 100%',
+              transformOrigin: '50% 50%',
             }}
           />
         ))}

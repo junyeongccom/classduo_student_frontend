@@ -909,17 +909,29 @@
   0%   {
     transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg));
   }
+  20%  {
+    transform: translate(
+      calc(var(--book-x, 0px) + calc(var(--fly-dx, 0px) * 0.55)),
+      calc(var(--fly-dy, -32px) * 0.5)
+    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 0.25)));
+  }
   40%  {
     transform: translate(
       calc(var(--book-x, 0px) + var(--fly-dx, 0px)),
       var(--fly-dy, -32px)
-    ) rotate(calc(var(--book-rot, 0deg) + var(--fly-spin, 360deg)));
+    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 0.6)));
   }
   60%  {
     transform: translate(
-      calc(var(--book-x, 0px) + calc(var(--fly-dx, 0px) * 0.3)),
-      calc(var(--fly-dy, -32px) * 0.8)
-    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 0.7)));
+      calc(var(--book-x, 0px) - calc(var(--fly-dx, 0px) * 0.5)),
+      calc(var(--fly-dy, -32px) * 0.85)
+    ) rotate(calc(var(--book-rot, 0deg) + var(--fly-spin, 360deg)));
+  }
+  80%  {
+    transform: translate(
+      calc(var(--book-x, 0px) + calc(var(--fly-dx, 0px) * 0.25)),
+      calc(var(--fly-dy, -32px) * 0.35)
+    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 1.3)));
   }
   100% {
     transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg));

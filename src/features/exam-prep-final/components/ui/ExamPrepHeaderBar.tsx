@@ -102,16 +102,14 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
   const currentStreak = state?.current_streak ?? 0
   // 등급은 totalXp 로부터 derive — 백엔드 rank.code stale 시에도 일관성 보장.
   const rankCode = deriveRankFromXp(totalXp)
-  const { xpToNext, ratio, isMax } = computeProgress(rankCode, totalXp)
+  const { nextTotal, ratio, isMax } = computeProgress(rankCode, totalXp)
   const barColor = RANK_COLORS[rankCode] ?? '#6366F1'
 
   const courseKey = courseId ?? 'default'
   const expDismissKey = `expBarTooltip_dismissed_${courseKey}`
 
   const [isExpTooltipOpen, setIsExpTooltipOpen] = useState(false)
-  const [isBadgePopupOpen, setIsBadgePopupOpen] = useState(false)
   const expTooltipRef = useRef<HTMLDivElement>(null)
-  const badgePopupRef = useRef<HTMLDivElement>(null)
 
   // 첫 진입 시 24시간 dismiss 검사 → 자동 노출
   useEffect(() => {
@@ -132,18 +130,6 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isExpTooltipOpen])
 
-  // 외부 클릭 닫기 — 계급 뱃지 팝업
-  useEffect(() => {
-    if (!isBadgePopupOpen) return
-    const handleClick = (e: MouseEvent) => {
-      if (badgePopupRef.current && !badgePopupRef.current.contains(e.target as Node)) {
-        setIsBadgePopupOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [isBadgePopupOpen])
-
   const handleExpDismiss = () => {
     markDismissed(expDismissKey)
     setIsExpTooltipOpen(false)
@@ -151,73 +137,27 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
 
   const isKo = locale !== 'en'
   const expTooltipBody = isKo
-    ? '경험치를 모으고 A+ 뱃지를 달성하세요! 추첨 이벤트 예정!'
-    : 'Earn XP and unlock the A+ badge! Raffle event coming soon!'
+    ? '경험치를 모으고 A+ 뱃지를 달성하세요!\n추첨 이벤트 예정!'
+    : 'Earn XP and unlock the A+ badge!\nRaffle event coming soon!'
   const expTooltipConfirm = isKo ? '확인' : 'OK'
-  const badgePopupTitle = isKo ? '학점 뱃지 시스템' : 'Grade Badge System'
-  const badgePopupSubtitle = isKo
-    ? '각 학점 진급에 필요한 누적 XP'
-    : 'Total XP thresholds for each grade promotion'
-  const xpToNextLabel = loading
+  // "240 / 300 XP" — 현재 누적 XP / 다음 등급 도달 임계 XP. A+ 면 "/ MAX".
+  const xpDisplay = loading
     ? '…'
     : isMax
-      ? (isKo ? '최고 계급' : 'Max rank')
-      : (isKo
-          ? `다음 계급까지 ${xpToNext.toLocaleString()} XP`
-          : `${xpToNext.toLocaleString()} XP to next`)
+      ? `${totalXp.toLocaleString()} / MAX`
+      : `${totalXp.toLocaleString()} / ${nextTotal.toLocaleString()}`
 
   return (
     <div className="flex items-center gap-4">
-      {/* 계급 뱃지 — 클릭 시 학점 임계 XP 표 팝업 */}
-      <div ref={badgePopupRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setIsBadgePopupOpen((v) => !v)}
-          className="shrink-0 text-3xl font-black leading-none tracking-tight text-gray-900 dark:text-gray-50 transition-opacity hover:opacity-80 cursor-pointer"
-          style={{ fontFamily: 'Pretendard, sans-serif' }}
-          aria-label={isKo ? `현재 계급 ${rankCode} — 클릭하여 뱃지 시스템 보기` : `Current grade ${rankCode} — click to see badge system`}
-        >
-          {rankCode}
-        </button>
-        {isBadgePopupOpen && (
-          <div className="absolute left-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-2xl">
-            <p className="text-sm font-bold text-gray-900 dark:text-gray-50">{badgePopupTitle}</p>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{badgePopupSubtitle}</p>
-            <ul className="mt-3 space-y-1.5">
-              {RANK_THRESHOLDS.map((t) => (
-                <li key={t.from} className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-gray-700 dark:text-gray-200">
-                    {t.from} → {t.to}
-                  </span>
-                  <span
-                    className="font-semibold"
-                    style={{ color: RANK_COLORS[t.to] ?? '#6366F1' }}
-                  >
-                    {t.total.toLocaleString()} XP
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="absolute -top-2 left-6 h-0 w-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-white dark:border-b-gray-900" />
-          </div>
-        )}
-      </div>
-
-      {/* XP 진행 바 — 자동 노출 + 24시간 dismiss 툴팁 */}
+      {/* XP 진행 바 — "240 / 300 XP" 표기 + 자동 노출/24시간 dismiss 툴팁 */}
       <div ref={expTooltipRef} className="relative flex w-[200px] shrink-0 flex-col gap-1">
-        <div className="flex items-baseline justify-between gap-1.5">
-          <span
-            className="text-[11px] font-medium text-gray-500 dark:text-gray-400"
-            style={{ fontFamily: 'Pretendard, sans-serif' }}
-          >
-            {xpToNextLabel}
-          </span>
+        <div className="flex items-baseline justify-end">
           <span
             className="text-sm font-extrabold leading-none text-gray-900 dark:text-gray-50"
             style={{ fontFamily: 'Pretendard, sans-serif' }}
           >
-            {loading ? '…' : totalXp.toLocaleString()}
-            <span className="ml-1 text-[10px] font-bold text-gray-500">XP</span>
+            {xpDisplay}
+            <span className="ml-1 text-sm font-extrabold text-gray-500">XP</span>
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
@@ -232,7 +172,7 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
         {isExpTooltipOpen && (
           <div className="absolute left-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-2xl">
             <div className="mb-3">
-              <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+              <p className="whitespace-pre-line text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
                 {expTooltipBody}
               </p>
             </div>

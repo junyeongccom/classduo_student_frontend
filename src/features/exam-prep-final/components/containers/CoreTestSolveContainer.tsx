@@ -523,7 +523,8 @@ export function CoreTestSolveContainer({
       if (!isLeftPanelOpen) toggleLeftPanel()
       setLeftTab(kind)
       if (kind === 'materials') {
-        const pages = sr.source_pages ?? []
+        // #0(또는 음수) 페이지는 UI/네비게이션에서 제외 — #1 부터 시작.
+        const pages = (sr.source_pages ?? []).filter((p) => p > 0)
         if (pages.length === 0) return
         const prev = materialsCursorRef.current[sectionKey] ?? 0
         const cursor = prev >= 0 && prev < pages.length ? prev : 0
@@ -531,7 +532,8 @@ export function CoreTestSolveContainer({
         if (page != null) setTargetPage(page - 1)
         materialsCursorRef.current[sectionKey] = (cursor + 1) % pages.length
       } else {
-        const chunks = sr.source_chunks ?? []
+        // #0(또는 음수) 청크 제외.
+        const chunks = (sr.source_chunks ?? []).filter((c) => c > 0)
         if (chunks.length === 0) return
         const prev = recordingsCursorRef.current[sectionKey] ?? 0
         const cursor = prev >= 0 && prev < chunks.length ? prev : 0

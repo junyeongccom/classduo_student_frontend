@@ -379,57 +379,94 @@ export function SolveQuestionPanel({
               const sr = (question.source_ref ?? null) as
                 | { source_pages?: number[]; source_chunks?: number[] }
                 | null
-              const pages = sr?.source_pages ?? []
-              const chunks = sr?.source_chunks ?? []
+              // #0 (또는 음수) 항목은 UI/네비게이션에서 제외 — #1번부터 시작 (사용자 정책).
+              const pages = (sr?.source_pages ?? []).filter((p) => p > 0)
+              const chunks = (sr?.source_chunks ?? []).filter((c) => c > 0)
               const hasMaterial = pages.length > 0
               const hasRecording = chunks.length > 0
               const sourceClickable = !!onSourceClick && (hasMaterial || hasRecording)
-              const tooltipLines: string[] = []
-              if (hasMaterial) {
-                tooltipLines.push(
-                  `강의자료 ${pages.map((p) => `p.${p}`).join(', ')}`,
-                )
-              }
-              if (hasRecording) {
-                tooltipLines.push(
-                  `녹음본 청크 ${chunks.map((c) => `#${c}`).join(', ')}`,
-                )
-              }
+              const materialTooltip = hasMaterial
+                ? `강의자료 ${pages.map((p) => `p.${p}`).join(', ')}`
+                : null
+              const recordingTooltip = hasRecording
+                ? `녹음본 청크 ${chunks.map((c) => `#${c}`).join(', ')}`
+                : null
+              // 강의자료 / 녹음본 동시에 있으면 두 버튼 모두 노출 — 단일 버튼이라 녹음본
+              // 클릭 경로가 막혔던 회귀 fix.
               return (
-                <div className="group/source relative inline-flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!sourceClickable) return
-                      onSourceClick(hasMaterial ? 'materials' : 'recordings')
-                    }}
-                    disabled={!sourceClickable}
-                    className={cn(
-                      'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
-                      sourceClickable
-                        ? 'hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800'
-                        : 'opacity-40 cursor-not-allowed',
-                    )}
-                    aria-label="강의자료 출처 보기"
-                  >
-                    {hasRecording && !hasMaterial ? (
-                      <Mic className="h-4 w-4" />
-                    ) : (
-                      <FileText className="h-4 w-4" />
-                    )}
-                  </button>
-                  {/* hover 툴팁 — 출처 페이지/청크 번호 표시 */}
-                  <div
-                    role="tooltip"
-                    className="pointer-events-none absolute left-1/2 top-0 z-20 w-max max-w-[260px] -translate-x-1/2 -translate-y-[calc(100%+8px)] opacity-0 transition-opacity duration-150 group-hover/source:opacity-100"
-                  >
-                    <div className="whitespace-pre-line rounded-md bg-gray-900 px-2 py-1 text-[11px] leading-snug text-white shadow-sm">
-                      {tooltipLines.length > 0
-                        ? tooltipLines.join('\n')
-                        : '출처 정보가 없습니다'}
+                <div className="flex items-center gap-1">
+                  {hasMaterial && (
+                    <div className="group/source-mat relative inline-flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!onSourceClick) return
+                          onSourceClick('materials')
+                        }}
+                        disabled={!onSourceClick}
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+                          onSourceClick
+                            ? 'hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800'
+                            : 'opacity-40 cursor-not-allowed',
+                        )}
+                        aria-label="강의자료 출처 보기"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </button>
+                      {materialTooltip && (
+                        <div
+                          role="tooltip"
+                          className="pointer-events-none absolute left-1/2 top-0 z-20 w-max max-w-[260px] -translate-x-1/2 -translate-y-[calc(100%+8px)] opacity-0 transition-opacity duration-150 group-hover/source-mat:opacity-100"
+                        >
+                          <div className="rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium text-white shadow-md dark:bg-gray-700">
+                            {materialTooltip}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="mx-auto mt-1 h-2 w-2 rotate-45 bg-gray-900" />
-                  </div>
+                  )}
+                  {hasRecording && (
+                    <div className="group/source-rec relative inline-flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!onSourceClick) return
+                          onSourceClick('recordings')
+                        }}
+                        disabled={!onSourceClick}
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+                          onSourceClick
+                            ? 'hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800'
+                            : 'opacity-40 cursor-not-allowed',
+                        )}
+                        aria-label="녹음본 출처 보기"
+                      >
+                        <Mic className="h-4 w-4" />
+                      </button>
+                      {recordingTooltip && (
+                        <div
+                          role="tooltip"
+                          className="pointer-events-none absolute left-1/2 top-0 z-20 w-max max-w-[260px] -translate-x-1/2 -translate-y-[calc(100%+8px)] opacity-0 transition-opacity duration-150 group-hover/source-rec:opacity-100"
+                        >
+                          <div className="rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium text-white shadow-md dark:bg-gray-700">
+                            {recordingTooltip}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!sourceClickable && (
+                    <button
+                      type="button"
+                      disabled
+                      className="flex h-9 w-9 items-center justify-center rounded-lg opacity-40 cursor-not-allowed"
+                      aria-label="출처 없음"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               )
             })()}
