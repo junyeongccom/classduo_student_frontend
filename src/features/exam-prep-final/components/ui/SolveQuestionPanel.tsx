@@ -282,15 +282,15 @@ export function SolveQuestionPanel({
                 disabled={isLocked || isHintDisabled || isGrading}
                 onClick={() => onSelectChoice(idx)}
                 className={cn(
-                  'group relative flex w-full items-center gap-4 rounded-xl border bg-white px-5 py-4 text-left shadow-sm transition-all',
-                  // base / hover / select — violet 계열로 통일
+                  'group relative flex w-full items-center gap-4 rounded-xl border bg-white px-5 py-4 text-left transition-all',
+                  // base / hover / select — violet 계열로 통일 (블러/그림자 제거)
                   !isLocked &&
                     !isHintDisabled &&
-                    'hover:bg-violet-50/50 hover:shadow-md dark:bg-gray-900 dark:hover:bg-gray-800',
+                    'hover:bg-violet-50/50 dark:bg-gray-900 dark:hover:bg-gray-800',
                   isSelected &&
                     !graded &&
                     !isHintDisabled &&
-                    'border-violet-400 bg-violet-50 shadow-md dark:border-violet-500 dark:bg-violet-950/30',
+                    'border-violet-400 bg-violet-50 dark:border-violet-500 dark:bg-violet-950/30',
                   !isSelected && !graded && 'border-gray-200 dark:border-gray-700',
                   // 정답 강조 — outline 으로 박스 크기 영향 X
                   showCorrectHighlight &&
@@ -419,7 +419,7 @@ export function SolveQuestionPanel({
                           role="tooltip"
                           className="pointer-events-none absolute left-1/2 top-0 z-20 w-max max-w-[260px] -translate-x-1/2 -translate-y-[calc(100%+8px)] opacity-0 transition-opacity duration-150 group-hover/source-mat:opacity-100"
                         >
-                          <div className="rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium text-white shadow-md dark:bg-gray-700">
+                          <div className="rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium text-white dark:bg-gray-700">
                             {materialTooltip}
                           </div>
                         </div>
@@ -450,7 +450,7 @@ export function SolveQuestionPanel({
                           role="tooltip"
                           className="pointer-events-none absolute left-1/2 top-0 z-20 w-max max-w-[260px] -translate-x-1/2 -translate-y-[calc(100%+8px)] opacity-0 transition-opacity duration-150 group-hover/source-rec:opacity-100"
                         >
-                          <div className="rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium text-white shadow-md dark:bg-gray-700">
+                          <div className="rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium text-white dark:bg-gray-700">
                             {recordingTooltip}
                           </div>
                         </div>

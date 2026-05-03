@@ -47,7 +47,7 @@ export function SolveResultPanel({
     <div className="flex h-full flex-1 flex-col overflow-y-auto bg-[#F5F7F8] dark:bg-gray-950">
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-8 py-10">
         {/* 큰 점수 카드 */}
-        <div className="mb-6 rounded-3xl border border-gray-200 bg-white p-8 text-center shadow-sm dark:border-gray-700 dark:bg-gray-900">
+        <div className="mb-6 rounded-3xl border border-gray-200 bg-white p-8 text-center dark:border-gray-700 dark:bg-gray-900">
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
             풀이 완료
           </p>

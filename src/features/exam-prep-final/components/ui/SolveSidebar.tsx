@@ -93,7 +93,7 @@ export function SolveSidebar({
         />
       </div>
 
-      {/* 문항 그리드 — 사각 (round 30) + 현재 문항은 폰트 키움 + 짙은 그림자 (흰 링 제거) */}
+      {/* 문항 그리드 — 사각 (round 30). 현재 문항은 폰트만 키움 (블러/그림자 없음) */}
       <div className="grid grid-cols-5 gap-2.5">
         {seqs.map((seq) => {
           const isCurrent = seq === currentSeq
@@ -105,10 +105,10 @@ export function SolveSidebar({
               type="button"
               onClick={() => onSelectSeq(seq)}
               className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-[30px] font-black leading-none transition-all',
+                'flex h-[38px] w-[38px] items-center justify-center rounded-[30px] font-black leading-none transition-all',
                 bgCls,
                 isCurrent
-                  ? 'text-lg shadow-[0_3px_8px_rgba(15,23,42,0.18)] scale-[1.06]'
+                  ? 'text-lg scale-[1.06]'
                   : 'text-base hover:brightness-95',
               )}
             >
@@ -118,12 +118,15 @@ export function SolveSidebar({
         })}
       </div>
 
-      {/* 경과 시간 — 문항 그리드 바로 아래 */}
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-500 dark:text-gray-400">
+      {/* 경과 시간 — 문항 그리드 바로 아래. 라벨 bold, 숫자 regular Pretendard */}
+      <div
+        className="flex items-center justify-between text-sm"
+        style={{ fontFamily: 'Pretendard, sans-serif' }}
+      >
+        <span className="font-bold text-gray-500 dark:text-gray-400">
           {t('examPrepFinal.elapsedTime')}
         </span>
-        <span className="font-mono font-semibold text-gray-900 dark:text-gray-50">
+        <span className="font-normal tabular-nums text-gray-900 dark:text-gray-50">
           {formatElapsed(elapsedSec)}
         </span>
       </div>

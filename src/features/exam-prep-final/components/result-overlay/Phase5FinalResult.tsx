@@ -95,7 +95,6 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
   postRankRef.current = postRankCode
   const startedRef = useRef(false)
   const flippedRef = useRef(false)
-  const poppedRef = useRef(false)
 
   useEffect(() => {
     // Phase1~4 오버레이가 떠 있는 동안엔 본 화면이 가려져 있어 카운트업이
@@ -117,16 +116,10 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
       setBarFill(preRatioRef.current + eased * span)
 
       const willLevelUp = pre.rankCode !== postRankRef.current
-      // 레벨업 케이스: 중간(t≈0.7) 에서 등급 글자 flip + pop 한 번
+      // 레벨업 케이스만 pop 재생 — 변동 없을 땐 모션 일절 X (사용자 요청).
       if (willLevelUp && !flippedRef.current && t >= 0.7) {
         flippedRef.current = true
         setGradeDisplay(postRankRef.current)
-        setGradePulse((p) => p + 1)
-        poppedRef.current = true // pop 끝났다 표시 → 추가 pop 안일어남
-      }
-      // 레벨업 없는 케이스: 끝나갈 때(t≈0.92) 가벼운 pop
-      if (!poppedRef.current && t >= 0.92) {
-        poppedRef.current = true
         setGradePulse((p) => p + 1)
       }
 
