@@ -971,6 +971,7 @@ export function CoreTestSolveContainer({
             data={finalData}
             onRestart={handleRestart}
             onExit={handleExit}
+            startAnimation={animationDone || !preSnapshot}
           />
         </div>
         {!animationDone && preSnapshot && (

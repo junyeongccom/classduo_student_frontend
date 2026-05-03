@@ -100,7 +100,8 @@ export const CUSTOMIZE_QUIZ_TYPES: StudentQuizType[] = [
   'STRUCTURE_OBJ',
 ]
 
-/** 유형별 그룹핑 순서 */
+/** 유형별 그룹핑 순서. exam_prep 문항은 quiz_type='EXAM_PREP' 으로 어댑트되므로 포함 필수
+ *  (누락 시 오답탭/북마크탭에서 통째로 필터아웃 됨). */
 export const TYPE_ORDER: StudentQuizType[] = [
   'DEF_TO_TERM',
   'TERM_TO_DEF',
@@ -108,4 +109,5 @@ export const TYPE_ORDER: StudentQuizType[] = [
   'RECALL',
   'STRUCTURE',
   'STRUCTURE_OBJ',
+  'EXAM_PREP',
 ]

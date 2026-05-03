@@ -898,6 +898,35 @@
 }
 
 /* ─────────────────────────────────────────────────────────
+   Bookshelf 부드러운 비행 — 클릭 시 책들이 위로 솟구쳐 회전하며 떠다니다 안착.
+   각 책의 --fly-dx/dy/spin 은 React 가 무작위로 부여 → 책마다 다른 궤적.
+   easing 은 "위로 부드럽게 떠올랐다 살짝 머문 뒤 천천히 안착" 곡선.
+   ───────────────────────────────────────────────────────── */
+@keyframes bookshelf-fly {
+  0%   {
+    transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg));
+  }
+  40%  {
+    transform: translate(
+      calc(var(--book-x, 0px) + var(--fly-dx, 0px)),
+      var(--fly-dy, -32px)
+    ) rotate(calc(var(--book-rot, 0deg) + var(--fly-spin, 360deg)));
+  }
+  60%  {
+    transform: translate(
+      calc(var(--book-x, 0px) + calc(var(--fly-dx, 0px) * 0.3)),
+      calc(var(--fly-dy, -32px) * 0.8)
+    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 0.7)));
+  }
+  100% {
+    transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg));
+  }
+}
+.bookshelf-fly .bookshelf-book {
+  animation: bookshelf-fly 1100ms cubic-bezier(.34, 1.2, .5, 1);
+}
+
+/* ─────────────────────────────────────────────────────────
    책 떨어짐 (수직→가로 누움) — Phase 2 회전 모션
    세로(rotate -90deg) → 안착 시 가로(rotate 0)
    ───────────────────────────────────────────────────────── */

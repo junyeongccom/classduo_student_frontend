@@ -1,42 +1,35 @@
 /**
  * @file BookshelfWidget.tsx
- * @description 출석 streak 에 따라 색·책 개수 바뀌는 책장. 클릭 시 책들이 쉐이커처럼
- *   흔들리고 배열이 살짝 재배치됨 (이스터에그).
- *   상태:
- *   - 0일차 (streak 0): 빈 회색 책장
- *   - 1일차: 연보라 책장 + 책 2권
- *   - 2~4일차: 중보라 책장 + 책 3권
- *   - 5일차+: 진보라 책장 + 책 3권
+ * @description 상단바 책장 위젯. 책장 BG = streak tier 색, 책 권수 = 오늘 풀이 수 (cap 5).
+ *   클릭 시 책들이 위로 솟구쳐 회전·이동하며 떠다니다 안착하는 부드러운 비행 모션.
  * @module features/exam-prep-final/components/ui
- * @dependencies public/upba/*.png, globals.css bookshelf-shake keyframe
+ * @dependencies public/upba/*.png, globals.css bookshelf-fly keyframe, getCalendarTestCounts
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
 import { cn } from '@/shared/lib/utils'
+import { getCalendarTestCounts } from '../result-overlay/utils'
 
 interface BookshelfWidgetProps {
-  /** 현재 출석 연속 일수 */
+  /** 현재 출석 연속 일수 — 책장 배경 색만 결정. 책 권수에는 영향 X. */
   currentStreak: number
   /** 외부 px 사이즈 — height 도 동일 (정사각) */
   size?: number
   className?: string
 }
 
-interface ShelfTier {
-  shelf: string
-  bookCount: number
-}
-
-function resolveTier(streak: number): ShelfTier {
-  if (streak <= 0) return { shelf: '/upba/0일차 책장.png', bookCount: 0 }
-  if (streak === 1) return { shelf: '/upba/1일차 책장.png', bookCount: 2 }
-  if (streak <= 4) return { shelf: '/upba/2~4일차 책장.png', bookCount: 3 }
-  return { shelf: '/upba/5일차 책장.png', bookCount: 3 }
+/** streak 별 책장 배경 — 책 권수는 오늘 풀이 수 기반으로 별도 계산 */
+function resolveShelfBg(streak: number): string {
+  if (streak <= 0) return '/upba/0일차 책장.png'
+  if (streak === 1) return '/upba/1일차 책장.png'
+  if (streak <= 4) return '/upba/2~4일차 책장.png'
+  return '/upba/5일차 책장.png'
 }
 
 const BOOK_SRCS = ['/upba/책1.png', '/upba/책2.png']
+const MAX_BOOKS = 5
 
 interface BookSlot {
   src: string
@@ -46,12 +39,18 @@ interface BookSlot {
   rotate: number
   /** 0~1 (셀 안 세로 비율, 작을수록 위쪽으로) */
   bottom: number
+  /** 클릭 시 비행 모션 — 횡 변위 px (±) */
+  flyDx: number
+  /** 클릭 시 비행 모션 — 종 변위 px (음수=위로) */
+  flyDy: number
+  /** 클릭 시 회전 spin deg */
+  flySpin: number
 }
 
-/** count 만큼 책 슬롯을 균등 분할 + jitter 로 만들어줌 */
+/** count 만큼 책 슬롯을 균등 분할 + jitter 로 만들어줌. 비행 모션용 랜덤 궤적 포함. */
 function generateBooks(count: number): BookSlot[] {
   if (count === 0) return []
-  // 책장 안쪽 가용 영역을 가로 25~78% 로 잡고 등간격 분할
+  // 책장 안쪽 가용 영역을 가로 22~78% 로 잡고 등간격 분할
   const start = 0.22
   const end = 0.78
   const span = end - start
@@ -64,50 +63,72 @@ function generateBooks(count: number): BookSlot[] {
       left: baseLeft + jitter,
       rotate: (Math.random() - 0.5) * 24, // ±12deg
       bottom: 0.18 + (Math.random() - 0.5) * 0.04, // 책장 바닥 근처
+      flyDx: (Math.random() - 0.5) * 60, // ±30px 횡 드리프트
+      flyDy: -28 - Math.random() * 24, // -28 ~ -52px (위로)
+      flySpin: (Math.random() < 0.5 ? -1 : 1) * (260 + Math.random() * 320), // ±260~580deg
     }
   })
 }
 
 export function BookshelfWidget({ currentStreak, size = 64, className }: BookshelfWidgetProps) {
-  const tier = resolveTier(currentStreak)
-  const [books, setBooks] = useState<BookSlot[]>(() => generateBooks(tier.bookCount))
-  const [shaking, setShaking] = useState(false)
+  const shelfBg = resolveShelfBg(currentStreak)
 
-  // streak 변경 시 책 개수 재생성
+  // 오늘 풀이 수 — localStorage 직접 조회. 다른 페이지 이동 시 새로 fetch.
+  const [todayCount, setTodayCount] = useState<number>(0)
   useEffect(() => {
-    setBooks(generateBooks(tier.bookCount))
-  }, [tier.bookCount])
+    const counts = getCalendarTestCounts()
+    setTodayCount(counts[0] ?? 0)
+  }, [])
+
+  // 풀이 직후 다른 컴포넌트가 incrementTodayTestCount 한 뒤 이벤트 발화 시 동기화 (window event).
+  useEffect(() => {
+    const handler = () => {
+      const counts = getCalendarTestCounts()
+      setTodayCount(counts[0] ?? 0)
+    }
+    window.addEventListener('exam-prep-rewards-refresh', handler)
+    return () => window.removeEventListener('exam-prep-rewards-refresh', handler)
+  }, [])
+
+  const visibleCount = Math.min(MAX_BOOKS, todayCount)
+  const [books, setBooks] = useState<BookSlot[]>(() => generateBooks(visibleCount))
+  const [flying, setFlying] = useState(false)
+
+  // todayCount 변동 시 책 재배치
+  useEffect(() => {
+    setBooks(generateBooks(visibleCount))
+  }, [visibleCount])
 
   const handleClick = () => {
-    if (tier.bookCount === 0) return // 빈 책장은 흔들림 없음
-    // 양념감자 섞듯 — 더 큰 회전/이동 모션 (이슈 5). 새 키프레임 bookshelf-shuffle 사용.
-    setBooks(generateBooks(tier.bookCount))
-    setShaking(true)
-    window.setTimeout(() => setShaking(false), 860)
+    if (visibleCount === 0) return
+    // 새 비행 궤적 + 새 안착 위치 — 매 클릭 다른 모양
+    setBooks(generateBooks(visibleCount))
+    setFlying(true)
+    window.setTimeout(() => setFlying(false), 1100)
   }
 
   return (
     <button
       type="button"
       onClick={handleClick}
-      disabled={tier.bookCount === 0}
-      aria-label={`출석 ${currentStreak}일차 책장`}
+      disabled={visibleCount === 0}
+      aria-label={`오늘 ${todayCount}권 / 출석 ${currentStreak}일차 책장`}
       className={cn(
         'relative shrink-0 transition-transform active:scale-95 disabled:cursor-default',
         className,
       )}
       style={{ width: size, height: size }}
     >
-      {/* 책장 배경 */}
+      {/* 책장 배경 — streak tier 별 색 */}
       <img
-        src={tier.shelf}
+        src={shelfBg}
         alt=""
         aria-hidden
         draggable={false}
         className="pointer-events-none absolute inset-0 h-full w-full object-contain"
       />
-      {/* 책들 — 책장 위에 랜덤 배치. shuffle 애니메이션 (양념감자 섞기) */}
-      <div className={cn('pointer-events-none absolute inset-0', shaking && 'bookshelf-shuffle')}>
+      {/* 책들 — 무작위 위치 + 클릭 시 비행 모션 */}
+      <div className={cn('pointer-events-none absolute inset-0', flying && 'bookshelf-fly')}>
         {books.map((book, i) => (
           <img
             key={`${book.src}-${i}-${book.left.toFixed(3)}`}
@@ -123,6 +144,9 @@ export function BookshelfWidget({ currentStreak, size = 64, className }: Bookshe
               height: `${size * 0.45}px`,
               ['--book-rot' as string]: `${book.rotate}deg`,
               ['--book-x' as string]: `-${size * 0.11}px`,
+              ['--fly-dx' as string]: `${book.flyDx}px`,
+              ['--fly-dy' as string]: `${book.flyDy}px`,
+              ['--fly-spin' as string]: `${book.flySpin}deg`,
               transform: `translate(-${size * 0.11}px, 0) rotate(${book.rotate}deg)`,
               transformOrigin: '50% 100%',
             }}

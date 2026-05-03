@@ -21,6 +21,9 @@ interface Phase5Props {
   onRestart: () => void
   onNext?: () => void
   onExit: () => void
+  /** Phase1~4 시퀀스가 끝났거나 skip되어 본 화면이 시각적으로 노출된 시점부터 true.
+   *  false인 동안 카운트업/진행바 RAF 와 MasteryRow setInterval 모두 대기. */
+  startAnimation: boolean
 }
 
 const XP_COUNT_DUR = 1800
@@ -38,7 +41,7 @@ const RIGHT_GREEN = '#76D76F'
 const WRONG_RED = '#F4473E'
 const HINT_GREEN_OPAQUE = 'rgba(118, 215, 111, 0.5)'
 
-export function Phase5FinalResult({ data, onRestart, onNext, onExit }: Phase5Props) {
+export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimation }: Phase5Props) {
   const {
     pre,
     postTotalXp,
@@ -95,6 +98,9 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit }: Phase5Pro
   const poppedRef = useRef(false)
 
   useEffect(() => {
+    // Phase1~4 오버레이가 떠 있는 동안엔 본 화면이 가려져 있어 카운트업이
+    // 백그라운드에서 끝나버리는 문제를 방지 — startAnimation 신호 받기 전엔 대기.
+    if (!startAnimation) return
     // StrictMode dev double-mount 가드. cleanup 으로 RAF cancel 안함 — 두 번째 mount 가
     // 첫 번째를 죽이면 영원히 멈춤. 자연 종료 (t===1) 까지 두는 게 안전.
     if (startedRef.current) return
@@ -129,7 +135,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit }: Phase5Pro
       }
     }
     requestAnimationFrame(tick)
-  }, [pre.rankCode])
+  }, [pre.rankCode, startAnimation])
 
   // ─── 좌상단 라벨 — 큰 번호 / 주차차시 / 회차제목 3행 ───
   const headlineLabel =
@@ -246,18 +252,21 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit }: Phase5Pro
               dotColor={STATE_BG_DOT.learning}
               before={pre.masterySummary.learning}
               after={postMasterySummary.learning}
+              start={startAnimation}
             />
             <MasteryRow
               label="Skilled"
               dotColor={STATE_BG_DOT.skilled}
               before={pre.masterySummary.skilled}
               after={postMasterySummary.skilled}
+              start={startAnimation}
             />
             <MasteryRow
               label="Master"
               dotColor={STATE_BG_DOT.master}
               before={pre.masterySummary.master}
               after={postMasterySummary.master}
+              start={startAnimation}
             />
           </div>
         </div>
@@ -350,11 +359,17 @@ interface MasteryRowProps {
   dotColor: string
   before: number
   after: number
+  /** Phase1~4 오버레이가 떠 있는 동안엔 false → before 유지. true 가 되면 카운트업 시작. */
+  start: boolean
 }
-function MasteryRow({ label, dotColor, before, after }: MasteryRowProps) {
+function MasteryRow({ label, dotColor, before, after, start }: MasteryRowProps) {
   // before → after 까지 1단위씩 변경. 변동 폭에 따라 step interval 조정 (총 1.5s 이내).
   const [display, setDisplay] = useState(before)
   useEffect(() => {
+    if (!start) {
+      setDisplay(before)
+      return
+    }
     if (before === after) {
       setDisplay(after)
       return
@@ -372,7 +387,7 @@ function MasteryRow({ label, dotColor, before, after }: MasteryRowProps) {
       if (i >= steps) window.clearInterval(id)
     }, stepDur)
     return () => window.clearInterval(id)
-  }, [before, after])
+  }, [before, after, start])
 
   return (
     <div className="flex items-center justify-between">
