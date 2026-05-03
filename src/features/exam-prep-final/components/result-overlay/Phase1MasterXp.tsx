@@ -66,7 +66,8 @@ const STEP_MAX = 210
 const FIRST_DELAY = 200
 const DROPLET_AFTER_PURPLE = 220
 const DROPLET_DUR = 1100
-const FINAL_DELAY = 320
+// 마지막 droplet 도달 후 다음 단계 진행 전 여유 — 너무 빨리 넘어가지 않게 +500ms 추가.
+const FINAL_DELAY = 820
 
 /** 풀이 전체 droplet 도착 좌표 — counter ref 기반으로 매번 측정 */
 interface Droplet {
@@ -241,7 +242,9 @@ export function Phase1MasterXp({ deltas, onDone }: Phase1Props) {
           중앙 위치/그리드 좌표가 흔들리지 않게 한다 (사용자 요청 7번). */}
       <div className="ml-[140px] flex w-[360px] shrink-0 flex-col items-end gap-4">
         <span className="text-xl font-bold text-gray-900">마스터 달성 경험치</span>
-        <div className="flex h-20 w-full items-center justify-end overflow-hidden text-right">
+        {/* counter-bump 애니메이션이 scale 1.22 로 살짝 커지면서 'P' 가 우측 잘리던 문제 →
+            overflow-visible + pr 여유로 해결. */}
+        <div className="flex h-20 w-full items-center justify-end pr-2 text-right">
           <span
             ref={counterRef}
             key={counterPulse}

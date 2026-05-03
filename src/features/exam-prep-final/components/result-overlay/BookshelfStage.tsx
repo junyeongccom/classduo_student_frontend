@@ -139,16 +139,14 @@ export function BookshelfStage({
           const filled = isFilled
             ? isWithinStreak(c.offset, postStreak)
             : isWithinStreak(c.offset, preStreak)
-          // 셀별 책 개수: 오늘은 동적 (todayBooks), 나머지는 calendarCounts 그대로. (이슈 2-4: 무제한)
+          // 셀별 책 개수: 오늘은 동적 (todayBooks), 나머지는 calendarCounts 그대로.
           const bookCount = c.isToday ? todayBooks : calendarCounts[c.offset] ?? 0
-          // 책 색: 채워진 셀(짙은 배경)은 흰 책, 흰 셀은 짙은 보라 책
-          const bookColor = filled ? '#FFFFFF' : '#6E5BE2'
           // 셀 가로세로비 7:6 — w-16(64) × h-[3.43rem](≈55) → 64:55 ≈ 7:6 (이슈 2-6)
           // overflow-visible 로 책이 셀 위로 자연스럽게 넘쳐 쌓이게 (이슈 2-4)
           return (
             <div
               key={c.offset}
-              className={`dar-cell relative flex h-[55px] w-16 flex-col items-start justify-between overflow-visible rounded-xl p-1.5 ${
+              className={`dar-cell relative flex h-[64px] w-16 flex-col items-start justify-between overflow-visible rounded-xl p-2.5 ${
                 filled ? 'is-filled' : ''
               }`}
               style={{
@@ -157,37 +155,46 @@ export function BookshelfStage({
                 fontFamily: 'Pretendard, sans-serif',
               }}
             >
-              {/* 날짜 라벨 — 좌상단, 더 큰 폰트 (이슈 2-5) */}
+              {/* 날짜 라벨 — 좌상단. 셀 padding 키워 안쪽 위치 (이슈) */}
               <span className="text-[15px] font-extrabold leading-none">{c.label}</span>
-              {/* 책 스택 — 셀 하단에서 위로. 무제한 누적 시 셀 위로 자연스럽게 넘침 (overflow-visible). */}
-              <div className="absolute inset-x-0 bottom-1.5 flex flex-col-reverse items-center gap-[1px]">
-                {Array.from({ length: bookCount }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="block w-[78%] rounded-[1px]"
-                    style={{
-                      height: `${BOOK_BAR_HEIGHT}px`,
-                      backgroundColor: bookColor,
-                    }}
-                  />
-                ))}
+              {/* 책 스택 — /calender/캘린더-책.png PNG 사용. 좌우 jitter 로 지그재그. */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-col-reverse items-center">
+                {Array.from({ length: bookCount }).map((_, i) => {
+                  const dx = i % 2 === 0 ? -3 : 3
+                  return (
+                    <img
+                      key={i}
+                      src="/calender/캘린더-책.png"
+                      alt=""
+                      aria-hidden
+                      draggable={false}
+                      className="block w-[88%] select-none"
+                      style={{
+                        marginTop: i === 0 ? 0 : '-2.4px',
+                        transform: `translateX(${dx}px)`,
+                      }}
+                    />
+                  )
+                })}
               </div>
             </div>
           )
         })}
-        {/* 떨어지는 책 — 수직(rotate -90deg) 으로 떨어져 안착 시 가로 (rotate 0).
-            rest 페이드 끝나면 bookHidden=true → 통째로 unmount. 다음 책 떨어질 자리
-            잔상으로 머무는 문제 방지. */}
+        {/* 떨어지는 책 — PNG 자산 (캘린더 셀의 책과 동일).
+            rest 페이드 끝나면 bookHidden=true → 통째로 unmount. */}
         {!bookHidden && (
-          <div
-            className={`dar-falling-book ${
+          <img
+            src="/calender/캘린더-책.png"
+            alt=""
+            aria-hidden
+            draggable={false}
+            className={`dar-falling-book select-none ${
               bookFalling && !bookResting ? 'is-falling-vertical' : ''
             } ${bookResting ? 'is-resting' : ''}`}
             style={{
-              width: '32px',
-              height: `${BOOK_BAR_HEIGHT}px`,
-              borderRadius: '1px',
-              backgroundColor: '#FFFFFF',
+              width: '52px',
+              height: 'auto',
+              backgroundColor: 'transparent',
               // @ts-expect-error CSS variable
               '--book-rest-y': `${49 - (calendarCounts[0] ?? 1) * (BOOK_BAR_HEIGHT + BOOK_BAR_GAP)}px`,
             }}

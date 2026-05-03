@@ -68,7 +68,7 @@ export function GradeProgressCard({
           {/* 1행: 현재 XP big number / 다음 등급 임계 (X / Y XP) */}
           <div className="flex items-baseline gap-2">
             <span
-              className="text-5xl font-extrabold leading-none text-gray-900 dark:text-gray-50"
+              className="text-5xl font-bold leading-none text-gray-900 dark:text-gray-50"
               style={{ fontFamily: 'Pretendard, sans-serif' }}
             >
               {xp.toLocaleString()}
