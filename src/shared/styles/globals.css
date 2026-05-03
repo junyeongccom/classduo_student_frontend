@@ -348,6 +348,581 @@
     background-size: 200% 100%;
     animation: none;
   }
+
+  /* ─────────── 과목 대시보드 — 기말 대비 hero 카드 ─────────── */
+  /* 시머(반짝이는 광선이 사선으로 쓸고 지나감) + 아케이드 누름 효과.
+     디자인 사양: 9초 주기, 1.5s sweep / hover시 살짝 떠오름 / active시 4px 푹 들어감. */
+  .exam-hero {
+    --button-side-dark: #1F1E5C;
+    position: relative;
+    overflow: hidden;
+    border: 0;
+    cursor: pointer;
+    transition:
+      transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow:
+      0 6px 0 var(--button-side-dark),
+      0 14px 28px rgba(0, 0, 0, 0.18);
+  }
+
+  @media (hover: hover) {
+    .exam-hero:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 0 var(--button-side-dark),
+        0 22px 40px rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  .exam-hero:active {
+    transform: translateY(4px);
+    box-shadow:
+      0 2px 0 var(--button-side-dark),
+      0 4px 10px rgba(0, 0, 0, 0.20);
+    transition-duration: 0.08s;
+  }
+
+  .exam-hero:focus-visible {
+    outline: 2px solid #FFFFFF;
+    outline-offset: 3px;
+  }
+
+  .exam-hero-shimmer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    overflow: hidden;
+    /* "기말 대비 학습" 둥근 버튼 (.relative.z-10 안의 span, isolate 처리) 보다
+       항상 뒤로 가야 함 — z-index 명시. */
+    z-index: 0;
+  }
+
+  .exam-hero-shimmer::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -120%;
+    width: 45%;
+    height: 200%;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.04) 45%,
+      rgba(255, 255, 255, 0.18) 50%,
+      rgba(255, 255, 255, 0.04) 55%,
+      transparent 70%
+    );
+    transform: skewX(-18deg);
+    /* 빠르게 한 번 지나가고 텀 후 다시 빠르게 — 2s 루프에서 첫 35% (=0.7s) 만 sweep,
+       나머지 65% (=1.3s) 는 화면 밖에서 대기. */
+    animation: exam-hero-sweep 2s linear infinite;
+  }
+
+  @keyframes exam-hero-sweep {
+    0% {
+      transform: translateX(0) skewX(-18deg);
+    }
+    35% {
+      transform: translateX(540%) skewX(-18deg);
+    }
+    100% {
+      transform: translateX(540%) skewX(-18deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .exam-hero-shimmer::after {
+      animation: none !important;
+    }
+    .exam-hero {
+      transition: none !important;
+    }
+  }
 }
 
+/* ─────────────────────────────────────────────────────────
+   Mid-Test Lock-Break Animation (lock-break.css 핸드오프 기반)
+   stage 0 locked → 1 unlocking → 2 pages → 3 opening → navigate
+   ───────────────────────────────────────────────────────── */
+
+/* Stage transitions — data-stage attribute selector */
+.mid-scene { perspective: 900px; }
+/* cover 기본 — 모든 stage(locked/unlocking/pages)에서 살짝 들린 상태.
+   backface 표시 (rotateY 가 90도 넘어도 표지 계속 보임) */
+.mid-scene .mid-cover {
+  transform-origin: 8% 50%;
+  transform: rotateY(-24deg) translateX(-3px);
+  transition: transform 380ms cubic-bezier(.34, 1.4, .5, 1);
+  backface-visibility: visible;
+  will-change: transform;
+}
+.mid-scene .mid-glow {
+  transition: opacity 380ms ease-out;
+}
+
+/* Pages stage hover / 선택(눌림) — cover 살짝 더 들림 + glow.
+   data-selected="true" 는 부모(ExamPrepContainer)가 핵심테스트와 동일하게 토글 관리.
+   locked/unlocking 단계에서는 hover/selected 모두 무효. */
+.mid-scene[data-stage="pages"]:hover .mid-cover,
+.mid-scene[data-stage="pages"]:focus-visible .mid-cover,
+.mid-scene[data-stage="pages"][data-selected="true"] .mid-cover {
+  transform: rotateY(-34deg) translateX(-4.5px);
+}
+.mid-scene[data-stage="pages"]:hover .mid-glow,
+.mid-scene[data-stage="pages"]:focus-visible .mid-glow,
+.mid-scene[data-stage="pages"][data-selected="true"] .mid-glow {
+  opacity: 1;
+}
+
+/* Stage 0 locked — chains/lock visible, no animation */
+.mid-scene[data-stage="locked"] .mid-chain,
+.mid-scene[data-stage="locked"] .mid-lock { opacity: 1; }
+.mid-scene[data-stage="locked"] .mid-sparkle { opacity: 0; }
+
+/* Stage 1 unlocking — chains fly off, lock falls, sparkles pop */
+.mid-scene[data-stage="unlocking"] .mid-chain-tl {
+  animation: mid-chain-tl 1.6s cubic-bezier(.55,.06,.45,.95) forwards;
+}
+.mid-scene[data-stage="unlocking"] .mid-chain-tr {
+  animation: mid-chain-tr 1.6s cubic-bezier(.55,.06,.45,.95) forwards;
+  animation-delay: 0.05s;
+}
+.mid-scene[data-stage="unlocking"] .mid-chain-bl {
+  animation: mid-chain-bl 1.6s cubic-bezier(.55,.06,.45,.95) forwards;
+  animation-delay: 0.03s;
+}
+.mid-scene[data-stage="unlocking"] .mid-chain-br {
+  animation: mid-chain-br 1.6s cubic-bezier(.55,.06,.45,.95) forwards;
+  animation-delay: 0.08s;
+}
+.mid-scene[data-stage="unlocking"] .mid-lock {
+  animation: mid-lock-fall 1.6s cubic-bezier(.55,.06,.45,.95) forwards;
+}
+.mid-scene[data-stage="unlocking"] .mid-book {
+  animation: mid-book-shake 0.8s ease-in-out;
+}
+.mid-scene[data-stage="unlocking"] .mid-sparkle {
+  animation: mid-sparkle 1.2s ease-out forwards;
+}
+.mid-scene[data-stage="unlocking"] .mid-sparkle-1 { animation-delay: 0.10s; }
+.mid-scene[data-stage="unlocking"] .mid-sparkle-2 { animation-delay: 0.22s; }
+.mid-scene[data-stage="unlocking"] .mid-sparkle-3 { animation-delay: 0.32s; }
+.mid-scene[data-stage="unlocking"] .mid-sparkle-4 { animation-delay: 0.18s; }
+.mid-scene[data-stage="unlocking"] .mid-sparkle-5 { animation-delay: 0.26s; }
+
+/* Stage 2 pages — chains/lock fully gone (animations settled) */
+.mid-scene[data-stage="pages"] .mid-chain,
+.mid-scene[data-stage="pages"] .mid-lock { opacity: 0; pointer-events: none; }
+
+/* Chain fly-off keyframes — 0~45% rattle, 45~100% fly + fade */
+@keyframes mid-chain-tl {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  10% { transform: translate(-2px, 1px) rotate(-3deg); }
+  20% { transform: translate(2px, -1px) rotate(2deg); }
+  30% { transform: translate(-3px, -2px) rotate(-4deg); }
+  45% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(-180px, -130px) rotate(-110deg) scale(0.5); opacity: 0; }
+}
+@keyframes mid-chain-tr {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  10% { transform: translate(2px, 1px) rotate(3deg); }
+  20% { transform: translate(-2px, -1px) rotate(-2deg); }
+  30% { transform: translate(3px, -2px) rotate(4deg); }
+  45% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(180px, -130px) rotate(110deg) scale(0.5); opacity: 0; }
+}
+@keyframes mid-chain-bl {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  10% { transform: translate(-2px, -1px) rotate(3deg); }
+  20% { transform: translate(2px, 1px) rotate(-2deg); }
+  30% { transform: translate(-3px, 2px) rotate(4deg); }
+  45% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(-170px, 140px) rotate(120deg) scale(0.5); opacity: 0; }
+}
+@keyframes mid-chain-br {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  10% { transform: translate(2px, -1px) rotate(-3deg); }
+  20% { transform: translate(-2px, 1px) rotate(2deg); }
+  30% { transform: translate(3px, 2px) rotate(-4deg); }
+  45% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(170px, 140px) rotate(-120deg) scale(0.5); opacity: 0; }
+}
+
+/* Lock — wobble 0~30%, lift 30~40%, fall + rotate + fade 40~100% */
+@keyframes mid-lock-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  10% { transform: translate(0, 0) rotate(-3deg); }
+  20% { transform: translate(0, 0) rotate(3deg); }
+  30% { transform: translate(0, -2px) rotate(-2deg); }
+  35% { transform: translate(0, -8px) rotate(0deg); }
+  40% { transform: translate(0, -4px) rotate(8deg); opacity: 1; }
+  60% { transform: translate(0, 40px) rotate(20deg); opacity: 1; }
+  80% { transform: translate(0, 140px) rotate(50deg); opacity: 0.5; }
+  100% { transform: translate(0, 260px) rotate(85deg); opacity: 0; }
+}
+
+/* Book shake — small jitter during unlock */
+@keyframes mid-book-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-1px, -1px); }
+  20% { transform: translate(1.5px, 0); }
+  30% { transform: translate(-1px, 1px); }
+  40% { transform: translate(1px, -1.5px); }
+  50% { transform: translate(0, 3px); }
+  60% { transform: translate(-1px, 0); }
+  70% { transform: translate(1px, 1px); }
+}
+
+/* Book pop — slight bounce during opening */
+@keyframes mid-book-pop {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.02) translateY(-3px); }
+}
+
+/* Cover open — rotateY swing with overshoot/settle.
+   hover 상태(-34deg)에서 시작해 점프 없이 자연스러운 이어짐 */
+@keyframes mid-cover-open {
+  0% { transform: rotateY(-34deg) translateX(-4.5px); }
+  10% { transform: rotateY(-42deg); }
+  60% { transform: rotateY(-118deg); }
+  78% { transform: rotateY(-108deg); }
+  90% { transform: rotateY(-114deg); }
+  100% { transform: rotateY(-112deg); }
+}
+
+/* Glow fade-in during opening */
+@keyframes mid-glow-fade {
+  0% { opacity: 0; }
+  100% { opacity: 0.9; }
+}
+
+/* Sparkle pop */
+@keyframes mid-sparkle {
+  0% { transform: scale(0); opacity: 0; }
+  20% { transform: scale(1.4); opacity: 1; }
+  40% { transform: scale(0.95); opacity: 0.85; }
+  60% { transform: scale(1.15); opacity: 0.6; }
+  100% { transform: scale(0.7); opacity: 0; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Bookshelf shake (이스터에그 — 클릭 시 책들만 흔들림)
+   ───────────────────────────────────────────────────────── */
+@keyframes bookshelf-shake {
+  0%, 100% { transform: translate(var(--book-x, 0), 0) rotate(var(--book-rot, 0deg)); }
+  15% { transform: translate(calc(var(--book-x, 0px) - 1.5px), -1px) rotate(calc(var(--book-rot, 0deg) - 4deg)); }
+  35% { transform: translate(calc(var(--book-x, 0px) + 1.5px), 0) rotate(calc(var(--book-rot, 0deg) + 5deg)); }
+  55% { transform: translate(calc(var(--book-x, 0px) - 1px), -0.5px) rotate(calc(var(--book-rot, 0deg) - 3deg)); }
+  75% { transform: translate(calc(var(--book-x, 0px) + 1px), 0) rotate(calc(var(--book-rot, 0deg) + 2deg)); }
+}
+.bookshelf-book {
+  /* CSS 변수로 base transform 지정 → shake 키프레임이 base 위에 흔들림 */
+  transform: translate(var(--book-x, 0), 0) rotate(var(--book-rot, 0deg));
+  transform-origin: 50% 100%;
+}
+.bookshelf-shake .bookshelf-book {
+  animation: bookshelf-shake 0.45s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mid-scene[data-stage="unlocking"] .mid-chain,
+  .mid-scene[data-stage="unlocking"] .mid-lock,
+  .mid-scene[data-stage="unlocking"] .mid-book,
+  .mid-scene[data-stage="unlocking"] .mid-sparkle,
+  .mid-scene[data-stage="opening"] .mid-cover,
+  .mid-scene[data-stage="opening"] .mid-glow,
+  .mid-scene[data-stage="opening"] .mid-book,
+  .mid-scene[data-stage="opening"] .mid-sparkle {
+    animation: none !important;
+  }
+  .mid-scene[data-stage="unlocking"] .mid-chain,
+  .mid-scene[data-stage="unlocking"] .mid-lock { opacity: 0; }
+  .mid-scene[data-stage="opening"] .mid-cover { transform: rotateY(-112deg); }
+  .mid-scene[data-stage="opening"] .mid-glow { opacity: 0.9; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Test End Overlay — Phase 1 (마스터 XP 집계) / Phase 2 (출석 책장)
+ * / Phase 3-4 (일일 참여 XP) / Phase 5 (최종 결과)
+ *
+ * 공통 ease: cubic-bezier(.34,1.5,.5,1) — squish-pop 곡선
+ * ───────────────────────────────────────────────────────────── */
+
+/* Phase 1 — XP 아이템 squish-pop (회색→노랑/노랑→보라 색 전환 시) */
+@keyframes xp-pop {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(0.85); }
+  60%  { transform: scale(1.15); }
+  85%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+.xp-item.is-popping {
+  animation: xp-pop 520ms cubic-bezier(.34,1.5,.5,1);
+}
+
+/* Phase 1 — 숙련도 하락 (덜컹) */
+@keyframes xp-skill-down {
+  0%   { transform: translateY(0); }
+  20%  { transform: translateY(3px); }
+  40%  { transform: translateY(0); }
+  60%  { transform: translateY(2px); }
+  80%  { transform: translateY(0); }
+  100% { transform: translateY(0); }
+}
+.xp-item.is-falling {
+  animation: xp-skill-down 480ms ease-out;
+}
+
+/* Phase 1 — droplet (보라 물방울 16px) — X/Y 분리해서 호 그리기 */
+.xp-drop-x {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform;
+  animation: xp-drop-x 2100ms cubic-bezier(.22,.61,.36,1) forwards;
+  z-index: 9999;
+}
+.xp-drop-y {
+  position: relative;
+  display: block;
+  will-change: transform;
+  animation: xp-drop-y 2100ms cubic-bezier(.42,0,.58,1) forwards;
+}
+.xp-drop {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  margin-top: -8px;
+  border-radius: 9999px;
+  background: #6E5BE2;
+  will-change: transform, opacity;
+  animation: xp-drop-fade 2100ms ease-in forwards;
+}
+@keyframes xp-drop-x {
+  from { transform: translateX(var(--from-x, 0px)); }
+  to   { transform: translateX(var(--to-x, 0px)); }
+}
+@keyframes xp-drop-y {
+  0%   { transform: translateY(var(--from-y, 0px)); }
+  50%  { transform: translateY(var(--apex-y, -90px)); }
+  100% { transform: translateY(var(--to-y, 0px)); }
+}
+@keyframes xp-drop-fade {
+  0%   { opacity: 0; transform: scale(0.6); }
+  10%  { opacity: 1; transform: scale(1); }
+  70%  { opacity: 1; transform: scale(1); }
+  88%  { opacity: 0.5; transform: scale(0.85); }
+  100% { opacity: 0; transform: scale(0.4); }
+}
+
+/* Phase 1 / Phase 5 — 카운터 +N pop (보라 깜빡 + scale) */
+@keyframes te-counter-bump {
+  0%   { transform: scale(1); color: #1C1C1E; }
+  35%  { transform: scale(1.22); color: #6E5BE2; }
+  70%  { transform: scale(1.05); color: #1C1C1E; }
+  100% { transform: scale(1); color: #1C1C1E; }
+}
+.te-counter-bump {
+  animation: te-counter-bump 640ms cubic-bezier(.34,1.5,.5,1);
+  display: inline-block;
+}
+
+/* Phase 5 — 숫자 키 변경 시 squish-pop */
+@keyframes te-num-pop {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.82); }
+  65%  { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+.te-num-pop {
+  animation: te-num-pop 380ms cubic-bezier(.34,1.5,.5,1);
+  display: inline-block;
+}
+
+/* Phase 5 — 등급 flip pop (F → D 순간). 회전은 부모 박스가 가지므로 여기선 scale + 색만. */
+@keyframes te-grade-pop {
+  0%   { transform: scale(1); color: #1C1C1E; }
+  20%  { transform: scale(0.7); color: #1C1C1E; }
+  55%  { transform: scale(1.2); color: #6E5BE2; }
+  80%  { transform: scale(0.97); color: #1C1C1E; }
+  100% { transform: scale(1); color: #1C1C1E; }
+}
+.te-grade-pop {
+  animation: te-grade-pop 720ms cubic-bezier(.34,1.5,.5,1);
+  display: inline-block;
+}
+
+/* Phase 2 / Phase 3 — 책 (하얀색 막대바) 위에서 떨어짐 */
+@keyframes dar-book-fall {
+  0%   { transform: translate(-50%, -130px); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(-50%, var(--book-rest-y, 0px)); opacity: 1; }
+}
+@keyframes dar-book-rest {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+.dar-falling-book {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 4px;
+  height: 22px;
+  border-radius: 1px;
+  background: #FFFFFF;
+  transform: translate(-50%, -130px);
+  will-change: transform, opacity;
+}
+.dar-falling-book.is-falling {
+  animation: dar-book-fall 1000ms cubic-bezier(.5,0,.85,1) forwards;
+}
+.dar-falling-book.is-resting {
+  animation: dar-book-rest 600ms ease-out forwards;
+}
+
+/* Phase 2 — 책장 셀(달력 칸) 색 채워짐 squish-pop */
+@keyframes dar-cell-pop {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(0.85); }
+  60%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.dar-cell.is-filled {
+  animation: dar-cell-pop 520ms cubic-bezier(.34,1.5,.5,1);
+}
+
+/* Phase 3 — DAY 카드 stagger entrance */
+@keyframes dar-card-in {
+  0%   { transform: translateY(12px) scale(0.92); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.dar-day-card.is-in {
+  animation: dar-card-in 540ms cubic-bezier(.34,1.4,.5,1) backwards;
+}
+
+/* Phase 3-4 — 패널 cross-fade */
+.dar-panel {
+  transition: opacity 480ms cubic-bezier(.4,0,.2,1), transform 480ms cubic-bezier(.4,0,.2,1);
+}
+.dar-panel.is-out {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+.dar-panel.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Phase 5 — 격려 / 박스 fade-up */
+@keyframes te-fade-up {
+  0%   { transform: translateY(8px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.te-fade-up {
+  animation: te-fade-up 360ms ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xp-item.is-popping,
+  .xp-item.is-falling,
+  .te-counter-bump,
+  .te-num-pop,
+  .te-grade-pop,
+  .dar-cell.is-filled,
+  .dar-day-card.is-in,
+  .te-fade-up,
+  .xp-drop-x,
+  .xp-drop-y,
+  .xp-drop,
+  .dar-falling-book.is-falling,
+  .dar-falling-book.is-resting {
+    animation: none !important;
+  }
+  .xp-drop, .dar-falling-book { opacity: 0; }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Master 도장 — first_master_transition 시 문제 우상단 쾅
+   ───────────────────────────────────────────────────────── */
+@keyframes master-stamp-pop {
+  0%   { transform: scale(2.4) rotate(-22deg); opacity: 0; }
+  55%  { transform: scale(0.86) rotate(-22deg); opacity: 1; }
+  78%  { transform: scale(1.12) rotate(-22deg); }
+  100% { transform: scale(1) rotate(-22deg); opacity: 1; }
+}
+.master-stamp-pop {
+  transform-origin: 50% 50%;
+  animation: master-stamp-pop 540ms cubic-bezier(.34,1.5,.5,1) backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .master-stamp-pop { animation: none !important; transform: rotate(-22deg); }
+}
+
+/* ─────────────────────────────────────────────────────────
+   Bookshelf 양념감자 흔들기 — 클릭 시 통 안에서 책들이 확 섞임
+   ───────────────────────────────────────────────────────── */
+@keyframes bookshelf-shuffle {
+  0%   { transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg)); }
+  10%  { transform: translate(calc(var(--book-x, 0px) - 4px), -3px) rotate(calc(var(--book-rot, 0deg) - 25deg)); }
+  22%  { transform: translate(calc(var(--book-x, 0px) + 5px), -5px) rotate(calc(var(--book-rot, 0deg) + 35deg)); }
+  35%  { transform: translate(calc(var(--book-x, 0px) - 5px), -2px) rotate(calc(var(--book-rot, 0deg) - 45deg)); }
+  48%  { transform: translate(calc(var(--book-x, 0px) + 6px), -7px) rotate(calc(var(--book-rot, 0deg) + 55deg)); }
+  62%  { transform: translate(calc(var(--book-x, 0px) - 4px), -3px) rotate(calc(var(--book-rot, 0deg) - 30deg)); }
+  76%  { transform: translate(calc(var(--book-x, 0px) + 3px), -1px) rotate(calc(var(--book-rot, 0deg) + 18deg)); }
+  88%  { transform: translate(calc(var(--book-x, 0px) - 1px), 0) rotate(calc(var(--book-rot, 0deg) - 8deg)); }
+  100% { transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg)); }
+}
+.bookshelf-shuffle .bookshelf-book {
+  animation: bookshelf-shuffle 0.85s cubic-bezier(.34,1.2,.5,1);
+}
+
+/* ─────────────────────────────────────────────────────────
+   Bookshelf 부드러운 비행 — 클릭 시 책들이 위로 솟구쳐 회전하며 떠다니다 안착.
+   각 책의 --fly-dx/dy/spin 은 React 가 무작위로 부여 → 책마다 다른 궤적.
+   회전은 단조 증가(0→spin) 하고 spin 은 360° 정수배 → 종료 시 base 회전과
+   시각적 일치 → 클래스 제거 시 스냅 없음. 키프레임은 3개로 압축 → 보간 자연스럽게.
+   ───────────────────────────────────────────────────────── */
+@keyframes bookshelf-fly {
+  0%   {
+    transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg));
+  }
+  50%  {
+    transform: translate(
+      calc(var(--book-x, 0px) + var(--fly-dx, 0px)),
+      var(--fly-dy, -32px)
+    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 0.5)));
+  }
+  100% {
+    transform: translate(var(--book-x, 0px), 0)
+      rotate(calc(var(--book-rot, 0deg) + var(--fly-spin, 360deg)));
+  }
+}
+.bookshelf-fly .bookshelf-book {
+  /* ease-in-out 단일 곡선 — 위로 빠르게 떠올랐다 정점 부드럽게 지나 안착 */
+  animation: bookshelf-fly var(--fly-dur, 700ms) ease-in-out var(--fly-delay, 0ms) both;
+  will-change: transform;
+}
+
+/* ─────────────────────────────────────────────────────────
+   책 떨어짐 (수직→가로 누움) — Phase 2 회전 모션
+   세로(rotate -90deg) → 안착 시 가로(rotate 0)
+   ───────────────────────────────────────────────────────── */
+@keyframes dar-book-fall-vertical {
+  0%   { transform: translate(-50%, -130px) rotate(-90deg); opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { transform: translate(-50%, calc(var(--book-rest-y, 0px) - 8px)) rotate(-90deg); opacity: 1; }
+  100% { transform: translate(-50%, var(--book-rest-y, 0px)) rotate(0deg); opacity: 1; }
+}
+.dar-falling-book.is-falling-vertical {
+  animation: dar-book-fall-vertical 1000ms cubic-bezier(.5,0,.85,1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dar-falling-book.is-falling-vertical { animation: none !important; opacity: 0; }
+}
 

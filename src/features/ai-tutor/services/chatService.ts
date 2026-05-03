@@ -16,6 +16,8 @@ import {
   Reference,
   ChatMode,
   LectureKeywordsResponse,
+  ElaborationRequest,
+  ElaborationResponse,
 } from '../types'
 
 // Re-export types for backward compatibility (optional but good for refactoring safety)
@@ -262,6 +264,23 @@ export const chatService = {
         auth: true,
       }
     )
+  },
+
+  /**
+   * v1.0 Sprint 3: 부연설명 요청
+   *
+   * SIMPLE 답변에 대한 [부연설명 요청] 버튼 클릭 시 호출.
+   * 새 RAG 검색 없이 원 SIMPLE 답변이 인용한 참고자료만 재사용한다.
+   * Case C 메시지에서는 호출하지 않아야 함 (UI 레벨에서 차단).
+   */
+  async requestElaboration(
+    request: ElaborationRequest
+  ): Promise<{ data: ElaborationResponse | null; error: any }> {
+    return apiRequest<ElaborationResponse>('/ai-tutor/elaboration', {
+      method: 'POST',
+      body: request,
+      auth: true,
+    })
   },
 
   /**

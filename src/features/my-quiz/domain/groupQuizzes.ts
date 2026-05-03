@@ -30,9 +30,6 @@ export interface QuizWithMeta {
   bookmark: boolean
   correct: boolean | null
   selected_answer: number | null
-  /** 오답노트 전용 retry 상태 */
-  retry_answer?: number | null
-  retry_correct?: boolean | null
   created_at?: string
   /** 영어 번역 (한/영 토글용) */
   question_eng?: string | null

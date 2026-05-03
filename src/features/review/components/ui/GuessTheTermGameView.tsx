@@ -244,7 +244,7 @@ export function GuessTheTermGameView({
           <div className="absolute inset-0 bg-black/30" />
           <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
             <div className="text-center">
-              <div className="text-3xl font-extrabold text-slate-900">{t('guessTheTerm.successTitle')}</div>
+              <div className="text-3xl font-bold text-slate-900">{t('guessTheTerm.successTitle')}</div>
               <div className="mt-6 text-sm text-slate-700">{t('guessTheTerm.successFound', { count: userChatCount })}</div>
               {wrongGuessCount > 0 && (
                 <div className="mt-2 text-sm text-slate-700">{t('guessTheTerm.successWrong', { count: wrongGuessCount })}</div>
@@ -282,7 +282,7 @@ export function GuessTheTermGameView({
           <div className="absolute inset-0 bg-black/30" />
           <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
             <div className="text-center">
-              <div className="text-3xl font-extrabold text-slate-900">
+              <div className="text-3xl font-bold text-slate-900">
                 {secretTerm?.keyword ? `정답은 ${secretTerm.keyword}입니다.` : '정답을 불러오지 못했습니다.'}
               </div>
               <div className="mt-3 text-sm text-slate-600">다시 시도하세요!</div>

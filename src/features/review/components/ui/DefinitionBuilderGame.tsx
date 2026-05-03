@@ -287,7 +287,7 @@ export function DefinitionBuilderGame({
     <div className="mt-4 flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       {gameCompleted ? (
         <div className="flex flex-col items-center gap-4 py-12">
-          <div className="definition-builder-success text-3xl font-extrabold text-emerald-600">
+          <div className="definition-builder-success text-3xl font-bold text-emerald-600">
             {t('definitionBuilder.successTitle')}
           </div>
           <div className="text-lg font-semibold text-slate-700">

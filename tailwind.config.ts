@@ -177,6 +177,13 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'shake-x': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%': { transform: 'translateX(-5px)' },
+          '40%': { transform: 'translateX(5px)' },
+          '60%': { transform: 'translateX(-3px)' },
+          '80%': { transform: 'translateX(2px)' },
+        },
         'blank-break': {
           '0%': {
             transform: 'rotate(0deg) scale(1) translateY(0)',
@@ -225,6 +232,7 @@ const config: Config = {
         'rotate-slow': 'rotate-slow 3s linear infinite',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'shake-x': 'shake-x 400ms ease-in-out',
       },
     },
   },

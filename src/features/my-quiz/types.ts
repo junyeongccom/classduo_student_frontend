@@ -14,7 +14,7 @@ export type TabType = 'generation' | 'favorites' | 'wrong'
 export type SessionStatus = 'CREATING' | 'COMPLETED' | 'FAILED'
 
 /** 퀴즈 소스 */
-export type QuizSource = 'instructor' | 'customize' | 'content'
+export type QuizSource = 'instructor' | 'customize' | 'content' | 'exam_prep' | 'incorrect'
 
 /** 퀴즈 세션 */
 export interface QuizSession {
@@ -81,18 +81,6 @@ export interface QuizBookmarkEntry {
   created_at: string
 }
 
-/** 오답노트 (user_quiz_incorrect) */
-export interface QuizIncorrectEntry {
-  id: string
-  quiz_id: string
-  quiz_source: QuizSource
-  lecture_id: string
-  original_answer: number | null
-  retry_answer: number | null
-  retry_correct: boolean | null
-  created_at: string
-}
-
 /** 세션 상세 응답 (퀴즈 목록 포함) */
 export interface SessionDetailResponse {
   session: QuizSession
@@ -112,7 +100,8 @@ export const CUSTOMIZE_QUIZ_TYPES: StudentQuizType[] = [
   'STRUCTURE_OBJ',
 ]
 
-/** 유형별 그룹핑 순서 */
+/** 유형별 그룹핑 순서. exam_prep 문항은 quiz_type='EXAM_PREP' 으로 어댑트되므로 포함 필수
+ *  (누락 시 오답탭/북마크탭에서 통째로 필터아웃 됨). */
 export const TYPE_ORDER: StudentQuizType[] = [
   'DEF_TO_TERM',
   'TERM_TO_DEF',
@@ -120,4 +109,5 @@ export const TYPE_ORDER: StudentQuizType[] = [
   'RECALL',
   'STRUCTURE',
   'STRUCTURE_OBJ',
+  'EXAM_PREP',
 ]

@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, Search, ArrowUp, Sparkles, Brain, X } from 'lucide-react'
+import { Loader2, Search, ArrowUp, Sparkles } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { chatAnalytics } from '@/shared/lib/analytics'
@@ -80,7 +80,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false) // 질문 리스트 표시 상태
   const [hasTypedInSession, setHasTypedInSession] = useState(false) // 세션 내 타이핑 여부
-  const [isDeepHintDismissed, setIsDeepHintDismissed] = useState(false) // DEEP 모드 안내 닫기
+  // v1.0: DEEP 모드 안내 배너 제거 — 관련 state 삭제
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
@@ -254,7 +254,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         try {
           const { data, error } = await chatService.getSession(currentSessionId)
           if (data && !error && data.messages.length > 0) {
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
@@ -265,15 +265,34 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   }
                 }
               }
-              
+
+              // v1.0: DB 로드 시 assistant 메시지의 original_question 복원
+              // 직전의 user 메시지를 원 질문으로 간주 (elaboration도 SIMPLE의 직전 user 질문을 공유)
+              let originalQuestion: string | undefined = undefined
+              if (m.role === 'assistant') {
+                for (let i = idx - 1; i >= 0; i--) {
+                  if (arr[i].role === 'user') {
+                    originalQuestion = arr[i].content
+                    break
+                  }
+                }
+              }
+
               return {
                 role: m.role,
                 content: m.content,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
+                id: m.id,
+                // v1.0: elaboration 렌더링에 필요한 필드
+                case_type: m.case_type ?? null,
+                message_kind: (m.message_kind as any) ?? undefined,
+                source_message_id: m.source_message_id ?? null,
+                references: (m.reference_data as Reference[]) ?? undefined,
+                original_question: originalQuestion,
               }
             })
-            
+
             setMessages(loadedMessages)
             
             // 타이핑 완료 상태 설정
@@ -319,7 +338,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           const { data, error } = await chatService.getSession(currentSessionId)
           if (data && !error) {
             // 현재 메시지 수와 로드된 메시지 수 비교
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
@@ -330,12 +349,30 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   }
                 }
               }
-              
+
+              // v1.0: DB 로드 시 assistant 메시지의 original_question 복원
+              let originalQuestion: string | undefined = undefined
+              if (m.role === 'assistant') {
+                for (let i = idx - 1; i >= 0; i--) {
+                  if (arr[i].role === 'user') {
+                    originalQuestion = arr[i].content
+                    break
+                  }
+                }
+              }
+
               return {
                 role: m.role,
                 content: m.content,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
+                id: m.id,
+                // v1.0
+                case_type: m.case_type ?? null,
+                message_kind: (m.message_kind as any) ?? undefined,
+                source_message_id: m.source_message_id ?? null,
+                references: (m.reference_data as Reference[]) ?? undefined,
+                original_question: originalQuestion,
               }
             })
             
@@ -408,8 +445,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         try {
           const { data, error } = await chatService.getSession(sessionId)
           if (data && !error) {
-            // 메시지 로드 (summary_keywords, follow_up_question 포함)
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage) => {
+            // 메시지 로드 (summary_keywords, follow_up_question, v1.0 필드 포함)
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
               // reference_data에서 follow_up_question 추출 (첫 번째 reference의 _meta에서)
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
@@ -422,6 +459,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 }
               }
 
+              // v1.0: DB 로드 시 assistant 메시지의 original_question 복원
+              // 직전 user 메시지를 원 질문으로 간주 (elaboration도 SIMPLE의 직전 user 질문 공유)
+              let originalQuestion: string | undefined = undefined
+              if (m.role === 'assistant') {
+                for (let i = idx - 1; i >= 0; i--) {
+                  if (arr[i].role === 'user') {
+                    originalQuestion = arr[i].content
+                    break
+                  }
+                }
+              }
+
               return {
                 role: m.role,
                 content: m.content,
@@ -429,6 +478,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 follow_up_question: followUpQuestion,
                 id: m.id,
                 feedback: m.feedback || null,
+                // v1.0: Case A/B/C 및 elaboration 메시지 렌더에 필요
+                case_type: m.case_type ?? null,
+                message_kind: (m.message_kind as any) ?? undefined,
+                source_message_id: m.source_message_id ?? null,
+                references: (m.reference_data as Reference[]) ?? undefined,
+                original_question: originalQuestion,
               }
             })
             setMessages(loadedMessages)
@@ -743,6 +798,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             content: result.answer,
             summary_keywords: result.summary_keywords || null,
             follow_up_question: result.follow_up_question || null,
+            // v1.0 Sprint 3: case_type 저장 + 부연설명 요청 시 재사용할 원 질문/출처 보관
+            case_type: (result as any).case_type ?? null,
+            message_kind: 'simple',
+            references: (result.references as Reference[]) || [],
+            original_question: question,
           }
           setMessages(prev => {
             const updated = [...prev, assistantMessage]
@@ -840,6 +900,91 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     // 재시도
     sendMessage(retryQuestion)
   }, [sendMessage])
+
+  // v1.0 Sprint 3: 부연설명 요청
+  // SIMPLE 답변 아래 [부연설명 요청] 버튼 클릭 시 호출.
+  // Case C 메시지에서는 이 버튼을 렌더하지 않음 (아래 조건부 렌더 참조).
+  const [elaboratingIndex, setElaboratingIndex] = useState<number | null>(null)
+  const handleRequestElaboration = useCallback(async (assistantIndex: number) => {
+    const target = messages[assistantIndex] as ChatMessage & {
+      original_question?: string
+      references?: Reference[]
+      case_type?: 'A' | 'B' | 'C' | null
+    }
+    if (!target || target.role !== 'assistant') return
+    if (target.case_type === 'C') return
+    if (!target.original_question) {
+      console.warn('Elaboration: original_question missing for index', assistantIndex)
+      return
+    }
+
+    setElaboratingIndex(assistantIndex)
+
+    // v1.0: 부연설명도 SIMPLE 모드와 동일한 로딩 UI 재활용 (자료 검색은 생략)
+    // 자료 검색 없이 LLM 단일 호출이므로 2단계 정도로 체감 UX만 나타낸다.
+    setIsLoading(true)
+    setLoadingStatusItems([
+      { step: 'preparing_elaboration', message: locale === 'en' ? 'Organizing key points...' : '핵심 포인트 정리 중...', sources: [] }
+    ])
+    const stage2Timer = window.setTimeout(() => {
+      setLoadingStatusItems(prev => [
+        ...prev,
+        { step: 'generating_elaboration', message: locale === 'en' ? 'Expanding the explanation based on the lecture materials...' : '강의자료 기반으로 자세히 풀어 쓰는 중...', sources: [] },
+      ])
+    }, 800)
+
+    try {
+      // reference_data 재구성: recording과 material을 분리하여 전달
+      const refs = target.references || []
+      const recording_chunks = refs.filter(r => r.type === 'recording')
+      const material_pages = refs.filter(r => r.type === 'material')
+
+      const { data, error } = await chatService.requestElaboration({
+        session_id: currentSessionId || undefined,  // v1.0: DB 저장을 위해 세션 ID 전달
+        original_question: target.original_question,
+        simple_answer: target.content,
+        reference_data: { recording_chunks, material_pages },
+        source_message_id: target.id,
+        // v1.0: 원 SIMPLE의 follow-up을 그대로 재사용 (부연설명에서 재생성 안 함)
+        source_follow_up_question: (target as any).follow_up_question ?? null,
+      })
+
+      if (error || !data) {
+        console.error('Elaboration failed:', error)
+        return
+      }
+
+      // 원 SIMPLE 메시지 바로 아래에 elaboration 메시지 삽입
+      const elaborationMessage: ChatMessage & {
+        message_kind?: 'elaboration'
+        source_message_id?: string | null
+        references?: Reference[]
+        follow_up_question?: string | null
+      } = {
+        role: 'assistant',
+        content: data.elaboration_text,
+        message_kind: 'elaboration',
+        source_message_id: target.id || null,
+        references: (data.referenced_sources || []) as Reference[],
+        follow_up_question: data.follow_up_question ?? null,
+        // 부연설명에도 원 질문을 보존
+        original_question: target.original_question,
+        // v1.0: DB에 저장된 message_id (feedback 등에 사용)
+        id: data.message_id ?? undefined,
+      }
+
+      setMessages(prev => {
+        const next = [...prev]
+        next.splice(assistantIndex + 1, 0, elaborationMessage)
+        return next
+      })
+    } finally {
+      window.clearTimeout(stage2Timer)
+      setLoadingStatusItems([])
+      setIsLoading(false)
+      setElaboratingIndex(null)
+    }
+  }, [messages, currentSessionId, locale])
 
   const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
@@ -1349,25 +1494,67 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                         <MarkdownMessage markdown={message.content} className="markdown-content" />
                       )}
                     </div>
-                    {/* 후속 질문 버튼 - 가장 마지막 답변에만 표시 */}
-                    {isTypingComplete && typingLength >= message.content.length && followUpQuestion && isLastAssistantMessage && (
-                      <div className="mt-4 flex justify-start animate-fade-in-up">
-                        <button
-                          onClick={() => {
-                            if (!isLoading) {
-                              chatAnalytics.followupClick(selectedLectureIds[0], { question_text: followUpQuestion.substring(0, 50) })
-                              // 후속질문 클릭 시 question_type: 'followup' 전달
-                              sendMessage(followUpQuestion, { question_type: 'followup' })
-                            }
-                          }}
-                          disabled={isLoading}
-                          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <span>💡</span>
-                          <span>{followUpQuestion}</span>
-                        </button>
-                      </div>
-                    )}
+                    {/* 후속 질문 + 부연설명 버튼 — 가장 마지막 답변에만 표시 */}
+                    {(() => {
+                      if (!isTypingComplete || typingLength < message.content.length) return null
+                      if (!isLastAssistantMessage) return null
+
+                      const messageKind = (assistantMessage as any).message_kind as
+                        | 'simple' | 'elaboration' | 'followup' | undefined
+                      // v1.0 guard: message_kind가 누락돼도 source_message_id 가 있으면 elaboration.
+                      //   - 신규 세션 insert 경로: message_kind='elaboration' (L928) + source_message_id 동시 주입
+                      //   - DB reload 경로: message_kind, source_message_id 모두 조회
+                      // 둘 중 하나만 있어도 elaboration 으로 간주하여 중복 버튼 노출 방지.
+                      const hasSourceMessageId = Boolean((assistantMessage as any).source_message_id)
+                      const isElaborationMsg = messageKind === 'elaboration' || hasSourceMessageId
+                      // v1.0: case_type이 DB에 null로 저장되는 경우가 있어 텍스트 기반 보조 판정 추가
+                      const contentHead = (message.content || '').trim()
+                      const CASE_C_PREFIX_KO = '제공된 강의자료에서는 해당 내용에 대한 구체적인 설명을 찾을 수 없습니다'
+                      const CASE_C_PREFIX_EN = 'The provided lecture materials do not contain specific information'
+                      const isCaseC =
+                        (assistantMessage as any).case_type === 'C' ||
+                        contentHead.startsWith(CASE_C_PREFIX_KO) ||
+                        contentHead.startsWith(CASE_C_PREFIX_EN)
+
+                      // [부연설명 요청] 버튼 — 부연설명 메시지에는 중복 노출 금지, Case C 숨김
+                      const canElaborate = !isElaborationMsg && !isCaseC
+                      // follow-up 버튼 — 부연설명 메시지에도 허용 (elaboration 응답에 follow_up_question 들어옴)
+                      const hasFollowUp = Boolean(followUpQuestion)
+                      const isElaborating = elaboratingIndex === index
+
+                      if (!hasFollowUp && !canElaborate) return null
+
+                      return (
+                        <div className="mt-4 flex flex-wrap items-center justify-start gap-2 animate-fade-in-up">
+                          {hasFollowUp && followUpQuestion && (
+                            <button
+                              onClick={() => {
+                                if (!isLoading) {
+                                  chatAnalytics.followupClick(selectedLectureIds[0], { question_text: followUpQuestion.substring(0, 50) })
+                                  sendMessage(followUpQuestion, { question_type: 'followup' })
+                                }
+                              }}
+                              disabled={isLoading}
+                              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <span>💡</span>
+                              <span>{followUpQuestion}</span>
+                            </button>
+                          )}
+                          {canElaborate && (
+                            <button
+                              onClick={() => handleRequestElaboration(index)}
+                              disabled={isLoading || isElaborating}
+                              className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-left text-sm font-medium text-indigo-700 shadow-sm transition-all duration-200 hover:bg-indigo-100 hover:border-indigo-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="이 답변을 강의 자료 범위 내에서 더 자세히 풀어서 설명받기"
+                            >
+                              <span>📖</span>
+                              <span>{isElaborating ? '부연설명 생성 중…' : '부연설명 요청'}</span>
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })()}
                     {/* 피드백 버튼 - 타이핑 완료된 AI 메시지에만 표시 */}
                     {isTypingComplete && typingLength >= message.content.length && (
                       <FeedbackButtons
@@ -1507,28 +1694,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         style={{ transform: 'translateY(0px)' }}
       >
         <div className="mx-auto max-w-[680px] 2xl:max-w-[820px]">
-          {/* DEEP 모드 안내 말풍선 — 세션 내 타이핑 전까지만 표시, X로 닫기 가능 */}
-          {!hasTypedInSession && chatMode !== 'deep' && !isDeepHintDismissed && (
-            <div className="mb-2 flex justify-start animate-fade-in-up">
-              <div className="relative ml-12 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-xl px-4 py-2 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-indigo-500 flex-shrink-0" />
-                  <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                    {t('deepModeHint')}
-                  </span>
-                  <button
-                    onClick={() => setIsDeepHintDismissed(true)}
-                    className="ml-1 p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 rounded transition-colors"
-                    aria-label="닫기"
-                  >
-                    <X className="h-3 w-3 text-indigo-400 dark:text-indigo-500" />
-                  </button>
-                </div>
-                {/* 말풍선 꼬리 — DEEP 토글 버튼 위 */}
-                <div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-indigo-50 dark:bg-indigo-900/30 border-r border-b border-indigo-200 dark:border-indigo-700 rotate-45" />
-              </div>
-            </div>
-          )}
+          {/* v1.0: DEEP 모드 안내 말풍선 제거 (DEEP 모드가 없어짐) */}
           <ChatComposer
             value={input}
             onChange={(value) => {

@@ -133,7 +133,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                 </div>
                 <div>
                   <h2
-                    className="text-lg font-extrabold tracking-wide uppercase text-gray-900"
+                    className="text-lg font-bold tracking-wide uppercase text-gray-900"
                     style={{ fontFamily: 'Pretendard, sans-serif' }}
                   >
                     {locale === 'ko' ? 'SELECT YOUR MISSION!' : 'SELECT YOUR MISSION!'}
@@ -280,7 +280,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                                   transform="rotate(-90 20 20)"
                                 />
                               </svg>
-                              <span className="text-sm font-extrabold text-gray-700" style={{ fontFamily: 'monospace' }}>
+                              <span className="text-sm font-bold text-gray-700" style={{ fontFamily: 'monospace' }}>
                                 {lecture.lecture_no}
                               </span>
                             </div>

@@ -319,7 +319,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
   if (gameCompleted) {
     return (
       <div className="flex flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center">
-        <div className="matching-game-success text-3xl font-extrabold text-emerald-600">SUCCESS</div>
+        <div className="matching-game-success text-3xl font-bold text-emerald-600">SUCCESS</div>
         <div className="text-sm font-semibold text-slate-600">{t('cardMatch.finalRecord')}</div>
         <div className="text-2xl font-bold text-slate-900">{formatTime(elapsedMs)}</div>
         <div className="mt-3 flex items-center gap-2">

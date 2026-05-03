@@ -8,7 +8,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Plus, Loader2, ArrowLeft, ChevronDown } from 'lucide-react'
 import * as myQuizService from '../../services/myQuizService'
 import { customQuizAnalytics } from '@/shared/lib/analytics'
@@ -31,7 +31,6 @@ type GenerationView = 'course-lecture' | 'quiz-setting' | 'session-list' | 'sess
 
 export default function QuizGenerationTab() {
   const t = useTranslations('myQuiz')
-  const locale = useLocale()
   const { toasts, error: showErrorToast } = useToast()
 
   // 강좌/회차 데이터
@@ -183,7 +182,10 @@ export default function QuizGenerationTab() {
     )
   }, [showErrorToast, t])
 
-  const handleCreateSubmit = useCallback(async (typeCounts: Record<string, number>) => {
+  const handleCreateSubmit = useCallback(async (
+    typeCounts: Record<string, number>,
+    language: 'ko' | 'en',
+  ) => {
     if (!selectedLectureId || isCreating) return
     setIsCreating(true)
     setCreateError(null)
@@ -202,7 +204,8 @@ export default function QuizGenerationTab() {
 
     customQuizAnalytics.generate({ lecture_id: selectedLectureId, type_counts: safeCounts, course_id: selectedCourseId ?? undefined })
 
-    const result = await myQuizService.createSession(selectedLectureId, safeCounts, locale)
+    // 생성 언어는 폼 토글 값(language)을 사용. 헤더의 사이트 전체 locale 과 무관.
+    const result = await myQuizService.createSession(selectedLectureId, safeCounts, language)
     if (result.error || !result.data) {
       const errorMsg = result.status === 400
         ? t('create.noSnapshot')
@@ -218,7 +221,7 @@ export default function QuizGenerationTab() {
       lecture_id: selectedLectureId,
       course_id: selectedCourseId ?? '',
       generation_batch_id: null,
-      language: locale,
+      language,
       status: 'CREATING',
       quiz_count: totalCount,
       title: null,

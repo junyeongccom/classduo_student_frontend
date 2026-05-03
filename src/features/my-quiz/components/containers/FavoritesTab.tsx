@@ -9,7 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Loader2, Star, BookOpen, ArrowUpDown } from 'lucide-react'
+import { Loader2, Bookmark, BookOpen, ArrowUpDown } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { useToast } from '@/shared/hooks/useToast'
@@ -343,8 +343,8 @@ export default function FavoritesTab({
     if (selectedLectureIds.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
-            <Star className="h-7 w-7 stroke-[1.5] text-amber-400" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
+            <Bookmark className="h-7 w-7 stroke-[1.5] text-blue-400" />
           </div>
           <p className="text-sm">{t('empty.noFavorites')}</p>
           <p className="text-xs text-gray-300">{t('empty.favoritesGuide')}</p>
@@ -378,8 +378,8 @@ export default function FavoritesTab({
     if (courseGroups.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
-            <Star className="h-7 w-7 stroke-[1.5] text-amber-400" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
+            <Bookmark className="h-7 w-7 stroke-[1.5] text-blue-400" />
           </div>
           <p className="text-sm">{t('empty.noFavorites')}</p>
           <p className="text-xs text-gray-300">{t('empty.favoritesGuide')}</p>

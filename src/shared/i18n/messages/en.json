@@ -13,6 +13,103 @@
     "games": "Game",
     "feedback": "Feedback"
   },
+  "courseNav": {
+    "dashboard": "Course Dashboard",
+    "lectureStudy": "By Lecture",
+    "examPrep": "Final Exam Prep",
+    "dialogue": "Dialogue Mode",
+    "myQuizzes": "My Quiz Library",
+    "createQuestion": "Create Question",
+    "home": "Home",
+    "feedback": "Feedback",
+    "sectionResources": "My Quizzes",
+    "sectionGlobal": "All"
+  },
+  "courseDashboard": {
+    "currentWeek": "Current Week",
+    "weekUnit": "W",
+    "examDday": "To Final",
+    "continueTitle": "Continue Learning",
+    "continueAction": "Continue",
+    "continueEmpty": "No lessons started yet. Begin from By-Lecture mode!",
+    "studyModes": "Study Modes",
+    "studyModesSubtitle": "4 study modes for this semester",
+    "modeWeekly": {
+      "eyebrow": "WEEKLY · NOTES · QUIZ · GAME",
+      "title": "By Lecture",
+      "description": "Practice quizzes that match each week's lecture",
+      "footer": "Week {week} uploaded",
+      "cta": "Enter"
+    },
+    "modeExam": {
+      "eyebrow": "EXAM · 30 TESTS · LOCK-ON",
+      "title": "Final Exam Prep",
+      "description": "Prepare for the final with 26 core, 3 mid, and 1 final test",
+      "footer": "Set 1 · In progress",
+      "cta": "Enter"
+    },
+    "modeDialogue": {
+      "eyebrow": "AI · FREE CHAT",
+      "title": "Dialogue Mode",
+      "description": "Learn freely with an AI tutor grounded on your lecture materials",
+      "footer": "",
+      "cta": "Enter"
+    },
+    "modeResources": {
+      "eyebrow": "RESOURCES · MY QUIZ / CREATE",
+      "title": "Study Resources",
+      "description": "Create and manage your own questions in one place",
+      "footer": "",
+      "cta": "Enter"
+    },
+    "examPrepPlaceholderTitle": "Final Exam Prep (Coming soon)",
+    "examPrepPlaceholderDescription": "A focused mode with 26 core tests to maximize mastery before exam day.",
+    "courseDialoguePlaceholderTitle": "Dialogue Mode",
+    "courseDialoguePlaceholderDescription": "Select a lecture to chat freely with the AI tutor."
+  },
+  "examPrepFinal": {
+    "ddayCardTitle": "Final Exam",
+    "masteryCardTitle": "Mastery Progress",
+    "masteryReached": "Master reached",
+    "completedSuffix": "% complete",
+    "recommendedTitle": "Recommended",
+    "recommendedStart": "Start now",
+    "testSets": "Test Sets",
+    "midTestTitle": "Mid Test",
+    "midTestMeta": "{minutes} min  {questions} questions",
+    "midTestDescription": "A diagnostic test based on items you missed in core tests {start}~{end}.",
+    "finalTitle": "Final\nExam Prep",
+    "finalMeta": "{minutes} min",
+    "finalQuestions": "{questions} questions",
+    "finalUnlockHint": "Unlocks D-3 before exam",
+    "finalDescription": "Unlocks once you've mastered all 3 mid tests across the sets.",
+    "selectedTestNumber": "{number}",
+    "weekSession": "W{week} S{session}",
+    "finalLabel": "Final",
+    "singleChoice": "Single choice",
+    "hint": "Hint",
+    "submit": "Submit",
+    "exit": "Exit",
+    "elapsedTime": "Elapsed",
+    "solveLoadError": "Failed to load questions.",
+    "slotsSectionTitle": "Mid / Final Tests",
+    "midSlotLabel": "Mid Test #{index}",
+    "finalSlotLabel": "Final Test",
+    "lockedHintRange": "Unlocks once you master sessions {start}–{end}",
+    "lockedHintSingle": "Unlocks once you master session {start}",
+    "lockedHintFallback": "Master all sessions first",
+    "lockedHintFinal": "Unlocks after you master all mid tests",
+    "lockedFinalShort": "Unlocks after all mid tests",
+    "generatingHint": "Will open automatically in a moment",
+    "masteredLabel": "Mastered",
+    "startCta": "Start",
+    "retryCta": "Retry",
+    "retryError": "Retry failed",
+    "midLockedAria": "{label} locked — {hint}",
+    "midGeneratingAria": "{label} generating",
+    "midMasteredAria": "{label} mastered",
+    "midStartAria": "{label} start"
+  },
   "aiTutorTopbar": {
     "newChat": "New chat",
     "chatHistory": "Chat history",
@@ -35,7 +132,6 @@
     "simpleLabel": "SIMPLE",
     "deepLabel": "DEEP",
     "suggestionsGuide": "Click me to see the key questions AI generated from this lecture!",
-    "deepModeHint": "Try DEEP mode for more detailed and thorough answers!",
     "referenceHint": "Check recording and material sources to better understand the answer",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",
@@ -477,193 +573,6 @@
     "exam": {
       "title": "Exam Prep",
       "body": "Exam Prep page (coming soon)"
-    }
-  },
-  "examPrep": {
-    "chatResetTitle": "Reset Chat",
-    "chatResetMessage": "Starting a new chat will clear the current conversation. Continue?",
-    "chatResetConfirm": "Confirm",
-    "chatResetCancel": "Cancel",
-    "title": "Exam Prep",
-    "subtitle": "Prepare summaries, quizzes, and memorization from your lecture materials.",
-    "summary": {
-      "title": "Summary",
-      "empty": "No summary available.",
-      "loading": "KUI is organizing your summary...",
-      "sourceButton": "Source",
-      "sourceTooltip": "Slide page {pages}",
-      "sourceEmptyTooltip": "No source information",
-      "recentIssuesTitle": "Recent issues",
-      "examPointsTitle": "Key points (Exam prep)"
-    },
-    "materials": {
-      "title": "Select Materials",
-      "description": "Drag materials to preview the original PDF on the left.",
-      "courseLabel": "Select course",
-      "coursePlaceholder": "Select a course",
-      "courseSelectPlaceholder": "Please select a course",
-      "materialSelectPlaceholder": "Please select materials",
-      "empty": "In progress",
-      "dropHint": "Drop materials here (in progress)"
-    },
-    "pdf": {
-      "title": "Lecture Material PDF",
-      "placeholder": "Select a material to view the PDF",
-      "fullscreen": "View fullscreen",
-      "textDeleteConfirm": "Delete this text box?",
-      "yes": "Yes",
-      "no": "No",
-      "prev": "Prev",
-      "next": "Next",
-      "fit": "Fit",
-      "rotate": "Rotate",
-      "singleColumn": "1 Col",
-      "splitView": "2 Split",
-      "hideTools": "Hide Tools",
-      "defaultTool": "Default",
-      "drawTool": "Draw",
-      "eraserTool": "Eraser",
-      "textTool": "Text",
-      "pen": "Pen",
-      "highlighter": "Highlighter",
-      "color": "Color",
-      "thickness": "Thickness",
-      "objectEraser": "Object Eraser",
-      "areaEraser": "Area Eraser",
-      "size": "Size",
-      "textColor": "Text Color",
-      "background": "Background",
-      "deleteAria": "Delete",
-      "loadingTitle": "Preparing your materials",
-      "loadingSubtitle": "Your PDF will open shortly.",
-      "errorNoUrl": "PDF URL was not provided.",
-      "errorInvalidPdf": "The PDF file is corrupted or in an unsupported format.",
-      "errorMissingPdf": "PDF file not found.",
-      "errorPasswordPdf": "Password-protected PDFs are not currently supported.",
-      "errorRequestFailed": "PDF request failed. (status: {status})",
-      "errorLoadFailed": "Failed to load PDF. ({message})",
-      "unknownError": "Unknown error"
-    },
-    "tabs": {
-      "summary": "Summary",
-      "quiz": "Quiz",
-      "memorize": "Memorize",
-      "notes": "Notes",
-      "aiTutor": "AI Tutor"
-    },
-    "content": {
-      "placeholder": "In progress"
-    },
-    "quiz": {
-      "create": {
-        "title": "Create Quiz",
-        "description": "Create a quiz set with your desired question types and difficulty levels",
-        "button": "Create",
-        "creating": "Creating"
-      },
-      "settings": {
-        "button": "Settings",
-        "title": "Quiz settings",
-        "closeAria": "Close settings",
-        "cancel": "Cancel",
-        "confirm": "Confirm",
-        "questionType": {
-          "title": "Question type",
-          "objective": "Multiple choice",
-          "subjective": "Short answer",
-          "options": {
-            "definitionToTerm": "Definition → Term quiz",
-            "termToDefinition": "Term → Definition quiz",
-            "misconceptionDetection": "Misconception detection quiz",
-            "contentRecall": "Content recall quiz",
-            "structureUnderstanding": "Structure understanding quiz"
-          }
-        },
-        "difficulty": {
-          "title": "Difficulty",
-          "options": {
-            "easy": "Easy",
-            "normal": "Normal",
-            "hard": "Hard"
-          }
-        },
-        "questionCount": {
-          "title": "Number of questions",
-          "input": "Enter question count"
-        },
-        "focus": {
-          "title": "What should the quiz focus on?",
-          "placeholder": "Please focus on the parts related to ~"
-        },
-        "discardWarning": {
-          "title": "Close settings?",
-          "description": "Your changes will not be saved. Press confirm in the settings to save.",
-          "cancel": "Keep editing",
-          "confirm": "Close"
-        }
-      },
-      "review": {
-        "title": "Review",
-        "description": "Review all the questions you got wrong so far",
-        "button": "Retry"
-      },
-      "myQuizzes": {
-        "title": "My Quizzes",
-        "sessionDate": "Date of each quiz session",
-        "empty": "No quiz sessions created yet.",
-        "preparing": "Preparing your quiz"
-      },
-      "sessionView": {
-        "backToList": "Back to List",
-        "submit": "Submit",
-        "correct": "Correct",
-        "incorrect": "Incorrect",
-        "answer": "Answer",
-        "explanation": "Explanation",
-        "prev": "Previous",
-        "next": "Next",
-        "viewResults": "View Results",
-        "resultTitle": "Quiz Results",
-        "resultDescription": "You have completed the quiz. Check your results below",
-        "resultScore": "Correct answers: {correctCount} / {totalQuizCount}",
-        "reviewAgain": "Review Again",
-        "correctQuestionsTitle": "Correct Questions",
-        "correctQuestionsEmpty": "No correct questions.",
-        "incorrectQuestionsTitle": "Incorrect Questions",
-        "incorrectQuestionsEmpty": "No incorrect questions.",
-        "answerPlaceholder": "Enter your answer",
-        "questionLabel": "Question {number}"
-      },
-      "sessionMenu": {
-        "rename": "Rename",
-        "delete": "Delete",
-        "renameModal": {
-          "title": "Rename",
-          "description": "Enter a new name for this quiz session.",
-          "placeholder": "e.g., First Review Quiz",
-          "cancel": "Cancel",
-          "confirm": "Confirm"
-        },
-        "deleteModal": {
-          "title": "Delete Quiz Session",
-          "description": "Are you sure you want to delete this quiz session?",
-          "cancel": "Cancel",
-          "confirm": "Delete"
-        }
-      }
-    },
-    "notes": {
-      "placeholder": "Type your notes here.",
-      "singleNote": "Single Note",
-      "pageNote": "Page Notes",
-      "pageLabel": "Page {page}",
-      "template": {
-        "h1": { "label": "Heading 1", "content": "Heading" },
-        "h2": { "label": "Heading 2", "content": "Subheading" },
-        "bullet": { "label": "Bullet", "content": "Item" },
-        "check": { "label": "Checklist", "content": "To do" },
-        "table": { "label": "Table", "content": "Table template is coming soon." }
-      }
     }
   },
   "aiTutorReference": {
@@ -1146,10 +1055,10 @@
       "typeMISCONCEPTION": "Misconception Detection",
       "typeSTRUCTURE_OBJ": "Structure Understanding",
       "typeDescription": {
-        "DEF_TO_TERM": "Choose the term that matches the given definition or description (5 multiple choice). e.g. \"Select the term that best fits the following description.\"",
-        "TERM_TO_DEF": "Choose the correct definition or description for the given term (5 multiple choice). e.g. \"Select the description that best matches the following term.\"",
-        "MISCONCEPTION": "Choose the one incorrect statement among five options. Designed to reveal common misconceptions or wrong interpretations.",
-        "STRUCTURE_OBJ": "Multiple-choice questions about relationships between concepts (why, how, or what is the relationship). Tests comprehension of structure, not just recall."
+        "DEF_TO_TERM": "Choose the term that matches the given definition or description (4 multiple choice). e.g. \"Select the term that best fits the following description.\"",
+        "TERM_TO_DEF": "Choose the correct definition or description for the given term (4 multiple choice). e.g. \"Select the description that best matches the following term.\"",
+        "MISCONCEPTION": "Choose the one incorrect statement among four options. Designed to reveal common misconceptions or wrong interpretations.",
+        "STRUCTURE_OBJ": "4-option multiple-choice questions about relationships between concepts (why, how, or what is the relationship). Tests comprehension of structure, not just recall."
       },
       "settingTitle": "Quiz Settings",
       "settingDescription": "Choose customized quiz options to boost your study efficiency.",

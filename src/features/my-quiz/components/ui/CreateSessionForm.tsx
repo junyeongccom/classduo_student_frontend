@@ -20,7 +20,7 @@ const QUIZ_TYPES = [
 ] as const
 
 interface CreateSessionFormProps {
-  onSubmit: (typeCounts: Record<string, number>) => Promise<void>
+  onSubmit: (typeCounts: Record<string, number>, language: 'ko' | 'en') => Promise<void>
   onCancel: () => void
   isSubmitting?: boolean
   error?: string | null
@@ -42,6 +42,8 @@ export default function CreateSessionForm({
     Object.fromEntries(QUIZ_TYPES.map(qt => [qt.value, 0])),
   )
   const [hoveredType, setHoveredType] = useState<string | null>(null)
+  // 생성 언어 — 헤더의 사이트 전체 언어와 독립. 사용자가 명시적으로 선택한 값만 백엔드로 전달.
+  const [language, setLanguage] = useState<'ko' | 'en'>('ko')
 
   const totalCount = Object.values(typeCounts).reduce((a, b) => a + b, 0)
 
@@ -55,8 +57,8 @@ export default function CreateSessionForm({
 
   const handleSubmit = useCallback(() => {
     if (isSubmitting || totalCount === 0) return
-    onSubmit(typeCounts)
-  }, [isSubmitting, totalCount, typeCounts, onSubmit])
+    onSubmit(typeCounts, language)
+  }, [isSubmitting, totalCount, typeCounts, language, onSubmit])
 
   return (
     <div className="flex h-full flex-col">
@@ -168,6 +170,41 @@ export default function CreateSessionForm({
                       </div>
                     )
                   })}
+                </div>
+              </div>
+
+              {/* 생성 언어 선택 — 헤더 토글과 독립 */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                    생성 언어
+                  </span>
+                </div>
+                <div className="inline-flex items-center rounded-xl bg-gray-100 dark:bg-gray-700 p-1 text-sm font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('ko')}
+                    className={cn(
+                      'rounded-lg px-5 py-1.5 transition',
+                      language === 'ko'
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-50 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-900',
+                    )}
+                  >
+                    한국어
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLanguage('en')}
+                    className={cn(
+                      'rounded-lg px-5 py-1.5 transition',
+                      language === 'en'
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-50 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-900',
+                    )}
+                  >
+                    English
+                  </button>
                 </div>
               </div>
 

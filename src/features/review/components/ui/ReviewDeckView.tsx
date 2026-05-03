@@ -144,7 +144,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
                     <div className="flex h-full w-full flex-col items-center justify-center">
                       {/* 내용 영역 - 항상 단어 */}
                       <div className="flex-1 flex items-center justify-center w-full">
-                        <div className="text-center text-5xl font-extrabold tracking-tight text-slate-900">
+                        <div className="text-center text-5xl font-bold tracking-tight text-slate-900">
                           {keyword}
                         </div>
                       </div>
