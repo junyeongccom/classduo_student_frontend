@@ -137,6 +137,9 @@ export function useQuizStorage({
         last_wrong_at: string | null
         selected_answer: number | null
         correct: boolean | null
+        /** exam_prep 한정 — 라벨 표시용 (핵심테스트/중간테스트/최종테스트). */
+        exam_prep_test_type?: 'core' | 'mid' | 'final'
+        exam_prep_segment_index?: number | null
       }
       const merged = new Map<string, Acc>()
 
@@ -170,6 +173,12 @@ export function useQuizStorage({
           ) {
             existing.last_wrong_at = w.last_wrong_at
           }
+          // exam_prep 메타가 incorrects 쪽에만 있으면 보강
+          if (w.quiz_source === 'exam_prep') {
+            if (!existing.exam_prep_test_type) existing.exam_prep_test_type = w.exam_prep_test_type
+            if (existing.exam_prep_segment_index == null)
+              existing.exam_prep_segment_index = w.exam_prep_segment_index
+          }
         } else {
           merged.set(key, {
             quiz_id: w.quiz_id,
@@ -182,6 +191,10 @@ export function useQuizStorage({
             last_wrong_at: w.last_wrong_at,
             selected_answer: w.latest_selected_answer,
             correct: w.latest_is_correct,
+            exam_prep_test_type:
+              w.quiz_source === 'exam_prep' ? w.exam_prep_test_type : undefined,
+            exam_prep_segment_index:
+              w.quiz_source === 'exam_prep' ? w.exam_prep_segment_index : null,
           })
         }
       }
@@ -254,6 +267,25 @@ export function useQuizStorage({
           ? Math.max(cumulativeWrong, 1)
           : cumulativeWrong
 
+        // exam_prep 항목은 lecture_name 을 테스트 종류 + 회차 라벨로 대체.
+        //   core: "핵심테스트 N회차" (N = lecture_no)
+        //   mid : "중간테스트 N회차" (N = segment_index)
+        //   final: "최종테스트"
+        let displayLectureName = info?.lecture_name
+        if (acc.quiz_source === 'exam_prep') {
+          const tt = acc.exam_prep_test_type
+          if (tt === 'core' && info?.lecture_no != null) {
+            displayLectureName = `핵심테스트 ${info.lecture_no}회차`
+          } else if (tt === 'mid') {
+            const seg = acc.exam_prep_segment_index ?? null
+            displayLectureName = seg != null ? `중간테스트 ${seg}회차` : '중간테스트'
+          } else if (tt === 'final') {
+            displayLectureName = '최종테스트'
+          } else {
+            displayLectureName = '기말대비학습'
+          }
+        }
+
         result.push({
           ...content,
           difficulty: content.difficulty ?? null,
@@ -264,7 +296,7 @@ export function useQuizStorage({
           selected_answer: acc.selected_answer,
           course_id: info?.course_id,
           course_name: info?.course_name,
-          lecture_name: info?.lecture_name,
+          lecture_name: displayLectureName,
           lecture_no: info?.lecture_no,
           is_bookmark: acc.is_bookmark,
           is_wrong: acc.is_wrong,

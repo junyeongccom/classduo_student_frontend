@@ -77,6 +77,8 @@ export function BookshelfStage({
   )
   const [bookFalling, setBookFalling] = useState(false)
   const [bookResting, setBookResting] = useState(false)
+  /** rest 페이드 종료 후 책 element 자체를 unmount — 다음 책 떨어질 자리에서 잔상으로 떠 있는 문제 방지. */
+  const [bookHidden, setBookHidden] = useState(initialFilled)
   const doneRef = useRef(false)
   // 부모 재렌더로 인한 callback 참조 변동 방지
   const onShelfFilledRef = useRef(onShelfFilled)
@@ -109,6 +111,8 @@ export function BookshelfStage({
       setTimeout(() => {
         if (doneRef.current) return
         doneRef.current = true
+        // rest 페이드 끝나는 시점에 element 완전히 숨김 — 다음 mounting 시 잔상 X.
+        setBookHidden(true)
         onSequenceDoneRef.current?.()
       }, FALL_DELAY + FALL_DUR + REST_DELAY + REST_DUR),
     )
@@ -172,23 +176,23 @@ export function BookshelfStage({
           )
         })}
         {/* 떨어지는 책 — 수직(rotate -90deg) 으로 떨어져 안착 시 가로 (rotate 0).
-            안착 좌표 = 셀 안 책 스택 바닥 + N×(높이+갭) — 무제한이므로 셀 위로 솟아도 OK.
-            min clamp 제거 — 셀 위로 넘쳐도 자연스럽게 보이게. */}
-        <div
-          className={`dar-falling-book ${
-            bookFalling && !bookResting ? 'is-falling-vertical' : ''
-          } ${bookResting ? 'is-resting' : ''}`}
-          style={{
-            width: '32px',
-            height: `${BOOK_BAR_HEIGHT}px`,
-            borderRadius: '1px',
-            backgroundColor: '#FFFFFF',
-            // 셀 안 책 스택 위치 — N번째 책의 top = (cellHeight - p) - N*(BAR+GAP)
-            // 셀 위로 넘치면 음수도 허용 (overflow-visible).
-            // @ts-expect-error CSS variable
-            '--book-rest-y': `${49 - (calendarCounts[0] ?? 1) * (BOOK_BAR_HEIGHT + BOOK_BAR_GAP)}px`,
-          }}
-        />
+            rest 페이드 끝나면 bookHidden=true → 통째로 unmount. 다음 책 떨어질 자리
+            잔상으로 머무는 문제 방지. */}
+        {!bookHidden && (
+          <div
+            className={`dar-falling-book ${
+              bookFalling && !bookResting ? 'is-falling-vertical' : ''
+            } ${bookResting ? 'is-resting' : ''}`}
+            style={{
+              width: '32px',
+              height: `${BOOK_BAR_HEIGHT}px`,
+              borderRadius: '1px',
+              backgroundColor: '#FFFFFF',
+              // @ts-expect-error CSS variable
+              '--book-rest-y': `${49 - (calendarCounts[0] ?? 1) * (BOOK_BAR_HEIGHT + BOOK_BAR_GAP)}px`,
+            }}
+          />
+        )}
       </div>
     </div>
   )

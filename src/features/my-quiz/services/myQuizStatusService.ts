@@ -576,6 +576,10 @@ export interface IncorrectQuizEntry {
   latest_selected_answer: number | null
   /** 가장 최근 응답의 is_correct */
   latest_is_correct: boolean | null
+  /** exam_prep 한정 — 테스트 타입 (core/mid/final). 라벨 표시용. */
+  exam_prep_test_type?: 'core' | 'mid' | 'final'
+  /** exam_prep mid 한정 — 1/2/3. */
+  exam_prep_segment_index?: number | null
 }
 
 export async function fetchIncorrectQuizIdsByLectureIds(
@@ -654,7 +658,7 @@ export async function fetchExamPrepIncorrectsByLectureIds(
       .from('exam_prep_response')
       .select(
         'question_id, selected, is_correct, answered_at, ' +
-        'exam_prep_question(source_lecture_id, exam_prep_test(lecture_session_id))'
+        'exam_prep_question(source_lecture_id, exam_prep_test(test_type, segment_index, lecture_session_id))'
       )
       .order('answered_at', { ascending: true })
     if (error) {
@@ -673,7 +677,11 @@ export async function fetchExamPrepIncorrectsByLectureIds(
       answered_at: string
       exam_prep_question: {
         source_lecture_id: string | null
-        exam_prep_test: { lecture_session_id: string | null } | null
+        exam_prep_test: {
+          test_type: 'core' | 'mid' | 'final' | null
+          segment_index: number | null
+          lecture_session_id: string | null
+        } | null
       } | null
     }
 
@@ -704,6 +712,8 @@ export async function fetchExamPrepIncorrectsByLectureIds(
             latest_selected_answer:
               selectedNum != null && !Number.isNaN(selectedNum) ? selectedNum + 1 : null,
             latest_is_correct: r.is_correct,
+            exam_prep_test_type: q.exam_prep_test?.test_type ?? undefined,
+            exam_prep_segment_index: q.exam_prep_test?.segment_index ?? null,
           })
         }
         continue
