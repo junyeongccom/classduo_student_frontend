@@ -159,15 +159,15 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
       {/* ──────── 상단 row: [번호+회차] | [XP + bar (with grade pinned to end)] ──────── */}
       <div className="grid grid-cols-[auto_1fr] items-center gap-10">
         {/* 좌상단 — 큰 번호 / 주차차시 / 회차제목 (3행). 테스트 마스터 시 챕터제목 위에 도장(이슈 12-2). */}
-        <div className="relative flex flex-col gap-2">
+        <div className="relative flex flex-col gap-2 pr-28 pt-2">
           {allMaster && (
             <img
               src="/master-big.png"
               alt="테스트 마스터!"
               aria-hidden
               draggable={false}
-              className="master-stamp-pop pointer-events-none absolute -right-12 -top-6 z-10 h-28 w-auto max-w-none select-none object-contain opacity-70"
-              style={{ animationDelay: '180ms' }}
+              className="master-stamp-pop pointer-events-none absolute right-0 top-0 z-10 h-24 w-auto max-w-[6.5rem] select-none object-contain opacity-70"
+              style={{ animationDelay: '180ms', transformOrigin: '100% 0%' }}
             />
           )}
           <span className="text-7xl font-black leading-none text-gray-900">{headlineLabel}</span>
