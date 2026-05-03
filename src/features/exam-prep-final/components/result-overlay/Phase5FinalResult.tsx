@@ -182,7 +182,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
             <span className="text-base font-bold text-gray-500">{sessionLine}</span>
           )}
           {titleLine && (
-            <span className="text-2xl font-extrabold text-gray-900">{titleLine}</span>
+            <span className="text-2xl font-bold text-gray-900">{titleLine}</span>
           )}
         </div>
 
@@ -190,7 +190,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         <div className="flex flex-col gap-4">
           <div className="flex items-baseline justify-between gap-4 pr-44">
             <div className="flex items-baseline gap-4">
-              <span className="text-2xl font-extrabold text-gray-900">총 획득 경험치</span>
+              <span className="text-2xl font-bold text-gray-900">총 획득 경험치</span>
               <span className="text-5xl font-black text-gray-900">
                 {xpDisplay.toLocaleString()} XP
               </span>
@@ -245,7 +245,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
 
         {/* 가운데 — 숙련도 현황 (풀이 전 → 풀이 후) */}
         <div className="te-fade-up flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5" style={{ animationDelay: '120ms' }}>
-          <span className="text-base font-extrabold text-gray-900">숙련도 현황</span>
+          <span className="text-base font-bold text-gray-900">숙련도 현황</span>
           <div className="flex flex-col gap-2.5">
             <MasteryRow
               label="Learning"
@@ -273,7 +273,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
 
         {/* 우측 — 문항별 OX (이슈 12-3 사각 round 30 + 12-4 좁은 gap + 12-1 안 푼 마스터 도장) */}
         <div className="te-fade-up flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5" style={{ animationDelay: '160ms' }}>
-          <span className="text-base font-extrabold text-gray-900">OX</span>
+          <span className="text-base font-bold text-gray-900">OX</span>
           <div className="grid grid-cols-5 gap-1.5">
             {questionDeltas
               .slice(0, 10)
@@ -298,7 +298,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
                 return (
                   <div
                     key={d.seq}
-                    className="relative flex h-10 w-10 items-center justify-center rounded-[30px] text-sm font-extrabold"
+                    className="relative flex h-10 w-10 items-center justify-center rounded-[30px] text-sm font-bold"
                     style={{ backgroundColor: bg, color: textColor }}
                   >
                     {skippedMaster ? (
@@ -327,7 +327,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         <button
           type="button"
           onClick={onRestart}
-          className="rounded-2xl px-12 py-4 text-lg font-extrabold transition-colors"
+          className="rounded-2xl px-12 py-4 text-lg font-bold transition-colors"
           style={{ backgroundColor: '#E9E5FB', color: '#2D2461' }}
         >
           다시 풀기
@@ -336,7 +336,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
           <button
             type="button"
             onClick={onNext}
-            className="rounded-2xl border border-gray-900 bg-white px-12 py-4 text-lg font-extrabold text-gray-900 transition-colors hover:bg-gray-50"
+            className="rounded-2xl border border-gray-900 bg-white px-12 py-4 text-lg font-bold text-gray-900 transition-colors hover:bg-gray-50"
           >
             다음 문제
           </button>
@@ -344,7 +344,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         <button
           type="button"
           onClick={onExit}
-          className="rounded-2xl px-12 py-4 text-lg font-extrabold text-white transition-colors hover:opacity-90"
+          className="rounded-2xl px-12 py-4 text-lg font-bold text-white transition-colors hover:opacity-90"
           style={{ backgroundColor: '#2D2461' }}
         >
           종료

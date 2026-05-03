@@ -179,7 +179,7 @@ function DeckGamePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
       {/* Card */}
       <div className="relative h-28 w-full max-w-[220px] rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div className="flex h-full flex-col items-center justify-center p-3">
-          <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">Keyword</span>
+          <span className="text-lg font-bold text-slate-900 dark:text-slate-100">Keyword</span>
           <span className="mt-1.5 text-[11px] text-slate-400">{t('lectureStudy.game.desc.deck.previewHint')}</span>
         </div>
         {/* Flip arrow indicator */}

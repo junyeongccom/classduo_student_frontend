@@ -153,11 +153,11 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
       <div ref={expTooltipRef} className="relative flex w-[200px] shrink-0 flex-col gap-1">
         <div className="flex items-baseline justify-end">
           <span
-            className="text-sm font-extrabold leading-none text-gray-900 dark:text-gray-50"
+            className="text-sm font-bold leading-none text-gray-900 dark:text-gray-50"
             style={{ fontFamily: 'Pretendard, sans-serif' }}
           >
             {xpDisplay}
-            <span className="ml-1 text-sm font-extrabold text-gray-500">XP</span>
+            <span className="ml-1 text-sm font-bold text-gray-500">XP</span>
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">

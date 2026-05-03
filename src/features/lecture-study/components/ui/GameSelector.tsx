@@ -80,7 +80,7 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
       <div className="relative mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Gamepad2 className="h-5 w-5 text-orange-500" />
-          <h3 className="text-lg font-extrabold tracking-wide text-gray-800">
+          <h3 className="text-lg font-bold tracking-wide text-gray-800">
             GAME ARCADE
           </h3>
         </div>

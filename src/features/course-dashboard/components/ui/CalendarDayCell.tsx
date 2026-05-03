@@ -41,7 +41,7 @@ export function CalendarDayCell({ cell }: CalendarDayCellProps) {
       {/* 책 스택 — PNG 가 셀 하단에서 위로 쌓임. 좌우 jitter (지그재그) 로 자연스러움. */}
       {tone.bookColor && books > 0 && (
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-col-reverse items-center"
+          className="pointer-events-none absolute inset-x-0 bottom-1 z-0 flex flex-col-reverse items-center"
           aria-hidden
         >
           {Array.from({ length: books }).map((_, i) => {
@@ -64,9 +64,9 @@ export function CalendarDayCell({ cell }: CalendarDayCellProps) {
         </div>
       )}
 
-      {/* day 텍스트 — 좌상단. p-2.5 로 inner padding 확보 */}
+      {/* day 텍스트 — 좌상단. 책 위로 (z-20). */}
       <span
-        className="relative z-10 text-[13px] font-extrabold leading-none"
+        className="relative z-20 text-[13px] font-bold leading-none"
         style={{ fontFamily: 'Pretendard, sans-serif' }}
       >
         {cell.display}

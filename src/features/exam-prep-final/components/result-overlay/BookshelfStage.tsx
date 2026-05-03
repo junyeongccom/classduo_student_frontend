@@ -155,10 +155,10 @@ export function BookshelfStage({
                 fontFamily: 'Pretendard, sans-serif',
               }}
             >
-              {/* 날짜 라벨 — 좌상단. 셀 padding 키워 안쪽 위치 (이슈) */}
-              <span className="text-[15px] font-extrabold leading-none">{c.label}</span>
+              {/* 날짜 라벨 — 좌상단. 책 위로 떠야 가려지지 않음 (relative + z-20). */}
+              <span className="relative z-20 text-[15px] font-bold leading-none">{c.label}</span>
               {/* 책 스택 — /calender/캘린더-책.png PNG 사용. 좌우 jitter 로 지그재그. */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-col-reverse items-center">
+              <div className="pointer-events-none absolute inset-x-0 bottom-1 z-0 flex flex-col-reverse items-center">
                 {Array.from({ length: bookCount }).map((_, i) => {
                   const dx = i % 2 === 0 ? -3 : 3
                   return (

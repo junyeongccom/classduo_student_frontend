@@ -118,14 +118,14 @@ export function Phase23DailyXp({
             rightStage === 'phase3-top' || rightStage === 'phase3-full' ? 'is-in' : 'is-out'
           }`}
         >
-          <span className="text-3xl font-extrabold leading-none text-gray-900">
+          <span className="text-3xl font-bold leading-none text-gray-900">
             일일 참여 획득 경험치
           </span>
           <div className="flex items-end gap-3">
             <span className="te-num-pop text-8xl font-black leading-none text-gray-900">
               {tier.dailyXp}
             </span>
-            <span className="text-3xl font-extrabold text-gray-900">XP</span>
+            <span className="text-3xl font-bold text-gray-900">XP</span>
           </div>
         </div>
 
@@ -135,11 +135,11 @@ export function Phase23DailyXp({
             rightStage === 'phase3-full' ? 'is-in' : 'is-out'
           }`}
         >
-          <span className="text-base font-extrabold tracking-wide text-gray-700">
+          <span className="text-base font-bold tracking-wide text-gray-700">
             연속 보상 강화
           </span>
           <DayCardsRow currentTier={tier.label} />
-          <span className="mt-1 text-lg font-extrabold text-gray-900">
+          <span className="mt-1 text-lg font-bold text-gray-900">
             1일 뒤 오면 {nextDayXp(postStreak)}XP를 얻어요!
           </span>
         </div>
@@ -165,11 +165,11 @@ export function Phase23DailyXp({
             rightStage === 'phase4' ? 'is-in' : 'is-out'
           }`}
         >
-          <span className="text-base font-extrabold tracking-wide text-gray-700">
+          <span className="text-base font-bold tracking-wide text-gray-700">
             연속 보상 강화
           </span>
           <DayCardsRow currentTier={tier.label} />
-          <span className="mt-1 text-lg font-extrabold text-gray-900">
+          <span className="mt-1 text-lg font-bold text-gray-900">
             1일 뒤 오면 {nextDayXp(postStreak)}XP를 얻어요!
           </span>
         </div>
@@ -179,7 +179,7 @@ export function Phase23DailyXp({
           <button
             type="button"
             onClick={() => onDoneRef.current()}
-            className="te-fade-up absolute bottom-12 right-20 rounded-2xl px-10 py-3.5 text-base font-extrabold text-white transition-colors hover:opacity-90"
+            className="te-fade-up absolute bottom-12 right-20 rounded-2xl px-10 py-3.5 text-base font-bold text-white transition-colors hover:opacity-90"
             style={{ backgroundColor: '#2D2461', fontFamily: 'Pretendard, sans-serif' }}
           >
             다음
@@ -209,32 +209,32 @@ interface DayCardsRowProps {
 }
 
 function DayCardsRow({ currentTier }: DayCardsRowProps) {
-  // 카드 가로 길이는 **날짜 범위(폭)** 에 정확히 비례 (사용자 요청: DAY 1 박스의 3배 = DAY 2~4).
-  //   - DAY 1     → 1일   → 80px  (기준)
-  //   - DAY 2~4   → 3일   → 240px (1일 × 3)
-  //   - DAY 5~    → 무한  → 400px (2~4 의 약 1.7배 — ∞ 시각적 강조)
-  const cards: { label: string; xp: number; bg: string; text: string; delay: number; width: number }[] = [
-    { label: 'DAY 1', xp: 20, bg: '#ECE7FB', text: '#2D2461', delay: 60, width: 80 },
-    { label: 'DAY 2~4', xp: 30, bg: '#B2A4F0', text: '#FFFFFF', delay: 180, width: 240 },
-    { label: 'DAY 5~', xp: 40, bg: '#2D2461', text: '#FFFFFF', delay: 300, width: 400 },
+  // 카드 가로 길이 비례: DAY 1 : DAY 2~4 : DAY 5~ = 1 : 3 : 5 (≈ 날짜 범위).
+  // 좁은 화면에서 잘리지 않도록 grid template 사용 (1fr 3fr 5fr) + 컨테이너 max-width 100%.
+  const cards: { label: string; xp: number; bg: string; text: string; delay: number; flex: string }[] = [
+    { label: 'DAY 1', xp: 20, bg: '#ECE7FB', text: '#2D2461', delay: 60, flex: '1' },
+    { label: 'DAY 2~4', xp: 30, bg: '#B2A4F0', text: '#FFFFFF', delay: 180, flex: '3' },
+    { label: 'DAY 5~', xp: 40, bg: '#2D2461', text: '#FFFFFF', delay: 300, flex: '5' },
   ]
   return (
-    <div className="flex items-end gap-4">
+    <div
+      className="grid w-full max-w-[640px] items-end gap-3"
+      style={{ gridTemplateColumns: '1fr 3fr 5fr' }}
+    >
       {cards.map((c) => {
         const isCurrent = c.label === currentTier
         return (
           <div
             key={c.label}
-            className="flex flex-col items-start gap-2"
+            className="flex min-w-0 flex-col items-start gap-2"
             style={{ fontFamily: 'Pretendard, sans-serif' }}
           >
-            <span className="pl-1 text-sm font-extrabold tracking-wide text-gray-700">
+            <span className="pl-1 text-sm font-bold tracking-wide text-gray-700">
               {c.label}
             </span>
             <div
-              className="dar-day-card is-in flex h-14 items-center justify-center rounded-2xl text-xl font-extrabold"
+              className="dar-day-card is-in flex h-14 w-full items-center justify-center rounded-2xl text-xl font-bold"
               style={{
-                width: `${c.width}px`,
                 backgroundColor: c.bg,
                 color: c.text,
                 boxShadow: isCurrent ? '0 0 0 2px rgba(110, 91, 226, 0.35)' : 'none',
