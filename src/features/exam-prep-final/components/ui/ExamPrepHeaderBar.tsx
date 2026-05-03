@@ -36,21 +36,22 @@ const RANK_THRESHOLDS: Array<{ from: string; to: string; total: number }> = [
 ]
 
 interface ProgressInfo {
-  xpToNext: number
+  /** 현재 등급에서 다음 등급으로 진급하는 데 필요한 누적 XP (예: D→D+ 면 300) */
+  nextTotal: number
   ratio: number
   isMax: boolean
 }
 
 function computeProgress(rankCode: string, totalXp: number): ProgressInfo {
   const step = RANK_THRESHOLDS.find((t) => t.from === rankCode)
-  if (!step) return { xpToNext: 0, ratio: 1, isMax: true } // A+
+  if (!step) return { nextTotal: totalXp, ratio: 1, isMax: true } // A+
   const prevTotal =
     RANK_THRESHOLDS.find((t) => t.to === rankCode)?.total ?? 0
   const span = step.total - prevTotal
   const earned = Math.max(0, totalXp - prevTotal)
   const ratio = span > 0 ? Math.min(1, earned / span) : 0
   return {
-    xpToNext: Math.max(0, step.total - totalXp),
+    nextTotal: step.total,
     ratio,
     isMax: false,
   }

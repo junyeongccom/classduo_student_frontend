@@ -412,14 +412,17 @@
       transparent 70%
     );
     transform: skewX(-18deg);
-    /* 광이 끝까지 가서 사라진 뒤 자연스럽게 다시 루프 (이슈 9). 8s sweep + 2s rest 가 아닌
-       단순 5s linear 무한 루프 — duration 끝나는 시점에 화면 밖이라 reset 이 보이지 않음. */
-    animation: exam-hero-sweep 5s linear infinite;
+    /* 빠르게 한 번 지나가고 텀 후 다시 빠르게 — 2s 루프에서 첫 35% (=0.7s) 만 sweep,
+       나머지 65% (=1.3s) 는 화면 밖에서 대기. */
+    animation: exam-hero-sweep 2s linear infinite;
   }
 
   @keyframes exam-hero-sweep {
     0% {
       transform: translateX(0) skewX(-18deg);
+    }
+    35% {
+      transform: translateX(540%) skewX(-18deg);
     }
     100% {
       transform: translateX(540%) skewX(-18deg);
