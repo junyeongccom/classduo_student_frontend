@@ -118,9 +118,7 @@ export function CoreTestButton({
   )
 }
 
-/** Master 도장 — 버튼 정중앙에 크게 배치 (이전 90% → 105%로 확대 + Y축 정중앙).
- *  PNG 원본이 살짝 기울어진 디자인이라 CSS 추가 회전은 주지 않는다.
- *  drop-shadow 로 살짝 도장 눌린 느낌의 입체감 부여. */
+/** Master 도장 — 버튼 하단에 배치. drop-shadow(블러) 제거. PNG 원본 비율 유지. */
 function MasterStamp({ src }: { src: string }) {
   return (
     <img
@@ -128,7 +126,7 @@ function MasterStamp({ src }: { src: string }) {
       alt="MASTER"
       aria-label="Master"
       title="Master 도달"
-      className="pointer-events-none absolute left-1/2 top-1/2 z-10 w-[105%] max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain drop-shadow-[0_2px_3px_rgba(0,0,0,0.25)]"
+      className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-[100%] max-w-none -translate-x-1/2 select-none object-contain"
       draggable={false}
     />
   )

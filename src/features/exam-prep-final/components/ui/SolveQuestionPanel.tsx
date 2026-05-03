@@ -224,14 +224,14 @@ export function SolveQuestionPanel({
   return (
     <div className="flex h-full flex-1 flex-col overflow-y-auto bg-[#F5F7F8] dark:bg-gray-950">
       <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-8 py-8">
-        {/* 마스터 도달 도장 — 첫 마스터 시 문제 우상단에 absolute 로 쾅 찍힘 (스케일 인 + 살짝 회전) */}
+        {/* 마스터 도달 도장 — 첫 마스터 시 문제 우상단에 표시. 등장 모션 X, 원본 비율 유지, alpha 0.5. */}
         {graded?.mastery.first_master_transition && (
           <img
             src="/master.png"
             alt="Master 도달!"
             aria-hidden
             draggable={false}
-            className="master-stamp-pop pointer-events-none absolute right-4 top-2 z-10 h-24 w-24 select-none"
+            className="pointer-events-none absolute right-4 top-2 z-10 h-24 w-auto select-none opacity-50"
           />
         )}
 
