@@ -379,6 +379,14 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
             <span>{resolvedCourseTitle}</span>
           )}
           <ChevronRight className="h-3.5 w-3.5" />
+          {courseId ? (
+            <Link href={`/studyspace/course/${courseId}`} className="transition-colors hover:text-[#6366F1]">
+              {t('courseNav.lectureStudy')}
+            </Link>
+          ) : (
+            <span>{t('lectureStudy.tabLecture')}</span>
+          )}
+          <ChevronRight className="h-3.5 w-3.5" />
           <span className="truncate font-semibold text-gray-900 dark:text-gray-50">
             {resolveLectureLabel()}
           </span>

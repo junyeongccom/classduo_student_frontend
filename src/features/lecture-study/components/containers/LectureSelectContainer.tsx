@@ -10,16 +10,13 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
-import { Loader2, BookOpen, Gamepad2, ChevronRight, X } from 'lucide-react'
-import { cn } from '@/shared/lib/utils'
+import { Loader2, BookOpen, ChevronRight } from 'lucide-react'
 import { trackPageEnter, trackPageLeave, navigationAnalytics, courseLectureAnalytics } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '../../hooks/useLectures'
 import { LectureRow } from '../ui/LectureRow'
 import { RecordingChunksModal } from '../ui/RecordingChunksModal'
 import { MaterialsModal } from '../ui/MaterialsModal'
-import { GameSelectionModal } from '@/shared/components/common/GameSelectionModal'
-import { useSidebarStore, SIDEBAR_WIDTH_EXPANDED, SIDEBAR_WIDTH_COLLAPSED } from '@/shared/store/useSidebarStore'
 import Link from 'next/link'
 import { getSupabaseClient } from '@/shared/lib/supabase'
 import { useCourses } from '@/features/home/hooks/useCourses'
@@ -44,15 +41,6 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const locale = useLocale()
   const router = useRouter()
   const { lectures, courseTitle, section, isLoading, error, refresh } = useLectures(courseId)
-  const [isCtaDismissed, setIsCtaDismissed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    const dismissed = localStorage.getItem('gameCta_dismissedDate')
-    return dismissed === new Date().toISOString().slice(0, 10)
-  })
-  const [isGameModalOpen, setIsGameModalOpen] = useState(false)
-
-  const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
-  const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
 
   // Analytics: 페이지 체류시간 추적
   useEffect(() => {
@@ -171,7 +159,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
         </nav>
       </StudyspaceTopbarSlot>
 
-      <div className={cn('relative h-full overflow-y-auto', !isCtaDismissed && 'pb-24')}>
+      <div className="relative h-full overflow-y-auto">
         <div className="mx-auto max-w-5xl px-8 py-6">
           {/* Course Hero Card — 흰배경 + 학기/분반 eyebrow + 진도 막대 */}
           <div className="rounded-2xl border border-gray-200 bg-white px-8 py-6 dark:border-gray-700 dark:bg-gray-900">
@@ -263,46 +251,6 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
           </div>
         </div>
 
-        {/* Floating Game CTA — fixed bottom */}
-        {!isCtaDismissed && (
-          <div className="fixed bottom-3 right-0 z-20 px-4 md:px-8 transition-[left] duration-300 ease-in-out" style={{ left: sidebarWidth }}>
-            <div className="mx-auto max-w-5xl">
-              <div className="relative overflow-hidden rounded-2xl bg-gray-900 px-8 py-4 text-white shadow-2xl">
-                <button
-                  onClick={() => setIsCtaDismissed(true)}
-                  className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-                <div className="relative z-10 flex items-center justify-between gap-6 pr-6">
-                  <div>
-                    <h4 className="text-lg font-bold">{t('lectureStudy.gameCta.title')}</h4>
-                    <p className="mt-1 text-sm text-gray-400">{t('lectureStudy.gameCta.description')}</p>
-                  </div>
-                  <button
-                    onClick={() => setIsGameModalOpen(true)}
-                    className="shrink-0 rounded-2xl bg-white px-8 py-3 font-black text-gray-900 shadow-xl transition-all hover:bg-[#6366F1] hover:text-white"
-                  >
-                    {t('lectureStudy.gameCta.button')}
-                  </button>
-                </div>
-                <div className="relative z-10 mt-2 text-right pr-6">
-                  <button
-                    onClick={() => {
-                      localStorage.setItem('gameCta_dismissedDate', new Date().toISOString().slice(0, 10))
-                      setIsCtaDismissed(true)
-                    }}
-                    className="text-xs text-gray-300 underline underline-offset-2 transition-colors hover:text-white"
-                  >
-                    {locale === 'ko' ? '오늘하루 닫기' : 'Hide for today'}
-                  </button>
-                </div>
-                <Gamepad2 className="absolute bottom-2 right-4 h-20 w-20 opacity-10" />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Recording Chunks Modal */}
@@ -320,11 +268,6 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
         lectureId={materialsModalLecture?.id ?? ''}
       />
 
-      {/* Game Selection Modal */}
-      <GameSelectionModal
-        open={isGameModalOpen}
-        onClose={() => setIsGameModalOpen(false)}
-      />
     </>
   )
 }
