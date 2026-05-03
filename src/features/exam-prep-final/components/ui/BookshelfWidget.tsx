@@ -45,9 +45,16 @@ interface BookSlot {
   flyDy: number
   /** 클릭 시 회전 spin deg */
   flySpin: number
+  /** 비행 시작 지연 ms (책마다 시차) */
+  flyDelay: number
+  /** 비행 한 사이클 duration ms (책마다 다름) */
+  flyDur: number
 }
 
-/** count 만큼 책 슬롯을 균등 분할 + jitter 로 만들어줌. 비행 모션용 랜덤 궤적 포함. */
+/** count 만큼 책 슬롯을 균등 분할 + jitter 로 만들어줌. 비행 모션용 랜덤 궤적 포함.
+ *  flyDx/Dy 는 책장 안쪽에서 자연스럽게 들썩이는 폭으로만 잡고, 시각적 클립은
+ *  부모 button 의 overflow-hidden 이 담당. flyDelay/Dur 는 책마다 무작위 부여 →
+ *  같은 시점에 다 같이 떨어지지 않고 시차 두고 흩어짐. */
 function generateBooks(count: number): BookSlot[] {
   if (count === 0) return []
   // 책장 안쪽 가용 영역을 가로 22~78% 로 잡고 등간격 분할
@@ -63,12 +70,17 @@ function generateBooks(count: number): BookSlot[] {
       left: baseLeft + jitter,
       rotate: (Math.random() - 0.5) * 24, // ±12deg
       bottom: 0.18 + (Math.random() - 0.5) * 0.04, // 책장 바닥 근처
-      flyDx: (Math.random() - 0.5) * 60, // ±30px 횡 드리프트
-      flyDy: -28 - Math.random() * 24, // -28 ~ -52px (위로)
+      flyDx: (Math.random() - 0.5) * 24, // ±12px 횡 드리프트 (책장 안쪽)
+      flyDy: -8 - Math.random() * 14, // -8 ~ -22px (위로, 책장 천장 안쪽)
       flySpin: (Math.random() < 0.5 ? -1 : 1) * (260 + Math.random() * 320), // ±260~580deg
+      flyDelay: Math.random() * 280, // 0 ~ 280ms 시차
+      flyDur: 900 + Math.random() * 500, // 900 ~ 1400ms
     }
   })
 }
+
+/** flying state 를 false 로 되돌리는 안전 timeout — 가장 늦게 끝나는 책의 (delay + dur) 보다 길게. */
+const FLY_RESET_MS = 1800
 
 export function BookshelfWidget({ currentStreak, size = 64, className }: BookshelfWidgetProps) {
   const shelfBg = resolveShelfBg(currentStreak)
@@ -104,7 +116,7 @@ export function BookshelfWidget({ currentStreak, size = 64, className }: Bookshe
     // 새 비행 궤적 + 새 안착 위치 — 매 클릭 다른 모양
     setBooks(generateBooks(visibleCount))
     setFlying(true)
-    window.setTimeout(() => setFlying(false), 1100)
+    window.setTimeout(() => setFlying(false), FLY_RESET_MS)
   }
 
   return (
@@ -114,7 +126,7 @@ export function BookshelfWidget({ currentStreak, size = 64, className }: Bookshe
       disabled={visibleCount === 0}
       aria-label={`오늘 ${todayCount}권 / 출석 ${currentStreak}일차 책장`}
       className={cn(
-        'relative shrink-0 transition-transform active:scale-95 disabled:cursor-default',
+        'relative shrink-0 overflow-hidden transition-transform active:scale-95 disabled:cursor-default',
         className,
       )}
       style={{ width: size, height: size }}
@@ -147,6 +159,8 @@ export function BookshelfWidget({ currentStreak, size = 64, className }: Bookshe
               ['--fly-dx' as string]: `${book.flyDx}px`,
               ['--fly-dy' as string]: `${book.flyDy}px`,
               ['--fly-spin' as string]: `${book.flySpin}deg`,
+              ['--fly-delay' as string]: `${book.flyDelay}ms`,
+              ['--fly-dur' as string]: `${book.flyDur}ms`,
               transform: `translate(-${size * 0.11}px, 0) rotate(${book.rotate}deg)`,
               transformOrigin: '50% 100%',
             }}

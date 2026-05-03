@@ -765,6 +765,43 @@ export async function fetchQuizResponsesByLectureIds(
 }
 
 /**
+ * 학생 본인의 exam_prep_response 에서 is_correct=false 행 수를 question_id 별로 직접 카운트.
+ * exam_prep_mastery.incorrect_count 는 Learning floor 정책으로 누적이 안 되는 케이스가 있어
+ * (백엔드 mid_worker 주석 참조) 신뢰할 수 없음 → response 행 수가 SSOT.
+ *
+ * RLS 가 본인 attempt 의 response 만 노출하므로 별도 user_id 필터 불필요.
+ */
+export async function fetchExamPrepWrongCounts(
+  questionIds: string[],
+): Promise<{ data: Map<string, number> | null; error: Error | null }> {
+  if (questionIds.length === 0) return { data: new Map(), error: null }
+  try {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('exam_prep_response')
+      .select('question_id')
+      .in('question_id', questionIds)
+      .eq('is_correct', false)
+    if (error) {
+      if (isJWTExpiredError(error)) {
+        const ok = await handleJWTExpiration()
+        if (!ok) return { data: null, error: new Error('세션이 만료되었습니다.') }
+        return { data: null, error: new Error('세션이 갱신되었습니다. 다시 시도해주세요.') }
+      }
+      return { data: null, error: new Error(getErrorMessage(error)) }
+    }
+    const map = new Map<string, number>()
+    for (const r of ((data ?? []) as Array<{ question_id: string }>)) {
+      map.set(r.question_id, (map.get(r.question_id) ?? 0) + 1)
+    }
+    return { data: map, error: null }
+  } catch (err) {
+    if (isJWTExpiredError(err)) { await handleJWTExpiration() }
+    return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
+/**
  * 학생 본인의 exam_prep_mastery 누적 카운트 조회 (own RLS 자동 적용).
  * exam_prep 는 mastery.correct_count / incorrect_count 가 SSOT.
  */

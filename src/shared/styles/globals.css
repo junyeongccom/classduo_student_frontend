@@ -923,7 +923,7 @@
   }
 }
 .bookshelf-fly .bookshelf-book {
-  animation: bookshelf-fly 1100ms cubic-bezier(.34, 1.2, .5, 1);
+  animation: bookshelf-fly var(--fly-dur, 1100ms) cubic-bezier(.34, 1.2, .5, 1) var(--fly-delay, 0ms) both;
 }
 
 /* ─────────────────────────────────────────────────────────

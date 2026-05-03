@@ -199,7 +199,7 @@ export function useQuizStorage({
         bySource[acc.quiz_source].push(acc.quiz_id)
       }
 
-      const [instr, cust, cont, exam, mastery] = await Promise.all([
+      const [instr, cust, cont, exam, examWrongCounts] = await Promise.all([
         bySource.instructor.length > 0
           ? statusService.fetchQuizContent(bySource.instructor, 'instructor')
           : { data: [], error: null },
@@ -212,10 +212,11 @@ export function useQuizStorage({
         bySource.exam_prep.length > 0
           ? statusService.fetchQuizContent(bySource.exam_prep, 'exam_prep')
           : { data: [], error: null },
-        // exam_prep 누적 incorrect_count 는 mastery 에서 직접. 실패 시 fallback.
+        // exam_prep 누적 오답 횟수 — exam_prep_response 의 is_correct=false 행 직접 카운트.
+        // (mastery.incorrect_count 는 Learning floor 정책으로 누적이 안 되는 케이스가 있음)
         bySource.exam_prep.length > 0
-          ? statusService.fetchExamPrepMasteryCounts(bySource.exam_prep)
-          : { data: [], error: null },
+          ? statusService.fetchExamPrepWrongCounts(bySource.exam_prep)
+          : { data: new Map<string, number>(), error: null },
       ])
 
       if (myReq !== requestIdRef.current) return
@@ -226,9 +227,10 @@ export function useQuizStorage({
       for (const x of cont.data ?? []) contentMap.set(`content:${x.quiz_id}`, x)
       for (const x of exam.data ?? []) contentMap.set(`exam_prep:${x.quiz_id}`, x)
 
-      // exam_prep mastery 누적 카운트 → wrongCountMap 에 합치기.
-      for (const m of mastery.data ?? []) {
-        wrongCountMap.set(`exam_prep:${m.question_id}`, m.incorrect_count)
+      // exam_prep 실 오답 횟수 → wrongCountMap 에 직접 매핑.
+      const examWrongMap = examWrongCounts.data ?? new Map<string, number>()
+      for (const [qid, cnt] of examWrongMap) {
+        wrongCountMap.set(`exam_prep:${qid}`, cnt)
       }
 
       const result: QuizStorageItem[] = []
