@@ -17,13 +17,20 @@ import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
 import { TopHeaderCards } from '../ui/TopHeaderCards'
 import { SelectedTestInfoCard } from '../ui/SelectedTestInfoCard'
+import { SelectedMidTestInfoCard } from '../ui/SelectedMidTestInfoCard'
 import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
 import { FinalTestPanel } from '../ui/FinalTestPanel'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
-import type { CoreTest, ExamPrepData, TestSetTab } from '../../types'
+import type { CoreTest, ExamPrepData, MidTest, TestSetTab } from '../../types'
+
+/** 선택 상태 — 핵심테스트(core) 또는 중간테스트(mid) 중 하나만 동시에 활성. */
+type Selection =
+  | { kind: 'core'; id: string }
+  | { kind: 'mid'; setNumber: 1 | 2 | 3 }
+  | null
 
 /** 세트별 컨텐츠 박스 배경색 (Figma) — 탭 배경과 동일하게 통일 */
 const SET_PANEL_BG: Record<1 | 2 | 3, string> = {
@@ -57,19 +64,40 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   }, [])
 
   const [activeTab, setActiveTab] = useState<TestSetTab>(1)
-  const [selectedTestId, setSelectedTestId] = useState<string | null>(null)
+  const [selection, setSelection] = useState<Selection>(null)
   const [startError, setStartError] = useState<string | null>(null)
 
-  const selectedTest: CoreTest | null = useMemo(() => {
-    if (!data) return null
-    return data.coreTests.find((t) => t.id === selectedTestId) ?? null
-  }, [data, selectedTestId])
+  const selectedCoreTest: CoreTest | null = useMemo(() => {
+    if (!data || selection?.kind !== 'core') return null
+    return data.coreTests.find((t) => t.id === selection.id) ?? null
+  }, [data, selection])
+
+  const selectedMidTest: MidTest | null = useMemo(() => {
+    if (!data || selection?.kind !== 'mid') return null
+    return data.midTests.find((m) => m.setNumber === selection.setNumber) ?? null
+  }, [data, selection])
 
   // 탭 변경 시 선택 해제
   const handleTabChange = (tab: TestSetTab) => {
     setActiveTab(tab)
-    setSelectedTestId(null)
+    setSelection(null)
     setStartError(null)
+  }
+
+  /** 핵심테스트 토글 — 같은 ID 재클릭 시 deselect, 그 외엔 core 로 교체 (mid 도 자동 해제). */
+  const handleSelectCore = (id: string) => {
+    setSelection((prev) =>
+      prev?.kind === 'core' && prev.id === id ? null : { kind: 'core', id },
+    )
+  }
+
+  /** 중간테스트 토글 — 같은 setNumber 재클릭 시 deselect, 그 외엔 mid 로 교체. */
+  const handleSelectMid = (setNumber: 1 | 2 | 3) => {
+    setSelection((prev) =>
+      prev?.kind === 'mid' && prev.setNumber === setNumber
+        ? null
+        : { kind: 'mid', setNumber },
+    )
   }
 
   /** 핵심테스트 풀이 페이지 라우팅
@@ -97,11 +125,12 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     )
   }
 
-  /** 중간 테스트 박스 클릭 — testId 가 있을 때만 풀이 페이지로 라우팅 */
-  const handleStartMid = (testId: string | null) => {
-    if (!testId) return
+  /** 중간 테스트 시작 — 카드 내 시작 버튼에서 호출. testId 있을 때만 라우팅. */
+  const handleStartMid = (mid: MidTest) => {
+    const tid = mid.testId
+    if (!tid) return
     setStartError(null)
-    router.push(`/studyspace/course/${courseId}/exam-prep/test/${testId}`)
+    router.push(`/studyspace/course/${courseId}/exam-prep/test/${tid}`)
   }
 
   /** 최종 테스트 클릭 — testId 가 있을 때만 풀이 페이지로 라우팅 */
@@ -152,22 +181,31 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
               {startError}
             </div>
           )}
-          {/* 상단 영역: 선택된 테스트 있으면 정보 카드, 없으면 3박스 헤더 */}
-          {selectedTest ? (
-            <SelectedTestInfoCard
-              test={selectedTest}
-              onStart={() => handleStartTest(selectedTest)}
-            />
-          ) : (
-            <TopHeaderCards
-              data={data}
-              onRecommendedClick={() => {
-                if (data.recommendedTest) {
-                  handleStartTest(data.recommendedTest)
-                }
-              }}
-            />
-          )}
+          {/* 상단 영역: 핵심/중간 선택 시 정보 카드, 없으면 3박스 헤더.
+              세 가지 변형의 자연 높이가 달라 스왑 시 하단 컨텐츠가 들썩이는 문제 →
+              고정 높이 래퍼로 묶고 내부는 h-full 로 채워 레이아웃 시프트 방지. */}
+          <div className="h-[200px]">
+            {selectedCoreTest ? (
+              <SelectedTestInfoCard
+                test={selectedCoreTest}
+                onStart={() => handleStartTest(selectedCoreTest)}
+              />
+            ) : selectedMidTest ? (
+              <SelectedMidTestInfoCard
+                midTest={selectedMidTest}
+                onStart={() => handleStartMid(selectedMidTest)}
+              />
+            ) : (
+              <TopHeaderCards
+                data={data}
+                onRecommendedClick={() => {
+                  if (data.recommendedTest) {
+                    handleStartTest(data.recommendedTest)
+                  }
+                }}
+              />
+            )}
+          </div>
 
           {/* 테스트 세트 섹션 */}
           <div className="mt-10">
@@ -190,10 +228,10 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
                 <CoreSetContent
                   setNumber={activeTab}
                   data={data}
-                  selectedTestId={selectedTestId}
+                  selection={selection}
                   courseId={courseId}
-                  onSelect={setSelectedTestId}
-                  onStartMid={handleStartMid}
+                  onSelectCore={handleSelectCore}
+                  onSelectMid={handleSelectMid}
                 />
               ) : (
                 <FinalTestPanel
@@ -254,23 +292,23 @@ function chunkInto<T>(arr: T[], size: number): T[][] {
 /** 1/2/3 세트 컨텐츠 — 핵심테스트 + 중간 테스트 책 (그리드 마지막 셀)
  *
  * MidTestBox(책 일러스트)는 핵심테스트 그리드의 마지막 셀로 자연스럽게 들어감.
- * unlocked / testId / status 는 useExamPrepData 에서 백엔드 mid status 와 coreTests 의
- * isTestMastered 로 산출됨. 잠금해제 시만 클릭 가능 → onStartMid(testId).
+ * 클릭 시 책 펼침 모션 없이 부모 selection 만 토글 — 핵심테스트와 동일한 토글 UX.
+ * 시작은 상단 SelectedMidTestInfoCard 의 Play 버튼에서.
  */
 function CoreSetContent({
   setNumber,
   data,
-  selectedTestId,
+  selection,
   courseId,
-  onSelect,
-  onStartMid,
+  onSelectCore,
+  onSelectMid,
 }: {
   setNumber: 1 | 2 | 3
   data: ExamPrepData
-  selectedTestId: string | null
+  selection: Selection
   courseId: string
-  onSelect: (id: string | null) => void
-  onStartMid: (testId: string | null) => void
+  onSelectCore: (id: string) => void
+  onSelectMid: (setNumber: 1 | 2 | 3) => void
 }) {
   const tests = getCoreTestsBySet(data.coreTests, setNumber)
   const midTest = data.midTests.find((m) => m.setNumber === setNumber)
@@ -285,6 +323,11 @@ function CoreSetContent({
   ]
   const rows = chunkInto(items, 5)
 
+  const isCoreSelected = (id: string) =>
+    selection?.kind === 'core' && selection.id === id
+  const isMidSelected = (setNum: 1 | 2 | 3) =>
+    selection?.kind === 'mid' && selection.setNumber === setNum
+
   return (
     <div className="flex flex-col gap-6">
       {rows.map((row, ri) => (
@@ -295,17 +338,16 @@ function CoreSetContent({
                 key={item.test.id}
                 test={item.test}
                 setTone={setNumber}
-                isSelected={selectedTestId === item.test.id}
-                onClick={() =>
-                  onSelect(selectedTestId === item.test.id ? null : item.test.id)
-                }
+                isSelected={isCoreSelected(item.test.id)}
+                onClick={() => onSelectCore(item.test.id)}
               />
             ) : (
               <MidTestBox
                 key={`mid-${item.mid.setNumber}`}
                 midTest={item.mid}
                 courseId={courseId}
-                onClick={() => onStartMid(item.mid.testId)}
+                isSelected={isMidSelected(item.mid.setNumber)}
+                onClick={() => onSelectMid(item.mid.setNumber)}
               />
             ),
           )}

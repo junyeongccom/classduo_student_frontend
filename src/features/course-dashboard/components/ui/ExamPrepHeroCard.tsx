@@ -44,7 +44,7 @@ export function ExamPrepHeroCard({
           />
         </div>
         <div className="flex w-full flex-col items-center gap-4">
-          <span className="rounded-full bg-white/25 px-12 py-4 text-3xl font-bold tracking-tight">
+          <span className="relative isolate rounded-full bg-white/25 px-12 py-4 text-3xl font-bold tracking-tight">
             {title}
           </span>
           <p className="text-base font-medium text-white/90">{subtitle}</p>

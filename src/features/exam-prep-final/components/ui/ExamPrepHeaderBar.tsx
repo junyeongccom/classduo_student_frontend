@@ -109,7 +109,9 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
   const expDismissKey = `expBarTooltip_dismissed_${courseKey}`
 
   const [isExpTooltipOpen, setIsExpTooltipOpen] = useState(false)
+  const [isBadgePopupOpen, setIsBadgePopupOpen] = useState(false)
   const expTooltipRef = useRef<HTMLDivElement>(null)
+  const badgePopupRef = useRef<HTMLDivElement>(null)
 
   // 첫 진입 시 24시간 dismiss 검사 → 자동 노출
   useEffect(() => {
@@ -130,6 +132,18 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isExpTooltipOpen])
 
+  // 외부 클릭 닫기 — 계급 뱃지 팝업
+  useEffect(() => {
+    if (!isBadgePopupOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (badgePopupRef.current && !badgePopupRef.current.contains(e.target as Node)) {
+        setIsBadgePopupOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [isBadgePopupOpen])
+
   const handleExpDismiss = () => {
     markDismissed(expDismissKey)
     setIsExpTooltipOpen(false)
@@ -140,15 +154,62 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
     ? '경험치를 모으고 A+ 뱃지를 달성하세요!\n추첨 이벤트 예정!'
     : 'Earn XP and unlock the A+ badge!\nRaffle event coming soon!'
   const expTooltipConfirm = isKo ? '확인' : 'OK'
+  const badgePopupTitle = isKo ? '학점 뱃지 시스템' : 'Grade Badge System'
+  const badgePopupSubtitle = isKo
+    ? '각 학점 진급에 필요한 누적 XP'
+    : 'Total XP thresholds for each grade promotion'
   // "240 / 300 XP" — 현재 누적 XP / 다음 등급 도달 임계 XP. A+ 면 "/ MAX".
   const xpDisplay = loading
     ? '…'
     : isMax
       ? `${totalXp.toLocaleString()} / MAX`
       : `${totalXp.toLocaleString()} / ${nextTotal.toLocaleString()}`
+  // 등급 이미지 — public/grade/{rank}.png ('+' URL 인코딩)
+  const rankImageSrc = `/grade/${encodeURIComponent(rankCode)}.png`
 
   return (
     <div className="flex items-center gap-4">
+      {/* 계급 뱃지 — 클릭 시 학점 임계 XP 표 팝업 */}
+      <div ref={badgePopupRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setIsBadgePopupOpen((v) => !v)}
+          className="block h-12 w-12 shrink-0 cursor-pointer transition-opacity hover:opacity-80"
+          aria-label={isKo
+            ? `현재 계급 ${rankCode} — 클릭하여 뱃지 시스템 보기`
+            : `Current grade ${rankCode} — click to see badge system`}
+        >
+          <img
+            src={rankImageSrc}
+            alt={rankCode}
+            draggable={false}
+            className="h-full w-full select-none object-contain"
+          />
+        </button>
+        {isBadgePopupOpen && (
+          <div className="absolute left-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+            <p className="text-sm font-bold text-gray-900 dark:text-gray-50">{badgePopupTitle}</p>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{badgePopupSubtitle}</p>
+            <ul className="mt-3 space-y-1.5">
+              {RANK_THRESHOLDS.map((th) => (
+                <li key={th.from} className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-gray-700 dark:text-gray-200">
+                    {th.from} → {th.to}
+                  </span>
+                  <span
+                    className="font-semibold"
+                    style={{ color: RANK_COLORS[th.to] ?? '#6366F1' }}
+                  >
+                    {th.total.toLocaleString()} XP
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="absolute -top-2 left-6 h-0 w-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-white dark:border-b-gray-900" />
+          </div>
+        )}
+      </div>
+
       {/* XP 진행 바 — "240 / 300 XP" 표기 + 자동 노출/24시간 dismiss 툴팁 */}
       <div ref={expTooltipRef} className="relative flex w-[200px] shrink-0 flex-col gap-1">
         <div className="flex items-baseline justify-end">

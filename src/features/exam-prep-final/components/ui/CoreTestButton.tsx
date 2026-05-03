@@ -66,13 +66,15 @@ export function CoreTestButton({
 
   const masterSrc = getCoreMasterSrc(setTone)
 
-  // 잠긴 상태 — 자물쇠 (선택 불가)
+  // 잠긴 상태 — 자물쇠 (선택 불가).
+  // 비선택 활성 버튼과 동일한 8px 하단 명암을 줘서 모든 핵심테스트 버튼의
+  // 시각적 바닥선이 일치하도록 한다 ("튀어나온 버튼" 디자인 유지).
   if (isLocked) {
     return (
       <button
         type="button"
         disabled
-        className="relative flex h-36 w-36 cursor-not-allowed items-center justify-center rounded-3xl bg-gray-100 dark:bg-gray-800"
+        className="relative flex h-36 w-36 cursor-not-allowed items-center justify-center rounded-3xl bg-gray-100 shadow-[0_8px_0_#D1D5DB] dark:bg-gray-800 dark:shadow-[0_8px_0_#374151]"
         aria-label={`Test ${test.number} locked`}
       >
         <img

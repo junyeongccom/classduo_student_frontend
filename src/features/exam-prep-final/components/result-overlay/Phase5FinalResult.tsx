@@ -166,7 +166,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
               alt="테스트 마스터!"
               aria-hidden
               draggable={false}
-              className="master-stamp-pop pointer-events-none absolute -right-12 -top-6 z-10 h-28 w-28 select-none"
+              className="master-stamp-pop pointer-events-none absolute -right-12 -top-6 z-10 h-28 w-auto max-w-none select-none object-contain opacity-70"
               style={{ animationDelay: '180ms' }}
             />
           )}

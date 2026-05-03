@@ -138,7 +138,7 @@ export function Phase23DailyXp({
           <span className="text-base font-bold tracking-wide text-gray-700">
             연속 보상 강화
           </span>
-          <DayCardsRow currentTier={tier.label} />
+          <DayCardsRow />
           <span className="mt-1 text-lg font-bold text-gray-900">
             1일 뒤 오면 {nextDayXp(postStreak)}XP를 얻어요!
           </span>
@@ -168,7 +168,7 @@ export function Phase23DailyXp({
           <span className="text-base font-bold tracking-wide text-gray-700">
             연속 보상 강화
           </span>
-          <DayCardsRow currentTier={tier.label} />
+          <DayCardsRow />
           <span className="mt-1 text-lg font-bold text-gray-900">
             1일 뒤 오면 {nextDayXp(postStreak)}XP를 얻어요!
           </span>
@@ -204,11 +204,7 @@ function nextDayXp(postStreak: number): number {
   return 40
 }
 
-interface DayCardsRowProps {
-  currentTier: string
-}
-
-function DayCardsRow({ currentTier }: DayCardsRowProps) {
+function DayCardsRow() {
   // 카드 가로 길이 비례: DAY 1 : DAY 2~4 : DAY 5~ = 1 : 3 : 5 (≈ 날짜 범위).
   // 좁은 화면에서 잘리지 않도록 grid template 사용 (1fr 3fr 5fr) + 컨테이너 max-width 100%.
   const cards: { label: string; xp: number; bg: string; text: string; delay: number; flex: string }[] = [
@@ -221,31 +217,27 @@ function DayCardsRow({ currentTier }: DayCardsRowProps) {
       className="grid w-full max-w-[640px] items-end gap-3"
       style={{ gridTemplateColumns: '1fr 3fr 5fr' }}
     >
-      {cards.map((c) => {
-        const isCurrent = c.label === currentTier
-        return (
+      {cards.map((c) => (
+        <div
+          key={c.label}
+          className="flex min-w-0 flex-col items-start gap-2"
+          style={{ fontFamily: 'Pretendard, sans-serif' }}
+        >
+          <span className="pl-1 text-sm font-bold tracking-wide text-gray-700">
+            {c.label}
+          </span>
           <div
-            key={c.label}
-            className="flex min-w-0 flex-col items-start gap-2"
-            style={{ fontFamily: 'Pretendard, sans-serif' }}
+            className="dar-day-card is-in flex h-14 w-full items-center justify-center rounded-2xl text-xl font-bold"
+            style={{
+              backgroundColor: c.bg,
+              color: c.text,
+              animationDelay: `${c.delay}ms`,
+            }}
           >
-            <span className="pl-1 text-sm font-bold tracking-wide text-gray-700">
-              {c.label}
-            </span>
-            <div
-              className="dar-day-card is-in flex h-14 w-full items-center justify-center rounded-2xl text-xl font-bold"
-              style={{
-                backgroundColor: c.bg,
-                color: c.text,
-                boxShadow: isCurrent ? '0 0 0 2px rgba(110, 91, 226, 0.35)' : 'none',
-                animationDelay: `${c.delay}ms`,
-              }}
-            >
-              {c.xp}
-            </div>
+            {c.xp}
           </div>
-        )
-      })}
+        </div>
+      ))}
     </div>
   )
 }

@@ -72,15 +72,17 @@ function generateBooks(count: number): BookSlot[] {
       bottom: 0.18 + (Math.random() - 0.5) * 0.04, // 책장 바닥 근처
       flyDx: (Math.random() - 0.5) * 24, // ±12px 횡 드리프트 (책장 안쪽)
       flyDy: -8 - Math.random() * 14, // -8 ~ -22px (위로, 책장 천장 안쪽)
-      flySpin: (Math.random() < 0.5 ? -1 : 1) * (260 + Math.random() * 320), // ±260~580deg
-      flyDelay: Math.random() * 280, // 0 ~ 280ms 시차
-      flyDur: 900 + Math.random() * 500, // 900 ~ 1400ms
+      // 360° 의 정수배 (1 또는 2 회전) — 종료 시 base 회전과 시각적으로 일치 → 클래스 제거
+      // 시 스냅 없음. 부호로 시계/반시계 다양화.
+      flySpin: (Math.random() < 0.5 ? -1 : 1) * (Math.random() < 0.5 ? 360 : 720),
+      flyDelay: Math.random() * 60, // 0 ~ 60ms — 거의 동시에 움직이며 시차는 미세하게만
+      flyDur: 580 + Math.random() * 180, // 580 ~ 760ms — 빠르게 휙
     }
   })
 }
 
 /** flying state 를 false 로 되돌리는 안전 timeout — 가장 늦게 끝나는 책의 (delay + dur) 보다 길게. */
-const FLY_RESET_MS = 1800
+const FLY_RESET_MS = 900
 
 export function BookshelfWidget({ currentStreak, size = 64, className }: BookshelfWidgetProps) {
   const shelfBg = resolveShelfBg(currentStreak)

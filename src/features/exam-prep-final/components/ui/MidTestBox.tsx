@@ -1,12 +1,13 @@
 /**
  * @file MidTestBox.tsx
  * @description 중간 테스트 책 버튼 — 핵심 테스트 그리드 마지막 셀
- *   stage state machine (locked → unlocking → pages → opening → navigate)
+ *   stage state machine (locked → unlocking → pages)
  *   - locked: 책 + 자물쇠 + 4-piece 체인 (사슬 4개 분리 PNG)
  *   - unlocking: 1.6s — 체인 fly-off, 자물쇠 wobble→낙하, 책 흔들림, sparkle×5
- *   - pages: 책만, hover 시 표지 살짝 열림 + glow 비침
- *   - opening: 1.4s — 표지 활짝 열림(rotateY -112°), glow, sparkle×5 → 라우팅
+ *   - pages: 책만, hover/선택 시 표지 살짝 열림 + glow 비침
  *   - mastered: MASTER 도장
+ *   클릭 시 책이 펼쳐지는 모션 없음 — 부모에서 선택 상태(isSelected)를 토글하면
+ *   호버와 동일한 표지 들림 + glow 가 유지됨. 다시 클릭 → 닫힘.
  *   localStorage 플래그로 첫 진입 1회만 자동 잠금풀림 재생.
  * @module features/exam-prep-final/components/ui
  * @dependencies globals.css mid-* keyframes, public/midtest/*.png
@@ -22,10 +23,12 @@ interface MidTestBoxProps {
   midTest: MidTest
   /** 첫 진입 unlocking 애니메이션 1회 재생 키용 (localStorage scope) */
   courseId: string
+  /** 선택(눌림) 상태 — 부모가 핵심테스트 선택과 동일하게 토글 관리 */
+  isSelected?: boolean
   onClick?: () => void
 }
 
-type Stage = 'locked' | 'unlocking' | 'pages' | 'opening'
+type Stage = 'locked' | 'unlocking' | 'pages'
 
 /** 세트별 PNG 자산 매핑 (public/midtest/) */
 const SET_ASSETS: Record<
@@ -61,7 +64,6 @@ const CHAINS = {
 }
 
 const UNLOCK_MS = 1600
-const OPEN_MS = 1400
 
 /**
  * 잠금 해제 모션은 "잠겨있던 상태에서 풀린 시점" 을 잡아서 한 번 재생한다.
@@ -77,7 +79,7 @@ const PREV_UNLOCKED_KEY = (courseId: string, setNumber: number) =>
 const LEGACY_SEEN_KEY = (courseId: string, setNumber: number) =>
   `aplus-mid-unlock-seen-${courseId}-${setNumber}`
 
-export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
+export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: MidTestBoxProps) {
   const assets = SET_ASSETS[midTest.setNumber]
   const isMastered = midTest.status === 'mastered'
 
@@ -158,23 +160,27 @@ export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
     return () => clearTimeout(t)
   }, [midTest.unlocked, midTest.setNumber, isMastered, courseId])
 
-  // pages 단계에서만 클릭 허용 (locked/unlocking/opening 중에는 차단).
-  const isClickable = stage === 'pages' && !!onClick && !isMastered
+  // pages 단계면 클릭 허용 (locked/unlocking 중에는 차단).
+  // 마스터 후에도 다시풀기를 위해 선택 가능 — 핵심테스트와 동일 정책.
+  const isClickable = stage === 'pages' && !!onClick
 
   const ariaLabel = (() => {
-    if (isMastered) return `Set ${midTest.setNumber} 중간 테스트 — 마스터 완료`
     if (stage === 'locked' || stage === 'unlocking') return `Set ${midTest.setNumber} 중간 테스트 — 잠김`
-    if (stage === 'opening') return `Set ${midTest.setNumber} 중간 테스트 — 펼치는 중`
-    return `Set ${midTest.setNumber} 중간 테스트 — 탭하면 펼쳐져요`
+    if (isMastered) {
+      return isSelected
+        ? `Set ${midTest.setNumber} 중간 테스트 — 마스터 완료, 선택됨 (다시 누르면 닫힘)`
+        : `Set ${midTest.setNumber} 중간 테스트 — 마스터 완료, 탭하여 다시 풀기`
+    }
+    return isSelected
+      ? `Set ${midTest.setNumber} 중간 테스트 — 선택됨 (다시 누르면 닫힘)`
+      : `Set ${midTest.setNumber} 중간 테스트 — 탭하면 펼쳐져요`
   })()
 
   const handleClick = () => {
     if (!isClickable) return
-    // pages → opening → 라우팅
-    setStage('opening')
-    setTimeout(() => {
-      onClick?.()
-    }, OPEN_MS)
+    // 책 펼침 모션 없이 부모로 토글 신호만 전달 — 부모가 isSelected 를 토글해서
+    // 호버와 동일한 표지 들림 + glow 가 유지되게 한다.
+    onClick?.()
   }
 
   return (
@@ -194,7 +200,9 @@ export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
       onClick={handleClick}
       disabled={!isClickable}
       data-stage={stage}
+      data-selected={isSelected ? 'true' : 'false'}
       aria-label={ariaLabel}
+      aria-pressed={isClickable ? isSelected : undefined}
       className={cn(
         'mid-scene group/midbook relative h-44 w-44 disabled:cursor-default',
         isClickable && 'cursor-pointer',
@@ -220,7 +228,6 @@ export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
           style={{
             background:
               'radial-gradient(ellipse at center, rgba(255,255,255,0.95) 0%, rgba(255,247,210,0.7) 35%, rgba(255,235,150,0.35) 60%, rgba(255,235,150,0) 100%)',
-            filter: 'blur(6px)',
           }}
         />
         {/* book-cover (표지) — pages stage 에선 기본 살짝 들린 상태,
@@ -298,7 +305,6 @@ export function MidTestBox({ midTest, courseId, onClick }: MidTestBoxProps) {
             ...p,
             background:
               'radial-gradient(circle, #FFE89A 0%, #FFD86A 40%, rgba(255,232,154,0) 80%)',
-            boxShadow: '0 0 8px 2px rgba(255,232,154,0.7)',
           }}
         />
       ))}

@@ -25,9 +25,9 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
   const formattedExamDate = formatKoreanDate(data.examDate)
 
   return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+    <div className="grid h-full grid-cols-1 gap-5 md:grid-cols-3">
       {/* D-day card (보라 그라데이션) */}
-      <div className="relative min-h-[200px] overflow-hidden rounded-3xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] px-7 py-7 text-white shadow-md shadow-indigo-500/20">
+      <div className="relative h-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] px-7 py-7 text-white shadow-md shadow-indigo-500/20">
         <p className="mb-3 text-sm font-medium uppercase tracking-wider opacity-80">
           {t('examPrepFinal.ddayCardTitle')}
         </p>
@@ -39,7 +39,7 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
       </div>
 
       {/* Mastery progress card */}
-      <div className="flex min-h-[200px] flex-col justify-between rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex h-full flex-col justify-between rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
         <div>
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
             {t('examPrepFinal.masteryCardTitle')}
@@ -66,7 +66,7 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
       </div>
 
       {/* Recommended card */}
-      <div className="flex min-h-[200px] flex-col rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex h-full flex-col rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
           {t('examPrepFinal.recommendedTitle')}
         </p>

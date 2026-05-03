@@ -394,6 +394,9 @@
     pointer-events: none;
     border-radius: inherit;
     overflow: hidden;
+    /* "기말 대비 학습" 둥근 버튼 (.relative.z-10 안의 span, isolate 처리) 보다
+       항상 뒤로 가야 함 — z-index 명시. */
+    z-index: 0;
   }
 
   .exam-hero-shimmer::after {
@@ -451,9 +454,7 @@
 .mid-scene .mid-cover {
   transform-origin: 8% 50%;
   transform: rotateY(-24deg) translateX(-3px);
-  box-shadow: 4px 2px 8px rgba(0, 0, 0, 0.12);
-  transition: transform 380ms cubic-bezier(.34, 1.4, .5, 1),
-              box-shadow 380ms ease-out;
+  transition: transform 380ms cubic-bezier(.34, 1.4, .5, 1);
   backface-visibility: visible;
   will-change: transform;
 }
@@ -461,14 +462,17 @@
   transition: opacity 380ms ease-out;
 }
 
-/* Pages stage hover — cover 살짝 더 들림 + glow (locked/unlocking 에선 hover 무효) */
+/* Pages stage hover / 선택(눌림) — cover 살짝 더 들림 + glow.
+   data-selected="true" 는 부모(ExamPrepContainer)가 핵심테스트와 동일하게 토글 관리.
+   locked/unlocking 단계에서는 hover/selected 모두 무효. */
 .mid-scene[data-stage="pages"]:hover .mid-cover,
-.mid-scene[data-stage="pages"]:focus-visible .mid-cover {
+.mid-scene[data-stage="pages"]:focus-visible .mid-cover,
+.mid-scene[data-stage="pages"][data-selected="true"] .mid-cover {
   transform: rotateY(-34deg) translateX(-4.5px);
-  box-shadow: 7px 2.5px 12px rgba(0, 0, 0, 0.17);
 }
 .mid-scene[data-stage="pages"]:hover .mid-glow,
-.mid-scene[data-stage="pages"]:focus-visible .mid-glow {
+.mid-scene[data-stage="pages"]:focus-visible .mid-glow,
+.mid-scene[data-stage="pages"][data-selected="true"] .mid-glow {
   opacity: 1;
 }
 
@@ -511,27 +515,6 @@
 /* Stage 2 pages — chains/lock fully gone (animations settled) */
 .mid-scene[data-stage="pages"] .mid-chain,
 .mid-scene[data-stage="pages"] .mid-lock { opacity: 0; pointer-events: none; }
-
-/* Stage 3 opening — cover swings open, glow fades in, sparkles */
-.mid-scene[data-stage="opening"] .mid-cover {
-  animation: mid-cover-open 1.4s cubic-bezier(.34,1.2,.64,1) forwards;
-}
-.mid-scene[data-stage="opening"] .mid-glow {
-  animation: mid-glow-fade 1.4s ease-out forwards;
-}
-.mid-scene[data-stage="opening"] .mid-book {
-  animation: mid-book-pop 1.4s ease-out;
-}
-.mid-scene[data-stage="opening"] .mid-chain,
-.mid-scene[data-stage="opening"] .mid-lock { opacity: 0; pointer-events: none; }
-.mid-scene[data-stage="opening"] .mid-sparkle {
-  animation: mid-sparkle 1.2s ease-out forwards;
-}
-.mid-scene[data-stage="opening"] .mid-sparkle-1 { animation-delay: 0.20s; }
-.mid-scene[data-stage="opening"] .mid-sparkle-2 { animation-delay: 0.32s; }
-.mid-scene[data-stage="opening"] .mid-sparkle-3 { animation-delay: 0.42s; }
-.mid-scene[data-stage="opening"] .mid-sparkle-4 { animation-delay: 0.28s; }
-.mid-scene[data-stage="opening"] .mid-sparkle-5 { animation-delay: 0.36s; }
 
 /* Chain fly-off keyframes — 0~45% rattle, 45~100% fly + fade */
 @keyframes mid-chain-tl {
@@ -717,7 +700,6 @@
   margin-top: -8px;
   border-radius: 9999px;
   background: #6E5BE2;
-  box-shadow: 0 0 12px rgba(110, 91, 226, 0.6);
   will-change: transform, opacity;
   animation: xp-drop-fade 2100ms ease-in forwards;
 }
@@ -903,42 +885,28 @@
 /* ─────────────────────────────────────────────────────────
    Bookshelf 부드러운 비행 — 클릭 시 책들이 위로 솟구쳐 회전하며 떠다니다 안착.
    각 책의 --fly-dx/dy/spin 은 React 가 무작위로 부여 → 책마다 다른 궤적.
-   easing 은 "위로 부드럽게 떠올랐다 살짝 머문 뒤 천천히 안착" 곡선.
+   회전은 단조 증가(0→spin) 하고 spin 은 360° 정수배 → 종료 시 base 회전과
+   시각적 일치 → 클래스 제거 시 스냅 없음. 키프레임은 3개로 압축 → 보간 자연스럽게.
    ───────────────────────────────────────────────────────── */
 @keyframes bookshelf-fly {
   0%   {
     transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg));
   }
-  20%  {
-    transform: translate(
-      calc(var(--book-x, 0px) + calc(var(--fly-dx, 0px) * 0.55)),
-      calc(var(--fly-dy, -32px) * 0.5)
-    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 0.25)));
-  }
-  40%  {
+  50%  {
     transform: translate(
       calc(var(--book-x, 0px) + var(--fly-dx, 0px)),
       var(--fly-dy, -32px)
-    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 0.6)));
-  }
-  60%  {
-    transform: translate(
-      calc(var(--book-x, 0px) - calc(var(--fly-dx, 0px) * 0.5)),
-      calc(var(--fly-dy, -32px) * 0.85)
-    ) rotate(calc(var(--book-rot, 0deg) + var(--fly-spin, 360deg)));
-  }
-  80%  {
-    transform: translate(
-      calc(var(--book-x, 0px) + calc(var(--fly-dx, 0px) * 0.25)),
-      calc(var(--fly-dy, -32px) * 0.35)
-    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 1.3)));
+    ) rotate(calc(var(--book-rot, 0deg) + calc(var(--fly-spin, 360deg) * 0.5)));
   }
   100% {
-    transform: translate(var(--book-x, 0px), 0) rotate(var(--book-rot, 0deg));
+    transform: translate(var(--book-x, 0px), 0)
+      rotate(calc(var(--book-rot, 0deg) + var(--fly-spin, 360deg)));
   }
 }
 .bookshelf-fly .bookshelf-book {
-  animation: bookshelf-fly var(--fly-dur, 1100ms) cubic-bezier(.34, 1.2, .5, 1) var(--fly-delay, 0ms) both;
+  /* ease-in-out 단일 곡선 — 위로 빠르게 떠올랐다 정점 부드럽게 지나 안착 */
+  animation: bookshelf-fly var(--fly-dur, 700ms) ease-in-out var(--fly-delay, 0ms) both;
+  will-change: transform;
 }
 
 /* ─────────────────────────────────────────────────────────
