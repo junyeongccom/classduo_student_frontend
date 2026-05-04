@@ -71,7 +71,7 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
   )
 
   return (
-    <div className="relative flex h-full items-stretch justify-between gap-6 overflow-hidden rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
+    <div className="relative flex min-h-[200px] items-stretch justify-between gap-6 rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
       {/* 좌측 — flex-col + justify-between 으로 박스 높이 안에서 균형 분산 */}
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
         <div>
