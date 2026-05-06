@@ -375,7 +375,7 @@ export function StudentQuizCard({
               </div>
             )}
 
-            {/* 선지별 분석 (객관식) — 짧은 한 줄 요약. 마크다운 헤더가 들어있을 수 있어 MarkdownMessage 로 렌더링. */}
+            {/* 선지별 분석 (객관식) — 짧은 한 줄 텍스트 (마크다운 X). 기존 동작 그대로. */}
             {isMultipleChoice &&
               quiz.choices.length > 0 &&
               quiz.choices.some((c) => c.choice_explanation) && (
@@ -383,7 +383,7 @@ export function StudentQuizCard({
                   <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-2">
                     {t('choiceAnalysis')}
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {quiz.choices.map((choice, idx) => (
                       <div key={choice.choice_id ?? `analysis-${idx}`} className="text-xs leading-relaxed">
                         <span
@@ -395,13 +395,9 @@ export function StudentQuizCard({
                         >
                           {choiceLabel(idx)}:
                         </span>
-                        {choice.choice_explanation ? (
-                          <div className="inline-block align-top text-gray-600 dark:text-gray-300">
-                            <MarkdownMessage markdown={choice.choice_explanation} />
-                          </div>
-                        ) : (
-                          <span className="text-gray-600 dark:text-gray-300">—</span>
-                        )}
+                        <span className="text-gray-600 dark:text-gray-300">
+                          {choice.choice_explanation || '—'}
+                        </span>
                       </div>
                     ))}
                   </div>

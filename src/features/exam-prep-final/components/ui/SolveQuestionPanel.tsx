@@ -360,51 +360,49 @@ export function SolveQuestionPanel({
               ? explanationEn
               : explanationKo
             if (!explanation || Object.keys(explanation).length === 0) return null
+            // 선지별 짧은 해설 (opt0~3) — 일반 텍스트로 표시 (마크다운 X). 기존 동작 그대로.
+            const optEntries = Object.entries(explanation).filter(([k]) => k.startsWith('opt'))
+            // 정답 기반 마크다운 3섹션 — `detailed` 키. 없으면 토글 미표시.
+            const detailedText = typeof explanation['detailed'] === 'string'
+              ? (explanation['detailed'] as string)
+              : null
             return (
               <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                   {isEn ? 'Explanation' : '해설'}
                 </p>
-                {/* 1단계: 선지별 짧은 라벨 — 마크다운 헤더가 들어있을 수 있어 MarkdownMessage 로 렌더 */}
-                {Object.entries(explanation).map(([key, val]) => (
-                  <div key={key} className="mb-2 last:mb-0">
+                {/* 1단계: 선지별 짧은 해설 (한 줄, 일반 텍스트) */}
+                {optEntries.map(([key, val]) => (
+                  <p key={key} className="mb-1 last:mb-0">
                     <span className="font-semibold">
-                      {key.startsWith('opt')
-                        ? OPTION_LABELS[parseInt(key.slice(3), 10)]
-                        : key}
-                      :
+                      {OPTION_LABELS[parseInt(key.slice(3), 10)]}:
                     </span>{' '}
-                    <MarkdownMessage markdown={typeof val === 'string' ? val : String(val ?? '')} className="inline-block align-top" />
-                  </div>
+                    {typeof val === 'string' ? val : String(val ?? '')}
+                  </p>
                 ))}
-                {/* 2단계: "상세 설명" 토글 — 정답 선지의 상세 분석을 별도로 강조 (사용자 정책: 학습 가이드) */}
-                {(() => {
-                  const correctIdxStr = `opt${correctIdx}`
-                  const correctVal = explanation[correctIdxStr]
-                  if (!correctVal || typeof correctVal !== 'string') return null
-                  return (
-                    <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-                      <button
-                        type="button"
-                        onClick={() => setShowDetailedExplanation((v) => !v)}
-                        className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer"
-                        aria-expanded={showDetailedExplanation}
-                      >
-                        {showDetailedExplanation ? (
-                          <ChevronUp className="h-3 w-3" />
-                        ) : (
-                          <ChevronDown className="h-3 w-3" />
-                        )}
-                        {showDetailedExplanation ? detailedExplanationHideLabel : detailedExplanationLabel}
-                      </button>
-                      {showDetailedExplanation && (
-                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100 animate-in fade-in slide-in-from-top-1 duration-200">
-                          <MarkdownMessage markdown={correctVal} />
-                        </div>
+                {/* 2단계: 상세 설명 토글 — explanation.detailed 가 있을 때만 노출 (마크다운 3섹션 렌더). */}
+                {detailedText && (
+                  <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDetailedExplanation((v) => !v)}
+                      className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer"
+                      aria-expanded={showDetailedExplanation}
+                    >
+                      {showDetailedExplanation ? (
+                        <ChevronUp className="h-3 w-3" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3" />
                       )}
-                    </div>
-                  )
-                })()}
+                      {showDetailedExplanation ? detailedExplanationHideLabel : detailedExplanationLabel}
+                    </button>
+                    {showDetailedExplanation && (
+                      <div className="mt-2 text-sm text-gray-900 dark:text-gray-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <MarkdownMessage markdown={detailedText} />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })()}
