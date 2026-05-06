@@ -36,11 +36,18 @@ export interface CoreTestQuestionItemDto {
   id: string
   seq: number
   stem: string
+  /** 영문 stem (한영 토글 시 사용. 백필 전 데이터는 null) */
+  stem_eng?: string | null
   options: string[]
+  /** 영문 선지 배열 (한국어와 1:1 대응, 정답 인덱스 동일) */
+  options_eng?: string[] | null
   /** "0"~"3" 문자열 인덱스 */
   answer: string
   explanation: Record<string, string>
+  /** 영문 해설 (선지별 키 opt0~opt3, 한국어와 동일 구조) */
+  explanation_eng?: Record<string, string> | null
   hint?: string | null
+  hint_eng?: string | null
   source_ref?: { source_pages?: number[]; source_chunks?: number[] } | null
   /** 강의자료 패널 점프 대상 lecture_id (core: 부모 test 의 lecture, mid: 원본 question lecture, final: LLM 추론) */
   source_lecture_id?: string | null
@@ -219,6 +226,8 @@ export interface GradeSingleResponseDto {
   is_correct: boolean
   correct_answer: string  // "0"~"3"
   explanation: Record<string, string> | null
+  /** 영문 해설 (백필 전 데이터는 null) */
+  explanation_eng?: Record<string, string> | null
   mastery: MasteryChangeDto
   hint_used: boolean
   graded_count: number

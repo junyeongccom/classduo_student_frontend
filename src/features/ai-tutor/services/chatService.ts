@@ -301,6 +301,24 @@ export const chatService = {
   },
 
   /**
+   * 대화형 학습 세션 만족도 평가 저장 (별점 1~5).
+   * 세션당 1회만 기록 — 이미 평가된 세션이면 updated=false.
+   */
+  async updateSessionSatisfaction(
+    sessionId: string,
+    rating: number
+  ): Promise<{ data: { updated: boolean; session_id: string; rating?: number; reason?: string } | null; error: any }> {
+    return apiRequest<{ updated: boolean; session_id: string; rating?: number; reason?: string }>(
+      `/ai-tutor/sessions/${sessionId}/satisfaction`,
+      {
+        method: 'PATCH',
+        body: { rating },
+        auth: true,
+      }
+    )
+  },
+
+  /**
    * 채팅 세션 검색
    */
   async searchSessions(

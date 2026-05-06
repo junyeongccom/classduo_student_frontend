@@ -17,6 +17,8 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useI18n } from '@/shared/i18n/I18nProvider'
+import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 
 /* ───────────── 타입 ───────────── */
 
@@ -125,7 +127,12 @@ export function StudentQuizCard({
   })
   const [isSubmitted, setIsSubmitted] = useState(() => isCorrect !== null)
   const [showAnswer, setShowAnswer] = useState(false)
+  // "해설 보기" 안에서 다시 펼치는 상세 설명 토글 (마크다운 렌더링)
+  const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
   const t = useTranslations('lectureStudy.quiz')
+  const { locale } = useI18n()
+  const detailedExplanationLabel = locale === 'en' ? 'Detailed Explanation' : '상세 설명'
+  const detailedExplanationHideLabel = locale === 'en' ? 'Hide Detailed Explanation' : '상세 설명 닫기'
 
   const badge = QUIZ_TYPE_BADGE[quiz.quiz_type]
 
@@ -368,19 +375,7 @@ export function StudentQuizCard({
               </div>
             )}
 
-            {/* 해설 */}
-            {quiz.explanation && (
-              <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
-                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
-                  {t('explanation')}
-                </p>
-                <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line leading-relaxed">
-                  {quiz.explanation}
-                </p>
-              </div>
-            )}
-
-            {/* 선지별 분석 (객관식) */}
+            {/* 선지별 분석 (객관식) — 짧은 한 줄 요약. 마크다운 헤더가 들어있을 수 있어 MarkdownMessage 로 렌더링. */}
             {isMultipleChoice &&
               quiz.choices.length > 0 &&
               quiz.choices.some((c) => c.choice_explanation) && (
@@ -388,7 +383,7 @@ export function StudentQuizCard({
                   <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-2">
                     {t('choiceAnalysis')}
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {quiz.choices.map((choice, idx) => (
                       <div key={choice.choice_id ?? `analysis-${idx}`} className="text-xs leading-relaxed">
                         <span
@@ -400,14 +395,42 @@ export function StudentQuizCard({
                         >
                           {choiceLabel(idx)}:
                         </span>
-                        <span className="text-gray-600 dark:text-gray-300">
-                          {choice.choice_explanation || '—'}
-                        </span>
+                        {choice.choice_explanation ? (
+                          <div className="inline-block align-top text-gray-600 dark:text-gray-300">
+                            <MarkdownMessage markdown={choice.choice_explanation} />
+                          </div>
+                        ) : (
+                          <span className="text-gray-600 dark:text-gray-300">—</span>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+
+            {/* 상세 설명 — 2단계 토글. 마크다운 헤더 3섹션 (오답 원인 / 혼동되기 쉬운 개념 / 추가 학습 방향) 렌더링. */}
+            {quiz.explanation && (
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDetailedExplanation((v) => !v)}
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer"
+                  aria-expanded={showDetailedExplanation}
+                >
+                  {showDetailedExplanation ? (
+                    <ChevronUp className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
+                  {showDetailedExplanation ? detailedExplanationHideLabel : detailedExplanationLabel}
+                </button>
+                {showDetailedExplanation && (
+                  <div className="mt-2 text-sm text-gray-900 dark:text-gray-100 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
+                    <MarkdownMessage markdown={quiz.explanation} />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 추가 콘텐츠 (출처 버튼 등) */}
             {renderAnswerExtra}

@@ -11,6 +11,8 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Check,
   X as XIcon,
   FileText,
@@ -19,6 +21,8 @@ import {
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
+import { useI18n } from '@/shared/i18n/I18nProvider'
+import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { HintBulbButton } from './HintBulbButton'
 import type {
   CoreTestQuestionItemDto,
@@ -89,11 +93,25 @@ export function SolveQuestionPanel({
   onFinish,
 }: SolveQuestionPanelProps) {
   const t = useTranslations()
+  const { locale } = useI18n()
+  const isEn = locale === 'en'
+  // 한영 토글에 따라 표시할 필드 선택. 영문 필드가 비어있으면 한국어 fallback.
+  const displayStem = (isEn && question.stem_eng) ? question.stem_eng : question.stem
+  const displayOptions: string[] = (
+    isEn && Array.isArray(question.options_eng) && question.options_eng.length === question.options.length
+      ? question.options_eng
+      : question.options
+  )
+  const displayHint = (isEn && question.hint_eng) ? question.hint_eng : question.hint
   // 힌트 진행률 0~100 (% 단위) — RAF 로 매 프레임 갱신, 끊김 없음
   const [hintProgressPct, setHintProgressPct] = useState(0)
   const hintStartRef = useRef<number | null>(null)
   // 해설보기 토글 — currentSeq 가 바뀌면 자동 닫힘
   const [showExplanation, setShowExplanation] = useState(false)
+  // "상세 설명" 2단계 토글 (해설 영역 안에 마크다운 헤더 3섹션 렌더)
+  const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
+  const detailedExplanationLabel = isEn ? 'Detailed Explanation' : '상세 설명'
+  const detailedExplanationHideLabel = isEn ? 'Hide Detailed Explanation' : '상세 설명 닫기'
   // 오답 시 shake 모션 중 여부 — true 동안엔 정답 표시를 보류
   const [shaking, setShaking] = useState(false)
   const seqRef = useRef(currentSeq)
@@ -105,6 +123,7 @@ export function SolveQuestionPanel({
       setHintProgressPct(0)
       hintStartRef.current = null
       setShowExplanation(false)
+      setShowDetailedExplanation(false)
       setShaking(false)
     }
   }, [currentSeq])
@@ -235,9 +254,9 @@ export function SolveQuestionPanel({
           />
         )}
 
-        {/* 문제 stem — 상단 메타(단일선택/숙련도 카운트)는 사이드바로 통합 */}
+        {/* 문제 stem — 상단 메타(단일선택/숙련도 카운트)는 사이드바로 통합. 한영 토글에 따라 다국어 표시. */}
         <h1 className="text-3xl font-bold leading-snug text-gray-900 dark:text-gray-50">
-          {question.stem}
+          {displayStem}
         </h1>
 
         {/* 채점 결과 배지 영역 — 항상 고정 높이 (h-9 mt-5) 로 비워둬서 채점 후 높낮이 변동 방지 */}
@@ -262,9 +281,9 @@ export function SolveQuestionPanel({
           )}
         </div>
 
-        {/* 선지 — 그림자 추가, 정답=연보라 outline, 오답=빨강 + shake-then-reveal */}
+        {/* 선지 — 그림자 추가, 정답=연보라 outline, 오답=빨강 + shake-then-reveal. 한영 토글 시 영문 선지 표시 */}
         <div className="mt-6 flex flex-col gap-3">
-          {question.options.map((opt, idx) => {
+          {displayOptions.map((opt, idx) => {
             const label = OPTION_LABELS[idx] ?? String.fromCharCode(65 + idx)
             const isSelected = selectedChoice === idx
             const isHintDisabled = hintDisabledOption === idx
@@ -332,27 +351,60 @@ export function SolveQuestionPanel({
           })}
         </div>
 
-        {/* 해설 — 채점 후엔 graded.explanation, master 락이면 question.explanation 사용 */}
+        {/* 해설 — 채점 후엔 graded.explanation, master 락이면 question.explanation 사용. 한영 토글 시 _eng 우선. */}
         {showExplanation &&
           (() => {
-            const explanation = graded?.explanation ?? question.explanation
+            const explanationKo = graded?.explanation ?? question.explanation
+            const explanationEn = graded?.explanation_eng ?? question.explanation_eng
+            const explanation = (isEn && explanationEn && Object.keys(explanationEn).length > 0)
+              ? explanationEn
+              : explanationKo
             if (!explanation || Object.keys(explanation).length === 0) return null
             return (
               <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  해설
+                  {isEn ? 'Explanation' : '해설'}
                 </p>
+                {/* 1단계: 선지별 짧은 라벨 — 마크다운 헤더가 들어있을 수 있어 MarkdownMessage 로 렌더 */}
                 {Object.entries(explanation).map(([key, val]) => (
-                  <p key={key} className="mb-1 last:mb-0">
+                  <div key={key} className="mb-2 last:mb-0">
                     <span className="font-semibold">
                       {key.startsWith('opt')
                         ? OPTION_LABELS[parseInt(key.slice(3), 10)]
                         : key}
                       :
                     </span>{' '}
-                    {val}
-                  </p>
+                    <MarkdownMessage markdown={typeof val === 'string' ? val : String(val ?? '')} className="inline-block align-top" />
+                  </div>
                 ))}
+                {/* 2단계: "상세 설명" 토글 — 정답 선지의 상세 분석을 별도로 강조 (사용자 정책: 학습 가이드) */}
+                {(() => {
+                  const correctIdxStr = `opt${correctIdx}`
+                  const correctVal = explanation[correctIdxStr]
+                  if (!correctVal || typeof correctVal !== 'string') return null
+                  return (
+                    <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowDetailedExplanation((v) => !v)}
+                        className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer"
+                        aria-expanded={showDetailedExplanation}
+                      >
+                        {showDetailedExplanation ? (
+                          <ChevronUp className="h-3 w-3" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3" />
+                        )}
+                        {showDetailedExplanation ? detailedExplanationHideLabel : detailedExplanationLabel}
+                      </button>
+                      {showDetailedExplanation && (
+                        <div className="mt-2 text-sm text-gray-900 dark:text-gray-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <MarkdownMessage markdown={correctVal} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
               </div>
             )
           })()}
