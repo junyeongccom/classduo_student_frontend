@@ -398,7 +398,7 @@ export function SolveQuestionPanel({
                     </button>
                     {showDetailedExplanation && (
                       <div className="mt-2 text-sm text-gray-900 dark:text-gray-100 animate-in fade-in slide-in-from-top-1 duration-200">
-                        <MarkdownMessage markdown={detailedText} />
+                        <MarkdownMessage markdown={detailedText} headingSize="compact" />
                       </div>
                     )}
                   </div>

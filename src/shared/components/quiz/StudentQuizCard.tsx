@@ -422,7 +422,7 @@ export function StudentQuizCard({
                 </button>
                 {showDetailedExplanation && (
                   <div className="mt-2 text-sm text-gray-900 dark:text-gray-100 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
-                    <MarkdownMessage markdown={quiz.explanation} />
+                    <MarkdownMessage markdown={quiz.explanation} headingSize="compact" />
                   </div>
                 )}
               </div>

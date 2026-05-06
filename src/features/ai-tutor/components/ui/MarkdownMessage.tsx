@@ -9,9 +9,16 @@ import katex from 'katex'
 type MarkdownMessageProps = {
   markdown: string
   className?: string
+  /**
+   * 헤더 크기 모드.
+   * - 'default': 일반 답변/문서용 (h2 = text-lg)
+   * - 'compact': 인라인 영역용 (퀴즈 상세 설명 등). 헤더가 작고 위/아래 마진 작음.
+   */
+  headingSize?: 'default' | 'compact'
 }
 
-export function MarkdownMessage({ markdown, className }: MarkdownMessageProps) {
+export function MarkdownMessage({ markdown, className, headingSize = 'default' }: MarkdownMessageProps) {
+  const isCompact = headingSize === 'compact'
   return (
     <div className={className}>
       <ReactMarkdown
@@ -19,13 +26,22 @@ export function MarkdownMessage({ markdown, className }: MarkdownMessageProps) {
         // NOTE: do not enable raw HTML rendering for safety
         components={{
           h1: ({ children }) => (
-            <h1 className="text-lg font-bold mb-2.5 mt-4 first:mt-0 text-gray-900 dark:text-gray-100">{children}</h1>
+            <h1 className={isCompact
+              ? "text-sm font-bold mb-1 mt-2 first:mt-0 text-gray-900 dark:text-gray-100"
+              : "text-lg font-bold mb-2.5 mt-4 first:mt-0 text-gray-900 dark:text-gray-100"
+            }>{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">{children}</h2>
+            <h2 className={isCompact
+              ? "mb-1 mt-2 first:mt-0 text-sm font-semibold text-gray-900 dark:text-gray-100"
+              : "mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100"
+            }>{children}</h2>
           ),
           h3: ({ children }) => (
-            <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-gray-100">{children}</h3>
+            <h3 className={isCompact
+              ? "mb-1 mt-2 first:mt-0 text-xs font-semibold text-gray-900 dark:text-gray-100"
+              : "mb-2 text-base font-semibold text-gray-900 dark:text-gray-100"
+            }>{children}</h3>
           ),
           p: ({ children }) => <p className="mb-2 last:mb-0 leading-snug text-sm">{children}</p>,
           strong: ({ children }) => <strong className="font-semibold text-gray-900 dark:text-gray-100">{children}</strong>,
