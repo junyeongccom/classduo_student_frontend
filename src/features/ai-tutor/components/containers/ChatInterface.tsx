@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl'
 import { Loader2, Search, ArrowUp, Sparkles } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
-// import { useTrackPendingDialogueFeedback } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'  // 일시 비활성화 (위 NOTE 참조)
+import { useTrackPendingDialogueFeedback } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'
 import { chatAnalytics } from '@/shared/lib/analytics'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -86,12 +86,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
 
-  // 대화형 학습 만족도 평가 — user 메시지 ≥1 인 active session 을 sessionStorage 에 등록.
-  // 이후 사용자가 dialogue 페이지를 떠나면 studyspace layout 의 모달 트리거가 평가 모달을 띄움.
-  // NOTE(2026-05-07): 일시 비활성화. 본 hook 추가 후 dev 사이트에서 후킹 질문 미표시 회귀가 보고됨.
-  // 인과관계 격리를 위해 hook 호출만 차단. 후킹 흐름 정상 확인 후 다시 활성화 예정.
-  // const userMessageCount = messages.filter((m) => m.role === 'user').length
-  // useTrackPendingDialogueFeedback(currentSessionId, userMessageCount)
+  // 대화형 학습 만족도 평가 — user 메시지 ≥1 인 active session 을 sessionStorage 에 등록 +
+  // currentSessionId 변경 (새 채팅 / 다른 세션) 감지 시 이전 세션 평가 모달 트리거.
+  // 페이지 이탈 시 trigger 는 studyspace layout 의 useDialogueFeedbackPopup 이 처리.
+  const userMessageCount = messages.filter((m) => m.role === 'user').length
+  useTrackPendingDialogueFeedback(currentSessionId, userMessageCount)
 
   // 로딩 중 복습 정답 조회 (locale 캐시 스위치)
   useEffect(() => {
