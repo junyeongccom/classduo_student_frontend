@@ -46,10 +46,10 @@ export interface FinalResultData {
   isFirstTestToday: boolean
   /** 오늘 첫 학습이면 streak 기반 10/20/30 — 그 외 0 */
   dailyXpEarned: number
-  /** 풀이 직후 카운터 (오늘 N번째). localStorage 기반. */
+  /** 풀이 직후 카운터 (오늘 N번째). 백엔드 attempt-counts 응답 (course_id 필터). */
   todayTestCount: number
   /** 캘린더 윈도우 (offset -3..+3) 의 날짜별 테스트 풀이 수.
-   *  BookshelfStage 의 셀별 책(=풀이 수) 시각화에 사용. offset=0 (today) 은 incrementTodayTestCount 후 값. */
+   *  BookshelfStage 의 셀별 책(=풀이 수) 시각화에 사용. offset=0 = today. */
   calendarTestCounts: Record<number, number>
   /** 이번 attempt 풀이 시간(초) */
   totalTimeSec: number

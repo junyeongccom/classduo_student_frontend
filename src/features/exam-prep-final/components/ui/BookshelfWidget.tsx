@@ -3,18 +3,21 @@
  * @description 상단바 책장 위젯. 책장 BG = streak tier 색, 책 권수 = 오늘 풀이 수 (cap 5).
  *   클릭 시 책들이 위로 솟구쳐 회전·이동하며 떠다니다 안착하는 부드러운 비행 모션.
  * @module features/exam-prep-final/components/ui
- * @dependencies public/upba/*.png, globals.css bookshelf-fly keyframe, getCalendarTestCounts
+ * @dependencies public/upba/*.png, globals.css bookshelf-fly keyframe, fetchCourseAttemptCounts
  */
 
 'use client'
 
 import { useEffect, useState } from 'react'
 import { cn } from '@/shared/lib/utils'
-import { getCalendarTestCounts } from '../result-overlay/utils'
+import { fetchCourseAttemptCounts } from '../../services/examPrepService'
+import { getKstTodayIso } from '../result-overlay/utils'
 
 interface BookshelfWidgetProps {
   /** 현재 출석 연속 일수 — 책장 배경 색만 결정. 책 권수에는 영향 X. */
   currentStreak: number
+  /** 과목 id — 일자별 풀이수를 과목 단위로 조회 (전역 누적이 아니다). */
+  courseId: string | null | undefined
   /** 외부 px 사이즈 — height 도 동일 (정사각) */
   size?: number
   className?: string
@@ -84,25 +87,35 @@ function generateBooks(count: number): BookSlot[] {
 /** flying state 를 false 로 되돌리는 안전 timeout — 가장 늦게 끝나는 책의 (delay + dur) 보다 길게. */
 const FLY_RESET_MS = 900
 
-export function BookshelfWidget({ currentStreak, size = 64, className }: BookshelfWidgetProps) {
+export function BookshelfWidget({ currentStreak, courseId, size = 64, className }: BookshelfWidgetProps) {
   const shelfBg = resolveShelfBg(currentStreak)
 
-  // 오늘 풀이 수 — localStorage 직접 조회. 다른 페이지 이동 시 새로 fetch.
+  // 오늘 풀이 수 — 백엔드 attempt-counts API (course_id 필터). localStorage 미사용.
   const [todayCount, setTodayCount] = useState<number>(0)
-  useEffect(() => {
-    const counts = getCalendarTestCounts()
-    setTodayCount(counts[0] ?? 0)
-  }, [])
 
-  // 풀이 직후 다른 컴포넌트가 incrementTodayTestCount 한 뒤 이벤트 발화 시 동기화 (window event).
   useEffect(() => {
-    const handler = () => {
-      const counts = getCalendarTestCounts()
-      setTodayCount(counts[0] ?? 0)
+    if (!courseId) {
+      setTodayCount(0)
+      return
     }
+    let cancelled = false
+
+    const refresh = async () => {
+      const today = getKstTodayIso()
+      const { data } = await fetchCourseAttemptCounts(courseId, today, today)
+      if (cancelled) return
+      setTodayCount(data?.counts?.[today] ?? 0)
+    }
+
+    void refresh()
+    // 풀이 직후 다른 컴포넌트가 발화하는 'exam-prep-rewards-refresh' 이벤트로 즉시 재조회.
+    const handler = () => { void refresh() }
     window.addEventListener('exam-prep-rewards-refresh', handler)
-    return () => window.removeEventListener('exam-prep-rewards-refresh', handler)
-  }, [])
+    return () => {
+      cancelled = true
+      window.removeEventListener('exam-prep-rewards-refresh', handler)
+    }
+  }, [courseId])
 
   const visibleCount = Math.min(MAX_BOOKS, todayCount)
   const [books, setBooks] = useState<BookSlot[]>(() => generateBooks(visibleCount))

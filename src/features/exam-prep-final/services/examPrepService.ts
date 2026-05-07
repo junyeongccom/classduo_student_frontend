@@ -85,6 +85,37 @@ export async function fetchCoreTestsByCourse(
   return { data: result.data ?? null, error: null }
 }
 
+/** 백엔드 응답 — 과목 내 학생 일자별(KST) 제출 attempt 수 */
+export interface CourseAttemptCountsDto {
+  course_id: string
+  start_date: string  // 'yyyy-mm-dd'
+  end_date: string    // 'yyyy-mm-dd'
+  /** KST 'yyyy-mm-dd' → 제출 attempt 수 (count > 0 인 키만 포함) */
+  counts: Record<string, number>
+}
+
+/** 과목 내 학생 일자별 제출 attempt 수 조회.
+ *
+ * 대시보드 캘린더 + 기말대비학습 책장 "책 권수" 시각화의 데이터 소스.
+ * course_id 필터로 다른 과목 풀이 기록이 섞이지 않는다 — 기존 localStorage
+ * 단일 키 (`aplus-test-counts-by-date`) 회귀 해결.
+ */
+export async function fetchCourseAttemptCounts(
+  courseId: string,
+  startDateIso: string,
+  endDateIso: string,
+): Promise<{ data: CourseAttemptCountsDto | null; error: string | null }> {
+  const qs = new URLSearchParams({ start_date: startDateIso, end_date: endDateIso })
+  const result = await apiRequest<CourseAttemptCountsDto>(
+    `/exam-prep/courses/${courseId}/attempt-counts?${qs.toString()}`,
+    { auth: true },
+  )
+  if (result.error) {
+    return { data: null, error: result.error.message }
+  }
+  return { data: result.data ?? null, error: null }
+}
+
 /** 단일 test 상세 조회 — core/mid/final 통합 (b2b20260430 §G18).
  *
  * 명칭은 historical naming 으로 유지 (CoreTestSolveContainer 와 동일 정책).

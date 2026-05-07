@@ -44,12 +44,10 @@ import { Phase5FinalResult } from '../result-overlay/Phase5FinalResult'
 import type { FinalResultData, MasteryState, PreSnapshot } from '../result-overlay/types'
 import {
   getKstTodayIso,
-  incrementTodayTestCount,
-  getTodayTestCount,
-  getCalendarTestCounts,
   deriveRankFromXp,
 } from '../result-overlay/utils'
 import { fetchMyCourseState } from '@/shared/services/gamificationService'
+import { fetchCourseAttemptCounts } from '../../services/examPrepService'
 import { LeftPanelMaterials } from '@/features/lecture-study/components/containers/LeftPanelMaterials'
 import { LeftPanelRecordings } from '@/features/lecture-study/components/ui/LeftPanelRecordings'
 import { useExamPrepSolveStore } from '../../store/useExamPrepSolveStore'
@@ -172,8 +170,10 @@ export function CoreTestSolveContainer({
   } | null>(null)
   /** Phase1~4 모션 완료 여부. true 가 되면 Phase5 본 패널로 진입. */
   const [animationDone, setAnimationDone] = useState(false)
-  /** 오늘 테스트 카운터 — 풀이 종료 시 incrementTodayTestCount 결과 캐시. */
+  /** 오늘 테스트 카운터 — 백엔드 attempt-counts 응답 (course_id 필터). */
   const [todayTestCount, setTodayTestCount] = useState(0)
+  /** 캘린더 7개 셀(offset -3..+3)별 풀이 수 — 백엔드 attempt-counts 응답 윈도우. */
+  const [calendarTestCounts, setCalendarTestCounts] = useState<Record<number, number>>({})
 
   // 경과 시간 타이머 — 풀이 중에만 동작. completed/error 시 정지 (마지막 [다음] 클릭 시점 고정).
   // 부수효과: 결과 화면 진입 후 컨테이너 재렌더가 멈춰 result-overlay 의 useEffect cleanup 도 안전.
@@ -603,6 +603,7 @@ export function CoreTestSolveContainer({
     setAnimationDone(false)
     setPostState(null)
     setTodayTestCount(0)
+    setCalendarTestCounts({})
     incrementedRef.current = false
   }, [restartTrigger])
 
@@ -612,15 +613,35 @@ export function CoreTestSolveContainer({
       incrementedRef.current = false
       return
     }
-    // 이미 한 번 증가했으면 skip — StrictMode dev 더블마운트 / 재렌더 케이스 방어
+    // 이미 한 번 처리했으면 skip — StrictMode dev 더블마운트 / 재렌더 케이스 방어
     if (incrementedRef.current) return
     incrementedRef.current = true
 
-    // 1) 오늘 카운터 +1 (localStorage 기반, 누적)
-    const next = incrementTodayTestCount()
-    setTodayTestCount(next)
-    // 2) 백엔드 누적 상태 갱신 (XP/streak/rank 새로고침)
     let cancelled = false
+
+    // 1) 백엔드 attempt-counts (course_id 필터) — -3..+3 일 윈도우.
+    //    이번 attempt 의 submit 이 백엔드에 반영된 직후이므로 today 카운트가 +1 되어 있다.
+    const today = new Date()
+    const offsetIso = (off: number) => {
+      const d = new Date(today)
+      d.setDate(today.getDate() + off)
+      return new Date(d.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    }
+    const startIso = offsetIso(-3)
+    const endIso = offsetIso(3)
+    fetchCourseAttemptCounts(courseId, startIso, endIso).then(({ data }) => {
+      if (cancelled) return
+      const map = data?.counts ?? {}
+      const todayIso = getKstTodayIso()
+      setTodayTestCount(map[todayIso] ?? 1)
+      const windowMap: Record<number, number> = {}
+      for (let off = -3; off <= 3; off++) {
+        windowMap[off] = map[offsetIso(off)] ?? 0
+      }
+      setCalendarTestCounts(windowMap)
+    })
+
+    // 2) 백엔드 누적 상태 갱신 (XP/streak/rank 새로고침)
     fetchMyCourseState(courseId).then(({ data }) => {
       if (cancelled || !data) return
       setPostState({
@@ -930,8 +951,8 @@ export function CoreTestSolveContainer({
       masterXpEarned,
       isFirstTestToday,
       dailyXpEarned,
-      todayTestCount: todayTestCount || getTodayTestCount() || 1,
-      calendarTestCounts: getCalendarTestCounts(),
+      todayTestCount: todayTestCount || 1,
+      calendarTestCounts,
       totalTimeSec: elapsedSec,
       correctCount,
       total,
