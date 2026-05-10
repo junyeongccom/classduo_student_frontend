@@ -380,7 +380,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           )}
           <ChevronRight className="h-3.5 w-3.5" />
           {courseId ? (
-            <Link href={`/studyspace/course/${courseId}`} className="transition-colors hover:text-[#6366F1]">
+            <Link href={`/studyspace/course/${courseId}/lectures`} className="transition-colors hover:text-[#6366F1]">
               {t('courseNav.lectureStudy')}
             </Link>
           ) : (
