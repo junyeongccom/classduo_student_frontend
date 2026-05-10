@@ -17,6 +17,8 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useI18n } from '@/shared/i18n/I18nProvider'
+import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 
 /* ───────────── 타입 ───────────── */
 
@@ -74,8 +76,7 @@ export interface StudentQuizCardProps {
 
 /* ───────────── 상수 ───────────── */
 
-// 신규 생성 퀴즈는 4지선다(A~D) 이지만, 기존 5지선다 데이터(choices.length===5)도
-// 그대로 표시되어야 하므로 인덱스 기반으로 라벨을 동적 생성한다 (A~Z 자동 확장).
+// 4지/5지선다 모두 호환 — 인덱스 기반 라벨 동적 생성 (A~Z 자동 확장).
 const choiceLabel = (idx: number): string => String.fromCharCode(65 + idx)
 
 const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
@@ -125,7 +126,12 @@ export function StudentQuizCard({
   })
   const [isSubmitted, setIsSubmitted] = useState(() => isCorrect !== null)
   const [showAnswer, setShowAnswer] = useState(false)
+  // "해설 보기" 안에서 다시 펼치는 상세 설명 토글 (마크다운 렌더링)
+  const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
   const t = useTranslations('lectureStudy.quiz')
+  const { locale } = useI18n()
+  const detailedExplanationLabel = locale === 'en' ? 'Detailed Explanation' : '상세 설명'
+  const detailedExplanationHideLabel = locale === 'en' ? 'Hide Detailed Explanation' : '상세 설명 닫기'
 
   const badge = QUIZ_TYPE_BADGE[quiz.quiz_type]
 
@@ -368,19 +374,7 @@ export function StudentQuizCard({
               </div>
             )}
 
-            {/* 해설 */}
-            {quiz.explanation && (
-              <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
-                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
-                  {t('explanation')}
-                </p>
-                <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line leading-relaxed">
-                  {quiz.explanation}
-                </p>
-              </div>
-            )}
-
-            {/* 선지별 분석 (객관식) */}
+            {/* 선지별 분석 (객관식) — 짧은 한 줄 텍스트 (마크다운 X). 기존 동작 그대로. */}
             {isMultipleChoice &&
               quiz.choices.length > 0 &&
               quiz.choices.some((c) => c.choice_explanation) && (
@@ -408,6 +402,30 @@ export function StudentQuizCard({
                   </div>
                 </div>
               )}
+
+            {/* 상세 설명 — 2단계 토글. 마크다운 헤더 3섹션 (오답 원인 / 혼동되기 쉬운 개념 / 추가 학습 방향) 렌더링. */}
+            {quiz.explanation && (
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDetailedExplanation((v) => !v)}
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer"
+                  aria-expanded={showDetailedExplanation}
+                >
+                  {showDetailedExplanation ? (
+                    <ChevronUp className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
+                  {showDetailedExplanation ? detailedExplanationHideLabel : detailedExplanationLabel}
+                </button>
+                {showDetailedExplanation && (
+                  <div className="mt-2 text-sm text-gray-900 dark:text-gray-100 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
+                    <MarkdownMessage markdown={quiz.explanation} headingSize="compact" />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 추가 콘텐츠 (출처 버튼 등) */}
             {renderAnswerExtra}

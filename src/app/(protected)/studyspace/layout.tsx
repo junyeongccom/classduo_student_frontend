@@ -20,6 +20,8 @@ import { useSidebarStore, SIDEBAR_WIDTH_EXPANDED, SIDEBAR_WIDTH_COLLAPSED } from
 import { useThemeStore } from '@/shared/store/useThemeStore'
 import { FeedbackModalContainer, useFeedbackStore } from '@/features/error-report'
 import { PasswordChangeModalContainer } from '@/features/user'
+import { DialogueFeedbackModal } from '@/features/ai-tutor/components/ui/DialogueFeedbackModal'
+import { useDialogueFeedbackPopup } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'
 
 function NewLanguageToggle() {
   const { locale, setLocale } = useI18n()
@@ -57,6 +59,8 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const { locale } = useI18n()
   const { topbar } = useStudyspaceLayoutSlots()
   const pathname = usePathname()
+  // 대화형 학습 이탈 시 만족도 평가 모달 트리거
+  const dialogueFeedback = useDialogueFeedbackPopup()
   const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
   const isTablet = useSidebarStore((s) => s.isTablet)
   // 태블릿에서는 사이드바가 항상 72px collapse 상태 (오버레이는 콘텐츠를 밀지 않음)
@@ -359,6 +363,13 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
         onClose={() => setIsPasswordModalOpen(false)}
         onLogout={logout}
       />
+
+      {/* 대화형 학습 만족도 평가 모달 — dialogue 페이지 이탈 시 자동 트리거 */}
+      <DialogueFeedbackModal
+        sessionId={dialogueFeedback.feedbackSessionId}
+        onClose={dialogueFeedback.dismiss}
+        onRated={dialogueFeedback.onRated}
+      />
     </div>
   )
 }
@@ -368,6 +379,8 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isMobileRightbarOpen, setIsMobileRightbarOpen] = useState(false)
   const [isResizingOverlay, setIsResizingOverlay] = useState(false)
+  // 대화형 학습 이탈 시 만족도 평가 모달 트리거 (구 레이아웃에서도 적용)
+  const dialogueFeedback = useDialogueFeedbackPopup()
   
   const { 
     materialsPanelWidth, 
@@ -571,6 +584,13 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </div>
+
+      {/* 대화형 학습 만족도 평가 모달 — dialogue 페이지 이탈 시 자동 트리거 (구 레이아웃) */}
+      <DialogueFeedbackModal
+        sessionId={dialogueFeedback.feedbackSessionId}
+        onClose={dialogueFeedback.dismiss}
+        onRated={dialogueFeedback.onRated}
+      />
     </div>
   )
 }

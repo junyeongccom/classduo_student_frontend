@@ -290,7 +290,7 @@ export default function QuizCreatorWizard({
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-gray-400">4지선다</span>
+                      <span className="text-[11px] text-gray-400">5지선다</span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"

@@ -250,8 +250,9 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
         )}
       </div>
 
-      {/* 출석 책장 — streak 별 색/책수, 클릭 시 쉐이커 이스터에그 */}
-      <BookshelfWidget currentStreak={currentStreak} size={48} />
+      {/* 출석 책장 — streak 별 색/책수, 클릭 시 쉐이커 이스터에그.
+          courseId 전달로 과목별 일자 풀이수를 분리해서 카운트 (전역 누적이 아니다). */}
+      <BookshelfWidget currentStreak={currentStreak} courseId={courseId ?? null} size={48} />
     </div>
   )
 }

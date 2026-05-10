@@ -36,11 +36,18 @@ export interface CoreTestQuestionItemDto {
   id: string
   seq: number
   stem: string
+  /** 영문 stem (한영 토글 시 사용. 백필 전 데이터는 null) */
+  stem_eng?: string | null
   options: string[]
+  /** 영문 선지 배열 (한국어와 1:1 대응, 정답 인덱스 동일) */
+  options_eng?: string[] | null
   /** "0"~"3" 문자열 인덱스 */
   answer: string
   explanation: Record<string, string>
+  /** 영문 해설 (선지별 키 opt0~opt3, 한국어와 동일 구조) */
+  explanation_eng?: Record<string, string> | null
   hint?: string | null
+  hint_eng?: string | null
   source_ref?: { source_pages?: number[]; source_chunks?: number[] } | null
   /** 강의자료 패널 점프 대상 lecture_id (core: 부모 test 의 lecture, mid: 원본 question lecture, final: LLM 추론) */
   source_lecture_id?: string | null
@@ -70,6 +77,37 @@ export async function fetchCoreTestsByCourse(
 ): Promise<{ data: CoreTestListResponseDto | null; error: string | null }> {
   const result = await apiRequest<CoreTestListResponseDto>(
     `/exam-prep/courses/${courseId}/core-tests`,
+    { auth: true },
+  )
+  if (result.error) {
+    return { data: null, error: result.error.message }
+  }
+  return { data: result.data ?? null, error: null }
+}
+
+/** 백엔드 응답 — 과목 내 학생 일자별(KST) 제출 attempt 수 */
+export interface CourseAttemptCountsDto {
+  course_id: string
+  start_date: string  // 'yyyy-mm-dd'
+  end_date: string    // 'yyyy-mm-dd'
+  /** KST 'yyyy-mm-dd' → 제출 attempt 수 (count > 0 인 키만 포함) */
+  counts: Record<string, number>
+}
+
+/** 과목 내 학생 일자별 제출 attempt 수 조회.
+ *
+ * 대시보드 캘린더 + 기말대비학습 책장 "책 권수" 시각화의 데이터 소스.
+ * course_id 필터로 다른 과목 풀이 기록이 섞이지 않는다 — 기존 localStorage
+ * 단일 키 (`aplus-test-counts-by-date`) 회귀 해결.
+ */
+export async function fetchCourseAttemptCounts(
+  courseId: string,
+  startDateIso: string,
+  endDateIso: string,
+): Promise<{ data: CourseAttemptCountsDto | null; error: string | null }> {
+  const qs = new URLSearchParams({ start_date: startDateIso, end_date: endDateIso })
+  const result = await apiRequest<CourseAttemptCountsDto>(
+    `/exam-prep/courses/${courseId}/attempt-counts?${qs.toString()}`,
     { auth: true },
   )
   if (result.error) {
@@ -219,6 +257,8 @@ export interface GradeSingleResponseDto {
   is_correct: boolean
   correct_answer: string  // "0"~"3"
   explanation: Record<string, string> | null
+  /** 영문 해설 (백필 전 데이터는 null) */
+  explanation_eng?: Record<string, string> | null
   mastery: MasteryChangeDto
   hint_used: boolean
   graded_count: number

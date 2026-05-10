@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { Loader2, Search, ArrowUp, Sparkles } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
+import { useTrackPendingDialogueFeedback } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'
 import { chatAnalytics } from '@/shared/lib/analytics'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -84,6 +85,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
+
+  // 대화형 학습 만족도 평가 — user 메시지 ≥1 인 active session 을 sessionStorage 에 등록 +
+  // currentSessionId 변경 (새 채팅 / 다른 세션) 감지 시 이전 세션 평가 모달 트리거.
+  // 페이지 이탈 시 trigger 는 studyspace layout 의 useDialogueFeedbackPopup 이 처리.
+  const userMessageCount = messages.filter((m) => m.role === 'user').length
+  useTrackPendingDialogueFeedback(currentSessionId, userMessageCount)
 
   // 로딩 중 복습 정답 조회 (locale 캐시 스위치)
   useEffect(() => {

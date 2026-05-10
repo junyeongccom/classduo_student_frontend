@@ -77,132 +77,28 @@ export function resolveStreakTier(streak: number): StreakTier {
 }
 
 /**
- * localStorage — 날짜별 테스트 풀이 수 단일 맵.
- *  키: 'aplus-test-counts-by-date'
- *  값: JSON `{ "yyyy-mm-dd": number }`
- * 책장 시각화에서 캘린더 7개 셀 전부의 책(=풀이 수)을 표시하기 위해 단일 맵으로 통합.
- * 14일 이전 날짜 키는 자동 정리.
+ * 일자별 테스트 풀이 수는 백엔드 `/exam-prep/courses/{course_id}/attempt-counts`
+ * 가 단일 source of truth (course_id 필터 보장).
+ * 과거 localStorage 키(`aplus-test-counts-by-date`, `aplus-today-test-count-*`)는
+ * course_id 차원이 없어 과목 간 카운트 누설 버그의 원인이었으므로 제거됨.
+ * 첫 진입 시 남아있는 stale 키를 정리한다.
  */
-const COUNTS_KEY = 'aplus-test-counts-by-date'
+const LEGACY_COUNTS_KEY = 'aplus-test-counts-by-date'
+const LEGACY_PER_DAY_PREFIX = 'aplus-today-test-count-'
 
-interface TestCountMap {
-  [iso: string]: number
-}
-
-/** 구 키 prefix — 단일 맵으로 통합되기 전 이전 버전이 사용. 첫 read 시 마이그레이션. */
-const LEGACY_PREFIX = 'aplus-today-test-count-'
-
-function readTestCountMap(): TestCountMap {
-  if (typeof window === 'undefined') return {}
-  const m: TestCountMap = {}
-  try {
-    const raw = window.localStorage.getItem(COUNTS_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      if (parsed && typeof parsed === 'object') {
-        Object.entries(parsed as Record<string, unknown>).forEach(([k, v]) => {
-          const n = typeof v === 'number' ? v : Number.parseInt(String(v), 10)
-          if (Number.isFinite(n) && n > 0) m[k] = n
-        })
-      }
-    }
-  } catch {
-    // JSON 파싱 실패 시 새 맵 시작
-  }
-
-  // ── legacy 키 마이그레이션 ─────────────────────────────────────────
-  // `aplus-today-test-count-{yyyy-mm-dd}` 형태의 구 키를 단일 맵으로 합치고 정리.
-  // 같은 날짜 키가 양쪽 다 있으면 큰 값을 채택 (프로덕션에선 한 쪽만 있을 가능성 높음).
-  let migrated = false
-  const legacyKeys: string[] = []
-  for (let i = 0; i < window.localStorage.length; i++) {
-    const k = window.localStorage.key(i)
-    if (k && k.startsWith(LEGACY_PREFIX)) legacyKeys.push(k)
-  }
-  legacyKeys.forEach((k) => {
-    const date = k.slice(LEGACY_PREFIX.length)
-    const v = Number.parseInt(window.localStorage.getItem(k) ?? '0', 10)
-    if (Number.isFinite(v) && v > 0) {
-      m[date] = Math.max(m[date] ?? 0, v)
-      migrated = true
-    }
-    window.localStorage.removeItem(k)
-  })
-  if (migrated) {
-    try {
-      window.localStorage.setItem(COUNTS_KEY, JSON.stringify(m))
-    } catch {
-      // quota 초과 등 — 무시
-    }
-  }
-  return m
-}
-
-function writeTestCountMap(m: TestCountMap): void {
+export function purgeLegacyTestCountStorage(): void {
   if (typeof window === 'undefined') return
-  // 14일 이전 키는 정리
-  const cutoff = new Date()
-  cutoff.setDate(cutoff.getDate() - 14)
-  cutoff.setHours(0, 0, 0, 0)
-  const cutoffKst = new Date(cutoff.getTime() + 9 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10)
-  const cleaned: TestCountMap = {}
-  Object.entries(m).forEach(([date, count]) => {
-    if (date >= cutoffKst) cleaned[date] = count
-  })
-  window.localStorage.setItem(COUNTS_KEY, JSON.stringify(cleaned))
-}
-
-export function getTodayTestCount(): number {
-  return readTestCountMap()[getKstTodayIso()] ?? 0
-}
-
-export function incrementTodayTestCount(): number {
-  if (typeof window === 'undefined') return 1
-  const today = getKstTodayIso()
-  const map = readTestCountMap()
-  const next = (map[today] ?? 0) + 1
-  map[today] = next
-  writeTestCountMap(map)
-  return next
-}
-
-/**
- * 캘린더 윈도우 (today 기준 offset -3..+3) 의 날짜별 테스트 풀이 수.
- * BookshelfStage 가 셀별 책 개수를 그리는 데 사용.
- */
-export function getCalendarTestCounts(): Record<number, number> {
-  const map = readTestCountMap()
-  const today = new Date()
-  const out: Record<number, number> = {}
-  for (let off = -3; off <= 3; off++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() + off)
-    const iso = new Date(d.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
-    out[off] = map[iso] ?? 0
+  try {
+    window.localStorage.removeItem(LEGACY_COUNTS_KEY)
+    const toRemove: string[] = []
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i)
+      if (k && k.startsWith(LEGACY_PER_DAY_PREFIX)) toRemove.push(k)
+    }
+    toRemove.forEach((k) => window.localStorage.removeItem(k))
+  } catch {
+    // localStorage 차단 환경 — 무시
   }
-  return out
-}
-
-/**
- * 한 달 전체 (year, monthZeroBased) 의 날짜별 테스트 풀이 수.
- * dashboard 캘린더가 월 단위로 책을 표시할 때 사용.
- */
-export function getMonthTestCounts(
-  year: number,
-  monthZeroBased: number,
-): Map<string, number> {
-  const map = readTestCountMap()
-  const result = new Map<string, number>()
-  const lastDay = new Date(year, monthZeroBased + 1, 0).getDate()
-  for (let d = 1; d <= lastDay; d += 1) {
-    const date = new Date(year, monthZeroBased, d)
-    const iso = new Date(date.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
-    const count = map[iso] ?? 0
-    if (count > 0) result.set(iso, count)
-  }
-  return result
 }
 
 /** "걸린 시간"을 mm:ss 로 포맷 */
