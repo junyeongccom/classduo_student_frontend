@@ -76,8 +76,7 @@ export interface StudentQuizCardProps {
 
 /* ───────────── 상수 ───────────── */
 
-// 신규 생성 퀴즈는 4지선다(A~D) 이지만, 기존 5지선다 데이터(choices.length===5)도
-// 그대로 표시되어야 하므로 인덱스 기반으로 라벨을 동적 생성한다 (A~Z 자동 확장).
+// 4지/5지선다 모두 호환 — 인덱스 기반 라벨 동적 생성 (A~Z 자동 확장).
 const choiceLabel = (idx: number): string => String.fromCharCode(65 + idx)
 
 const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
