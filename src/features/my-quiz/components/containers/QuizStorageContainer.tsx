@@ -289,55 +289,57 @@ export default function QuizStorageContainer() {
         .qs-switch-track.is-on .qs-switch-knob { transform: translateX(14px); }
       `}</style>
 
-      <div className="mx-auto max-w-6xl px-8 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-5 md:px-8 md:py-8">
         {/* ===================== PAGE HEADER ===================== */}
-        <div className="mb-6 flex items-end justify-between gap-6">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3 md:mb-6 md:gap-6">
           <div className="min-w-0 flex-1">
-            <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mb-1.5 text-xs text-gray-500 dark:text-gray-400 md:mb-2 md:text-sm">
               내가 다시 풀어볼 문제 모음 · 출처 무관 통합
             </p>
-            <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-gray-50 md:text-5xl">
+            <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-50 md:text-4xl xl:text-5xl">
               내 퀴즈 저장소
             </h1>
           </div>
-          <div className="flex shrink-0 items-end gap-8 pb-2">
+          <div className="flex shrink-0 items-end gap-4 pb-1 md:gap-8 md:pb-2">
             <div className="text-right">
-              <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">즐겨찾기</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+              <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">즐겨찾기</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-50 md:text-2xl">
                 <span className="text-[#6366F1]">{totalCounts.fav}</span>
-                <span className="ml-1 text-base text-gray-500 dark:text-gray-400">개</span>
+                <span className="ml-1 text-sm text-gray-500 dark:text-gray-400 md:text-base">개</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">오답</p>
-              <p className="text-2xl font-bold text-[#F97316]">{totalCounts.wrong}</p>
+              <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">오답</p>
+              <p className="text-lg font-bold text-[#F97316] md:text-2xl">{totalCounts.wrong}</p>
             </div>
           </div>
         </div>
 
         {/* ===================== FILTER BAR ===================== */}
-        <section className="mb-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex items-center justify-between gap-4">
-            <div className="inline-flex h-10 items-center rounded-xl bg-gray-100 p-1 text-sm font-semibold dark:bg-gray-800">
+        <section className="mb-4 rounded-2xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900 md:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 md:gap-4">
+            <div className="inline-flex h-9 items-center rounded-xl bg-gray-100 p-1 text-xs font-semibold dark:bg-gray-800 md:h-10 md:text-sm">
               <SegBtn
                 active={segment === 'all'}
                 onClick={() => setSegment('all')}
               >
-                전체 <span className="ml-1 text-xs text-gray-400">{totalCounts.total}</span>
+                전체 <span className="ml-1 text-[11px] text-gray-400 md:text-xs">{totalCounts.total}</span>
               </SegBtn>
               <SegBtn
                 active={segment === 'fav'}
                 onClick={() => setSegment('fav')}
               >
                 <Bookmark className="h-3.5 w-3.5" />
-                즐겨찾기 <span className="text-xs text-gray-400">{totalCounts.fav}</span>
+                <span className="hidden sm:inline">즐겨찾기</span>
+                <span className="text-[11px] text-gray-400 md:text-xs">{totalCounts.fav}</span>
               </SegBtn>
               <SegBtn
                 active={segment === 'wrong'}
                 onClick={() => setSegment('wrong')}
               >
                 <XCircle className="h-3.5 w-3.5" />
-                오답 <span className="text-xs text-gray-400">{totalCounts.wrong}</span>
+                <span className="hidden sm:inline">오답</span>
+                <span className="text-[11px] text-gray-400 md:text-xs">{totalCounts.wrong}</span>
               </SegBtn>
             </div>
 
@@ -346,14 +348,14 @@ export default function QuizStorageContainer() {
                 onClick={() =>
                   setSortOrder((s) => (s === 'newest' ? 'oldest' : 'newest'))
                 }
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 md:px-3 md:py-2 md:text-xs"
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
                 {sortOrder === 'newest' ? '최신순' : '오래된순'}
               </button>
               <button
                 onClick={() => setAdvancedOpen((v) => !v)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 md:px-3 md:py-2 md:text-xs"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 필터
@@ -495,8 +497,8 @@ export default function QuizStorageContainer() {
         </section>
 
         {/* ===================== TOOLBAR (count + view + answers) ===================== */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] text-gray-500 md:gap-2 md:text-xs">
             <span className="font-semibold text-gray-700 dark:text-gray-300">{filtered.length}개</span>
             <span>의 문제</span>
             <span className="text-gray-300">·</span>
@@ -504,11 +506,10 @@ export default function QuizStorageContainer() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* View toggle */}
             {/* Answers toggle */}
             <button
               onClick={() => setAnswersMode((m) => (m === 'on' ? 'off' : 'on'))}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 md:gap-2 md:px-3 md:text-xs"
             >
               {answersMode === 'on' ? (
                 <Eye className="h-3.5 w-3.5" />
@@ -574,7 +575,7 @@ function SegBtn({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-5 py-1.5 ${
+      className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 md:gap-1.5 md:px-5 md:py-1.5 ${
         active
           ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100'
           : 'text-gray-500 hover:text-gray-900'

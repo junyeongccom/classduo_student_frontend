@@ -259,25 +259,25 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
         {/* 채팅 영역 — 콘텐츠 안에 맞게 100% 채움 */}
         <div ref={chatAreaRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <div
-            className="flex flex-1 min-h-0 flex-col px-4 py-1.5"
-            style={{ paddingRight: rightPanelsWidth > 0 ? rightPanelsWidth + 16 : 16 }}
+            className="flex flex-1 min-h-0 flex-col px-2 py-1.5 md:px-4"
+            style={{ paddingRight: rightPanelsWidth > 0 ? rightPanelsWidth + 16 : undefined }}
           >
             <div className="flex flex-1 min-h-0 flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
               {/* Chat Toolbar */}
-              <div className="flex items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-700 px-5 py-2.5 shrink-0">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shrink-0 md:gap-4 md:px-5 md:py-2.5">
+                <div className="flex items-center gap-1.5 md:gap-2">
                   <button
                     onClick={handleNewChatAndResetPanels}
-                    className="rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors hover:border-gray-300 hover:text-gray-700"
+                    className="rounded-lg border border-gray-200 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:border-gray-300 hover:text-gray-700 md:px-3 md:py-1.5 md:text-sm"
                   >
                     {tTopbar('newChat')}
                   </button>
                   <button
                     onClick={() => setIsChatSidebarOpen(true)}
-                    className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 md:p-2"
                     title={tTopbar('chatHistory')}
                   >
-                    <History className="h-5 w-5" />
+                    <History className="h-4 w-4 md:h-5 md:w-5" />
                   </button>
                 </div>
 
@@ -288,7 +288,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                       if (isNotesPanelOpen) toggleNotesPanel(false)
                       if (isMaterialsPanelOpen) toggleMaterialsPanel(false)
                     }}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    className={`px-2 py-1 text-xs font-medium rounded-md transition-all md:px-3 md:py-1.5 md:text-sm ${
                       !isNotesPanelOpen && !isMaterialsPanelOpen
                         ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
@@ -304,7 +304,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                       else if (isMaterialsPanelOpen) setActiveTab('materials')
                       else setActiveTab('answer')
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-all md:gap-1.5 md:px-3 md:py-1.5 md:text-sm ${
                       isNotesPanelOpen
                         ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
@@ -325,7 +325,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                       else if (isNotesPanelOpen) setActiveTab('notes')
                       else setActiveTab('answer')
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-all md:gap-1.5 md:px-3 md:py-1.5 md:text-sm ${
                       isMaterialsPanelOpen
                         ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'

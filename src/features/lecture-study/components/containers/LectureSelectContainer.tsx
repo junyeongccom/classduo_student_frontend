@@ -160,9 +160,9 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
       </StudyspaceTopbarSlot>
 
       <div className="relative h-full overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-8 py-6">
+        <div className="mx-auto max-w-5xl px-4 py-5 md:px-8 md:py-6">
           {/* Course Hero Card — 흰배경 + 학기/분반 eyebrow + 진도 막대 */}
-          <div className="rounded-2xl border border-gray-200 bg-white px-8 py-6 dark:border-gray-700 dark:bg-gray-900">
+          <div className="rounded-2xl border border-gray-200 bg-white px-4 py-5 md:px-8 md:py-6 dark:border-gray-700 dark:bg-gray-900">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="min-w-0 flex-1">
                 {eyebrow && (
@@ -170,12 +170,12 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                     {eyebrow}
                   </p>
                 )}
-                <h2 className="text-4xl font-black tracking-tight text-gray-900 dark:text-gray-50 md:text-5xl">
+                <h2 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-50 md:text-4xl xl:text-5xl">
                   {courseTitle}
                 </h2>
               </div>
               {/* 우상단: 현재 주차수 / 총 주차수 */}
-              <div className="shrink-0 pb-1 text-right text-2xl">
+              <div className="shrink-0 pb-1 text-right text-lg md:text-2xl">
                 <span className="font-bold text-gray-900 dark:text-gray-50">
                   {currentWeek > 0 ? currentWeek : '-'}
                 </span>
