@@ -101,10 +101,10 @@ function NewSidebar() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden',
+          'fixed left-0 top-0 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden pt-safe',
           'transition-[width,padding] duration-300 ease-in-out',
           isTablet && isOverlayOpen ? 'z-[51]' : 'z-50',
-          visualCollapsed ? 'w-[72px] px-3 py-4 gap-4' : 'w-[240px] px-6 py-6 gap-8',
+          visualCollapsed ? 'w-[72px] px-3 py-4 gap-4' : 'w-[85vw] max-w-[280px] sm:w-[240px] sm:max-w-[240px] px-6 py-6 gap-8',
         )}
       >
         {/* Header */}
@@ -128,9 +128,9 @@ function NewSidebar() {
               visualCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100',
             )}
           >
-            <Link href="/studyspace/home" className="flex items-center gap-3">
+            <Link href="/studyspace/home" className="flex min-w-0 items-center gap-3">
               <img src="/Aplus_logo.png" alt="Aplus" className="h-9 w-auto shrink-0" />
-              <h2 className="whitespace-nowrap text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Aplus</h2>
+              <h2 className="truncate text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Aplus</h2>
             </Link>
             <button
               onClick={handleSidebarToggle}

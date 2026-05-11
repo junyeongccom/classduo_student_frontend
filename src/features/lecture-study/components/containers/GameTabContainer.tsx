@@ -551,7 +551,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
           onClick={handleCloseMatching}
         >
           <div
-            className="relative flex max-h-[92vh] w-full max-w-[1200px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[1200px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -618,7 +618,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
           onClick={handleCloseDefBuilder}
         >
           <div
-            className="relative flex max-h-[92vh] w-full max-w-[800px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[800px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header with score */}
@@ -707,7 +707,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
           onClick={handleCloseDeck}
         >
           <div
-            className="relative flex max-h-[92vh] w-full max-w-[900px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[900px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

@@ -59,7 +59,7 @@ export function SolveSidebar({
   const seqs = Array.from({ length: total }, (_, i) => i + 1)
 
   return (
-    <aside className="flex h-full w-[260px] shrink-0 flex-col gap-6 border-r border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+    <aside className="hidden md:flex h-full w-[200px] md:w-[260px] shrink-0 flex-col gap-3 md:gap-6 border-r border-gray-200 bg-white p-3 md:p-6 dark:border-gray-700 dark:bg-gray-900">
       {/* 회차 정보 */}
       <div>
         <p className="text-xs text-gray-400">{sessionLabel}</p>

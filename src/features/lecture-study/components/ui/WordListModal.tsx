@@ -126,7 +126,7 @@ export function WordListModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-[calc(100vw-1rem)] sm:max-w-3xl max-h-[calc(100dvh-3rem)] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t('lectureStudy.game.wordListTitle')}</DialogTitle>
           <DialogDescription>{gameName}</DialogDescription>

@@ -335,7 +335,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
             <TabsTrigger
               key={tab}
               value={tab}
-              className="flex-1 rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+              className="flex-1 min-w-0 truncate rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
             >
               {t(`lectureStudy.rightPanel.${tab}Tab`)}
             </TabsTrigger>

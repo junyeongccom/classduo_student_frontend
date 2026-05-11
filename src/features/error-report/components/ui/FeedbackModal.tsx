@@ -147,7 +147,7 @@ export function FeedbackModal({
         if (e.target === e.currentTarget && !isSubmitting) handleClose()
       }}
     >
-      <div className="flex w-full max-w-[640px] flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-2xl" style={{ maxHeight: '90vh' }}>
+      <div className="flex w-full max-w-[calc(100vw-1rem)] sm:max-w-[640px] flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-2xl" style={{ maxHeight: 'calc(100dvh - 2rem)' }}>
         {/* Header */}
         <header className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-8 py-6">
           <div className="flex items-center gap-3">

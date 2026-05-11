@@ -70,7 +70,7 @@ export function HomeContainer() {
   if (courses.length === 0) {
     return (
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-8 py-10">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-10">
           <GreetingHeader name={user?.full_name} t={t} locale={locale} />
           <EmptyState
             message={t('home.empty')}

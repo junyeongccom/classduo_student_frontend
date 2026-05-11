@@ -1041,7 +1041,7 @@ export function CoreTestSolveContainer({
         {/* 강의자료/녹음본 패널 (출처 클릭 시 자동 열림) — 사이드바 와 문제 영역 사이에 삽입.
             사이드바는 항상 가장 왼쪽 고정, 본 패널은 사이드바 오른쪽에 떠야 함. */}
         {isLeftPanelOpen && currentLectureId && (
-          <div className="flex h-full w-[360px] shrink-0 flex-col border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+          <div className="fixed inset-0 z-40 flex h-full w-full sm:relative sm:inset-auto sm:w-[360px] shrink-0 flex-col border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
               <div className="flex gap-1">
                 <button
@@ -1141,7 +1141,7 @@ export function CoreTestSolveContainer({
 
         {/* 우측: AI 챗봇 패널 (챗봇 아이콘 클릭 시 자동 열림). */}
         {isChatPanelOpen && (
-          <div className="flex h-full w-[360px] shrink-0 flex-col border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+          <div className="fixed inset-0 z-40 flex h-full w-full sm:relative sm:inset-auto sm:w-[360px] shrink-0 flex-col border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
                 AI 챗봇

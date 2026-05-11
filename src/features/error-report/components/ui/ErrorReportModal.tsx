@@ -218,7 +218,7 @@ export function ErrorReportModal({
         }
       }}
     >
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[520px] max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[calc(100vw-1rem)] sm:max-w-[520px] max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col">
         {/* 헤더 */}
         <div className="px-8 pt-6 pb-4 border-b border-gray-200">
           <div className="flex items-start justify-between">
