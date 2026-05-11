@@ -163,7 +163,12 @@
     "streakDays": "{days}일 째",
     "restart": "다시 풀기",
     "nextQuestion": "다음 문제",
-    "endTest": "종료"
+    "endTest": "종료",
+    "dailyParticipationXp": "일일 참여 획득 경험치",
+    "streakRewardBoost": "연속 보상 강화",
+    "nextDayXpHint": "1일 뒤 오면 {xp}XP를 얻어요!",
+    "alreadyEarnedToday": "오늘은 이미 일일 참여\n경험치를 얻었어요.",
+    "nextButton": "다음"
   },
   "aiTutorTopbar": {
     "newChat": "새 채팅",
