@@ -66,22 +66,22 @@ export function GradeProgressCard({
         </div>
 
         {/* 라벨 + 큰 숫자 + 진행률 바 */}
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           {/* 1행: 현재 XP big number / 다음 등급 임계 (X / Y XP) */}
-          <div className="flex items-baseline gap-2">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span
-              className="text-5xl font-bold leading-none text-gray-900 dark:text-gray-50"
+              className="text-3xl font-bold leading-none text-gray-900 dark:text-gray-50 md:text-5xl"
               style={{ fontFamily: 'Pretendard, sans-serif' }}
             >
               {xp.toLocaleString()}
             </span>
             <span
-              className="text-xl font-bold text-gray-400"
+              className="text-base font-bold text-gray-400 md:text-xl"
               style={{ fontFamily: 'Pretendard, sans-serif' }}
             >
               / {isMax ? '∞' : nextTotal.toLocaleString()}
             </span>
-            <span className="text-base font-bold text-gray-500">XP</span>
+            <span className="text-sm font-bold text-gray-500 md:text-base">XP</span>
           </div>
 
           {/* 2행: 다음 등급 까지 N XP */}
