@@ -152,7 +152,18 @@
     "masterySummaryTitle": "숙련도 현황",
     "questionMasteredAlt": "{seq}번 마스터",
     "masterXpEarned": "마스터 달성 경험치",
-    "skipLabel": "건너뛰기"
+    "skipLabel": "건너뛰기",
+    "showExplanation": "해설보기",
+    "hideExplanation": "해설 닫기",
+    "endQuizAria": "퀴즈 종료",
+    "endQuiz": "퀴즈 종료",
+    "encouragementAllMaster": "전부 마스터 했어요!",
+    "encouragementTryAgain": "한 번 더 풀어서 경험치를 획득하세요!",
+    "gradeDisclaimerShort": "• 테스트 점수가 아닌 현재 Aplus 등급입니다.",
+    "streakDays": "{days}일 째",
+    "restart": "다시 풀기",
+    "nextQuestion": "다음 문제",
+    "endTest": "종료"
   },
   "aiTutorTopbar": {
     "newChat": "새 채팅",

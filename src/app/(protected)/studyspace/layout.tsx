@@ -215,15 +215,17 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               <div className="min-w-0 flex-1">{topbar}</div>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-3 pl-6">
+          <div className="flex shrink-0 items-center gap-3 pl-2 md:pl-6">
             {isExamPrepPage ? (
-              <ExamPrepHeaderBar
-                state={gamificationState}
-                loading={gamificationLoading}
-                courseId={examPrepCourseId}
-              />
+              <div className="hidden md:flex md:items-center">
+                <ExamPrepHeaderBar
+                  state={gamificationState}
+                  loading={gamificationLoading}
+                  courseId={examPrepCourseId}
+                />
+              </div>
             ) : (
-              <div ref={flameRef} className="relative">
+              <div ref={flameRef} className="relative hidden md:block">
                 <button
                   id="flame-badge"
                   onClick={() => setIsFlamePopupOpen(v => !v)}
@@ -264,9 +266,9 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                 )}
               </div>
             )}
-            <div ref={profileRef} className="relative flex items-center gap-3 border-l border-gray-200 dark:border-gray-700 pl-3">
-              <img src="/KU_logo.png" alt="" className="h-9 shrink-0 object-contain" />
-              <div>
+            <div ref={profileRef} className="relative flex items-center gap-3 md:border-l md:border-gray-200 dark:border-gray-700 md:pl-3">
+              <img src="/KU_logo.png" alt="" className="hidden md:block h-9 shrink-0 object-contain" />
+              <div className="hidden md:block">
                 <p className="text-sm font-bold leading-tight text-gray-900 dark:text-gray-50">{user?.full_name ?? ''}</p>
                 <p className="truncate text-xs text-gray-400 dark:text-gray-500" style={{ maxWidth: 160 }}>{user?.email ?? ''}</p>
               </div>

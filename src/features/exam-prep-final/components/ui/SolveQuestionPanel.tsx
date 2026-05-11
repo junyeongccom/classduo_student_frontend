@@ -553,7 +553,7 @@ export function SolveQuestionPanel({
                 onClick={() => setShowExplanation((v) => !v)}
                 className="flex h-10 min-w-[104px] items-center justify-center rounded-lg bg-violet-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-violet-600"
               >
-                {showExplanation ? '해설 닫기' : '해설보기'}
+                {showExplanation ? t('examPrepFinal.hideExplanation') : t('examPrepFinal.showExplanation')}
               </button>
             ) : (
               <button
@@ -589,10 +589,10 @@ export function SolveQuestionPanel({
               <button
                 type="button"
                 onClick={onFinish}
-                aria-label="퀴즈 종료"
+                aria-label={t('examPrepFinal.endQuizAria')}
                 className="flex h-9 items-center justify-center rounded-lg bg-violet-600 px-4 text-sm font-bold text-white transition-colors hover:bg-violet-700"
               >
-                퀴즈 종료
+                {t('examPrepFinal.endQuiz')}
               </button>
             ) : (
               <button
