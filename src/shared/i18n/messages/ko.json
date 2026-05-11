@@ -143,7 +143,16 @@
       "selected": "Set {setNumber} 중간 테스트 — 선택됨 (다시 누르면 닫힘)",
       "available": "Set {setNumber} 중간 테스트 — 탭하면 펼쳐져요"
     },
-    "bookshelfAria": "오늘 {today}권 / 출석 {streak}일차 책장"
+    "bookshelfAria": "오늘 {today}권 / 출석 {streak}일차 책장",
+    "todayTestCount": "오늘의 테스트 풀이 횟수",
+    "midTestOfSet": "세트 {testNumber} 중간 테스트",
+    "testMasterAlt": "테스트 마스터!",
+    "totalEarnedXp": "총 획득 경험치",
+    "streakOngoing": "연속 학습 중",
+    "masterySummaryTitle": "숙련도 현황",
+    "questionMasteredAlt": "{seq}번 마스터",
+    "masterXpEarned": "마스터 달성 경험치",
+    "skipLabel": "건너뛰기"
   },
   "aiTutorTopbar": {
     "newChat": "새 채팅",

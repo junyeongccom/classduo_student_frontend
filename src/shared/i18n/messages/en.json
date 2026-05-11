@@ -143,7 +143,16 @@
       "selected": "Set {setNumber} Mid test — selected (tap to close)",
       "available": "Set {setNumber} Mid test — tap to expand"
     },
-    "bookshelfAria": "Today {today} books / {streak}-day streak shelf"
+    "bookshelfAria": "Today {today} books / {streak}-day streak shelf",
+    "todayTestCount": "Today's Tests",
+    "midTestOfSet": "Set {testNumber} Mid Test",
+    "testMasterAlt": "Test Mastered!",
+    "totalEarnedXp": "Total XP Earned",
+    "streakOngoing": "Streak ongoing",
+    "masterySummaryTitle": "Mastery Status",
+    "questionMasteredAlt": "Q{seq} mastered",
+    "masterXpEarned": "Master XP Earned",
+    "skipLabel": "Skip"
   },
   "aiTutorTopbar": {
     "newChat": "New chat",
