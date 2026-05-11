@@ -40,7 +40,7 @@ export function AuthGuard({
 
         {/* 공지 모달 (왼쪽 고정) */}
         {showNotice && (
-          <div className="fixed z-10 top-1/2 -translate-y-1/2 left-4 lg:left-[calc(50%-280px-380px)] w-[340px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-6 hidden lg:block">
+          <div className="fixed z-20 top-1/2 -translate-y-1/2 left-4 lg:left-[calc(50%-280px-380px)] w-[340px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-6 hidden lg:block">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="rounded-full bg-blue-100 dark:bg-blue-900/40 p-2">
@@ -83,7 +83,7 @@ export function AuthGuard({
 
         {/* 모바일: 공지를 인증 모달 위에 표시 */}
         {showNotice && (
-          <div className="fixed z-10 top-2 left-4 right-4 rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-4 lg:hidden">
+          <div className="fixed z-20 top-2 left-4 right-4 rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-4 lg:hidden">
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
