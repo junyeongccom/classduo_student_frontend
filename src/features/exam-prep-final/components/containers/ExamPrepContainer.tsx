@@ -175,7 +175,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
       </StudyspaceTopbarSlot>
 
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-10 py-10">
+        <div className="mx-auto max-w-5xl px-3 py-5 md:px-10 md:py-10">
           {startError && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               {startError}
@@ -184,7 +184,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
           {/* 상단 영역: 핵심/중간 선택 시 정보 카드, 없으면 3박스 헤더.
               세 가지 변형의 자연 높이가 달라 스왑 시 하단 컨텐츠가 들썩이는 문제 →
               고정 높이 래퍼로 묶고 내부는 h-full 로 채워 레이아웃 시프트 방지. */}
-          <div className="h-[200px]">
+          <div className="md:h-[200px]">
             {selectedCoreTest ? (
               <SelectedTestInfoCard
                 test={selectedCoreTest}
@@ -218,7 +218,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
             {/* 컨텐츠 박스 (탭과 이어짐 — 상단 좌측 모서리만 라운드 제거) */}
             <div
               className={cn(
-                'relative rounded-3xl rounded-tl-none px-12 py-16',
+                'relative rounded-3xl rounded-tl-none px-3 py-6 md:px-12 md:py-16',
                 isCoreSetTab(activeTab)
                   ? SET_PANEL_BG[activeTab]
                   : 'bg-[#383698]',
@@ -258,22 +258,22 @@ function ExamPrepBreadcrumb({
   courseTitle: string | null
 }) {
   return (
-    <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
+    <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
       <Link
         href="/studyspace/home"
-        className="transition-colors hover:text-[#6366F1]"
+        className="shrink-0 transition-colors hover:text-[#6366F1]"
       >
         {t('courseNav.home')}
       </Link>
-      <ChevronRight className="h-3.5 w-3.5" />
+      <ChevronRight className="h-3.5 w-3.5 shrink-0" />
       <Link
         href={`/studyspace/course/${courseId}`}
-        className="truncate transition-colors hover:text-[#6366F1]"
+        className="min-w-0 truncate transition-colors hover:text-[#6366F1]"
       >
         {courseTitle ?? '...'}
       </Link>
-      <ChevronRight className="h-3.5 w-3.5" />
-      <span className="truncate font-semibold text-gray-900 dark:text-gray-100">
+      <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+      <span className="shrink-0 font-semibold text-gray-900 dark:text-gray-100">
         {t('courseNav.examPrep')}
       </span>
     </nav>
@@ -329,9 +329,9 @@ function CoreSetContent({
     selection?.kind === 'mid' && selection.setNumber === setNum
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex items-center justify-center gap-6">
+        <div key={ri} className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
           {row.map((item) =>
             item.kind === 'core' ? (
               <CoreTestButton

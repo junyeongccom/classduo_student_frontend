@@ -207,7 +207,7 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
       aria-label={ariaLabel}
       aria-pressed={isClickable ? isSelected : undefined}
       className={cn(
-        'mid-scene group/midbook relative h-44 w-44 disabled:cursor-default',
+        'mid-scene group/midbook relative h-28 w-28 disabled:cursor-default md:h-44 md:w-44',
         isClickable && 'cursor-pointer',
         // 잠금해제 중: backdrop 위로 끌어올림 + 살짝 확대 → 포커스 부각
         stage === 'unlocking' &&

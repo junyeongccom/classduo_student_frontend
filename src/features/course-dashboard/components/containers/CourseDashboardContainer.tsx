@@ -67,22 +67,22 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     <>
       {/* Breadcrumb topbar — 기존 유지 */}
       <StudyspaceTopbarSlot>
-        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
           <Link
             href="/studyspace/home"
-            className="transition-colors hover:text-[#6366F1]"
+            className="shrink-0 transition-colors hover:text-[#6366F1]"
           >
             {t('courseNav.home')}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="truncate font-semibold text-gray-900 dark:text-gray-100">
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate font-semibold text-gray-900 dark:text-gray-100">
             {courseTitle ?? '...'}
           </span>
         </nav>
       </StudyspaceTopbarSlot>
 
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-6 py-5 lg:px-10">
+        <div className="mx-auto max-w-6xl px-3 py-4 md:px-6 md:py-5 lg:px-10">
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[5fr_6fr]">
             {/* ───── 좌측 컬럼 ───── */}
             <div className="flex flex-col gap-3">
@@ -112,7 +112,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
                 }
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <QuickActionLink
                   icon={PencilLine}
                   label={t('courseNav.createQuestion')}

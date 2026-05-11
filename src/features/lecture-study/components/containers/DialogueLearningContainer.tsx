@@ -227,19 +227,19 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     <>
       {/* Breadcrumb → Header topbar slot */}
       <StudyspaceTopbarSlot>
-        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
-          <Link href="/studyspace/home" className="transition-colors hover:text-[#6366F1]">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
+          <Link href="/studyspace/home" className="shrink-0 transition-colors hover:text-[#6366F1]">
             {t('lectureStudy.breadcrumbHome')}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
           <Link
             href={`/studyspace/course/${courseId}`}
-            className="transition-colors hover:text-[#6366F1]"
+            className="min-w-0 truncate transition-colors hover:text-[#6366F1]"
           >
             {courseTitle ?? '...'}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="font-semibold text-gray-900 dark:text-gray-50">
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          <span className="shrink-0 font-semibold text-gray-900 dark:text-gray-50">
             {t('lectureStudy.dialogueLearning')}
           </span>
         </nav>
