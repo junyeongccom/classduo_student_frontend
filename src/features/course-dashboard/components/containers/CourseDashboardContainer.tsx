@@ -88,7 +88,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
             <div className="flex flex-col gap-3">
               <ExamPrepHeroCard
                 title={t('courseDashboard.modeExam.title')}
-                subtitle="10문제 · 30세트 · 일일 참여 시 보상 UP"
+                subtitle={t('courseDashboard.examSubtitle')}
                 onClick={() =>
                   router.push(`/studyspace/course/${courseId}/exam-prep`)
                 }
@@ -97,7 +97,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
               <StudyModeMidCard
                 eyebrow={t('courseDashboard.modeWeekly.eyebrow')}
                 title={t('courseDashboard.modeWeekly.title')}
-                description="매주 진도를 복습할 수 있어요."
+                description={t('courseDashboard.weeklyShortDescription')}
                 onClick={() =>
                   router.push(`/studyspace/course/${courseId}/lectures`)
                 }
@@ -106,7 +106,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
               <StudyModeMidCard
                 eyebrow={t('courseDashboard.modeDialogue.eyebrow')}
                 title={t('courseDashboard.modeDialogue.title')}
-                description="AI에게 모르는 것을 질문하세요."
+                description={t('courseDashboard.dialogueShortDescription')}
                 onClick={() =>
                   router.push(`/studyspace/course/${courseId}/dialogue`)
                 }
@@ -124,7 +124,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
                 />
                 <QuickActionLink
                   icon={Bookmark}
-                  label="내 퀴즈 저장소"
+                  label={t('courseDashboard.myQuizSaved')}
                   onClick={() =>
                     router.push(`/studyspace/course/${courseId}/my-quizzes`)
                   }

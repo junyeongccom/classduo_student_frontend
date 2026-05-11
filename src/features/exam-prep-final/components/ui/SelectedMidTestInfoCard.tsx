@@ -11,6 +11,7 @@
 
 import { useEffect, useState } from 'react'
 import { Play, RotateCcw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { fetchTestMasterySummary } from '../../services/examPrepService'
 import type { MidTest } from '../../types'
 
@@ -29,8 +30,12 @@ export function SelectedMidTestInfoCard({
   midTest,
   onStart,
 }: SelectedMidTestInfoCardProps) {
+  const t = useTranslations()
   const numberLabel = String(midTest.setNumber).padStart(2, '0')
-  const subtitle = `${midTest.minutes}분 / ${midTest.questions}문항`
+  const subtitle = t('examPrepFinal.midTestMetaSlash', {
+    minutes: midTest.minutes,
+    questions: midTest.questions,
+  })
   const isMastered = midTest.status === 'mastered'
   const canStart = !!midTest.testId && (midTest.status === 'available' || midTest.status === 'mastered')
 
@@ -78,7 +83,7 @@ export function SelectedMidTestInfoCard({
             <span className="text-base font-medium text-gray-400">{subtitle}</span>
           </div>
           <h3 className="mt-5 text-3xl font-bold text-gray-900 dark:text-gray-50">
-            중간테스트 {midTest.setNumber}회차
+            {t('examPrepFinal.midTestSetTitle', { setNumber: midTest.setNumber })}
           </h3>
         </div>
 
@@ -113,8 +118,8 @@ export function SelectedMidTestInfoCard({
             type="button"
             onClick={onStart}
             disabled={!canStart}
-            aria-label="다시 보기"
-            title="다시 보기"
+            aria-label={t('examPrepFinal.replayLabel')}
+            title={t('examPrepFinal.replayLabel')}
             className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500  transition-colors hover:bg-gray-50 hover:text-[#6366F1] disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
           >
             <RotateCcw className="h-4 w-4" />
@@ -125,7 +130,7 @@ export function SelectedMidTestInfoCard({
           type="button"
           onClick={onStart}
           disabled={!canStart}
-          aria-label="Start mid test"
+          aria-label={t('examPrepFinal.startMidTestAria')}
           className="flex h-20 w-20 shrink-0 self-center items-center justify-center rounded-2xl bg-[#6366F1] text-white   transition-colors hover:bg-[#5558E6] disabled:cursor-not-allowed disabled:bg-gray-300 "
         >
           <Play className="h-8 w-8 fill-white" />

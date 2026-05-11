@@ -8,6 +8,7 @@
 
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { resolveDayTone, MAX_BOOKS_PER_CELL, type CalendarDay } from '../../domain/calendar'
 
 interface CalendarDayCellProps {
@@ -19,6 +20,7 @@ const BOOK_SRC = '/calender/캘린더-책.png'
 const BOOK_ROW_HEIGHT = 6 // 한 줄 차지하는 세로 px (이미지 자체는 더 큼 — 겹쳐 쌓임)
 
 export function CalendarDayCell({ cell }: CalendarDayCellProps) {
+  const t = useTranslations()
   // 빈 placeholder
   if (cell.display === 0) {
     return <div className="mx-auto w-full max-w-[52px]" style={{ aspectRatio: '7 / 6' }} aria-hidden />
@@ -77,7 +79,7 @@ export function CalendarDayCell({ cell }: CalendarDayCellProps) {
           className="absolute right-1 top-0.5 z-10 text-[8px] font-bold"
           style={{ color: tone.bookColor === '#FFFFFF' ? '#FFFFFF' : '#383698' }}
         >
-          Today
+          {t('courseDashboard.todayLabel')}
         </span>
       )}
     </div>

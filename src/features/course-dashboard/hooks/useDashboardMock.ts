@@ -8,6 +8,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   fetchMyCourseState,
   type StudentCourseStateDto,
@@ -64,8 +65,10 @@ function monthRangeIso(year: number, monthZeroBased: number): { start: string; e
 }
 
 export function useDashboardMock(courseId: string): DashboardData {
-  // useAuthStore 의 user.full_name 을 표시명으로 사용 (없으면 fallback '학생').
-  const fullName = useAuthStore((s) => s.user?.full_name ?? '학생')
+  const t = useTranslations()
+  // useAuthStore 의 user.full_name 을 표시명으로 사용 (없으면 i18n fallback)
+  const rawFullName = useAuthStore((s) => s.user?.full_name)
+  const fullName = rawFullName ?? t('courseDashboard.defaultStudentName')
   const [state, setState] = useState<StudentCourseStateDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   // 일자별 풀이 수 — 백엔드 attempt-counts API 응답 (course_id 필터됨).

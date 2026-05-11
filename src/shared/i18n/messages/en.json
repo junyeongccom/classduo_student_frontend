@@ -65,7 +65,20 @@
     "examPrepPlaceholderTitle": "Final Exam Prep (Coming soon)",
     "examPrepPlaceholderDescription": "A focused mode with 26 core tests to maximize mastery before exam day.",
     "courseDialoguePlaceholderTitle": "Dialogue Mode",
-    "courseDialoguePlaceholderDescription": "Select a lecture to chat freely with the AI tutor."
+    "courseDialoguePlaceholderDescription": "Select a lecture to chat freely with the AI tutor.",
+    "examSubtitle": "10 questions · 30 sets · daily reward boost",
+    "weeklyShortDescription": "Review what you learned each week.",
+    "dialogueShortDescription": "Ask the AI anything you don't understand.",
+    "myQuizSaved": "My Quiz Library",
+    "expectedGradeTitle": "{name}'s expected grade",
+    "maxRankReached": "Top rank reached!",
+    "xpToNext": "{xp} XP to next rank",
+    "gradeDisclaimer": "Not the actual grade for {course}. This rank is used only within Aplus.",
+    "monthLabel": "{month}",
+    "streakInProgress": "{days}-day streak",
+    "todayLabel": "Today",
+    "defaultStudentName": "Student",
+    "rankBadgeAlt": "{rank} grade badge"
   },
   "examPrepFinal": {
     "ddayCardTitle": "Final Exam",
@@ -108,7 +121,29 @@
     "midLockedAria": "{label} locked — {hint}",
     "midGeneratingAria": "{label} generating",
     "midMasteredAria": "{label} mastered",
-    "midStartAria": "{label} start"
+    "midStartAria": "{label} start",
+    "coreTestNotGenerated": "Core test #{number} hasn't been generated yet. Please complete the content generation pipeline.",
+    "midTestSetTitle": "Mid Test Set {setNumber}",
+    "midTestMetaSlash": "{minutes} min / {questions} questions",
+    "replayLabel": "Replay",
+    "startTestAria": "Start test",
+    "startMidTestAria": "Start mid test",
+    "masterReachedTitle": "Master reached",
+    "coreTestAria": {
+      "locked": "Test {number} locked",
+      "base": "Test {number}",
+      "selected": "Test {number} selected",
+      "mastered": "Test {number} mastered",
+      "selectedMastered": "Test {number} selected, mastered"
+    },
+    "midBoxAria": {
+      "locked": "Set {setNumber} Mid test — locked",
+      "masteredSelected": "Set {setNumber} Mid test — mastered, selected (tap to close)",
+      "masteredAvailable": "Set {setNumber} Mid test — mastered, tap to retry",
+      "selected": "Set {setNumber} Mid test — selected (tap to close)",
+      "available": "Set {setNumber} Mid test — tap to expand"
+    },
+    "bookshelfAria": "Today {today} books / {streak}-day streak shelf"
   },
   "aiTutorTopbar": {
     "newChat": "New chat",

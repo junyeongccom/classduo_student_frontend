@@ -115,7 +115,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
       test.id.startsWith('placeholder-')
     ) {
       setStartError(
-        `${test.number}회차의 핵심 테스트가 아직 생성되지 않았어요. 컨텐츠 생성 파이프라인을 완료해주세요.`,
+        t('examPrepFinal.coreTestNotGenerated', { number: test.number }),
       )
       return
     }

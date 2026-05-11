@@ -9,6 +9,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { fetchCourseAttemptCounts } from '../../services/examPrepService'
 import { getKstTodayIso } from '../result-overlay/utils'
@@ -88,6 +89,7 @@ function generateBooks(count: number): BookSlot[] {
 const FLY_RESET_MS = 900
 
 export function BookshelfWidget({ currentStreak, courseId, size = 64, className }: BookshelfWidgetProps) {
+  const t = useTranslations()
   const shelfBg = resolveShelfBg(currentStreak)
 
   // 오늘 풀이 수 — 백엔드 attempt-counts API (course_id 필터). localStorage 미사용.
@@ -139,7 +141,7 @@ export function BookshelfWidget({ currentStreak, courseId, size = 64, className 
       type="button"
       onClick={handleClick}
       disabled={visibleCount === 0}
-      aria-label={`오늘 ${todayCount}권 / 출석 ${currentStreak}일차 책장`}
+      aria-label={t('examPrepFinal.bookshelfAria', { today: todayCount, streak: currentStreak })}
       className={cn(
         'relative shrink-0 overflow-hidden transition-transform active:scale-95 disabled:cursor-default',
         className,

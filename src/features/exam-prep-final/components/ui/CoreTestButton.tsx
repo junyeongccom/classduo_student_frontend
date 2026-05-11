@@ -6,6 +6,7 @@
 
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import type { CoreTest } from '../../types'
 
@@ -59,6 +60,7 @@ export function CoreTestButton({
   isSelected,
   onClick,
 }: CoreTestButtonProps) {
+  const t = useTranslations()
   const isLocked = test.status === 'locked'
   const cfg = SET_BUTTON_STYLES[setTone]
   const numberLabel = String(test.number).padStart(2, '0')
@@ -75,7 +77,7 @@ export function CoreTestButton({
         type="button"
         disabled
         className="relative flex h-36 w-36 cursor-not-allowed items-center justify-center rounded-3xl bg-gray-100 shadow-[0_8px_0_#D1D5DB] dark:bg-gray-800 dark:shadow-[0_8px_0_#374151]"
-        aria-label={`Test ${test.number} locked`}
+        aria-label={t('examPrepFinal.coreTestAria.locked', { number: test.number })}
       >
         <img
           src="/자물쇠.png"
@@ -85,10 +87,19 @@ export function CoreTestButton({
           className="opacity-60"
           draggable={false}
         />
-        {showMasterBadge && <MasterStamp src={masterSrc} />}
+        {showMasterBadge && <MasterStamp src={masterSrc} masterReachedTitle={t('examPrepFinal.masterReachedTitle')} />}
       </button>
     )
   }
+
+  const activeAriaKey =
+    isSelected && showMasterBadge
+      ? 'examPrepFinal.coreTestAria.selectedMastered'
+      : isSelected
+        ? 'examPrepFinal.coreTestAria.selected'
+        : showMasterBadge
+          ? 'examPrepFinal.coreTestAria.mastered'
+          : 'examPrepFinal.coreTestAria.base'
 
   // 활성 버튼 — 선택 시 pressed 고정(translate + shadow 제거), 비선택 시 set색 하단 명암
   return (
@@ -102,7 +113,7 @@ export function CoreTestButton({
           ? 'translate-y-2 shadow-none'
           : `${cfg.shadow} active:translate-y-1 active:shadow-none`,
       )}
-      aria-label={`Test ${test.number}${isSelected ? ' selected' : ''}${showMasterBadge ? ' mastered' : ''}`}
+      aria-label={t(activeAriaKey, { number: test.number })}
     >
       <span
         className={cn(
@@ -115,19 +126,19 @@ export function CoreTestButton({
       </span>
 
       {/* MASTER 도장 — 숫자 위로 (z-10), 버튼 내부라 pressed 시 같이 translate */}
-      {showMasterBadge && <MasterStamp src={masterSrc} />}
+      {showMasterBadge && <MasterStamp src={masterSrc} masterReachedTitle={t('examPrepFinal.masterReachedTitle')} />}
     </button>
   )
 }
 
 /** Master 도장 — 버튼 하단에 배치. drop-shadow(블러) 제거. PNG 원본 비율 유지. */
-function MasterStamp({ src }: { src: string }) {
+function MasterStamp({ src, masterReachedTitle }: { src: string; masterReachedTitle: string }) {
   return (
     <img
       src={src}
       alt="MASTER"
       aria-label="Master"
-      title="Master 도달"
+      title={masterReachedTitle}
       className="pointer-events-none absolute bottom-3 left-1/2 z-10 w-[100%] max-w-none -translate-x-1/2 select-none object-contain"
       draggable={false}
     />

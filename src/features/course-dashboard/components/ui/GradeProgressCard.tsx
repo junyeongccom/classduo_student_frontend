@@ -8,6 +8,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { resolveGradeTier } from '../../domain/grade'
 import { RANK_THRESHOLDS } from '@/features/exam-prep-final/components/result-overlay/utils'
 
@@ -27,6 +28,7 @@ export function GradeProgressCard({
   rankCode,
   courseTitle,
 }: GradeProgressCardProps) {
+  const t = useTranslations()
   // 백엔드 RANK_THRESHOLDS 기반 진행률 계산.
   const step = RANK_THRESHOLDS.find((t) => t.from === rankCode)
   const isMax = !step
@@ -47,7 +49,7 @@ export function GradeProgressCard({
           className="text-xl font-bold text-gray-900 dark:text-gray-50"
           style={{ fontFamily: 'Pretendard, sans-serif' }}
         >
-          {displayName} 님의 예상 학점
+          {t('courseDashboard.expectedGradeTitle', { name: displayName })}
         </h2>
       </header>
 
@@ -56,7 +58,7 @@ export function GradeProgressCard({
         <div className="flex h-24 w-24 shrink-0 items-center justify-center">
           <Image
             src={tier.badgeSrc}
-            alt={`${rankCode} 등급 뱃지`}
+            alt={t('courseDashboard.rankBadgeAlt', { rank: rankCode })}
             width={96}
             height={96}
             className="h-full w-full object-contain"
@@ -87,7 +89,9 @@ export function GradeProgressCard({
             className="text-xs font-medium text-gray-500"
             style={{ fontFamily: 'Pretendard, sans-serif' }}
           >
-            {isMax ? '최고 등급 도달!' : `다음 등급까지 ${xpToNext.toLocaleString()} XP`}
+            {isMax
+              ? t('courseDashboard.maxRankReached')
+              : t('courseDashboard.xpToNext', { xp: xpToNext.toLocaleString() })}
           </span>
 
           {/* progress bar — 너무 길어 보이지 않게 max-width 로 제한 (이슈 13) */}
@@ -104,7 +108,7 @@ export function GradeProgressCard({
       </div>
 
       <p className="mt-3 text-center text-xs text-gray-400">
-        실제 {courseTitle ?? ''} 학점이 아닙니다. Aplus 서비스에서만 사용되는 등급입니다.
+        {t('courseDashboard.gradeDisclaimer', { course: courseTitle ?? '' })}
       </p>
     </section>
   )
