@@ -13,6 +13,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import type { FinalResultData, MasteryState } from './types'
 import { formatElapsed, getRankProgress } from './utils'
 
@@ -42,6 +43,7 @@ const WRONG_RED = '#F4473E'
 const HINT_GREEN_OPAQUE = 'rgba(118, 215, 111, 0.5)'
 
 export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimation }: Phase5Props) {
+  const t = useTranslations()
   const {
     pre,
     postTotalXp,
@@ -140,7 +142,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
   // 2번째 줄(주차차시) — mid/final 은 통합 라벨 사용
   const sessionLine =
     testType === 'mid'
-      ? `세트 ${testNumber ?? ''} 중간 테스트`
+      ? t('examPrepFinal.midTestOfSet', { testNumber: testNumber ?? '' })
       : testType === 'final'
         ? '최종 테스트'
         : sessionLabel
@@ -163,7 +165,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
           {allMaster && (
             <img
               src="/master-big.png"
-              alt="테스트 마스터!"
+              alt={t('examPrepFinal.testMasterAlt')}
               aria-hidden
               draggable={false}
               className="master-stamp-pop pointer-events-none absolute right-0 top-0 z-10 h-24 w-auto max-w-[6.5rem] select-none object-contain opacity-70"
@@ -183,7 +185,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         <div className="flex flex-col gap-4">
           <div className="flex items-baseline justify-between gap-4 pr-44">
             <div className="flex items-baseline gap-4">
-              <span className="text-2xl font-bold text-gray-900">총 획득 경험치</span>
+              <span className="text-2xl font-bold text-gray-900">{t('examPrepFinal.totalEarnedXp')}</span>
               <span className="text-5xl font-black text-gray-900">
                 {xpDisplay.toLocaleString()} XP
               </span>
@@ -227,7 +229,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         <div className="flex w-[180px] flex-col gap-4">
           <div className="te-fade-up flex h-32 flex-col items-start justify-center gap-1 rounded-2xl border border-gray-200 bg-white p-5">
             <span className="text-2xl font-black text-gray-900">{postCurrentStreak}일 째</span>
-            <span className="text-sm font-medium text-gray-500">연속 학습 중</span>
+            <span className="text-sm font-medium text-gray-500">{t('examPrepFinal.streakOngoing')}</span>
           </div>
           <div className="te-fade-up flex h-24 items-center justify-start rounded-2xl border border-gray-200 bg-white px-5" style={{ animationDelay: '80ms' }}>
             <span className="text-3xl font-black tabular-nums text-gray-900">
@@ -238,7 +240,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
 
         {/* 가운데 — 숙련도 현황 (풀이 전 → 풀이 후) */}
         <div className="te-fade-up flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5" style={{ animationDelay: '120ms' }}>
-          <span className="text-base font-bold text-gray-900">숙련도 현황</span>
+          <span className="text-base font-bold text-gray-900">{t('examPrepFinal.masterySummaryTitle')}</span>
           <div className="flex flex-col gap-2.5">
             <MasteryRow
               label="Learning"
@@ -297,7 +299,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
                     {skippedMaster ? (
                       <img
                         src="/master.png"
-                        alt={`${d.seq}번 마스터`}
+                        alt={t('examPrepFinal.questionMasteredAlt', { seq: d.seq })}
                         aria-hidden
                         draggable={false}
                         className="absolute inset-0 h-full w-full select-none object-contain"

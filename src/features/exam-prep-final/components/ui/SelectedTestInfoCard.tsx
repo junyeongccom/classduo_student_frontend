@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from 'react'
 import { Play, RotateCcw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { fetchTestMasterySummary } from '../../services/examPrepService'
 import type { CoreTest } from '../../types'
 
@@ -30,8 +31,12 @@ function _isBackendTestId(id: string): boolean {
 }
 
 export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProps) {
+  const t = useTranslations()
   const numberLabel = String(test.number).padStart(2, '0')
-  const sessionLabel = `${test.weekNo}주차 ${test.sessionNo}차시`
+  const sessionLabel = t('examPrepFinal.weekSession', {
+    week: test.weekNo,
+    session: test.sessionNo,
+  })
 
   const [mastery, setMastery] = useState<MasteryCounts | null>(null)
 
@@ -125,8 +130,8 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
           <button
             type="button"
             onClick={onStart}
-            aria-label="다시 보기"
-            title="다시 보기"
+            aria-label={t('examPrepFinal.replayLabel')}
+            title={t('examPrepFinal.replayLabel')}
             className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:bg-gray-50 hover:text-[#6366F1] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
           >
             <RotateCcw className="h-4 w-4" />
@@ -136,7 +141,7 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
         <button
           type="button"
           onClick={onStart}
-          aria-label="Start test"
+          aria-label={t('examPrepFinal.startTestAria')}
           className="flex h-20 w-20 shrink-0 self-center items-center justify-center rounded-2xl bg-[#6366F1] text-white shadow-md shadow-indigo-500/20 transition-colors hover:bg-[#5558E6]"
         >
           <Play className="h-8 w-8 fill-white" />

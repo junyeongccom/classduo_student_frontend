@@ -11,6 +11,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import type { QuestionDelta, MasteryState } from './types'
 import { shuffleEventsPreservingPerQuestionOrder, type XpEvent } from './utils'
 
@@ -80,6 +81,7 @@ interface Droplet {
 }
 
 export function Phase1MasterXp({ deltas, onDone }: Phase1Props) {
+  const t = useTranslations()
   // ─── 큐 (random shuffle 1회) ───
   const [queue] = useState<XpEvent[]>(() => {
     const groups = new Map<number, XpEvent[]>()
@@ -241,7 +243,7 @@ export function Phase1MasterXp({ deltas, onDone }: Phase1Props) {
       {/* 우측: 카운터 — 라벨 + N XP. 카운터 영역은 고정 너비 (w-[360px]) 로 자릿수 변동에도
           중앙 위치/그리드 좌표가 흔들리지 않게 한다 (사용자 요청 7번). */}
       <div className="ml-[140px] flex w-[360px] shrink-0 flex-col items-end gap-4">
-        <span className="text-xl font-bold text-gray-900">마스터 달성 경험치</span>
+        <span className="text-xl font-bold text-gray-900">{t('examPrepFinal.masterXpEarned')}</span>
         {/* counter-bump 애니메이션이 scale 1.22 로 살짝 커지면서 'P' 가 우측 잘리던 문제 →
             overflow-visible + pr 여유로 해결. */}
         <div className="flex h-20 w-full items-center justify-end pr-2 text-right">

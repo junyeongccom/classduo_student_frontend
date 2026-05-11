@@ -8,7 +8,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
 import {
   fetchCoreTestsByCourse,
@@ -57,8 +57,10 @@ function lectureToCoreTest(args: {
   apiTestId: string | null  // exam_prep_test.id (백엔드 매칭 결과)
   apiQuestionCount: number  // 백엔드 question_count (없으면 0)
   apiIsMastered: boolean  // 백엔드 is_mastered (test_user_state.mastered_at)
+  /** locale-aware fallback 생성용 — '{week}주차 {session}차시' / 'W{week} S{session}' */
+  fallbackTitle: (week: number, session: number) => string
 }): CoreTest {
-  const { lecture, number, apiTestId, apiQuestionCount, apiIsMastered } = args
+  const { lecture, number, apiTestId, apiQuestionCount, apiIsMastered, fallbackTitle } = args
   // 26개 정원 고정 분배 (set1=9, set2=9, set3=8) — SET_RANGES 기준
   const setNumber: 1 | 2 | 3 =
     number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
@@ -77,7 +79,7 @@ function lectureToCoreTest(args: {
     lectureTitle:
       lecture.title ??
       lecture.essence_7words ??
-      `${lecture.week_number ?? 0}주차 ${lecture.session_number ?? 0}차시`,
+      fallbackTitle(lecture.week_number ?? 0, lecture.session_number ?? 0),
     masteryLevel: 0,  // v1: mastery 데이터 없음
     status,
     metaCounts: {
@@ -98,6 +100,7 @@ interface UseExamPrepDataResult {
 
 export function useExamPrepData(courseId: string): UseExamPrepDataResult {
   const locale = useLocale()
+  const t = useTranslations()
   const {
     lectures,
     isLoading: lecturesLoading,
@@ -262,6 +265,8 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
           apiTestId: api?.test_id ?? null,
           apiQuestionCount: api?.question_count ?? 0,
           apiIsMastered: api?.is_mastered ?? false,
+          fallbackTitle: (week, session) =>
+            t('examPrepFinal.weekSession', { week, session }),
         })
       },
     )

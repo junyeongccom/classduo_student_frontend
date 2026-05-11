@@ -16,6 +16,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import type { MidTest } from '../../types'
 
@@ -80,6 +81,7 @@ const LEGACY_SEEN_KEY = (courseId: string, setNumber: number) =>
   `aplus-mid-unlock-seen-${courseId}-${setNumber}`
 
 export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: MidTestBoxProps) {
+  const t = useTranslations()
   const assets = SET_ASSETS[midTest.setNumber]
   const isMastered = midTest.status === 'mastered'
 
@@ -165,15 +167,16 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
   const isClickable = stage === 'pages' && !!onClick
 
   const ariaLabel = (() => {
-    if (stage === 'locked' || stage === 'unlocking') return `Set ${midTest.setNumber} 중간 테스트 — 잠김`
+    const params = { setNumber: midTest.setNumber }
+    if (stage === 'locked' || stage === 'unlocking') return t('examPrepFinal.midBoxAria.locked', params)
     if (isMastered) {
       return isSelected
-        ? `Set ${midTest.setNumber} 중간 테스트 — 마스터 완료, 선택됨 (다시 누르면 닫힘)`
-        : `Set ${midTest.setNumber} 중간 테스트 — 마스터 완료, 탭하여 다시 풀기`
+        ? t('examPrepFinal.midBoxAria.masteredSelected', params)
+        : t('examPrepFinal.midBoxAria.masteredAvailable', params)
     }
     return isSelected
-      ? `Set ${midTest.setNumber} 중간 테스트 — 선택됨 (다시 누르면 닫힘)`
-      : `Set ${midTest.setNumber} 중간 테스트 — 탭하면 펼쳐져요`
+      ? t('examPrepFinal.midBoxAria.selected', params)
+      : t('examPrepFinal.midBoxAria.available', params)
   })()
 
   const handleClick = () => {
@@ -315,7 +318,7 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
           src={assets.masterStamp}
           alt="MASTER"
           aria-label="Master"
-          title="Master 도달"
+          title={t('examPrepFinal.masterReachedTitle')}
           draggable={false}
           className="pointer-events-none absolute left-1/2 top-1/2 z-[9] w-[110%] max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain"
         />

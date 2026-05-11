@@ -11,7 +11,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { Phase1MasterXp } from './Phase1MasterXp'
 import { Phase23DailyXp } from './Phase23DailyXp'
 import type { FinalResultData } from './types'
@@ -25,10 +25,10 @@ interface TestEndOverlayProps {
 type Stage = 'phase1' | 'phase23' | 'done'
 
 export function TestEndOverlay({ data, onAnimationComplete }: TestEndOverlayProps) {
+  const t = useTranslations()
   const [stage, setStage] = useState<Stage>('phase1')
   /** 진입 1초 후 노출되는 글로벌 건너뛰기 버튼. 클릭 시 Phase 1~4 건너뛰고 Phase 5 로 진입. */
   const [showSkip, setShowSkip] = useState(false)
-  const locale = useLocale()
 
   useEffect(() => {
     const id = window.setTimeout(() => setShowSkip(true), 1000)
@@ -41,7 +41,7 @@ export function TestEndOverlay({ data, onAnimationComplete }: TestEndOverlayProp
     onAnimationComplete()
   }
 
-  const skipLabel = locale === 'en' ? 'Skip' : '건너뛰기'
+  const skipLabel = t('examPrepFinal.skipLabel')
   // Phase 1/2/3/4 (z-[200]) 위에 떠야 하므로 z-[210]. stage !== 'done' 동안만 노출.
   const skipButton =
     showSkip && stage !== 'done' ? (

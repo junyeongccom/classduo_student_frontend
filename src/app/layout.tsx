@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 import { cookies } from 'next/headers'
 import '@/shared/styles/globals.css'
@@ -36,6 +36,13 @@ export const metadata: Metadata = {
     description: 'AI 기반 학습 보조 플랫폼',
     images: ['/present_image.png'],
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
 }
 
 export default async function RootLayout({

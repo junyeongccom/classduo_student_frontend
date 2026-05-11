@@ -8,7 +8,7 @@
 'use client'
 
 import { CalendarClock, Zap } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import type { ExamPrepData } from '../../types'
 
 interface TopHeaderCardsProps {
@@ -18,11 +18,12 @@ interface TopHeaderCardsProps {
 
 export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps) {
   const t = useTranslations()
+  const locale = useLocale()
   const masteryPercent =
     data.totalCoreTests > 0
       ? Math.round((data.masteredCount / data.totalCoreTests) * 100)
       : 0
-  const formattedExamDate = formatKoreanDate(data.examDate)
+  const formattedExamDate = formatExamDate(data.examDate, locale)
 
   return (
     <div className="grid h-full grid-cols-1 gap-5 md:grid-cols-3">
@@ -72,13 +73,18 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
         </p>
         {data.recommendedTest && (() => {
           const r = data.recommendedTest
-          const sessionLabel = `${r.weekNo}주차 ${String(r.sessionNo).padStart(2, '0')}차시`
+          const sessionLabel = t('examPrepFinal.weekSession', {
+            week: r.weekNo,
+            session: String(r.sessionNo).padStart(2, '0'),
+          })
           // lectureTitle 이 의미있는 값일 때만 ' · {title}' 덧붙임.
-          // (useExamPrepData lectureToCoreTest 의 fallback 이 "{wk}주차 {ss}차시" 형태라
-          //  그대로 표시하면 "6주차 02차시 · 6주차 2차시" 식의 중복 노출 발생)
+          // (useExamPrepData lectureToCoreTest 의 fallback 이 weekSession 키 형태라
+          //  그대로 표시하면 중복 노출 발생 — locale 무관하게 "weekN sessionM" 형식 매칭)
           const title = (r.lectureTitle || '').trim()
           const looksLikeSessionLabel =
-            !title || /^\d+주차\s+\d+차시$/.test(title)
+            !title ||
+            /^\d+주차\s+\d+차시$/.test(title) ||
+            /^W\d+\s+S\d+$/.test(title)
           return (
             <p className="mt-3 flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-gray-50">
               <Zap className="h-5 w-5 shrink-0 fill-[#6366F1] text-[#6366F1]" />
@@ -101,8 +107,15 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
   )
 }
 
-function formatKoreanDate(iso: string): string {
+function formatExamDate(iso: string, locale: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`
+  if (locale === 'ko') {
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`
+  }
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }

@@ -12,6 +12,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { BookshelfStage } from './BookshelfStage'
 import { resolveStreakTier } from './utils'
 
@@ -44,6 +45,7 @@ export function Phase23DailyXp({
   calendarCounts,
   onDone,
 }: Phase23Props) {
+  const t = useTranslations()
   const tier = resolveStreakTier(postStreak)
   const [rightStage, setRightStage] = useState<RightStage>('phase2')
   const [counterDisplay, setCounterDisplay] = useState(preTodayCount)
@@ -103,7 +105,7 @@ export function Phase23DailyXp({
             rightStage === 'phase2' ? 'is-in' : 'is-out'
           }`}
         >
-          <span className="text-base font-bold text-gray-900">오늘의 테스트 풀이 횟수</span>
+          <span className="text-base font-bold text-gray-900">{t('examPrepFinal.todayTestCount')}</span>
           <span
             key={counterPulse}
             className="te-num-pop text-7xl font-black text-gray-900"

@@ -7,6 +7,7 @@
 
 'use client'
 
+import { useLocale, useTranslations } from 'next-intl'
 import { resolveDdayTone } from '../../domain/dday'
 import { CalendarDayCell } from './CalendarDayCell'
 import type { MonthGrid } from '../../domain/calendar'
@@ -22,9 +23,19 @@ export function AttendanceCalendarCard({
   examDday,
   currentStreak,
 }: AttendanceCalendarCardProps) {
+  const t = useTranslations()
+  const locale = useLocale()
   const ddayTone = resolveDdayTone(examDday)
   const ddayLabel =
     examDday == null ? 'D-?' : examDday === 0 ? 'D-day' : `D-${examDday}`
+
+  // 월 표시 — 영어는 월 이름 ("May"), 한국어는 "{N}월" 키
+  const monthDisplay =
+    locale === 'ko'
+      ? t('courseDashboard.monthLabel', { month: monthGrid.month })
+      : new Date(2024, monthGrid.month - 1, 1).toLocaleString('en-US', {
+          month: 'long',
+        })
 
   // 7열 × N행
   const rows: typeof monthGrid.cells[] = []
@@ -56,7 +67,7 @@ export function AttendanceCalendarCard({
             className="text-3xl font-semibold leading-none"
             style={{ color: '#383698', fontFamily: 'Pretendard, sans-serif' }}
           >
-            {monthGrid.month}월
+            {monthDisplay}
           </h2>
           <div className="flex items-center gap-2">
             {currentStreak > 0 && (
@@ -64,7 +75,7 @@ export function AttendanceCalendarCard({
                 className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
                 style={{ backgroundColor: ddayTone.bg, color: ddayTone.text }}
               >
-                {currentStreak}일 연속 학습 중
+                {t('courseDashboard.streakInProgress', { days: currentStreak })}
               </span>
             )}
             <span
