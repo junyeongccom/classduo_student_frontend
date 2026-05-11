@@ -121,7 +121,7 @@ export function Phase23DailyXp({
           }`}
         >
           <span className="text-3xl font-bold leading-none text-gray-900">
-            일일 참여 획득 경험치
+            {t('examPrepFinal.dailyParticipationXp')}
           </span>
           <div className="flex items-end gap-3">
             <span className="te-num-pop text-8xl font-black leading-none text-gray-900">
@@ -138,11 +138,11 @@ export function Phase23DailyXp({
           }`}
         >
           <span className="text-base font-bold tracking-wide text-gray-700">
-            연속 보상 강화
+            {t('examPrepFinal.streakRewardBoost')}
           </span>
           <DayCardsRow />
           <span className="mt-1 text-lg font-bold text-gray-900">
-            1일 뒤 오면 {nextDayXp(postStreak)}XP를 얻어요!
+            {t('examPrepFinal.nextDayXpHint', { xp: nextDayXp(postStreak) })}
           </span>
         </div>
 
@@ -153,12 +153,10 @@ export function Phase23DailyXp({
           }`}
         >
           <span
-            className="text-5xl font-black leading-tight text-gray-900"
+            className="whitespace-pre-line text-5xl font-black leading-tight text-gray-900"
             style={{ fontFamily: 'Pretendard, sans-serif' }}
           >
-            오늘은 이미 일일 참여
-            <br />
-            경험치를 얻었어요.
+            {t('examPrepFinal.alreadyEarnedToday')}
           </span>
         </div>
         {/* Phase 4 — 하단 블록: 연속 보상 강화 (Phase3 와 동일 톤) */}
@@ -168,11 +166,11 @@ export function Phase23DailyXp({
           }`}
         >
           <span className="text-base font-bold tracking-wide text-gray-700">
-            연속 보상 강화
+            {t('examPrepFinal.streakRewardBoost')}
           </span>
           <DayCardsRow />
           <span className="mt-1 text-lg font-bold text-gray-900">
-            1일 뒤 오면 {nextDayXp(postStreak)}XP를 얻어요!
+            {t('examPrepFinal.nextDayXpHint', { xp: nextDayXp(postStreak) })}
           </span>
         </div>
 
@@ -184,7 +182,7 @@ export function Phase23DailyXp({
             className="te-fade-up absolute bottom-12 right-20 rounded-2xl px-10 py-3.5 text-base font-bold text-white transition-colors hover:opacity-90"
             style={{ backgroundColor: '#2D2461', fontFamily: 'Pretendard, sans-serif' }}
           >
-            다음
+            {t('examPrepFinal.nextButton')}
           </button>
         )}
       </div>

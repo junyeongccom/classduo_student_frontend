@@ -163,7 +163,12 @@
     "streakDays": "Day {days}",
     "restart": "Restart",
     "nextQuestion": "Next question",
-    "endTest": "End"
+    "endTest": "End",
+    "dailyParticipationXp": "Daily Participation XP",
+    "streakRewardBoost": "Streak Reward Boost",
+    "nextDayXpHint": "Come back tomorrow for {xp} XP!",
+    "alreadyEarnedToday": "You've already earned\ntoday's participation XP.",
+    "nextButton": "Next"
   },
   "aiTutorTopbar": {
     "newChat": "New chat",
