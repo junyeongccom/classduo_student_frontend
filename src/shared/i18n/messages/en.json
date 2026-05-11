@@ -152,7 +152,18 @@
     "masterySummaryTitle": "Mastery Status",
     "questionMasteredAlt": "Q{seq} mastered",
     "masterXpEarned": "Master XP Earned",
-    "skipLabel": "Skip"
+    "skipLabel": "Skip",
+    "showExplanation": "Show explanation",
+    "hideExplanation": "Hide explanation",
+    "endQuizAria": "End quiz",
+    "endQuiz": "End quiz",
+    "encouragementAllMaster": "All mastered!",
+    "encouragementTryAgain": "Try again to earn more XP!",
+    "gradeDisclaimerShort": "• This is your current Aplus rank, not a test score.",
+    "streakDays": "Day {days}",
+    "restart": "Restart",
+    "nextQuestion": "Next question",
+    "endTest": "End"
   },
   "aiTutorTopbar": {
     "newChat": "New chat",

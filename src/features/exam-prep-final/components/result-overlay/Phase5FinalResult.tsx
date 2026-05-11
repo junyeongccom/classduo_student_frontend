@@ -151,7 +151,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
 
   // ─── 격려 문구 ───
   const allMaster = postMasterySummary.master >= total
-  const encouragement = allMaster ? '전부 마스터 했어요!' : '한 번 더 풀어서 경험치를 획득하세요!'
+  const encouragement = allMaster ? t('examPrepFinal.encouragementAllMaster') : t('examPrepFinal.encouragementTryAgain')
 
   return (
     <div
@@ -191,7 +191,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
               </span>
             </div>
             <span className="text-xs font-medium text-gray-500">
-              • 테스트 점수가 아닌 현재 Aplus 등급입니다.
+              {t('examPrepFinal.gradeDisclaimerShort')}
             </span>
           </div>
 
@@ -228,7 +228,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         {/* 좌측 column: 연속 학습 + 걸린 시간 (세로 stack) */}
         <div className="flex w-[180px] flex-col gap-4">
           <div className="te-fade-up flex h-32 flex-col items-start justify-center gap-1 rounded-2xl border border-gray-200 bg-white p-5">
-            <span className="text-2xl font-black text-gray-900">{postCurrentStreak}일 째</span>
+            <span className="text-2xl font-black text-gray-900">{t('examPrepFinal.streakDays', { days: postCurrentStreak })}</span>
             <span className="text-sm font-medium text-gray-500">{t('examPrepFinal.streakOngoing')}</span>
           </div>
           <div className="te-fade-up flex h-24 items-center justify-start rounded-2xl border border-gray-200 bg-white px-5" style={{ animationDelay: '80ms' }}>
@@ -325,7 +325,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
           className="rounded-2xl px-12 py-4 text-lg font-bold transition-colors"
           style={{ backgroundColor: '#E9E5FB', color: '#2D2461' }}
         >
-          다시 풀기
+          {t('examPrepFinal.restart')}
         </button>
         {onNext && (
           <button
@@ -333,7 +333,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
             onClick={onNext}
             className="rounded-2xl border border-gray-900 bg-white px-12 py-4 text-lg font-bold text-gray-900 transition-colors hover:bg-gray-50"
           >
-            다음 문제
+            {t('examPrepFinal.nextQuestion')}
           </button>
         )}
         <button
@@ -342,7 +342,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
           className="rounded-2xl px-12 py-4 text-lg font-bold text-white transition-colors hover:opacity-90"
           style={{ backgroundColor: '#2D2461' }}
         >
-          종료
+          {t('examPrepFinal.endTest')}
         </button>
       </div>
     </div>
