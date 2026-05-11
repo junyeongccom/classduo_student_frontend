@@ -80,7 +80,7 @@ export function TestSetTabs({ active, onChange }: TestSetTabsProps) {
             type="button"
             onClick={() => onChange(cfg.id)}
             className={cn(
-              'relative min-w-[80px] rounded-t-2xl px-[26px] text-lg font-bold transition-colors',
+              'relative min-w-[56px] rounded-t-2xl px-3 text-sm font-bold transition-colors md:min-w-[80px] md:px-[26px] md:text-lg',
               isActive
                 ? `${cfg.activeBg} ${cfg.activeText} ${cfg.activeBorder ?? ''} z-10 -mb-px h-16`
                 : `${cfg.inactiveBg} ${cfg.inactiveText} h-14 hover:opacity-90`,
