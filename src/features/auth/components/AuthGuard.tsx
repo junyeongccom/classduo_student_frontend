@@ -98,8 +98,14 @@ export function AuthGuard({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs text-gray-900 dark:text-gray-100 font-medium">{t('noticeLine3')}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('noticeLine4')}</p>
+            <div className="space-y-1.5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+              {t('noticeLine1') && <p>{t('noticeLine1')}</p>}
+              {t('noticeLine2') && <p>{t('noticeLine2')}</p>}
+              {t('noticeLine3') && (
+                <p className="text-gray-900 dark:text-gray-100 font-medium">{t('noticeLine3')}</p>
+              )}
+              {t('noticeLine4') && <p>{t('noticeLine4')}</p>}
+            </div>
             <div className="mt-2 flex items-center justify-between">
               <LanguageToggle size="sm" />
               <button
