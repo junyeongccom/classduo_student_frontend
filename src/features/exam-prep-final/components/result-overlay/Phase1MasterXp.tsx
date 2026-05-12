@@ -209,7 +209,7 @@ export function Phase1MasterXp({ deltas, onDone }: Phase1Props) {
   return (
     <div
       ref={stageRef}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-white py-12"
+      className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-8 bg-white px-4 py-6 md:flex-row md:gap-0 md:px-0 md:py-12"
       style={{ fontFamily: 'Pretendard, sans-serif' }}
     >
       {/* 좌측: 문항 그리드 5x2 */}
@@ -240,17 +240,14 @@ export function Phase1MasterXp({ deltas, onDone }: Phase1Props) {
         })}
       </div>
 
-      {/* 우측: 카운터 — 라벨 + N XP. 카운터 영역은 고정 너비 (w-[360px]) 로 자릿수 변동에도
-          중앙 위치/그리드 좌표가 흔들리지 않게 한다 (사용자 요청 7번). */}
-      <div className="ml-[140px] flex w-[360px] shrink-0 flex-col items-end gap-4">
-        <span className="text-xl font-bold text-gray-900">{t('examPrepFinal.masterXpEarned')}</span>
-        {/* counter-bump 애니메이션이 scale 1.22 로 살짝 커지면서 'P' 가 우측 잘리던 문제 →
-            overflow-visible + pr 여유로 해결. */}
-        <div className="flex h-20 w-full items-center justify-end pr-2 text-right">
+      {/* 우측(데스크탑) / 하단(모바일): 카운터 — 라벨 + N XP */}
+      <div className="flex w-full max-w-[360px] shrink-0 flex-col items-center gap-3 md:ml-[140px] md:items-end md:gap-4">
+        <span className="text-base font-bold text-gray-900 md:text-xl">{t('examPrepFinal.masterXpEarned')}</span>
+        <div className="flex h-14 w-full items-center justify-center pr-0 text-center md:h-20 md:justify-end md:pr-2 md:text-right">
           <span
             ref={counterRef}
             key={counterPulse}
-            className="te-counter-bump tabular-nums text-6xl font-black leading-none text-gray-900"
+            className="te-counter-bump tabular-nums text-4xl font-black leading-none text-gray-900 md:text-6xl"
           >
             {xpCount} XP
           </span>

@@ -989,6 +989,7 @@ export function CoreTestSolveContainer({
             currentQuestionState={null}
             onSelectSeq={() => {}}
             elapsedSec={elapsedSec}
+            hideOnMobile
           />
           <Phase5FinalResult
             data={finalData}
@@ -1019,7 +1020,7 @@ export function CoreTestSolveContainer({
         onExit={handleExit}
       />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex flex-col md:flex-row min-h-0 flex-1">
         <SolveSidebar
           sessionLabel={sessionLabel}
           lectureTitle={lectureTitle}
@@ -1041,7 +1042,7 @@ export function CoreTestSolveContainer({
         {/* 강의자료/녹음본 패널 (출처 클릭 시 자동 열림) — 사이드바 와 문제 영역 사이에 삽입.
             사이드바는 항상 가장 왼쪽 고정, 본 패널은 사이드바 오른쪽에 떠야 함. */}
         {isLeftPanelOpen && currentLectureId && (
-          <div className="flex h-full w-[360px] shrink-0 flex-col border-r border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+          <div className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:relative md:inset-auto md:h-full md:w-[360px] md:rounded-none md:border-t-0 md:border-r md:shadow-none shrink-0 dark:border-gray-700 dark:bg-gray-900">
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
               <div className="flex gap-1">
                 <button
@@ -1125,6 +1126,7 @@ export function CoreTestSolveContainer({
             }
             onSourceClick={handleSourceClick}
             onAskChatbot={handleAskChatbot}
+            mobileBottomSpacer={isLeftPanelOpen || isChatPanelOpen}
             // 모든 채점 가능한 문항이 채점됐거나 backend 가 attempt_completed 신호 또는
             // 모든 문항이 master 상태(다시풀 필요 없음) → 퀴즈 종료 버튼 활성화 (이슈 8)
             canFinish={
@@ -1141,7 +1143,7 @@ export function CoreTestSolveContainer({
 
         {/* 우측: AI 챗봇 패널 (챗봇 아이콘 클릭 시 자동 열림). */}
         {isChatPanelOpen && (
-          <div className="flex h-full w-[360px] shrink-0 flex-col border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+          <div className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:relative md:inset-auto md:h-full md:w-[360px] md:rounded-none md:border-t-0 md:border-l md:shadow-none shrink-0 dark:border-gray-700 dark:bg-gray-900">
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
                 AI 챗봇

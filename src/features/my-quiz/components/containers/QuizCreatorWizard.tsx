@@ -187,7 +187,7 @@ export default function QuizCreatorWizard({
             <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
               회차와 유형을 정하면 AI가 약 1~2분 만에 만들어드려요
             </p>
-            <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-gray-50 md:text-5xl">
+            <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-50 sm:text-3xl md:text-5xl">
               새 퀴즈 만들기
             </h1>
           </div>
@@ -412,9 +412,41 @@ export default function QuizCreatorWizard({
         </div>
       </div>
 
-      {/* ===================== STICKY BOTTOM BAR ===================== */}
-      <div className="sticky bottom-0 border-t border-gray-200 bg-white/90 px-8 py-4 backdrop-blur dark:border-gray-700 dark:bg-gray-900/90">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+      {/* ===================== STICKY BOTTOM BAR =====================
+          모바일: 한 줄 요약(라벨 생략, 점으로 구분) + 풀폭 버튼 (세로 스택)
+          데스크탑(md+): 기존 4컬럼 (라벨 + 값) + 우측 버튼 */}
+      <div className="sticky bottom-0 border-t border-gray-200 bg-white/90 px-4 py-3 backdrop-blur md:px-8 md:py-4 dark:border-gray-700 dark:bg-gray-900/90">
+        {/* 모바일 전용 — 컴팩트 인라인 요약 + 풀폭 버튼 */}
+        <div className="flex flex-col gap-2 md:hidden">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
+            <span className={selectedLecture ? '' : 'text-gray-400'}>
+              {selectedLecture ? `${selectedLecture.lecture_no}주차` : '회차 선택 안 됨'}
+            </span>
+            <span className="text-gray-300">·</span>
+            <span>
+              <span className="font-bold text-[#6366F1]">{totalCount}</span>
+              <span className="ml-0.5">문항</span>
+            </span>
+            <span className="text-gray-300">·</span>
+            <span>{totalCount > 0 ? `~${estimatedMinutes}분` : '~0분'}</span>
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={!ready}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition ${
+              ready
+                ? 'bg-[#6366F1] text-white hover:bg-[#4F46E5] hover:shadow-lg'
+                : 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+            }`}
+          >
+            <Sparkles className="h-4 w-4" />
+            {isSubmitting ? '생성 시작 중...' : '퀴즈 생성하기'}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* 데스크탑 — 기존 4컬럼 */}
+        <div className="mx-auto hidden max-w-5xl items-center justify-between gap-4 md:flex">
           <div className="flex items-center gap-4">
             <div>
               <p className="text-[11px] font-semibold text-gray-400">선택한 회차</p>

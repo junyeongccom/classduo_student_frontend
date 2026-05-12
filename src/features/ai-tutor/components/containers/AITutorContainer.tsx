@@ -469,8 +469,8 @@ export function AITutorContainer() {
       <div className="flex h-full min-h-0 overflow-hidden bg-transparent">
         <div ref={containerRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <main
-            className="flex flex-1 min-h-0 overflow-y-hidden overflow-x-hidden p-6"
-            style={{ paddingRight: showInlineNotesPanel ? notesPanelWidth : 0 }}
+            className="flex flex-1 min-h-0 overflow-y-hidden overflow-x-hidden p-3 sm:p-6 pr-3 sm:pr-6 md:pr-[var(--ai-pr,0px)]"
+            style={{ '--ai-pr': showInlineNotesPanel ? `${notesPanelWidth}px` : '0px' } as React.CSSProperties}
           >
             <div className="flex h-full w-full items-center justify-center -ml-3">
               <div
@@ -597,17 +597,19 @@ export function AITutorContainer() {
           </main>
 
           {showInlineNotesPanel && (
-            <div 
-              className="absolute inset-y-0 right-0 z-20 border-l border-gray-200 bg-white shadow-xl"
-              style={{ width: notesPanelWidth }}
+            <div
+              className="fixed inset-x-0 bottom-0 z-30 h-[50dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-y-0 md:right-0 md:left-auto md:bottom-auto md:h-full md:w-[var(--ai-w,380px)] md:rounded-none md:border-l md:border-t-0 md:shadow-xl md:z-20"
+              style={{ '--ai-w': `${notesPanelWidth}px` } as React.CSSProperties}
             >
-              {/* Resizer Handle */}
+              {/* Mobile grip handle */}
+              <div className="md:hidden mx-auto mt-2 h-1.5 w-12 rounded-full bg-gray-300" aria-hidden />
+              {/* Resizer Handle (desktop) */}
               <div
                 onMouseDown={(e) => {
                   e.preventDefault()
                   setIsResizingNotes(true)
                 }}
-                className={`absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
+                className={`hidden md:block absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
                   isResizingNotes ? 'bg-gray-900' : 'bg-transparent'
                 }`}
               />

@@ -235,7 +235,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
                     : t('summary.sourceEmptyTooltip')
                 }
                 disabled={!hasSourcePages}
-                disabledClick={isMobile}
+                disabledClick={false}
                 onClick={() => handleMaterialSourceClick(sectionKey, section.source_pages, totalMaterialPages)}
               />
 
@@ -249,7 +249,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
                     : t('summary.sourceEmptyTooltip')
                 }
                 disabled={!hasSourceChunks}
-                disabledClick={isMobile}
+                disabledClick={false}
                 onClick={() => handleRecordingSourceClick(sectionKey, section.source_chunks, totalRecordingChunks)}
               />
             </div>

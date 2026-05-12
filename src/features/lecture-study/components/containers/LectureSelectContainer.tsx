@@ -138,22 +138,22 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
     <>
       {/* Breadcrumb → Header topbar slot: 홈 > 과목명(대시보드) > 회차별 학습 */}
       <StudyspaceTopbarSlot>
-        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
           <Link
             href="/studyspace/home"
-            className="transition-colors hover:text-[#6366F1]"
+            className="shrink-0 transition-colors hover:text-[#6366F1]"
           >
             {t('lectureStudy.breadcrumbHome')}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
           <Link
             href={`/studyspace/course/${courseId}`}
-            className="truncate transition-colors hover:text-[#6366F1]"
+            className="min-w-0 truncate transition-colors hover:text-[#6366F1]"
           >
             {courseTitle ?? '...'}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="truncate font-semibold text-gray-900 dark:text-gray-100">
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          <span className="shrink-0 font-semibold text-gray-900 dark:text-gray-100">
             {t('courseNav.lectureStudy')}
           </span>
         </nav>

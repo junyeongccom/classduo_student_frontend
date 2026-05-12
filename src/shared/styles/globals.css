@@ -20,11 +20,24 @@
     overflow-x: hidden;
     font-family: 'Space Grotesk', 'Noto Sans KR', 'Apple SD Gothic Neo', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     height: 100%;
+    /* 한국어 단어 단위 줄바꿈 + 긴 URL/숫자 강제 줄바꿈 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
   }
 
   body {
     @apply bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-50;
     min-height: 100dvh;
+  }
+
+  /* iOS Safari 자동 zoom 방지 — 모바일에서 input/textarea/select 16px 보장.
+     !important 필수: Tailwind utility(text-sm 등)가 specificity로 미디어쿼리를 이기는 것 차단 */
+  @media (max-width: 640px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
   }
 
   a {
@@ -71,6 +84,38 @@
 }
 
 @layer utilities {
+  /* ───────────── 모바일 공용 유틸 ───────────── */
+
+  /* safe-area-inset 적용 (iOS notch/홈바) */
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pl-safe { padding-left: env(safe-area-inset-left); }
+  .pr-safe { padding-right: env(safe-area-inset-right); }
+  .top-safe { top: env(safe-area-inset-top); }
+  .bottom-safe { bottom: env(safe-area-inset-bottom); }
+
+  /* 한국어 단어 단위 줄바꿈 (globals body에 적용되긴 하지만 명시적 utility) */
+  .break-keep-all {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  /* 모달이 viewport를 넘지 않게 (좌우 여백 1rem) */
+  .modal-mobile-safe-w {
+    max-width: calc(100vw - 1rem);
+  }
+
+  /* 모달이 viewport 높이를 넘지 않게 (상하 여백 2rem) + iOS dvh */
+  .modal-mobile-safe-h {
+    max-height: calc(100dvh - 2rem);
+  }
+
+  /* 가로 스크롤 래퍼 (테이블, 코드블록, 차트 등) */
+  .scroll-x-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   /* Gooey 효과 배경 */
   .game-gooey-bg {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

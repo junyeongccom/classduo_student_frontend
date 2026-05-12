@@ -87,8 +87,8 @@ export function MarkdownMessage({ markdown, className, headingSize = 'default' }
           hr: () => null,
           // Tables (GFM)
           table: ({ children }) => (
-            <div className="my-3 overflow-x-auto">
-              <table className="min-w-[560px] w-full border-collapse border border-gray-200 dark:border-gray-700 text-sm">
+            <div className="my-3 overflow-x-auto -mx-1 sm:mx-0 scroll-x-wrapper">
+              <table className="min-w-full sm:min-w-[560px] w-full border-collapse border border-gray-200 dark:border-gray-700 text-sm">
                 {children}
               </table>
             </div>

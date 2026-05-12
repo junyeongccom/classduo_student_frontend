@@ -364,7 +364,7 @@ export function GameDescriptionPopup({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl gap-0 overflow-hidden p-0 max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-[calc(100vw-1rem)] sm:max-w-3xl gap-0 overflow-hidden p-0 max-h-[calc(100dvh-2rem)] flex flex-col">
         {onViewRanking && (
           <button
             onClick={onViewRanking}

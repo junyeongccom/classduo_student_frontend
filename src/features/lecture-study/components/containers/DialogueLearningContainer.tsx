@@ -8,7 +8,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { History, ChevronRight } from 'lucide-react'
+import { History, ChevronRight, Menu, X as XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
@@ -165,6 +165,16 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
   // Panel resizing
   const [isResizingNotes, setIsResizingNotes] = useState(false)
   const [isResizingMaterials, setIsResizingMaterials] = useState(false)
+  const [isLectureSidebarOpen, setIsLectureSidebarOpen] = useState(false)
+  // 데스크탑(md 이상) 여부 — notes/materials 패널 layout 분기 (모바일은 하단 55dvh sheet)
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)')
+    const update = () => setIsDesktopViewport(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
   const chatAreaRef = useRef<HTMLDivElement>(null)
 
   const MIN_CHAT_WIDTH = 280
@@ -227,26 +237,26 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     <>
       {/* Breadcrumb → Header topbar slot */}
       <StudyspaceTopbarSlot>
-        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
-          <Link href="/studyspace/home" className="transition-colors hover:text-[#6366F1]">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
+          <Link href="/studyspace/home" className="shrink-0 transition-colors hover:text-[#6366F1]">
             {t('lectureStudy.breadcrumbHome')}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
           <Link
             href={`/studyspace/course/${courseId}`}
-            className="transition-colors hover:text-[#6366F1]"
+            className="min-w-0 truncate transition-colors hover:text-[#6366F1]"
           >
             {courseTitle ?? '...'}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="font-semibold text-gray-900 dark:text-gray-50">
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          <span className="shrink-0 font-semibold text-gray-900 dark:text-gray-50">
             {t('lectureStudy.dialogueLearning')}
           </span>
         </nav>
       </StudyspaceTopbarSlot>
 
       <div className="flex h-full min-h-0 overflow-hidden">
-        {/* 회차 선택 사이드바 — 수업 고정, 게임/보상 없음 */}
+        {/* 회차 선택 사이드바 — 데스크탑 inline */}
         <aside className={`hidden h-full w-[320px] shrink-0 flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 ${hideSidebar ? '' : 'xl:flex'}`}>
           <DialogueLectureSidebar
             courseId={courseId}
@@ -256,16 +266,55 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
           />
         </aside>
 
+        {/* 모바일 회차 사이드바 drawer (xl 미만) */}
+        {isLectureSidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/40 xl:hidden"
+              onClick={() => setIsLectureSidebarOpen(false)}
+              aria-hidden
+            />
+            <aside className="fixed inset-y-0 left-0 z-50 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 xl:hidden">
+              <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+                <span className="text-sm font-bold text-gray-900 dark:text-gray-50">회차 선택</span>
+                <button
+                  onClick={() => setIsLectureSidebarOpen(false)}
+                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  aria-label="close"
+                >
+                  <XIcon className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                <DialogueLectureSidebar
+                  courseId={courseId}
+                  selectedLectureIds={selectedLectureIds}
+                  onSelectLectureIds={(ids) => { setSelectedLectureIds(ids); setIsLectureSidebarOpen(false) }}
+                  isLocked={messages.length > 0}
+                />
+              </div>
+            </aside>
+          </>
+        )}
+
         {/* 채팅 영역 — 콘텐츠 안에 맞게 100% 채움 */}
         <div ref={chatAreaRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <div
             className="flex flex-1 min-h-0 flex-col px-2 py-1.5 md:px-4"
-            style={{ paddingRight: rightPanelsWidth > 0 ? rightPanelsWidth + 16 : undefined }}
+            style={{ paddingRight: isDesktopViewport && rightPanelsWidth > 0 ? rightPanelsWidth + 16 : undefined }}
           >
             <div className="flex flex-1 min-h-0 flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
               {/* Chat Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shrink-0 md:gap-4 md:px-5 md:py-2.5">
                 <div className="flex items-center gap-1.5 md:gap-2">
+                  {/* 모바일 회차 사이드바 토글 */}
+                  <button
+                    onClick={() => setIsLectureSidebarOpen(true)}
+                    className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 xl:hidden"
+                    aria-label="open lecture sidebar"
+                  >
+                    <Menu className="h-4 w-4 md:h-5 md:w-5" />
+                  </button>
                   <button
                     onClick={handleNewChatAndResetPanels}
                     className="rounded-lg border border-gray-200 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:border-gray-300 hover:text-gray-700 md:px-3 md:py-1.5 md:text-sm"
@@ -300,6 +349,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     onClick={() => {
                       const nextState = !isNotesPanelOpen
                       toggleNotesPanel(nextState)
+                      // 모바일에선 둘 중 하나만 — notes 열 때 materials 자동 닫기
+                      if (nextState && !isDesktopViewport && isMaterialsPanelOpen) toggleMaterialsPanel(false)
                       if (nextState) setActiveTab('notes')
                       else if (isMaterialsPanelOpen) setActiveTab('materials')
                       else setActiveTab('answer')
@@ -321,6 +372,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     onClick={() => {
                       const nextState = !isMaterialsPanelOpen
                       toggleMaterialsPanel(nextState)
+                      // 모바일에선 둘 중 하나만 — materials 열 때 notes 자동 닫기
+                      if (nextState && !isDesktopViewport && isNotesPanelOpen) toggleNotesPanel(false)
                       if (nextState) setActiveTab('materials')
                       else if (isNotesPanelOpen) setActiveTab('notes')
                       else setActiveTab('answer')
@@ -365,21 +418,26 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
             </div>
           </div>
 
-          {/* 녹음본 출처 패널 (인라인, 리사이즈 가능) */}
+          {/* 녹음본 출처 패널 — 데스크탑 inline 사이드 / 모바일 하단 55dvh sheet */}
           {isNotesPanelOpen && (
             <div
-              className="absolute inset-y-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl"
-              style={{
-                width: notesPanelWidth,
-                right: isMaterialsPanelOpen ? materialsPanelWidth : 0,
-              }}
+              className={
+                isDesktopViewport
+                  ? 'absolute inset-y-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
+                  : 'fixed inset-x-0 bottom-0 z-[70] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+              }
+              style={
+                isDesktopViewport
+                  ? { width: notesPanelWidth, right: isMaterialsPanelOpen ? materialsPanelWidth : 0 }
+                  : undefined
+              }
             >
               <div
                 onMouseDown={(e) => {
                   e.preventDefault()
                   setIsResizingNotes(true)
                 }}
-                className={`absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
+                className={`hidden md:block absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
                   isResizingNotes ? 'bg-gray-900' : 'bg-transparent'
                 }`}
               />
@@ -393,11 +451,15 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
             </div>
           )}
 
-          {/* 강의자료 출처 패널 (인라인, 리사이즈 가능) */}
+          {/* 강의자료 출처 패널 — 데스크탑 inline 사이드 / 모바일 하단 55dvh sheet */}
           {isMaterialsPanelOpen && (
             <div
-              className="absolute inset-y-0 right-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl"
-              style={{ width: materialsPanelWidth }}
+              className={
+                isDesktopViewport
+                  ? 'absolute inset-y-0 right-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
+                  : 'fixed inset-x-0 bottom-0 z-[70] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+              }
+              style={isDesktopViewport ? { width: materialsPanelWidth } : undefined}
             >
               <div
                 onMouseDown={(e) => {

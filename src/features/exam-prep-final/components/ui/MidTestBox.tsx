@@ -207,7 +207,7 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
       aria-label={ariaLabel}
       aria-pressed={isClickable ? isSelected : undefined}
       className={cn(
-        'mid-scene group/midbook relative h-44 w-44 disabled:cursor-default',
+        'mid-scene group/midbook relative h-28 w-28 disabled:cursor-default md:h-44 md:w-44',
         isClickable && 'cursor-pointer',
         // 잠금해제 중: backdrop 위로 끌어올림 + 살짝 확대 → 포커스 부각
         stage === 'unlocking' &&
@@ -320,7 +320,7 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
           aria-label="Master"
           title={t('examPrepFinal.masterReachedTitle')}
           draggable={false}
-          className="pointer-events-none absolute left-1/2 top-1/2 z-[9] w-[110%] max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain"
+          className="pointer-events-none absolute left-1/2 top-1/2 z-[20] w-[110%] max-w-none -translate-x-1/2 -translate-y-1/2 select-none object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.25)]"
         />
       )}
     </button>

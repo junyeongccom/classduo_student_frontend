@@ -144,7 +144,7 @@ export function ChatComposer({
         ? createPortal(
             <div
               role="tooltip"
-              className="pointer-events-none fixed z-50 inline-flex max-w-[420px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 shadow-lg"
+              className="pointer-events-none fixed z-50 inline-flex max-w-[calc(100vw-2rem)] sm:max-w-[420px] rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 shadow-lg"
               style={{
                 left: helpPos.left,
                 top: helpPos.top,

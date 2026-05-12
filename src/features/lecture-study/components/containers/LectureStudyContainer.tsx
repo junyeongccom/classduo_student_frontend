@@ -335,7 +335,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
             <TabsTrigger
               key={tab}
               value={tab}
-              className="flex-1 rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+              className="flex-1 min-w-0 truncate rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
             >
               {t(`lectureStudy.rightPanel.${tab}Tab`)}
             </TabsTrigger>
@@ -366,28 +366,29 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     <div className="flex h-full flex-col">
       {/* Breadcrumb + Action buttons → Header topbar slot */}
       <StudyspaceTopbarSlot>
-        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
-          <Link href="/studyspace/home" className="transition-colors hover:text-[#6366F1]">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
+          {/* 모바일에선 부모 레벨 3개 숨기고 회차명만 truncate로 노출 — 글자단위 break + 헤더 부풀어오름 방지 */}
+          <Link href="/studyspace/home" className="hidden shrink-0 transition-colors hover:text-[#6366F1] md:inline">
             {t('lectureStudy.breadcrumbHome')}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 md:inline" />
           {courseId ? (
-            <Link href={`/studyspace/course/${courseId}`} className="transition-colors hover:text-[#6366F1]">
+            <Link href={`/studyspace/course/${courseId}`} className="hidden shrink-0 transition-colors hover:text-[#6366F1] md:inline">
               {resolvedCourseTitle}
             </Link>
           ) : (
-            <span>{resolvedCourseTitle}</span>
+            <span className="hidden shrink-0 md:inline">{resolvedCourseTitle}</span>
           )}
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 md:inline" />
           {courseId ? (
-            <Link href={`/studyspace/course/${courseId}/lectures`} className="transition-colors hover:text-[#6366F1]">
+            <Link href={`/studyspace/course/${courseId}/lectures`} className="shrink-0 transition-colors hover:text-[#6366F1]">
               {t('courseNav.lectureStudy')}
             </Link>
           ) : (
-            <span>{t('lectureStudy.tabLecture')}</span>
+            <span className="shrink-0">{t('lectureStudy.tabLecture')}</span>
           )}
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="truncate font-semibold text-gray-900 dark:text-gray-50">
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate font-semibold text-gray-900 dark:text-gray-50">
             {resolveLectureLabel()}
           </span>
         </nav>
@@ -437,9 +438,9 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </div>
         )}
 
-        {/* Mobile: 강의자료/녹음본 패널 (전체 폭 오버레이) */}
+        {/* Mobile: 강의자료/녹음본 패널 (시험풀이와 동일 — 하단 55dvh bottom sheet) */}
         {isMobile && isLeftPanelOpen && (
-          <section className="absolute inset-0 z-20 flex flex-col bg-white dark:bg-gray-900">
+          <section className="fixed inset-x-0 bottom-0 z-[70] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
             <Tabs
               value={leftTab}
               onValueChange={v => setLeftTab(v as LeftPanelTab)}
@@ -480,9 +481,9 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </section>
         )}
 
-        {/* Mobile: 채팅 패널 (전체 폭 오버레이) */}
+        {/* Mobile: 채팅 패널 (시험풀이와 동일 — 하단 55dvh bottom sheet) */}
         {isMobile && isChatPanelOpen && (
-          <section className="absolute inset-0 z-20 flex flex-col bg-white dark:bg-gray-900">
+          <section className="fixed inset-x-0 bottom-0 z-[70] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
             <div className="flex items-center justify-between shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 py-2">
               <div className="flex items-center gap-1.5">
                 <Bot className="h-3.5 w-3.5 text-gray-500" />

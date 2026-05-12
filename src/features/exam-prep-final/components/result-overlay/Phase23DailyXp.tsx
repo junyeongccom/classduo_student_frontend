@@ -77,10 +77,10 @@ export function Phase23DailyXp({
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex bg-white">
-      {/* 좌측: 진한 그레이 패널 */}
+    <div className="fixed inset-0 z-[200] flex flex-col bg-white md:flex-row">
+      {/* 좌측(데스크탑) / 상단(모바일): 진한 그레이 패널 */}
       <div
-        className="relative flex h-full w-[44%] shrink-0 items-center justify-center"
+        className="relative flex h-[38%] w-full shrink-0 items-center justify-center md:h-full md:w-[44%]"
         style={{ backgroundColor: '#242424' }}
       >
         <BookshelfStage
@@ -96,19 +96,19 @@ export function Phase23DailyXp({
 
       {/* 우측: 텍스트 영역 (cross-fade) */}
       <div
-        className="relative flex h-full flex-1 flex-col items-start justify-center gap-12 px-20"
+        className="relative flex h-full flex-1 flex-col items-start justify-center gap-6 px-5 md:gap-12 md:px-20"
         style={{ fontFamily: 'Pretendard, sans-serif' }}
       >
         {/* Phase 2 */}
         <div
-          className={`dar-panel absolute left-20 top-1/2 -translate-y-1/2 flex flex-col items-start gap-4 ${
+          className={`dar-panel absolute left-5 right-5 top-1/2 md:left-20 md:right-auto -translate-y-1/2 flex flex-col items-start gap-4 ${
             rightStage === 'phase2' ? 'is-in' : 'is-out'
           }`}
         >
           <span className="text-base font-bold text-gray-900">{t('examPrepFinal.todayTestCount')}</span>
           <span
             key={counterPulse}
-            className="te-num-pop text-7xl font-black text-gray-900"
+            className="te-num-pop text-5xl font-black text-gray-900 md:text-7xl"
           >
             {counterDisplay}
           </span>
@@ -116,24 +116,24 @@ export function Phase23DailyXp({
 
         {/* Phase 3 — 상단 블록: 라벨 + 큰 XP */}
         <div
-          className={`dar-panel absolute left-20 right-20 top-[12%] flex flex-col items-start gap-6 ${
+          className={`dar-panel absolute left-5 right-5 top-[12%] md:left-20 md:right-20 flex flex-col items-start gap-6 ${
             rightStage === 'phase3-top' || rightStage === 'phase3-full' ? 'is-in' : 'is-out'
           }`}
         >
-          <span className="text-3xl font-bold leading-none text-gray-900">
+          <span className="text-xl font-bold leading-none text-gray-900 md:text-3xl">
             {t('examPrepFinal.dailyParticipationXp')}
           </span>
           <div className="flex items-end gap-3">
-            <span className="te-num-pop text-8xl font-black leading-none text-gray-900">
+            <span className="te-num-pop text-5xl font-black leading-none text-gray-900 md:text-8xl">
               {tier.dailyXp}
             </span>
-            <span className="text-3xl font-bold text-gray-900">XP</span>
+            <span className="text-xl font-bold text-gray-900 md:text-3xl">XP</span>
           </div>
         </div>
 
         {/* Phase 3 — 하단 블록: 연속 보상 강화 헤더 + DAY 카드 + 1일 뒤 안내 */}
         <div
-          className={`dar-panel absolute left-20 right-20 bottom-[10%] flex flex-col items-start gap-4 ${
+          className={`dar-panel absolute left-5 right-5 bottom-[10%] md:left-20 md:right-20 flex flex-col items-start gap-4 ${
             rightStage === 'phase3-full' ? 'is-in' : 'is-out'
           }`}
         >
@@ -148,12 +148,12 @@ export function Phase23DailyXp({
 
         {/* Phase 4 — 상단 블록: "이미 받았어요" — 큰 글자로 꽉 차게 */}
         <div
-          className={`dar-panel absolute left-20 right-20 top-[14%] flex flex-col items-start ${
+          className={`dar-panel absolute left-5 right-5 top-[14%] md:left-20 md:right-20 flex flex-col items-start ${
             rightStage === 'phase4' ? 'is-in' : 'is-out'
           }`}
         >
           <span
-            className="whitespace-pre-line text-5xl font-black leading-tight text-gray-900"
+            className="whitespace-pre-line text-3xl font-black leading-tight text-gray-900 md:text-5xl"
             style={{ fontFamily: 'Pretendard, sans-serif' }}
           >
             {t('examPrepFinal.alreadyEarnedToday')}
@@ -161,7 +161,7 @@ export function Phase23DailyXp({
         </div>
         {/* Phase 4 — 하단 블록: 연속 보상 강화 (Phase3 와 동일 톤) */}
         <div
-          className={`dar-panel absolute left-20 right-20 bottom-[10%] flex flex-col items-start gap-4 ${
+          className={`dar-panel absolute left-5 right-5 bottom-[10%] md:left-20 md:right-20 flex flex-col items-start gap-4 ${
             rightStage === 'phase4' ? 'is-in' : 'is-out'
           }`}
         >
@@ -174,12 +174,14 @@ export function Phase23DailyXp({
           </span>
         </div>
 
-        {/* [다음] 버튼 — Phase 3/4 entrance 끝난 뒤 노출. Phase 2 에서는 표시 X. */}
+        {/* [다음] 버튼 — Phase 3/4 entrance 끝난 뒤 노출. Phase 2 에서는 표시 X.
+            모바일에선 phase4 콘텐츠와 겹치지 않게 중앙 고정 + bottom 작게.
+            데스크탑은 우하단 absolute. */}
         {canAdvance && rightStage !== 'phase2' && (
           <button
             type="button"
             onClick={() => onDoneRef.current()}
-            className="te-fade-up absolute bottom-12 right-20 rounded-2xl px-10 py-3.5 text-base font-bold text-white transition-colors hover:opacity-90"
+            className="te-fade-up fixed bottom-4 right-4 z-[205] rounded-2xl px-6 py-3 text-base font-bold text-white shadow-lg transition-colors hover:opacity-90 md:absolute md:bottom-12 md:right-20 md:px-10 md:py-3.5"
             style={{ backgroundColor: '#2D2461', fontFamily: 'Pretendard, sans-serif' }}
           >
             {t('examPrepFinal.nextButton')}

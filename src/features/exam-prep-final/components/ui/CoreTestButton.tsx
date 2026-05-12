@@ -76,7 +76,7 @@ export function CoreTestButton({
       <button
         type="button"
         disabled
-        className="relative flex h-36 w-36 cursor-not-allowed items-center justify-center rounded-3xl bg-gray-100 shadow-[0_8px_0_#D1D5DB] dark:bg-gray-800 dark:shadow-[0_8px_0_#374151]"
+        className="relative flex h-24 w-24 md:h-36 md:w-36 cursor-not-allowed items-center justify-center rounded-3xl bg-gray-100 shadow-[0_8px_0_#D1D5DB] dark:bg-gray-800 dark:shadow-[0_8px_0_#374151]"
         aria-label={t('examPrepFinal.coreTestAria.locked', { number: test.number })}
       >
         <img
@@ -107,7 +107,7 @@ export function CoreTestButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'relative flex h-36 w-36 items-center justify-center rounded-3xl transition-all hover:opacity-90',
+        'relative flex h-24 w-24 md:h-36 md:w-36 items-center justify-center rounded-3xl transition-all hover:opacity-90',
         cfg.bg,
         isSelected
           ? 'translate-y-2 shadow-none'

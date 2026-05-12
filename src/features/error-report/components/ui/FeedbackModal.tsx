@@ -12,6 +12,7 @@ import { X, MessageSquareText, Upload, FileText, Trash2, Loader2, ChevronDown, M
 import { useTranslations } from 'next-intl'
 import type { FeedbackCategory } from '../../types'
 import { FEEDBACK_CATEGORY_LABELS } from '../../types'
+import { DateTimePicker } from '@/shared/components/ui/DateTimePicker'
 
 export interface FeedbackFormData {
   content: string
@@ -147,7 +148,7 @@ export function FeedbackModal({
         if (e.target === e.currentTarget && !isSubmitting) handleClose()
       }}
     >
-      <div className="flex w-full max-w-[640px] flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-2xl" style={{ maxHeight: '90vh' }}>
+      <div className="flex w-full max-w-[calc(100vw-1rem)] sm:max-w-[640px] flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-900 shadow-2xl" style={{ maxHeight: 'calc(100dvh - 2rem)' }}>
         {/* Header */}
         <header className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-8 py-6">
           <div className="flex items-center gap-3">
@@ -199,13 +200,10 @@ export function FeedbackModal({
             {/* 발생시각 */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('occurrenceTime')}</label>
-              <input
-                type="datetime-local"
+              <DateTimePicker
                 value={occurrenceTime}
-                onChange={(e) => setOccurrenceTime(e.target.value)}
-                onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
+                onChange={setOccurrenceTime}
                 disabled={isSubmitting}
-                className="h-12 w-full cursor-pointer rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-4 text-sm text-gray-900 dark:text-gray-100 outline-none transition-all focus:border-[#6366F1] focus:ring-2 focus:ring-[#6366F1]/20 disabled:cursor-not-allowed disabled:bg-gray-100"
               />
             </div>
           </div>
