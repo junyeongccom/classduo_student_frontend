@@ -284,13 +284,13 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               {/* Profile Dropdown */}
               {isProfileOpen && (
                 <div className="absolute right-0 top-[calc(100%+1px)] z-[100] w-full overflow-hidden rounded-b-xl border border-t-0 border-gray-200/60 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl">
-                  <div className="flex flex-col py-1">
+                  <div className="flex flex-col py-0.5 sm:py-1">
                     {/* 개선 요청 */}
                     <button
                       onClick={() => { setIsProfileOpen(false); openFeedback() }}
-                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="group flex items-center gap-2.5 px-3 py-1.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 sm:gap-3 sm:px-4 sm:py-2.5"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6366F1]/10 text-[#6366F1] transition-colors group-hover:bg-[#6366F1] group-hover:text-white">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg sm:h-8 sm:w-8 bg-[#6366F1]/10 text-[#6366F1] transition-colors group-hover:bg-[#6366F1] group-hover:text-white">
                         <MessageSquare className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -301,9 +301,9 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                     {/* 비밀번호 변경 */}
                     <button
                       onClick={() => { setIsProfileOpen(false); setIsPasswordModalOpen(true) }}
-                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="group flex items-center gap-2.5 px-3 py-1.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 sm:gap-3 sm:px-4 sm:py-2.5"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-500 group-hover:text-white">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg sm:h-8 sm:w-8 bg-amber-100 text-amber-600 transition-colors group-hover:bg-amber-500 group-hover:text-white">
                         <KeyRound className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -314,9 +314,9 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                     {/* 다크 모드 */}
                     <button
                       onClick={toggleTheme}
-                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="group flex items-center gap-2.5 px-3 py-1.5 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 sm:gap-3 sm:px-4 sm:py-2.5"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600 transition-colors group-hover:bg-gray-700 group-hover:text-white">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg sm:h-8 sm:w-8 bg-gray-100 text-gray-600 transition-colors group-hover:bg-gray-700 group-hover:text-white">
                         <Moon className="h-4 w-4" />
                       </div>
                       <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -331,14 +331,14 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                       </div>
                     </button>
 
-                    <div className="mx-4 my-1 border-t border-gray-100 dark:border-gray-700" />
+                    <div className="mx-3 my-0.5 border-t border-gray-100 dark:border-gray-700 sm:mx-4 sm:my-1" />
 
                     {/* 로그아웃 */}
                     <button
                       onClick={() => { setIsProfileOpen(false); logout() }}
-                      className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-red-50"
+                      className="group flex items-center gap-2.5 px-3 py-1.5 transition-colors hover:bg-red-50 sm:gap-3 sm:px-4 sm:py-2.5"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-500 transition-colors group-hover:bg-red-500 group-hover:text-white">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg sm:h-8 sm:w-8 bg-red-100 text-red-500 transition-colors group-hover:bg-red-500 group-hover:text-white">
                         <LogOut className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-medium text-red-500">

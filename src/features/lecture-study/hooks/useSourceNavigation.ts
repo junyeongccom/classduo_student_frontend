@@ -28,7 +28,7 @@ export function useSourceNavigation(lectureId: string) {
 
   const handleMaterialSourceClick = useCallback(
     (sectionKey: string, sourcePages: number[], totalPageCount: number) => {
-      if (isMobile || sourcePages.length === 0) return
+      if (sourcePages.length === 0) return
 
       const cursor = materialsCursorRef.current[sectionKey] ?? 0
       const safeCursor = cursor >= 0 && cursor < sourcePages.length ? cursor : 0
@@ -58,7 +58,7 @@ export function useSourceNavigation(lectureId: string) {
 
   const handleRecordingSourceClick = useCallback(
     (sectionKey: string, sourceChunks: number[], totalChunkCount: number) => {
-      if (isMobile || sourceChunks.length === 0) return
+      if (sourceChunks.length === 0) return
 
       const cursor = recordingsCursorRef.current[sectionKey] ?? 0
       const safeCursor = cursor >= 0 && cursor < sourceChunks.length ? cursor : 0

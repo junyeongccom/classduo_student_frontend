@@ -598,7 +598,7 @@ export function AITutorContainer() {
 
           {showInlineNotesPanel && (
             <div
-              className="fixed inset-x-0 bottom-0 z-30 h-[75dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-y-0 md:right-0 md:left-auto md:bottom-auto md:h-full md:w-[var(--ai-w,380px)] md:rounded-none md:border-l md:border-t-0 md:shadow-xl md:z-20"
+              className="fixed inset-x-0 bottom-0 z-30 h-[50dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-y-0 md:right-0 md:left-auto md:bottom-auto md:h-full md:w-[var(--ai-w,380px)] md:rounded-none md:border-l md:border-t-0 md:shadow-xl md:z-20"
               style={{ '--ai-w': `${notesPanelWidth}px` } as React.CSSProperties}
             >
               {/* Mobile grip handle */}

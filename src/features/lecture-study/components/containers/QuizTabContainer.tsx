@@ -406,7 +406,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                           tooltipId={`quiz-material-source-${quiz.quiz_id}`}
                           tooltipContent={tSummary('sourceTooltipPages', { pages: quiz.source.source_pages!.join(', ') })}
                           disabled={false}
-                          disabledClick={isMobile}
+                          disabledClick={false}
                           onClick={() =>
                             handleMaterialSourceClick(
                               `quiz-${quiz.quiz_id}`,
@@ -422,7 +422,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                           tooltipId={`quiz-recording-source-${quiz.quiz_id}`}
                           tooltipContent={tSummary('sourceTooltipChunks', { chunks: quiz.source.source_chunks!.join(', ') })}
                           disabled={false}
-                          disabledClick={isMobile}
+                          disabledClick={false}
                           onClick={() =>
                             handleRecordingSourceClick(
                               `quiz-${quiz.quiz_id}`,

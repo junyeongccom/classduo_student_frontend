@@ -62,6 +62,8 @@ interface SolveQuestionPanelProps {
   canFinish: boolean
   /** "퀴즈 종료" 클릭 — 결과 화면 전환 */
   onFinish: () => void
+  /** 모바일에서 좌/우 panel(강의자료·AI챗봇)이 열려있을 때, 마지막 액션이 panel 뒤로 가리지 않도록 하단 spacer 추가 */
+  mobileBottomSpacer?: boolean
 }
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D']
@@ -91,6 +93,7 @@ export function SolveQuestionPanel({
   onAskChatbot,
   canFinish,
   onFinish,
+  mobileBottomSpacer = false,
 }: SolveQuestionPanelProps) {
   const t = useTranslations()
   const { locale } = useI18n()
@@ -607,6 +610,8 @@ export function SolveQuestionPanel({
             )}
           </div>
         </div>
+        {/* 모바일에서 좌/우 panel(강의자료·AI챗봇) 떠 있을 때, 마지막 액션이 panel 뒤로 가려지지 않도록 spacer */}
+        {mobileBottomSpacer && <div className="h-[60dvh] shrink-0 md:hidden" aria-hidden />}
       </div>
     </div>
   )

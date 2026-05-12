@@ -366,28 +366,29 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     <div className="flex h-full flex-col">
       {/* Breadcrumb + Action buttons → Header topbar slot */}
       <StudyspaceTopbarSlot>
-        <nav className="flex items-center gap-2 text-sm font-medium text-gray-400">
-          <Link href="/studyspace/home" className="transition-colors hover:text-[#6366F1]">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
+          {/* 모바일에선 부모 레벨 3개 숨기고 회차명만 truncate로 노출 — 글자단위 break + 헤더 부풀어오름 방지 */}
+          <Link href="/studyspace/home" className="hidden shrink-0 transition-colors hover:text-[#6366F1] md:inline">
             {t('lectureStudy.breadcrumbHome')}
           </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 md:inline" />
           {courseId ? (
-            <Link href={`/studyspace/course/${courseId}`} className="transition-colors hover:text-[#6366F1]">
+            <Link href={`/studyspace/course/${courseId}`} className="hidden shrink-0 transition-colors hover:text-[#6366F1] md:inline">
               {resolvedCourseTitle}
             </Link>
           ) : (
-            <span>{resolvedCourseTitle}</span>
+            <span className="hidden shrink-0 md:inline">{resolvedCourseTitle}</span>
           )}
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="hidden h-3.5 w-3.5 shrink-0 md:inline" />
           {courseId ? (
-            <Link href={`/studyspace/course/${courseId}/lectures`} className="transition-colors hover:text-[#6366F1]">
+            <Link href={`/studyspace/course/${courseId}/lectures`} className="shrink-0 transition-colors hover:text-[#6366F1]">
               {t('courseNav.lectureStudy')}
             </Link>
           ) : (
-            <span>{t('lectureStudy.tabLecture')}</span>
+            <span className="shrink-0">{t('lectureStudy.tabLecture')}</span>
           )}
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="truncate font-semibold text-gray-900 dark:text-gray-50">
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate font-semibold text-gray-900 dark:text-gray-50">
             {resolveLectureLabel()}
           </span>
         </nav>

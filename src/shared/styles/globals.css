@@ -30,12 +30,13 @@
     min-height: 100dvh;
   }
 
-  /* iOS Safari 자동 zoom 방지 — 모바일에서 input/textarea/select 16px 보장 */
+  /* iOS Safari 자동 zoom 방지 — 모바일에서 input/textarea/select 16px 보장.
+     !important 필수: Tailwind utility(text-sm 등)가 specificity로 미디어쿼리를 이기는 것 차단 */
   @media (max-width: 640px) {
     input,
     textarea,
     select {
-      font-size: 16px;
+      font-size: 16px !important;
     }
   }
 

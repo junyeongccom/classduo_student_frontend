@@ -155,7 +155,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
 
   return (
     <div
-      className="flex h-full flex-1 flex-col overflow-y-auto bg-white px-12 py-10"
+      className="flex h-full flex-1 flex-col overflow-y-auto bg-white px-4 py-6 md:px-12 md:py-10"
       style={{ fontFamily: 'Pretendard, sans-serif' }}
     >
       {/* ──────── 상단 row: [번호+회차] | [XP + bar (with grade pinned to end)] ──────── */}
@@ -186,7 +186,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
           <div className="flex items-baseline justify-between gap-4 pr-44">
             <div className="flex items-baseline gap-4">
               <span className="text-2xl font-bold text-gray-900">{t('examPrepFinal.totalEarnedXp')}</span>
-              <span className="text-5xl font-black text-gray-900">
+              <span className="text-3xl font-black text-gray-900 md:text-5xl">
                 {xpDisplay.toLocaleString()} XP
               </span>
             </div>
@@ -226,7 +226,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
       {/* ──────── 하단 4 박스 ──────── */}
       <div className="mt-10 grid grid-cols-[auto_1fr_1.4fr] gap-4">
         {/* 좌측 column: 연속 학습 + 걸린 시간 (세로 stack) */}
-        <div className="flex w-[180px] flex-col gap-4">
+        <div className="flex w-full flex-col gap-4 md:w-[180px]">
           <div className="te-fade-up flex h-32 flex-col items-start justify-center gap-1 rounded-2xl border border-gray-200 bg-white p-5">
             <span className="text-2xl font-black text-gray-900">{t('examPrepFinal.streakDays', { days: postCurrentStreak })}</span>
             <span className="text-sm font-medium text-gray-500">{t('examPrepFinal.streakOngoing')}</span>
@@ -322,7 +322,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         <button
           type="button"
           onClick={onRestart}
-          className="rounded-2xl px-12 py-4 text-lg font-bold transition-colors"
+          className="rounded-2xl px-6 py-3 text-base font-bold md:px-12 md:py-4 md:text-lg transition-colors"
           style={{ backgroundColor: '#E9E5FB', color: '#2D2461' }}
         >
           {t('examPrepFinal.restart')}
@@ -339,7 +339,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         <button
           type="button"
           onClick={onExit}
-          className="rounded-2xl px-12 py-4 text-lg font-bold text-white transition-colors hover:opacity-90"
+          className="rounded-2xl px-6 py-3 text-base font-bold md:px-12 md:py-4 md:text-lg text-white transition-colors hover:opacity-90"
           style={{ backgroundColor: '#2D2461' }}
         >
           {t('examPrepFinal.endTest')}

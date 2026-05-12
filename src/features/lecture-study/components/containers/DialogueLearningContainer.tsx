@@ -8,7 +8,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { History, ChevronRight } from 'lucide-react'
+import { History, ChevronRight, Menu, X as XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
@@ -165,6 +165,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
   // Panel resizing
   const [isResizingNotes, setIsResizingNotes] = useState(false)
   const [isResizingMaterials, setIsResizingMaterials] = useState(false)
+  const [isLectureSidebarOpen, setIsLectureSidebarOpen] = useState(false)
   const chatAreaRef = useRef<HTMLDivElement>(null)
 
   const MIN_CHAT_WIDTH = 280
@@ -246,7 +247,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
       </StudyspaceTopbarSlot>
 
       <div className="flex h-full min-h-0 overflow-hidden">
-        {/* 회차 선택 사이드바 — 수업 고정, 게임/보상 없음 */}
+        {/* 회차 선택 사이드바 — 데스크탑 inline */}
         <aside className={`hidden h-full w-[320px] shrink-0 flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 ${hideSidebar ? '' : 'xl:flex'}`}>
           <DialogueLectureSidebar
             courseId={courseId}
@@ -255,6 +256,37 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
             isLocked={messages.length > 0}
           />
         </aside>
+
+        {/* 모바일 회차 사이드바 drawer (xl 미만) */}
+        {isLectureSidebarOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/40 xl:hidden"
+              onClick={() => setIsLectureSidebarOpen(false)}
+              aria-hidden
+            />
+            <aside className="fixed inset-y-0 left-0 z-50 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 xl:hidden">
+              <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+                <span className="text-sm font-bold text-gray-900 dark:text-gray-50">{tTopbar('lectureSelect') ?? '회차 선택'}</span>
+                <button
+                  onClick={() => setIsLectureSidebarOpen(false)}
+                  className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  aria-label="close"
+                >
+                  <XIcon className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                <DialogueLectureSidebar
+                  courseId={courseId}
+                  selectedLectureIds={selectedLectureIds}
+                  onSelectLectureIds={(ids) => { setSelectedLectureIds(ids); setIsLectureSidebarOpen(false) }}
+                  isLocked={messages.length > 0}
+                />
+              </div>
+            </aside>
+          </>
+        )}
 
         {/* 채팅 영역 — 콘텐츠 안에 맞게 100% 채움 */}
         <div ref={chatAreaRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -266,6 +298,14 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
               {/* Chat Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shrink-0 md:gap-4 md:px-5 md:py-2.5">
                 <div className="flex items-center gap-1.5 md:gap-2">
+                  {/* 모바일 회차 사이드바 토글 */}
+                  <button
+                    onClick={() => setIsLectureSidebarOpen(true)}
+                    className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 xl:hidden"
+                    aria-label="open lecture sidebar"
+                  >
+                    <Menu className="h-4 w-4 md:h-5 md:w-5" />
+                  </button>
                   <button
                     onClick={handleNewChatAndResetPanels}
                     className="rounded-lg border border-gray-200 dark:border-gray-600 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:border-gray-300 hover:text-gray-700 md:px-3 md:py-1.5 md:text-sm"
