@@ -76,20 +76,20 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
   )
 
   return (
-    <div className="relative flex min-h-[200px] items-stretch justify-between gap-6 rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
+    <div className="relative flex items-stretch justify-between gap-3 rounded-3xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-900 md:min-h-[200px] md:gap-6 md:px-7 md:py-7">
       {/* 좌측 — flex-col + justify-between 으로 박스 높이 안에서 균형 분산 */}
-      <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 md:gap-4">
         <div>
-          <div className="flex items-baseline gap-4">
-            <span className="text-5xl font-bold leading-none text-gray-900 dark:text-gray-50">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 md:gap-4">
+            <span className="text-3xl font-bold leading-none text-gray-900 dark:text-gray-50 md:text-5xl">
               {numberLabel}
             </span>
-            <span className="text-base font-medium text-gray-400">
+            <span className="whitespace-nowrap text-sm font-medium text-gray-400 md:text-base">
               {sessionLabel}
             </span>
           </div>
           <h3
-            className="mt-5 line-clamp-2 text-3xl font-bold text-gray-900 dark:text-gray-50"
+            className="mt-3 line-clamp-2 text-base font-bold text-gray-900 dark:text-gray-50 md:mt-5 md:text-3xl"
             title={test.lectureTitle}
           >
             {test.lectureTitle}
@@ -123,7 +123,7 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
               alt="MASTER"
               aria-hidden
               draggable={false}
-              className="pointer-events-none h-32 w-auto select-none object-contain"
+              className="pointer-events-none h-20 w-auto select-none object-contain md:h-32"
             />
           </div>
           {/* 다시보기 — 우측 하단 작은 리플레이 버튼 */}
@@ -142,9 +142,9 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
           type="button"
           onClick={onStart}
           aria-label={t('examPrepFinal.startTestAria')}
-          className="flex h-20 w-20 shrink-0 self-center items-center justify-center rounded-2xl bg-[#6366F1] text-white shadow-md shadow-indigo-500/20 transition-colors hover:bg-[#5558E6]"
+          className="flex h-14 w-14 shrink-0 self-center items-center justify-center rounded-2xl bg-[#6366F1] text-white shadow-md shadow-indigo-500/20 transition-colors hover:bg-[#5558E6] md:h-20 md:w-20"
         >
-          <Play className="h-8 w-8 fill-white" />
+          <Play className="h-6 w-6 fill-white md:h-8 md:w-8" />
         </button>
       )}
     </div>

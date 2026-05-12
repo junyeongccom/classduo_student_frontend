@@ -158,46 +158,46 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
       className="flex h-full flex-1 flex-col overflow-y-auto bg-white px-4 py-6 md:px-12 md:py-10"
       style={{ fontFamily: 'Pretendard, sans-serif' }}
     >
-      {/* ──────── 상단 row: [번호+회차] | [XP + bar (with grade pinned to end)] ──────── */}
-      <div className="grid grid-cols-[auto_1fr] items-center gap-10">
+      {/* ──────── 상단 row: 모바일은 세로 stack, 데스크탑은 [번호+회차] | [XP + bar (with grade pinned to end)] ──────── */}
+      <div className="flex flex-col gap-6 md:grid md:grid-cols-[auto_1fr] md:items-center md:gap-10">
         {/* 좌상단 — 큰 번호 / 주차차시 / 회차제목 (3행). 테스트 마스터 시 챕터제목 위에 도장(이슈 12-2). */}
-        <div className="relative flex flex-col gap-2 pr-28 pt-2">
+        <div className="relative flex flex-col gap-2 pt-1 md:pr-28 md:pt-2">
           {allMaster && (
             <img
               src="/master-big.png"
               alt={t('examPrepFinal.testMasterAlt')}
               aria-hidden
               draggable={false}
-              className="master-stamp-pop pointer-events-none absolute right-0 top-0 z-10 h-24 w-auto max-w-[6.5rem] select-none object-contain opacity-70"
+              className="master-stamp-pop pointer-events-none absolute right-0 top-0 z-10 h-14 w-auto max-w-[4rem] select-none object-contain opacity-70 md:h-24 md:max-w-[6.5rem]"
               style={{ animationDelay: '180ms', transformOrigin: '100% 0%' }}
             />
           )}
-          <span className="text-7xl font-black leading-none text-gray-900">{headlineLabel}</span>
+          <span className="text-4xl font-black leading-none text-gray-900 md:text-7xl">{headlineLabel}</span>
           {sessionLine && (
-            <span className="text-base font-bold text-gray-500">{sessionLine}</span>
+            <span className="text-sm font-bold text-gray-500 md:text-base">{sessionLine}</span>
           )}
           {titleLine && (
-            <span className="text-2xl font-bold text-gray-900">{titleLine}</span>
+            <span className="line-clamp-2 text-base font-bold text-gray-900 md:text-2xl" title={titleLine}>{titleLine}</span>
           )}
         </div>
 
-        {/* 우측 — XP 헤더 + 진행 바 (끝에 큰 등급 박스 부착) */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-baseline justify-between gap-4 pr-44">
-            <div className="flex items-baseline gap-4">
-              <span className="text-2xl font-bold text-gray-900">{t('examPrepFinal.totalEarnedXp')}</span>
-              <span className="text-3xl font-black text-gray-900 md:text-5xl">
+        {/* 우측(데스크탑) / 하단(모바일) — XP 헤더 + 진행 바 + 등급 박스 */}
+        <div className="flex flex-col gap-3 md:gap-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 md:gap-4 md:pr-44">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 md:gap-4">
+              <span className="text-base font-bold text-gray-900 md:text-2xl">{t('examPrepFinal.totalEarnedXp')}</span>
+              <span className="text-2xl font-black text-gray-900 md:text-5xl">
                 {xpDisplay.toLocaleString()} XP
               </span>
             </div>
-            <span className="text-xs font-medium text-gray-500">
+            <span className="text-[10px] font-medium text-gray-500 md:text-xs">
               {t('examPrepFinal.gradeDisclaimerShort')}
             </span>
           </div>
 
-          {/* bar + 등급 박스 한 row — grade 가 bar 우측 끝에 부착되어 부각 */}
-          <div className="relative flex items-center gap-3 pr-44">
-            <div className="h-3.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+          {/* bar + 등급 박스 한 row — 데스크탑은 등급 박스 absolute, 모바일은 inline */}
+          <div className="relative flex items-center gap-3 md:pr-44">
+            <div className="h-3 flex-1 overflow-hidden rounded-full bg-gray-100 md:h-3.5">
               <div
                 className="h-full rounded-full"
                 style={{
@@ -207,14 +207,13 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
                 }}
               />
             </div>
-            {/* 등급 박스 — 진행 바 끝에 절대 배치 + 회전. 큰 사이즈로 부각 */}
+            {/* 등급 박스 — 모바일은 inline (작게), 데스크탑은 진행 바 우측 absolute + 회전 */}
             <div
-              className="absolute right-0 top-1/2 flex h-40 w-40 -translate-y-1/2 items-center justify-center bg-white shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
-              style={{ transform: 'translateY(-50%) rotate(-18deg)' }}
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-white shadow-md md:absolute md:right-0 md:top-1/2 md:h-40 md:w-40 md:-translate-y-1/2 md:rotate-[-18deg] md:rounded-none md:shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
             >
               <span
                 key={gradePulse}
-                className="te-grade-pop text-8xl font-black leading-none text-gray-900"
+                className="te-grade-pop text-4xl font-black leading-none text-gray-900 md:text-8xl"
               >
                 {gradeDisplay}
               </span>
@@ -223,16 +222,16 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
         </div>
       </div>
 
-      {/* ──────── 하단 4 박스 ──────── */}
-      <div className="mt-10 grid grid-cols-[auto_1fr_1.4fr] gap-4">
-        {/* 좌측 column: 연속 학습 + 걸린 시간 (세로 stack) */}
-        <div className="flex w-full flex-col gap-4 md:w-[180px]">
-          <div className="te-fade-up flex h-32 flex-col items-start justify-center gap-1 rounded-2xl border border-gray-200 bg-white p-5">
-            <span className="text-2xl font-black text-gray-900">{t('examPrepFinal.streakDays', { days: postCurrentStreak })}</span>
-            <span className="text-sm font-medium text-gray-500">{t('examPrepFinal.streakOngoing')}</span>
+      {/* ──────── 하단 박스 — 모바일 1열, 데스크탑 3열 ──────── */}
+      <div className="mt-6 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-[auto_1fr_1.4fr]">
+        {/* 좌측 column: 연속 학습 + 걸린 시간 — 모바일에선 2열 grid, 데스크탑은 세로 stack */}
+        <div className="grid w-full grid-cols-2 gap-3 md:flex md:flex-col md:gap-4 md:w-[180px]">
+          <div className="te-fade-up flex h-24 flex-col items-start justify-center gap-1 rounded-2xl border border-gray-200 bg-white p-4 md:h-32 md:p-5">
+            <span className="text-xl font-black text-gray-900 md:text-2xl">{t('examPrepFinal.streakDays', { days: postCurrentStreak })}</span>
+            <span className="text-xs font-medium text-gray-500 md:text-sm">{t('examPrepFinal.streakOngoing')}</span>
           </div>
-          <div className="te-fade-up flex h-24 items-center justify-start rounded-2xl border border-gray-200 bg-white px-5" style={{ animationDelay: '80ms' }}>
-            <span className="text-3xl font-black tabular-nums text-gray-900">
+          <div className="te-fade-up flex h-24 items-center justify-start rounded-2xl border border-gray-200 bg-white px-4 md:px-5" style={{ animationDelay: '80ms' }}>
+            <span className="text-2xl font-black tabular-nums text-gray-900 md:text-3xl">
               {formatElapsed(totalTimeSec)}
             </span>
           </div>

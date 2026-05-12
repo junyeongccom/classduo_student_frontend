@@ -181,7 +181,7 @@ export function Phase23DailyXp({
           <button
             type="button"
             onClick={() => onDoneRef.current()}
-            className="te-fade-up fixed bottom-4 left-1/2 z-[205] -translate-x-1/2 rounded-2xl px-8 py-3 text-base font-bold text-white shadow-lg transition-colors hover:opacity-90 md:absolute md:bottom-12 md:right-20 md:left-auto md:translate-x-0 md:px-10 md:py-3.5"
+            className="te-fade-up fixed bottom-4 right-4 z-[205] rounded-2xl px-6 py-3 text-base font-bold text-white shadow-lg transition-colors hover:opacity-90 md:absolute md:bottom-12 md:right-20 md:px-10 md:py-3.5"
             style={{ backgroundColor: '#2D2461', fontFamily: 'Pretendard, sans-serif' }}
           >
             {t('examPrepFinal.nextButton')}
