@@ -87,16 +87,16 @@ export function SelectedMidTestInfoCard({
           </h3>
         </div>
 
-        <div className="flex items-center gap-5 text-base font-medium text-gray-700 dark:text-gray-200">
-          <span className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-base font-medium text-gray-700 dark:text-gray-200">
+          <span className="flex items-center gap-2 whitespace-nowrap">
             <span className="inline-block h-3.5 w-3.5 rounded-full bg-[#D9D9D9]" />
             {counts.learning}
           </span>
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 whitespace-nowrap">
             <span className="inline-block h-3.5 w-3.5 rounded-full bg-[#FFCD36]" />
             {counts.skilled}
           </span>
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 whitespace-nowrap">
             <span className="inline-block h-3.5 w-3.5 rounded-full bg-[#A78BFA]" />
             {counts.master}
           </span>
