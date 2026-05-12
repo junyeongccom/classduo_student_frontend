@@ -46,6 +46,22 @@ function getSessionId(): string {
   return stored
 }
 
+/**
+ * viewport 폭 기준 device 분류.
+ * - mobile  : <768px  (iPhone SE/14, Galaxy S22 등)
+ * - tablet  : 768~1279px (iPad, Galaxy Tab 등)
+ * - desktop : >=1280px
+ *
+ * batch flush 시점에 매번 평가 — 사용자가 도중에 resize/회전한 경우 그 시점 device 반영.
+ */
+function detectDeviceType(): 'mobile' | 'tablet' | 'desktop' {
+  if (typeof window === 'undefined') return 'desktop'
+  const w = window.innerWidth
+  if (w < 768) return 'mobile'
+  if (w < 1280) return 'tablet'
+  return 'desktop'
+}
+
 // ─── 핵심 함수 ───
 
 /**
@@ -92,6 +108,7 @@ async function flushEvents() {
       body: {
         events: batch,
         session_id: getSessionId(),
+        device_type: detectDeviceType(),
       },
     })
   } catch {
