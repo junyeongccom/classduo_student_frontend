@@ -74,6 +74,16 @@ export function SelectedMidTestInfoCard({
 
   return (
     <div className="relative flex h-full items-stretch justify-between gap-3 overflow-hidden rounded-3xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-900 md:gap-6 md:px-7 md:py-7">
+      {/* MASTER 도장 — 마스터 상태일 때 우측 상단 absolute 로 띄워서 제목이 풀폭으로 보이게. */}
+      {isMastered && (
+        <img
+          src="/master-big.png"
+          alt="MASTER"
+          aria-hidden
+          draggable={false}
+          className="pointer-events-none absolute right-3 top-3 z-10 h-16 w-auto select-none object-contain md:right-5 md:top-5 md:h-28"
+        />
+      )}
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 md:gap-4">
         <div>
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 md:gap-4">
@@ -104,27 +114,16 @@ export function SelectedMidTestInfoCard({
       </div>
 
       {isMastered ? (
-        <>
-          <div className="flex shrink-0 self-center">
-            <img
-              src="/master-big.png"
-              alt="MASTER"
-              aria-hidden
-              draggable={false}
-              className="pointer-events-none h-20 w-auto select-none object-contain md:h-32"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={onStart}
-            disabled={!canStart}
-            aria-label={t('examPrepFinal.replayLabel')}
-            title={t('examPrepFinal.replayLabel')}
-            className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500  transition-colors hover:bg-gray-50 hover:text-[#6366F1] disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-        </>
+        <button
+          type="button"
+          onClick={onStart}
+          disabled={!canStart}
+          aria-label={t('examPrepFinal.replayLabel')}
+          title={t('examPrepFinal.replayLabel')}
+          className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500  transition-colors hover:bg-gray-50 hover:text-[#6366F1] disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </button>
       ) : (
         <button
           type="button"

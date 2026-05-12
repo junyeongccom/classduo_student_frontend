@@ -77,6 +77,18 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
 
   return (
     <div className="relative flex items-stretch justify-between gap-3 rounded-3xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-900 md:min-h-[200px] md:gap-6 md:px-7 md:py-7">
+      {/* MASTER 도장 — 마스터 상태일 때 우측 상단 absolute 로 띄움. 좌측 제목이 풀폭으로
+          보이도록 (이전엔 도장이 우측 컬럼을 차지해 제목이 잘림). pointer-events-none 으로
+          하단의 RotateCcw 버튼 클릭 영역과 겹치지 않게. */}
+      {test.isTestMastered && (
+        <img
+          src="/master-big.png"
+          alt="MASTER"
+          aria-hidden
+          draggable={false}
+          className="pointer-events-none absolute right-3 top-3 z-10 h-16 w-auto select-none object-contain md:right-5 md:top-5 md:h-28"
+        />
+      )}
       {/* 좌측 — flex-col + justify-between 으로 박스 높이 안에서 균형 분산 */}
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 md:gap-4">
         <div>
@@ -89,7 +101,7 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
             </span>
           </div>
           <h3
-            className="mt-3 line-clamp-2 text-base font-bold text-gray-900 dark:text-gray-50 md:mt-5 md:text-3xl"
+            className="mt-3 text-base font-bold text-gray-900 dark:text-gray-50 md:mt-5 md:text-3xl"
             title={test.lectureTitle}
           >
             {test.lectureTitle}
@@ -115,28 +127,16 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
       </div>
 
       {test.isTestMastered ? (
-        <>
-          {/* 마스터한 테스트 — 진입 버튼 위치에 MASTER 도장 (장식, 비상호작용) */}
-          <div className="flex shrink-0 self-center">
-            <img
-              src="/master-big.png"
-              alt="MASTER"
-              aria-hidden
-              draggable={false}
-              className="pointer-events-none h-20 w-auto select-none object-contain md:h-32"
-            />
-          </div>
-          {/* 다시보기 — 우측 하단 작은 리플레이 버튼 */}
-          <button
-            type="button"
-            onClick={onStart}
-            aria-label={t('examPrepFinal.replayLabel')}
-            title={t('examPrepFinal.replayLabel')}
-            className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:bg-gray-50 hover:text-[#6366F1] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-        </>
+        /* 다시보기 — 우측 하단 작은 리플레이 버튼 (MASTER 도장은 카드 상단 absolute) */
+        <button
+          type="button"
+          onClick={onStart}
+          aria-label={t('examPrepFinal.replayLabel')}
+          title={t('examPrepFinal.replayLabel')}
+          className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:bg-gray-50 hover:text-[#6366F1] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+        >
+          <RotateCcw className="h-4 w-4" />
+        </button>
       ) : (
         <button
           type="button"
