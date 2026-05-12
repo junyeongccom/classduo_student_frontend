@@ -301,7 +301,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
         <div ref={chatAreaRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <div
             className="flex flex-1 min-h-0 flex-col px-2 py-1.5 md:px-4"
-            style={{ paddingRight: rightPanelsWidth > 0 ? rightPanelsWidth + 16 : undefined }}
+            style={{ paddingRight: isDesktopViewport && rightPanelsWidth > 0 ? rightPanelsWidth + 16 : undefined }}
           >
             <div className="flex flex-1 min-h-0 flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
               {/* Chat Toolbar */}
@@ -424,7 +424,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
               className={
                 isDesktopViewport
                   ? 'absolute inset-y-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
-                  : 'fixed inset-x-0 bottom-0 z-[55] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+                  : 'fixed inset-x-0 bottom-0 z-[70] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
               }
               style={
                 isDesktopViewport
@@ -457,7 +457,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
               className={
                 isDesktopViewport
                   ? 'absolute inset-y-0 right-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
-                  : 'fixed inset-x-0 bottom-0 z-[55] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+                  : 'fixed inset-x-0 bottom-0 z-[70] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
               }
               style={isDesktopViewport ? { width: materialsPanelWidth } : undefined}
             >
