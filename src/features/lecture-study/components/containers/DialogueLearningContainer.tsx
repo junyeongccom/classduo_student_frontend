@@ -424,7 +424,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
               className={
                 isDesktopViewport
                   ? 'absolute inset-y-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
-                  : 'fixed inset-x-0 bottom-0 z-20 flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+                  : 'fixed inset-x-0 bottom-0 z-[55] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
               }
               style={
                 isDesktopViewport
@@ -457,7 +457,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
               className={
                 isDesktopViewport
                   ? 'absolute inset-y-0 right-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
-                  : 'fixed inset-x-0 bottom-0 z-20 flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+                  : 'fixed inset-x-0 bottom-0 z-[55] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
               }
               style={isDesktopViewport ? { width: materialsPanelWidth } : undefined}
             >
