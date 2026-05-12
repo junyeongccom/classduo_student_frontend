@@ -187,7 +187,7 @@ export default function QuizCreatorWizard({
             <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
               회차와 유형을 정하면 AI가 약 1~2분 만에 만들어드려요
             </p>
-            <h1 className="text-4xl font-black tracking-tight text-gray-900 dark:text-gray-50 md:text-5xl">
+            <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-50 sm:text-3xl md:text-5xl">
               새 퀴즈 만들기
             </h1>
           </div>

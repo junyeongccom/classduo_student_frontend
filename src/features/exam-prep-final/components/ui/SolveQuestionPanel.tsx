@@ -255,7 +255,7 @@ export function SolveQuestionPanel({
         )}
 
         {/* 문제 stem — 상단 메타(단일선택/숙련도 카운트)는 사이드바로 통합. 한영 토글에 따라 다국어 표시. */}
-        <h1 className="text-3xl font-bold leading-snug text-gray-900 dark:text-gray-50">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-snug text-gray-900 dark:text-gray-50">
           {displayStem}
         </h1>
 
