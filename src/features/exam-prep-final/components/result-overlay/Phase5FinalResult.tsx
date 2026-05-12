@@ -276,7 +276,8 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
                 const ok = d.isCorrect === true
                 const wrong = d.isCorrect === false
                 // 안 푼 문항 (isCorrect===null) + 마스터 도달 상태(after==='master') → master 도장 (이슈 12-1)
-                const skippedMaster = d.isCorrect === null && d.after === 'master'
+                // after === 'master' 면 풀이 결과 무관하게 마스터 도장 (이미 마스터된 테스트 다시 푸는 케이스에서 OX 대신 도장 일관 표시)
+                const skippedMaster = d.after === 'master'
                 let bg = '#ECECEE'
                 let textColor = '#1C1C1E'
                 if (ok && d.hintUsed) {
