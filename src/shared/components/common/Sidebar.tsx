@@ -101,10 +101,13 @@ function NewSidebar() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden pt-safe',
+          'fixed left-0 top-0 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden',
           'transition-[width,padding] duration-300 ease-in-out',
           isTablet && isOverlayOpen ? 'z-[51]' : 'z-50',
-          visualCollapsed ? 'w-[72px] px-3 pt-5 pb-4 gap-4' : 'w-[85vw] max-w-[280px] sm:w-[240px] sm:max-w-[240px] px-6 pt-8 pb-6 gap-8',
+          // pt 는 max(safe-area, 최소값) — pt-safe(=env)가 Tailwind pt-* 를 override 하던 문제 회피
+          visualCollapsed
+            ? 'w-[72px] px-3 pb-4 pt-[max(env(safe-area-inset-top),1.25rem)] gap-4'
+            : 'w-[85vw] max-w-[280px] sm:w-[240px] sm:max-w-[240px] px-6 pb-6 pt-[max(env(safe-area-inset-top),2rem)] gap-8',
         )}
       >
         {/* Header */}
