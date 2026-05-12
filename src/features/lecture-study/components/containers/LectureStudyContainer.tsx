@@ -438,9 +438,9 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </div>
         )}
 
-        {/* Mobile: 강의자료/녹음본 패널 (전체 폭 오버레이) */}
+        {/* Mobile: 강의자료/녹음본 패널 (시험풀이와 동일 — 하단 55dvh bottom sheet) */}
         {isMobile && isLeftPanelOpen && (
-          <section className="absolute inset-0 z-20 flex flex-col bg-white dark:bg-gray-900">
+          <section className="fixed inset-x-0 bottom-0 z-20 flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
             <Tabs
               value={leftTab}
               onValueChange={v => setLeftTab(v as LeftPanelTab)}
@@ -481,9 +481,9 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
           </section>
         )}
 
-        {/* Mobile: 채팅 패널 (전체 폭 오버레이) */}
+        {/* Mobile: 채팅 패널 (시험풀이와 동일 — 하단 55dvh bottom sheet) */}
         {isMobile && isChatPanelOpen && (
-          <section className="absolute inset-0 z-20 flex flex-col bg-white dark:bg-gray-900">
+          <section className="fixed inset-x-0 bottom-0 z-20 flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
             <div className="flex items-center justify-between shrink-0 border-b border-gray-100 dark:border-gray-700 px-3 py-2">
               <div className="flex items-center gap-1.5">
                 <Bot className="h-3.5 w-3.5 text-gray-500" />

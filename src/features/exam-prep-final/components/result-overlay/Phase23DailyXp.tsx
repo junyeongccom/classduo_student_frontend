@@ -174,12 +174,14 @@ export function Phase23DailyXp({
           </span>
         </div>
 
-        {/* [다음] 버튼 — Phase 3/4 entrance 끝난 뒤 노출. Phase 2 에서는 표시 X. */}
+        {/* [다음] 버튼 — Phase 3/4 entrance 끝난 뒤 노출. Phase 2 에서는 표시 X.
+            모바일에선 phase4 콘텐츠와 겹치지 않게 중앙 고정 + bottom 작게.
+            데스크탑은 우하단 absolute. */}
         {canAdvance && rightStage !== 'phase2' && (
           <button
             type="button"
             onClick={() => onDoneRef.current()}
-            className="te-fade-up absolute bottom-12 right-20 rounded-2xl px-10 py-3.5 text-base font-bold text-white transition-colors hover:opacity-90"
+            className="te-fade-up fixed bottom-4 left-1/2 z-[205] -translate-x-1/2 rounded-2xl px-8 py-3 text-base font-bold text-white shadow-lg transition-colors hover:opacity-90 md:absolute md:bottom-12 md:right-20 md:left-auto md:translate-x-0 md:px-10 md:py-3.5"
             style={{ backgroundColor: '#2D2461', fontFamily: 'Pretendard, sans-serif' }}
           >
             {t('examPrepFinal.nextButton')}

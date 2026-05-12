@@ -283,7 +283,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
               {/* Profile Dropdown */}
               {isProfileOpen && (
-                <div className="absolute right-0 top-[calc(100%+1px)] z-[100] w-full overflow-hidden rounded-b-xl border border-t-0 border-gray-200/60 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl">
+                <div className="absolute right-0 top-[calc(100%+1px)] z-[100] w-56 overflow-hidden rounded-xl border border-gray-200/60 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xl sm:w-full sm:rounded-b-xl sm:rounded-t-none sm:border-t-0">
                   <div className="flex flex-col py-0.5 sm:py-1">
                     {/* 개선 요청 */}
                     <button

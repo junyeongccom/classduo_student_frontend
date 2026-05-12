@@ -166,6 +166,15 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
   const [isResizingNotes, setIsResizingNotes] = useState(false)
   const [isResizingMaterials, setIsResizingMaterials] = useState(false)
   const [isLectureSidebarOpen, setIsLectureSidebarOpen] = useState(false)
+  // 데스크탑(md 이상) 여부 — notes/materials 패널 layout 분기 (모바일은 하단 55dvh sheet)
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)')
+    const update = () => setIsDesktopViewport(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
   const chatAreaRef = useRef<HTMLDivElement>(null)
 
   const MIN_CHAT_WIDTH = 280
@@ -340,6 +349,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     onClick={() => {
                       const nextState = !isNotesPanelOpen
                       toggleNotesPanel(nextState)
+                      // 모바일에선 둘 중 하나만 — notes 열 때 materials 자동 닫기
+                      if (nextState && !isDesktopViewport && isMaterialsPanelOpen) toggleMaterialsPanel(false)
                       if (nextState) setActiveTab('notes')
                       else if (isMaterialsPanelOpen) setActiveTab('materials')
                       else setActiveTab('answer')
@@ -361,6 +372,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     onClick={() => {
                       const nextState = !isMaterialsPanelOpen
                       toggleMaterialsPanel(nextState)
+                      // 모바일에선 둘 중 하나만 — materials 열 때 notes 자동 닫기
+                      if (nextState && !isDesktopViewport && isNotesPanelOpen) toggleNotesPanel(false)
                       if (nextState) setActiveTab('materials')
                       else if (isNotesPanelOpen) setActiveTab('notes')
                       else setActiveTab('answer')
@@ -405,21 +418,26 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
             </div>
           </div>
 
-          {/* 녹음본 출처 패널 (인라인, 리사이즈 가능) */}
+          {/* 녹음본 출처 패널 — 데스크탑 inline 사이드 / 모바일 하단 55dvh sheet */}
           {isNotesPanelOpen && (
             <div
-              className="absolute inset-y-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl"
-              style={{
-                width: notesPanelWidth,
-                right: isMaterialsPanelOpen ? materialsPanelWidth : 0,
-              }}
+              className={
+                isDesktopViewport
+                  ? 'absolute inset-y-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
+                  : 'fixed inset-x-0 bottom-0 z-20 flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+              }
+              style={
+                isDesktopViewport
+                  ? { width: notesPanelWidth, right: isMaterialsPanelOpen ? materialsPanelWidth : 0 }
+                  : undefined
+              }
             >
               <div
                 onMouseDown={(e) => {
                   e.preventDefault()
                   setIsResizingNotes(true)
                 }}
-                className={`absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
+                className={`hidden md:block absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
                   isResizingNotes ? 'bg-gray-900' : 'bg-transparent'
                 }`}
               />
@@ -433,11 +451,15 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
             </div>
           )}
 
-          {/* 강의자료 출처 패널 (인라인, 리사이즈 가능) */}
+          {/* 강의자료 출처 패널 — 데스크탑 inline 사이드 / 모바일 하단 55dvh sheet */}
           {isMaterialsPanelOpen && (
             <div
-              className="absolute inset-y-0 right-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl"
-              style={{ width: materialsPanelWidth }}
+              className={
+                isDesktopViewport
+                  ? 'absolute inset-y-0 right-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
+                  : 'fixed inset-x-0 bottom-0 z-20 flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+              }
+              style={isDesktopViewport ? { width: materialsPanelWidth } : undefined}
             >
               <div
                 onMouseDown={(e) => {

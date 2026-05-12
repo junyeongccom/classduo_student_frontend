@@ -36,6 +36,8 @@ interface SolveSidebarProps {
   onSelectSeq: (seq: number) => void
   /** 경과 시간 (초) */
   elapsedSec: number
+  /** Phase5 결과 화면처럼 모바일에서 progress bar 불필요한 케이스에서 모바일 부분 통째로 숨김 */
+  hideOnMobile?: boolean
 }
 
 const STATE_BG: Record<MasteryState, string> = {
@@ -54,13 +56,16 @@ export function SolveSidebar({
   currentQuestionState,
   onSelectSeq,
   elapsedSec,
+  hideOnMobile = false,
 }: SolveSidebarProps) {
   const t = useTranslations()
   const seqs = Array.from({ length: total }, (_, i) => i + 1)
 
   return (
     <>
-      {/* Mobile: 상단 가로 progress bar (회차 라벨 + 문항 dots + 경과) */}
+      {/* Mobile: 상단 가로 progress bar (회차 라벨 + 문항 dots + 경과).
+          hideOnMobile=true 시 (결과 화면) 통째로 숨김. */}
+      {!hideOnMobile && (
       <div className="md:hidden flex shrink-0 flex-col gap-1.5 border-b border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
         <div className="flex items-center justify-between gap-2 text-xs">
           <span className="min-w-0 flex-1 truncate text-gray-500 dark:text-gray-400">
@@ -96,6 +101,7 @@ export function SolveSidebar({
           })}
         </div>
       </div>
+      )}
 
       {/* Desktop: 좌측 사이드바 (기존) */}
       <aside className="hidden md:flex h-full w-[200px] md:w-[260px] shrink-0 flex-col gap-3 md:gap-6 border-r border-gray-200 bg-white p-3 md:p-6 dark:border-gray-700 dark:bg-gray-900">

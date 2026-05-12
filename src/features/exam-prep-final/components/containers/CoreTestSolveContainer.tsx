@@ -989,6 +989,7 @@ export function CoreTestSolveContainer({
             currentQuestionState={null}
             onSelectSeq={() => {}}
             elapsedSec={elapsedSec}
+            hideOnMobile
           />
           <Phase5FinalResult
             data={finalData}
