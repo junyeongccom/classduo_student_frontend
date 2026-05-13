@@ -8,6 +8,7 @@
 'use client'
 
 import Image from 'next/image'
+import { Play } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { resolveGradeTier } from '../../domain/grade'
 import { RANK_THRESHOLDS } from '@/features/exam-prep-final/components/result-overlay/utils'
@@ -20,6 +21,8 @@ interface GradeProgressCardProps {
   rankCode: string
   /** 과목명 — 디스클레이머 표시용 (예: "생명과학의 세계") */
   courseTitle?: string
+  /** 우측 화살표 버튼 클릭 시 기말 대비 학습 진입 핸들러 */
+  onStartExamPrep?: () => void
 }
 
 export function GradeProgressCard({
@@ -27,6 +30,7 @@ export function GradeProgressCard({
   xp,
   rankCode,
   courseTitle,
+  onStartExamPrep,
 }: GradeProgressCardProps) {
   const t = useTranslations()
   // 백엔드 RANK_THRESHOLDS 기반 진행률 계산.
@@ -105,6 +109,18 @@ export function GradeProgressCard({
             />
           </div>
         </div>
+
+        {/* 우측 — 기말 대비 학습 시작 버튼 (CTA) */}
+        {onStartExamPrep && (
+          <button
+            type="button"
+            onClick={onStartExamPrep}
+            aria-label={t('courseDashboard.startExamPrepAria')}
+            className="ml-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#6366F1] text-white shadow-md shadow-[#6366F1]/30 transition-all hover:scale-105 hover:bg-[#4F46E5] active:scale-95"
+          >
+            <Play className="h-6 w-6 translate-x-[1px] fill-current" />
+          </button>
+        )}
       </div>
 
       <p className="mt-3 text-center text-xs text-gray-400">

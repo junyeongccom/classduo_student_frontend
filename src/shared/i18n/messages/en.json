@@ -74,6 +74,7 @@
     "maxRankReached": "Top rank reached!",
     "xpToNext": "{xp} XP to next rank",
     "gradeDisclaimer": "Not the actual grade for {course}. This rank is used only within Aplus.",
+    "startExamPrepAria": "Start final-exam prep",
     "monthLabel": "{month}",
     "streakInProgress": "{days}-day streak",
     "todayLabel": "Today",

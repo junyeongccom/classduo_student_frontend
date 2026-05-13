@@ -144,6 +144,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
                 xp={user.xp}
                 rankCode={rankCode}
                 courseTitle={courseTitle ?? undefined}
+                onStartExamPrep={() => router.push(`/studyspace/course/${courseId}/exam-prep`)}
               />
             </div>
           </div>

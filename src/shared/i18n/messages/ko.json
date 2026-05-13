@@ -74,6 +74,7 @@
     "maxRankReached": "최고 등급 도달!",
     "xpToNext": "다음 등급까지 {xp} XP",
     "gradeDisclaimer": "실제 {course} 학점이 아닙니다. Aplus 서비스에서만 사용되는 등급입니다.",
+    "startExamPrepAria": "기말 대비 학습 시작",
     "monthLabel": "{month}월",
     "streakInProgress": "{days}일 연속 학습 중",
     "todayLabel": "오늘",
