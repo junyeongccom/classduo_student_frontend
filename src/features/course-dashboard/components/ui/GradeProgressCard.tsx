@@ -110,15 +110,15 @@ export function GradeProgressCard({
           </div>
         </div>
 
-        {/* 우측 — 기말 대비 학습 시작 버튼 (CTA) */}
+        {/* 우측 — 기말 대비 학습 시작 버튼 (기말대비 SelectedTestInfoCard 와 동일 디자인) */}
         {onStartExamPrep && (
           <button
             type="button"
             onClick={onStartExamPrep}
             aria-label={t('courseDashboard.startExamPrepAria')}
-            className="ml-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#6366F1] text-white shadow-md shadow-[#6366F1]/30 transition-all hover:scale-105 hover:bg-[#4F46E5] active:scale-95"
+            className="ml-auto flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#6366F1] text-white shadow-md shadow-indigo-500/20 transition-colors hover:bg-[#5558E6] md:h-20 md:w-20"
           >
-            <Play className="h-6 w-6 translate-x-[1px] fill-current" />
+            <Play className="h-6 w-6 fill-white md:h-8 md:w-8" />
           </button>
         )}
       </div>
