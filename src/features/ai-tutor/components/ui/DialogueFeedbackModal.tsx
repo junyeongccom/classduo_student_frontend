@@ -2,7 +2,7 @@
  * @file DialogueFeedbackModal.tsx
  * @description 대화형 학습 세션 만족도 평가 모달 (별점 5점). 사용자가 user 메시지 ≥1 인 세션을 떠날 때 표시.
  * @module features/ai-tutor/components/ui
- * @dependencies lucide-react, useI18n, chatService
+ * @dependencies lucide-react, useI18n, chatService, useDialogueFeedbackStore (오늘하루 닫기)
  */
 'use client'
 
@@ -10,6 +10,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { Star, X } from 'lucide-react'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { chatService } from '@/features/ai-tutor/services/chatService'
+import { dismissForToday } from '@/features/ai-tutor/store/useDialogueFeedbackStore'
 
 interface DialogueFeedbackModalProps {
   /** 평가 대상 세션 ID. null 이면 모달 미표시. */
@@ -44,6 +45,7 @@ export function DialogueFeedbackModal({ sessionId, onClose, onRated }: DialogueF
     submit: isEn ? 'Submit' : '평가 보내기',
     skip: isEn ? 'Skip' : '건너뛰기',
     close: isEn ? 'Close' : '닫기',
+    dismissToday: isEn ? "Don't show today" : '오늘하루 닫기',
     error: isEn ? 'Failed to submit. Please try again.' : '저장에 실패했습니다. 잠시 후 다시 시도해 주세요.',
   }
 
@@ -66,6 +68,11 @@ export function DialogueFeedbackModal({ sessionId, onClose, onRated }: DialogueF
       setSubmitting(false)
     }
   }, [sessionId, selected, submitting, onClose, onRated, labels.error])
+
+  const handleDismissToday = useCallback(() => {
+    dismissForToday()
+    onClose()
+  }, [onClose])
 
   if (!sessionId) return null
 
@@ -127,6 +134,18 @@ export function DialogueFeedbackModal({ sessionId, onClose, onRated }: DialogueF
               </button>
             )
           })}
+        </div>
+
+        {/* 오늘하루 닫기 — 별점 칸 최하단 가운데, 클릭 시 자정까지 미표시 */}
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={handleDismissToday}
+            disabled={submitting}
+            className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors cursor-pointer disabled:cursor-not-allowed"
+          >
+            {labels.dismissToday}
+          </button>
         </div>
 
         {/* 에러 메시지 */}
