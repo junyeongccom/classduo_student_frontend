@@ -123,7 +123,7 @@ export function GradeProgressCard({
         )}
       </div>
 
-      <p className="mt-3 text-center text-xs text-gray-400">
+      <p className="mt-3 text-center text-xs font-bold text-[#6366F1]">
         {t('courseDashboard.gradeDisclaimer', { course: courseTitle ?? '' })}
       </p>
     </section>

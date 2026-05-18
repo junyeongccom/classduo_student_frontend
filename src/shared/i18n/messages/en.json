@@ -70,7 +70,7 @@
     "weeklyShortDescription": "Review what you learned each week.",
     "dialogueShortDescription": "Ask the AI anything you don't understand.",
     "myQuizSaved": "My Quiz Library",
-    "expectedGradeTitle": "{name}'s expected grade",
+    "expectedGradeTitle": "{name}'s Grade Badge",
     "maxRankReached": "Top rank reached!",
     "xpToNext": "{xp} XP to next rank",
     "gradeDisclaimer": "Not the actual grade for {course}. This rank is used only within Aplus.",
