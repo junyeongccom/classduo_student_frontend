@@ -588,7 +588,16 @@ export function SolveQuestionPanel({
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            {canFinish ? (
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={!hasNext}
+              aria-label="next"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            {canFinish && (
               <button
                 type="button"
                 onClick={onFinish}
@@ -596,16 +605,6 @@ export function SolveQuestionPanel({
                 className="flex h-9 items-center justify-center rounded-lg bg-violet-600 px-4 text-sm font-bold text-white transition-colors hover:bg-violet-700"
               >
                 {t('examPrepFinal.endQuiz')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onNext}
-                disabled={!hasNext}
-                aria-label="next"
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
-              >
-                <ChevronRight className="h-4 w-4" />
               </button>
             )}
           </div>
