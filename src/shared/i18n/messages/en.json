@@ -67,6 +67,8 @@
     "courseDialoguePlaceholderTitle": "Dialogue Mode",
     "courseDialoguePlaceholderDescription": "Select a lecture to chat freely with the AI tutor.",
     "examSubtitle": "10 questions · 30 sets · daily reward boost",
+    "examPrepLockedTooltip": "Opens on June 1, ahead of finals",
+    "gradeLockedNotice": "Your grade badge will appear when exam prep opens",
     "weeklyShortDescription": "Review what you learned each week.",
     "dialogueShortDescription": "Ask the AI anything you don't understand.",
     "myQuizSaved": "My Quiz Library",
