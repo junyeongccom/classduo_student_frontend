@@ -12,3 +12,7 @@ export {
   inferCurrentWeekFromLectures,
 } from './domain/computeWeekAndDday'
 export { pickContinueLecture } from './domain/pickContinueLecture'
+export {
+  EXAM_PREP_UNLOCK_DATE_MS,
+  isExamPrepLockedNow,
+} from './domain/examPrepUnlock'

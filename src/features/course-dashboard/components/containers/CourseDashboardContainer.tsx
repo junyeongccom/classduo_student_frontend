@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -16,6 +16,7 @@ import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 import { useCourseDashboard } from '../../hooks/useCourseDashboard'
 import { useDashboardMock } from '../../hooks/useDashboardMock'
+import { isExamPrepLockedNow } from '../../domain/examPrepUnlock'
 import { ExamPrepHeroCard } from '../ui/ExamPrepHeroCard'
 import { StudyModeMidCard } from '../ui/StudyModeMidCard'
 import { QuickActionLink } from '../ui/QuickActionLink'
@@ -33,6 +34,12 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     examDday,
   } = useCourseDashboard(courseId)
   const { user, streak, monthGrid, rankCode } = useDashboardMock(courseId)
+
+  // 기말대비학습 카드 잠금 — 자정 경계 hydration 안전을 위해 client mount 시 1회 계산.
+  const [isExamPrepLocked, setIsExamPrepLocked] = useState(false)
+  useEffect(() => {
+    setIsExamPrepLocked(isExamPrepLockedNow())
+  }, [])
 
   useEffect(() => {
     trackPageEnter('course_dashboard', { courseId })
@@ -89,6 +96,8 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
               <ExamPrepHeroCard
                 title={t('courseDashboard.modeExam.title')}
                 subtitle={t('courseDashboard.examSubtitle')}
+                isLocked={isExamPrepLocked}
+                lockedTooltip={t('courseDashboard.examPrepLockedTooltip')}
                 onClick={() =>
                   router.push(`/studyspace/course/${courseId}/exam-prep`)
                 }
@@ -139,13 +148,21 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
                 examDday={examDday}
                 currentStreak={streak.currentStreak}
               />
-              <GradeProgressCard
-                displayName={user.displayName}
-                xp={user.xp}
-                rankCode={rankCode}
-                courseTitle={courseTitle ?? undefined}
-                onStartExamPrep={() => router.push(`/studyspace/course/${courseId}/exam-prep`)}
-              />
+              {isExamPrepLocked ? (
+                <section className="rounded-2xl bg-white px-8 py-8 text-center shadow-[0_4px_20px_rgba(15,23,42,0.06)] dark:bg-gray-900">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 md:text-base">
+                    {t('courseDashboard.gradeLockedNotice')}
+                  </p>
+                </section>
+              ) : (
+                <GradeProgressCard
+                  displayName={user.displayName}
+                  xp={user.xp}
+                  rankCode={rankCode}
+                  courseTitle={courseTitle ?? undefined}
+                  onStartExamPrep={() => router.push(`/studyspace/course/${courseId}/exam-prep`)}
+                />
+              )}
             </div>
           </div>
         </div>
