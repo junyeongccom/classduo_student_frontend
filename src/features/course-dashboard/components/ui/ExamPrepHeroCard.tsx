@@ -23,7 +23,7 @@ interface ExamPrepHeroCardProps {
   ariaLabel?: string
   /** 잠금 상태 — 자물쇠+체인 오버레이 + 클릭 비활성 + 호버 시 lockedTooltip 표시 */
   isLocked?: boolean
-  /** 잠금 시 카드 내부 호버 안내 메시지 (예: "기말고사를 앞두고 6월 1일에 오픈됩니다") */
+  /** 잠금 시 카드 내부 호버 안내 메시지 (예: "6월 1일부터 이용 가능합니다") */
   lockedTooltip?: string
 }
 
