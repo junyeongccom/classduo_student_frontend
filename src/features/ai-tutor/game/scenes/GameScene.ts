@@ -35,6 +35,8 @@ import {
   COIN_DIAGONAL_COUNT,
   COIN_ZIGZAG_COUNT,
   SCROLL_SPAWN_INTERVAL_MS,
+  QUIZ_SPAWN_GUARD_PRE_MS,
+  QUIZ_SPAWN_GUARD_POST_MS,
   FALL_DEATH_Y,
   HP_MAX,
   SPEED_LINE_THRESHOLD,
@@ -72,6 +74,10 @@ import {
   SCORE_BONUS,
   JUMP_COUNT_MAX,
   JUMP_COUNT_MIN,
+  HYPER_DASH_SPEED_MULT,
+  PLAYER_SIZE,
+  PLAYER_TEX_HEIGHT,
+  GIANT_BUFF_SCALE,
 } from "../constants";
 
 export class GameScene extends Phaser.Scene {
@@ -92,6 +98,16 @@ export class GameScene extends Phaser.Scene {
   private meteorTimer = 0;
   private meteorNextSpawn = 0;
   private elapsedPlayTime = 0;
+  // 퀴즈 풀이 종료(playing 재진입) 시점에 time.now + GUARD_POST_MS 로 갱신.
+  // 이 시각 전에는 spawn 가드 활성 — gap/meteor 새로 spawn 안 함.
+  private quizSpawnGuardUntil = 0;
+  // 거인화/초고속 종료 직후 fall_death 무시 + player.y 강제 ground 위 — 구덩이 위 종료 보호.
+  private fallDeathGraceUntil = 0;
+  // 거인화/초고속 종료 직후 N ms 동안:
+  //  - gap(구덩이) spawn 금지
+  //  - meteor spawn 금지(타이머 기반)
+  //  - meteor 충돌 무시(면역)
+  private postAbilityGuardUntil = 0;
 
   private hp = HP_MAX;
   private hpMax = HP_MAX;
@@ -143,6 +159,16 @@ export class GameScene extends Phaser.Scene {
       spawnMeteor: () => this.spawnMeteor(),
       getEffectiveSpeed: () => this.getEffectiveSpeed(),
       lerpDiff: (keys) => this.lerpDiff(keys),
+      startFallDeathGrace: (ms) => { this.fallDeathGraceUntil = this.time.now + ms; },
+      startPostAbilityGuard: (ms) => { this.postAbilityGuardUntil = this.time.now + ms; },
+      clearAllMeteors: () => {
+        // 거인화 종료 시점에 화면에 떠있는 meteor 일괄 destroy — 종료 직후 player 가 맞는 케이스 차단.
+        this.meteors.getChildren().forEach((obj) => {
+          const meteor = obj as Meteor;
+          this.particles.spawnMeteorSmash(meteor.x, meteor.y);
+          meteor.destroyWithTrail();
+        });
+      },
     }, this.ui);
     this.buffDebuff.setActiveStacksQuery((type) => this.activeAbility.getStacks(type));
 
@@ -187,7 +213,40 @@ export class GameScene extends Phaser.Scene {
     this.meteorSlowTimer = 0;
     this.meteorSlowMult = 1;
     this.obstacleHitCount = 0;
+    this.quizSpawnGuardUntil = 0;
     // Managers reset in create() after instantiation
+  }
+
+  /**
+   * gap/meteor spawn 차단 윈도우 안인지 판정.
+   * - gameState 가 playing 아님: 퀴즈/보상 화면 진행 중 → spawn 차단
+   * - scrollTimer 가 다음 자동 퀴즈 트리거 시점에서 PRE_MS 이내: 곧 퀴즈 → 차단
+   * - time.now 가 quizSpawnGuardUntil 보다 작음: 퀴즈 종료 직후 grace → 차단
+   */
+  private isInQuizSpawnGuard(): boolean {
+    if (this.gameState !== "playing") return true;
+    if (this.scrollTimer + QUIZ_SPAWN_GUARD_PRE_MS >= SCROLL_SPAWN_INTERVAL_MS) return true;
+    if (this.time.now < this.quizSpawnGuardUntil) return true;
+    return false;
+  }
+
+  /** gap 전용 가드 — 퀴즈 가드 + 거인화/초고속 종료 직후 N초 차단. */
+  private isInGapSpawnGuard(): boolean {
+    if (this.isInQuizSpawnGuard()) return true;
+    if (this.time.now < this.postAbilityGuardUntil) return true;
+    return false;
+  }
+
+  /** meteor 전용 가드 — 퀴즈 가드 + 거인화/초고속 종료 직후 N초 차단 + 면역. */
+  private isInMeteorSpawnGuard(): boolean {
+    if (this.isInQuizSpawnGuard()) return true;
+    if (this.time.now < this.postAbilityGuardUntil) return true;
+    return false;
+  }
+
+  /** 거인화/초고속 종료 직후 meteor 충돌 무시 (postAbilityGuard 시간 동안). */
+  private isMeteorImmune(): boolean {
+    return this.time.now < this.postAbilityGuardUntil;
   }
 
   private checkNicknameAndStart(): void {
@@ -312,6 +371,11 @@ export class GameScene extends Phaser.Scene {
       isJumpCountMaxed: () => this.player.maxJumps >= JUMP_COUNT_MAX,
       isJumpCountAtMin: () => this.player.maxJumps <= JUMP_COUNT_MIN,
       setGameState: (state: GameState) => {
+        // 퀴즈 풀이/보상 → playing 으로 복귀하는 시점에 spawn 가드 연장.
+        // physics.resume() 직후 player 앞에 이미 떠있던 gap/meteor 로 인한 불공평 사망 방지.
+        if (this.gameState !== "playing" && state === "playing") {
+          this.quizSpawnGuardUntil = this.time.now + QUIZ_SPAWN_GUARD_POST_MS;
+        }
         this.gameState = state;
       },
       addScore: (amount: number) => {
@@ -338,21 +402,36 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private isInputBlocked(): boolean {
+    // 퀴즈 풀이 중에는 키 입력이 게임 동작으로 새어들어가면 안 됨
+    // (SPACE 키로 답 선택하다가 점프 버퍼가 오염되는 케이스 방지)
+    return (
+      this.gameState === "game_over" ||
+      this.gameState === "intro" ||
+      this.gameState === "waiting_start" ||
+      this.gameState === "quiz_answering" ||
+      this.gameState === "quiz_result" ||
+      this.gameState === "choosing_reward"
+    );
+  }
+
   private handleJumpDown = (): void => {
-    if (this.gameState === "game_over" || this.gameState === "intro") return;
+    if (this.isInputBlocked()) return;
     this.player.requestJump(this.time.now);
   };
 
   private handleJumpUp = (): void => {
+    if (this.isInputBlocked()) return;
     this.player.releaseJump();
   };
 
   private handleDuckDown = (): void => {
-    if (this.gameState === "game_over" || this.gameState === "intro") return;
+    if (this.isInputBlocked()) return;
     this.player.startDuck();
   };
 
   private handleDuckUp = (): void => {
+    if (this.isInputBlocked()) return;
     this.player.endDuck();
   };
 
@@ -377,7 +456,12 @@ export class GameScene extends Phaser.Scene {
 
   private spawnNewGround(): void {
     while (this.nextGroundX < GAME_WIDTH + GROUND_TILE_WIDTH * 2) {
-      if (this.distanceTraveled > 800 && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)) {
+      // 퀴즈 임박/직후 + 거인화/초고속 종료 직후 gap spawn 금지
+      if (
+        this.distanceTraveled > 800
+        && !this.isInGapSpawnGuard()
+        && Math.random() < this.lerpDiff(DIFF_GAP_PROBABILITY)
+      ) {
         const gapWidth = Phaser.Math.Between(GAP_WIDTH_MIN, Math.round(this.lerpDiff(DIFF_GAP_MAX_WIDTH)));
         this.spawnArcCoins(this.nextGroundX, gapWidth);
         this.nextGroundX += gapWidth;
@@ -612,8 +696,15 @@ export class GameScene extends Phaser.Scene {
     const mx = meteor.x;
     const my = meteor.y;
 
-    // Giant buff — smash meteor instead of taking damage
-    if (this.activeAbility.isGiantActive()) {
+    // 거인화/초고속 종료 직후 grace 동안 meteor 면역 — 충돌해도 destroy 만 하고 데미지 없음
+    if (this.isMeteorImmune()) {
+      meteor.destroyWithTrail();
+      this.particles.spawnMeteorSmash(mx, my);
+      return;
+    }
+
+    // Giant/HyperDash buff — smash meteor instead of taking damage
+    if (this.activeAbility.isGiantActive() || this.activeAbility.isHyperDashActive()) {
       meteor.destroyWithTrail();
       const meteorScore = this.activeAbility.getGiantMeteorScore();
       if (meteorScore > 0) {
@@ -662,7 +753,8 @@ export class GameScene extends Phaser.Scene {
 
   private getEffectiveSpeed(): number {
     const base = this.baseScrollSpeed * this.buffDebuff.scrollSpeedMultiplier + this.lerpDiff(DIFF_SCROLL_SPEED_BONUS);
-    return base * this.meteorSlowMult;
+    const hyperMult = this.activeAbility.isHyperDashActive() ? HYPER_DASH_SPEED_MULT : 1;
+    return base * this.meteorSlowMult * hyperMult;
   }
 
   // ── Sync scroll speed ──
@@ -745,14 +837,17 @@ export class GameScene extends Phaser.Scene {
             Math.round(this.lerpDiff(DIFF_METEOR_MIN_MS)),
             Math.round(this.lerpDiff(DIFF_METEOR_MAX_MS)),
           );
-          this.spawnMeteor();
-          // Extra meteors in late game
-          const d = this.getDifficulty();
-          if (d > DIFF_DOUBLE_METEOR_THRESHOLD && Math.random() < DIFF_DOUBLE_METEOR_CHANCE) {
+          // 퀴즈 임박/직후 + 거인화/초고속 종료 직후 meteor spawn 금지
+          if (!this.isInMeteorSpawnGuard()) {
             this.spawnMeteor();
-          }
-          if (d > DIFF_TRIPLE_METEOR_THRESHOLD && Math.random() < DIFF_TRIPLE_METEOR_CHANCE) {
-            this.spawnMeteor();
+            // Extra meteors in late game
+            const d = this.getDifficulty();
+            if (d > DIFF_DOUBLE_METEOR_THRESHOLD && Math.random() < DIFF_DOUBLE_METEOR_CHANCE) {
+              this.spawnMeteor();
+            }
+            if (d > DIFF_TRIPLE_METEOR_THRESHOLD && Math.random() < DIFF_TRIPLE_METEOR_CHANCE) {
+              this.spawnMeteor();
+            }
           }
         }
       }
@@ -795,10 +890,38 @@ export class GameScene extends Phaser.Scene {
     this.particles.update(delta);
     this.ui.update(delta);
 
-    // Fall death — not during intro
-    if (!isIntro && this.player.y > FALL_DEATH_Y) {
+    // 거인화/초고속 종료 직후 grace 동안 player 를 ground 위 떠있게 유지(구덩이 위 종료 보호).
+    if (this.time.now < this.fallDeathGraceUntil) {
+      this.player.ensureAboveGround();
+    } else if (!isIntro && this.player.y > FALL_DEATH_Y) {
+      // Fall death — not during intro, grace 끝난 후만 트리거
       this.triggerGameOver("fall");
     }
+
+    // 거인화 활성 중에는 거대 visual 영역(반경 PLAYER_SIZE/2 × 거인화 scale) 안의 코인 자동 획득.
+    if (this.activeAbility.isGiantActive()) {
+      this.collectCoinsInGiantArea();
+    }
+  }
+
+  /**
+   * 거인화 visual 영역(직사각형) 안의 코인을 자동 획득.
+   * sprite display 의 실제 가로(PLAYER_SIZE × scale) / 세로(PLAYER_TEX_HEIGHT × scale)
+   * 를 그대로 사용 → 발 밑(ground 위) 코인부터 머리 위 코인까지 모두 흡수.
+   */
+  private collectCoinsInGiantArea(): void {
+    const scale = this.player.getGiantScale();
+    const halfWidth = (PLAYER_SIZE / 2) * scale;
+    const halfHeight = (PLAYER_TEX_HEIGHT / 2) * scale;
+    const px = this.player.x;
+    const py = this.player.y;
+    this.coins.getChildren().forEach((obj) => {
+      const coin = obj as Coin;
+      if (Math.abs(coin.x - px) < halfWidth && Math.abs(coin.y - py) < halfHeight) {
+        // onCollectCoin 시그니처에 맞춰 호출 (player, coin)
+        (this.onCollectCoin as (a: unknown, b: unknown) => void)(this.player, coin);
+      }
+    });
   }
 
   private triggerGameOver(cause: "hp" | "fall"): void {

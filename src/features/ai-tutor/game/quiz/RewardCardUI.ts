@@ -7,7 +7,18 @@ import {
   GAME_HEIGHT,
   FONT_FAMILY,
   ACTIVE_MAX_LEVEL,
+  ACTIVE_UNLOCK_STACKS,
 } from "../constants";
+
+// 패시브 카드 → 잠금 해제되는 액티브 어빌리티 한글/영어 이름.
+// (실제 매핑은 BuffDebuffManager.PASSIVE_TO_ACTIVE 와 1:1 일치 — heartBoost 는 매핑 없음)
+const PASSIVE_TO_ACTIVE_LABEL: Record<string, { ko: string; en: string }> = {
+  score:     { ko: "자석",       en: "Magnet" },
+  hpDecay:   { ko: "거인화",     en: "Giant" },
+  speed:     { ko: "코인 비",    en: "Coin Rain" },
+  jumpCount: { ko: "초고속 돌진", en: "Hyper Dash" },
+  jump:      { ko: "하늘 보물",   en: "Sky Treasure" },
+};
 
 interface CardDef {
   type: ChoiceType;
@@ -38,7 +49,7 @@ const ACTIVE_CARDS_KO: CardDef[] = [
   { type: "magnet", title: "자석", desc: "코인을 끌어당기는 힘!", color: 0xf1c40f },
   { type: "giant", title: "거인화", desc: "거대해져서 운석 파괴!", color: 0x1abc9c },
   { type: "coinRain", title: "코인 비", desc: "하늘에서 코인이 내린다!", color: 0x3498db },
-  { type: "multiJumpScore", title: "멀티점프", desc: "다단 점프로 보너스 점수!", color: 0x9b59b6 },
+  { type: "multiJumpScore", title: "초고속 돌진", desc: "속도 ×5 + 무적 + 자석!", color: 0x9b59b6 },
   { type: "skyTreasure", title: "하늘 보물", desc: "높은 곳에서 보물이 내린다!", color: 0x2ecc71 },
 ];
 
@@ -46,7 +57,7 @@ const ACTIVE_CARDS_EN: CardDef[] = [
   { type: "magnet", title: "MAGNET", desc: "Attract coins!", color: 0xf1c40f },
   { type: "giant", title: "GIANT", desc: "Grow big & smash meteors!", color: 0x1abc9c },
   { type: "coinRain", title: "COIN RAIN", desc: "Coins from the sky!", color: 0x3498db },
-  { type: "multiJumpScore", title: "MULTI JUMP", desc: "Bonus score on multi-jumps!", color: 0x9b59b6 },
+  { type: "multiJumpScore", title: "HYPER DASH", desc: "Speed ×5 + invincible + magnet!", color: 0x9b59b6 },
   { type: "skyTreasure", title: "SKY TREASURE", desc: "Treasures from above!", color: 0x2ecc71 },
 ];
 
@@ -222,6 +233,25 @@ export class RewardCardUI {
         .setOrigin(0.5);
       container.add(cardDesc);
 
+      // 패시브 카드 → 잠금 해제되는 액티브 어빌리티 안내 (heartBoost / scoreFallback / 액티브 카드는 안내 없음)
+      const activeLabel = PASSIVE_TO_ACTIVE_LABEL[card.type as string];
+      if (activeLabel) {
+        const hint = this.locale === "en"
+          ? `Collect ${ACTIVE_UNLOCK_STACKS} → ${activeLabel.en}!`
+          : `${ACTIVE_UNLOCK_STACKS}번 모으면 ${activeLabel.ko} 발동!`;
+        const cardHint = this.scene.add
+          .text(0, 56 * S, hint, {
+            fontFamily: FONT_FAMILY,
+            fontSize: `${10 * S}px`,
+            color: "#ffd86b",
+            fontStyle: "bold",
+            align: "center",
+            wordWrap: { width: cardW - 16 * S },
+          })
+          .setOrigin(0.5);
+        container.add(cardHint);
+      }
+
       // Sparkle particles
       const sparkleTimer = this.scene.time.addEvent({
         delay: 500,
@@ -311,25 +341,9 @@ export class RewardCardUI {
     // Hide passives whose active ability is activated or already at max stacks
     pool = pool.filter((c) => !this.rewardCallbacks.isPassiveHidden(c.type) && !this.rewardCallbacks.isPassiveMaxed(c.type));
 
-    // Filter out max-level actives from unlocked pool
-    const activeTypes: ActiveAbilityType[] = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"];
-    const unlocked = activeTypes.filter((t) =>
-      this.rewardCallbacks.isActiveUnlocked(t) && this.rewardCallbacks.getActiveLevel(t) < ACTIVE_MAX_LEVEL
-    );
-
-    if (unlocked.length > 0) {
-      const chosenType = unlocked[Phaser.Math.Between(0, unlocked.length - 1)];
-      const level = this.rewardCallbacks.getActiveLevel(chosenType);
-      // Lv1: 20%, Lv2: 12%, Lv3: 6%
-      const chance = level >= 3 ? 0.06 : level >= 2 ? 0.12 : 0.20;
-      if (Math.random() < chance) {
-        const activeCard = this.activeCards.find((c) => c.type === chosenType)!;
-        const passives = Phaser.Utils.Array.Shuffle(pool).slice(0, 2);
-        const insertIdx = Phaser.Math.Between(0, 2);
-        passives.splice(insertIdx, 0, activeCard);
-        return this.fillWithFallback(passives);
-      }
-    }
+    // 액티브 카드 풀 제거 — 사용자 도파민을 위해 어빌리티는 패시브 3장 모이는
+    // 그 순간 QuizManager.handleRewardSelect 에서 자동 발동 (스택 리셋). 즉
+    // 보상에는 패시브 카드만 등장. 액티브 카드 등장 확률 분기 폐기.
 
     const picked = Phaser.Utils.Array.Shuffle(pool).slice(0, 3);
     return this.fillWithFallback(picked);

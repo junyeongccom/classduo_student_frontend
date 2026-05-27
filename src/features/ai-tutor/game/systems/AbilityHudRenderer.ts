@@ -18,6 +18,7 @@ export class AbilityHudRenderer {
     bgCircle: Phaser.GameObjects.Graphics;
     progressRing: Phaser.GameObjects.Graphics;
     label: Phaser.GameObjects.Text;
+    nameLabel: Phaser.GameObjects.Text;
     levelText: Phaser.GameObjects.Text;
   }> = {};
   private abilityActivePulse: Record<string, Phaser.Tweens.Tween> = {};
@@ -28,13 +29,16 @@ export class AbilityHudRenderer {
 
   create(): void {
     const types = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"] as const;
-    const labels: Record<string, string> = { magnet: "M", giant: "G", coinRain: "C", multiJumpScore: "J", skyTreasure: "S" };
+    // 동그라미 안: 직관적 한글 1자 / 동그라미 아래: 풀 한글 이름
+    const labels: Record<string, string> = { magnet: "자", giant: "거", coinRain: "코", multiJumpScore: "초", skyTreasure: "보" };
+    const names: Record<string, string> = { magnet: "자석", giant: "거대화", coinRain: "코인비", multiJumpScore: "초고속", skyTreasure: "보물" };
     const colors: Record<string, number> = { magnet: 0xf1c40f, giant: 0x1abc9c, coinRain: 0x3498db, multiJumpScore: 0x9b59b6, skyTreasure: 0x2ecc71 };
 
     const startX = HP_BAR_X;
     const startY = HP_BAR_Y + HP_BAR_HEIGHT + 8 * S;
     const iconR = 10 * S;
-    const spacing = 28 * S;
+    // 풀 이름(최대 3자) 가로 폭 확보를 위해 spacing 살짝 확대
+    const spacing = 34 * S;
 
     for (let i = 0; i < types.length; i++) {
       const type = types[i];
@@ -54,7 +58,7 @@ export class AbilityHudRenderer {
       const progressRing = this.scene.add.graphics();
       container.add(progressRing);
 
-      // Ability letter
+      // 동그라미 안 한 글자 라벨 (자/거/코/콤/보)
       const label = this.scene.add
         .text(0, -1 * S, labels[type], {
           fontFamily: FONT_FAMILY,
@@ -65,17 +69,31 @@ export class AbilityHudRenderer {
         .setOrigin(0.5);
       container.add(label);
 
-      // Level text below icon
-      const levelText = this.scene.add
-        .text(0, iconR + 4 * S, "", {
+      // 동그라미 아래 풀 한글 이름 (자석/거대화/코인비/콤보/보물)
+      const nameLabel = this.scene.add
+        .text(0, iconR + 4 * S, names[type], {
           fontFamily: FONT_FAMILY,
           fontSize: `${7 * S}px`,
           color: "#ffffff",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5);
+      container.add(nameLabel);
+
+      // 풀 이름 아래 진행도/레벨 (1/3, Lv1 등) — bold + 사이즈 ↑ + 진한 색 (가독성)
+      const levelText = this.scene.add
+        .text(0, iconR + 13 * S, "", {
+          fontFamily: FONT_FAMILY,
+          fontSize: `${9 * S}px`,
+          color: "#ffffff",
+          fontStyle: "bold",
+          stroke: "#000000",
+          strokeThickness: 2 * S,
         })
         .setOrigin(0.5);
       container.add(levelText);
 
-      this.abilityIcons[type] = { container, bgCircle, progressRing, label, levelText };
+      this.abilityIcons[type] = { container, bgCircle, progressRing, label, nameLabel, levelText };
     }
   }
 
@@ -123,7 +141,7 @@ export class AbilityHudRenderer {
 
       icon.label.setAlpha(0.4);
       icon.levelText.setText(`${absStacks}/${ACTIVE_UNLOCK_STACKS}`);
-      icon.levelText.setColor("#aaaaaa");
+      icon.levelText.setColor("#ffffff");
 
       g.lineStyle(1.5 * S, 0x888888, 0.3);
       g.strokeCircle(0, 0, iconR);
@@ -163,8 +181,8 @@ export class AbilityHudRenderer {
     const level = Math.min(Math.abs(stacks), ACTIVE_MAX_LEVEL);
     const iconR = 10 * S;
 
-    // Update level text
-    icon.levelText.setText(`Lv${level}`);
+    // 1회성 발동 + 매번 동일 효과 — Lv 표시 제거. 진행도 ring 으로 활성/지속 시간 표현.
+    icon.levelText.setText("");
     icon.levelText.setColor("#2ecc71");
 
     // Draw progress ring

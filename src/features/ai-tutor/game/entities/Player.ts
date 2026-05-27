@@ -41,21 +41,55 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   scrollSpeed = 0;
   clampLeft = true;
   private _giantScale = 1;
+  // 거인화 transition 의 목표 scale — update 에서 매 프레임 lerp 로 _giantScale 점진 변경.
+  // 즉시 setScale 변동(시각적 깜빡임/사라짐) 방지.
+  private _targetGiantScale = 1;
+  private _giantScaleOnComplete: (() => void) | null = null;
+  // 거인화 활성 중 player X 를 이 값으로 강제 (Phaser body 보정으로 좌측 벽까지 밀리는 버그 방지)
+  private fixedX: number | null = null;
+  // 거인화/초고속 돌진 등 "구덩이 무시" 어빌리티 활성 중 player Y 를 ground 위에 고정.
+  private groundLocked = false;
 
-  setGiantScale(scale: number): void {
-    const old = this._giantScale;
-    if (scale === old) return;
-    this._giantScale = scale;
-    if (scale > old) {
-      // Growing: shift up so feet stay on ground (larger sprite pushes feet down)
-      this.y -= (PLAYER_TEX_HEIGHT / 2) * (scale - old);
-    }
-    // Shrinking: don't adjust Y — moving down risks pushing body inside ground.
-    // Player floats briefly; gravity brings them back down naturally.
+  setFixedX(x: number | null): void {
+    this.fixedX = x;
+  }
+
+  setGroundLocked(locked: boolean): void {
+    this.groundLocked = locked;
+  }
+
+  isGroundLocked(): boolean {
+    return this.groundLocked;
+  }
+
+  /**
+   * 거인화 scale 변경. tween 없이 update() 안에서 매 프레임 lerp 로 부드럽게 _giantScale 변경.
+   * y 좌표는 건드리지 않음 — groundLocked 가 visual 발을 ground 위로 강제.
+   * @param onComplete scale 도달 시 콜백 (deactivate 흐름 — groundLocked 해제 등)
+   */
+  setGiantScale(scale: number, onComplete?: () => void): void {
+    this._targetGiantScale = scale;
+    this._giantScaleOnComplete = onComplete ?? null;
   }
 
   getGiantScale(): number {
     return this._giantScale;
+  }
+
+  /** _giantScale 을 _targetGiantScale 쪽으로 ~300ms 에 도달하도록 매 프레임 lerp. */
+  private updateGiantScaleLerp(delta: number): void {
+    const diff = this._targetGiantScale - this._giantScale;
+    if (Math.abs(diff) < 0.01) {
+      if (this._giantScale !== this._targetGiantScale) {
+        this._giantScale = this._targetGiantScale;
+        const cb = this._giantScaleOnComplete;
+        this._giantScaleOnComplete = null;
+        cb?.();
+      }
+      return;
+    }
+    // 300ms 안에 거의 도달하도록 (delta/300 비율로 보간)
+    this._giantScale += diff * Math.min(1, delta / 300);
   }
 
   startSpin(): void {
@@ -96,6 +130,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   update(time: number, delta: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     const onGround = body.blocked.down;
+
+    // 거인화 scale 부드러운 transition (매 프레임 lerp)
+    this.updateGiantScaleLerp(delta);
 
     // Landing detection → emit event for dust effect + squash
     // Cooldown prevents re-trigger when squash scale momentarily lifts body off ground
@@ -181,21 +218,44 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Ensure body size stays correct after texture swap
     // NOTE: setSize sets SOURCE dimensions; updateBounds multiplies by sprite scale.
-    // So do NOT multiply by gs here — setScale(gs) already handles body scaling.
+    // Giant 발동 중에는 source 를 1/scale 로 줄여 actual body = 원본(30×38) 유지 →
+    // ground collision 정상, 점프 정상, 화면 좌측 밀림 방지.
+    const gs2 = this._giantScale;
     if (this.ducking) {
       body.setSize(30 * S, 19 * S);
       body.setOffset(5 * S, 22 * S);
       // Tilt only when sliding on ground; flat in air
       this.setAngle(onGround ? -10 : 0);
+    } else if (gs2 !== 1) {
+      body.setSize(30 * S / gs2, 38 * S / gs2);
+      body.setOffset(5 * S / gs2, 5 * S / gs2);
     } else {
       body.setSize(30 * S, 38 * S);
       body.setOffset(5 * S, 5 * S);
     }
 
     // Apply giant visual scale when no squash/stretch tween is playing
-    const gs2 = this._giantScale;
     if (gs2 !== 1 && (!this.squashTween || !this.squashTween.isPlaying())) {
       this.setScale(gs2);
+    }
+
+    // 거인화 중 X 고정 — Phaser body 보정/충돌로 player 가 화면 좌측 벽까지 밀려나는 케이스 차단
+    if (this.fixedX !== null) {
+      this.x = this.fixedX;
+      body.setVelocityX(0);
+    }
+
+    // 무적(거인화·초고속 돌진 등) 활성 중에는 구덩이 위에서도 ground 위에 떠있도록 Y 강제.
+    // 거인화 시에는 visual 발(PLAYER_TEX_HEIGHT/2 × scale)이 ground top 에 닿도록,
+    // 평소(scale=1, 초고속 돌진)에는 평소 body 발 위치(player 원래 ground 위치) 유지.
+    if (this.groundLocked) {
+      const groundTop = GROUND_Y - GROUND_HEIGHT / 2;
+      const offset = this._giantScale > 1
+        ? (PLAYER_TEX_HEIGHT / 2) * this._giantScale
+        : 19 * S; // body source height/2 — 평소 ground 위 위치
+      const targetY = groundTop - offset;
+      this.y = targetY;
+      body.setVelocityY(0);
     }
 
     this.applyVariableGravity(body);
@@ -230,6 +290,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.jumpHeld = true;
     this.jumpBufferedAt = time;
 
+    // groundLocked(거인화/초고속) 활성 중에는 실제 점프 대신 회전 모션만 트리거 — 시각 도파민용.
+    // body 가 ground 와 안 닿아 있어 일반 점프 분기 모두 fail, spinning 효과만 살리기 위함.
+    if (this.groundLocked) {
+      this.spinning = true;
+      this.jumpCount++;
+      this.emit('jump', this.x, this.y, this.jumpCount);
+      return;
+    }
+
     const body = this.body as Phaser.Physics.Arcade.Body;
     const onGround = body.blocked.down;
     const inCoyoteWindow = time - this.lastGroundedAt < COYOTE_TIME_MS;
@@ -263,6 +332,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setOffset(5 * S, 22 * S);
     this.y += 8.5 * S;
     this.setScale(1.3 * this._giantScale, 0.5 * this._giantScale);
+    // y 좌표를 8.5*S 만큼 내리면서 body 가 ground 안쪽으로 한두 프레임 박히는
+    // 케이스 방지 — 즉시 ground 위로 보정.
+    this.ensureAboveGround();
   }
 
   endDuck(): void {
@@ -286,6 +358,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.jumpMultiplier = 1;
     this.scrollSpeed = 0;
     this._giantScale = 1;
+    this._targetGiantScale = 1;
+    this._giantScaleOnComplete = null;
+    this.fixedX = null;
+    this.groundLocked = false;
     this.justJumped = false;
     this.spinning = false;
     this.ducking = false;

@@ -23,7 +23,7 @@ import {
 } from "../constants";
 
 /** Passive → Active mapping: hide passive when its active has stacks > 0 */
-const PASSIVE_TO_ACTIVE: Record<string, ActiveAbilityType> = {
+export const PASSIVE_TO_ACTIVE: Record<string, ActiveAbilityType> = {
   score: "magnet",
   hpDecay: "giant",
   speed: "coinRain",
@@ -49,6 +49,14 @@ export class BuffDebuffManager {
   speedRewardStacks = 0;
   jumpRewardStacks = 0;
   jumpCountRewardStacks = 0;
+
+  // 어빌리티 발동 카운터 (정답 시 ++, ACTIVE_UNLOCK_STACKS 도달 시 매핑 어빌리티 발동 + 카운터 리셋).
+  // 카운터와 분리 — stacks/multiplier 는 영구 누적해서 buff 효과를 유지.
+  speedTrigger = 0;
+  jumpTrigger = 0;
+  jumpCountTrigger = 0;
+  scoreTrigger = 0;
+  hpDecayTrigger = 0;
 
   private player: Player;
   private getHeartItems: () => Phaser.Physics.Arcade.Group;
@@ -80,14 +88,20 @@ export class BuffDebuffManager {
     this.speedRewardStacks = 0;
     this.jumpRewardStacks = 0;
     this.jumpCountRewardStacks = 0;
+    this.speedTrigger = 0;
+    this.jumpTrigger = 0;
+    this.jumpCountTrigger = 0;
+    this.scoreTrigger = 0;
+    this.hpDecayTrigger = 0;
   }
 
   // ── Speed ──
 
   applySpeedUp(): void {
-    if (this.speedStacks >= ACTIVE_UNLOCK_STACKS) return;
+    // cap 제거 — multiplier 는 SPEED_MULT_MAX 에서 자연 cap. 사용자 buff 효과 영구 누적.
     this.speedStacks++;
     this.scrollSpeedMultiplier = this.computeMultiplier(SPEED_STACK_BASE, this.speedStacks, SPEED_MULT_MIN, SPEED_MULT_MAX);
+    this.speedTrigger++;
   }
 
   applySpeedDown(): void {
@@ -99,9 +113,9 @@ export class BuffDebuffManager {
   // ── Jump ──
 
   applyJumpUp(): void {
-    if (this.jumpStacks >= ACTIVE_UNLOCK_STACKS) return;
     this.jumpStacks++;
     this.player.jumpMultiplier = this.computeMultiplier(JUMP_STACK_BASE, this.jumpStacks, JUMP_MULT_MIN, JUMP_MULT_MAX);
+    this.jumpTrigger++;
   }
 
   applyJumpDown(): void {
@@ -113,9 +127,9 @@ export class BuffDebuffManager {
   // ── Jump Count ──
 
   applyJumpCountUp(): void {
-    if (this.jumpCountStacks >= ACTIVE_UNLOCK_STACKS) return;
     this.jumpCountStacks++;
     this.player.maxJumps = Phaser.Math.Clamp(MAX_JUMPS + this.jumpCountStacks, JUMP_COUNT_MIN, JUMP_COUNT_MAX);
+    this.jumpCountTrigger++;
   }
 
   applyJumpCountDown(): void {
@@ -127,7 +141,7 @@ export class BuffDebuffManager {
   // ── Heart Restore ──
 
   applyHeartBoostUp(): void {
-    if (this.heartRestoreStacks >= ACTIVE_UNLOCK_STACKS) return;
+    // cap 제거 — HEART_RESTORE_MULT_MAX 에서 자연 cap. heartBoost 는 어빌리티 매핑 없는 단순 buff.
     this.heartRestoreStacks++;
     this.heartRestoreMultiplier = this.computeMultiplier(HEART_RESTORE_STACK_BASE, this.heartRestoreStacks, HEART_RESTORE_MULT_MIN, HEART_RESTORE_MULT_MAX);
     this.syncHeartRestoreStacks();
@@ -150,9 +164,10 @@ export class BuffDebuffManager {
 
   applyHpDecayDown(): void {
     // hpDecay is inverted: negative = buff direction (less decay)
-    if (this.hpDecayStacks <= -ACTIVE_UNLOCK_STACKS) return;
+    // cap 제거 — HP_DECAY_MULT_MIN 에서 자연 cap. trigger 는 정답 카운터.
     this.hpDecayStacks--;
     this.hpDecayMultiplier = this.computeMultiplier(HP_DECAY_STACK_BASE, this.hpDecayStacks, HP_DECAY_MULT_MIN, HP_DECAY_MULT_MAX);
+    this.hpDecayTrigger++;
   }
 
   applyHpDecayUp(): void {
@@ -165,8 +180,8 @@ export class BuffDebuffManager {
   // ── Score Passive ──
 
   applyScorePassiveUp(): void {
-    if (this.scoreCardPickCount >= ACTIVE_UNLOCK_STACKS) return;
     this.scoreCardPickCount++;
+    this.scoreTrigger++;
   }
 
   applyScorePassiveDown(): void {
@@ -174,18 +189,24 @@ export class BuffDebuffManager {
     this.scoreCardPickCount--;
   }
 
+  // ── Passive trigger reset ──
+  // 어빌리티 발동 시 호출 — trigger 카운터만 0 으로. stacks/multiplier 는 영구 유지(buff 보존).
+  // heartBoost 는 어빌리티 매핑이 없어 호출 대상 아님.
+  resetPassiveStacksFor(passiveType: string): void {
+    switch (passiveType) {
+      case "speed":     this.speedTrigger = 0; break;
+      case "jump":      this.jumpTrigger = 0; break;
+      case "jumpCount": this.jumpCountTrigger = 0; break;
+      case "score":     this.scoreTrigger = 0; break;
+      case "hpDecay":   this.hpDecayTrigger = 0; break;
+    }
+  }
+
   // ── Query helpers ──
 
-  isPassiveAtMax(passiveType: string): boolean {
-    switch (passiveType) {
-      case "speed":      return this.speedStacks >= ACTIVE_UNLOCK_STACKS;
-      case "jump":       return this.jumpStacks >= ACTIVE_UNLOCK_STACKS;
-      case "jumpCount":  return this.jumpCountStacks >= ACTIVE_UNLOCK_STACKS;
-      case "score":      return this.scoreCardPickCount >= ACTIVE_UNLOCK_STACKS;
-      case "heartBoost": return this.heartRestoreStacks >= ACTIVE_UNLOCK_STACKS;
-      case "hpDecay":    return this.hpDecayStacks <= -ACTIVE_UNLOCK_STACKS;
-      default:           return false;
-    }
+  isPassiveAtMax(_passiveType: string): boolean {
+    // 영구 누적 + trigger 발동/리셋 사이클 — max-out 상태 없음. 보상 카드 풀에서 제외하지 않음.
+    return false;
   }
 
   isPassiveHiddenByActive(passiveType: string): boolean {
@@ -198,23 +219,25 @@ export class BuffDebuffManager {
     return this.getPassiveStacksForAbility(type) >= ACTIVE_UNLOCK_STACKS;
   }
 
+  // 어빌리티 발동 진행도 표시(좌상단 동그라미 1/3)와 잠금 해제 판정은 모두 trigger 기반.
+  // stacks 는 영구 누적되는 buff multiplier 입력값이라 어빌리티 발동 카운터로 쓰지 않음.
   getSignedPassiveStacks(type: ActiveAbilityType): number {
     switch (type) {
-      case "magnet":         return this.scoreCardPickCount;
-      case "giant":          return -this.hpDecayStacks; // hpDecay is inverted: negative stacks = buff
-      case "coinRain":       return this.speedStacks;
-      case "multiJumpScore": return this.jumpCountStacks;
-      case "skyTreasure":    return this.jumpStacks;
+      case "magnet":         return this.scoreTrigger;
+      case "giant":          return this.hpDecayTrigger;
+      case "coinRain":       return this.speedTrigger;
+      case "multiJumpScore": return this.jumpCountTrigger;
+      case "skyTreasure":    return this.jumpTrigger;
     }
   }
 
   getPassiveStacksForAbility(type: ActiveAbilityType): number {
     switch (type) {
-      case "magnet":         return this.scoreCardPickCount;
-      case "giant":          return Math.abs(this.hpDecayStacks);
-      case "coinRain":       return Math.abs(this.speedStacks);
-      case "multiJumpScore": return Math.abs(this.jumpCountStacks);
-      case "skyTreasure":    return Math.abs(this.jumpStacks);
+      case "magnet":         return this.scoreTrigger;
+      case "giant":          return this.hpDecayTrigger;
+      case "coinRain":       return this.speedTrigger;
+      case "multiJumpScore": return this.jumpCountTrigger;
+      case "skyTreasure":    return this.jumpTrigger;
     }
   }
 
