@@ -5,7 +5,7 @@ import { QuizQuestion, ChoiceType, ActiveAbilityType } from "./quizTypes";
 import { QuizPanelUI } from "./QuizPanelUI";
 import { RewardCardUI } from "./RewardCardUI";
 import { QuizAnswerUI } from "./QuizAnswerUI";
-import { BuffDebuffManager } from "../systems/BuffDebuffManager";
+import { BuffDebuffManager, PASSIVE_TO_ACTIVE } from "../systems/BuffDebuffManager";
 import { ActiveAbilityManager } from "../systems/ActiveAbilityManager";
 import {
   QUIZ_RESULT_MS,
@@ -382,6 +382,27 @@ export class QuizManager {
           effectLabel = prefix + "SKY METEOR!";
         }
         break;
+    }
+
+    // 패시브 카드(speed/jump/jumpCount/score/hpDecay) 가 3장 도달했고 정답이면
+    // 매핑된 어빌리티 즉시 발동 + 그 패시브 스택 0 으로 소모.
+    // heartBoost / scoreFallback / 액티브 카드 (magnet/giant/...) 는 매핑 없음 → skip.
+    const activeType = PASSIVE_TO_ACTIVE[type];
+    if (isCorrect && activeType && buffDebuff.isActiveUnlocked(activeType)) {
+      activeAbility.applyActiveAbilityUp(activeType);
+      buffDebuff.resetPassiveStacksFor(type);
+      const abilityKo: Record<ActiveAbilityType, string> = {
+        magnet: "자석", giant: "거인화", coinRain: "코인비",
+        multiJumpScore: "초고속 돌진", skyTreasure: "하늘 보물",
+      };
+      const abilityEn: Record<ActiveAbilityType, string> = {
+        magnet: "Magnet", giant: "Giant", coinRain: "Coin Rain",
+        multiJumpScore: "Hyper Dash", skyTreasure: "Sky Treasure",
+      };
+      const label = this.locale === "en"
+        ? `${abilityEn[activeType]} UNLOCKED!`
+        : `${abilityKo[activeType]} 발동!`;
+      effectLabel = label;
     }
 
     const answer = isCorrect ? undefined : this.currentCorrectAnswer;

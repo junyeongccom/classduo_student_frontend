@@ -55,6 +55,12 @@ export interface ActiveAbilityDeps {
   spawnMeteor: () => void;
   getEffectiveSpeed: () => number;
   lerpDiff: (keys: [number, number, number, number]) => number;
+  /** 거인화/초고속 종료 직후 ms 동안 fall_death 무시 + ensureAboveGround 적용 */
+  startFallDeathGrace?: (ms: number) => void;
+  /** 거인화/초고속 종료 직후 ms 동안 gap+meteor spawn 금지 + meteor 충돌 면역 */
+  startPostAbilityGuard?: (ms: number) => void;
+  /** 거인화 종료 시점에 화면에 떠있는 meteor 일괄 제거 */
+  clearAllMeteors?: () => void;
 }
 
 export interface MultiJumpScoreResult {
@@ -72,7 +78,9 @@ const ABILITY_CONFIG: Record<ActiveAbilityType, { cooldownMs: number; durationMs
   skyTreasure:    { cooldownMs: SKY_TREASURE_COOLDOWN_MS, durationMs: SKY_TREASURE_DURATION_MS },
 };
 
-const ALWAYS_ON_ABILITIES: Set<ActiveAbilityType> = new Set(["magnet", "multiJumpScore", "skyTreasure"]);
+// 5종 어빌리티 모두 1회성 발동(패시브 3 모음 → 한 번 발동 → 원상복귀 → 다시 모음 → 발동).
+// 영구 활성(ALWAYS_ON) 어빌리티 없음 — 사용자 의도(단일 발동 + 매번 동일 효과).
+const ALWAYS_ON_ABILITIES: Set<ActiveAbilityType> = new Set();
 
 const ALL_TYPES: ActiveAbilityType[] = ["magnet", "giant", "coinRain", "multiJumpScore", "skyTreasure"];
 
@@ -129,6 +137,12 @@ export class ActiveAbilityManager {
     return s.isActive && s.stacks > 0;
   }
 
+  /** multiJumpScore type 을 "초고속 돌진" 효과로 재정의 — 속도 ×5, 자석, 무적, groundLock. */
+  isHyperDashActive(): boolean {
+    const s = this.abilities.multiJumpScore;
+    return s.isActive && s.stacks > 0;
+  }
+
   getGiantMeteorScore(): number {
     const level = Math.min(Math.abs(this.abilities.giant.stacks), ACTIVE_MAX_LEVEL);
     return GIANT_METEOR_SCORE[level];
@@ -139,7 +153,8 @@ export class ActiveAbilityManager {
   applyActiveAbilityUp(type: ActiveAbilityType): void {
     const state = this.abilities[type];
     const oldStacks = state.stacks;
-    state.stacks = Math.min(state.stacks + 1, ACTIVE_MAX_LEVEL);
+    // 1회성 발동 + 매번 동일 효과 — Lv 누적 개념 폐기. 항상 stacks=1.
+    state.stacks = 1;
     this.handleAbilityStackChange(type, oldStacks);
   }
 
@@ -174,9 +189,16 @@ export class ActiveAbilityManager {
         state.isActive = true;
         state.spawnTimer = 0;
       } else {
+        // 잠금 해제 직후 즉시 첫 발동 (이전엔 cooldown 채워야 첫 발동 → 사용자가 발동을 못 느낌).
+        // 사용자가 액티브 카드 선택한 그 순간 바로 효과 체감.
+        const config = ABILITY_CONFIG[type];
+        const level = Math.min(Math.abs(state.stacks), ACTIVE_MAX_LEVEL);
+        const isBuff = state.stacks > 0;
+        state.isActive = true;
+        state.activeTimer = config.durationMs;
         state.cooldown = 0;
-        state.isActive = false;
         state.spawnTimer = 0;
+        this.activateAbility(type, level, isBuff);
       }
     }
   }
@@ -245,26 +267,24 @@ export class ActiveAbilityManager {
       if (state.isActive) {
         state.activeTimer -= delta;
         if (state.activeTimer <= 0) {
+          // 발동 종료 — 자동 재발동(cooldown 사이클) 안 함. stacks 0 으로
+          // 원상복귀 → 다음 update 의 stacks===0 분기에서 패시브 진행도 HUD 로 전환.
           this.deactivateAbility(type);
           state.isActive = false;
           state.cooldown = 0;
+          state.activeTimer = 0;
+          state.stacks = 0;
+          state.spawnTimer = 0;
+          this.ui.updateActiveAbilityHUD(type, 0, 0, false);
         } else {
           this.applyAbilityEffect(type, level, isBuff, delta);
+          this.ui.updateActiveAbilityHUD(type, state.stacks,
+            state.activeTimer / config.durationMs, true);
         }
-        this.ui.updateActiveAbilityHUD(type, state.stacks,
-          state.activeTimer / config.durationMs, true);
-      } else {
-        state.cooldown += delta;
-        if (state.cooldown >= config.cooldownMs) {
-          state.isActive = true;
-          state.activeTimer = config.durationMs;
-          state.cooldown = 0;
-          state.spawnTimer = 0;
-          this.activateAbility(type, level, isBuff);
-        }
-        this.ui.updateActiveAbilityHUD(type, state.stacks,
-          state.cooldown / config.cooldownMs, false);
       }
+      // stacks > 0 + !isActive 케이스는 도달하지 않음
+      //  - handleAbilityStackChange(oldStacks=0) 가 즉시 isActive=true 로 설정
+      //  - 위 분기에서 activeTimer 끝나면 stacks=0 으로 가버림
     }
   }
 
@@ -275,15 +295,40 @@ export class ActiveAbilityManager {
       case "giant": {
         const scale = isBuff ? GIANT_BUFF_SCALE[level] : GIANT_DEBUFF_SCALE[level];
         this.deps.player.setGiantScale(scale);
+        // 거인화 동안 player X 위치 고정 — body 보정/ground 충돌로 좌측 벽까지 밀리는 버그 차단
+        this.deps.player.setFixedX(this.deps.player.x);
+        // 구덩이 무시 — 거인화 발동 동안 ground 위 떠있도록 Y 고정
+        this.deps.player.setGroundLocked(true);
         break;
       }
+      case "multiJumpScore":
+        // 초고속 돌진 발동 — getEffectiveSpeed 가 isHyperDashActive 체크로 자동 ×5,
+        // meteor 충돌 무시는 onHitMeteor 가드, 구덩이 무시는 groundLock 처리.
+        this.deps.player.setGroundLocked(true);
+        break;
     }
   }
 
   private deactivateAbility(type: ActiveAbilityType): void {
     switch (type) {
       case "giant":
-        this.deps.player.setGiantScale(1);
+        // 종료 시점에 화면 모든 meteor 제거 — 거인화 동안 폭격된 meteor 가 player 에 도달해
+        // 종료 직후 체력 깎이는 케이스 차단.
+        this.deps.clearAllMeteors?.();
+        // 종료 후 2초간 gap spawn 금지 — 구덩이 위로 떨어져 죽는 케이스 차단.
+        this.deps.startPostAbilityGuard?.(2000);
+        // visual scale 8 → 1 부드러운 lerp 가 끝난 후에야 groundLocked 해제 +
+        // fall_death grace 시작. 그 사이엔 거인 상태로 ground 위에 떠있어 자연스럽게 축소.
+        this.deps.player.setFixedX(null);
+        this.deps.player.setGiantScale(1, () => {
+          this.deps.player.setGroundLocked(false);
+          this.deps.startFallDeathGrace?.(1500);
+        });
+        break;
+      case "multiJumpScore":
+        this.deps.player.setGroundLocked(false);
+        this.deps.startFallDeathGrace?.(1500);
+        this.deps.startPostAbilityGuard?.(2000);
         break;
     }
   }
@@ -301,8 +346,28 @@ export class ActiveAbilityManager {
       case "skyTreasure":
         this.applySkyTreasureEffect(level, isBuff, delta);
         break;
-      // Giant effect is passive (scale), handled in activate/deactivate
-      // multiJumpScore is event-based (onPlayerJump), no per-frame effect
+      case "giant":
+        // 거인화 동안 meteor 폭격 — 무적임을 시각적으로 강하게 보여줌
+        this.applyGiantMeteorRain(delta);
+        // 거인 visual 영역 안의 코인 자동 획득은 GameScene 에서 매 프레임 처리.
+        break;
+      case "multiJumpScore":
+        // 초고속 돌진 동안 자석 효과(코인 자동 흡수) — magnet Lv1 강도 재사용
+        this.applyMagnetEffect(1, true, delta);
+        break;
+    }
+  }
+
+  /** 거인화 활성 동안 300ms 마다 meteor spawn — 사용자가 직접 부딪치며 무적 체감. */
+  private applyGiantMeteorRain(delta: number): void {
+    const state = this.abilities.giant;
+    // 종료 1초 전부터는 spawn 중단 — 새 meteor 가 player 도달 전 화면 밖으로 나가도록.
+    if (state.activeTimer <= 1000) return;
+    const interval = 300;
+    state.spawnTimer += delta;
+    if (state.spawnTimer >= interval) {
+      state.spawnTimer -= interval;
+      this.deps.spawnMeteor();
     }
   }
 
@@ -333,7 +398,8 @@ export class ActiveAbilityManager {
     if (interval <= 0) return;
 
     state.spawnTimer += delta;
-    if (state.spawnTimer >= interval) {
+    // while 루프 — interval 이 매우 짧을 때(예: 10ms) 한 프레임(16ms)에 여러 개 spawn.
+    while (state.spawnTimer >= interval) {
       state.spawnTimer -= interval;
       if (isBuff) {
         const x = Phaser.Math.Between(Math.round(100 * S), Math.round(GAME_WIDTH - 100 * S));

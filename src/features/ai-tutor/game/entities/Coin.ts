@@ -41,9 +41,10 @@ export class Coin extends Phaser.Physics.Arcade.Sprite {
   preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
 
-    // Bob animation (sine wave) — rain coins fall instead
+    // Bob animation (sine wave) — rain coins fall instead.
+    // 1200 px/s — 화면을 약 0.5초만에 가로질러 떨어짐 (소나기 강도).
     if (this.rainMode) {
-      this.baseY += 300 * S * (delta / 1000);
+      this.baseY += 1200 * S * (delta / 1000);
       this.y = this.baseY;
     } else {
       this.y = this.baseY + Math.sin(time * 0.003 + this.spawnX * 0.1) * 3 * S;

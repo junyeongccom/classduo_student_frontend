@@ -55,6 +55,11 @@ export const COLOR_COIN = 0xf1c40f;
 export const QUIZ_SAFE_ZONE_MS = 3000;
 export const QUIZ_INTERVAL_MS = 12000;
 export const SCROLL_SPAWN_INTERVAL_MS = 12000;
+// 퀴즈 트리거 임박 / 종료 직후 일정 시간 동안 gap·meteor spawn 금지 (불공평 사망 방지)
+// PRE: 트리거 N ms 전부터 새 gap/meteor spawn 결정 차단 → 퀴즈 풀이 중 player 앞에 도달하는 케이스 차단
+// POST: 풀이 종료(playing 재진입) 후 N ms 동안 동일 차단 → physics resume 직후 첫 점프 여유
+export const QUIZ_SPAWN_GUARD_PRE_MS = 6000;
+export const QUIZ_SPAWN_GUARD_POST_MS = 3000;
 export const QUIZ_ANSWER_TIMEOUT_MS = 15000;
 export const QUIZ_ANNOUNCE_MS = 4500;
 export const QUIZ_WINDOW_MS = 5000;
@@ -269,39 +274,51 @@ export const MAGNET_DURATION_MS = 5000;
 export const MAGNET_PULL_FORCE:  [number, number, number, number] = [0, 400 * S, 400 * S, 400 * S];
 export const MAGNET_REPEL_FORCE: [number, number, number, number] = [0, 400 * S, 400 * S, 400 * S];
 //                                                    Lv0    Lv1              Lv2              Lv3
-export const MAGNET_RANGE: [number, number, number, number] = [0, GAME_WIDTH * 0.10, GAME_WIDTH * 0.25, GAME_WIDTH];
+// 자석 발동 시 모든 레벨에서 화면 전체 + 여유분 — 발동 동안 등장하는 모든 코인을 흡수.
+export const MAGNET_RANGE: [number, number, number, number] = [0, GAME_WIDTH * 1.5, GAME_WIDTH * 1.5, GAME_WIDTH * 1.5];
 
 // Giant — player scale change + meteor destroy
-export const GIANT_COOLDOWN_MS = 22000;
-export const GIANT_DURATION_MS = 4000;
-export const GIANT_BUFF_SCALE:   [number, number, number, number] = [1, 1.5, 1.8, 2.0];
+export const GIANT_COOLDOWN_MS = 10000;
+export const GIANT_DURATION_MS = 8000;
+// 1회성 발동(스택 1만 사용) 시 8배. 화면의 약 40% 차지하는 임팩트 + 자석 효과 결합.
+export const GIANT_BUFF_SCALE:   [number, number, number, number] = [1, 8, 8, 8];
 export const GIANT_DEBUFF_SCALE: [number, number, number, number] = [1, 0.7, 0.5, 0.4];
 export const GIANT_METEOR_SCORE: [number, number, number, number] = [0, 50, 100, 200];
 
 // Coin Rain — spawns coins (buff) or extra meteors (debuff)
-export const COIN_RAIN_COOLDOWN_MS = 18000;
-export const COIN_RAIN_DURATION_MS = 5000;
-export const COIN_RAIN_SPAWN_MS:   [number, number, number, number] = [0, 250, 170, 100];
+export const COIN_RAIN_COOLDOWN_MS = 10000;
+export const COIN_RAIN_DURATION_MS = 8000;
+// 코인비 발동 시 spawn 간격 — Lv1 10ms = 초당 100개. 5초 duration 동안 약 500개 코인 폭우.
+// applyCoinRainEffect 의 while 루프로 한 프레임에 여러 개 spawn 가능.
+export const COIN_RAIN_SPAWN_MS:   [number, number, number, number] = [0, 10, 8, 6];
 export const METEOR_RAIN_SPAWN_MS: [number, number, number, number] = [0, 500, 300, 180];
 
 // Multi Jump Score (멀티점프 보너스) — jumpCount passive → active
-export const MULTI_JUMP_COOLDOWN_MS = 15000;
-export const MULTI_JUMP_DURATION_MS = 8000;
+// 멀티점프 → 초고속 돌진(Hyper Dash)으로 재정의. cooldown 사이클은 사용 안 함(1회성),
+// duration 만 사용. 5초 동안 속도 ×5, 자석 활성, 구덩이/유성 무적.
+export const MULTI_JUMP_COOLDOWN_MS = 10000;
+export const MULTI_JUMP_DURATION_MS = 5000;
+export const HYPER_DASH_SPEED_MULT = 5;
 export const MULTI_JUMP_SCORE_BUFF:  [number, number, number, number] = [0, 1, 2, 3];
 export const MULTI_JUMP_HP_PENALTY:  [number, number, number, number] = [0, 500, 1000, 1500];
 
 // Sky Treasure (하늘 보물) — jump passive → active
 export const SKY_TREASURE_COOLDOWN_MS = 20000;
 export const SKY_TREASURE_DURATION_MS = 6000;
-export const SKY_TREASURE_SPAWN_MS:        [number, number, number, number] = [0, 800, 500, 300];
+// 발동 동안 보물 spawn 간격 — 짧을수록 자주. Lv1 = 350ms (이전 800 → 절반 이상 잦아짐).
+export const SKY_TREASURE_SPAWN_MS:        [number, number, number, number] = [0, 350, 250, 180];
 export const SKY_TREASURE_DEBUFF_SPAWN_MS: [number, number, number, number] = [0, 600, 400, 250];
-export const SKY_TREASURE_SPAWN_Y = 160 * S;
+// 보물 spawn Y — 값이 클수록 화면 아래. 240*S = 점프력 buff 1~2회 누적이면 닿을 높이.
+export const SKY_TREASURE_SPAWN_Y = 240 * S;
 export const BIG_COIN_SIZE = 32 * S;
-export const BIG_COIN_VALUE = 10;
+// 하늘 보물(큰 코인) 점수 — 일반 코인 1점 대비 30배.
+export const BIG_COIN_VALUE = 30;
 export const SMALL_HEART_RESTORE = 4000;
 
 // Active unlock thresholds
 export const ACTIVE_UNLOCK_SCORE = 30;
-export const ACTIVE_UNLOCK_STACKS = 5;
+// 어빌리티 잠금 해제에 필요한 보상 카드 누적 횟수.
+// 5 → 3 으로 완화 (한림 학생 피드백: 어빌리티 도달이 너무 멀어 동그라미 인디케이터의 의미를 체감하지 못함).
+export const ACTIVE_UNLOCK_STACKS = 3;
 export const ACTIVE_MAX_LEVEL = 3;
 export const PASSIVE_STACK_MIN = -1;
