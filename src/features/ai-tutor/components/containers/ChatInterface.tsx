@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
-import { Loader2, Search, ArrowUp, Sparkles } from 'lucide-react'
+import { Loader2, Search, ArrowUp, AlertCircle } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { useTrackPendingDialogueFeedback } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'
@@ -1327,26 +1327,15 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         {/* 중앙 컨텐츠 */}
         <div className="flex flex-1 flex-col items-center justify-center px-8 py-6 max-w-full">
 
-          {/* 안내 문구 — 질문이 있고 리스트가 아직 안 열린 상태 */}
-          {hasSuggestions && !showSuggestionsPanel && (
-            <button
-              onClick={() => {
-                setShowSuggestionsPanel(true)
-                chatAnalytics.bannerClick(selectedLectureIds[0], { banner_type: 'suggestion_guide' })
-                const lectureId = selectedLectureIds[0]
-                if (hookingQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: hookingQuestions.length })
-                if (pqmQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: pqmQuestions.length })
-              }}
-              className="mb-6 animate-bounce-slow cursor-pointer"
-            >
-              <div className="flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 px-5 py-2.5 shadow-sm hover:shadow-md transition-shadow">
-                <Sparkles className="h-4 w-4 text-indigo-500" />
-                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
-                  {t('suggestionsGuide')}
-                </span>
-              </div>
-            </button>
-          )}
+          {/* 회차 확인 안내 — 회차 선택 시 항상 표시 */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 px-4 py-3 shadow-sm">
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
+              <span className="whitespace-nowrap text-sm font-medium text-amber-700 dark:text-amber-300">
+                {t('lectureCheckGuide')}
+              </span>
+            </div>
+          </div>
 
           {/* 중앙 입력창 */}
           <div className="w-full max-w-[680px] 2xl:max-w-[820px] mx-auto">

@@ -194,7 +194,7 @@
     "sendLabel": "Send",
     "simpleLabel": "SIMPLE",
     "deepLabel": "DEEP",
-    "suggestionsGuide": "Click me to see the key questions AI generated from this lecture!",
+    "lectureCheckGuide": "Before you ask, make sure you've selected the right lecture on the left. Topics not covered in the selected lecture can't be answered accurately.",
     "referenceHint": "Check recording and material sources to better understand the answer",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",
