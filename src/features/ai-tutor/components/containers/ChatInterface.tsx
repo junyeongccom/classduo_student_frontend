@@ -1328,10 +1328,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         <div className="flex flex-1 flex-col items-center justify-center px-8 py-6 max-w-full">
 
           {/* 회차 확인 안내 — 회차 선택 시 항상 표시 */}
-          <div className="mb-6 w-full max-w-[680px]">
-            <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 px-4 py-3 shadow-sm">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 px-4 py-3 shadow-sm">
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
+              <span className="whitespace-nowrap text-sm font-medium text-amber-700 dark:text-amber-300">
                 {t('lectureCheckGuide')}
               </span>
             </div>
