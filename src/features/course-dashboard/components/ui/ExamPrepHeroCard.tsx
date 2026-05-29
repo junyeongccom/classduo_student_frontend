@@ -42,28 +42,36 @@ export function ExamPrepHeroCard({
       onClick={isLocked ? undefined : onClick}
       aria-label={ariaLabel ?? title}
       aria-disabled={isLocked}
-      className={`exam-hero group relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#7C7AEC] via-[#6361E0] to-[#4F4DD3] px-4 py-5 text-left text-white md:px-10 md:py-7 ${isLocked ? 'cursor-not-allowed' : ''}`}
+      className={`exam-hero group relative mx-auto w-[calc(340.06px*var(--u))] overflow-hidden rounded-[calc(40px*var(--u))] bg-gradient-to-b from-[#8f8df0] to-[#4340bd] px-[calc(20px*var(--u))] py-[calc(16px*var(--u))] text-left text-white md:w-full md:rounded-3xl md:bg-gradient-to-br md:from-[#7C7AEC] md:via-[#6361E0] md:to-[#4F4DD3] md:px-10 md:py-7 ${isLocked ? 'cursor-not-allowed' : ''}`}
     >
       {/* 시머 효과 — 잠금 시 비활성 (광 안 남) */}
       {!isLocked && <span className="exam-hero-shimmer" aria-hidden />}
 
       {/* 카드 콘텐츠 (아이콘 + 제목 + 부제) — 잠금 시 흐림 */}
-      <div className={`relative z-10 flex flex-col items-center gap-4 md:gap-7 ${isLocked ? 'opacity-30' : ''}`}>
-        <div className="flex h-16 w-16 items-center justify-center md:h-24 md:w-24">
+      <div className={`relative z-10 flex flex-col items-center gap-[calc(5.88px*var(--u))] md:gap-7 ${isLocked ? 'opacity-30' : ''}`}>
+        <div className="flex h-[calc(60px*var(--u))] w-[calc(60px*var(--u))] items-center justify-center md:h-24 md:w-24">
           <Image
             src={iconSrc}
             alt=""
             width={80}
             height={80}
-            className="h-12 w-12 object-contain md:h-20 md:w-20"
+            className="h-[calc(60.27px*var(--u))] w-[calc(49.49px*var(--u))] object-contain md:h-20 md:w-20"
             priority
           />
         </div>
-        <div className="flex w-full flex-col items-center gap-2 md:gap-4">
-          <span className="relative isolate whitespace-nowrap rounded-full bg-white/25 px-5 py-2 text-lg font-bold tracking-tight md:px-12 md:py-4 md:text-3xl">
+        <div className="flex w-full flex-col items-center gap-[calc(5.88px*var(--u))] md:gap-4">
+          <span
+            className="relative isolate whitespace-nowrap rounded-full bg-transparent px-[calc(29.4px*var(--u))] py-[calc(9.8px*var(--u))] text-[calc(34.3px*var(--u))] font-bold tracking-tight md:bg-white/25 md:px-12 md:py-4 md:text-3xl"
+            style={{ fontFamily: 'Pretendard, sans-serif' }}
+          >
             {title}
           </span>
-          <p className="text-xs font-medium text-white/90 md:text-base">{subtitle}</p>
+          <p
+            className="whitespace-nowrap text-[calc(14px*var(--u))] font-medium text-white/90 md:text-base"
+            style={{ fontFamily: 'Pretendard, sans-serif' }}
+          >
+            {subtitle}
+          </p>
         </div>
       </div>
 

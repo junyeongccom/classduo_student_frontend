@@ -45,41 +45,41 @@ export function AttendanceCalendarCard({
 
   return (
     // 바깥 — 연보라 클립보드 프레임 (Figma: bg #DBDAFB)
-    <section className="rounded-2xl bg-[#DBDAFB] p-2 dark:bg-violet-950/30">
+    <section className="mx-auto w-[calc(320.46px*var(--u))] rounded-[calc(8px*var(--u))] bg-[#DBDAFB] p-[calc(6px*var(--u))] md:w-full md:rounded-2xl md:p-2 dark:bg-violet-950/30">
       {/* 핀 — 8개 가로 정렬 */}
       <div
-        className="flex justify-around px-2 pb-2 pt-0.5"
+        className="flex justify-around px-2 pb-[calc(6px*var(--u))] pt-0.5 md:pb-2"
         aria-hidden
       >
         {Array.from({ length: 8 }).map((_, i) => (
           <span
             key={i}
-            className="block h-5 w-2.5 rounded-full bg-[#6361E0]"
+            className="block h-[calc(17.64px*var(--u))] w-[calc(3.92px*var(--u))] rounded-full bg-[#6361E0] md:h-5 md:w-2.5"
           />
         ))}
       </div>
 
       {/* 안쪽 — 흰 캘린더 + 보더 */}
-      <div className="rounded-xl border-[2px] border-[#DBDAFB] bg-white p-4 dark:bg-gray-900">
+      <div className="rounded-[calc(6.46px*var(--u))] border-[2px] border-[#DBDAFB] bg-white p-[calc(12px*var(--u))] md:rounded-xl md:p-4 dark:bg-gray-900">
         {/* 상단 — 월/streak/D-day */}
         <header className="mb-3 flex items-start justify-between">
           <h2
-            className="text-3xl font-semibold leading-none"
+            className="text-[calc(21.52px*var(--u))] font-semibold leading-none md:text-3xl"
             style={{ color: '#383698', fontFamily: 'Pretendard, sans-serif' }}
           >
             {monthDisplay}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-[calc(6px*var(--u))] md:gap-2">
             {currentStreak > 0 && (
               <span
-                className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                className="rounded-full px-[calc(8px*var(--u))] py-[calc(3px*var(--u))] text-[calc(7.84px*var(--u))] font-semibold md:px-2.5 md:py-1 md:text-[11px]"
                 style={{ backgroundColor: ddayTone.bg, color: ddayTone.text }}
               >
                 {t('courseDashboard.streakInProgress', { days: currentStreak })}
               </span>
             )}
             <span
-              className="rounded-full px-3 py-1 text-sm font-semibold"
+              className="rounded-full px-[calc(10px*var(--u))] py-[calc(3px*var(--u))] text-[calc(11.48px*var(--u))] font-semibold md:px-3 md:py-1 md:text-sm"
               style={{ backgroundColor: '#DBDAFB', color: '#000', fontFamily: 'Pretendard, sans-serif' }}
             >
               {ddayLabel}

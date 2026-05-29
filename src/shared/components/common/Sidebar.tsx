@@ -48,7 +48,7 @@ function NewSidebar() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const tabParam = searchParams?.get('tab') ?? null
-  const { isCollapsed, toggle, setCollapsed, isOverlayOpen, openOverlay, closeOverlay, isTablet } = useSidebarStore()
+  const { isCollapsed, toggle, setCollapsed, isOverlayOpen, openOverlay, closeOverlay, isTablet, isMobile } = useSidebarStore()
   const openFeedback = useFeedbackStore((s) => s.open)
   const [isGameModalOpen, setIsGameModalOpen] = useState(false)
   const wasTabletRef = useRef(false)
@@ -86,12 +86,12 @@ function NewSidebar() {
     }
   }
 
-  // 실제 렌더 상태: 태블릿 오버레이 열림이면 확장 표시
-  const visualCollapsed = isTablet ? !isOverlayOpen : isCollapsed
+  // 실제 렌더 상태: 모바일 드로어는 항상 확장 콘텐츠, 태블릿 오버레이 열림이면 확장 표시
+  const visualCollapsed = isMobile ? false : isTablet ? !isOverlayOpen : isCollapsed
 
   return (
     <TooltipProvider delayDuration={300}>
-      {/* 태블릿 오버레이 딤 배경 */}
+      {/* 비-데스크탑 오버레이 딤 배경 */}
       {isTablet && isOverlayOpen && (
         <div
           className="fixed inset-0 z-[49] bg-black/40 backdrop-blur-[2px] transition-opacity"
@@ -99,15 +99,31 @@ function NewSidebar() {
         />
       )}
 
+      {/* 모바일 — 좌하단 플로팅 토글 버튼 (레일 대체, Figma 787:9499) */}
+      {isMobile && !isOverlayOpen && (
+        <button
+          onClick={openOverlay}
+          aria-label="Open sidebar"
+          className="fixed bottom-[max(env(safe-area-inset-bottom),calc(16px*var(--u)))] left-[calc(16px*var(--u))] z-[48] flex h-[calc(40px*var(--u))] w-[calc(40px*var(--u))] items-center justify-center rounded-[calc(10px*var(--u))] border border-gray-200 bg-white text-gray-700 shadow-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+        >
+          <Menu className="h-[calc(24px*var(--u))] w-[calc(24px*var(--u))]" />
+        </button>
+      )}
+
       <aside
         className={cn(
           'fixed left-0 top-0 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden',
-          'transition-[width,padding] duration-300 ease-in-out',
+          'transition-[width,padding,transform] duration-300 ease-in-out',
           isTablet && isOverlayOpen ? 'z-[51]' : 'z-50',
           // pt 는 max(safe-area, 최소값) — pt-safe(=env)가 Tailwind pt-* 를 override 하던 문제 회피
-          visualCollapsed
-            ? 'w-[72px] px-3 pb-4 pt-[max(env(safe-area-inset-top),1.25rem)] gap-4'
-            : 'w-[85vw] max-w-[280px] sm:w-[240px] sm:max-w-[240px] px-6 pb-6 pt-[max(env(safe-area-inset-top),2rem)] gap-8',
+          isMobile
+            ? cn(
+                'w-[calc(262px*var(--u))] max-w-[300px] px-[calc(9px*var(--u))] pb-6 pt-[max(env(safe-area-inset-top),1.5rem)] gap-[calc(16px*var(--u))]',
+                isOverlayOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none',
+              )
+            : visualCollapsed
+              ? 'w-[72px] px-3 pb-4 pt-[max(env(safe-area-inset-top),1.25rem)] gap-4'
+              : 'w-[85vw] max-w-[280px] sm:w-[240px] sm:max-w-[240px] px-6 pb-6 pt-[max(env(safe-area-inset-top),2rem)] gap-8',
         )}
       >
         {/* Header */}
@@ -131,9 +147,20 @@ function NewSidebar() {
               visualCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100',
             )}
           >
-            <Link href="/studyspace/home" className="flex min-w-0 items-center gap-3">
-              <img src="/Aplus_logo.png" alt="Aplus" className="h-9 w-auto shrink-0" />
-              <h2 className="truncate text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50">Aplus</h2>
+            <Link href="/studyspace/home" className={cn('flex min-w-0 items-center', isMobile ? 'gap-[calc(8px*var(--u))]' : 'gap-3')}>
+              <img
+                src="/Aplus_logo.png"
+                alt="Aplus"
+                className={cn('w-auto shrink-0', isMobile ? 'h-[calc(26px*var(--u))]' : 'h-9')}
+              />
+              <h2
+                className={cn(
+                  'truncate font-bold tracking-tight text-gray-900 dark:text-gray-50',
+                  isMobile ? 'text-[calc(15px*var(--u))]' : 'text-xl sm:text-2xl',
+                )}
+              >
+                Aplus
+              </h2>
             </Link>
             <button
               onClick={handleSidebarToggle}
@@ -153,6 +180,7 @@ function NewSidebar() {
               pathname={pathname}
               tabParam={tabParam}
               visualCollapsed={visualCollapsed}
+              scaled={isMobile}
               onItemClick={() => {
                 if (isTablet && isOverlayOpen) closeOverlay()
               }}
@@ -242,6 +270,8 @@ interface CourseContextNavProps {
   /** ?tab=... 값 — my-quizzes 와 create-question active 분기용 */
   tabParam: string | null
   visualCollapsed: boolean
+  /** 모바일 드로어 — 항목 크기를 --u 비례로 확대 (Figma 모바일 시안) */
+  scaled?: boolean
   onItemClick: () => void
   openFeedback: () => void
   t: ReturnType<typeof useTranslations>
@@ -252,6 +282,7 @@ function CourseContextNav({
   pathname,
   tabParam,
   visualCollapsed,
+  scaled = false,
   onItemClick,
   openFeedback,
   t,
@@ -306,7 +337,9 @@ function CourseContextNav({
           'group/menuitem relative flex items-center rounded-xl font-medium transition-all duration-300',
           visualCollapsed
             ? 'h-10 w-10 justify-center self-center p-0'
-            : 'gap-3 px-3 py-2',
+            : scaled
+              ? 'gap-[calc(11px*var(--u))] px-[calc(18px*var(--u))] py-[calc(11px*var(--u))]'
+              : 'gap-3 px-3 py-2',
           isActive
             ? 'bg-gray-100 font-bold dark:bg-gray-800'
             : 'hover:bg-gray-100 dark:hover:bg-gray-800',
@@ -317,12 +350,18 @@ function CourseContextNav({
           <img
             src={item.iconSrc}
             alt=""
-            className="h-[18px] w-[18px] shrink-0 object-contain"
+            className={cn(
+              'shrink-0 object-contain',
+              scaled ? 'h-[calc(21px*var(--u))] w-[calc(21px*var(--u))]' : 'h-[18px] w-[18px]',
+            )}
             draggable={false}
           />
         ) : (
           <Icon
-            className="h-[18px] w-[18px] shrink-0"
+            className={cn(
+              'shrink-0',
+              scaled ? 'h-[calc(21px*var(--u))] w-[calc(21px*var(--u))]' : 'h-[18px] w-[18px]',
+            )}
             style={{ color: isActive ? '#374151' : '#6B7280' }}
           />
         )}
@@ -330,7 +369,8 @@ function CourseContextNav({
           <>
             <span
               className={cn(
-                'flex-1 whitespace-nowrap text-[13px] transition-colors',
+                'flex-1 whitespace-nowrap transition-colors',
+                scaled ? 'text-[calc(14px*var(--u))]' : 'text-[13px]',
                 isActive
                   ? 'text-gray-900 dark:text-gray-50'
                   : 'text-gray-600 dark:text-gray-400',
@@ -394,7 +434,14 @@ function CourseContextNav({
       return <div className="my-2 mx-3 h-px bg-gray-200 dark:bg-gray-700" />
     }
     return (
-      <div className="mt-3 mb-1 px-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+      <div
+        className={cn(
+          'font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500',
+          scaled
+            ? 'mb-[calc(4px*var(--u))] mt-[calc(12px*var(--u))] px-[calc(18px*var(--u))] text-[calc(11px*var(--u))]'
+            : 'mt-3 mb-1 px-4 text-[11px]',
+        )}
+      >
         {t(labelKey)}
       </div>
     )

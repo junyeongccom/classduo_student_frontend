@@ -8,6 +8,7 @@
 import { cn } from '@/shared/lib/utils'
 import { Mic, FileText, Lock, Calendar, Flame } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import type { Lecture } from '../../types'
 import type { LectureStatus } from '../containers/LectureSelectContainer'
 
@@ -43,8 +44,11 @@ const STATUS_CONFIG = {
 export function LectureRow({ lecture, status, hasReward = false, onClick, onMicClick, onPdfClick }: LectureRowProps) {
   const locale = useLocale()
   const t = useTranslations()
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const isAvailable = status !== 'upcoming'
   const cfg = STATUS_CONFIG[status]
+  // 모바일: 학습하기 버튼 대신 카드 전체 클릭으로 학습 페이지 진입 (Figma 788-9784)
+  const cardClickable = isMobile && isAvailable
 
   // has_content → 녹음/자료 존재 프록시
   const hasRecording = lecture.has_content
@@ -71,50 +75,55 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onMicC
 
   return (
     <div
+      onClick={cardClickable ? onClick : undefined}
+      role={cardClickable ? 'button' : undefined}
+      tabIndex={cardClickable ? 0 : undefined}
+      onKeyDown={cardClickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
       className={cn(
-        'flex flex-wrap items-center gap-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 transition-all',
+        'flex flex-wrap items-center gap-[calc(12px*var(--u))] rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-[calc(16px*var(--u))] py-[calc(10px*var(--u))] transition-all md:gap-6 md:p-5',
         status === 'in-progress' && 'border-l-4 border-l-[#6366F1] shadow-sm',
         status === 'upcoming' && 'opacity-70',
         isAvailable && 'hover:-translate-y-0.5 hover:shadow-md',
+        cardClickable && 'cursor-pointer active:scale-[0.99]',
       )}
     >
       {/* Reward Icon (활성 시 녹색 톤 — Figma 카테고리 컬러) */}
       <div className={cn(
-        'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm',
+        'flex h-[calc(40px*var(--u))] w-[calc(40px*var(--u))] shrink-0 items-center justify-center rounded-[calc(12px*var(--u))] shadow-sm md:h-14 md:w-14 md:rounded-2xl',
         hasReward ? 'bg-[#D1FAE5]' : 'bg-gray-100 dark:bg-gray-800',
       )}>
         <Flame className={cn(
-          'h-6 w-6',
+          'h-[calc(20px*var(--u))] w-[calc(20px*var(--u))] md:h-6 md:w-6',
           hasReward ? 'fill-[#047857] text-[#047857]' : 'fill-gray-300 text-gray-300',
         )} />
       </div>
 
       {/* Info */}
-      <div className="min-w-[280px] flex-1">
-        <div className="mb-1 flex items-center gap-2">
+      <div className="min-w-0 flex-1 md:min-w-[280px]">
+        <div className="mb-0.5 flex items-center gap-[calc(6px*var(--u))] md:mb-1 md:gap-2">
           <span
             className={cn(
-              'rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight',
+              'rounded px-[calc(6px*var(--u))] py-0.5 text-[calc(9px*var(--u))] font-bold uppercase tracking-tight md:px-2 md:text-[10px]',
               cfg.badgeClass,
             )}
           >
             {locale === 'ko' ? cfg.labelKo : cfg.label}
           </span>
           {weekSessionLabel && (
-            <span className="text-xs font-medium text-gray-400">{weekSessionLabel}</span>
+            <span className="text-[calc(10px*var(--u))] font-medium text-gray-400 md:text-xs">{weekSessionLabel}</span>
           )}
         </div>
-        <h4 className="text-lg font-bold text-gray-900 dark:text-gray-50">{displayTitle}</h4>
-        <div className="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+        <h4 className="truncate text-[calc(12px*var(--u))] font-bold text-gray-900 dark:text-gray-50 md:whitespace-normal md:text-lg">{displayTitle}</h4>
+        <div className="mt-[calc(4px*var(--u))] flex items-center gap-4 text-[calc(10px*var(--u))] text-gray-500 dark:text-gray-400 md:mt-2 md:text-sm">
           {isAvailable && formattedDate && (
             <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
+              <Calendar className="h-[calc(12px*var(--u))] w-[calc(12px*var(--u))] md:h-3.5 md:w-3.5" />
               {formattedDate}
             </span>
           )}
           {!isAvailable && (
             <span className="flex items-center gap-1">
-              <Lock className="h-3.5 w-3.5" />
+              <Lock className="h-[calc(12px*var(--u))] w-[calc(12px*var(--u))] md:h-3.5 md:w-3.5" />
               {locale === 'ko' ? '아직 사용할 수 없습니다' : 'Not yet available'}
             </span>
           )}
@@ -122,36 +131,37 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onMicC
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-[calc(8px*var(--u))] md:gap-2">
         {isAvailable ? (
           <>
             <button
-              onClick={onMicClick}
+              onClick={(e) => { e.stopPropagation(); onMicClick() }}
               className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
+                'flex h-[calc(24px*var(--u))] w-[calc(24px*var(--u))] items-center justify-center rounded-[calc(7.5px*var(--u))] transition-all md:h-10 md:w-10 md:rounded-xl',
                 hasRecording
                   ? 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                   : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600',
               )}
               title={locale === 'ko' ? '녹음' : 'Recording'}
             >
-              <Mic className="h-5 w-5" />
+              <Mic className="h-[calc(12px*var(--u))] w-[calc(12px*var(--u))] md:h-5 md:w-5" />
             </button>
             <button
-              onClick={onPdfClick}
+              onClick={(e) => { e.stopPropagation(); onPdfClick() }}
               className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-xl transition-all',
+                'flex h-[calc(24px*var(--u))] w-[calc(24px*var(--u))] items-center justify-center rounded-[calc(7.5px*var(--u))] transition-all md:h-10 md:w-10 md:rounded-xl',
                 hasMaterial
                   ? 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                   : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600',
               )}
               title={locale === 'ko' ? '강의자료' : 'PDF'}
             >
-              <FileText className="h-5 w-5" />
+              <FileText className="h-[calc(12px*var(--u))] w-[calc(12px*var(--u))] md:h-5 md:w-5" />
             </button>
+            {/* 학습하기 버튼 — 모바일에선 카드 전체 클릭으로 대체되어 숨김 */}
             <button
-              onClick={onClick}
-              className="ml-4 rounded-xl bg-[#6366F1] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105 active:scale-95"
+              onClick={(e) => { e.stopPropagation(); onClick() }}
+              className="ml-4 hidden rounded-xl bg-[#6366F1] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-105 active:scale-95 md:block"
             >
               {locale === 'ko' ? '학습하기' : 'Study'}
             </button>
@@ -160,19 +170,19 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onMicC
           <>
             <button
               disabled
-              className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600"
+              className="flex h-[calc(24px*var(--u))] w-[calc(24px*var(--u))] cursor-not-allowed items-center justify-center rounded-[calc(7.5px*var(--u))] bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 md:h-10 md:w-10 md:rounded-xl"
             >
-              <Mic className="h-5 w-5" />
+              <Mic className="h-[calc(12px*var(--u))] w-[calc(12px*var(--u))] md:h-5 md:w-5" />
             </button>
             <button
               disabled
-              className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600"
+              className="flex h-[calc(24px*var(--u))] w-[calc(24px*var(--u))] cursor-not-allowed items-center justify-center rounded-[calc(7.5px*var(--u))] bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600 md:h-10 md:w-10 md:rounded-xl"
             >
-              <FileText className="h-5 w-5" />
+              <FileText className="h-[calc(12px*var(--u))] w-[calc(12px*var(--u))] md:h-5 md:w-5" />
             </button>
             <button
               disabled
-              className="ml-4 cursor-not-allowed rounded-xl bg-gray-200 dark:bg-gray-700 px-6 py-2.5 text-sm font-bold text-gray-500 dark:text-gray-400"
+              className="ml-4 hidden cursor-not-allowed rounded-xl bg-gray-200 dark:bg-gray-700 px-6 py-2.5 text-sm font-bold text-gray-500 dark:text-gray-400 md:block"
             >
               {locale === 'ko' ? '잠겨있음' : 'Locked'}
             </button>

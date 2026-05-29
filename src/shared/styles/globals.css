@@ -7,6 +7,17 @@
 /* Pretendard (게임 모달 등 특수 UI용) */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
+/* ───────────── 모바일 비례 스케일 (Figma 390 기준) ─────────────
+   --app-w: 화면 폭(100vw)을 430px 로 캡 → 큰 폰/폴더블 과대 확대 방지
+   --u: Figma 1px = calc(1px * --u) 형태로 쓰는 "단위 없는 배수".
+        주의: calc(--app-w / 390) 은 length(px) 를 반환 → px*px 라 calc 가 무효화됨.
+        CSS calc 는 length/length 를 못 하므로 tan(atan2(y,x))=y/x 트릭으로 단위 없는 비율을 얻는다.
+        md+ 는 기존 Tailwind 클래스가 override 하므로 --u 영향 없음. */
+:root {
+  --app-w: min(100vw, 430px);
+  --u: tan(atan2(var(--app-w), 390px));
+}
+
 @layer base {
   * {
     box-sizing: border-box;
