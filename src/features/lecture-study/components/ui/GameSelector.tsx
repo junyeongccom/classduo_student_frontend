@@ -99,31 +99,31 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
       {/* 구분선 */}
       <div className="mb-5 h-px bg-gray-100" />
 
-      {/* 게임 카드 그리드 */}
-      <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* 게임 카드 그리드 — 모바일 2열 가로 배치 */}
+      <div className="relative grid grid-cols-2 gap-[calc(12px*var(--u))] sm:grid-cols-2 md:gap-4">
         {GAME_LIST.map((game, i) => {
           const theme = CARD_THEMES[i]
           return (
             <button
               key={game.id}
               onClick={() => onSelectGame(game.id)}
-              className={`group flex flex-col items-center gap-3 rounded-2xl border bg-white p-5 text-center transition-all duration-200 hover:-translate-y-1 ${theme.border} ${theme.hoverBorder} ${theme.glow}`}
+              className={`group flex flex-col items-center gap-[calc(8px*var(--u))] rounded-2xl border bg-white p-[calc(14px*var(--u))] text-center transition-all duration-200 hover:-translate-y-1 md:gap-3 md:p-5 ${theme.border} ${theme.hoverBorder} ${theme.glow}`}
             >
               {/* 아이콘 */}
               <div
-                className={`flex h-14 w-14 items-center justify-center rounded-xl text-3xl ${theme.iconBg} transition-transform duration-200 group-hover:scale-110`}
+                className={`flex h-[calc(44px*var(--u))] w-[calc(44px*var(--u))] items-center justify-center rounded-[calc(10px*var(--u))] text-[calc(24px*var(--u))] md:h-14 md:w-14 md:rounded-xl md:text-3xl ${theme.iconBg} transition-transform duration-200 group-hover:scale-110`}
               >
                 {game.icon}
               </div>
 
               {/* 게임명 */}
-              <h4 className={`text-sm font-bold tracking-wide ${theme.accent}`}>
+              <h4 className={`text-[calc(12px*var(--u))] font-bold tracking-wide md:text-sm ${theme.accent}`}>
                 {gameNames[game.id]}
               </h4>
 
               {/* PLAY 버튼 영역 */}
               <div
-                className={`w-full rounded-lg px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-all duration-200 ${theme.playBg} ${theme.playText}`}
+                className={`w-full rounded-lg px-[calc(12px*var(--u))] py-[calc(5px*var(--u))] text-[calc(10px*var(--u))] font-bold uppercase tracking-widest transition-all duration-200 md:px-4 md:py-1.5 md:text-xs ${theme.playBg} ${theme.playText}`}
               >
                 PLAY
               </div>
