@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { useMobilePortrait } from '@/shared/hooks/useMediaQuery'
 
 interface GameOverlayProps {
   isOpen: boolean
@@ -28,21 +29,34 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
   const keywordsRef = useRef<{ keyword: string; description: string }[]>([])
   const { locale } = useI18n()
+  // 모바일 세로: 게임을 가로 모드로 강제(90° 회전)
+  const landscape = useMobilePortrait()
 
-  // 16:9 비율 계산
+  // 2:1 비율 계산 (모바일 세로면 화면 긴 변 기준으로 가로 채움 후 회전)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const maxWidth = window.innerWidth * 0.9
-      const maxHeight = window.innerHeight * 0.9
-      let width = Math.min(maxWidth, 1600)
-      let height = width / 2 // game is 2:1 ratio (1600x800)
-      if (height > maxHeight) {
-        height = maxHeight
+    if (typeof window === 'undefined') return
+    if (landscape) {
+      const long = Math.max(window.innerWidth, window.innerHeight)
+      const short = Math.min(window.innerWidth, window.innerHeight)
+      let width = long // 게임 가로폭(2) → 회전 후 화면 세로를 채움
+      let height = width / 2
+      if (height > short) {
+        height = short
         width = height * 2
       }
       setDimensions({ width, height })
+      return
     }
-  }, [])
+    const maxWidth = window.innerWidth * 0.9
+    const maxHeight = window.innerHeight * 0.9
+    let width = Math.min(maxWidth, 1600)
+    let height = width / 2 // game is 2:1 ratio (1600x800)
+    if (height > maxHeight) {
+      height = maxHeight
+      width = height * 2
+    }
+    setDimensions({ width, height })
+  }, [landscape])
 
   // 애니메이션 상태 관리
   useEffect(() => {
@@ -97,7 +111,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
       if (!containerRef.current) return
 
-      const config = createGameConfig(containerRef.current)
+      const config = createGameConfig(containerRef.current, landscape ? dimensions.width / 1600 : undefined)
       game = new Phaser.Game(config)
       game.registry.set('keywords', keywordsRef.current)
       game.registry.set('locale', locale)
@@ -142,18 +156,20 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     return null
   }
 
+  const rotate = landscape ? ' rotate(90deg)' : ''
+
   const getInitialTransform = () => {
     if (!triggerPosition || typeof window === 'undefined') {
-      return 'translate(-50%, -50%) scale(0)'
+      return `translate(-50%, -50%)${rotate} scale(0)`
     }
     const scale = triggerPosition.width / dimensions.width
     const x = triggerPosition.left + triggerPosition.width / 2 - window.innerWidth / 2
     const y = triggerPosition.top + triggerPosition.height / 2 - window.innerHeight / 2
-    return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`
+    return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))${rotate} scale(${scale})`
   }
 
   const getFinalTransform = () => {
-    return 'translate(-50%, -50%) scale(1)'
+    return `translate(-50%, -50%)${rotate} scale(1)`
   }
 
   return (

@@ -34,6 +34,18 @@ import {
 } from '@/shared/components/ui'
 import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
 import { gameAnalytics, gameAbandonAnalytics, gameExtraAnalytics } from '@/shared/lib/analytics'
+import { useMobilePortrait } from '@/shared/hooks/useMediaQuery'
+
+/** 모바일 세로에서 게임 모달을 가로 모드로 강제(90° 회전 + 전체화면)하는 패널 스타일 */
+const LANDSCAPE_PANEL_STYLE: React.CSSProperties = {
+  width: '100dvh',
+  height: '100dvw',
+  maxWidth: 'none',
+  maxHeight: 'none',
+  flexShrink: 0,
+  borderRadius: 0,
+  transform: 'rotate(90deg)',
+}
 
 const GameOverlay = dynamic(
   () => import('@/features/ai-tutor').then(m => ({ default: m.GameOverlay })),
@@ -121,6 +133,8 @@ interface GameTabContainerProps {
 export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTabContainerProps) {
   const t = useTranslations()
   const locale = useLocale()
+  // 모바일 세로: 게임 모달을 가로 모드로 강제(90° 회전)
+  const landscape = useMobilePortrait()
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [showDescriptionPopup, setShowDescriptionPopup] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
@@ -552,6 +566,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
         >
           <div
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[1200px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            style={landscape ? LANDSCAPE_PANEL_STYLE : undefined}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -619,6 +634,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
         >
           <div
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[800px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            style={landscape ? LANDSCAPE_PANEL_STYLE : undefined}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header with score */}

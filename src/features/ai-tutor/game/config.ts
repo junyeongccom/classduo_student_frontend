@@ -5,7 +5,15 @@ import { MainMenuScene } from "./scenes/MainMenuScene";
 import { GameScene } from "./scenes/GameScene";
 import { GameOverScene } from "./scenes/GameOverScene";
 
-export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameConfig {
+/**
+ * @param parent Phaser 렌더 컨테이너
+ * @param landscapeZoom 모바일 가로 강제 시 고정 줌(=목표 캔버스 폭/GAME_WIDTH). 지정 시 Scale.NONE 사용 —
+ *   부모를 90° 회전시켜도 FIT처럼 회전된 bounding box를 재측정해 캔버스가 절반으로 줄지 않도록 측정에서 분리한다.
+ */
+export function createGameConfig(parent: HTMLElement, landscapeZoom?: number): Phaser.Types.Core.GameConfig {
+  const scale: Phaser.Types.Core.ScaleConfig = landscapeZoom
+    ? { mode: Phaser.Scale.NONE, autoCenter: Phaser.Scale.NO_CENTER, zoom: landscapeZoom }
+    : { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH };
   return {
     type: Phaser.WEBGL,
     width: GAME_WIDTH,
@@ -36,10 +44,7 @@ export function createGameConfig(parent: HTMLElement): Phaser.Types.Core.GameCon
     dom: {
       createContainer: true,
     },
-    scale: {
-      mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
-    },
+    scale,
     scene: [BootScene, MainMenuScene, GameScene, GameOverScene],
   };
 }
