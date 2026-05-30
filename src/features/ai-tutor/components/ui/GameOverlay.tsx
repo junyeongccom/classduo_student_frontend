@@ -122,6 +122,38 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
       gameRef.current = game
       setIsGameReady(true)
 
+      // 모바일 세로에서 캔버스를 90° CSS 회전하면 Phaser의 기본 포인터 변환이
+      // 회전된 getBoundingClientRect를 그대로 써서 좌표가 어긋난다(터치가 안 먹힘).
+      // 회전을 역보정하는 transformPointer로 교체한다.
+      if (landscape) {
+        const canvas = game.canvas
+        game.input.transformPointer = function (pointer, pageX, pageY, wasMove) {
+          const p0 = pointer.position
+          const p1 = pointer.prevPosition
+          p1.x = p0.x
+          p1.y = p0.y
+          const rect = canvas.getBoundingClientRect()
+          const cx = rect.left + rect.width / 2
+          const cy = rect.top + rect.height / 2
+          const cssW = rect.height // 회전 전 논리 가로 = 화면상 세로
+          const z = cssW / canvas.width
+          const halfW = cssW / 2
+          const halfH = rect.width / 2
+          const sx = pageX - window.scrollX - cx
+          const sy = pageY - window.scrollY - cy
+          const x = (sy + halfW) / z
+          const y = (halfH - sx) / z
+          const a = pointer.smoothFactor
+          if (!wasMove || a === 0) {
+            p0.x = x
+            p0.y = y
+          } else {
+            p0.x = x * a + p1.x * (1 - a)
+            p0.y = y * a + p1.y * (1 - a)
+          }
+        }
+      }
+
       // 게임 컨테이너로 포커스 이동 → 사이드바 버튼의 onKeyDown이 SPACE를 가로채지 않도록
       containerRef.current?.focus()
     }
@@ -175,11 +207,11 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   return (
     <>
       {/* 배경 오버레이 */}
+      {/* 배경 클릭으로 닫히지 않음 — 게임 활성 중에는 X 버튼만 닫기 허용 */}
       <div
         className={`fixed inset-0 bg-black/50 z-[80] transition-opacity duration-500 ${
           animationState === 'entered' ? 'opacity-100' : 'opacity-0'
         }`}
-        onClick={handleClose}
       />
 
       {/* 게임 컨테이너 */}

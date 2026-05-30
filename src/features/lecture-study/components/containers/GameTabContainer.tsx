@@ -554,15 +554,13 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     }
     return (
       <>
-        {/* Backdrop */}
+        {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
         <div
           className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
-          onClick={handleCloseMatching}
         />
         {/* Modal */}
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center p-6"
-          onClick={handleCloseMatching}
         >
           <div
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[1200px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
@@ -570,7 +568,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+            <div className={`flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 ${landscape ? 'py-1.5' : 'py-3'}`}>
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
                 {t('lectureStudy.game.cardMatch')}
               </h3>
@@ -582,10 +580,11 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
               </button>
             </div>
             {/* Game area */}
-            <div className="flex-1 overflow-auto p-6">
+            <div className={`flex-1 overflow-auto ${landscape ? 'p-3' : 'p-6'}`}>
               <ReviewMatchingGame
                 reviewItems={gameMode === 'rank' ? rankReviewItems : reviewItems}
                 isEnabled
+                fitContainer={landscape}
                 onExit={handleCloseMatching}
                 lectureId={lectureId}
                 courseId={courseId}
@@ -624,13 +623,12 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     }
     return (
       <>
+        {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
         <div
           className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
-          onClick={handleCloseDefBuilder}
         />
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center p-6"
-          onClick={handleCloseDefBuilder}
         >
           <div
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[800px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
@@ -638,7 +636,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header with score */}
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+            <div className={`flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 ${landscape ? 'py-1.5' : 'py-3'}`}>
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
                 {t('lectureStudy.game.definitionBuilder')}
               </h3>
@@ -673,13 +671,14 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
               </div>
             </div>
             {/* Game area */}
-            <div className="flex-1 overflow-auto p-6">
+            <div className={`flex-1 overflow-auto ${landscape ? 'p-3' : 'p-6'}`}>
               <DefinitionBuilderGame
                 data={defBuilderData}
                 isLoading={false}
                 error={defBuilderError}
                 onRetry={retryDefBuilder}
                 isEnabled
+                fitContainer={landscape}
                 currentScore={defBuilderScore}
                 lectureId={lectureId}
                 courseId={courseId}
@@ -714,13 +713,12 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     }
     return (
       <>
+        {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
         <div
           className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
-          onClick={handleCloseDeck}
         />
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center p-6"
-          onClick={handleCloseDeck}
         >
           <div
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[900px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"

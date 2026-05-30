@@ -20,6 +20,8 @@ interface DefinitionBuilderGameProps {
   courseId?: string
   gameMode?: 'rank' | 'normal'
   onRankSubmitSuccess?: (score: number, durationMs: number) => void
+  /** 모바일 회전 모달에서 한 화면에 맞도록 여백을 축소 */
+  fitContainer?: boolean
 }
 
 const formatTime = (valueMs: number) => {
@@ -52,6 +54,7 @@ export function DefinitionBuilderGame({
   courseId,
   gameMode,
   onRankSubmitSuccess,
+  fitContainer = false,
 }: DefinitionBuilderGameProps) {
   const t = useTranslations('review.ui')
   const questions = data?.questions ?? []
@@ -80,12 +83,10 @@ export function DefinitionBuilderGame({
     () => (currentQuestion?.blank_indices ? [...currentQuestion.blank_indices].sort((a, b) => a - b) : []),
     [currentQuestion]
   )
-  const choiceRows = useMemo(() => {
-    if (!currentQuestion) return [[], []] as string[][]
-    const first = currentQuestion.choices.slice(0, 9)
-    const second = currentQuestion.choices.slice(9, 12)
-    return [first, second]
-  }, [currentQuestion])
+  const choices = useMemo(
+    () => currentQuestion?.choices ?? [],
+    [currentQuestion]
+  )
 
   useEffect(() => {
     setFilledMap(createBlankMap(currentQuestion))
@@ -284,7 +285,9 @@ export function DefinitionBuilderGame({
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className={`flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm ${
+      fitContainer ? 'gap-3 p-4' : 'mt-4 gap-5 p-6'
+    }`}>
       {gameCompleted ? (
         <div className="flex flex-col items-center gap-4 py-12">
           <div className="definition-builder-success text-3xl font-bold text-emerald-600">
@@ -321,14 +324,14 @@ export function DefinitionBuilderGame({
         <div>{t('definitionBuilder.progressLabel', { current: currentIndex + 1, total: totalCount })}</div>
       </div>
 
-      <div className="text-center text-2xl font-semibold text-blue-600">
+      <div className={`text-center font-semibold text-blue-600 ${fitContainer ? 'text-xl' : 'text-2xl'}`}>
         {currentQuestion.keyword}
       </div>
 
       <div
-        className={`rounded-2xl border border-slate-200 bg-slate-50 px-6 py-5 text-base text-slate-700 ${
-          completed ? 'definition-builder-complete' : ''
-        }`}
+        className={`rounded-2xl border border-slate-200 bg-slate-50 text-base text-slate-700 ${
+          fitContainer ? 'px-4 py-3' : 'px-6 py-5'
+        } ${completed ? 'definition-builder-complete' : ''}`}
       >
         <div className="flex flex-wrap items-center justify-center gap-2 text-center">
           {currentQuestion.tokens.map((token, index) => {
@@ -352,32 +355,28 @@ export function DefinitionBuilderGame({
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-2">
-        {choiceRows.map((row, rowIndex) => (
-          <div key={`choice-row-${rowIndex}`} className="flex flex-wrap justify-center gap-2">
-            {row.map((choice, index) => {
-              const isUsed = usedChoices.has(choice)
-              const isWrong = lastWrongChoice === choice
-              return (
-                <button
-                  key={`${choice}-${rowIndex}-${index}`}
-                  type="button"
-                  disabled={isUsed || completed}
-                  onClick={() => handleChoiceClick(choice)}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
-                    isUsed
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
-                      : isWrong
-                        ? 'border-rose-300 bg-rose-50 text-rose-600'
-                        : 'border-blue-200 bg-blue-50 text-blue-600 hover:border-blue-300 hover:bg-blue-100'
-                  } ${completed ? 'opacity-60' : ''}`}
-                >
-                  {choice}
-                </button>
-              )
-            })}
-          </div>
-        ))}
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {choices.map((choice, index) => {
+          const isUsed = usedChoices.has(choice)
+          const isWrong = lastWrongChoice === choice
+          return (
+            <button
+              key={`${choice}-${index}`}
+              type="button"
+              disabled={isUsed || completed}
+              onClick={() => handleChoiceClick(choice)}
+              className={`rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
+                isUsed
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
+                  : isWrong
+                    ? 'border-rose-300 bg-rose-50 text-rose-600'
+                    : 'border-blue-200 bg-blue-50 text-blue-600 hover:border-blue-300 hover:bg-blue-100'
+              } ${completed ? 'opacity-60' : ''}`}
+            >
+              {choice}
+            </button>
+          )
+        })}
       </div>
 
       {completed && (
