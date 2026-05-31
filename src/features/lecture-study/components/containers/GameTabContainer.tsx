@@ -34,6 +34,18 @@ import {
 } from '@/shared/components/ui'
 import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
 import { gameAnalytics, gameAbandonAnalytics, gameExtraAnalytics } from '@/shared/lib/analytics'
+import { useMobilePortrait } from '@/shared/hooks/useMediaQuery'
+
+/** 모바일 세로에서 게임 모달을 가로 모드로 강제(90° 회전 + 전체화면)하는 패널 스타일 */
+const LANDSCAPE_PANEL_STYLE: React.CSSProperties = {
+  width: '100dvh',
+  height: '100dvw',
+  maxWidth: 'none',
+  maxHeight: 'none',
+  flexShrink: 0,
+  borderRadius: 0,
+  transform: 'rotate(90deg)',
+}
 
 const GameOverlay = dynamic(
   () => import('@/features/ai-tutor').then(m => ({ default: m.GameOverlay })),
@@ -121,6 +133,8 @@ interface GameTabContainerProps {
 export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTabContainerProps) {
   const t = useTranslations()
   const locale = useLocale()
+  // 모바일 세로: 게임 모달을 가로 모드로 강제(90° 회전)
+  const landscape = useMobilePortrait()
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [showDescriptionPopup, setShowDescriptionPopup] = useState(false)
   const [showWordModal, setShowWordModal] = useState(false)
@@ -540,22 +554,21 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     }
     return (
       <>
-        {/* Backdrop */}
+        {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
         <div
           className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
-          onClick={handleCloseMatching}
         />
         {/* Modal */}
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center p-6"
-          onClick={handleCloseMatching}
         >
           <div
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[1200px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            style={landscape ? LANDSCAPE_PANEL_STYLE : undefined}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+            <div className={`flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 ${landscape ? 'py-1.5' : 'py-3'}`}>
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
                 {t('lectureStudy.game.cardMatch')}
               </h3>
@@ -567,10 +580,11 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
               </button>
             </div>
             {/* Game area */}
-            <div className="flex-1 overflow-auto p-6">
+            <div className={`flex-1 overflow-auto ${landscape ? 'p-3' : 'p-6'}`}>
               <ReviewMatchingGame
                 reviewItems={gameMode === 'rank' ? rankReviewItems : reviewItems}
                 isEnabled
+                fitContainer={landscape}
                 onExit={handleCloseMatching}
                 lectureId={lectureId}
                 courseId={courseId}
@@ -609,20 +623,20 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     }
     return (
       <>
+        {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
         <div
           className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
-          onClick={handleCloseDefBuilder}
         />
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center p-6"
-          onClick={handleCloseDefBuilder}
         >
           <div
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[800px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"
+            style={landscape ? LANDSCAPE_PANEL_STYLE : undefined}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header with score */}
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+            <div className={`flex shrink-0 items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 ${landscape ? 'py-1.5' : 'py-3'}`}>
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
                 {t('lectureStudy.game.definitionBuilder')}
               </h3>
@@ -657,13 +671,14 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
               </div>
             </div>
             {/* Game area */}
-            <div className="flex-1 overflow-auto p-6">
+            <div className={`flex-1 overflow-auto ${landscape ? 'p-3' : 'p-6'}`}>
               <DefinitionBuilderGame
                 data={defBuilderData}
                 isLoading={false}
                 error={defBuilderError}
                 onRetry={retryDefBuilder}
                 isEnabled
+                fitContainer={landscape}
                 currentScore={defBuilderScore}
                 lectureId={lectureId}
                 courseId={courseId}
@@ -698,13 +713,12 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     }
     return (
       <>
+        {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
         <div
           className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity"
-          onClick={handleCloseDeck}
         />
         <div
           className="fixed inset-0 z-[80] flex items-center justify-center p-6"
-          onClick={handleCloseDeck}
         >
           <div
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] sm:max-w-[900px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900"

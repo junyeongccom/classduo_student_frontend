@@ -51,9 +51,11 @@ interface ReviewMatchingGameProps {
   courseId?: string
   gameMode?: 'rank' | 'normal'
   onRankSubmitSuccess?: (score: number, durationMs: number) => void
+  /** 모바일 회전 모달에서 보드가 부모 컨테이너를 가득 채우도록(vw/vh 대신) */
+  fitContainer?: boolean
 }
 
-export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, courseId, gameMode, onRankSubmitSuccess }: ReviewMatchingGameProps) {
+export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, courseId, gameMode, onRankSubmitSuccess, fitContainer = false }: ReviewMatchingGameProps) {
   const t = useTranslations('review.ui')
   const [selectedSize, setSelectedSize] = useState<SizeOption | null>(null)
   const [cards, setCards] = useState<MatchCard[]>([])
@@ -94,13 +96,15 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
 
   const boardWidth = useMemo(() => {
     if (!selectedSize) return undefined
+    if (fitContainer) return '100%'
     return selectedSize.cols === 5 ? 'min(90vw, 1100px)' : 'min(85vw, 920px)'
-  }, [selectedSize])
+  }, [selectedSize, fitContainer])
 
   const boardHeight = useMemo(() => {
     if (!selectedSize) return undefined
+    if (fitContainer) return '100%'
     return selectedSize.rows === 3 ? 'min(55vh, 520px)' : 'min(65vh, 640px)'
-  }, [selectedSize])
+  }, [selectedSize, fitContainer])
 
   const buildGame = (size?: SizeOption | null) => {
     const activeSize = size ?? selectedSize
@@ -356,8 +360,8 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative flex h-10 w-full items-center justify-center">
+    <div className={`flex flex-col items-center gap-4 ${fitContainer ? 'h-full w-full' : ''}`}>
+      <div className="relative flex h-10 w-full shrink-0 items-center justify-center">
         {!startBanner ? (
           <div className="text-3xl font-semibold text-slate-800">
             {formatTime(elapsedMs)}
@@ -369,7 +373,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
         )}
       </div>
       <div
-        className="matching-game-board grid gap-3"
+        className={`matching-game-board grid gap-3 ${fitContainer ? 'min-h-0 flex-1' : ''}`}
         style={{ ...gridStyle, height: boardHeight, width: boardWidth }}
       >
         {cards.map(card => {

@@ -68,7 +68,7 @@ export function CalendarDayCell({ cell }: CalendarDayCellProps) {
 
       {/* day 텍스트 — 좌상단. 책 위로 (z-20). */}
       <span
-        className="relative z-20 text-[13px] font-bold leading-none"
+        className="relative z-20 whitespace-nowrap text-[calc(9.8px*var(--u))] font-bold leading-none md:text-[13px]"
         style={{ fontFamily: 'Pretendard, sans-serif' }}
       >
         {cell.display}

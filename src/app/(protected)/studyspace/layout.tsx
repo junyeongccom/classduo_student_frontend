@@ -63,8 +63,16 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const dialogueFeedback = useDialogueFeedbackPopup()
   const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
   const isTablet = useSidebarStore((s) => s.isTablet)
-  // 태블릿에서는 사이드바가 항상 72px collapse 상태 (오버레이는 콘텐츠를 밀지 않음)
-  const sidebarWidth = isTablet ? SIDEBAR_WIDTH_COLLAPSED : (sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED)
+  const isMobile = useSidebarStore((s) => s.isMobile)
+  // 모바일은 레일 없이 좌하단 플로팅 버튼 → 콘텐츠 좌패딩 0.
+  // 태블릿에서는 사이드바가 항상 72px collapse 상태 (오버레이는 콘텐츠를 밀지 않음).
+  const sidebarWidth = isMobile
+    ? 0
+    : isTablet
+      ? SIDEBAR_WIDTH_COLLAPSED
+      : sidebarCollapsed
+        ? SIDEBAR_WIDTH_COLLAPSED
+        : SIDEBAR_WIDTH_EXPANDED
   const isFeedbackOpen = useFeedbackStore((s) => s.isOpen)
   const closeFeedback = useFeedbackStore((s) => s.close)
   const openFeedback = useFeedbackStore((s) => s.open)

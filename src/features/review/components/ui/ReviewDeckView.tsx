@@ -26,7 +26,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
   if (!hasSelectedLecture) {
     return (
       <div className="flex flex-1 justify-center">
-        <div className="w-full max-w-[66%]">
+        <div className="w-full max-w-full md:max-w-[66%]">
           <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-6">
             <p className="text-sm font-medium text-slate-500">{t('needLecture')}</p>
           </div>
@@ -38,7 +38,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
   if (isReviewItemsLoading) {
     return (
       <div className="flex flex-1 justify-center">
-        <div className="w-full max-w-[66%]">
+        <div className="w-full max-w-full md:max-w-[66%]">
           <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-6">
             <p className="text-sm font-medium text-slate-500">{t('loading')}</p>
           </div>
@@ -50,7 +50,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
   if (reviewItemsError) {
     return (
       <div className="flex flex-1 justify-center">
-        <div className="w-full max-w-[66%]">
+        <div className="w-full max-w-full md:max-w-[66%]">
           <div className="flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-5 py-6">
             <p className="text-sm font-medium text-rose-700">{reviewItemsError}</p>
           </div>
@@ -62,7 +62,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
   if (deck.reviewItemsCount === 0) {
     return (
       <div className="flex flex-1 justify-center">
-        <div className="w-full max-w-[66%]">
+        <div className="w-full max-w-full md:max-w-[66%]">
           <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-6">
             <p className="text-sm font-medium text-slate-500">{t('empty')}</p>
           </div>
@@ -78,8 +78,8 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
 
   return (
     <div className="flex flex-1 justify-center">
-      {/* 목록과 동일한 가로 폭(max-w-[66%])로 통일 */}
-      <div className="flex w-full max-w-[66%] flex-col gap-4">
+      {/* 목록과 동일한 가로 폭(max-w-full md:max-w-[66%])로 통일 */}
+      <div className="flex w-full max-w-full md:max-w-[66%] flex-col gap-4">
         {/* 모드 정보 + 이해 단계 분포 */}
         <div className="flex justify-center">
           <div className="w-full max-w-[780px] grid grid-cols-[1fr_2fr] gap-2">
@@ -89,7 +89,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
                 ? 'border-rose-200 bg-rose-50' 
                 : 'border-slate-200 bg-white'
             }`}>
-              <div className="text-[22px] font-semibold text-slate-500 mb-2">
+              <div className="whitespace-nowrap text-base md:text-[22px] font-semibold text-slate-500 mb-2">
                 {deck.mode === 'basic' ? t('modeBasic') : t('modeLowest')}
               </div>
             </div>
@@ -104,8 +104,8 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
                     onClick={() => setSelectedLevel(lv as DeckLevel)}
                     className="rounded-xl border border-slate-100 bg-slate-50 px-2 py-2 hover:bg-slate-100 hover:border-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
                   >
-                    <div className="text-[10px] font-semibold text-slate-500">{t(`level${lv}` as 'level1' | 'level2' | 'level3' | 'level4')}</div>
-                    <div className="mt-0.5 text-[35px] font-bold text-slate-900">
+                    <div className="whitespace-nowrap text-[10px] font-semibold text-slate-500">{t(`level${lv}` as 'level1' | 'level2' | 'level3' | 'level4')}</div>
+                    <div className="mt-0.5 text-2xl md:text-[35px] font-bold text-slate-900">
                       {deck.levelCounts[lv as 1 | 2 | 3 | 4]}
                     </div>
                   </button>
@@ -144,7 +144,7 @@ export function ReviewDeckView({ hasSelectedLecture, isReviewItemsLoading, revie
                     <div className="flex h-full w-full flex-col items-center justify-center">
                       {/* 내용 영역 - 항상 단어 */}
                       <div className="flex-1 flex items-center justify-center w-full">
-                        <div className="text-center text-5xl font-bold tracking-tight text-slate-900">
+                        <div className="text-center text-3xl md:text-5xl font-bold tracking-tight text-slate-900">
                           {keyword}
                         </div>
                       </div>

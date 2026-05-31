@@ -89,10 +89,10 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
       </StudyspaceTopbarSlot>
 
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-3 py-4 md:px-6 md:py-5 lg:px-10">
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-[5fr_6fr]">
+        <div className="mx-auto max-w-6xl px-0 py-4 md:px-6 md:py-5 lg:px-10">
+          <div className="grid grid-cols-1 gap-[calc(16px*var(--u))] md:gap-5 lg:grid-cols-[5fr_6fr]">
             {/* ───── 좌측 컬럼 ───── */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-[calc(16px*var(--u))] md:gap-3">
               <ExamPrepHeroCard
                 title={t('courseDashboard.modeExam.title')}
                 subtitle={t('courseDashboard.examSubtitle')}
@@ -121,7 +121,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
                 }
               />
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+              <div className="mx-auto grid w-[calc(343px*var(--u))] grid-cols-2 gap-[calc(16px*var(--u))] py-[calc(14px*var(--u))] sm:w-full sm:gap-4 sm:py-0">
                 <QuickActionLink
                   icon={PencilLine}
                   label={t('courseNav.createQuestion')}
@@ -142,7 +142,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
             </div>
 
             {/* ───── 우측 컬럼 ───── */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-[calc(16px*var(--u))] md:gap-3">
               <AttendanceCalendarCard
                 monthGrid={monthGrid}
                 examDday={examDday}

@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { X, Loader2 } from 'lucide-react'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { useMobilePortrait } from '@/shared/hooks/useMediaQuery'
 
 interface GameOverlayProps {
   isOpen: boolean
@@ -28,21 +29,34 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
   const [dimensions, setDimensions] = useState({ width: 1200, height: 675 })
   const keywordsRef = useRef<{ keyword: string; description: string }[]>([])
   const { locale } = useI18n()
+  // 모바일 세로: 게임을 가로 모드로 강제(90° 회전)
+  const landscape = useMobilePortrait()
 
-  // 16:9 비율 계산
+  // 2:1 비율 계산 (모바일 세로면 화면 긴 변 기준으로 가로 채움 후 회전)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const maxWidth = window.innerWidth * 0.9
-      const maxHeight = window.innerHeight * 0.9
-      let width = Math.min(maxWidth, 1600)
-      let height = width / 2 // game is 2:1 ratio (1600x800)
-      if (height > maxHeight) {
-        height = maxHeight
+    if (typeof window === 'undefined') return
+    if (landscape) {
+      const long = Math.max(window.innerWidth, window.innerHeight)
+      const short = Math.min(window.innerWidth, window.innerHeight)
+      let width = long // 게임 가로폭(2) → 회전 후 화면 세로를 채움
+      let height = width / 2
+      if (height > short) {
+        height = short
         width = height * 2
       }
       setDimensions({ width, height })
+      return
     }
-  }, [])
+    const maxWidth = window.innerWidth * 0.9
+    const maxHeight = window.innerHeight * 0.9
+    let width = Math.min(maxWidth, 1600)
+    let height = width / 2 // game is 2:1 ratio (1600x800)
+    if (height > maxHeight) {
+      height = maxHeight
+      width = height * 2
+    }
+    setDimensions({ width, height })
+  }, [landscape])
 
   // 애니메이션 상태 관리
   useEffect(() => {
@@ -97,7 +111,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
 
       if (!containerRef.current) return
 
-      const config = createGameConfig(containerRef.current)
+      const config = createGameConfig(containerRef.current, landscape ? dimensions.width / 1600 : undefined)
       game = new Phaser.Game(config)
       game.registry.set('keywords', keywordsRef.current)
       game.registry.set('locale', locale)
@@ -107,6 +121,38 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
       if (nickname) game.registry.set('nickname', nickname)
       gameRef.current = game
       setIsGameReady(true)
+
+      // 모바일 세로에서 캔버스를 90° CSS 회전하면 Phaser의 기본 포인터 변환이
+      // 회전된 getBoundingClientRect를 그대로 써서 좌표가 어긋난다(터치가 안 먹힘).
+      // 회전을 역보정하는 transformPointer로 교체한다.
+      if (landscape) {
+        const canvas = game.canvas
+        game.input.transformPointer = function (pointer, pageX, pageY, wasMove) {
+          const p0 = pointer.position
+          const p1 = pointer.prevPosition
+          p1.x = p0.x
+          p1.y = p0.y
+          const rect = canvas.getBoundingClientRect()
+          const cx = rect.left + rect.width / 2
+          const cy = rect.top + rect.height / 2
+          const cssW = rect.height // 회전 전 논리 가로 = 화면상 세로
+          const z = cssW / canvas.width
+          const halfW = cssW / 2
+          const halfH = rect.width / 2
+          const sx = pageX - window.scrollX - cx
+          const sy = pageY - window.scrollY - cy
+          const x = (sy + halfW) / z
+          const y = (halfH - sx) / z
+          const a = pointer.smoothFactor
+          if (!wasMove || a === 0) {
+            p0.x = x
+            p0.y = y
+          } else {
+            p0.x = x * a + p1.x * (1 - a)
+            p0.y = y * a + p1.y * (1 - a)
+          }
+        }
+      }
 
       // 게임 컨테이너로 포커스 이동 → 사이드바 버튼의 onKeyDown이 SPACE를 가로채지 않도록
       containerRef.current?.focus()
@@ -142,28 +188,30 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
     return null
   }
 
+  const rotate = landscape ? ' rotate(90deg)' : ''
+
   const getInitialTransform = () => {
     if (!triggerPosition || typeof window === 'undefined') {
-      return 'translate(-50%, -50%) scale(0)'
+      return `translate(-50%, -50%)${rotate} scale(0)`
     }
     const scale = triggerPosition.width / dimensions.width
     const x = triggerPosition.left + triggerPosition.width / 2 - window.innerWidth / 2
     const y = triggerPosition.top + triggerPosition.height / 2 - window.innerHeight / 2
-    return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`
+    return `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))${rotate} scale(${scale})`
   }
 
   const getFinalTransform = () => {
-    return 'translate(-50%, -50%) scale(1)'
+    return `translate(-50%, -50%)${rotate} scale(1)`
   }
 
   return (
     <>
       {/* 배경 오버레이 */}
+      {/* 배경 클릭으로 닫히지 않음 — 게임 활성 중에는 X 버튼만 닫기 허용 */}
       <div
         className={`fixed inset-0 bg-black/50 z-[80] transition-opacity duration-500 ${
           animationState === 'entered' ? 'opacity-100' : 'opacity-0'
         }`}
-        onClick={handleClose}
       />
 
       {/* 게임 컨테이너 */}

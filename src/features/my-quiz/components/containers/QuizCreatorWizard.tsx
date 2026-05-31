@@ -208,30 +208,36 @@ export default function QuizCreatorWizard({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3 md:gap-3 lg:grid-cols-4">
               {lectures.map((l) => {
                 const selected = selectedLectureId === l.lecture_id
+                const dateLabel = `${l.lecture_date ? new Date(l.lecture_date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : ''} · 자료 준비됨`
                 return (
                   <button
                     key={l.lecture_id}
                     onClick={() => setSelectedLectureId(l.lecture_id)}
-                    className={`qcw-lecture-card group rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-gray-300 hover:shadow-sm dark:border-gray-700 dark:bg-gray-800 ${
+                    className={`qcw-lecture-card group flex items-center gap-3.5 rounded-2xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-gray-300 hover:shadow-sm md:flex-col md:items-start md:gap-0 md:rounded-xl dark:border-gray-700 dark:bg-gray-800 ${
                       selected ? 'selected' : ''
                     }`}
                   >
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="qcw-lecture-num inline-flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">
+                    <div className="flex shrink-0 items-center md:mb-2 md:w-full md:justify-between">
+                      <span className="qcw-lecture-num inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-600 md:h-7 md:w-7 md:text-xs">
                         {l.lecture_no}
                       </span>
-                      {selected && <Check className="h-4 w-4 text-[#6366F1]" />}
+                      {selected && <Check className="hidden h-4 w-4 text-[#6366F1] md:block" />}
                     </div>
-                    <p className="mb-0.5 truncate text-sm font-bold text-gray-900 dark:text-gray-50">
-                      {l.title ?? `${l.lecture_no}회차`}
-                    </p>
-                    <p className="text-[11px] text-gray-400">
-                      {l.lecture_date ? new Date(l.lecture_date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : ''}
-                      {' · 자료 준비됨'}
-                    </p>
+                    <div className="min-w-0 flex-1 md:w-full">
+                      <p className="truncate text-sm font-bold text-gray-900 dark:text-gray-50 md:mb-0.5">
+                        <span className="md:hidden">{l.title ?? `${l.lecture_no}회차`}</span>
+                        <span className="hidden md:inline">{`${l.lecture_no}회차`}</span>
+                      </p>
+                      {l.title && (
+                        <p className="hidden truncate text-xs text-gray-500 md:mb-0.5 md:block dark:text-gray-400">
+                          {l.title}
+                        </p>
+                      )}
+                      <p className="truncate text-[11px] text-gray-400">{dateLabel}</p>
+                    </div>
                   </button>
                 )
               })}
