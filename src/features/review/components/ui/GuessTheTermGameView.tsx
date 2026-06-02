@@ -125,7 +125,7 @@ export function GuessTheTermGameView({
     if (isSending) return
 
     if (!secretTerm) {
-      appendMessage('system', '정답 용어를 불러오지 못했습니다. 새 게임을 시작해 주세요.')
+      appendMessage('system', t('guessTheTerm.secretLoadFailed'))
       return
     }
 
@@ -138,7 +138,7 @@ export function GuessTheTermGameView({
       description: secretTerm.description,
     })
     if (!answer) {
-      appendMessage('system', errorMessage || '답변을 불러오지 못했습니다.')
+      appendMessage('system', errorMessage || t('guessTheTerm.responseLoadFailed'))
       return
     }
     appendMessage('system', answer)
@@ -149,8 +149,10 @@ export function GuessTheTermGameView({
     setIsGameOver(true)
     setIsSelectingAnswer(false)
     setConfirmCandidateId(null)
-    const answer = secretTerm?.keyword ? `정답은 "${secretTerm.keyword}" 입니다.` : '정답을 불러오지 못했습니다.'
-    appendMessage('system', `포기했습니다. ${answer}`)
+    const answer = secretTerm?.keyword
+      ? t('guessTheTerm.answerIsQuoted', { keyword: secretTerm.keyword })
+      : t('guessTheTerm.answerTermLoadFailed')
+    appendMessage('system', t('guessTheTerm.giveUpResult', { answer }))
   }
 
   const toggleDisabledTerm = (id: string) => {
@@ -170,7 +172,7 @@ export function GuessTheTermGameView({
     setIsSelectingAnswer(false)
     setConfirmCandidateId(null)
     const picked = reviewItems.find(item => item.id === id)
-    const label = picked?.keyword ? `"${picked.keyword}"` : '선택한 용어'
+    const label = picked?.keyword ? `"${picked.keyword}"` : t('guessTheTerm.selectedTermFallback')
     if (id === secretTermId) {
       setIsGameOver(true)
       setCorrectId(id)
@@ -188,7 +190,7 @@ export function GuessTheTermGameView({
       }
       return next
     })
-    appendMessage('system', `아니오. ${label} 는(은) 정답이 아닙니다.`)
+    appendMessage('system', t('guessTheTerm.wrongGuess', { label }))
   }
 
   if (stage === 'intro') {
@@ -228,7 +230,7 @@ export function GuessTheTermGameView({
         isOpen={Boolean(confirmCandidate)}
         title={t('guessTheTerm.confirmTitle')}
         message={
-          confirmCandidate?.keyword ? `${confirmCandidate.keyword}을(를) 답으로 선택하시겠습니까?` : t('guessTheTerm.confirmTitle')
+          confirmCandidate?.keyword ? t('guessTheTerm.confirmSelect', { keyword: confirmCandidate.keyword }) : t('guessTheTerm.confirmTitle')
         }
         confirmLabel={t('guessTheTerm.confirmYes')}
         cancelLabel={t('guessTheTerm.confirmNo')}
@@ -283,9 +285,9 @@ export function GuessTheTermGameView({
           <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
             <div className="text-center">
               <div className="text-3xl font-bold text-slate-900">
-                {secretTerm?.keyword ? `정답은 ${secretTerm.keyword}입니다.` : '정답을 불러오지 못했습니다.'}
+                {secretTerm?.keyword ? t('guessTheTerm.answerIsReveal', { keyword: secretTerm.keyword }) : t('guessTheTerm.answerTermLoadFailed')}
               </div>
-              <div className="mt-3 text-sm text-slate-600">다시 시도하세요!</div>
+              <div className="mt-3 text-sm text-slate-600">{t('guessTheTerm.tryAgain')}</div>
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-3">
@@ -322,7 +324,7 @@ export function GuessTheTermGameView({
         <div className="mt-3 flex h-[240px] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
           <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-3">
             {messages.length === 0 ? (
-              <div className="text-xs text-slate-400">채팅을 시작해 보세요.</div>
+              <div className="text-xs text-slate-400">{t('guessTheTerm.startChat')}</div>
             ) : (
               <div className="flex flex-col gap-2">
                 {messages.map(msg => (
@@ -346,7 +348,7 @@ export function GuessTheTermGameView({
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={usedQuestions >= maxQuestions ? '모든 질문을 사용했습니다' : t('guessTheTerm.inputPlaceholder')}
+              placeholder={usedQuestions >= maxQuestions ? t('guessTheTerm.allQuestionsUsed') : t('guessTheTerm.inputPlaceholder')}
               disabled={isGameOver || usedQuestions >= maxQuestions || isSending}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void handleSend()
@@ -391,7 +393,7 @@ export function GuessTheTermGameView({
       {/* Right: Terms */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold text-slate-900">용어</div>
+          <div className="text-sm font-semibold text-slate-900">{t('guessTheTerm.termsTitle')}</div>
           <button
             type="button"
             onClick={() => setShowDescription(prev => !prev)}

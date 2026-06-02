@@ -199,7 +199,7 @@ export function LectureSidebarUI({
       {/* 강좌 없음 메시지 */}
       {!isLoading && !error && courses.length === 0 && (
         <p className="mb-3 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded text-center">
-          등록된 강좌가 없습니다
+          {t('noCourses')}
         </p>
       )}
 
@@ -307,7 +307,7 @@ export function LectureSidebarUI({
                   const professorName = course.professor_name?.trim()
                   const rawSection = course.section
                   const sectionValue = rawSection === null || rawSection === undefined ? '' : String(rawSection).trim()
-                  const sectionLabel = sectionValue ? `${sectionValue}분반` : ''
+                  const sectionLabel = sectionValue ? t('sectionLabel', { value: sectionValue }) : ''
                   const meta = [professorName, sectionLabel].filter(Boolean).join(' · ')
                   return meta ? <span className="text-xs text-gray-400">{meta}</span> : null
                 })()}
@@ -337,7 +337,7 @@ export function LectureSidebarUI({
 
           <div className="flex-1 overflow-y-auto space-y-1.5">
             {selectedCourse.lectures.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-4">등록된 회차가 없습니다</p>
+              <p className="text-xs text-gray-400 text-center py-4">{t('noLectures')}</p>
             ) : (
               selectedCourse.lectures.map(lecture => {
                 const isSelected = selectedLectureIds.includes(lecture.lecture_id)
@@ -359,7 +359,7 @@ export function LectureSidebarUI({
                         ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
                         : 'bg-gray-50 border-transparent hover:border-gray-200 hover:bg-gray-100 text-gray-700'
                     }`}
-                    title={!lecture.is_available ? '강의자료가 준비되지 않은 회차입니다' : undefined}
+                    title={!lecture.is_available ? t('materialNotReady') : undefined}
                   >
                     <div className="flex-1 min-w-0">
                       <p
@@ -421,7 +421,7 @@ export function LectureSidebarUI({
                                 }
                               }}
                               className="flex h-5 w-5 items-center justify-center rounded-full transition-colors cursor-pointer bg-blue-500 hover:bg-blue-600"
-                              title="게임 시작"
+                              title={t('gameStart')}
                             >
                               <Gamepad2 className="h-3 w-3 text-white" />
                             </div>
@@ -451,7 +451,7 @@ export function LectureSidebarUI({
                                     treasureRefs.current[lecture.lecture_id] = el
                                   }}
                                   src={alreadyClaimed ? '/icon_reward_empty.png' : '/icon_reward.png'}
-                                  alt="보상"
+                                  alt={t('rewardAlt')}
                                   onClick={e => {
                                     if (!selectedCourseId) return
                                     onTreasureClick(lecture.lecture_id, selectedCourseId, e)
@@ -465,10 +465,10 @@ export function LectureSidebarUI({
                                   }`}
                                   title={
                                     alreadyClaimed
-                                      ? '보상을 수령했습니다'
+                                      ? t('rewardClaimed')
                                       : progress >= 10
-                                      ? '클릭하여 보상을 수령하세요!'
-                                      : `${10 - progress}개 더 풀면 보상 획득!`
+                                      ? t('rewardClickToClaim')
+                                      : t('rewardRemaining', { count: String(10 - progress) })
                                   }
                                 />
                               )
@@ -528,7 +528,7 @@ export function LectureSidebarUI({
               <div className="flex items-start gap-2">
                 <img 
                   src="/icon_flame.png" 
-                  alt="불꽃" 
+                  alt={t('flameAlt')} 
                   className="h-4 w-4 object-contain mt-0.5 shrink-0 opacity-90 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]"
                 />
                 <span className="leading-relaxed">{tFlame('flame2')}</span>
@@ -536,7 +536,7 @@ export function LectureSidebarUI({
               <div className="flex items-start gap-2">
                 <img 
                   src="/icon_flame.png" 
-                  alt="불꽃" 
+                  alt={t('flameAlt')} 
                   className="h-4 w-4 object-contain mt-0.5 shrink-0 opacity-90 drop-shadow-[0_0_6px_rgba(129,140,248,0.6)]"
                 />
                 <span className="leading-relaxed">{tFlame('flame4')}</span>
@@ -580,7 +580,7 @@ export function LectureSidebarUI({
         >
           <img
             src="/icon_flame.png"
-            alt="불꽃"
+            alt={t('flameAlt')}
             className="h-6 w-6 object-contain drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]"
             style={{
               animation: 'flameGlow 200ms ease-in-out infinite alternate',

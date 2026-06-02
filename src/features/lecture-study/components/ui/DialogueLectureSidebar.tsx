@@ -75,11 +75,11 @@ export function DialogueLectureSidebar({
         setCourse(found ?? null)
       }
     } catch {
-      setError('데이터를 불러올 수 없습니다')
+      setError(t('loadError'))
     } finally {
       setIsLoading(false)
     }
-  }, [courseId])
+  }, [courseId, t])
 
   useEffect(() => {
     fetchCourse()
@@ -165,7 +165,7 @@ export function DialogueLectureSidebar({
   if (error || !course) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 p-4">
-        <p className="text-xs text-red-600">{error ?? '과목을 찾을 수 없습니다'}</p>
+        <p className="text-xs text-red-600">{error ?? t('courseNotFound')}</p>
       </div>
     )
   }
@@ -205,7 +205,7 @@ export function DialogueLectureSidebar({
       {/* 회차 목록 */}
       <div className="flex-1 overflow-y-auto space-y-1.5">
         {course.lectures.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-4">등록된 회차가 없습니다</p>
+          <p className="text-xs text-gray-400 text-center py-4">{t('noLectures')}</p>
         ) : (
           course.lectures.map((lecture) => {
             const isSelected = selectedLectureIds.includes(lecture.lecture_id)
