@@ -1542,10 +1542,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                               onClick={() => handleRequestElaboration(index)}
                               disabled={isLoading || isElaborating}
                               className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-left text-sm font-medium text-indigo-700 shadow-sm transition-all duration-200 hover:bg-indigo-100 hover:border-indigo-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="이 답변을 강의 자료 범위 내에서 더 자세히 풀어서 설명받기"
+                              title={t('elaborateTitle')}
                             >
                               <span>📖</span>
-                              <span>{isElaborating ? '부연설명 생성 중…' : '부연설명 요청'}</span>
+                              <span>{isElaborating ? t('elaborating') : t('elaborateRequest')}</span>
                             </button>
                           )}
                         </div>

@@ -276,7 +276,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
             />
             <aside className="fixed inset-y-0 left-0 z-50 flex h-full w-[280px] max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 xl:hidden">
               <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-50">회차 선택</span>
+                <span className="text-sm font-bold text-gray-900 dark:text-gray-50">{t('aiTutorSidebar.lectureSelectTitle')}</span>
                 <button
                   onClick={() => setIsLectureSidebarOpen(false)}
                   className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"

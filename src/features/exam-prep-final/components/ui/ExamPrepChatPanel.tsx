@@ -11,6 +11,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Loader2, Send, X } from 'lucide-react'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { trackEvent } from '@/shared/lib/analytics'
@@ -40,6 +41,7 @@ export function ExamPrepChatPanel({
   quizChatContext,
   onClearQuizContext,
 }: ExamPrepChatPanelProps) {
+  const t = useTranslations('examPrepFinal')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -131,19 +133,19 @@ export function ExamPrepChatPanel({
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: '답변 생성에 실패했어요. 잠시 후 다시 시도해 주세요.' },
+          { role: 'assistant', content: t('chat.answerFailed') },
         ])
       }
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: '일시적인 오류가 발생했어요. 다시 시도해 주세요.' },
+        { role: 'assistant', content: t('chat.tempError') },
       ])
     } finally {
       setIsLoading(false)
       scrollToBottom()
     }
-  }, [input, isLoading, testId, currentLectureId, quizChatContext, onClearQuizContext, scrollToBottom])
+  }, [input, isLoading, testId, currentLectureId, quizChatContext, onClearQuizContext, scrollToBottom, t])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -162,7 +164,7 @@ export function ExamPrepChatPanel({
         {messages.length === 0 && (
           <div className="flex h-full items-center justify-center text-gray-400">
             <p className="text-sm text-center whitespace-pre-line">
-              핵심테스트 풀이 중 막히는 부분이 있으면{'\n'}언제든 물어보세요!
+              {t('chat.introPrompt')}
             </p>
           </div>
         )}
@@ -193,7 +195,7 @@ export function ExamPrepChatPanel({
           <div className="flex justify-start">
             <div className="flex items-center gap-2 rounded-2xl rounded-bl-md bg-gray-100 dark:bg-gray-800 px-4 py-3">
               <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              <span className="text-sm text-gray-400">답변 생성 중…</span>
+              <span className="text-sm text-gray-400">{t('chat.generating')}</span>
             </div>
           </div>
         )}
@@ -224,8 +226,8 @@ export function ExamPrepChatPanel({
             onKeyDown={handleKeyDown}
             placeholder={
               quizChatContext
-                ? '이 문제에 대해 물어보세요'
-                : '핵심테스트 관련 질문을 자유롭게 입력하세요'
+                ? t('chat.placeholderWithQuestion')
+                : t('chat.placeholderGeneral')
             }
             rows={1}
             className="flex-1 resize-none bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 outline-none max-h-24 overflow-y-auto"

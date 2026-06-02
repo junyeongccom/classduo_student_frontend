@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import {
   ArrowUpDown,
   Bookmark,
@@ -43,7 +43,6 @@ type AnswersMode = 'off' | 'on'
 const ANSWERS_KEY = 'quizStorage:answers'
 
 interface SourceMeta {
-  label: string
   pillBg: string
   pillText: string
   dot: string
@@ -51,23 +50,27 @@ interface SourceMeta {
 
 const SOURCE_META: Record<Exclude<SourceValue, 'all'>, SourceMeta> = {
   'lecture-content': {
-    label: '회차별 학습',
     pillBg: 'bg-[#F5F3FF]',
     pillText: 'text-[#7C3AED]',
     dot: 'bg-[#8B5CF6]',
   },
   'exam-prep': {
-    label: '기말 대비 학습',
     pillBg: 'bg-orange-50',
     pillText: 'text-[#C2410C]',
     dot: 'bg-[#F97316]',
   },
   customize: {
-    label: '내가 만든 퀴즈',
     pillBg: 'bg-[#EEF2FF]',
     pillText: 'text-[#4F46E5]',
     dot: 'bg-[#6366F1]',
   },
+}
+
+// 출처 → i18n 키 매핑 (storage.sourceLabels)
+const SOURCE_LABEL_KEY: Record<Exclude<SourceValue, 'all'>, string> = {
+  'lecture-content': 'lectureContent',
+  'exam-prep': 'examPrep',
+  customize: 'customize',
 }
 
 /**
@@ -89,31 +92,35 @@ function toDisplaySource(
 // 생성되므로 '구조' 라벨로 1회만 노출 (이전에 STRUCTURE + STRUCTURE_OBJ 둘 다 등재되어
 // 동일 라벨 "구조" 가 2번 보이던 문제 수정).
 // exam_prep 는 quiz_type 메타가 없어 유형 필터 적용 시 자동으로 결과에서 제외된다.
-const TYPE_LABELS: Partial<Record<StudentQuizType, string>> = {
-  DEF_TO_TERM: '정의→용어',
-  TERM_TO_DEF: '용어→정의',
-  MISCONCEPTION: '오개념',
-  STRUCTURE_OBJ: '구조',
-}
+const STORAGE_TYPES: StudentQuizType[] = [
+  'DEF_TO_TERM',
+  'TERM_TO_DEF',
+  'MISCONCEPTION',
+  'STRUCTURE_OBJ',
+]
 
-function formatRelative(iso: string | null): string {
+function formatRelative(
+  iso: string | null,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
   if (!iso) return ''
   const ts = new Date(iso).getTime()
   if (Number.isNaN(ts)) return ''
   const diff = Date.now() - ts
   const day = 24 * 60 * 60 * 1000
   const days = Math.floor(diff / day)
-  if (days <= 0) return '오늘'
-  if (days === 1) return '어제'
-  if (days < 7) return `${days}일 전`
-  if (days < 30) return `${Math.floor(days / 7)}주 전`
-  return `${Math.floor(days / 30)}달 전`
+  if (days <= 0) return t('today')
+  if (days === 1) return t('yesterday')
+  if (days < 7) return t('daysAgo', { n: days })
+  if (days < 30) return t('weeksAgo', { n: Math.floor(days / 7) })
+  return t('monthsAgo', { n: Math.floor(days / 30) })
 }
 
 export default function QuizStorageContainer() {
   const params = useParams<{ courseId?: string }>()
   const courseIdParam = params?.courseId ?? null
   const locale = useLocale()
+  const t = useTranslations('myQuiz')
 
   const {
     courses,
@@ -294,22 +301,22 @@ export default function QuizStorageContainer() {
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3 md:mb-6 md:gap-6">
           <div className="min-w-0 flex-1">
             <p className="mb-1.5 text-xs text-gray-500 dark:text-gray-400 md:mb-2 md:text-sm">
-              내가 다시 풀어볼 문제 모음 · 출처 무관 통합
+              {t('storage.subtitle')}
             </p>
             <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-50 md:text-4xl xl:text-5xl">
-              내 퀴즈 저장소
+              {t('storage.pageTitle')}
             </h1>
           </div>
           <div className="flex shrink-0 items-end gap-4 pb-1 md:gap-8 md:pb-2">
             <div className="text-right">
-              <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">즐겨찾기</p>
+              <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">{t('storage.favorites')}</p>
               <p className="text-lg font-bold text-gray-900 dark:text-gray-50 md:text-2xl">
                 <span className="text-[#6366F1]">{totalCounts.fav}</span>
-                <span className="ml-1 text-sm text-gray-500 dark:text-gray-400 md:text-base">개</span>
+                <span className="ml-1 text-sm text-gray-500 dark:text-gray-400 md:text-base">{t('storage.countUnit')}</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">오답</p>
+              <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">{t('storage.wrong')}</p>
               <p className="text-lg font-bold text-[#F97316] md:text-2xl">{totalCounts.wrong}</p>
             </div>
           </div>
@@ -323,14 +330,14 @@ export default function QuizStorageContainer() {
                 active={segment === 'all'}
                 onClick={() => setSegment('all')}
               >
-                전체 <span className="ml-1 text-[11px] text-gray-400 md:text-xs">{totalCounts.total}</span>
+                {t('storage.all')} <span className="ml-1 text-[11px] text-gray-400 md:text-xs">{totalCounts.total}</span>
               </SegBtn>
               <SegBtn
                 active={segment === 'fav'}
                 onClick={() => setSegment('fav')}
               >
                 <Bookmark className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">즐겨찾기</span>
+                <span className="hidden sm:inline">{t('storage.favorites')}</span>
                 <span className="text-[11px] text-gray-400 md:text-xs">{totalCounts.fav}</span>
               </SegBtn>
               <SegBtn
@@ -338,7 +345,7 @@ export default function QuizStorageContainer() {
                 onClick={() => setSegment('wrong')}
               >
                 <XCircle className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">오답</span>
+                <span className="hidden sm:inline">{t('storage.wrong')}</span>
                 <span className="text-[11px] text-gray-400 md:text-xs">{totalCounts.wrong}</span>
               </SegBtn>
             </div>
@@ -351,14 +358,14 @@ export default function QuizStorageContainer() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 md:px-3 md:py-2 md:text-xs"
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
-                {sortOrder === 'newest' ? '최신순' : '오래된순'}
+                {sortOrder === 'newest' ? t('sort.newest') : t('sort.oldest')}
               </button>
               <button
                 onClick={() => setAdvancedOpen((v) => !v)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 md:px-3 md:py-2 md:text-xs"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
-                필터
+                {t('storage.filter')}
                 {(lectureFilter.length > 0 ||
                   typeFilter !== null ||
                   coreTestFilter.length > 0) && (
@@ -374,12 +381,12 @@ export default function QuizStorageContainer() {
 
           {/* 출처 칩 — 항상 보임 */}
           <div className="qs-no-scrollbar mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-            <span className="shrink-0 text-xs font-semibold text-gray-400">출처</span>
+            <span className="shrink-0 text-xs font-semibold text-gray-400">{t('storage.source')}</span>
             <Chip
               active={sourceFilter === 'all'}
               onClick={() => setSourceFilter('all')}
             >
-              전체
+              {t('storage.all')}
             </Chip>
             {(['lecture-content', 'exam-prep', 'customize'] as const).map((src) => {
               const meta = SOURCE_META[src]
@@ -390,7 +397,7 @@ export default function QuizStorageContainer() {
                   onClick={() => setSourceFilter(src)}
                 >
                   <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                  {meta.label}
+                  {t(`storage.sourceLabels.${SOURCE_LABEL_KEY[src]}`)}
                 </Chip>
               )
             })}
@@ -408,14 +415,14 @@ export default function QuizStorageContainer() {
                   ] as const).map(([start, end], rowIdx) => (
                     <div key={rowIdx} className="flex flex-wrap items-center gap-2">
                       <span className="w-16 shrink-0 text-xs font-semibold text-gray-400">
-                        {rowIdx === 0 ? '핵심테스트' : ''}
+                        {rowIdx === 0 ? t('storage.coreTest') : ''}
                       </span>
                       {rowIdx === 0 && (
                         <Chip
                           active={coreTestFilter.length === 0}
                           onClick={() => setCoreTestFilter([])}
                         >
-                          전체
+                          {t('storage.all')}
                         </Chip>
                       )}
                       {Array.from(
@@ -433,7 +440,7 @@ export default function QuizStorageContainer() {
                             )
                           }
                         >
-                          {n}번
+                          {t('storage.coreTestNo', { n })}
                         </Chip>
                       ))}
                     </div>
@@ -442,12 +449,12 @@ export default function QuizStorageContainer() {
               ) : (
                 <>
                   <div className="qs-no-scrollbar flex items-center gap-2 overflow-x-auto">
-                    <span className="w-12 shrink-0 text-xs font-semibold text-gray-400">회차</span>
+                    <span className="w-12 shrink-0 text-xs font-semibold text-gray-400">{t('storage.lecture')}</span>
                     <Chip
                       active={lectureFilter.length === 0}
                       onClick={() => setLectureFilter([])}
                     >
-                      전체
+                      {t('storage.all')}
                     </Chip>
                     {courseLectures.map((l) => (
                       <Chip
@@ -461,23 +468,23 @@ export default function QuizStorageContainer() {
                           )
                         }
                       >
-                        {l.lecture_no}주차
+                        {t('landing.lectureWeek', { no: l.lecture_no })}
                       </Chip>
                     ))}
                   </div>
 
                   <div className="qs-no-scrollbar flex items-center gap-2 overflow-x-auto">
-                    <span className="w-12 shrink-0 text-xs font-semibold text-gray-400">유형</span>
+                    <span className="w-12 shrink-0 text-xs font-semibold text-gray-400">{t('storage.type')}</span>
                     <Chip active={typeFilter === null} onClick={() => setTypeFilter(null)}>
-                      전체
+                      {t('storage.all')}
                     </Chip>
-                    {(Object.keys(TYPE_LABELS) as StudentQuizType[]).map((tp) => (
+                    {STORAGE_TYPES.map((tp) => (
                       <Chip
                         key={tp}
                         active={typeFilter === tp}
                         onClick={() => setTypeFilter(tp)}
                       >
-                        {TYPE_LABELS[tp]}
+                        {t(`storage.typeLabels.${tp}`)}
                       </Chip>
                     ))}
                   </div>
@@ -489,7 +496,7 @@ export default function QuizStorageContainer() {
                   onClick={handleResetFilters}
                   className="text-xs font-semibold text-gray-400 hover:text-gray-600"
                 >
-                  필터 초기화
+                  {t('storage.resetFilters')}
                 </button>
               </div>
             </div>
@@ -499,10 +506,10 @@ export default function QuizStorageContainer() {
         {/* ===================== TOOLBAR (count + view + answers) ===================== */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-[11px] text-gray-500 md:gap-2 md:text-xs">
-            <span className="font-semibold text-gray-700 dark:text-gray-300">{filtered.length}개</span>
-            <span>의 문제</span>
+            <span className="font-semibold text-gray-700 dark:text-gray-300">{t('storage.countBadge', { count: filtered.length })}</span>
+            <span>{t('storage.problemsLabel')}</span>
             <span className="text-gray-300">·</span>
-            <span>{sortOrder === 'newest' ? '최신순' : '오래된순'}</span>
+            <span>{sortOrder === 'newest' ? t('sort.newest') : t('sort.oldest')}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -516,7 +523,7 @@ export default function QuizStorageContainer() {
               ) : (
                 <EyeOff className="h-3.5 w-3.5" />
               )}
-              <span>{answersMode === 'on' ? '정답 표시' : '정답 가림'}</span>
+              <span>{answersMode === 'on' ? t('storage.showAnswers') : t('storage.hideAnswers')}</span>
               <span
                 className={`qs-switch-track ${answersMode === 'on' ? 'is-on' : ''}`}
               >
@@ -530,7 +537,7 @@ export default function QuizStorageContainer() {
         <div className={rootClass}>
           {(courseLoading || isLoading) && filtered.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900">
-              불러오는 중...
+              {t('selector.loading')}
             </div>
           )}
 
@@ -620,10 +627,14 @@ function QuizCard({
   isWrongTab: boolean
   answersMode: AnswersMode
 }) {
+  const t = useTranslations('myQuiz')
   const display = toDisplaySource(item.quiz_source)
   const meta = display ? SOURCE_META[display] : SOURCE_META['lecture-content']
+  const sourceLabel = display ? t(`storage.sourceLabels.${SOURCE_LABEL_KEY[display]}`) : ''
   const lectureLabel = item.lecture_name ?? ''
-  const typeLabel = TYPE_LABELS[item.quiz_type] ?? ''
+  const typeLabel = STORAGE_TYPES.includes(item.quiz_type)
+    ? t(`storage.typeLabels.${item.quiz_type}`)
+    : ''
   const question =
     locale === 'en' && item.question_eng ? item.question_eng : item.question
   const explanation =
@@ -667,7 +678,7 @@ function QuizCard({
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${meta.pillBg} ${meta.pillText}`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-            {meta.label}
+            {sourceLabel}
           </span>
           {(lectureLabel || typeLabel) && (
             <>
@@ -682,13 +693,13 @@ function QuizCard({
           {item.is_wrong && (
             <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-[#C2410C]">
               <X className="h-3 w-3" />
-              오답{item.wrong_count > 0 ? ` (${item.wrong_count}회 틀림)` : ''}
+              {t('storage.wrongBadge')}{item.wrong_count > 0 ? t('storage.wrongCountSuffix', { count: item.wrong_count }) : ''}
             </span>
           )}
           {item.is_bookmark && (
             <span
               className="rounded-lg p-1.5 text-blue-500"
-              title="즐겨찾기"
+              title={t('storage.bookmarkTitle')}
             >
               <Bookmark className="h-4 w-4 fill-current" />
             </span>
@@ -729,10 +740,10 @@ function QuizCard({
             >
               <span className="qs-choice-num">{order}</span>
               <span className="qs-choice-text">{text}</span>
-              <span className="qs-answer-badge">정답</span>
-              <span className="qs-mine-badge">내가 선택</span>
+              <span className="qs-answer-badge">{t('storage.answerBadge')}</span>
+              <span className="qs-mine-badge">{t('storage.myChoice')}</span>
               <span className="qs-mine-indicator">
-                <span>•</span>내가 골랐던
+                <span>•</span>{t('storage.iChose')}
               </span>
             </li>
           )
@@ -742,19 +753,19 @@ function QuizCard({
       {/* Footer — 다시 풀기 → 해설 보기 (expand) */}
       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs dark:border-gray-800">
         <span className="text-gray-400">
-          {formatRelative(isWrongTab ? (item.last_wrong_at ?? item.last_activity_at) : item.last_activity_at)}
+          {formatRelative(isWrongTab ? (item.last_wrong_at ?? item.last_activity_at) : item.last_activity_at, t)}
           {item.is_bookmark && item.is_wrong
-            ? ' · 즐겨찾기 + 오답'
+            ? t('storage.favAndWrong')
             : item.is_bookmark
-              ? ' 즐겨찾기'
-              : ' 오답'}
+              ? t('storage.favOnly')
+              : t('storage.wrongOnly')}
         </span>
         <button
           onClick={() => setExplanationOpen((o) => !o)}
           className="inline-flex items-center gap-1 font-semibold text-[#6366F1] hover:text-[#4F46E5]"
         >
           <Lightbulb className="h-3.5 w-3.5" />
-          {explanationOpen ? '해설 닫기' : '해설 보기'}
+          {explanationOpen ? t('storage.closeExplanation') : t('storage.showExplanation')}
           {explanationOpen ? (
             <ChevronUp className="h-3.5 w-3.5" />
           ) : (
@@ -766,13 +777,13 @@ function QuizCard({
       {/* Explanation — expand 시 카드 내부에 펼쳐짐 (아래 카드들이 자연스럽게 밀려남, grid layout 덕분) */}
       {explanationOpen && (
         <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-800">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">해설</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('storage.explanation')}</p>
           {explanation ? (
             <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-200">
               {explanation}
             </p>
           ) : (
-            <p className="text-gray-400">해설이 제공되지 않은 문제입니다.</p>
+            <p className="text-gray-400">{t('storage.noExplanation')}</p>
           )}
           {/* exam_prep 출처는 explanation 필드에 이미 "1번:, 2번:..." 형식 전체 분석이 들어있어
               choice_explanation 까지 출력하면 동일 내용이 두 번 나옴 → 선지별 분석 섹션 생략 */}
@@ -788,8 +799,8 @@ function QuizCard({
                 return (
                   <li key={c.choice_id} className="text-xs text-gray-600 dark:text-gray-300">
                     <span className="font-semibold text-gray-700 dark:text-gray-200">
-                      {idx + 1}번
-                      {c.is_correct ? ' (정답)' : ''}:
+                      {t('storage.coreTestNo', { n: idx + 1 })}
+                      {c.is_correct ? t('storage.correctSuffix') : ''}:
                     </span>{' '}
                     {exp}
                   </li>
@@ -804,22 +815,23 @@ function QuizCard({
 }
 
 function EmptyState({ onReset }: { onReset: () => void }) {
+  const t = useTranslations('myQuiz')
   return (
     <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 dark:bg-gray-800">
         <Bookmark className="h-6 w-6 text-gray-300" />
       </div>
       <h3 className="mb-1 text-base font-bold text-gray-900 dark:text-gray-100">
-        조건에 맞는 문제가 없어요
+        {t('storage.emptyTitle')}
       </h3>
       <p className="mb-4 text-sm text-gray-500">
-        필터를 줄이거나 다른 출처/회차를 골라보세요.
+        {t('storage.emptyDesc')}
       </p>
       <button
         onClick={onReset}
         className="rounded-lg bg-[#6366F1] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4F46E5]"
       >
-        필터 초기화
+        {t('storage.resetFilters')}
       </button>
     </div>
   )

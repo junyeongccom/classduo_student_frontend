@@ -13,8 +13,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import type { StudentCourseStateDto } from '@/shared/services/gamificationService'
+
+type RewardTranslator = (key: string, values?: Record<string, string | number>) => string
 
 interface ExamPrepRewardWidgetProps {
   state: StudentCourseStateDto | null
@@ -70,9 +73,10 @@ function computeNextRankProgress(args: {
   totalXp: number
   masterXp: number
   stampXp: number
+  t: RewardTranslator
 }): NextRankProgress {
-  const { rankCode, totalXp, masterXp, stampXp } = args
-  const step = RANK_THRESHOLDS.find((t) => t.from === rankCode)
+  const { rankCode, totalXp, masterXp, stampXp, t } = args
+  const step = RANK_THRESHOLDS.find((s) => s.from === rankCode)
   if (!step) {
     // 이미 A+ 도달
     return {
@@ -80,7 +84,7 @@ function computeNextRankProgress(args: {
       xpRemaining: 0,
       masterXpRemaining: 0,
       stampXpRemaining: 0,
-      hint: '최고 계급에 도달했어요!',
+      hint: t('reward.maxRankReached'),
     }
   }
   const xpRemaining = Math.max(0, step.total - totalXp)
@@ -95,12 +99,12 @@ function computeNextRankProgress(args: {
 
   // hint 작성: 가장 부족한 조건을 강조
   const parts: string[] = []
-  if (xpRemaining > 0) parts.push(`XP +${xpRemaining}`)
-  if (masterXpRemaining > 0) parts.push(`문제 Master XP +${masterXpRemaining}`)
-  if (stampXpRemaining > 0) parts.push(`도장 XP +${stampXpRemaining}`)
+  if (xpRemaining > 0) parts.push(t('reward.partXp', { n: xpRemaining }))
+  if (masterXpRemaining > 0) parts.push(t('reward.partMasterXp', { n: masterXpRemaining }))
+  if (stampXpRemaining > 0) parts.push(t('reward.partStampXp', { n: stampXpRemaining }))
   const hint = parts.length > 0
-    ? `${step.to} 진급까지 ${parts.join(' · ')}`
-    : `${step.to} 진급 조건 충족 — 곧 갱신됩니다`
+    ? t('reward.hintToNext', { rank: step.to, parts: parts.join(' · ') })
+    : t('reward.hintConditionMet', { rank: step.to })
 
   return {
     nextCode: step.to,
@@ -115,6 +119,7 @@ export function ExamPrepRewardWidget({
   state,
   loading = false,
 }: ExamPrepRewardWidgetProps) {
+  const t = useTranslations('examPrepFinal')
   const [isStampPopupOpen, setIsStampPopupOpen] = useState(false)
   const popupRef = useRef<HTMLDivElement>(null)
 
@@ -132,6 +137,7 @@ export function ExamPrepRewardWidget({
     totalXp,
     masterXp,
     stampXp,
+    t,
   })
 
   // 외부 클릭 시 팝업 닫기
@@ -152,7 +158,7 @@ export function ExamPrepRewardWidget({
       <button
         type="button"
         onClick={() => setIsStampPopupOpen((v) => !v)}
-        aria-label={hasTodayStamp ? '오늘 도장 받음' : '오늘 도장 미수령'}
+        aria-label={hasTodayStamp ? t('reward.stampReceivedAria') : t('reward.stampNotReceivedAria')}
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#6366F1]/10 transition-colors hover:bg-[#6366F1]/20"
       >
         <span
@@ -167,7 +173,7 @@ export function ExamPrepRewardWidget({
 
       {/* XP */}
       <div
-        aria-label="총 경험치"
+        aria-label={t('reward.totalXpAria')}
         className="flex h-10 items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3 text-[#6366F1]"
       >
         <span className="text-xs font-bold uppercase tracking-wide opacity-80">XP</span>
@@ -178,7 +184,7 @@ export function ExamPrepRewardWidget({
 
       {/* 계급 */}
       <div
-        aria-label="계급"
+        aria-label={t('reward.rankAria')}
         className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6366F1] text-white"
       >
         <span className="text-base font-black tracking-tight">{rankCode}</span>
@@ -188,40 +194,40 @@ export function ExamPrepRewardWidget({
       {isStampPopupOpen && (
         <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-700 dark:bg-gray-900">
           <p className="mb-2 text-sm font-bold text-gray-900 dark:text-gray-100">
-            나의 도장 기록
+            {t('reward.myStampRecord')}
           </p>
           <div className="space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
             <div className="flex items-center justify-between">
-              <span>오늘 도장</span>
+              <span>{t('reward.todayStamp')}</span>
               <span className="font-semibold">
-                {hasTodayStamp ? '받음' : '미수령'}
+                {hasTodayStamp ? t('reward.received') : t('reward.notReceived')}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span>연속 접속</span>
-              <span className="font-semibold">{currentStreak}일</span>
+              <span>{t('reward.streak')}</span>
+              <span className="font-semibold">{t('reward.daysValue', { n: currentStreak })}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span>누적 접속</span>
-              <span className="font-semibold">{totalDays}일</span>
+              <span>{t('reward.totalDays')}</span>
+              <span className="font-semibold">{t('reward.daysValue', { n: totalDays })}</span>
             </div>
           </div>
 
           <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
             <p className="mb-1 text-xs font-bold text-gray-500 dark:text-gray-400">
-              경험치 상세
+              {t('reward.xpDetail')}
             </p>
             <div className="space-y-1 text-xs text-gray-600 dark:text-gray-300">
               <div className="flex items-center justify-between">
-                <span>문제 Master XP</span>
+                <span>{t('reward.masterXp')}</span>
                 <span className="font-semibold">{masterXp.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>도장 XP</span>
+                <span>{t('reward.stampXp')}</span>
                 <span className="font-semibold">{stampXp.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-[#6366F1]">
-                <span>총 XP</span>
+                <span>{t('reward.totalXp')}</span>
                 <span className="font-bold">{totalXp.toLocaleString()}</span>
               </div>
             </div>
@@ -230,7 +236,7 @@ export function ExamPrepRewardWidget({
           <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                현재 계급
+                {t('reward.currentRank')}
               </span>
               <span className="text-sm font-black text-[#6366F1]">{rankCode}</span>
             </div>

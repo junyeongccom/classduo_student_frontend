@@ -323,9 +323,9 @@ export default function QuizCreatorContainer() {
         (l) => l.lecture_id === lectureId,
       )
       if (!lecture) return ''
-      return `${lecture.lecture_no}주차`
+      return t('landing.lectureWeek', { no: lecture.lecture_no })
     },
-    [selectedCourse],
+    [selectedCourse, t],
   )
 
   const getLectureFull = useCallback(
@@ -336,10 +336,13 @@ export default function QuizCreatorContainer() {
       )
       if (!lecture) return ''
       return lecture.title
-        ? `${lecture.lecture_no}주차 · ${lecture.title}`
-        : `${lecture.lecture_no}주차`
+        ? t('landing.lectureWeekWithTitle', {
+            no: lecture.lecture_no,
+            title: lecture.title,
+          })
+        : t('landing.lectureWeek', { no: lecture.lecture_no })
     },
-    [selectedCourse],
+    [selectedCourse, t],
   )
 
   // ─── 뷰 분기 ───
@@ -447,28 +450,28 @@ export default function QuizCreatorContainer() {
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3 md:mb-6 md:gap-6">
           <div className="min-w-0 flex-1">
             <p className="mb-1.5 text-xs text-gray-500 dark:text-gray-400 md:mb-2 md:text-sm">
-              맞춤형 퀴즈를 직접 만들어 학습 효율을 높이세요
+              {t('landing.subtitle')}
             </p>
             <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-gray-50 md:text-4xl xl:text-5xl">
-              문제 만들기
+              {t('landing.pageTitle')}
             </h1>
           </div>
           <div className="flex shrink-0 items-end gap-4 pb-1 md:gap-8 md:pb-2">
             <div className="text-right">
               <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">
-                생성한 세션
+                {t('landing.generatedSessions')}
               </p>
               <p className="text-lg font-bold text-gray-900 dark:text-gray-50 md:text-2xl">
                 <span className="text-[#6366F1]">{stats.total}</span>
                 <span className="ml-1 text-sm text-gray-500 dark:text-gray-400 md:text-base">
-                  개
+                  {t('landing.sessionUnit')}
                 </span>
               </p>
             </div>
             {stats.averageScore != null && (
               <div className="text-right">
                 <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">
-                  평균 점수
+                  {t('landing.averageScore')}
                 </p>
                 <p className="text-lg font-bold text-emerald-600 md:text-2xl">
                   {stats.averageScore}
@@ -496,19 +499,20 @@ export default function QuizCreatorContainer() {
               </div>
               <div className="min-w-0">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 md:mb-1.5 md:text-[11px]">
-                  CREATE · AI 맞춤 생성
+                  {t('landing.heroEyebrow')}
                 </p>
                 <h2 className="mb-1 text-lg font-black text-gray-900 dark:text-gray-50 md:mb-1.5 md:text-2xl">
-                  새 퀴즈 만들기
+                  {t('landing.heroTitle')}
                 </h2>
                 <p className="text-xs text-gray-600 dark:text-gray-300 md:text-sm">
-                  회차를 선택하고 유형·난이도를 정하면 AI가 즉시 생성해드려요
+                  {t('landing.heroDescription')}
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2 md:pr-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold text-[#4F46E5] md:px-3 md:py-1.5 md:text-xs">
-                <Sparkles className="h-3 w-3 md:h-3.5 md:w-3.5" />약 1~2분 소요
+                <Sparkles className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                {t('landing.estimateBadge')}
               </span>
               <ArrowRight className="h-4 w-4 text-[#6366F1] transition-transform group-hover:translate-x-1 md:h-5 md:w-5" />
             </div>
@@ -519,7 +523,7 @@ export default function QuizCreatorContainer() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3">
             <h2 className="text-base font-bold text-gray-900 dark:text-gray-50 md:text-xl">
-              내 퀴즈 세션
+              {t('session.title')}
             </h2>
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300 md:px-2.5 md:text-xs">
               {sessions.length}
@@ -528,7 +532,7 @@ export default function QuizCreatorContainer() {
           <div className="flex items-center gap-2">
             <button className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 md:px-3 md:py-2 md:text-xs">
               <ArrowUpDown className="h-3.5 w-3.5" />
-              최신순
+              {t('sort.newest')}
             </button>
             <div className="hidden h-5 w-px bg-gray-200 dark:bg-gray-700 sm:block" />
             {/* View toggle */}
@@ -542,7 +546,7 @@ export default function QuizCreatorContainer() {
                 }`}
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">카드</span>
+                <span className="hidden sm:inline">{t('landing.viewCard')}</span>
               </button>
               <button
                 onClick={() => setSessionsView('list')}
@@ -553,7 +557,7 @@ export default function QuizCreatorContainer() {
                 }`}
               >
                 <List className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">리스트</span>
+                <span className="hidden sm:inline">{t('landing.viewList')}</span>
               </button>
             </div>
           </div>
@@ -576,7 +580,7 @@ export default function QuizCreatorContainer() {
           {(courseLoading || isLoadingSessions) && sessions.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900">
               <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-gray-400" />
-              불러오는 중...
+              {t('selector.loading')}
             </div>
           )}
 
@@ -616,11 +620,11 @@ export default function QuizCreatorContainer() {
               {/* List */}
               <div className="qcl-list overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
                 <div className="grid grid-cols-12 gap-2 border-b border-gray-200 bg-gray-50 px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:border-gray-700 dark:bg-gray-800">
-                  <div className="col-span-1">상태</div>
-                  <div className="col-span-4">제목</div>
-                  <div className="col-span-2">회차</div>
-                  <div className="col-span-2">결과</div>
-                  <div className="col-span-2">생성</div>
+                  <div className="col-span-1">{t('landing.colStatus')}</div>
+                  <div className="col-span-4">{t('landing.colTitle')}</div>
+                  <div className="col-span-2">{t('landing.colLecture')}</div>
+                  <div className="col-span-2">{t('landing.colResult')}</div>
+                  <div className="col-span-2">{t('landing.colCreated')}</div>
                   <div className="col-span-1 text-right" />
                 </div>
                 {sessions.map((s) => (
@@ -673,6 +677,7 @@ function SessionCard({
   onDelete: () => void
   formattedDate: string
 }) {
+  const t = useTranslations('myQuiz')
   const isCreating = session.status === 'CREATING'
   const isFailed = session.status === 'FAILED'
   const isCompleted = session.status === 'COMPLETED'
@@ -703,22 +708,25 @@ function SessionCard({
               {lectureLabel}
             </span>
             <span className="text-gray-300">·</span>
-            <span className="text-gray-400">{session.quiz_count}문항</span>
+            <span className="text-gray-400">
+              {t('session.quizCount', { count: session.quiz_count })}
+            </span>
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-600">
             <Loader2 className="h-3 w-3 animate-spin" />
-            생성 중
+            {t('session.creating')}
           </span>
         </div>
         <h3 className="mb-1 truncate text-base font-bold text-gray-900 dark:text-gray-50">
-          {session.title || '새 퀴즈 세션'}
+          {session.title || t('card.newSessionTitle')}
         </h3>
         <p className="mb-3 text-xs text-gray-400">
-          <Calendar className="inline h-3 w-3" /> 방금 시작 · 약 {remainingMin}분 남음
+          <Calendar className="inline h-3 w-3" />{' '}
+          {t('card.justStarted', { min: remainingMin })}
         </p>
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="text-gray-500">AI 생성 진행</span>
+            <span className="text-gray-500">{t('card.aiProgress')}</span>
             <span className="font-semibold text-blue-600">
               {session.generated_count ?? 0}/{session.quiz_count}
             </span>
@@ -731,7 +739,7 @@ function SessionCard({
           </div>
         </div>
         <p className="text-xs text-blue-600">
-          <Sparkles className="inline h-3 w-3" /> AI가 회차 내용에 맞춰 문제를 작성하고 있어요
+          <Sparkles className="inline h-3 w-3" /> {t('card.aiWriting')}
         </p>
       </article>
     )
@@ -746,18 +754,18 @@ function SessionCard({
               {lectureLabel}
             </span>
             <span className="text-gray-300">·</span>
-            <span className="text-gray-400">생성 시도</span>
+            <span className="text-gray-400">{t('card.creationAttempt')}</span>
           </div>
           <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-600">
             <AlertTriangle className="h-3 w-3" />
-            실패
+            {t('session.failed')}
           </span>
         </div>
         <h3 className="mb-1 truncate text-base font-bold text-red-700">
-          생성 중 오류 발생
+          {t('card.creationError')}
         </h3>
         <p className="mb-3 text-xs text-red-500">
-          학습 데이터가 충분하지 않거나 일시적인 문제로 생성에 실패했습니다
+          {t('card.creationErrorDesc')}
         </p>
         <div className="flex items-center justify-between border-t border-red-100 pt-3 text-xs">
           <span className="text-gray-400">{formattedDate}</span>
@@ -765,7 +773,7 @@ function SessionCard({
             onClick={onDelete}
             className="font-semibold text-red-500 hover:text-red-700"
           >
-            삭제
+            {t('landing.delete')}
           </button>
         </div>
       </article>
@@ -793,7 +801,9 @@ function SessionCard({
             {lectureLabel}
           </span>
           <span className="text-gray-300">·</span>
-          <span className="text-gray-400">{session.quiz_count}문항</span>
+          <span className="text-gray-400">
+            {t('session.quizCount', { count: session.quiz_count })}
+          </span>
           {/* 진행도 배지 — 휴지통(우상단 absolute)과 겹치지 않게 문항 수 오른쪽으로 이동 */}
           {!(isSolvingComplete && scorePercent != null) && (
             stats && stats.answered > 0 ? (
@@ -801,13 +811,13 @@ function SessionCard({
                 <span className="text-gray-300">·</span>
                 <span className="inline-flex items-center gap-1 text-blue-600">
                   <Clock className="h-3 w-3" />
-                  진행 중
+                  {t('session.solvingInProgress')}
                 </span>
               </>
             ) : (
               <>
                 <span className="text-gray-300">·</span>
-                <span className="text-gray-500">미시작</span>
+                <span className="text-gray-500">{t('session.solvingNotStarted')}</span>
               </>
             )
           )}
@@ -824,16 +834,17 @@ function SessionCard({
       </div>
 
       <h3 className="mb-1 truncate text-base font-bold text-gray-900 dark:text-gray-50">
-        {session.title || `${lectureLabel} 퀴즈 세션`}
+        {session.title || t('card.lectureSessionTitle', { lecture: lectureLabel })}
       </h3>
       <p className="mb-3 text-xs text-gray-400">
-        <Calendar className="inline h-3 w-3" /> {formattedDate} 생성
+        <Calendar className="inline h-3 w-3" />{' '}
+        {t('card.createdOn', { date: formattedDate })}
       </p>
 
       {stats && stats.answered > 0 && !isSolvingComplete && (
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="text-gray-500">진행률</span>
+            <span className="text-gray-500">{t('session.progressRate')}</span>
             <span className="font-semibold text-gray-700 dark:text-gray-300">
               {stats.answered}/{stats.total}
             </span>
@@ -852,14 +863,17 @@ function SessionCard({
       <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs dark:border-gray-800">
         <span className="text-gray-500">
           {isSolvingComplete
-            ? '풀이 완료'
+            ? t('card.solvingComplete')
             : stats && stats.answered > 0
-              ? `정답률 ${
-                  stats.answered > 0
-                    ? Math.round((stats.correct / stats.answered) * 100)
-                    : 0
-                }% · ${stats.correct}/${stats.answered}`
-              : `${session.quiz_count}문항 대기 중`}
+              ? t('card.accuracy', {
+                  percent:
+                    stats.answered > 0
+                      ? Math.round((stats.correct / stats.answered) * 100)
+                      : 0,
+                  correct: stats.correct,
+                  answered: stats.answered,
+                })
+              : t('card.questionsWaiting', { count: session.quiz_count })}
         </span>
         <button
           onClick={(e) => {
@@ -873,10 +887,10 @@ function SessionCard({
           }`}
         >
           {isSolvingComplete
-            ? '결과 보기'
+            ? t('session.viewResult')
             : stats && stats.answered > 0
-              ? '계속하기'
-              : '풀이 시작'}
+              ? t('session.continueSession')
+              : t('card.startSolving')}
           <ArrowRight className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -887,7 +901,7 @@ function SessionCard({
           onDelete()
         }}
         className="absolute top-4 right-4 rounded-md p-1 text-gray-300 opacity-0 transition hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-        title="삭제"
+        title={t('landing.delete')}
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -908,6 +922,7 @@ function SessionListRow({
   onSelect: () => void
   formattedDate: string
 }) {
+  const t = useTranslations('myQuiz')
   const isCreating = session.status === 'CREATING'
   const isFailed = session.status === 'FAILED'
   const isSolvingComplete =
@@ -920,7 +935,7 @@ function SessionListRow({
   let StatusIcon: ComponentType<SVGProps<SVGSVGElement>> = CircleDashed
   let statusColor = 'bg-gray-100 text-gray-400'
   let resultNode: React.ReactNode = (
-    <span className="text-xs text-gray-400">미시작</span>
+    <span className="text-xs text-gray-400">{t('session.solvingNotStarted')}</span>
   )
 
   if (isCreating) {
@@ -946,7 +961,9 @@ function SessionListRow({
   } else if (isFailed) {
     StatusIcon = AlertTriangle
     statusColor = 'bg-red-100 text-red-600'
-    resultNode = <span className="text-xs text-red-500">학습 데이터 부족</span>
+    resultNode = (
+      <span className="text-xs text-red-500">{t('card.insufficientData')}</span>
+    )
   } else if (isSolvingComplete && scorePercent != null) {
     StatusIcon = CheckCircle2
     statusColor =
@@ -1007,11 +1024,12 @@ function SessionListRow({
         className={`col-span-4 truncate text-sm font-bold ${isFailed ? 'text-red-700' : 'text-gray-900 dark:text-gray-50'}`}
       >
         {isFailed
-          ? '생성 중 오류 발생'
-          : session.title || `${lectureLabel} 퀴즈 세션`}
+          ? t('card.creationError')
+          : session.title ||
+            t('card.lectureSessionTitle', { lecture: lectureLabel })}
       </div>
       <div className="col-span-2 text-xs text-gray-500">
-        {lectureLabel} · {session.quiz_count}문항
+        {lectureLabel} · {t('session.quizCount', { count: session.quiz_count })}
       </div>
       <div className="col-span-2">{resultNode}</div>
       <div className="col-span-2 text-xs text-gray-400">{formattedDate}</div>
@@ -1025,22 +1043,24 @@ function SessionListRow({
 }
 
 function EmptyState({ onCreate }: { onCreate: () => void }) {
+  const t = useTranslations('myQuiz')
   return (
     <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F5F3FF] to-[#E0E7FF]">
         <Pencil className="h-7 w-7 text-[#6366F1]" />
       </div>
       <h3 className="mb-1 text-base font-bold text-gray-900 dark:text-gray-50">
-        아직 만든 퀴즈가 없어요
+        {t('landing.emptyTitle')}
       </h3>
       <p className="mb-5 text-sm text-gray-500">
-        회차를 골라 약점 보완용 퀴즈를 직접 만들어보세요. 평균 1~2분이면 완성됩니다.
+        {t('landing.emptyDesc')}
       </p>
       <button
         onClick={onCreate}
         className="inline-flex items-center gap-1.5 rounded-lg bg-[#6366F1] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#4F46E5]"
       >
-        <Plus className="h-4 w-4" />첫 퀴즈 만들기
+        <Plus className="h-4 w-4" />
+        {t('landing.emptyCta')}
       </button>
     </div>
   )
