@@ -109,11 +109,11 @@ function formatRelative(
   const diff = Date.now() - ts
   const day = 24 * 60 * 60 * 1000
   const days = Math.floor(diff / day)
-  if (days <= 0) return t('today')
-  if (days === 1) return t('yesterday')
-  if (days < 7) return t('daysAgo', { n: days })
-  if (days < 30) return t('weeksAgo', { n: Math.floor(days / 7) })
-  return t('monthsAgo', { n: Math.floor(days / 30) })
+  if (days <= 0) return t('storage.today')
+  if (days === 1) return t('storage.yesterday')
+  if (days < 7) return t('storage.daysAgo', { n: days })
+  if (days < 30) return t('storage.weeksAgo', { n: Math.floor(days / 7) })
+  return t('storage.monthsAgo', { n: Math.floor(days / 30) })
 }
 
 export default function QuizStorageContainer() {
