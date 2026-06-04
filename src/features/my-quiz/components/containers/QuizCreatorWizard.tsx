@@ -67,6 +67,8 @@ const PRESETS: Record<string, Record<QuizType, number>> = {
 
 interface QuizCreatorWizardProps {
   lectures: LectureItem[]
+  /** 외부 딥링크로 사전 선택할 회차 id (이메일 '퀴즈 생성하기' 등). 없으면 미선택. */
+  initialLectureId?: string | null
   isSubmitting: boolean
   error: string | null
   onSubmit: (
@@ -79,6 +81,7 @@ interface QuizCreatorWizardProps {
 
 export default function QuizCreatorWizard({
   lectures,
+  initialLectureId = null,
   isSubmitting,
   error,
   onSubmit,
@@ -86,7 +89,7 @@ export default function QuizCreatorWizard({
 }: QuizCreatorWizardProps) {
   const t = useTranslations('myQuiz')
   const locale = useLocale()
-  const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
+  const [selectedLectureId, setSelectedLectureId] = useState<string | null>(initialLectureId)
   const [counts, setCounts] = useState<Record<QuizType, number>>({
     DEF_TO_TERM: 0,
     TERM_TO_DEF: 0,
