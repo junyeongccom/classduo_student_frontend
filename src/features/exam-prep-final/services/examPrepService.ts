@@ -41,11 +41,17 @@ export interface CoreTestQuestionItemDto {
   options: string[]
   /** 영문 선지 배열 (한국어와 1:1 대응, 정답 인덱스 동일) */
   options_eng?: string[] | null
-  /** "0"~"3" 문자열 인덱스 */
+  /** "0"~"3" 문자열 인덱스 (레거시 단일 4지선다). payload 유형은 미사용. */
   answer: string
   explanation: Record<string, string>
   /** 영문 해설 (선지별 키 opt0~opt3, 한국어와 동일 구조) */
   explanation_eng?: Record<string, string> | null
+  /** B2C식 유형. null/undefined = 레거시 단일 4지선다(options/answer 사용). 그 외는 payload 사용 */
+  question_format?: string | null
+  /** 유형별 구조 데이터 (choices/correct_answer/left_items/right_items/correct_pairs/model_answer 등) */
+  payload?: Record<string, unknown> | null
+  /** payload 영문 버전 (한영 토글) */
+  payload_eng?: Record<string, unknown> | null
   hint?: string | null
   hint_eng?: string | null
   source_ref?: { source_pages?: number[]; source_chunks?: number[] } | null
