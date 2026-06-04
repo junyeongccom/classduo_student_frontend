@@ -21,7 +21,7 @@ import {
   type ComponentType,
   type SVGProps,
 } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { useFormatter, useTranslations } from 'next-intl'
 import {
   AlertTriangle,
@@ -65,6 +65,10 @@ const ALLOWED_QUIZ_TYPES = [
 export default function QuizCreatorContainer() {
   const params = useParams<{ courseId?: string }>()
   const courseIdParam = params?.courseId ?? null
+  // 이메일 등 외부 딥링크: ?new=1 → 위저드 바로 진입, &lectureId= → 해당 회차 사전 선택
+  const searchParams = useSearchParams()
+  const wantNewQuiz = searchParams?.get('new') === '1'
+  const deepLinkLectureId = searchParams?.get('lectureId') ?? null
   const t = useTranslations('myQuiz')
   const format = useFormatter()
   const { toasts, error: showErrorToast } = useToast()
@@ -79,7 +83,7 @@ export default function QuizCreatorContainer() {
   // 이전 구현은 자동 첫강좌 선택 → URL 보정 두 단계로 selectedCourseId 가 두 번 변경되어
   // fetchSessions 두 번 실행 + 깜빡임 발생.
 
-  const [view, setView] = useState<View>('landing')
+  const [view, setView] = useState<View>(wantNewQuiz ? 'wizard' : 'landing')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
   const [sessions, setSessions] = useState<QuizSession[]>([])
@@ -395,6 +399,7 @@ export default function QuizCreatorContainer() {
     return (
       <QuizCreatorWizard
         lectures={lectures}
+        initialLectureId={deepLinkLectureId}
         isSubmitting={isCreating}
         error={createError}
         onSubmit={handleWizardSubmit}
