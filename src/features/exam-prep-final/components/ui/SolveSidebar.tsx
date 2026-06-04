@@ -38,6 +38,8 @@ interface SolveSidebarProps {
   elapsedSec: number
   /** Phase5 결과 화면처럼 모바일에서 progress bar 불필요한 케이스에서 모바일 부분 통째로 숨김 */
   hideOnMobile?: boolean
+  /** 풀이 캔버스(1920×1080 contain) 내부 렌더 — cqw 비례 + 항상 표시 + 시안 매칭. */
+  scaled?: boolean
 }
 
 const STATE_BG: Record<MasteryState, string> = {
@@ -57,9 +59,107 @@ export function SolveSidebar({
   onSelectSeq,
   elapsedSec,
   hideOnMobile = false,
+  scaled = false,
 }: SolveSidebarProps) {
   const t = useTranslations()
   const seqs = Array.from({ length: total }, (_, i) => i + 1)
+
+  // ─── 풀이 캔버스 내부 렌더 (cqw 비례, 시안 매칭) ───
+  if (scaled) {
+    const legend = [
+      ['learning', '#D9D9D9', 'Learning', masterySummary.learning],
+      ['skilled', '#FFCD36', 'Skilled', masterySummary.skilled],
+      ['master', '#A78BFA', 'Master', masterySummary.master],
+    ] as const
+    return (
+      <aside
+        className="flex h-full shrink-0 flex-col bg-white dark:bg-gray-900"
+        style={{
+          width: '15.36cqw' /* 295/1920 */,
+          borderRight: '0.052cqw solid rgb(233 235 239)',
+          padding: '2.6cqw 1.77cqw' /* 50 / 34 px @1920 */,
+          gap: '1.77cqw',
+        }}
+      >
+        {/* 회차 정보 */}
+        <div>
+          <p className="text-gray-400" style={{ fontSize: '0.78cqw', lineHeight: 1.3 }}>
+            {sessionLabel}
+          </p>
+          <h2
+            className="font-bold text-gray-900 dark:text-gray-50 break-keep"
+            style={{ fontSize: '1.51cqw', marginTop: '0.26cqw', lineHeight: 1.2 }}
+          >
+            {lectureTitle}
+          </h2>
+        </div>
+
+        {/* 숙련도 범례 */}
+        <div className="flex flex-col" style={{ gap: '0.55cqw' }}>
+          {legend.map(([key, color, label, count]) => (
+            <div key={key} className="flex items-center" style={{ gap: '0.62cqw' }}>
+              <span
+                className="inline-block shrink-0 rounded-full"
+                style={{ width: '0.73cqw', height: '0.73cqw', backgroundColor: color }}
+              />
+              <span
+                className="font-bold text-gray-800 dark:text-gray-200"
+                style={{ fontSize: '0.78cqw' }}
+              >
+                {label}
+              </span>
+              <span
+                className="ml-auto tabular-nums text-gray-700 dark:text-gray-300"
+                style={{ fontSize: '0.78cqw' }}
+              >
+                {count}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* 문항 그리드 — 5열. 현재 문항은 더 크게 + 굵게 (사용자 요청). */}
+        <div className="grid grid-cols-5" style={{ gap: '0.62cqw', placeItems: 'center' }}>
+          {seqs.map((seq) => {
+            const isCurrent = seq === currentSeq
+            const state = seqStateMap.get(seq)
+            const bg =
+              state === 'master' ? '#A78BFA' : state === 'skilled' ? '#FFCD36' : '#F0F1F4'
+            const fg = state === 'master' ? '#ffffff' : '#1F2937'
+            const size = isCurrent ? '2.55cqw' : '2.08cqw'
+            return (
+              <button
+                key={seq}
+                type="button"
+                onClick={() => onSelectSeq(seq)}
+                className="flex items-center justify-center rounded-full leading-none"
+                style={{
+                  width: size,
+                  height: size,
+                  backgroundColor: bg,
+                  color: fg,
+                  fontSize: isCurrent ? '1.04cqw' : '0.78cqw',
+                  fontWeight: isCurrent ? 800 : 600,
+                }}
+              >
+                {seq}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 경과 시간 */}
+        <div className="flex items-center justify-between" style={{ fontSize: '0.83cqw' }}>
+          <span className="font-bold text-gray-500 dark:text-gray-400">
+            {t('examPrepFinal.elapsedTime')}
+          </span>
+          <span className="tabular-nums text-gray-900 dark:text-gray-50">
+            {formatElapsed(elapsedSec)}
+          </span>
+        </div>
+      </aside>
+    )
+  }
 
   return (
     <>

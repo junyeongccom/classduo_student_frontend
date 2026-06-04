@@ -1,18 +1,11 @@
 /**
  * @file FillBlankDnd.tsx
- * @description 빈칸채우기 공통 컴포넌트 (dnd-kit). 단어 칩을 빈칸에 드래그.
- *              question_text 의 ___ 시퀀스를 빈칸 위치로 파싱 → 빈칸 N개 배치.
- *              5지선다 1개 빈칸 (시안 339:8328):
- *                - 상단 3 chips + 하단 2 chips 를 **absolute 위치** 로 스캐터 배치
- *                  (justify-around 같은 균등 정렬 X — 시안처럼 흩어진 느낌).
- *                - 문장 박스는 넓은 padding 으로 시원하게.
- *                - 문장 내부는 flex-wrap 이 아니라 일반 <p> + inline-flex blank → 단어 단위 자연 wrap.
- *              7지선다 2개 빈칸: 기존 flex-wrap (placed 항목 collapse).
- *              빈칸 시각:
- *                - 비어있음: 검정 placeholder
- *                - 채워짐: 칩과 동일 회색 bg + 중앙 정렬 텍스트
- *                - 채점 정답: bg 그대로 + 텍스트만 파랑 (mastery-master)
- *                - 채점 오답: bg 그대로 + 텍스트만 빨강 (semantic-delete)
+ * @description 빈칸채우기 공통 컴포넌트 (dnd-kit). 디자이너 시안(B2B) 매칭.
+ *              - 상단 지시문 + 가운데 큰 문장(인라인 빈칸 박스) + 하단 흰 그림자 pill 칩.
+ *              - 칩은 content-sized + flex-wrap(justify-center) →
+ *                  5지선다: 짧은 선지는 한 줄(5개), 길어지면 자연스럽게 여러 행(≈2열).
+ *                  7지선다: 폭에 맞춰 4+3 행으로 wrap.
+ *              - 빈칸: 흰 라운드 박스(빈 상태=옅은 보더). 채움=칩 텍스트. 채점=텍스트 색만 변경.
  * @module features/exam-prep-final/components/ui/forms
  * @dependencies @dnd-kit/core
  */
@@ -37,8 +30,10 @@ import {
 
 import { cn } from "@/shared/lib/utils";
 
-// 마우스 포인터가 droppable 영역 안이면 그 droppable 선택. 포인터가 어떤 droppable 위에도 없으면
-// 박스끼리 겹치는 droppable 로 폴백.
+const C_BLACK = "var(--color-neutral-black-hex)";
+const C_MASTER = "var(--color-mastery-master)";
+const C_DELETE = "rgb(var(--color-semantic-delete))";
+
 const pointerCollisionDetection: CollisionDetection = (args) => {
   const pointer = pointerWithin(args);
   if (pointer.length > 0) return pointer;
@@ -58,54 +53,12 @@ export type FillBlankDndProps = {
   feedbackSlot?: React.ReactNode;
 };
 
-// 칩 위치 — 좌측 % 와 세로 offset. 가운데 칩을 raise 해서 "흩어진 느낌".
-type ChipPos = { left: string; top: string };
-
-// 5지선다 1개 빈칸 — 상단 3 + 하단 2.
-const TOP_5: ChipPos[] = [
-  { left: "15%", top: "1vw" }, // 좌
-  { left: "50%", top: "0" },   // 중앙 (raised)
-  { left: "82%", top: "1vw" }, // 우
-];
-const BOTTOM_5: ChipPos[] = [
-  { left: "32%", top: "0" },
-  { left: "62%", top: "0" },
-];
-
-// 7지선다 2개 빈칸 — 상단 4 + 하단 3.
-const TOP_7: ChipPos[] = [
-  { left: "12%", top: "1vw" },
-  { left: "38%", top: "0" },   // raised
-  { left: "62%", top: "1vw" },
-  { left: "88%", top: "0" },   // raised
-];
-const BOTTOM_7: ChipPos[] = [
-  { left: "20%", top: "1vw" },
-  { left: "50%", top: "0" },   // 중앙 (raised)
-  { left: "80%", top: "1vw" },
-];
-
-// 칩 행 container 높이 — chip height (~2.76vw) + max offset (1vw) + 약간 여유. 모바일 min 56px.
-const CHIP_ROW_HEIGHT = "clamp(56px, 3.75vw, 88px)";
-
-/**
- * 선지 폰트 크기 자동 축소 — scatter 레이아웃 칩들이 길어지면 서로 겹치는 문제 해결.
- * 기준 길이 8자 이하는 1.0, 그 이상은 linear 감소. 최소 0.55 까지.
- * 16자 ≈ 0.78, 20자 ≈ 0.62, 24자 ≈ 0.55(cap).
- */
+/** 선지 길이에 따른 폰트 스케일 — 긴 선지일수록 약간 축소(겹침 방지). */
 function computeChipFontScale(choices: string[]): number {
   if (choices.length === 0) return 1;
   const maxLen = Math.max(...choices.map((c) => c.length));
   if (maxLen <= 8) return 1;
-  return Math.max(0.55, 1 - (maxLen - 8) * 0.03);
-}
-
-/** scale factor 적용된 clamp() 문자열 생성 — fontSize 일관성 위해 chip/blank/overlay 공유. */
-function scaledFontClamp(scale: number): string {
-  const minPx = 14 * scale;
-  const vw = 1.5 * scale;
-  const maxPx = 32 * scale;
-  return `clamp(${minPx.toFixed(1)}px, ${vw.toFixed(3)}vw, ${maxPx.toFixed(1)}px)`;
+  return Math.max(0.62, 1 - (maxLen - 8) * 0.03);
 }
 
 export function FillBlankDnd({
@@ -126,21 +79,10 @@ export function FillBlankDnd({
   );
   const [draggingChipIdx, setDraggingChipIdx] = useState<number | null>(null);
 
-  // 선지 길이에 따른 폰트 스케일 — 모든 chip / blank / drag overlay 에 동일 적용해 시각 일관성 유지.
   const fontScale = useMemo(() => computeChipFontScale(choices), [choices]);
-  const chipFontSize = useMemo(() => scaledFontClamp(fontScale), [fontScale]);
-
-  // 스캐터 레이아웃 적용 — 5지/1빈칸, 7지/2빈칸.
-  const scatterLayout: { top: ChipPos[]; bottom: ChipPos[] } | null =
-    choices.length === 5 && blanksCount === 1
-      ? { top: TOP_5, bottom: BOTTOM_5 }
-      : choices.length === 7 && blanksCount === 2
-        ? { top: TOP_7, bottom: BOTTOM_7 }
-        : null;
-  const useScatterLayout = scatterLayout !== null;
+  const chipFontSize = `${(1.15 * fontScale).toFixed(3)}cqw`;
 
   const parts = useMemo(() => questionText.split(/_{2,}/), [questionText]);
-
   const usedChipIndexes = new Set(value.filter((v): v is number => v !== null));
   const availableChips = choices
     .map((label, idx) => ({ label, idx }))
@@ -186,81 +128,24 @@ export function FillBlankDnd({
 
   const draggingLabel = draggingChipIdx !== null ? choices[draggingChipIdx] : null;
 
-  // 스캐터 배치 — chip 의 절대 위치에 렌더 (placed 면 null → 사라짐).
-  const renderChipAtPosition = (idx: number, pos: ChipPos) => {
-    const isPlaced = usedChipIndexes.has(idx);
-    if (isPlaced) return null;
-    const isEliminatedHint = eliminatedIdx === idx && !isCorrect && isCorrect !== false;
-    return (
-      <div
-        key={idx}
-        className="absolute"
-        style={{
-          left: pos.left,
-          top: pos.top,
-          transform: "translateX(-50%)",
-        }}
-      >
-        <DraggableChip
-          chipIdx={idx}
-          label={choices[idx]}
-          disabled={disabled || eliminatedIdx === idx}
-          eliminated={isEliminatedHint}
-          fontSize={chipFontSize}
-        />
-      </div>
-    );
-  };
-
-  // 문장 박스 — 시원한 padding + 단어 단위 자연 wrap (flex 아님).
-  // padding/line-height 는 한 화면 fit 위해 컴팩트하게 (특히 7-다중 3줄 wrap 대비).
-  const sentenceBox = (
-    <div
-      className="w-full rounded-md bg-white"
-      style={{
-        border: "max(2px, 0.156vw) solid var(--color-neutral-black-hex)" /* 3/1920 */,
-        padding: "clamp(14px, 1.667vw, 36px) clamp(16px, 2.5vw, 56px)" /* 32/48 px @ 1920 */,
-        minHeight: "clamp(80px, 6vw, 140px)" /* 115/1920 */,
-      }}
-    >
-      <p
-        className="break-keep text-[var(--color-neutral-black-hex)]"
-        style={{
-          fontSize: "clamp(16px, 1.667vw, 36px)" /* 32/1920 */,
-          lineHeight: 1.5,
-          wordBreak: "keep-all" as const,
-        }}
-      >
-        {parts.map((text, i) => {
-          const isLastPart = i === parts.length - 1;
-          const blankIdx = i;
-          const hasBlank = !isLastPart && blankIdx < blanksCount;
-          return (
-            <Fragment key={i}>
-              {text}
-              {hasBlank ? (
-                <DroppableBlank
-                  blankIdx={blankIdx}
-                  chipIdx={value[blankIdx]}
-                  chipLabel={
-                    value[blankIdx] !== null ? choices[value[blankIdx] as number] : null
-                  }
-                  onClear={() => clearBlank(blankIdx)}
-                  disabled={disabled}
-                  isCorrect={
-                    typeof isCorrect === "boolean"
-                      ? isCorrect && correctIndexes.includes(value[blankIdx] as number)
-                      : null
-                  }
-                  fontSize={chipFontSize}
-                />
-              ) : null}
-            </Fragment>
-          );
-        })}
-      </p>
-    </div>
-  );
+  // 칩 배치 — 5지선다(빈칸 1개): 짧으면 1행(5개), 길면 2열 그리드(시안/요청).
+  // 그 외(7지 등): content-sized flex-wrap (폭에 맞춰 4+3 등).
+  const maxChoiceLen = choices.reduce((m, c) => Math.max(m, c.length), 0);
+  const fiveSingle = blanksCount === 1 && choices.length === 5;
+  const chipContainerStyle: React.CSSProperties =
+    fiveSingle && maxChoiceLen <= 5
+      ? { display: "grid", gridTemplateColumns: "repeat(5, max-content)", justifyContent: "center", gap: "1.15cqw" }
+      : fiveSingle
+        ? {
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            justifyItems: "center",
+            columnGap: "1.6cqw",
+            rowGap: "1.15cqw",
+            maxWidth: "36cqw",
+            margin: "0 auto",
+          }
+        : { display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "1.15cqw", maxWidth: "44cqw" };
 
   return (
     <DndContext
@@ -269,63 +154,74 @@ export function FillBlankDnd({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className="flex w-full flex-col" style={{ gap: "clamp(12px, 1.04vw, 24px)" /* 20/1920 */ }}>
-        <h1
-          className="font-semibold leading-snug text-[var(--color-neutral-black-hex)] break-keep"
-          style={{ fontSize: "clamp(18px, 1.875vw, 40px)" /* 36/1920 */ }}
-        >
-          아래 문장에 알맞은 단어를 드래그하여 넣으세요.
+      <div className="flex h-full w-full flex-col" style={{ gap: "1.04cqw" }}>
+        {/* 지시문 */}
+        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "1.875cqw", color: C_BLACK }}>
+          빈칸에 들어갈 알맞은 단어를 넣으세요.
         </h1>
-        <div
-          className="flex w-full shrink-0 items-center"
-          style={{ minHeight: "clamp(32px, 2.604vw, 60px)" /* 50/1920 */ }}
-        >
+        <div className="flex w-full shrink-0 items-center" style={{ minHeight: "1.4cqw" }}>
           {feedbackSlot}
         </div>
 
-        {useScatterLayout && scatterLayout ? (
-          <div
-            className="flex w-full flex-col items-stretch"
-            style={{ gap: "clamp(10px, 0.833vw, 22px)" /* 16/1920 — 컴팩트 */ }}
+        {/* 문장 + 칩 — 세로 중앙, 넉넉한 간격 */}
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center" style={{ gap: "4cqw" }}>
+          {/* 문장 (인라인 빈칸) */}
+          <p
+            className="w-full break-keep text-center"
+            style={{ fontSize: "1.667cqw", lineHeight: 1.7, maxWidth: "42cqw", color: C_BLACK }}
           >
-            {/* 상단 chips — absolute scattered */}
-            <div className="relative w-full" style={{ height: CHIP_ROW_HEIGHT }}>
-              {scatterLayout.top.map((pos, i) => renderChipAtPosition(i, pos))}
-            </div>
-            {sentenceBox}
-            {/* 하단 chips — absolute scattered */}
-            <div className="relative w-full" style={{ height: CHIP_ROW_HEIGHT }}>
-              {scatterLayout.bottom.map((pos, i) =>
-                renderChipAtPosition(scatterLayout.top.length + i, pos),
-              )}
-            </div>
+            {parts.map((text, i) => {
+              const isLastPart = i === parts.length - 1;
+              const blankIdx = i;
+              const hasBlank = !isLastPart && blankIdx < blanksCount;
+              return (
+                <Fragment key={i}>
+                  {text}
+                  {hasBlank ? (
+                    <DroppableBlank
+                      blankIdx={blankIdx}
+                      chipIdx={value[blankIdx]}
+                      chipLabel={value[blankIdx] !== null ? choices[value[blankIdx] as number] : null}
+                      onClear={() => clearBlank(blankIdx)}
+                      disabled={disabled}
+                      isCorrect={
+                        typeof isCorrect === "boolean"
+                          ? isCorrect && correctIndexes.includes(value[blankIdx] as number)
+                          : null
+                      }
+                      fontSize={chipFontSize}
+                    />
+                  ) : null}
+                </Fragment>
+              );
+            })}
+          </p>
+
+          {/* 칩 — 5지: 짧으면 1행/길면 2열, 그 외: wrap (chipContainerStyle). */}
+          <div className="w-full" style={chipContainerStyle}>
+            {availableChips.map((c) => (
+              <DraggableChip
+                key={c.idx}
+                chipIdx={c.idx}
+                label={c.label}
+                disabled={disabled || eliminatedIdx === c.idx}
+                eliminated={eliminatedIdx === c.idx && !isCorrect && isCorrect !== false}
+                fontSize={chipFontSize}
+              />
+            ))}
           </div>
-        ) : (
-          <div className="flex w-full flex-col" style={{ gap: "clamp(14px, 1.5vw, 32px)" }}>
-            <div className="flex flex-wrap" style={{ gap: "clamp(10px, 1vw, 22px)" /* 19/1920 */ }}>
-              {availableChips.map((c) => (
-                <DraggableChip
-                  key={c.idx}
-                  chipIdx={c.idx}
-                  label={c.label}
-                  disabled={disabled || eliminatedIdx === c.idx}
-                  eliminated={eliminatedIdx === c.idx && !isCorrect && isCorrect !== false}
-                  fontSize={chipFontSize}
-                />
-              ))}
-            </div>
-            {sentenceBox}
-          </div>
-        )}
+        </div>
       </div>
+
       <DragOverlay>
         {draggingLabel ? (
           <span
-            className="select-none rounded-md bg-[rgb(var(--color-neutral-gray-100))] font-medium text-[var(--color-neutral-black-hex)] shadow-md"
+            className="select-none rounded-[0.6cqw] bg-white font-medium shadow-lg"
             style={{
-              padding: "clamp(8px, 0.625vw, 14px) clamp(14px, 1.5vw, 32px)",
+              padding: "0.62cqw 1.4cqw",
               fontSize: chipFontSize,
               lineHeight: 1.2,
+              color: C_BLACK,
             }}
           >
             {draggingLabel}
@@ -347,7 +243,6 @@ function DraggableChip({
   label: string;
   disabled?: boolean;
   eliminated?: boolean;
-  /** 부모(FillBlankDnd) 가 choices 길이 기반으로 계산해 일관 적용. */
   fontSize: string;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -365,15 +260,18 @@ function DraggableChip({
       style={{
         opacity: isDragging ? 0 : 1,
         touchAction: "none",
-        padding: "clamp(8px, 0.625vw, 14px) clamp(14px, 1.5vw, 32px)" /* 12/29 px @ 1920 */,
-        minWidth: "clamp(72px, 7vw, 160px)" /* 134/1920 — 한글 4~5자 까지 nowrap 으로 fit */,
+        padding: "0.62cqw 1.5cqw",
+        minWidth: "5cqw",
+        maxWidth: "20cqw",
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
+        color: C_BLACK,
+        boxShadow: "0 0.1cqw 0.5cqw rgba(17,24,39,0.12)",
       }}
       className={cn(
-        "select-none rounded-md bg-[rgb(var(--color-neutral-gray-100))] text-center font-medium text-[var(--color-neutral-black-hex)]",
-        !disabled && "cursor-grab active:cursor-grabbing",
+        "select-none rounded-[0.6cqw] bg-white text-center font-medium",
+        !disabled && "cursor-grab active:cursor-grabbing hover:shadow-md",
         disabled && !eliminated && "opacity-60",
         eliminated && "cursor-not-allowed opacity-30 line-through",
       )}
@@ -398,49 +296,41 @@ function DroppableBlank({
   onClear: () => void;
   disabled?: boolean;
   isCorrect: boolean | null;
-  /** 부모(FillBlankDnd) 가 choices 길이 기반으로 계산해 일관 적용. */
   fontSize: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `blank-${blankIdx}` });
   const isEmpty = chipIdx === null;
   const textColor =
-    isCorrect === true
-      ? "var(--color-mastery-master)"
-      : isCorrect === false
-        ? "rgb(var(--color-semantic-delete))"
-        : "var(--color-neutral-black-hex)";
+    isCorrect === true ? C_MASTER : isCorrect === false ? C_DELETE : C_BLACK;
   return (
     <span
       ref={setNodeRef}
       onClick={onClear}
       style={{
-        // inline-flex 로 문장 안에서 자연스럽게 흐름.
         display: "inline-flex",
         verticalAlign: "middle",
         alignItems: "center",
         justifyContent: "center",
         textAlign: "center",
-        // 칩과 동일 dimension/스타일 + nowrap.
-        padding: "clamp(8px, 0.625vw, 14px) clamp(14px, 1.5vw, 32px)" /* 12/29 px @ 1920 */,
-        minWidth: "clamp(72px, 7vw, 160px)" /* 134/1920 — 칩과 매칭, 빈상태도 충분히 보이는 크기 */,
+        padding: "0.42cqw 1.4cqw",
+        minWidth: "7cqw",
+        margin: "0 0.4cqw",
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
-        // 빈칸: 검정. 채워짐: 칩과 동일 회색.
-        backgroundColor: isEmpty
-          ? "var(--color-neutral-black-hex)"
-          : "rgb(var(--color-neutral-gray-100))",
+        backgroundColor: "#ffffff",
+        border: `0.08cqw solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
+        boxShadow: isEmpty ? "inset 0 0.08cqw 0.3cqw rgba(17,24,39,0.06)" : "0 0.1cqw 0.4cqw rgba(17,24,39,0.1)",
         color: isEmpty ? "transparent" : textColor,
         fontWeight: isCorrect === true || isCorrect === false ? 700 : 500,
-        margin: "0 4px" /* 약간의 좌우 여유 */,
       }}
       className={cn(
-        "select-none rounded-md cursor-pointer transition-colors",
+        "select-none rounded-[0.5cqw] cursor-pointer transition-colors",
         isOver && isEmpty && "ring-2 ring-[var(--color-mastery-master)]",
         disabled && "cursor-not-allowed",
       )}
     >
-      {chipLabel ?? " "}
+      {chipLabel ?? " "}
     </span>
   );
 }

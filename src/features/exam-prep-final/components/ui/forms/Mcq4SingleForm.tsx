@@ -1,9 +1,9 @@
 /**
  * @file Mcq4SingleForm.tsx
- * @description 4지선다 단수 객관식 — Figma 시안 591:4034 매칭.
- *              네모 박스로 둘러쌓인 4개 선지가 인접 보더를 공유하며 세로 스택.
- *              선택중인 선지는 외곽 보더 3px + 텍스트 SemiBold/Bold 로 강조.
- *              모든 치수는 1920 baseline vw 환산 (viewport 폭에 비례 스케일).
+ * @description 4지선다 단수 객관식 — 디자이너 시안(B2B) 매칭.
+ *              분리된 흰 라운드 박스 4개가 세로 스택(박스 간 gap). 각 박스: letter + 세로 구분선 + 텍스트.
+ *              선택중 = 보라 보더. 채점 후 정/오답 색상 로직 보존.
+ *              모든 치수는 SolveCanvas 기준 cqw(=캔버스폭 1%, 1920 baseline).
  * @module features/exam-prep-final/components/ui/forms
  * @dependencies none
  */
@@ -12,10 +12,6 @@
 import { cn } from "@/shared/lib/utils";
 import type { QuizFormResult } from "./types";
 
-/**
- * 값 계약: value = 선택한 선지 index (number) | 미선택 시 null.
- *          onChange(idx: number) — 단일 선택 토글 없음(같은 항목 다시 눌러도 유지).
- */
 export type Mcq4SingleFormProps = {
   questionText: string;
   choices: string[];
@@ -25,9 +21,16 @@ export type Mcq4SingleFormProps = {
   result?: QuizFormResult | null;
   /** 힌트로 제거된 오답 인덱스 — 해당 선택지는 비활성/취소선 표시. */
   eliminatedIdx?: number;
-  /** 문제와 선지 사이에 끼울 슬롯 — 채점 후 정/오답 한 줄 헤더. 자리는 항상 잡힘. */
   feedbackSlot?: React.ReactNode;
 };
+
+const C_MASTER = "var(--color-mastery-master)";
+const C_DELETE = "rgb(var(--color-semantic-delete))";
+const C_BLACK = "var(--color-neutral-black-hex)";
+const C_BORDER = "rgb(229 231 235)"; // 기본 보더 (gray-200)
+const C_DIVIDER = "rgb(229 231 235)";
+const C_LETTER = "rgb(156 163 175)"; // gray-400
+const C_TEXT = "rgb(55 65 81)"; // gray-700
 
 export function Mcq4SingleForm({
   questionText,
@@ -43,68 +46,55 @@ export function Mcq4SingleForm({
     result && typeof result.correct_answer === "number" ? result.correct_answer : null;
 
   return (
-    <div
-      className="flex w-full flex-col items-stretch"
-      style={{ gap: "clamp(12px, 1.04vw, 24px)" /* 20/1920 */ }}
-    >
-      {/* 문제 텍스트 — SemiBold 36px (시안). 화면 폭에 비례 + 모바일 min 18px. */}
+    <div className="flex w-full flex-col items-stretch" style={{ gap: "1.04cqw" }}>
+      {/* 문제 텍스트 — SemiBold 36px @1920 */}
       <h1
-        className="font-semibold leading-snug text-[var(--color-neutral-black-hex)] break-keep"
-        style={{ fontSize: "clamp(18px, 1.875vw, 40px)" /* 36/1920 */ }}
+        className="font-semibold leading-snug break-keep"
+        style={{ fontSize: "1.875cqw", color: C_BLACK }}
       >
         {questionText}
       </h1>
 
       {/* 정/오답 표시 슬롯 — 채점 전에도 자리 잡음 (레이아웃 shift 방지) */}
-      <div
-        className="flex w-full shrink-0 items-center"
-        style={{ minHeight: "clamp(36px, 2.864vw, 64px)" /* 55/1920 */ }}
-      >
+      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "1.6cqw" }}>
         {feedbackSlot}
       </div>
 
-      {/* 4개 선지 — 박스끼리 보더 공유 (인접 박스 1px 겹침). 선택중은 보더 3px 로 강조.
-            채점 후: 정답 = 파란 보더, 사용자 픽 오답 = 빨강 배경 + 흰 텍스트, 그 외 비-정답 = 회색 배경 + 회색 텍스트.
-            정답이 아닌 모든 선지의 letter 는 "X" 로 치환. */}
-      <fieldset className="flex w-full flex-col" disabled={disabled}>
+      {/* 4개 선지 — 분리된 흰 라운드 박스 + letter + 세로 구분선 + 텍스트 */}
+      <fieldset className="flex w-full flex-col" style={{ gap: "0.83cqw" }} disabled={disabled}>
         {choices.map((choice, idx) => {
           const letter = String.fromCharCode(65 + idx);
           const isSelected = value === idx;
           const showResult = !!result;
           const isCorrect = !!(result && correct === idx);
           const isWrongPick = !!(result && isSelected && correct !== null && !result.is_correct);
-          // 채점 후 + 정답도 아니고 사용자 픽도 아닌 선지 — 회색 dim 처리.
           const isOtherAfterResult = showResult && !isCorrect && !isWrongPick;
           const isEliminated = eliminatedIdx === idx && !result;
-
-          // 외곽 보더 색/굵기 — 채점 후 정/오답이 우선, 그 다음 선택중.
-          const borderColor = isCorrect
-            ? "var(--color-mastery-master)"
-            : isWrongPick
-              ? "rgb(var(--color-semantic-delete))"
-              : isOtherAfterResult
-                ? "rgb(var(--color-neutral-gray-300))"
-                : "var(--color-neutral-black-hex)";
-          const borderWidth = isCorrect || isWrongPick || isSelected
-            ? "max(2px, 0.156vw)" // 3/1920 — 선택/정답/오답 시 굵게
-            : "max(1px, 0.052vw)"; // 1/1920 — 기본
-          // 인접 박스끼리 보더 겹침: 굵은 보더가 위/아래 박스 위로 올라오도록 zIndex 처리.
           const isEmphasized = isCorrect || isWrongPick || isSelected;
 
-          // 배경/텍스트 색 — 채점 후 비-정답 dim, 사용자 픽 오답 빨강 채움.
+          const borderColor = isCorrect
+            ? C_MASTER
+            : isWrongPick
+              ? C_DELETE
+              : isSelected
+                ? C_MASTER
+                : isOtherAfterResult
+                  ? "rgb(var(--color-neutral-gray-300))"
+                  : C_BORDER;
+          const borderWidth = isEmphasized ? "0.13cqw" : "0.052cqw";
           const backgroundColor = isWrongPick
-            ? "rgb(var(--color-semantic-delete))"
+            ? C_DELETE
             : isOtherAfterResult
               ? "rgb(var(--color-neutral-gray-200))"
-              : undefined; // 기본 = className bg-button-primary-bg
-          const itemTextColor = isWrongPick
-            ? "var(--color-text-inverse)"   /* 빨강 BG 위 텍스트는 inverse — 다크에서도 가독성 유지 */
+              : "#ffffff";
+          const textColor = isWrongPick
+            ? "var(--color-text-inverse)"
             : isOtherAfterResult
               ? "rgb(var(--color-neutral-gray-500))"
-              : "var(--color-neutral-black-hex)";
-          // 정답 letter 는 보더와 동일한 파란색(mastery-master) 으로 강조.
-          const letterColor = isCorrect ? "var(--color-mastery-master)" : itemTextColor;
-          // 정답이 아닌 모든 선지(채점 후)는 라벨 X. 정답은 원래 letter 유지.
+              : isSelected || isCorrect
+                ? C_BLACK
+                : C_TEXT;
+          const letterColor = isCorrect ? C_MASTER : isWrongPick ? "var(--color-text-inverse)" : isSelected ? C_BLACK : C_LETTER;
           const displayLetter = showResult && !isCorrect ? "X" : letter;
 
           return (
@@ -116,50 +106,42 @@ export function Mcq4SingleForm({
               aria-label={isEliminated ? "힌트로 제거된 선택지" : undefined}
               className={cn(
                 "relative flex w-full items-center transition-colors",
-                // 채점 후 빨강/회색 배경이 아닐 때만 기본 흰 배경 + hover.
-                !isWrongPick && !isOtherAfterResult && "bg-button-primary-bg",
                 isEliminated && "cursor-not-allowed opacity-30 [&_*]:line-through",
-                !isEliminated && !isEmphasized && !isOtherAfterResult && "hover:bg-[rgb(var(--color-neutral-gray-100))]",
+                !isEliminated && !isEmphasized && !isOtherAfterResult && "hover:border-[var(--color-mastery-master)]",
               )}
               style={{
-                minHeight: "clamp(56px, 4.948vw, 110px)" /* 95/1920 */,
-                paddingTop: "12px",
-                paddingBottom: "12px",
-                paddingLeft: "clamp(12px, 1.25vw, 28px)" /* 24/1920 */,
-                paddingRight: "clamp(12px, 1.25vw, 28px)",
-                marginTop: idx === 0 ? 0 : "-1px" /* 인접 보더 1px 겹침 */,
+                minHeight: "3.02cqw",
+                borderRadius: "0.83cqw",
                 border: `${borderWidth} solid ${borderColor}`,
                 backgroundColor,
-                zIndex: isEmphasized ? 2 : 1,
-                gap: "clamp(16px, 2.083vw, 48px)" /* 40/1920 */,
+                padding: "0 1.46cqw",
+                gap: "1.15cqw",
               }}
             >
-              {/* 영문 letter (또는 X) — Bookk Gothic. 36px Light, 선택/정답/픽 시 Bold. */}
+              {/* letter */}
               <span
-                className={cn(
-                  "font-bookk shrink-0 text-center",
-                  isSelected || isCorrect || isWrongPick ? "font-bold" : "font-light",
-                )}
+                className="shrink-0 text-center"
                 style={{
-                  fontSize: "clamp(18px, 1.875vw, 40px)" /* 36/1920 */,
-                  width: "clamp(16px, 1.406vw, 32px)" /* 27/1920 */,
+                  fontSize: "1.15cqw",
+                  width: "1.4cqw",
                   color: letterColor,
+                  fontWeight: isEmphasized ? 700 : 500,
                 }}
               >
                 {displayLetter}
               </span>
-              {/* 선지 텍스트 — 24px, 선택/정답 시 굵게. 좌측 정렬 (긴 문장 wrap 시 자연스러운 시선 흐름). */}
+              {/* 세로 구분선 */}
+              <span
+                className="shrink-0"
+                style={{ width: "0.052cqw", height: "1.5cqw", backgroundColor: C_DIVIDER }}
+              />
+              {/* 선지 텍스트 */}
               <span
                 className="flex-1 text-left break-keep leading-snug"
                 style={{
-                  fontSize: "clamp(14px, 1.25vw, 28px)" /* 24/1920 */,
-                  color: itemTextColor,
-                  fontVariationSettings: isSelected || isCorrect
-                    ? "'wght' 600"
-                    : isWrongPick
-                      ? "'wght' 500"
-                      : "'wght' 400",
-                  fontWeight: "normal", // 가변 wght 만 쓰도록 강제
+                  fontSize: "1.04cqw",
+                  color: textColor,
+                  fontWeight: isSelected || isCorrect ? 600 : 400,
                 }}
               >
                 {choice}

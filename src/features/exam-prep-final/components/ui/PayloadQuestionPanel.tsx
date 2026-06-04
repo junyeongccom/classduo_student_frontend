@@ -3,13 +3,23 @@
  * @description payload 유형(매칭/빈칸/복수/서술형) 풀이 패널 + question_format 디스패처.
  *   레거시 단일 4지선다는 SolveQuestionPanel 이 담당하고, 본 패널은 question_format 이 있는
  *   신규 유형만 렌더(컨테이너에서 분기). 응답 값은 유형별 polymorphic.
+ *   레이아웃은 SolveCanvas(1920×1080) 안에서 cqw 비례 — Figma 시안 매칭.
  * @module features/exam-prep-final/components/ui
  */
 
 'use client'
 
-import { useState } from 'react'
-import { Bookmark, Check, X as XIcon, FileText, Mic, Bot, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  Bookmark,
+  Check,
+  X as XIcon,
+  FileText,
+  Mic,
+  MessageSquareText,
+  Lightbulb,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -87,6 +97,8 @@ interface PayloadQuestionPanelProps {
   hasNext: boolean
   onSourceClick?: (kind: 'materials' | 'recordings') => void
   onAskChatbot?: () => void
+  /** 힌트(전구) — payload 유형은 옵션 제거 미지원이라 현재는 시각 배치용(legacy 4지선다만 실제 동작). */
+  onHint?: () => void
   canFinish: boolean
   onFinish: () => void
   mobileBottomSpacer?: boolean
@@ -109,9 +121,9 @@ export function PayloadQuestionPanel({
   hasNext,
   onSourceClick,
   onAskChatbot,
+  onHint,
   canFinish,
   onFinish,
-  mobileBottomSpacer = false,
 }: PayloadQuestionPanelProps) {
   const t = useTranslations()
   const { locale } = useI18n()
@@ -212,131 +224,173 @@ export function PayloadQuestionPanel({
   const hasMaterial = (sr?.source_pages ?? []).some((p) => p > 0)
   const hasRecording = (sr?.source_chunks ?? []).some((c) => c > 0)
 
+  // 하단 좌측 아이콘 버튼 공통 스타일 (cqw)
+  const iconBtn =
+    'flex items-center justify-center rounded-[0.42cqw] text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/10'
+  const iconBtnStyle = { width: '2.08cqw', height: '2.08cqw' } as const
+  const iconSize = { width: '1.25cqw', height: '1.25cqw' } as const
+
   return (
-    <div className="flex h-full flex-1 flex-col overflow-y-auto bg-[#F5F7F8] dark:bg-gray-950">
-      <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-8 py-8">
-        {/* 정오답 배지 (서술형은 채점 없음 → 제출 완료 배지) */}
-        <div className="mb-4 flex h-9 items-center gap-2">
-          {graded && !isEssay && (
-            graded.is_correct ? (
-              <span className="flex items-center gap-1 rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700">
-                <Check className="h-4 w-4" /> 정답
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">
-                <XIcon className="h-4 w-4" /> 오답
-              </span>
-            )
+    <div
+      className="flex h-full min-h-0 flex-1 flex-col bg-[#F6F7F9] dark:bg-gray-950"
+      style={{ padding: '3.3cqw 5.2cqw 2.6cqw' }}
+    >
+      <div className="mx-auto flex h-full w-full min-h-0 flex-col" style={{ maxWidth: '50cqw' }}>
+        {/* 폼 영역 (stem + body) — 상단 정렬, 남는 높이 차지 */}
+        <div className="flex min-h-0 flex-1 flex-col" style={{ overflowY: 'auto' }}>
+          {/* 정/오답 배지 (채점 후만 — 시안엔 없는 채점후 상태, 기존 동작 보존) */}
+          {graded && (
+            <div className="mb-[1cqw] flex items-center" style={{ gap: '0.5cqw' }}>
+              {!isEssay ? (
+                graded.is_correct ? (
+                  <span
+                    className="flex items-center rounded-full bg-violet-100 font-semibold text-violet-700"
+                    style={{ gap: '0.3cqw', padding: '0.3cqw 0.8cqw', fontSize: '0.78cqw' }}
+                  >
+                    <Check style={{ width: '0.9cqw', height: '0.9cqw' }} /> 정답
+                  </span>
+                ) : (
+                  <span
+                    className="flex items-center rounded-full bg-rose-100 font-semibold text-rose-700"
+                    style={{ gap: '0.3cqw', padding: '0.3cqw 0.8cqw', fontSize: '0.78cqw' }}
+                  >
+                    <XIcon style={{ width: '0.9cqw', height: '0.9cqw' }} /> 오답
+                  </span>
+                )
+              ) : (
+                <span
+                  className="rounded-full bg-violet-100 font-semibold text-violet-700"
+                  style={{ padding: '0.3cqw 0.8cqw', fontSize: '0.78cqw' }}
+                >
+                  제출 완료 · 모범답안 확인
+                </span>
+              )}
+            </div>
           )}
-          {graded && isEssay && (
-            <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700">
-              제출 완료 · 모범답안 확인
-            </span>
-          )}
+
+          {/* 유형별 폼 본문 (폼이 stem + body 렌더) */}
+          {renderForm()}
         </div>
 
-        {/* 유형별 폼 본문 (폼이 stem + body 렌더) */}
-        {renderForm()}
-
-        {/* 하단 액션 */}
-        <div className="mt-8 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-400">
+        {/* 하단 툴바 — 좌: 보조 아이콘 / 우: 힌트(전구) + 제출 */}
+        <div className="flex shrink-0 items-center justify-between" style={{ marginTop: '1.6cqw' }}>
+          <div className="flex items-center" style={{ gap: '0.4cqw' }}>
             <button
               type="button"
               onClick={onBookmarkToggle}
-              className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors',
-                isBookmarked ? 'text-blue-500 hover:text-blue-600' : 'hover:text-gray-700',
-              )}
+              className={cn(iconBtn, isBookmarked && 'text-violet-500 hover:text-violet-600')}
+              style={iconBtnStyle}
               aria-label={isBookmarked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
             >
-              <Bookmark className={cn('h-4 w-4', isBookmarked && 'fill-current')} />
+              <Bookmark style={iconSize} className={cn(isBookmarked && 'fill-current')} />
             </button>
-            {hasMaterial && (
-              <button
-                type="button"
-                onClick={() => onSourceClick?.('materials')}
-                disabled={!onSourceClick}
-                className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label="강의자료 출처 보기"
-              >
-                <FileText className="h-4 w-4" />
-              </button>
-            )}
-            {hasRecording && (
-              <button
-                type="button"
-                onClick={() => onSourceClick?.('recordings')}
-                disabled={!onSourceClick}
-                className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label="녹음본 출처 보기"
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => onSourceClick?.('materials')}
+              disabled={!hasMaterial || !onSourceClick}
+              className={iconBtn}
+              style={iconBtnStyle}
+              aria-label="강의자료 출처 보기"
+            >
+              <FileText style={iconSize} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSourceClick?.('recordings')}
+              disabled={!hasRecording || !onSourceClick}
+              className={iconBtn}
+              style={iconBtnStyle}
+              aria-label="녹음본 출처 보기"
+            >
+              <Mic style={iconSize} />
+            </button>
             <button
               type="button"
               onClick={onAskChatbot}
               disabled={!onAskChatbot}
-              className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+              className={iconBtn}
+              style={iconBtnStyle}
               aria-label="AI 챗봇에게 물어보기"
             >
-              <Bot className="h-4 w-4" />
+              <MessageSquareText style={iconSize} />
             </button>
           </div>
 
-          {/* 제출 (채점 후엔 비활성 — 서술형은 제출=모범답안 노출) */}
-          {!isLocked && (
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={!complete || isGrading}
-              className="flex h-10 min-w-[104px] items-center justify-center rounded-lg bg-violet-500 px-5 text-sm font-semibold text-white transition-colors hover:bg-violet-600 disabled:opacity-40"
-            >
-              {isGrading ? '채점 중...' : t('examPrepFinal.submit')}
-            </button>
-          )}
+          <div className="flex items-center" style={{ gap: '1cqw' }}>
+            {/* 힌트(전구) — 시안 배치. legacy 4지선다 외 유형은 현재 시각 배치용. */}
+            {!isLocked && onHint && (
+              <button
+                type="button"
+                onClick={onHint}
+                className="flex items-center justify-center text-amber-400 transition-transform hover:scale-110"
+                style={{ width: '2.4cqw', height: '2.4cqw' }}
+                aria-label="힌트"
+              >
+                <Lightbulb style={{ width: '1.7cqw', height: '1.7cqw' }} className="fill-amber-200" />
+              </button>
+            )}
+            {/* 제출 (채점 후엔 숨김 — 서술형은 제출=모범답안 노출) */}
+            {!isLocked && (
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={!complete || isGrading}
+                className="flex items-center justify-center bg-[#7c7aec] font-semibold text-white transition-colors hover:brightness-95 disabled:opacity-40"
+                style={{
+                  minWidth: '6cqw',
+                  height: '2.7cqw',
+                  borderRadius: '0.6cqw',
+                  padding: '0 1.4cqw',
+                  fontSize: '0.94cqw',
+                }}
+              >
+                {isGrading ? '채점 중...' : t('examPrepFinal.submit')}
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* 페이지네이션 */}
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-base font-semibold text-gray-700 dark:text-gray-300">
+        {/* 푸터 — 좌: n/total / 우: 이전·다음 화살표 (+ 종료) */}
+        <div className="flex shrink-0 items-center justify-between" style={{ marginTop: '1.1cqw' }}>
+          <p className="font-bold" style={{ fontSize: '0.94cqw' }}>
             <span className="text-gray-900 dark:text-gray-50">{currentSeq}</span>
-            <span className="mx-1.5 text-gray-300">/</span>
+            <span className="mx-[0.4cqw] text-gray-300">/</span>
             <span className="text-gray-400">{total}</span>
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center" style={{ gap: '0.5cqw' }}>
             <button
               type="button"
               onClick={onPrev}
               disabled={!hasPrev}
               aria-label="prev"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              className="flex items-center justify-center border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              style={{ width: '2.3cqw', height: '2.3cqw', borderRadius: '0.5cqw' }}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft style={{ width: '1.1cqw', height: '1.1cqw' }} />
             </button>
             <button
               type="button"
               onClick={onNext}
               disabled={!hasNext}
               aria-label="next"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              className="flex items-center justify-center border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              style={{ width: '2.3cqw', height: '2.3cqw', borderRadius: '0.5cqw' }}
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight style={{ width: '1.1cqw', height: '1.1cqw' }} />
             </button>
             {canFinish && (
               <button
                 type="button"
                 onClick={onFinish}
                 aria-label={t('examPrepFinal.endQuizAria')}
-                className="flex h-9 items-center justify-center rounded-lg bg-violet-600 px-4 text-sm font-bold text-white transition-colors hover:bg-violet-700"
+                className="flex items-center justify-center bg-[#7c7aec] font-bold text-white transition-colors hover:brightness-95"
+                style={{ height: '2.3cqw', borderRadius: '0.5cqw', padding: '0 1cqw', fontSize: '0.83cqw' }}
               >
                 {t('examPrepFinal.endQuiz')}
               </button>
             )}
           </div>
         </div>
-        {mobileBottomSpacer && <div className="h-[60dvh] shrink-0 md:hidden" aria-hidden />}
       </div>
     </div>
   )

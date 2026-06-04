@@ -36,6 +36,7 @@ import {
   type GradeSingleResponseDto,
 } from '../../services/examPrepService'
 import { SolveTopBar } from '../ui/SolveTopBar'
+import { SolveCanvas } from '../ui/SolveCanvas'
 import { SolveSidebar } from '../ui/SolveSidebar'
 import { SolveQuestionPanel } from '../ui/SolveQuestionPanel'
 import { PayloadQuestionPanel } from '../ui/PayloadQuestionPanel'
@@ -1033,20 +1034,38 @@ export function CoreTestSolveContainer({
     )
   }
 
-  // ─── 풀이 화면 ───
+  // ─── 풀이 화면 (1920×1080 캔버스 contain 스케일, 시안 매칭) ───
   return (
-    <div className="flex h-full flex-col">
-      <SolveTopBar
-        courseId={courseId}
-        courseTitle={courseTitle}
-        currentLectureLabel={
-          sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle
-        }
-        onExit={handleExit}
-      />
+    <SolveCanvas>
+      <div className="flex h-full w-full flex-col">
+        {/* 상단바 — 얇은 흰 바 (cqw 비례) */}
+        <header
+          className="flex shrink-0 items-center justify-between bg-white dark:bg-gray-900"
+          style={{
+            height: '3.65cqw',
+            padding: '0 1.77cqw',
+            borderBottom: '0.052cqw solid rgb(233 235 239)',
+          }}
+        >
+          <span
+            className="min-w-0 flex-1 truncate text-gray-400"
+            style={{ fontSize: '0.83cqw' }}
+          >
+            {sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle}
+          </span>
+          <button
+            type="button"
+            onClick={handleExit}
+            className="shrink-0 border border-gray-300 bg-white font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+            style={{ fontSize: '0.78cqw', padding: '0.42cqw 0.94cqw', borderRadius: '0.42cqw' }}
+          >
+            {t('examPrepFinal.exit')}
+          </button>
+        </header>
 
-      <div className="flex flex-col md:flex-row min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1">
         <SolveSidebar
+          scaled
           sessionLabel={sessionLabel}
           lectureTitle={lectureTitle}
           total={total}
@@ -1189,6 +1208,7 @@ export function CoreTestSolveContainer({
             }
             onSourceClick={handleSourceClick}
             onAskChatbot={handleAskChatbot}
+            onHint={handleHintClick}
             mobileBottomSpacer={isLeftPanelOpen || isChatPanelOpen}
             canFinish={
               total > 0 &&
@@ -1224,7 +1244,8 @@ export function CoreTestSolveContainer({
             </div>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </SolveCanvas>
   )
 }
