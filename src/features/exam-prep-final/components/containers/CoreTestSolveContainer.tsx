@@ -38,6 +38,7 @@ import {
 import { SolveTopBar } from '../ui/SolveTopBar'
 import { SolveSidebar } from '../ui/SolveSidebar'
 import { SolveQuestionPanel } from '../ui/SolveQuestionPanel'
+import { PayloadQuestionPanel } from '../ui/PayloadQuestionPanel'
 import { ExamPrepChatPanel } from '../ui/ExamPrepChatPanel'
 import { TestEndOverlay } from '../result-overlay/TestEndOverlay'
 import { Phase5FinalResult } from '../result-overlay/Phase5FinalResult'
@@ -121,6 +122,8 @@ export function CoreTestSolveContainer({
   // ─── 풀이 상태 (seq 기반) ───
   /** 학생이 선택한 옵션 (0-based 인덱스) — 즉시 채점 후 disable */
   const [selectedBySeq, setSelectedBySeq] = useState<Record<number, number>>({})
+  /** payload 유형(매칭/빈칸/복수/서술형) 응답 — 유형별 polymorphic 값. 제출 시 JSON 직렬화. */
+  const [responseBySeq, setResponseBySeq] = useState<Record<number, unknown>>({})
   /** 채점 결과 (seq → GradeSingleResponseDto) — 정오답 + mastery 변동 */
   const [gradedBySeq, setGradedBySeq] = useState<
     Record<number, GradeSingleResponseDto>
@@ -245,6 +248,7 @@ export function CoreTestSolveContainer({
       setPhaseError(null)
       // 다시풀기 트리거 시 로컬 상태 초기화
       setSelectedBySeq({})
+      setResponseBySeq({})
       setGradedBySeq({})
       setHintUsedSeqs(new Set())
       setHintDisabledBySeq({})
@@ -679,6 +683,15 @@ export function CoreTestSolveContainer({
     [currentSeq, gradedBySeq],
   )
 
+  // ─── 액션: payload 유형 응답 변경 (채점 전) ───
+  const handleResponseChange = useCallback(
+    (value: unknown) => {
+      if (gradedBySeq[currentSeq]) return  // 이미 채점된 문항은 변경 X
+      setResponseBySeq((prev) => ({ ...prev, [currentSeq]: value }))
+    },
+    [currentSeq, gradedBySeq],
+  )
+
   // ─── 액션: 힌트 클릭 → 오답 1개 random disable ───
   const handleHintClick = useCallback(() => {
     if (gradedBySeq[currentSeq]) return  // 채점된 문항은 무시
@@ -710,8 +723,18 @@ export function CoreTestSolveContainer({
   const handleSubmit = useCallback(async () => {
     if (!attemptId || isGrading) return
     if (gradedBySeq[currentSeq]) return  // 이미 채점됨
-    const selected = selectedBySeq[currentSeq]
-    if (selected == null) return
+    // payload 유형은 responseBySeq(JSON 직렬화), 레거시 단일4지선다는 selectedBySeq(인덱스 문자열).
+    const qf = currentQuestion?.question_format ?? null
+    let selectedStr: string
+    if (qf) {
+      const resp = responseBySeq[currentSeq]
+      if (resp == null) return
+      selectedStr = JSON.stringify(resp)
+    } else {
+      const selected = selectedBySeq[currentSeq]
+      if (selected == null) return
+      selectedStr = String(selected)
+    }
     const qid = seqToQuestionId.get(currentSeq)
     if (!qid) {
       // 매핑 안된 문항 (마스터된 문항) — 채점 대상 아님. 다음 문항으로 이동만.
@@ -724,7 +747,7 @@ export function CoreTestSolveContainer({
     const { data: result, error, errorCode } = await gradeAttemptResponse(
       attemptId,
       qid,
-      String(selected),
+      selectedStr,
       hintUsed,
     )
     setIsGrading(false)
@@ -788,6 +811,8 @@ export function CoreTestSolveContainer({
     isGrading,
     gradedBySeq,
     selectedBySeq,
+    responseBySeq,
+    currentQuestion,
     currentSeq,
     seqToQuestionId,
     hintUsedSeqs,
@@ -1094,7 +1119,7 @@ export function CoreTestSolveContainer({
           </div>
         )}
 
-        {currentQuestion && (
+        {currentQuestion && !currentQuestion.question_format && (
           <SolveQuestionPanel
             question={currentQuestion}
             currentSeq={currentSeq}
@@ -1136,6 +1161,38 @@ export function CoreTestSolveContainer({
                 Array.from(seqToQuestionId.values()).every(
                   (qid) => byQuestionState[qid] === 'master',
                 ))
+            }
+            onFinish={() => setPhase('completed')}
+          />
+        )}
+
+        {/* payload 유형(매칭/빈칸/복수/서술형) — question_format 디스패처 패널 */}
+        {currentQuestion && !!currentQuestion.question_format && (
+          <PayloadQuestionPanel
+            question={currentQuestion}
+            currentSeq={currentSeq}
+            total={total}
+            response={responseBySeq[currentSeq]}
+            graded={gradedBySeq[currentSeq] ?? null}
+            isGrading={isGrading}
+            isBookmarked={bookmarkedQuestionIds.has(seqToQuestionId.get(currentSeq) ?? '')}
+            onBookmarkToggle={handleBookmarkToggle}
+            onResponseChange={handleResponseChange}
+            onSubmit={handleSubmit}
+            onPrev={() => setCurrentSeq((s) => Math.max(1, s - 1))}
+            onNext={handleNext}
+            hasPrev={currentSeq > 1}
+            hasNext={
+              currentSeq < total ||
+              Object.keys(gradedBySeq).length >= total ||
+              attemptCompletedFromBackend
+            }
+            onSourceClick={handleSourceClick}
+            onAskChatbot={handleAskChatbot}
+            mobileBottomSpacer={isLeftPanelOpen || isChatPanelOpen}
+            canFinish={
+              total > 0 &&
+              (Object.keys(gradedBySeq).length >= total || attemptCompletedFromBackend)
             }
             onFinish={() => setPhase('completed')}
           />
