@@ -374,6 +374,11 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       if (!isSetComplete(set) && !bypassLock) {
         status = 'locked'
         unlocked = false
+      } else if (bypassLock && apiItem?.test_id) {
+        // dev/로컬: 백엔드가 shared mid 를 게이트(status='locked')해도 test_id 가 있으면(생성됨)
+        // 강제 개방 — 생성된 mid 를 자유롭게 풀게.
+        status = rawStatus === 'mastered' ? 'mastered' : 'available'
+        unlocked = true
       } else {
         status = rawStatus === 'empty' ? 'mastered' : rawStatus
         unlocked = status === 'available' || status === 'mastered'
