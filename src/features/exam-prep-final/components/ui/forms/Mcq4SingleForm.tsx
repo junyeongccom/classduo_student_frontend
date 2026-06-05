@@ -28,7 +28,6 @@ const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
 const C_BLACK = "var(--color-neutral-black-hex)";
 const C_BORDER = "rgb(229 231 235)"; // 기본 보더 (gray-200)
-const C_DIVIDER = "rgb(229 231 235)";
 const C_LETTER = "rgb(156 163 175)"; // gray-400
 const C_TEXT = "rgb(55 65 81)"; // gray-700
 const SELECTED_BG = "rgba(124, 122, 236, 0.08)"; // 연보라 (selected 배경, C_MASTER #7c7aec 연한)
@@ -134,11 +133,6 @@ export function Mcq4SingleForm({
               >
                 {displayLetter}
               </span>
-              {/* 세로 구분선 */}
-              <span
-                className="shrink-0"
-                style={{ width: "0.062cqw", height: "1.778cqw", backgroundColor: C_DIVIDER }}
-              />
               {/* 선지 텍스트 */}
               <span
                 className="flex-1 text-left break-keep leading-snug"

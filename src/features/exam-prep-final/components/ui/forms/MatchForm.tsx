@@ -42,8 +42,9 @@ const VB_W = 838;
 const CARD_H = 125;
 const ROW_GAP = 38;
 const VB_H = 3 * CARD_H + 2 * ROW_GAP; // 451
-const LEFT_PX = 232; // 좌카드 우측 점 x
-const RIGHT_PX = 443; // 우카드 좌측 점 x (838-395)
+// 점/연결선은 카드 가장자리가 아니라 가운데 공간(232~443) 안쪽으로 배치.
+const LEFT_PX = 285; // 좌측 점 x — 가운데 공간으로 이동
+const RIGHT_PX = 390; // 우측 점 x — 가운데 공간으로 이동
 const rowY = (i: number) => i * (CARD_H + ROW_GAP) + CARD_H / 2; // 62.5 / 225.5 / 388.5
 
 /** 우측 정의 텍스트 길이에 따라 폰트 크기(cqw) 동적 결정. */

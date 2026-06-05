@@ -27,7 +27,6 @@ const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
 const C_BLACK = "var(--color-neutral-black-hex)";
 const C_BORDER = "rgb(229 231 235)";
-const C_DIVIDER = "rgb(229 231 235)";
 const C_LETTER = "rgb(156 163 175)";
 const C_TEXT = "rgb(55 65 81)";
 const SELECTED_BG = "rgba(124, 122, 236, 0.08)"; // 연보라 (selected 배경)
@@ -150,10 +149,6 @@ export function Mcq6MultiForm({
               >
                 {displayLetter}
               </span>
-              <span
-                className="shrink-0"
-                style={{ width: "0.062cqw", height: "1.541cqw", backgroundColor: C_DIVIDER }}
-              />
               <span
                 className="flex-1 text-left break-keep leading-snug"
                 style={{
