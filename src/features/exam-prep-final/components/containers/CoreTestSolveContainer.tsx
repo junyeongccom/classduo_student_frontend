@@ -84,7 +84,7 @@ export function CoreTestSolveContainer({
   const { data, isLoading: detailLoading, error: detailError } = useCoreTestDetail(testId)
 
   // ─── 우측 통합 패널(출처+챗봇 2탭) 활성 탭 — null=닫힘 (UI 순간 상태) ───
-  const [rightTab, setRightTab] = useState<'source' | 'chat' | null>(null)
+  const [rightTab, setRightTab] = useState<'materials' | 'recordings' | 'chat' | null>(null)
 
   // ─── 챗봇 store (testId 단위 키잉) ───
   const setStoreTestId = useExamPrepSolveStore((s) => s.setTestId)
@@ -93,8 +93,6 @@ export function CoreTestSolveContainer({
   const clearQuizChatContext = useExamPrepSolveStore((s) => s.clearQuizChatContext)
 
   // ─── 출처 자료 패널 store (콘텐츠 학습과 공유 — LeftPanelMaterials/Recordings 재사용) ───
-  const leftTab = useLectureStudyStore((s) => s.leftTab)
-  const setLeftTab = useLectureStudyStore((s) => s.setLeftTab)
   const setLectureStudyLectureId = useLectureStudyStore((s) => s.setLectureId)
   const setTargetPage = useLectureStudyStore((s) => s.setTargetPage)
   const setTargetChunkIndex = useLectureStudyStore((s) => s.setTargetChunkIndex)
@@ -533,9 +531,8 @@ export function CoreTestSolveContainer({
         | null
       if (!sr) return
       const sectionKey = `q-${currentSeq}`
-      // 우측 패널 출처 탭 열기 + 강의자료/녹음본 하위 탭 전환
-      setRightTab('source')
-      setLeftTab(kind)
+      // 우측 패널을 해당 탭(강의자료/녹음본)으로 직접 열기
+      setRightTab(kind)
       if (kind === 'materials') {
         // #0(또는 음수) 페이지는 UI/네비게이션에서 제외 — #1 부터 시작.
         const pages = (sr.source_pages ?? []).filter((p) => p > 0)
@@ -560,7 +557,6 @@ export function CoreTestSolveContainer({
       currentQuestion,
       currentSeq,
       setRightTab,
-      setLeftTab,
       setTargetPage,
       setTargetChunkIndex,
     ],
@@ -1113,7 +1109,7 @@ export function CoreTestSolveContainer({
           </button>
         </header>
 
-        <div className="flex min-h-0 flex-1">
+        <div className="relative flex min-h-0 flex-1">
         <SolveSidebar
           scaled
           sessionLabel={sessionLabel}
@@ -1219,38 +1215,33 @@ export function CoreTestSolveContainer({
           </div>
         )}
 
-        {/* 우측: 출처 + AI 챗봇 통합 패널 (상단 2탭, MLP 풀이화면 레이아웃 차용).
-            두 탭 콘텐츠는 모두 마운트 유지하고 hidden 으로 토글 — 탭 전환 시 챗봇 히스토리/입력,
-            자료 스크롤 상태가 보존되도록(ExamPrepChatPanel 은 로컬 state 라 재마운트하면 재조회됨). */}
+        {/* 우측: 강의자료 / 녹음본 / AI 챗봇 3탭 패널.
+            데스크탑은 본문 위에 absolute 오버레이 — 열려도 문제 영역이 리스케일/축소되지 않음.
+            세 탭 콘텐츠는 모두 마운트 유지 + hidden 토글(탭 전환 시 챗봇 히스토리/입력·자료 스크롤 보존). */}
         {rightTab && (
-          <div className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:relative md:inset-auto md:h-full md:w-[360px] md:rounded-none md:border-t-0 md:border-l md:shadow-none shrink-0 dark:border-gray-700 dark:bg-gray-900">
-            {/* 상단 2탭 헤더: 출처 / AI 챗봇 */}
+          <div className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-x-auto md:left-auto md:right-0 md:top-0 md:bottom-0 md:h-full md:w-[360px] md:rounded-none md:border-t-0 md:border-l shrink-0 dark:border-gray-700 dark:bg-gray-900">
+            {/* 상단 3탭 헤더: 강의자료 / 녹음본 / AI 챗봇 */}
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
               <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setRightTab('source')}
-                  className={cn(
-                    'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
-                    rightTab === 'source'
-                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
-                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
-                  )}
-                >
-                  출처
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRightTab('chat')}
-                  className={cn(
-                    'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
-                    rightTab === 'chat'
-                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
-                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
-                  )}
-                >
-                  AI 챗봇
-                </button>
+                {([
+                  ['materials', '강의자료'],
+                  ['recordings', '녹음본'],
+                  ['chat', 'AI 챗봇'],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setRightTab(key)}
+                    className={cn(
+                      'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
+                      rightTab === key
+                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
+                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
               <button
                 type="button"
@@ -1263,55 +1254,34 @@ export function CoreTestSolveContainer({
             </div>
 
             <div className="min-h-0 flex-1 overflow-hidden">
-              {/* 출처 탭 — 강의자료/녹음본 하위 토글 */}
-              <div className={cn('h-full flex-col', rightTab === 'source' ? 'flex' : 'hidden')}>
-                <div className="flex shrink-0 gap-1 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
-                  <button
-                    type="button"
-                    onClick={() => setLeftTab('materials')}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors',
-                      leftTab === 'materials'
-                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
-                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
-                    )}
-                  >
-                    강의자료
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLeftTab('recordings')}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors',
-                      leftTab === 'recordings'
-                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
-                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
-                    )}
-                  >
-                    녹음본
-                  </button>
-                </div>
-                <div className="min-h-0 flex-1 overflow-hidden">
-                  {currentLectureId ? (
-                    leftTab === 'materials' ? (
-                      <LeftPanelMaterials />
-                    ) : (
-                      <LeftPanelRecordings
-                        recordings={leftPanelRecordings ?? []}
-                        targetChunkIndex={targetChunkIndex}
-                        onTargetConsumed={resetNavigationState}
-                        lectureId={currentLectureId ?? undefined}
-                      />
-                    )
-                  ) : (
-                    <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
-                      이 문항에 연결된 출처 자료가 없습니다.
-                    </div>
-                  )}
-                </div>
+              {/* 강의자료 */}
+              <div className={cn('h-full', rightTab === 'materials' ? 'block' : 'hidden')}>
+                {currentLectureId ? (
+                  <LeftPanelMaterials />
+                ) : (
+                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
+                    이 문항에 연결된 강의자료가 없습니다.
+                  </div>
+                )}
               </div>
 
-              {/* 챗봇 탭 */}
+              {/* 녹음본 */}
+              <div className={cn('h-full', rightTab === 'recordings' ? 'block' : 'hidden')}>
+                {currentLectureId ? (
+                  <LeftPanelRecordings
+                    recordings={leftPanelRecordings ?? []}
+                    targetChunkIndex={targetChunkIndex}
+                    onTargetConsumed={resetNavigationState}
+                    lectureId={currentLectureId ?? undefined}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
+                    이 문항에 연결된 녹음본이 없습니다.
+                  </div>
+                )}
+              </div>
+
+              {/* AI 챗봇 */}
               <div className={cn('h-full', rightTab === 'chat' ? 'block' : 'hidden')}>
                 <ExamPrepChatPanel
                   testId={testId}
