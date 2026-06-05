@@ -41,6 +41,14 @@ import {
   computeDdaysToExam,
 } from '@/shared/constants/examPrep'
 
+/** dev 사이트(dev-*)/localhost 는 기말대비 sequential 잠금을 우회(생성된 테스트 자유 풀이),
+ *  prod 는 정상 게이트 유지. course-dashboard 의 examPrepUnlock 와 동일 정책(도메인 분리상 로컬 복제). */
+function isDevOrLocalHost(): boolean {
+  if (typeof window === 'undefined') return false
+  const host = window.location.hostname
+  return host === 'localhost' || host.startsWith('127.') || host.startsWith('dev-')
+}
+
 /** lecture 1 row → CoreTest 형태로 매핑 */
 function lectureToCoreTest(args: {
   lecture: {
@@ -297,6 +305,9 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       return s === 'mastered' || s === 'empty'
     }
 
+    // dev/로컬은 sequential 잠금 + mid 게이트를 우회 — 생성된 테스트 전부 자유 풀이. prod 는 정상 게이트.
+    const bypassLock = isDevOrLocalHost()
+
     // ─── 핵심테스트 sequential 잠금 정책 (b2c20260503 + set 경계 강화) ───
     //   1번: 항상 시작점 (단, 백엔드 문항 미생성이면 자동 locked)
     //   같은 set 내 N번(>1): 직전 핵심테스트(N-1) master 시 unlock
@@ -314,7 +325,7 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
           allowed = false
         }
       }
-      if (!allowed) {
+      if (!allowed && !bypassLock) {
         coreTests[i] = {
           ...t,
           status: 'locked',
@@ -360,7 +371,7 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       // 2) 세트 완성 → backend status 사용 (단 'empty' → 'mastered' 변환)
       let status: typeof rawStatus
       let unlocked: boolean
-      if (!isSetComplete(set)) {
+      if (!isSetComplete(set) && !bypassLock) {
         status = 'locked'
         unlocked = false
       } else {

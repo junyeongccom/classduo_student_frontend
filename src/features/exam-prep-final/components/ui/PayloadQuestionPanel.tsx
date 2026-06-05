@@ -251,8 +251,17 @@ export function PayloadQuestionPanel({
   const sr = (question.source_ref ?? null) as
     | { source_pages?: number[]; source_chunks?: number[] }
     | null
-  const hasMaterial = (sr?.source_pages ?? []).some((p) => p > 0)
-  const hasRecording = (sr?.source_chunks ?? []).some((c) => c > 0)
+  // #0(또는 음수) 항목은 UI/네비게이션 제외 — #1 부터 (사용자 정책).
+  const sourcePages = (sr?.source_pages ?? []).filter((p) => p > 0)
+  const sourceChunks = (sr?.source_chunks ?? []).filter((c) => c > 0)
+  const hasMaterial = sourcePages.length > 0
+  const hasRecording = sourceChunks.length > 0
+  const materialTooltip = hasMaterial
+    ? `강의자료 ${sourcePages.map((p) => `p.${p}`).join(', ')}`
+    : null
+  const recordingTooltip = hasRecording
+    ? `녹음본 청크 ${sourceChunks.map((c) => `#${c}`).join(', ')}`
+    : null
 
   // 하단 좌측 아이콘 버튼 공통 스타일 (cqw)
   const iconBtn =
@@ -326,26 +335,48 @@ export function PayloadQuestionPanel({
             >
               <Bookmark style={iconSize} className={cn(isBookmarked && 'fill-current')} />
             </button>
-            <button
-              type="button"
-              onClick={() => onSourceClick?.('materials')}
-              disabled={!hasMaterial || !onSourceClick}
-              className={iconBtn}
-              style={iconBtnStyle}
-              aria-label="강의자료 출처 보기"
-            >
-              <FileText style={iconSize} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onSourceClick?.('recordings')}
-              disabled={!hasRecording || !onSourceClick}
-              className={iconBtn}
-              style={iconBtnStyle}
-              aria-label="녹음본 출처 보기"
-            >
-              <Mic style={iconSize} />
-            </button>
+            <div className="group/src-mat relative inline-flex">
+              <button
+                type="button"
+                onClick={() => onSourceClick?.('materials')}
+                disabled={!hasMaterial || !onSourceClick}
+                className={iconBtn}
+                style={iconBtnStyle}
+                aria-label="강의자료 출처 보기"
+              >
+                <FileText style={iconSize} />
+              </button>
+              {materialTooltip && (
+                <div
+                  role="tooltip"
+                  className="pointer-events-none absolute left-0 z-20 whitespace-nowrap bg-gray-900 font-medium text-white opacity-0 transition-opacity duration-150 group-hover/src-mat:opacity-100 dark:bg-gray-700"
+                  style={{ bottom: 'calc(100% + 0.4cqw)', fontSize: '1cqw', padding: '0.3cqw 0.6cqw', borderRadius: '0.4cqw' }}
+                >
+                  {materialTooltip}
+                </div>
+              )}
+            </div>
+            <div className="group/src-rec relative inline-flex">
+              <button
+                type="button"
+                onClick={() => onSourceClick?.('recordings')}
+                disabled={!hasRecording || !onSourceClick}
+                className={iconBtn}
+                style={iconBtnStyle}
+                aria-label="녹음본 출처 보기"
+              >
+                <Mic style={iconSize} />
+              </button>
+              {recordingTooltip && (
+                <div
+                  role="tooltip"
+                  className="pointer-events-none absolute left-0 z-20 whitespace-nowrap bg-gray-900 font-medium text-white opacity-0 transition-opacity duration-150 group-hover/src-rec:opacity-100 dark:bg-gray-700"
+                  style={{ bottom: 'calc(100% + 0.4cqw)', fontSize: '1cqw', padding: '0.3cqw 0.6cqw', borderRadius: '0.4cqw' }}
+                >
+                  {recordingTooltip}
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={onAskChatbot}
