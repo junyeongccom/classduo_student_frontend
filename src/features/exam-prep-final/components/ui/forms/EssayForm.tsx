@@ -37,9 +37,9 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result }: Essay
     ((result?.payload as PrincipleQuizPayload | null) ?? quiz.payload)?.model_answer ?? "";
 
   return (
-    <div className="flex w-full flex-col" style={{ gap: "1.46cqw" }}>
+    <div className="flex w-full flex-col" style={{ gap: "1.730cqw" }}>
       {/* 질문 텍스트 */}
-      <h1 className="font-bold leading-snug break-keep" style={{ fontSize: "1.875cqw", color: C_BLACK }}>
+      <h1 className="font-bold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
         {quiz.question_text}
       </h1>
 
@@ -48,10 +48,10 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result }: Essay
         className="w-full break-keep"
         style={{
           backgroundColor: "rgb(243 244 246)",
-          borderLeft: `0.21cqw solid ${C_MASTER}`,
-          borderRadius: "0 0.6cqw 0.6cqw 0",
-          padding: "1.25cqw 1.6cqw",
-          fontSize: "1.15cqw",
+          borderLeft: `0.676cqw solid ${C_MASTER}` /* figma 인용바 11px */,
+          borderRadius: "0 0.711cqw 0.711cqw 0",
+          padding: "1.019cqw 2.465cqw" /* figma 좌측 바+여백 51px, 상하 16.5px */,
+          fontSize: "1.481cqw",
           lineHeight: 1.7,
           color: C_BLACK,
         }}
@@ -67,11 +67,11 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result }: Essay
           placeholder="답안을 작성하세요..."
           className="w-full resize-none bg-white outline-none focus:ring-2"
           style={{
-            border: "0.08cqw solid rgb(209 213 219)",
-            borderRadius: "0.6cqw",
-            padding: "1.2cqw 1.4cqw",
-            minHeight: "10.5cqw",
-            fontSize: "1.04cqw",
+            border: "0.095cqw solid rgb(209 213 219)",
+            borderRadius: "0.711cqw",
+            padding: "1.422cqw 1.659cqw",
+            minHeight: "11.544cqw" /* figma 답작성영역 187px */,
+            fontSize: "1.233cqw",
             lineHeight: 1.6,
             color: C_BLACK,
           }}
@@ -86,20 +86,20 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result }: Essay
 /** 제출 후 — 답안 + 정답(모범답안) 영역. */
 function AnsweredView({ userAnswer, modelAnswer }: { userAnswer: string; modelAnswer: string }) {
   return (
-    <div className="flex w-full flex-col" style={{ gap: "1cqw" }}>
+    <div className="flex w-full flex-col" style={{ gap: "1.185cqw" }}>
       <div>
-        <p className="mb-[0.5cqw] font-bold" style={{ fontSize: "1.04cqw", color: C_BLACK }}>
+        <p className="mb-[0.593cqw] font-bold" style={{ fontSize: "1.233cqw", color: C_BLACK }}>
           답안
         </p>
         <div
           className="w-full bg-white"
           style={{
-            border: "0.08cqw solid rgb(209 213 219)",
-            borderRadius: "0.6cqw",
-            padding: "1cqw 1.4cqw",
-            fontSize: "1.04cqw",
+            border: "0.095cqw solid rgb(209 213 219)",
+            borderRadius: "0.711cqw",
+            padding: "1.185cqw 1.659cqw",
+            fontSize: "1.233cqw",
             lineHeight: 1.6,
-            minHeight: "5cqw",
+            minHeight: "5.926cqw",
             whiteSpace: "pre-wrap",
             color: C_BLACK,
           }}
@@ -109,17 +109,17 @@ function AnsweredView({ userAnswer, modelAnswer }: { userAnswer: string; modelAn
       </div>
 
       <div>
-        <p className="mb-[0.5cqw] font-bold" style={{ fontSize: "1.04cqw", color: C_MASTER }}>
+        <p className="mb-[0.593cqw] font-bold" style={{ fontSize: "1.233cqw", color: C_MASTER }}>
           모범답안
         </p>
         <div
           className="w-full break-keep"
           style={{
             backgroundColor: "rgb(243 244 246)",
-            borderLeft: `0.21cqw solid ${C_MASTER}`,
-            borderRadius: "0 0.6cqw 0.6cqw 0",
-            padding: "1cqw 1.4cqw",
-            fontSize: "1.04cqw",
+            borderLeft: `0.249cqw solid ${C_MASTER}`,
+            borderRadius: "0 0.711cqw 0.711cqw 0",
+            padding: "1.185cqw 1.659cqw",
+            fontSize: "1.233cqw",
             lineHeight: 1.7,
             whiteSpace: "pre-wrap",
             color: C_BLACK,

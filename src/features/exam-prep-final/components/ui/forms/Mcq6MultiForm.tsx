@@ -60,24 +60,24 @@ export function Mcq6MultiForm({
   };
 
   return (
-    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.83cqw" }}>
+    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" /* figma 문제~정오답~선지 8px */ }}>
       {/* 문제 텍스트 + (2개 선택) */}
-      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "1.875cqw", color: C_BLACK }}>
+      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
         {questionText}
         <span
-          className="ml-[0.6cqw] font-normal"
-          style={{ fontSize: "1.04cqw", color: "rgb(var(--color-neutral-gray-500))" }}
+          className="ml-[0.711cqw] font-normal"
+          style={{ fontSize: "1.233cqw", color: "rgb(var(--color-neutral-gray-500))" }}
         >
           (2개 선택)
         </span>
       </h1>
 
-      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "1.4cqw" }}>
+      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
         {feedbackSlot}
       </div>
 
       {/* 6개 선지 */}
-      <fieldset className="flex w-full flex-col" style={{ gap: "0.62cqw" }} disabled={disabled}>
+      <fieldset className="flex w-full flex-col" style={{ gap: "0.735cqw" }} disabled={disabled}>
         {choices.map((choice, idx) => {
           const letter = String.fromCharCode(65 + idx);
           const isSelected = selected.has(idx);
@@ -97,7 +97,7 @@ export function Mcq6MultiForm({
                 : isOtherAfterResult
                   ? "rgb(var(--color-neutral-gray-300))"
                   : C_BORDER;
-          const borderWidth = isEmphasized ? "0.13cqw" : "0.052cqw";
+          const borderWidth = isEmphasized ? "0.154cqw" : "0.062cqw";
           const backgroundColor = isWrongPick
             ? C_DELETE
             : isOtherAfterResult
@@ -127,19 +127,19 @@ export function Mcq6MultiForm({
                 !isEliminated && !isEmphasized && !isOtherAfterResult && "hover:border-[var(--color-mastery-master)]",
               )}
               style={{
-                minHeight: "2.55cqw",
-                borderRadius: "0.73cqw",
+                minHeight: "5.867cqw" /* figma 선지박스 95px */,
+                borderRadius: "0.865cqw",
                 border: `${borderWidth} solid ${borderColor}`,
                 backgroundColor,
-                padding: "0 1.46cqw",
-                gap: "1.04cqw",
+                padding: "0 1.730cqw",
+                gap: "1.233cqw",
               }}
             >
               <span
                 className="shrink-0 text-center"
                 style={{
-                  fontSize: "1.04cqw",
-                  width: "1.3cqw",
+                  fontSize: "1.233cqw",
+                  width: "1.541cqw",
                   color: letterColor,
                   fontWeight: isEmphasized ? 700 : 500,
                 }}
@@ -148,12 +148,12 @@ export function Mcq6MultiForm({
               </span>
               <span
                 className="shrink-0"
-                style={{ width: "0.052cqw", height: "1.3cqw", backgroundColor: C_DIVIDER }}
+                style={{ width: "0.062cqw", height: "1.541cqw", backgroundColor: C_DIVIDER }}
               />
               <span
                 className="flex-1 text-left break-keep leading-snug"
                 style={{
-                  fontSize: "0.99cqw",
+                  fontSize: "1.173cqw",
                   color: textColor,
                   fontWeight: isSelected || isCorrect ? 600 : 400,
                 }}

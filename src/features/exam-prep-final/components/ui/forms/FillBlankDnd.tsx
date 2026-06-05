@@ -134,18 +134,18 @@ export function FillBlankDnd({
   const fiveSingle = blanksCount === 1 && choices.length === 5;
   const chipContainerStyle: React.CSSProperties =
     fiveSingle && maxChoiceLen <= 5
-      ? { display: "grid", gridTemplateColumns: "repeat(5, max-content)", justifyContent: "center", gap: "1.15cqw" }
+      ? { display: "grid", gridTemplateColumns: "repeat(5, max-content)", justifyContent: "center", gap: "1.363cqw" }
       : fiveSingle
         ? {
             display: "grid",
             gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
             justifyItems: "center",
-            columnGap: "1.6cqw",
-            rowGap: "1.15cqw",
-            maxWidth: "36cqw",
+            columnGap: "1.896cqw",
+            rowGap: "1.363cqw",
+            maxWidth: "42.667cqw",
             margin: "0 auto",
           }
-        : { display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "1.15cqw", maxWidth: "44cqw" };
+        : { display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "1.363cqw", maxWidth: "52.148cqw" };
 
   return (
     <DndContext
@@ -154,21 +154,21 @@ export function FillBlankDnd({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className="flex h-full w-full flex-col" style={{ gap: "1.04cqw" }}>
+      <div className="flex h-full w-full flex-col" style={{ gap: "1.233cqw" }}>
         {/* 지시문 */}
-        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "1.875cqw", color: C_BLACK }}>
+        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
           빈칸에 들어갈 알맞은 단어를 넣으세요.
         </h1>
-        <div className="flex w-full shrink-0 items-center" style={{ minHeight: "1.4cqw" }}>
+        <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
           {feedbackSlot}
         </div>
 
-        {/* 문장 + 칩 — 세로 중앙, 넉넉한 간격 */}
-        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center" style={{ gap: "4cqw" }}>
+        {/* 문장 + 칩 — 세로 중앙, figma 보기패널~선지 24px */}
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center" style={{ gap: "1.481cqw" }}>
           {/* 문장 (인라인 빈칸) */}
           <p
             className="w-full break-keep text-center"
-            style={{ fontSize: "1.667cqw", lineHeight: 1.7, maxWidth: "42cqw", color: C_BLACK }}
+            style={{ fontSize: "1.976cqw", lineHeight: 1.7, maxWidth: "49.778cqw", color: C_BLACK }}
           >
             {parts.map((text, i) => {
               const isLastPart = i === parts.length - 1;
@@ -216,9 +216,9 @@ export function FillBlankDnd({
       <DragOverlay>
         {draggingLabel ? (
           <span
-            className="select-none rounded-[0.6cqw] bg-white font-medium shadow-lg"
+            className="select-none rounded-[0.711cqw] bg-white font-medium shadow-lg"
             style={{
-              padding: "0.62cqw 1.4cqw",
+              padding: "0.735cqw 1.659cqw",
               fontSize: chipFontSize,
               lineHeight: 1.2,
               color: C_BLACK,
@@ -260,17 +260,17 @@ function DraggableChip({
       style={{
         opacity: isDragging ? 0 : 1,
         touchAction: "none",
-        padding: "0.62cqw 1.5cqw",
-        minWidth: "5cqw",
-        maxWidth: "20cqw",
+        padding: "1.363cqw 1.778cqw" /* figma 칩 높이 66px */,
+        minWidth: "8.083cqw" /* figma 131px */,
+        maxWidth: "23.704cqw",
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
         color: C_BLACK,
-        boxShadow: "0 0.1cqw 0.5cqw rgba(17,24,39,0.12)",
+        boxShadow: "0 0.119cqw 0.593cqw rgba(17,24,39,0.12)",
       }}
       className={cn(
-        "select-none rounded-[0.6cqw] bg-white text-center font-medium",
+        "select-none rounded-[0.711cqw] bg-white text-center font-medium",
         !disabled && "cursor-grab active:cursor-grabbing hover:shadow-md",
         disabled && !eliminated && "opacity-60",
         eliminated && "cursor-not-allowed opacity-30 line-through",
@@ -312,20 +312,20 @@ function DroppableBlank({
         alignItems: "center",
         justifyContent: "center",
         textAlign: "center",
-        padding: "0.42cqw 1.4cqw",
-        minWidth: "7cqw",
-        margin: "0 0.4cqw",
+        padding: "1.185cqw 1.659cqw" /* figma 빈칸 높이 60px */,
+        minWidth: "12.207cqw" /* figma 198px */,
+        margin: "0 0.474cqw",
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
         backgroundColor: "#ffffff",
-        border: `0.08cqw solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
-        boxShadow: isEmpty ? "inset 0 0.08cqw 0.3cqw rgba(17,24,39,0.06)" : "0 0.1cqw 0.4cqw rgba(17,24,39,0.1)",
+        border: `0.095cqw solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
+        boxShadow: isEmpty ? "inset 0 0.095cqw 0.356cqw rgba(17,24,39,0.06)" : "0 0.119cqw 0.474cqw rgba(17,24,39,0.1)",
         color: isEmpty ? "transparent" : textColor,
         fontWeight: isCorrect === true || isCorrect === false ? 700 : 500,
       }}
       className={cn(
-        "select-none rounded-[0.5cqw] cursor-pointer transition-colors",
+        "select-none rounded-[0.593cqw] cursor-pointer transition-colors",
         isOver && isEmpty && "ring-2 ring-[var(--color-mastery-master)]",
         disabled && "cursor-not-allowed",
       )}

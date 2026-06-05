@@ -40,11 +40,11 @@ const C_BORDER = "rgb(229 231 235)";
 /** 우측 정의 텍스트 길이에 따라 폰트 크기(cqw) 동적 결정. truncate 없이 자동 축소. */
 function getRightFontSizeCqw(text: string): string {
   const len = text.length;
-  if (len <= 22) return "1.04cqw";
-  if (len <= 38) return "0.94cqw";
-  if (len <= 58) return "0.83cqw";
-  if (len <= 86) return "0.73cqw";
-  return "0.63cqw";
+  if (len <= 22) return "1.233cqw";
+  if (len <= 38) return "1.114cqw";
+  if (len <= 58) return "0.984cqw";
+  if (len <= 86) return "0.865cqw";
+  return "0.747cqw";
 }
 
 export function MatchForm({
@@ -106,17 +106,17 @@ export function MatchForm({
   };
 
   return (
-    <div className="flex w-full flex-col items-stretch" style={{ gap: "1.04cqw" }}>
-      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "1.875cqw", color: C_BLACK }}>
+    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" /* figma 문제~정오답~매칭 8px */ }}>
+      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
         {questionText || "좌측 개념을 클릭한 뒤, 우측에서 알맞은 정의를 클릭하세요."}
       </h1>
 
-      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "1.6cqw" }}>
+      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
         {feedbackSlot}
       </div>
 
       {/* 3 rows */}
-      <div className="mx-auto flex w-full flex-col items-stretch" style={{ gap: "1.15cqw", maxWidth: "44cqw" }}>
+      <div className="mx-auto flex w-full flex-col items-stretch" style={{ gap: "2.347cqw" /* figma 카드 행간 38px */, maxWidth: "52.148cqw" }}>
         {leftItems.map((leftItem, i) => {
           const ri = rightInRow[i];
           const rightItem = ri >= 0 ? rightItems[ri] ?? null : null;
@@ -216,20 +216,20 @@ function MatchRow({
   const cardBase =
     "relative flex items-center transition-colors break-keep";
   const leftStyle = {
-    width: "12cqw",
-    minHeight: "4.4cqw",
-    borderRadius: "0.83cqw",
-    border: `${leftEmph ? "0.13cqw" : "0.052cqw"} solid ${leftEmph ? accent : C_BORDER}`,
+    width: "14.317cqw" /* figma 좌측카드 232px */,
+    minHeight: "7.716cqw" /* figma 125px */,
+    borderRadius: "0.984cqw",
+    border: `${leftEmph ? "0.154cqw" : "0.062cqw"} solid ${leftEmph ? accent : C_BORDER}`,
     backgroundColor: "#ffffff",
-    padding: "0.6cqw 0.9cqw",
+    padding: "0.711cqw 1.067cqw",
   } as const;
   const rightStyle = {
     flex: 1,
-    minHeight: "4.4cqw",
-    borderRadius: "0.83cqw",
-    border: `${rightEmph ? "0.13cqw" : "0.052cqw"} solid ${rightEmph ? accent : C_BORDER}`,
+    minHeight: "7.716cqw" /* figma 우측카드 ~125px */,
+    borderRadius: "0.984cqw",
+    border: `${rightEmph ? "0.154cqw" : "0.062cqw"} solid ${rightEmph ? accent : C_BORDER}`,
     backgroundColor: "#ffffff",
-    padding: "0.6cqw 1.1cqw",
+    padding: "0.711cqw 1.304cqw",
   } as const;
 
   return (
@@ -247,13 +247,13 @@ function MatchRow({
         )}
         style={leftStyle}
       >
-        <span style={{ fontSize: "1.04cqw", fontWeight: 700, color: C_BLACK }}>{leftText}</span>
+        <span style={{ fontSize: "1.233cqw", fontWeight: 700, color: C_BLACK }}>{leftText}</span>
       </button>
 
       {/* 연결 점 (··) */}
-      <div className="flex shrink-0 items-center justify-center" style={{ width: "3.6cqw", gap: "0.5cqw" }}>
-        <span className="rounded-full" style={{ width: "0.5cqw", height: "0.5cqw", backgroundColor: dotColor }} />
-        <span className="rounded-full" style={{ width: "0.5cqw", height: "0.5cqw", backgroundColor: dotColor }} />
+      <div className="flex shrink-0 items-center justify-between" style={{ width: "14.696cqw" /* figma 점영역 238px */, gap: "0.593cqw" }}>
+        <span className="rounded-full" style={{ width: "0.924cqw", height: "0.924cqw", backgroundColor: dotColor }} />
+        <span className="rounded-full" style={{ width: "0.924cqw", height: "0.924cqw", backgroundColor: dotColor }} />
       </div>
 
       <button
@@ -271,7 +271,7 @@ function MatchRow({
       >
         <span
           className="break-keep leading-snug"
-          style={{ fontSize: rightText ? getRightFontSizeCqw(rightText) : "1.04cqw", color: C_BLACK }}
+          style={{ fontSize: rightText ? getRightFontSizeCqw(rightText) : "1.233cqw", color: C_BLACK }}
         >
           {rightText ?? ""}
         </span>

@@ -226,41 +226,41 @@ export function PayloadQuestionPanel({
 
   // 하단 좌측 아이콘 버튼 공통 스타일 (cqw)
   const iconBtn =
-    'flex items-center justify-center rounded-[0.42cqw] text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/10'
-  const iconBtnStyle = { width: '2.08cqw', height: '2.08cqw' } as const
-  const iconSize = { width: '1.25cqw', height: '1.25cqw' } as const
+    'flex items-center justify-center rounded-[0.498cqw] text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/10'
+  const iconBtnStyle = { width: '2.714cqw', height: '2.714cqw' } as const /* figma 44px */
+  const iconSize = { width: '1.481cqw', height: '1.481cqw' } as const /* figma 24px */
 
   return (
     <div
       className="flex h-full min-h-0 flex-1 flex-col bg-[#F6F7F9] dark:bg-gray-950"
-      style={{ padding: '3.3cqw 5.2cqw 2.6cqw' }}
+      style={{ padding: '2.465cqw 21.452cqw 1.185cqw 18.205cqw' /* figma content x=595 (사이드바300+좌295), 폼폭 ~977, 하단 여백 최소(6지선다 fit) */ }}
     >
-      <div className="mx-auto flex h-full w-full min-h-0 flex-col" style={{ maxWidth: '50cqw' }}>
+      <div className="flex h-full w-full min-h-0 flex-col">
         {/* 폼 영역 (stem + body) — 상단 정렬, 남는 높이 차지 */}
         <div className="flex min-h-0 flex-1 flex-col" style={{ overflowY: 'auto' }}>
           {/* 정/오답 배지 (채점 후만 — 시안엔 없는 채점후 상태, 기존 동작 보존) */}
           {graded && (
-            <div className="mb-[1cqw] flex items-center" style={{ gap: '0.5cqw' }}>
+            <div className="mb-[1.185cqw] flex items-center" style={{ gap: '0.593cqw' }}>
               {!isEssay ? (
                 graded.is_correct ? (
                   <span
                     className="flex items-center rounded-full bg-violet-100 font-semibold text-violet-700"
-                    style={{ gap: '0.3cqw', padding: '0.3cqw 0.8cqw', fontSize: '0.78cqw' }}
+                    style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
                   >
-                    <Check style={{ width: '0.9cqw', height: '0.9cqw' }} /> 정답
+                    <Check style={{ width: '1.067cqw', height: '1.067cqw' }} /> 정답
                   </span>
                 ) : (
                   <span
                     className="flex items-center rounded-full bg-rose-100 font-semibold text-rose-700"
-                    style={{ gap: '0.3cqw', padding: '0.3cqw 0.8cqw', fontSize: '0.78cqw' }}
+                    style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
                   >
-                    <XIcon style={{ width: '0.9cqw', height: '0.9cqw' }} /> 오답
+                    <XIcon style={{ width: '1.067cqw', height: '1.067cqw' }} /> 오답
                   </span>
                 )
               ) : (
                 <span
                   className="rounded-full bg-violet-100 font-semibold text-violet-700"
-                  style={{ padding: '0.3cqw 0.8cqw', fontSize: '0.78cqw' }}
+                  style={{ padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
                 >
                   제출 완료 · 모범답안 확인
                 </span>
@@ -273,8 +273,8 @@ export function PayloadQuestionPanel({
         </div>
 
         {/* 하단 툴바 — 좌: 보조 아이콘 / 우: 힌트(전구) + 제출 */}
-        <div className="flex shrink-0 items-center justify-between" style={{ marginTop: '1.6cqw' }}>
-          <div className="flex items-center" style={{ gap: '0.4cqw' }}>
+        <div className="flex shrink-0 items-center justify-between" style={{ marginTop: '0.498cqw' /* figma 폼끝~하단세트 8px */ }}>
+          <div className="flex items-center" style={{ gap: '0.474cqw' }}>
             <button
               type="button"
               onClick={onBookmarkToggle}
@@ -316,17 +316,17 @@ export function PayloadQuestionPanel({
             </button>
           </div>
 
-          <div className="flex items-center" style={{ gap: '1cqw' }}>
+          <div className="flex items-center" style={{ gap: '1.185cqw' }}>
             {/* 힌트(전구) — 시안 배치. legacy 4지선다 외 유형은 현재 시각 배치용. */}
             {!isLocked && onHint && (
               <button
                 type="button"
                 onClick={onHint}
                 className="flex items-center justify-center text-amber-400 transition-transform hover:scale-110"
-                style={{ width: '2.4cqw', height: '2.4cqw' }}
+                style={{ width: '2.844cqw', height: '2.844cqw' }}
                 aria-label="힌트"
               >
-                <Lightbulb style={{ width: '1.7cqw', height: '1.7cqw' }} className="fill-amber-200" />
+                <Lightbulb style={{ width: '2.015cqw', height: '2.015cqw' }} className="fill-amber-200" />
               </button>
             )}
             {/* 제출 (채점 후엔 숨김 — 서술형은 제출=모범답안 노출) */}
@@ -337,11 +337,11 @@ export function PayloadQuestionPanel({
                 disabled={!complete || isGrading}
                 className="flex items-center justify-center bg-[#7c7aec] font-semibold text-white transition-colors hover:brightness-95 disabled:opacity-40"
                 style={{
-                  minWidth: '6cqw',
-                  height: '2.7cqw',
-                  borderRadius: '0.6cqw',
-                  padding: '0 1.4cqw',
-                  fontSize: '0.94cqw',
+                  minWidth: '8.024cqw' /* figma 130px */,
+                  height: '3.704cqw' /* figma 60px */,
+                  borderRadius: '0.747cqw',
+                  padding: '0 1.730cqw',
+                  fontSize: '1.233cqw',
                 }}
               >
                 {isGrading ? '채점 중...' : t('examPrepFinal.submit')}
@@ -351,22 +351,22 @@ export function PayloadQuestionPanel({
         </div>
 
         {/* 푸터 — 좌: n/total / 우: 이전·다음 화살표 (+ 종료) */}
-        <div className="flex shrink-0 items-center justify-between" style={{ marginTop: '1.1cqw' }}>
-          <p className="font-bold" style={{ fontSize: '0.94cqw' }}>
+        <div className="flex shrink-0 items-center justify-between" style={{ marginTop: '1.304cqw' }}>
+          <p className="font-bold" style={{ fontSize: '1.363cqw' /* figma 1/10 ~22px */ }}>
             <span className="text-gray-900 dark:text-gray-50">{currentSeq}</span>
-            <span className="mx-[0.4cqw] text-gray-300">/</span>
+            <span className="mx-[0.474cqw] text-gray-300">/</span>
             <span className="text-gray-400">{total}</span>
           </p>
-          <div className="flex items-center" style={{ gap: '0.5cqw' }}>
+          <div className="flex items-center" style={{ gap: '0.593cqw' }}>
             <button
               type="button"
               onClick={onPrev}
               disabled={!hasPrev}
               aria-label="prev"
               className="flex items-center justify-center border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
-              style={{ width: '2.3cqw', height: '2.3cqw', borderRadius: '0.5cqw' }}
+              style={{ width: '3.390cqw', height: '3.390cqw', borderRadius: '0.616cqw' }} /* figma 55px */
             >
-              <ChevronLeft style={{ width: '1.1cqw', height: '1.1cqw' }} />
+              <ChevronLeft style={{ width: '1.778cqw', height: '1.778cqw' }} />
             </button>
             <button
               type="button"
@@ -374,9 +374,9 @@ export function PayloadQuestionPanel({
               disabled={!hasNext}
               aria-label="next"
               className="flex items-center justify-center border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
-              style={{ width: '2.3cqw', height: '2.3cqw', borderRadius: '0.5cqw' }}
+              style={{ width: '3.390cqw', height: '3.390cqw', borderRadius: '0.616cqw' }} /* figma 55px */
             >
-              <ChevronRight style={{ width: '1.1cqw', height: '1.1cqw' }} />
+              <ChevronRight style={{ width: '1.778cqw', height: '1.778cqw' }} />
             </button>
             {canFinish && (
               <button
@@ -384,7 +384,7 @@ export function PayloadQuestionPanel({
                 onClick={onFinish}
                 aria-label={t('examPrepFinal.endQuizAria')}
                 className="flex items-center justify-center bg-[#7c7aec] font-bold text-white transition-colors hover:brightness-95"
-                style={{ height: '2.3cqw', borderRadius: '0.5cqw', padding: '0 1cqw', fontSize: '0.83cqw' }}
+                style={{ height: '3.390cqw', borderRadius: '0.616cqw', padding: '0 1.304cqw', fontSize: '1.114cqw' }}
               >
                 {t('examPrepFinal.endQuiz')}
               </button>

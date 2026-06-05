@@ -46,22 +46,22 @@ export function Mcq4SingleForm({
     result && typeof result.correct_answer === "number" ? result.correct_answer : null;
 
   return (
-    <div className="flex w-full flex-col items-stretch" style={{ gap: "1.04cqw" }}>
+    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" /* figma 문제~정오답~선지 8px */ }}>
       {/* 문제 텍스트 — SemiBold 36px @1920 */}
       <h1
         className="font-semibold leading-snug break-keep"
-        style={{ fontSize: "1.875cqw", color: C_BLACK }}
+        style={{ fontSize: "2.222cqw", color: C_BLACK }}
       >
         {questionText}
       </h1>
 
       {/* 정/오답 표시 슬롯 — 채점 전에도 자리 잡음 (레이아웃 shift 방지) */}
-      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "1.6cqw" }}>
+      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
         {feedbackSlot}
       </div>
 
       {/* 4개 선지 — 분리된 흰 라운드 박스 + letter + 세로 구분선 + 텍스트 */}
-      <fieldset className="flex w-full flex-col" style={{ gap: "0.83cqw" }} disabled={disabled}>
+      <fieldset className="flex w-full flex-col" style={{ gap: "1.481cqw" /* figma 선지 간격 24px */ }} disabled={disabled}>
         {choices.map((choice, idx) => {
           const letter = String.fromCharCode(65 + idx);
           const isSelected = value === idx;
@@ -81,7 +81,7 @@ export function Mcq4SingleForm({
                 : isOtherAfterResult
                   ? "rgb(var(--color-neutral-gray-300))"
                   : C_BORDER;
-          const borderWidth = isEmphasized ? "0.13cqw" : "0.052cqw";
+          const borderWidth = isEmphasized ? "0.154cqw" : "0.062cqw";
           const backgroundColor = isWrongPick
             ? C_DELETE
             : isOtherAfterResult
@@ -110,20 +110,20 @@ export function Mcq4SingleForm({
                 !isEliminated && !isEmphasized && !isOtherAfterResult && "hover:border-[var(--color-mastery-master)]",
               )}
               style={{
-                minHeight: "3.02cqw",
-                borderRadius: "0.83cqw",
+                minHeight: "5.867cqw" /* figma 선지박스 95px */,
+                borderRadius: "0.984cqw",
                 border: `${borderWidth} solid ${borderColor}`,
                 backgroundColor,
-                padding: "0 1.46cqw",
-                gap: "1.15cqw",
+                padding: "0 1.730cqw",
+                gap: "1.363cqw",
               }}
             >
               {/* letter */}
               <span
                 className="shrink-0 text-center"
                 style={{
-                  fontSize: "1.15cqw",
-                  width: "1.4cqw",
+                  fontSize: "1.363cqw",
+                  width: "1.659cqw",
                   color: letterColor,
                   fontWeight: isEmphasized ? 700 : 500,
                 }}
@@ -133,13 +133,13 @@ export function Mcq4SingleForm({
               {/* 세로 구분선 */}
               <span
                 className="shrink-0"
-                style={{ width: "0.052cqw", height: "1.5cqw", backgroundColor: C_DIVIDER }}
+                style={{ width: "0.062cqw", height: "1.778cqw", backgroundColor: C_DIVIDER }}
               />
               {/* 선지 텍스트 */}
               <span
                 className="flex-1 text-left break-keep leading-snug"
                 style={{
-                  fontSize: "1.04cqw",
+                  fontSize: "1.233cqw",
                   color: textColor,
                   fontWeight: isSelected || isCorrect ? 600 : 400,
                 }}

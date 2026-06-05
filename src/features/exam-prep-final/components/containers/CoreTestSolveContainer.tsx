@@ -36,7 +36,7 @@ import {
   type GradeSingleResponseDto,
 } from '../../services/examPrepService'
 import { SolveTopBar } from '../ui/SolveTopBar'
-import { SolveCanvas } from '../ui/SolveCanvas'
+import { ContentScaledCanvas } from '../ui/ContentScaledCanvas'
 import { SolveSidebar } from '../ui/SolveSidebar'
 import { SolveQuestionPanel } from '../ui/SolveQuestionPanel'
 import { PayloadQuestionPanel } from '../ui/PayloadQuestionPanel'
@@ -1036,20 +1036,19 @@ export function CoreTestSolveContainer({
 
   // ─── 풀이 화면 (1920×1080 캔버스 contain 스케일, 시안 매칭) ───
   return (
-    <SolveCanvas>
-      <div className="flex h-full w-full flex-col">
-        {/* 상단바 — 얇은 흰 바 (cqw 비례) */}
+    <div className="flex h-full w-full flex-col bg-[#F9F9FB] dark:bg-gray-950">
+        {/* 상단바 — 얇은 흰 바 (px 고정) */}
         <header
           className="flex shrink-0 items-center justify-between bg-white dark:bg-gray-900"
           style={{
-            height: '3.65cqw',
-            padding: '0 1.77cqw',
-            borderBottom: '0.052cqw solid rgb(233 235 239)',
+            height: '70px',
+            padding: '0 34px',
+            borderBottom: '1px solid rgb(233 235 239)',
           }}
         >
           <span
             className="min-w-0 flex-1 truncate text-gray-400"
-            style={{ fontSize: '0.83cqw' }}
+            style={{ fontSize: '16px' }}
           >
             {sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle}
           </span>
@@ -1057,7 +1056,7 @@ export function CoreTestSolveContainer({
             type="button"
             onClick={handleExit}
             className="shrink-0 border border-gray-300 bg-white font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-            style={{ fontSize: '0.78cqw', padding: '0.42cqw 0.94cqw', borderRadius: '0.42cqw' }}
+            style={{ fontSize: '15px', padding: '8px 18px', borderRadius: '8px' }}
           >
             {t('examPrepFinal.exit')}
           </button>
@@ -1185,8 +1184,11 @@ export function CoreTestSolveContainer({
           />
         )}
 
-        {/* payload 유형(매칭/빈칸/복수/서술형) — question_format 디스패처 패널 */}
+        {/* payload 유형(매칭/빈칸/복수/서술형) — question_format 디스패처 패널.
+            본문만 비례: ContentScaledCanvas(1620×1080) 안에서 폼 cqw 스케일. */}
         {currentQuestion && !!currentQuestion.question_format && (
+          <div className="relative flex min-h-0 flex-1 overflow-hidden bg-[#F6F7F9] dark:bg-gray-950">
+            <ContentScaledCanvas>
           <PayloadQuestionPanel
             question={currentQuestion}
             currentSeq={currentSeq}
@@ -1216,6 +1218,8 @@ export function CoreTestSolveContainer({
             }
             onFinish={() => setPhase('completed')}
           />
+            </ContentScaledCanvas>
+          </div>
         )}
 
         {/* 우측: AI 챗봇 패널 (챗봇 아이콘 클릭 시 자동 열림). */}
@@ -1246,6 +1250,5 @@ export function CoreTestSolveContainer({
         )}
         </div>
       </div>
-    </SolveCanvas>
   )
 }
