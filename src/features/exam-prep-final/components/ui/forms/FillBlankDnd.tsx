@@ -33,8 +33,7 @@ import { cn } from "@/shared/lib/utils";
 const C_BLACK = "var(--color-neutral-black-hex)";
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
-const SELECTED_BG = "rgba(124, 122, 236, 0.08)"; // 연보라 (correct 빈칸 배경)
-const WRONG_BG = "rgba(244, 63, 94, 0.08)";      // 연빨강 (wrong 빈칸 배경)
+const WRONG_BG = "rgba(244, 63, 94, 0.08)"; // 연빨강 (wrong 빈칸 배경)
 
 const pointerCollisionDetection: CollisionDetection = (args) => {
   const pointer = pointerWithin(args);
@@ -306,8 +305,7 @@ function DroppableBlank({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `blank-${blankIdx}` });
   const isEmpty = chipIdx === null;
-  const textColor =
-    isCorrect === true ? C_MASTER : isCorrect === false ? C_DELETE : C_BLACK;
+  const textColor = isCorrect === false ? C_DELETE : C_BLACK;
   return (
     <span
       ref={setNodeRef}
@@ -324,8 +322,11 @@ function DroppableBlank({
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
-        backgroundColor: isCorrect === false ? WRONG_BG : isCorrect === true ? SELECTED_BG : "#ffffff",
-        border: `0.095cqw solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
+        backgroundColor: isCorrect === false ? WRONG_BG : "#ffffff",
+        border:
+          isCorrect === true
+            ? `0.154cqw solid ${C_MASTER}` /* 정답: 흰 배경 + 보라 테두리 진하게 (시안) */
+            : `0.095cqw solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
         boxShadow: isEmpty ? "inset 0 0.095cqw 0.356cqw rgba(17,24,39,0.06)" : "0 0.119cqw 0.474cqw rgba(17,24,39,0.1)",
         color: isEmpty ? "transparent" : textColor,
         fontWeight: isCorrect === true || isCorrect === false ? 700 : 500,

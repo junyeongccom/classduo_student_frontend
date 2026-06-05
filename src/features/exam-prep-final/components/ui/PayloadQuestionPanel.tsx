@@ -143,6 +143,26 @@ export function PayloadQuestionPanel({
   const explObj = (graded?.explanation ?? question.explanation) as Record<string, string> | null | undefined
   const explanationText = explObj?.detailed ?? (explObj ? Object.values(explObj)[0] ?? '' : '')
 
+  // 정/오답 배지 — 채점 후 각 폼의 feedbackSlot(문제/지시문 밑)에 표시 (시안: 라벨이 문제 밑). Essay 제외.
+  const feedbackBadge =
+    graded && !isEssay ? (
+      graded.is_correct ? (
+        <span
+          className="flex items-center rounded-full bg-violet-100 font-semibold text-violet-700"
+          style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
+        >
+          <Check style={{ width: '1.067cqw', height: '1.067cqw' }} /> 정답
+        </span>
+      ) : (
+        <span
+          className="flex items-center rounded-full bg-rose-100 font-semibold text-rose-700"
+          style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
+        >
+          <XIcon style={{ width: '1.067cqw', height: '1.067cqw' }} /> 오답
+        </span>
+      )
+    ) : null
+
   // ── 유형별 폼 디스패치 ──
   const renderForm = () => {
     switch (qf) {
@@ -156,6 +176,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            feedbackSlot={feedbackBadge}
           />
         )
       case 'category_fill_blank5_single':
@@ -167,6 +188,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            feedbackSlot={feedbackBadge}
           />
         )
       case 'category_fill_blank7_multi':
@@ -178,6 +200,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            feedbackSlot={feedbackBadge}
           />
         )
       case 'description_mcq6_multi':
@@ -189,6 +212,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            feedbackSlot={feedbackBadge}
           />
         )
       case 'error_diagnosis_evaluation': {
@@ -218,6 +242,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            feedbackSlot={feedbackBadge}
           />
         )
     }
@@ -243,33 +268,15 @@ export function PayloadQuestionPanel({
       <div className="flex h-full w-full min-h-0 flex-col">
         {/* 폼 영역 (stem + body) — 상단 정렬, 남는 높이 차지 */}
         <div className="flex min-h-0 flex-1 flex-col" style={{ overflowY: 'auto' }}>
-          {/* 정/오답 배지 (채점 후만 — 시안엔 없는 채점후 상태, 기존 동작 보존) */}
-          {graded && (
+          {/* Essay 는 feedbackSlot 이 없어 제출완료 배지를 폼 위에 유지. 그 외 유형은 폼 내부 feedbackSlot(문제 밑). */}
+          {graded && isEssay && (
             <div className="mb-[1.185cqw] flex items-center" style={{ gap: '0.593cqw' }}>
-              {!isEssay ? (
-                graded.is_correct ? (
-                  <span
-                    className="flex items-center rounded-full bg-violet-100 font-semibold text-violet-700"
-                    style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
-                  >
-                    <Check style={{ width: '1.067cqw', height: '1.067cqw' }} /> 정답
-                  </span>
-                ) : (
-                  <span
-                    className="flex items-center rounded-full bg-rose-100 font-semibold text-rose-700"
-                    style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
-                  >
-                    <XIcon style={{ width: '1.067cqw', height: '1.067cqw' }} /> 오답
-                  </span>
-                )
-              ) : (
-                <span
-                  className="rounded-full bg-violet-100 font-semibold text-violet-700"
-                  style={{ padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
-                >
-                  제출 완료 · 모범답안 확인
-                </span>
-              )}
+              <span
+                className="rounded-full bg-violet-100 font-semibold text-violet-700"
+                style={{ padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
+              >
+                제출 완료 · 모범답안 확인
+              </span>
             </div>
           )}
 
