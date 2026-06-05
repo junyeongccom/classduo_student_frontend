@@ -75,42 +75,42 @@ export function SolveSidebar({
       <aside
         className="flex h-full shrink-0 flex-col bg-white dark:bg-gray-900"
         style={{
-          width: '300.0px' /* 300/1920 (figma 사이드바 폭) */,
-          borderRight: '1.0px solid rgb(233 235 239)',
-          padding: '49.9px 28.0px' /* 50 / 28 px @1920 */,
-          gap: '34.0px',
+          width: '15.625vw' /* 300/1920 (figma 사이드바 폭) */,
+          borderRight: '0.052vw solid rgb(233 235 239)',
+          padding: '2.599vw 1.458vw' /* 50 / 28 px @1920 */,
+          gap: '1.771vw',
         }}
       >
         {/* 회차 정보 */}
         <div>
-          <p className="text-gray-400" style={{ fontSize: '15.0px', lineHeight: 1.3 }}>
+          <p className="text-gray-400" style={{ fontSize: '0.781vw', lineHeight: 1.3 }}>
             {sessionLabel}
           </p>
           <h2
             className="font-bold text-gray-900 dark:text-gray-50 break-keep"
-            style={{ fontSize: '29.0px', marginTop: '5.0px', lineHeight: 1.2 }}
+            style={{ fontSize: '1.510vw', marginTop: '0.260vw', lineHeight: 1.2 }}
           >
             {lectureTitle}
           </h2>
         </div>
 
         {/* 숙련도 범례 */}
-        <div className="flex flex-col" style={{ gap: '10.6px' }}>
+        <div className="flex flex-col" style={{ gap: '0.552vw' }}>
           {legend.map(([key, color, label, count]) => (
-            <div key={key} className="flex items-center" style={{ gap: '11.9px' }}>
+            <div key={key} className="flex items-center" style={{ gap: '0.620vw' }}>
               <span
                 className="inline-block shrink-0 rounded-full"
-                style={{ width: '14.0px', height: '14.0px', backgroundColor: color }}
+                style={{ width: '0.729vw', height: '0.729vw', backgroundColor: color }}
               />
               <span
                 className="font-bold text-gray-800 dark:text-gray-200"
-                style={{ fontSize: '15.0px' }}
+                style={{ fontSize: '0.781vw' }}
               >
                 {label}
               </span>
               <span
                 className="ml-auto tabular-nums text-gray-700 dark:text-gray-300"
-                style={{ fontSize: '15.0px' }}
+                style={{ fontSize: '0.781vw' }}
               >
                 {count}
               </span>
@@ -119,14 +119,14 @@ export function SolveSidebar({
         </div>
 
         {/* 문항 그리드 — 5열. 현재 문항은 더 크게 + 굵게 (사용자 요청). */}
-        <div className="grid grid-cols-5" style={{ gap: '11.9px', placeItems: 'center' }}>
+        <div className="grid grid-cols-5" style={{ gap: '0.620vw', placeItems: 'center' }}>
           {seqs.map((seq) => {
             const isCurrent = seq === currentSeq
             const state = seqStateMap.get(seq)
             const bg =
               state === 'master' ? '#A78BFA' : state === 'skilled' ? '#FFCD36' : '#F0F1F4'
             const fg = state === 'master' ? '#ffffff' : '#1F2937'
-            const size = isCurrent ? '49.0px' : '39.9px'
+            const size = isCurrent ? '2.552vw' : '2.078vw'
             return (
               <button
                 key={seq}
@@ -138,7 +138,7 @@ export function SolveSidebar({
                   height: size,
                   backgroundColor: bg,
                   color: fg,
-                  fontSize: isCurrent ? '20.0px' : '15.0px',
+                  fontSize: isCurrent ? '1.042vw' : '0.781vw',
                   fontWeight: isCurrent ? 800 : 600,
                 }}
               >
@@ -149,7 +149,7 @@ export function SolveSidebar({
         </div>
 
         {/* 경과 시간 */}
-        <div className="flex items-center justify-between" style={{ fontSize: '15.9px' }}>
+        <div className="flex items-center justify-between" style={{ fontSize: '0.828vw' }}>
           <span className="font-bold text-gray-500 dark:text-gray-400">
             {t('examPrepFinal.elapsedTime')}
           </span>

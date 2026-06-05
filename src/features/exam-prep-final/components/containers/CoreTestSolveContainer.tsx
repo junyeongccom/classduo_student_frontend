@@ -1041,14 +1041,14 @@ export function CoreTestSolveContainer({
         <header
           className="flex shrink-0 items-center justify-between bg-white dark:bg-gray-900"
           style={{
-            height: '70px',
-            padding: '0 34px',
-            borderBottom: '1px solid rgb(233 235 239)',
+            height: '3.646vw',
+            padding: '0 1.771vw',
+            borderBottom: '0.052vw solid rgb(233 235 239)',
           }}
         >
           <span
             className="min-w-0 flex-1 truncate text-gray-400"
-            style={{ fontSize: '16px' }}
+            style={{ fontSize: '0.833vw' }}
           >
             {sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle}
           </span>
@@ -1056,7 +1056,7 @@ export function CoreTestSolveContainer({
             type="button"
             onClick={handleExit}
             className="shrink-0 border border-gray-300 bg-white font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-            style={{ fontSize: '15px', padding: '8px 18px', borderRadius: '8px' }}
+            style={{ fontSize: '0.781vw', padding: '0.417vw 0.938vw', borderRadius: '0.417vw' }}
           >
             {t('examPrepFinal.exit')}
           </button>
