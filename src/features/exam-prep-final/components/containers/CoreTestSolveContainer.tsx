@@ -1083,19 +1083,24 @@ export function CoreTestSolveContainer({
 
   // ─── 풀이 화면 (1920×1080 캔버스 contain 스케일, 시안 매칭) ───
   return (
-    <div className="flex h-full w-full flex-col bg-[#F9F9FB] dark:bg-gray-950">
+    // 한계치(1024px) 미만이면 더 안 줄이고 가로 스크롤 — 사이드바/헤더/본문이 너무 작아지지 않게.
+    <div className="h-full w-full overflow-x-auto overflow-y-hidden">
+    <div
+      className="flex h-full w-full min-w-[1024px] flex-col bg-[#F9F9FB] dark:bg-gray-950"
+      style={{ containerType: 'inline-size' }}
+    >
         {/* 상단바 — 얇은 흰 바 (px 고정) */}
         <header
           className="flex shrink-0 items-center justify-between bg-white dark:bg-gray-900"
           style={{
-            height: '3.646vw',
-            padding: '0 1.771vw',
-            borderBottom: '0.052vw solid rgb(233 235 239)',
+            height: '3.646cqw',
+            padding: '0 1.771cqw',
+            borderBottom: '0.052cqw solid rgb(233 235 239)',
           }}
         >
           <span
             className="min-w-0 flex-1 truncate text-gray-400"
-            style={{ fontSize: '0.833vw' }}
+            style={{ fontSize: '0.833cqw' }}
           >
             {sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle}
           </span>
@@ -1103,7 +1108,7 @@ export function CoreTestSolveContainer({
             type="button"
             onClick={handleExit}
             className="shrink-0 border border-gray-300 bg-white font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-            style={{ fontSize: '0.781vw', padding: '0.417vw 0.938vw', borderRadius: '0.417vw' }}
+            style={{ fontSize: '0.781cqw', padding: '0.417cqw 0.938cqw', borderRadius: '0.417cqw' }}
           >
             {t('examPrepFinal.exit')}
           </button>
@@ -1295,5 +1300,6 @@ export function CoreTestSolveContainer({
         )}
         </div>
       </div>
+    </div>
   )
 }
