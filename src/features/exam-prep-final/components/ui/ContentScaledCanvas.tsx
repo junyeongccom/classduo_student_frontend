@@ -18,14 +18,17 @@ export const CONTENT_DESIGN_H = 1010
 
 export function ContentScaledCanvas({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-full w-full items-center justify-center overflow-hidden">
+    <div
+      className="flex h-full w-full items-center justify-center overflow-hidden"
+      style={{ containerType: 'size' }}
+    >
       <div
         className="relative flex shrink-0 overflow-hidden"
         style={{
-          // 본문 영역 안에서 1620:1080 비율 박스를 contain (높이 우선, 넘치면 maxWidth 로 가로 맞춤).
-          height: '100%',
+          // 본문 영역에 1620:1010 비율 박스를 contain — container query 로 가로·세로 둘 다 맞춤.
+          // (height:100%+maxWidth 조합은 세로 큰 화면서 폭이 영역을 넘쳐 잘림 → cqw/cqh 로 교정.)
+          width: `min(100cqw, calc(100cqh * ${CONTENT_DESIGN_W} / ${CONTENT_DESIGN_H}))`,
           aspectRatio: `${CONTENT_DESIGN_W} / ${CONTENT_DESIGN_H}`,
-          maxWidth: '100%',
           containerType: 'size',
         }}
       >
