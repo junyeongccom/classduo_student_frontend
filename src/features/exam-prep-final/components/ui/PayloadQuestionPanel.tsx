@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -128,6 +129,7 @@ export function PayloadQuestionPanel({
   const t = useTranslations()
   const { locale } = useI18n()
   const isEn = locale === 'en'
+  const [showExplanation, setShowExplanation] = useState(false)
 
   const qf = question.question_format ?? null
   const isEssay = qf === ESSAY_FORMAT
@@ -137,6 +139,9 @@ export function PayloadQuestionPanel({
   const result = buildResult(question, graded)
   const isLocked = graded !== null
   const complete = isPayloadResponseComplete(qf, payload, response)
+  // 해설 텍스트 — graded.explanation 우선, 없으면 question.explanation. key 'detailed' 우선.
+  const explObj = (graded?.explanation ?? question.explanation) as Record<string, string> | null | undefined
+  const explanationText = explObj?.detailed ?? (explObj ? Object.values(explObj)[0] ?? '' : '')
 
   // ── 유형별 폼 디스패치 ──
   const renderForm = () => {
@@ -270,6 +275,36 @@ export function PayloadQuestionPanel({
 
           {/* 유형별 폼 본문 (폼이 stem + body 렌더) */}
           {renderForm()}
+
+          {/* 해설 영역 — 채점 후 [해설보기] 시 펼침. 매칭은 정답 다이어그램 + 텍스트. */}
+          {showExplanation && (
+            <div className="mt-[2cqw] flex w-full flex-col border-t border-gray-200 pt-[1.5cqw]" style={{ gap: '1.5cqw' }}>
+              <p className="font-bold" style={{ fontSize: '1.5cqw', color: 'var(--color-neutral-black-hex)' }}>
+                해설
+              </p>
+              {qf === 'term_definition_match3' && (
+                <MatchForm
+                  questionText=""
+                  showHeader={false}
+                  leftItems={(payload.left_items as string[]) ?? []}
+                  rightItems={(payload.right_items as string[]) ?? []}
+                  value={(payload.correct_pairs as [number, number][]) ?? null}
+                  onChange={() => {}}
+                  disabled
+                  result={{
+                    is_correct: true,
+                    correct_answer: (payload.correct_pairs as [number, number][]) ?? null,
+                    payload: payload as never,
+                  }}
+                />
+              )}
+              {explanationText && (
+                <p className="break-keep text-center" style={{ fontSize: '1.1cqw', lineHeight: 1.7, color: 'rgb(75 85 99)' }}>
+                  {explanationText}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 하단 툴바 — 좌: 보조 아이콘 / 우: 힌트(전구) + 제출 */}
@@ -345,6 +380,23 @@ export function PayloadQuestionPanel({
                 }}
               >
                 {isGrading ? '채점 중...' : t('examPrepFinal.submit')}
+              </button>
+            )}
+            {/* 해설보기 / 닫기 (채점 후, 서술형 제외 — 서술형은 모범답안이 폼에 노출) */}
+            {isLocked && !isEssay && (
+              <button
+                type="button"
+                onClick={() => setShowExplanation((s) => !s)}
+                className="flex items-center justify-center bg-[#7c7aec] font-semibold text-white transition-colors hover:brightness-95"
+                style={{
+                  minWidth: '8.024cqw',
+                  height: '3.704cqw',
+                  borderRadius: '0.747cqw',
+                  padding: '0 1.730cqw',
+                  fontSize: '1.233cqw',
+                }}
+              >
+                {showExplanation ? '닫기' : '해설보기'}
               </button>
             )}
           </div>

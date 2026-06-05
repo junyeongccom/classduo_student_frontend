@@ -23,6 +23,8 @@ export type MatchFormProps = {
   disabled?: boolean;
   result?: QuizFormResult | null;
   feedbackSlot?: React.ReactNode;
+  /** false면 문제 텍스트·정오답칸 숨김 (해설 정답 다이어그램용). */
+  showHeader?: boolean;
 };
 
 type ActiveSel = { side: "left" | "right"; idx: number } | null;
@@ -63,6 +65,7 @@ export function MatchForm({
   disabled,
   result,
   feedbackSlot,
+  showHeader = true,
 }: MatchFormProps) {
   const pairs = value ?? [];
   const [active, setActive] = useState<ActiveSel>(null);
@@ -129,13 +132,17 @@ export function MatchForm({
 
   return (
     <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" }}>
-      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
-        {questionText || "좌측 개념을 클릭한 뒤, 우측에서 알맞은 정의를 클릭하세요."}
-      </h1>
+      {showHeader && (
+        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
+          {questionText || "좌측 개념을 클릭한 뒤, 우측에서 알맞은 정의를 클릭하세요."}
+        </h1>
+      )}
 
-      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" }}>
-        {feedbackSlot}
-      </div>
+      {showHeader && (
+        <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" }}>
+          {feedbackSlot}
+        </div>
+      )}
 
       <div className="relative mx-auto w-full" style={{ maxWidth: "51.728cqw" /* 838px */ }}>
         <div className="flex justify-between">
