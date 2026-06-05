@@ -703,28 +703,69 @@ export function CoreTestSolveContainer({
     [currentSeq, gradedBySeq],
   )
 
-  // ─── 액션: 힌트 클릭 → 오답 1개 random disable ───
+  // ─── 액션: 힌트 클릭 → 오답 1개 random disable (레거시 4지선다 + payload 객관식/빈칸채우기) ───
   const handleHintClick = useCallback(() => {
     if (gradedBySeq[currentSeq]) return  // 채점된 문항은 무시
     if (hintDisabledBySeq[currentSeq] != null) return  // 이미 힌트 사용
     if (!currentQuestion) return
-    const correctIdx = parseInt(currentQuestion.answer, 10)
-    const wrongOptions = currentQuestion.options
-      .map((_, i) => i)
-      .filter((i) => i !== correctIdx)
-    if (wrongOptions.length === 0) return
-    const pickIdx = wrongOptions[Math.floor(Math.random() * wrongOptions.length)]
+
+    const qf = currentQuestion.question_format
+    let pickIdx: number
+    if (qf) {
+      // payload 유형 — payload.choices + correct_answer 로 오답 인덱스 산출.
+      // 매칭/서술형 등 choices 없는 유형은 무시.
+      const payload = (currentQuestion.payload ?? {}) as Record<string, unknown>
+      const choices = (payload.choices as string[] | undefined) ?? []
+      if (choices.length === 0) return
+      const rawCorrect = payload.correct_answer
+      const correctSet = new Set<number>(
+        Array.isArray(rawCorrect)
+          ? (rawCorrect as unknown[]).filter((x): x is number => typeof x === 'number')
+          : typeof rawCorrect === 'number'
+            ? [rawCorrect]
+            : [],
+      )
+      const wrong = choices.map((_, i) => i).filter((i) => !correctSet.has(i))
+      if (wrong.length === 0) return
+      pickIdx = wrong[Math.floor(Math.random() * wrong.length)]
+    } else {
+      // 레거시 단일 4지선다
+      const correctIdx = parseInt(currentQuestion.answer, 10)
+      const wrong = currentQuestion.options
+        .map((_, i) => i)
+        .filter((i) => i !== correctIdx)
+      if (wrong.length === 0) return
+      pickIdx = wrong[Math.floor(Math.random() * wrong.length)]
+    }
+
     setHintDisabledBySeq((prev) => ({ ...prev, [currentSeq]: pickIdx }))
     setHintUsedSeqs((prev) => {
       const next = new Set(prev)
       next.add(currentSeq)
       return next
     })
-    // 학생이 disable된 선지를 선택했었다면 해제
+    // 레거시: 제거된 선지를 선택했었다면 해제
     setSelectedBySeq((prev) => {
       if (prev[currentSeq] === pickIdx) {
         const { [currentSeq]: _drop, ...rest } = prev
         return rest
+      }
+      return prev
+    })
+    // payload: 응답에 제거된 인덱스가 있으면 해제 (number / number[] / (number|null)[])
+    setResponseBySeq((prev) => {
+      const r = prev[currentSeq]
+      if (typeof r === 'number') {
+        if (r !== pickIdx) return prev
+        const { [currentSeq]: _drop, ...rest } = prev
+        return rest
+      }
+      if (Array.isArray(r) && r.includes(pickIdx)) {
+        const next =
+          qf === 'category_fill_blank7_multi'
+            ? (r as (number | null)[]).map((x) => (x === pickIdx ? null : x))
+            : (r as number[]).filter((x) => x !== pickIdx)
+        return { ...prev, [currentSeq]: next }
       }
       return prev
     })
@@ -1166,6 +1207,7 @@ export function CoreTestSolveContainer({
             onSourceClick={handleSourceClick}
             onAskChatbot={handleAskChatbot}
             onHint={handleHintClick}
+            eliminatedIdx={hintDisabledBySeq[currentSeq] ?? undefined}
             mobileBottomSpacer={rightTab !== null}
             canFinish={
               total > 0 &&

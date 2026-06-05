@@ -98,8 +98,10 @@ interface PayloadQuestionPanelProps {
   hasNext: boolean
   onSourceClick?: (kind: 'materials' | 'recordings') => void
   onAskChatbot?: () => void
-  /** 힌트(전구) — payload 유형은 옵션 제거 미지원이라 현재는 시각 배치용(legacy 4지선다만 실제 동작). */
+  /** 힌트(전구) 클릭 — 객관식/빈칸채우기에서 오답 선지 1개 제거. */
   onHint?: () => void
+  /** 힌트로 제거된 오답 choice 인덱스 — 해당 선택지 비활성/취소선. */
+  eliminatedIdx?: number
   canFinish: boolean
   onFinish: () => void
   mobileBottomSpacer?: boolean
@@ -123,6 +125,7 @@ export function PayloadQuestionPanel({
   onSourceClick,
   onAskChatbot,
   onHint,
+  eliminatedIdx,
   canFinish,
   onFinish,
 }: PayloadQuestionPanelProps) {
@@ -188,6 +191,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            eliminatedIdx={eliminatedIdx}
             feedbackSlot={feedbackBadge}
           />
         )
@@ -200,6 +204,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            eliminatedIdx={eliminatedIdx}
             feedbackSlot={feedbackBadge}
           />
         )
@@ -212,6 +217,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            eliminatedIdx={eliminatedIdx}
             feedbackSlot={feedbackBadge}
           />
         )
@@ -242,6 +248,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
             result={result}
+            eliminatedIdx={eliminatedIdx}
             feedbackSlot={feedbackBadge}
           />
         )
@@ -390,8 +397,8 @@ export function PayloadQuestionPanel({
           </div>
 
           <div className="flex items-center" style={{ gap: '1.185cqw' }}>
-            {/* 힌트(전구) — 시안 배치. legacy 4지선다 외 유형은 현재 시각 배치용. */}
-            {!isLocked && onHint && (
+            {/* 힌트(전구) — 객관식/빈칸채우기에서 오답 1개 제거. 선택지 없는 유형(매칭/서술형)·사용 후 숨김. */}
+            {!isLocked && onHint && choices.length > 0 && eliminatedIdx == null && (
               <button
                 type="button"
                 onClick={onHint}
