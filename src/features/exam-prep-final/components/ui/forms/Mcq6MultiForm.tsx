@@ -127,7 +127,7 @@ export function Mcq6MultiForm({
               aria-pressed={isSelected}
               className={cn(
                 "relative flex w-full items-center transition-colors",
-                isEliminated && "cursor-not-allowed opacity-30 [&_*]:line-through",
+                isEliminated && "cursor-not-allowed opacity-[0.45]",
                 !isEliminated && !isEmphasized && !isOtherAfterResult && "hover:border-[var(--color-mastery-master)]",
               )}
               style={{

@@ -399,15 +399,24 @@ export function PayloadQuestionPanel({
           <div className="flex items-center" style={{ gap: '1.185cqw' }}>
             {/* 힌트(전구) — 객관식/빈칸채우기에서 오답 1개 제거. 선택지 없는 유형(매칭/서술형)·사용 후 숨김. */}
             {!isLocked && onHint && choices.length > 0 && eliminatedIdx == null && (
-              <button
-                type="button"
-                onClick={onHint}
-                className="flex items-center justify-center text-amber-400 transition-transform hover:scale-110"
-                style={{ width: '2.844cqw', height: '2.844cqw' }}
-                aria-label="힌트"
-              >
-                <Lightbulb style={{ width: '2.015cqw', height: '2.015cqw' }} className="fill-amber-200" />
-              </button>
+              <div className="group/hint relative flex items-center">
+                <button
+                  type="button"
+                  onClick={onHint}
+                  className="flex items-center justify-center text-amber-400 transition-transform hover:scale-110"
+                  style={{ width: '2.844cqw', height: '2.844cqw' }}
+                  aria-label="힌트"
+                >
+                  <Lightbulb style={{ width: '2.015cqw', height: '2.015cqw' }} className="fill-amber-200" />
+                </button>
+                <div
+                  role="tooltip"
+                  className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap bg-gray-900 font-medium text-white opacity-0 transition-opacity duration-150 group-hover/hint:opacity-100 dark:bg-gray-700"
+                  style={{ bottom: 'calc(100% + 0.4cqw)', fontSize: '1cqw', padding: '0.3cqw 0.6cqw', borderRadius: '0.4cqw' }}
+                >
+                  힌트보기
+                </div>
+              </div>
             )}
             {/* 제출 (채점 후엔 숨김 — 서술형은 제출=모범답안 노출) */}
             {!isLocked && (

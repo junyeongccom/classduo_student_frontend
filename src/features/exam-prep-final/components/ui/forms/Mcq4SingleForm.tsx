@@ -110,7 +110,7 @@ export function Mcq4SingleForm({
               aria-label={isEliminated ? "힌트로 제거된 선택지" : undefined}
               className={cn(
                 "relative flex w-full items-center transition-colors",
-                isEliminated && "cursor-not-allowed opacity-30 [&_*]:line-through",
+                isEliminated && "cursor-not-allowed opacity-[0.45]",
                 !isEliminated && !isEmphasized && !isOtherAfterResult && "hover:border-[var(--color-mastery-master)]",
               )}
               style={{

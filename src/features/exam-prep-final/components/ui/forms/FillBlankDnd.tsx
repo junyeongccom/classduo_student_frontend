@@ -262,7 +262,7 @@ function DraggableChip({
       disabled={disabled}
       aria-label={eliminated ? "힌트로 제거된 선택지" : undefined}
       style={{
-        opacity: isDragging ? 0 : 1,
+        opacity: isDragging ? 0 : eliminated ? 0.45 : 1,
         touchAction: "none",
         padding: "1.363cqw 1.778cqw" /* figma 칩 높이 66px */,
         minWidth: "8.083cqw" /* figma 131px */,
@@ -278,7 +278,7 @@ function DraggableChip({
         "select-none rounded-[0.711cqw] bg-white text-center font-medium",
         !disabled && "cursor-grab active:cursor-grabbing hover:shadow-md",
         disabled && !eliminated && "opacity-60",
-        eliminated && "cursor-not-allowed opacity-30 line-through",
+        eliminated && "cursor-not-allowed",
       )}
     >
       {label}
