@@ -11,9 +11,10 @@
 
 import type { ReactNode } from 'react'
 
-/** 본문 디자인 좌표계 — 전체 1920 에서 사이드바(300) 를 뺀 폭. */
+/** 본문 디자인 좌표계 — 폭은 전체 1920 에서 사이드바(300) 를 뺀 1620,
+ *  높이는 전체 1080 에서 헤더(70) 를 뺀 1010 (figma content 프레임 y=70~1080). */
 export const CONTENT_DESIGN_W = 1620
-export const CONTENT_DESIGN_H = 1080
+export const CONTENT_DESIGN_H = 1010
 
 export function ContentScaledCanvas({ children }: { children: ReactNode }) {
   return (
