@@ -1083,10 +1083,10 @@ export function CoreTestSolveContainer({
 
   // ─── 풀이 화면 (1920×1080 캔버스 contain 스케일, 시안 매칭) ───
   return (
-    // 한계치(1024px) 미만이면 더 안 줄이고 가로 스크롤 — 사이드바/헤더/본문이 너무 작아지지 않게.
+    // 한계치(1440px) 미만이면 더 안 줄이고 가로 스크롤 — 사이드바/헤더/본문이 너무 작아지지 않게.
     <div className="h-full w-full overflow-x-auto overflow-y-hidden">
     <div
-      className="flex h-full w-full min-w-[1024px] flex-col bg-[#F9F9FB] dark:bg-gray-950"
+      className="flex h-full w-full min-w-[1440px] flex-col bg-[#F9F9FB] dark:bg-gray-950"
       style={{ containerType: 'inline-size' }}
     >
         {/* 상단바 — 얇은 흰 바 (px 고정) */}
