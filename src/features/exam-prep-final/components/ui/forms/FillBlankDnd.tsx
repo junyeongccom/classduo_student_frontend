@@ -33,6 +33,8 @@ import { cn } from "@/shared/lib/utils";
 const C_BLACK = "var(--color-neutral-black-hex)";
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
+const SELECTED_BG = "rgba(124, 122, 236, 0.08)"; // 연보라 (correct 빈칸 배경)
+const WRONG_BG = "rgba(244, 63, 94, 0.08)";      // 연빨강 (wrong 빈칸 배경)
 
 const pointerCollisionDetection: CollisionDetection = (args) => {
   const pointer = pointerWithin(args);
@@ -80,7 +82,7 @@ export function FillBlankDnd({
   const [draggingChipIdx, setDraggingChipIdx] = useState<number | null>(null);
 
   const fontScale = useMemo(() => computeChipFontScale(choices), [choices]);
-  const chipFontSize = `${(1.15 * fontScale).toFixed(3)}cqw`;
+  const chipFontSize = `${(1.5 * fontScale).toFixed(3)}cqw`;
 
   const parts = useMemo(() => questionText.split(/_{2,}/), [questionText]);
   const usedChipIndexes = new Set(value.filter((v): v is number => v !== null));
@@ -207,6 +209,7 @@ export function FillBlankDnd({
                 disabled={disabled || eliminatedIdx === c.idx}
                 eliminated={eliminatedIdx === c.idx && !isCorrect && isCorrect !== false}
                 fontSize={chipFontSize}
+                highlight={typeof isCorrect === "boolean" && correctIndexes.includes(c.idx)}
               />
             ))}
           </div>
@@ -238,12 +241,14 @@ function DraggableChip({
   disabled,
   eliminated,
   fontSize,
+  highlight,
 }: {
   chipIdx: number;
   label: string;
   disabled?: boolean;
   eliminated?: boolean;
   fontSize: string;
+  highlight?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `chip-${chipIdx}`,
@@ -266,7 +271,8 @@ function DraggableChip({
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
-        color: C_BLACK,
+        color: highlight ? C_MASTER : C_BLACK,
+        border: highlight ? "0.154cqw solid var(--color-mastery-master)" : "0.062cqw solid transparent",
         boxShadow: "0 0.119cqw 0.593cqw rgba(17,24,39,0.12)",
       }}
       className={cn(
@@ -313,12 +319,12 @@ function DroppableBlank({
         justifyContent: "flex-start",
         textAlign: "center",
         padding: "1.185cqw 1.659cqw" /* figma 빈칸 높이 60px */,
-        minWidth: "12.207cqw" /* figma 198px */,
+        minWidth: isEmpty ? "12.207cqw" /* figma 198px (빈칸) */ : "5cqw" /* 채우면 단어 길이에 맞게 */,
         margin: "0 0.474cqw",
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
-        backgroundColor: "#ffffff",
+        backgroundColor: isCorrect === false ? WRONG_BG : isCorrect === true ? SELECTED_BG : "#ffffff",
         border: `0.095cqw solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
         boxShadow: isEmpty ? "inset 0 0.095cqw 0.356cqw rgba(17,24,39,0.06)" : "0 0.119cqw 0.474cqw rgba(17,24,39,0.1)",
         color: isEmpty ? "transparent" : textColor,

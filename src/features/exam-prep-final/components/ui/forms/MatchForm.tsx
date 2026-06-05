@@ -1,10 +1,9 @@
 /**
  * @file MatchForm.tsx
- * @description 3개 고정 매칭 — term_definition_match3. 디자이너 시안(B2B) 매칭.
- *              좌측 개념카드 · 가운데 연결 점(··) · 우측 정의카드 의 라운드 박스 3행.
- *              양방향 진입: 좌/우 어디부터 클릭해도 매칭 성립. 한쪽 활성 시 같은 쪽 다른 카드 회색 비활성.
- *              매칭/채점 시 두 카드 + 연결점이 보라(정답)·빨강(오답)으로 강조.
- *              모든 치수는 SolveCanvas 기준 cqw.
+ * @description 3개 고정 매칭 — term_definition_match3. 좌측 개념 컬럼 + 우측 정의 컬럼(고정 순서) +
+ *   가운데 SVG 연결선. 클릭 매칭(좌↔우 어느 쪽이든 먼저). 연결선/점/박스 색상:
+ *   default(회색) / selected(연보라) / wrong(빨강, 선은 점보다 연함) / correct(보라).
+ *   wrong 채점 시 정답 박스는 보라 테두리. 모든 치수는 본문 캔버스(1620) 기준 cqw.
  * @module features/exam-prep-final/components/ui/forms
  * @dependencies none
  */
@@ -15,10 +14,6 @@ import { useState } from "react";
 import { cn } from "@/shared/lib/utils";
 import type { QuizFormResult } from "./types";
 
-/**
- * 값 계약: value = 매칭된 [좌측 index, 우측 index] 쌍 배열 ([number, number][]) | 미매칭 시 null.
- *          onChange(value: [number, number][]) — 쌍 추가/제거 시 전체 배열 전달.
- */
 export type MatchFormProps = {
   questionText: string;
   leftItems: string[];
@@ -30,14 +25,26 @@ export type MatchFormProps = {
   feedbackSlot?: React.ReactNode;
 };
 
-type ActiveSel = { side: "left"; idx: number } | { side: "right"; idx: number } | null;
+type ActiveSel = { side: "left" | "right"; idx: number } | null;
 
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
 const C_BLACK = "var(--color-neutral-black-hex)";
 const C_BORDER = "rgb(229 231 235)";
+const PT_DEFAULT = "#D1D5DB"; // 회색 (미선택 점)
+const PT_SELECTED = "#A78BFA"; // 연보라 (선택/연결, 채점 전)
+const WRONG_BG = "rgba(244, 63, 94, 0.08)"; // 연빨강 (wrong 박스 배경)
 
-/** 우측 정의 텍스트 길이에 따라 폰트 크기(cqw) 동적 결정. truncate 없이 자동 축소. */
+// SVG viewBox(design px) — 좌카드 232 + 가운데 211 + 우카드 395 = 838, 카드높이 125·행간 38.
+const VB_W = 838;
+const CARD_H = 125;
+const ROW_GAP = 38;
+const VB_H = 3 * CARD_H + 2 * ROW_GAP; // 451
+const LEFT_PX = 232; // 좌카드 우측 점 x
+const RIGHT_PX = 443; // 우카드 좌측 점 x (838-395)
+const rowY = (i: number) => i * (CARD_H + ROW_GAP) + CARD_H / 2; // 62.5 / 225.5 / 388.5
+
+/** 우측 정의 텍스트 길이에 따라 폰트 크기(cqw) 동적 결정. */
 function getRightFontSizeCqw(text: string): string {
   const len = text.length;
   if (len <= 22) return "1.233cqw";
@@ -60,15 +67,14 @@ export function MatchForm({
   const pairs = value ?? [];
   const [active, setActive] = useState<ActiveSel>(null);
 
-  const pairedLeft = new Set(pairs.map(([l]) => l));
-  const pairedRight = new Set(pairs.map(([, r]) => r));
+  const pairedLeft = new Map(pairs.map(([l, r]) => [l, r]));
+  const pairedRight = new Map(pairs.map(([l, r]) => [r, l]));
 
   const correctPairs = Array.isArray(result?.correct_answer)
     ? (result?.correct_answer as [number, number][])
     : [];
   const correctSet = new Set(correctPairs.map((p) => p.join(",")));
-
-  const rightInRow: number[] = computeRightLayout(pairs, leftItems.length, rightItems.length);
+  const showResult = !!result;
 
   const commitPair = (l: number, r: number) => {
     const next: [number, number][] = pairs.filter(([pl, pr]) => pl !== l && pr !== r);
@@ -76,7 +82,6 @@ export function MatchForm({
     onChange(next);
     setActive(null);
   };
-
   const onLeftClick = (l: number) => {
     if (disabled) return;
     if (pairedLeft.has(l)) {
@@ -90,7 +95,6 @@ export function MatchForm({
     }
     setActive(active?.side === "left" && active.idx === l ? null : { side: "left", idx: l });
   };
-
   const onRightClick = (r: number) => {
     if (disabled) return;
     if (pairedRight.has(r)) {
@@ -105,177 +109,128 @@ export function MatchForm({
     setActive(active?.side === "right" && active.idx === r ? null : { side: "right", idx: r });
   };
 
+  /** 매칭 쌍의 상태 색 — 채점 후 correct(보라)/wrong(빨강), 채점 전 selected(연보라). */
+  const pairColor = (l: number, r: number): string =>
+    showResult ? (correctSet.has(`${l},${r}`) ? C_MASTER : C_DELETE) : PT_SELECTED;
+
+  /** 좌/우 강조색 — 매칭된 쌍 색 우선, 그다음 활성(연보라), 채점 시 정답 박스(보라). */
+  const leftEmph = (l: number): string | null => {
+    if (pairedLeft.has(l)) return pairColor(l, pairedLeft.get(l)!);
+    if (active?.side === "left" && active.idx === l) return PT_SELECTED;
+    if (showResult && correctPairs.some(([cl]) => cl === l)) return C_MASTER;
+    return null;
+  };
+  const rightEmph = (r: number): string | null => {
+    if (pairedRight.has(r)) return pairColor(pairedRight.get(r)!, r);
+    if (active?.side === "right" && active.idx === r) return PT_SELECTED;
+    if (showResult && correctPairs.some(([, cr]) => cr === r)) return C_MASTER;
+    return null;
+  };
+
   return (
-    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" /* figma 문제~정오답~매칭 8px */ }}>
+    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" }}>
       <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
         {questionText || "좌측 개념을 클릭한 뒤, 우측에서 알맞은 정의를 클릭하세요."}
       </h1>
 
-      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
+      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" }}>
         {feedbackSlot}
       </div>
 
-      {/* 3 rows */}
-      <div className="mx-auto flex w-full flex-col items-stretch" style={{ gap: "2.347cqw" /* figma 카드 행간 38px */, maxWidth: "52.148cqw" }}>
-        {leftItems.map((leftItem, i) => {
-          const ri = rightInRow[i];
-          const rightItem = ri >= 0 ? rightItems[ri] ?? null : null;
-          const isMatched = pairedLeft.has(i);
-          const isLeftActive = active?.side === "left" && active.idx === i;
-          const isRightActive = ri >= 0 && active?.side === "right" && active.idx === ri;
-          const isCorrect = !!(result && isMatched && ri >= 0 && correctSet.has(`${i},${ri}`));
-          const isWrong = !!(result && isMatched && !isCorrect);
-          const isLeftGrayed = !!active && active.side === "left" && active.idx !== i && !isMatched;
-          const isRightGrayed =
-            !!active && active.side === "right" && ri >= 0 && active.idx !== ri && !isMatched;
+      <div className="relative mx-auto w-full" style={{ maxWidth: "51.728cqw" /* 838px */ }}>
+        <div className="flex justify-between">
+          {/* 좌측 개념 컬럼 */}
+          <div className="flex shrink-0 flex-col" style={{ width: "14.317cqw" /* 232 */, gap: "2.347cqw" /* 38 */ }}>
+            {leftItems.map((item, i) => {
+              const emph = leftEmph(i);
+              const isWrong = showResult && emph === C_DELETE;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onLeftClick(i)}
+                  disabled={disabled}
+                  className={cn(
+                    "relative flex items-center justify-center break-keep text-center transition-colors",
+                    !disabled && !emph && "cursor-pointer hover:border-[var(--color-mastery-master)]",
+                  )}
+                  style={{
+                    minHeight: "7.716cqw" /* 125 */,
+                    borderRadius: "0.984cqw",
+                    border: `${emph ? "0.154cqw" : "0.062cqw"} solid ${emph ?? C_BORDER}`,
+                    backgroundColor: isWrong ? WRONG_BG : "#ffffff",
+                    padding: "0.711cqw 1.067cqw",
+                  }}
+                >
+                  <span style={{ fontSize: "1.233cqw", fontWeight: 700, color: emph ?? C_BLACK }}>{item}</span>
+                </button>
+              );
+            })}
+          </div>
 
-          return (
-            <MatchRow
-              key={i}
-              leftText={leftItem}
-              rightText={rightItem}
-              isMatched={isMatched}
-              isLeftActive={isLeftActive}
-              isRightActive={isRightActive}
-              isLeftGrayed={isLeftGrayed}
-              isRightGrayed={isRightGrayed}
-              isCorrect={isCorrect}
-              isWrong={isWrong}
-              onLeftClick={() => onLeftClick(i)}
-              onRightClick={() => {
-                if (ri >= 0) onRightClick(ri);
-              }}
-              disabled={disabled}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+          {/* 우측 정의 컬럼 (고정 순서) */}
+          <div className="flex shrink-0 flex-col" style={{ width: "24.383cqw" /* 395 */, gap: "2.347cqw" }}>
+            {rightItems.map((item, j) => {
+              const emph = rightEmph(j);
+              const isWrong = showResult && emph === C_DELETE;
+              return (
+                <button
+                  key={j}
+                  type="button"
+                  onClick={() => onRightClick(j)}
+                  disabled={disabled}
+                  className={cn(
+                    "relative flex items-center break-keep text-left transition-colors",
+                    !disabled && !emph && "cursor-pointer hover:border-[var(--color-mastery-master)]",
+                  )}
+                  style={{
+                    minHeight: "7.716cqw",
+                    borderRadius: "0.984cqw",
+                    border: `${emph ? "0.154cqw" : "0.062cqw"} solid ${emph ?? C_BORDER}`,
+                    backgroundColor: isWrong ? WRONG_BG : "#ffffff",
+                    padding: "0.711cqw 1.358cqw",
+                  }}
+                >
+                  <span className="leading-snug" style={{ fontSize: getRightFontSizeCqw(item), color: emph ?? C_BLACK }}>
+                    {item}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-function computeRightLayout(
-  pairs: [number, number][],
-  leftLen: number,
-  rightLen: number,
-): number[] {
-  const result = new Array<number>(leftLen).fill(-1);
-  const pairedRightSet = new Set(pairs.map(([, r]) => r));
-  for (const [l, r] of pairs) {
-    if (l >= 0 && l < leftLen) result[l] = r;
-  }
-  const unmatchedRights: number[] = [];
-  for (let r = 0; r < rightLen; r++) {
-    if (!pairedRightSet.has(r)) unmatchedRights.push(r);
-  }
-  let cursor = 0;
-  for (let i = 0; i < leftLen; i++) {
-    if (result[i] === -1) {
-      result[i] = unmatchedRights[cursor] ?? -1;
-      cursor++;
-    }
-  }
-  return result;
-}
-
-type MatchRowProps = {
-  leftText: string;
-  rightText: string | null;
-  isMatched: boolean;
-  isLeftActive: boolean;
-  isRightActive: boolean;
-  isLeftGrayed: boolean;
-  isRightGrayed: boolean;
-  isCorrect: boolean;
-  isWrong: boolean;
-  onLeftClick: () => void;
-  onRightClick: () => void;
-  disabled?: boolean;
-};
-
-function MatchRow({
-  leftText,
-  rightText,
-  isMatched,
-  isLeftActive,
-  isRightActive,
-  isLeftGrayed,
-  isRightGrayed,
-  isCorrect,
-  isWrong,
-  onLeftClick,
-  onRightClick,
-  disabled,
-}: MatchRowProps) {
-  // 강조 색 — 채점(정/오답) 우선, 그다음 매칭/활성.
-  const accent = isCorrect ? C_MASTER : isWrong ? C_DELETE : C_MASTER;
-  const leftEmph = isMatched || isLeftActive || isCorrect || isWrong;
-  const rightEmph = isMatched || isRightActive || isCorrect || isWrong;
-  const dotColor = isMatched || isLeftActive || isRightActive ? accent : "rgb(209 213 219)";
-
-  const cardBase =
-    "relative flex items-center transition-colors break-keep";
-  const leftStyle = {
-    width: "14.317cqw" /* figma 좌측카드 232px */,
-    minHeight: "7.716cqw" /* figma 125px */,
-    borderRadius: "0.984cqw",
-    border: `${leftEmph ? "0.154cqw" : "0.062cqw"} solid ${leftEmph ? accent : C_BORDER}`,
-    backgroundColor: "#ffffff",
-    padding: "0.711cqw 1.067cqw",
-  } as const;
-  const rightStyle = {
-    flex: 1,
-    minHeight: "7.716cqw" /* figma 우측카드 ~125px */,
-    borderRadius: "0.984cqw",
-    border: `${rightEmph ? "0.154cqw" : "0.062cqw"} solid ${rightEmph ? accent : C_BORDER}`,
-    backgroundColor: "#ffffff",
-    padding: "0.711cqw 1.304cqw",
-  } as const;
-
-  return (
-    <div className="flex w-full items-stretch">
-      <button
-        type="button"
-        onClick={onLeftClick}
-        disabled={disabled || isLeftGrayed}
-        aria-pressed={isLeftActive || isMatched}
-        className={cn(
-          cardBase,
-          "shrink-0 justify-center text-center",
-          isLeftGrayed && "opacity-30",
-          disabled || isLeftGrayed ? "cursor-not-allowed" : "cursor-pointer hover:border-[var(--color-mastery-master)]",
-        )}
-        style={leftStyle}
-      >
-        <span style={{ fontSize: "1.233cqw", fontWeight: 700, color: C_BLACK }}>{leftText}</span>
-      </button>
-
-      {/* 연결 점 (··) */}
-      <div className="flex shrink-0 items-center justify-between" style={{ width: "14.696cqw" /* figma 점영역 238px */, gap: "0.593cqw" }}>
-        <span className="rounded-full" style={{ width: "0.924cqw", height: "0.924cqw", backgroundColor: dotColor }} />
-        <span className="rounded-full" style={{ width: "0.924cqw", height: "0.924cqw", backgroundColor: dotColor }} />
-      </div>
-
-      <button
-        type="button"
-        onClick={onRightClick}
-        disabled={disabled || isRightGrayed}
-        aria-pressed={isRightActive || isMatched}
-        className={cn(
-          cardBase,
-          "text-left",
-          isRightGrayed && "opacity-30",
-          disabled || isRightGrayed ? "cursor-not-allowed" : "cursor-pointer hover:border-[var(--color-mastery-master)]",
-        )}
-        style={rightStyle}
-      >
-        <span
-          className="break-keep leading-snug"
-          style={{ fontSize: rightText ? getRightFontSizeCqw(rightText) : "1.233cqw", color: C_BLACK }}
+        {/* 연결선 + 점 (SVG 오버레이) — viewBox 비율 = 카드영역 비율이라 원 왜곡 없음 */}
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox={`0 0 ${VB_W} ${VB_H}`}
+          preserveAspectRatio="none"
         >
-          {rightText ?? ""}
-        </span>
-      </button>
+          {/* 연결선 (점보다 연하게) */}
+          {pairs.map(([l, r], k) => (
+            <line
+              key={k}
+              x1={LEFT_PX}
+              y1={rowY(l)}
+              x2={RIGHT_PX}
+              y2={rowY(r)}
+              stroke={pairColor(l, r)}
+              strokeWidth={5}
+              strokeLinecap="round"
+              opacity={0.5}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+          {/* 좌측 점 */}
+          {leftItems.map((_, i) => (
+            <circle key={`lp${i}`} cx={LEFT_PX} cy={rowY(i)} r={7.5} fill={leftEmph(i) ?? PT_DEFAULT} />
+          ))}
+          {/* 우측 점 */}
+          {rightItems.map((_, j) => (
+            <circle key={`rp${j}`} cx={RIGHT_PX} cy={rowY(j)} r={7.5} fill={rightEmph(j) ?? PT_DEFAULT} />
+          ))}
+        </svg>
+      </div>
     </div>
   );
 }

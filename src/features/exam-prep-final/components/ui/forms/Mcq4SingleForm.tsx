@@ -31,6 +31,8 @@ const C_BORDER = "rgb(229 231 235)"; // 기본 보더 (gray-200)
 const C_DIVIDER = "rgb(229 231 235)";
 const C_LETTER = "rgb(156 163 175)"; // gray-400
 const C_TEXT = "rgb(55 65 81)"; // gray-700
+const SELECTED_BG = "rgba(124, 122, 236, 0.08)"; // 연보라 (selected 배경, C_MASTER #7c7aec 연한)
+const WRONG_BG = "rgba(244, 63, 94, 0.08)";      // 연빨강 (wrong 배경, C_DELETE 연한)
 
 export function Mcq4SingleForm({
   questionText,
@@ -75,27 +77,29 @@ export function Mcq4SingleForm({
           const borderColor = isCorrect
             ? C_MASTER
             : isWrongPick
-              ? C_DELETE
+              ? "transparent"
               : isSelected
                 ? C_MASTER
                 : isOtherAfterResult
                   ? "rgb(var(--color-neutral-gray-300))"
                   : C_BORDER;
-          const borderWidth = isEmphasized ? "0.154cqw" : "0.062cqw";
+          const borderWidth = isCorrect || isSelected ? "0.154cqw" : "0.062cqw";
           const backgroundColor = isWrongPick
-            ? C_DELETE
-            : isOtherAfterResult
-              ? "rgb(var(--color-neutral-gray-200))"
-              : "#ffffff";
+            ? WRONG_BG
+            : isSelected
+              ? SELECTED_BG
+              : isOtherAfterResult
+                ? "rgb(var(--color-neutral-gray-200))"
+                : "#ffffff";
           const textColor = isWrongPick
-            ? "var(--color-text-inverse)"
+            ? C_DELETE
             : isOtherAfterResult
               ? "rgb(var(--color-neutral-gray-500))"
               : isSelected || isCorrect
                 ? C_BLACK
                 : C_TEXT;
-          const letterColor = isCorrect ? C_MASTER : isWrongPick ? "var(--color-text-inverse)" : isSelected ? C_BLACK : C_LETTER;
-          const displayLetter = showResult && !isCorrect ? "X" : letter;
+          const letterColor = isCorrect ? C_MASTER : isWrongPick ? C_DELETE : isSelected ? C_MASTER : C_LETTER;
+          const displayLetter = letter;
 
           return (
             <button
