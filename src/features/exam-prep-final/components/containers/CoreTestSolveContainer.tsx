@@ -335,6 +335,7 @@ export function CoreTestSolveContainer({
     })
 
     const newSelected: Record<number, number> = {}
+    const newResponse: Record<number, unknown> = {}
     const newGraded: Record<number, GradeSingleResponseDto> = {}
     const newHintUsed = new Set<number>()
 
@@ -344,10 +345,19 @@ export function CoreTestSolveContainer({
       const question = data.questions.find((q) => q.seq === seq)
       if (!question) continue
 
-      // selected 는 백엔드에 0-indexed string 으로 저장 ("0"~"3")
-      const selectedIdx = parseInt(r.selected, 10)
-      if (Number.isInteger(selectedIdx)) {
-        newSelected[seq] = selectedIdx
+      // payload 유형(매칭/빈칸/복수/서술형)은 selected 에 JSON 직렬화 저장 → responseBySeq 복원.
+      // 레거시 4지선다는 0-indexed string("0"~"3") → selectedBySeq.
+      if (question.question_format) {
+        try {
+          newResponse[seq] = JSON.parse(r.selected)
+        } catch {
+          /* 파싱 실패 시 무시 */
+        }
+      } else {
+        const selectedIdx = parseInt(r.selected, 10)
+        if (Number.isInteger(selectedIdx)) {
+          newSelected[seq] = selectedIdx
+        }
       }
 
       if (r.is_correct === true || r.is_correct === false) {
@@ -376,6 +386,7 @@ export function CoreTestSolveContainer({
     }
 
     if (Object.keys(newSelected).length > 0) setSelectedBySeq(newSelected)
+    if (Object.keys(newResponse).length > 0) setResponseBySeq(newResponse)
     if (Object.keys(newGraded).length > 0) setGradedBySeq(newGraded)
     if (newHintUsed.size > 0) setHintUsedSeqs(newHintUsed)
 
