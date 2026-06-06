@@ -34,25 +34,25 @@ function getKstTodayIso(): string {
 
 /**
  * 계급 진급까지 필요한 XP / 추가 조건 안내.
- * 백엔드 RANK_BRACKETS (rank_schema.py) 미러. 핵심테스트 15→10문항 변경에 따라 ×2/3.
+ * 백엔드 RANK_BRACKETS (rank_schema.py) 미러. 26 핵심테스트(서빙 491문항) 체계로 재스케일(2026-06-07).
  *
  * 진급 임계 (총 XP):
- *   F→D 100 / D→D+ 300 / D+→C 650 / C→C+ 1100 / C+→B 1700 /
- *   B→B+ 2300 / B+→A 3000 / A→A+ 3750
+ *   F→D 400 / D→D+ 900 / D+→C 1600 / C→C+ 2300 / C+→B 3000 /
+ *   B→B+ 3700 / B+→A 4400 / A→A+ 4900
  *
- * A / A+ 추가 조건 (master/stamp XP 하한):
- *   A  : master_xp ≥ 3000
- *   A+ : master_xp ≥ 3000, stamp_xp ≥ 1100
+ * A / A+ 추가 조건 (master_xp 하한 — stamp 게이트 없음):
+ *   A  : master_xp ≥ 4400 (~90% 마스터)
+ *   A+ : master_xp ≥ 4900 (전 문항 마스터) — 연속학습 불요
  */
 const RANK_THRESHOLDS: Array<{ from: string; to: string; total: number }> = [
-  { from: 'F',  to: 'D',  total: 100 },
-  { from: 'D',  to: 'D+', total: 300 },
-  { from: 'D+', to: 'C',  total: 650 },
-  { from: 'C',  to: 'C+', total: 1100 },
-  { from: 'C+', to: 'B',  total: 1700 },
-  { from: 'B',  to: 'B+', total: 2300 },
-  { from: 'B+', to: 'A',  total: 3000 },
-  { from: 'A',  to: 'A+', total: 3750 },
+  { from: 'F',  to: 'D',  total: 400 },
+  { from: 'D',  to: 'D+', total: 900 },
+  { from: 'D+', to: 'C',  total: 1600 },
+  { from: 'C',  to: 'C+', total: 2300 },
+  { from: 'C+', to: 'B',  total: 3000 },
+  { from: 'B',  to: 'B+', total: 3700 },
+  { from: 'B+', to: 'A',  total: 4400 },
+  { from: 'A',  to: 'A+', total: 4900 },
 ]
 
 interface NextRankProgress {
@@ -75,7 +75,7 @@ function computeNextRankProgress(args: {
   stampXp: number
   t: RewardTranslator
 }): NextRankProgress {
-  const { rankCode, totalXp, masterXp, stampXp, t } = args
+  const { rankCode, totalXp, masterXp, t } = args  // stampXp 미사용(A+ stamp 게이트 제거)
   const step = RANK_THRESHOLDS.find((s) => s.from === rankCode)
   if (!step) {
     // 이미 A+ 도달
@@ -89,12 +89,11 @@ function computeNextRankProgress(args: {
   }
   const xpRemaining = Math.max(0, step.total - totalXp)
   let masterXpRemaining = 0
-  let stampXpRemaining = 0
-  if (step.to === 'A' || step.to === 'A+') {
-    masterXpRemaining = Math.max(0, 4500 - masterXp)
-  }
-  if (step.to === 'A+') {
-    stampXpRemaining = Math.max(0, 1100 - stampXp)
+  const stampXpRemaining = 0  // A+ stamp 게이트 제거 — 마스터만으로 A+ (2026-06-07)
+  if (step.to === 'A') {
+    masterXpRemaining = Math.max(0, 4400 - masterXp)
+  } else if (step.to === 'A+') {
+    masterXpRemaining = Math.max(0, 4900 - masterXp)
   }
 
   // hint 작성: 가장 부족한 조건을 강조

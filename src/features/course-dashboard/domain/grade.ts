@@ -28,16 +28,18 @@ export interface GradeTier {
   badgeSrc: string
 }
 
+// 백엔드 RANK_BRACKETS (rank_schema.py) 의 total_xp 구간과 정합 (2026-06-07 재스케일).
+// A/A+ 의 master_xp 게이트는 백엔드 RankService 가 권위 판정 — 본 테이블은 total_xp→뱃지 시각 매핑.
 export const GRADE_TIERS: readonly GradeTier[] = [
-  { key: 'F', min: 0, max: 999, color: '#EF4444', badgeSrc: '/grade/F.png' },
-  { key: 'D', min: 1000, max: 1999, color: '#A16207', badgeSrc: '/grade/D.png' },
-  { key: 'D+', min: 2000, max: 2999, color: '#CA8A04', badgeSrc: '/grade/D%2B.png' },
-  { key: 'C', min: 3000, max: 3999, color: '#65A30D', badgeSrc: '/grade/C.png' },
-  { key: 'C+', min: 4000, max: 4999, color: '#16A34A', badgeSrc: '/grade/C%2B.png' },
-  { key: 'B', min: 5000, max: 6999, color: '#0891B2', badgeSrc: '/grade/B.png' },
-  { key: 'B+', min: 7000, max: 8999, color: '#2563EB', badgeSrc: '/grade/B%2B.png' },
-  { key: 'A', min: 9000, max: 11999, color: '#7C3AED', badgeSrc: '/grade/A.png' },
-  { key: 'A+', min: 12000, max: Number.POSITIVE_INFINITY, color: '#383698', badgeSrc: '/grade/A%2B.png' },
+  { key: 'F', min: 0, max: 399, color: '#EF4444', badgeSrc: '/grade/F.png' },
+  { key: 'D', min: 400, max: 899, color: '#A16207', badgeSrc: '/grade/D.png' },
+  { key: 'D+', min: 900, max: 1599, color: '#CA8A04', badgeSrc: '/grade/D%2B.png' },
+  { key: 'C', min: 1600, max: 2299, color: '#65A30D', badgeSrc: '/grade/C.png' },
+  { key: 'C+', min: 2300, max: 2999, color: '#16A34A', badgeSrc: '/grade/C%2B.png' },
+  { key: 'B', min: 3000, max: 3699, color: '#0891B2', badgeSrc: '/grade/B.png' },
+  { key: 'B+', min: 3700, max: 4399, color: '#2563EB', badgeSrc: '/grade/B%2B.png' },
+  { key: 'A', min: 4400, max: 4899, color: '#7C3AED', badgeSrc: '/grade/A.png' },
+  { key: 'A+', min: 4900, max: Number.POSITIVE_INFINITY, color: '#383698', badgeSrc: '/grade/A%2B.png' },
 ] as const
 
 export interface GradeProgress {
