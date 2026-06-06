@@ -322,7 +322,7 @@ export function PayloadQuestionPanel({
                 />
               )}
               {explanationText && (
-                <p className="break-keep text-center" style={{ fontSize: '1.1cqw', lineHeight: 1.7, color: 'rgb(75 85 99)' }}>
+                <p className="break-keep text-center whitespace-pre-line" style={{ fontSize: '1.1cqw', lineHeight: 1.7, color: 'rgb(75 85 99)' }}>
                   {explanationText}
                 </p>
               )}
