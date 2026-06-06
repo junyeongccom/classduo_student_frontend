@@ -135,7 +135,7 @@ export function FillBlankDnd({
   const fiveSingle = blanksCount === 1 && choices.length === 5;
   const chipContainerStyle: React.CSSProperties =
     fiveSingle && maxChoiceLen <= 5
-      ? { display: "grid", gridTemplateColumns: "repeat(5, max-content)", justifyContent: "flex-start", gap: "1.363cqw" }
+      ? { display: "grid", gridTemplateColumns: "repeat(5, max-content)", justifyContent: "center", gap: "1.363cqw" }
       : fiveSingle
         ? {
             display: "grid",
@@ -146,7 +146,7 @@ export function FillBlankDnd({
             maxWidth: "42.667cqw",
             margin: "0 auto",
           }
-        : { display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-start", gap: "1.363cqw", maxWidth: "52.148cqw" };
+        : { display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: "1.363cqw", maxWidth: "57.963cqw" /* figma 선지 프레임 939px */, margin: "0 auto" };
 
   return (
     <DndContext
@@ -164,12 +164,12 @@ export function FillBlankDnd({
           {feedbackSlot}
         </div>
 
-        {/* 문장 + 칩 — figma: 위쪽·왼쪽 정렬, 보기패널~선지 24px */}
-        <div className="flex min-h-0 w-full flex-1 flex-col items-start justify-start" style={{ gap: "1.481cqw" }}>
+        {/* 문장 + 칩 — figma 문제영역(942:10284) 오토레이아웃 items-center: 가로 중앙 + 위쪽 정렬, 보기패널~선지 24px */}
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-start" style={{ gap: "1.481cqw" }}>
           {/* 문장 (인라인 빈칸) */}
           <p
             className="w-full break-keep text-left"
-            style={{ fontSize: "1.976cqw", lineHeight: 1.7, maxWidth: "49.778cqw", color: C_BLACK }}
+            style={{ fontSize: "1.976cqw", lineHeight: 1.7, maxWidth: "57.531cqw" /* figma 보기패널 텍스트 932px */, color: C_BLACK }}
           >
             {parts.map((text, i) => {
               const isLastPart = i === parts.length - 1;
