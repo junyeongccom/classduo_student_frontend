@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import type { PrincipleQuiz, PrincipleQuizPayload, QuizFormResult } from "./types";
 
 const C_BLACK = "var(--color-neutral-black-hex)";
+const C_CANVAS_FG = "var(--color-exam-canvas-fg)"; // 캔버스 직속 텍스트(질문·라벨) — 다크 반전
 const C_MASTER = "var(--color-mastery-master)";
 
 export type EssayFormProps = {
@@ -41,7 +42,7 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result }: Essay
   return (
     <div className="flex w-full flex-col" style={{ gap: "1.730cqw" }}>
       {/* 질문 텍스트 */}
-      <h1 className="font-bold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
+      <h1 className="font-bold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}>
         {quiz.question_text}
       </h1>
 
@@ -90,7 +91,7 @@ function AnsweredView({ userAnswer, modelAnswer }: { userAnswer: string; modelAn
   return (
     <div className="flex w-full flex-col" style={{ gap: "1.185cqw" }}>
       <div>
-        <p className="mb-[0.593cqw] font-bold" style={{ fontSize: "1.233cqw", color: C_BLACK }}>
+        <p className="mb-[0.593cqw] font-bold" style={{ fontSize: "1.233cqw", color: C_CANVAS_FG }}>
           답안
         </p>
         <div

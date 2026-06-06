@@ -10,7 +10,8 @@
  * CSS custom properties referenced by these forms (integrator must define):
  *   --color-mastery-master          채점 정답 강조 (파랑 계열). 직접 var() 사용.
  *   --color-semantic-delete         채점 오답 강조 (빨강 계열). rgb(var(--...)) 형태 — "R G B" 채널값으로 정의 필요.
- *   --color-neutral-black-hex       기본 텍스트/보더 (검정). 직접 var() 사용.
+ *   --color-neutral-black-hex       흰 카드(선지/칩/보기 박스) 안 텍스트/보더 (검정). 직접 var(). 다크에서도 유지.
+ *   --color-exam-canvas-fg          패널 캔버스에 '직접' 놓이는 본문(지문/문장/해설 헤더). 직접 var(). 다크에서 밝게 반전.
  *   --color-neutral-gray-100        칩/빈칸 배경, hover. rgb(var(--...)) 형태.
  *   --color-neutral-gray-200        채점 후 dim 배경. rgb(var(--...)) 형태.
  *   --color-neutral-gray-300        채점 후 dim 보더. rgb(var(--...)) 형태.

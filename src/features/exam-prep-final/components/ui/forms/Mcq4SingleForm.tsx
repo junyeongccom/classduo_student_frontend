@@ -28,11 +28,14 @@ export type Mcq4SingleFormProps = {
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
 const C_BLACK = "var(--color-neutral-black-hex)";
+const C_CANVAS_FG = "var(--color-exam-canvas-fg)"; // 캔버스 직속 텍스트(지문) — 다크 반전
 const C_BORDER = "rgb(229 231 235)"; // 기본 보더 (gray-200)
 const C_LETTER = "rgb(156 163 175)"; // gray-400
 const C_TEXT = "rgb(55 65 81)"; // gray-700
-const SELECTED_BG = "rgba(124, 122, 236, 0.08)"; // 연보라 (selected 배경, C_MASTER #7c7aec 연한)
-const WRONG_BG = "rgba(244, 63, 94, 0.08)";      // 연빨강 (wrong 배경, C_DELETE 연한)
+// selected/wrong 배경은 불투명(=흰 패널 #F6F7F9 위 합성값과 동일). rgba 합성이 아니라
+// 고정 밝은 카드라 다크 패널(gray-950) 위에서도 글자(어두움)가 또렷이 보인다.
+const SELECTED_BG = "rgb(236, 237, 248)"; // 연보라 (selected 배경, C_MASTER #7c7aec 연한)
+const WRONG_BG = "rgb(246, 232, 237)";    // 연빨강 (wrong 배경, C_DELETE 연한)
 
 export function Mcq4SingleForm({
   questionText,
@@ -53,7 +56,7 @@ export function Mcq4SingleForm({
       {/* 문제 텍스트 — SemiBold 36px @1920 */}
       <h1
         className="font-semibold leading-snug break-keep"
-        style={{ fontSize: "2.222cqw", color: C_BLACK }}
+        style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}
       >
         {questionText}
       </h1>

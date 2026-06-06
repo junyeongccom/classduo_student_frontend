@@ -344,7 +344,7 @@ export function PayloadQuestionPanel({
           {/* 해설 영역 — 채점 후 [해설보기] 시 펼침. 매칭은 정답 다이어그램 + 텍스트. */}
           {showExplanation && (
             <div className="mt-[2cqw] flex w-full flex-col border-t border-gray-200 pt-[1.5cqw]" style={{ gap: '1.5cqw' }}>
-              <p className="font-bold" style={{ fontSize: '1.5cqw', color: 'var(--color-neutral-black-hex)' }}>
+              <p className="font-bold" style={{ fontSize: '1.5cqw', color: 'var(--color-exam-canvas-fg)' }}>
                 {t('examPrepFinal.solve.explanation')}
               </p>
               {qf === 'term_definition_match3' && (

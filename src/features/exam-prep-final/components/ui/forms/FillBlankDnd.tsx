@@ -32,6 +32,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 
 const C_BLACK = "var(--color-neutral-black-hex)";
+const C_CANVAS_FG = "var(--color-exam-canvas-fg)"; // 캔버스 직속 텍스트(지시문·문장) — 다크 반전
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
 const WRONG_BG = "rgba(244, 63, 94, 0.08)"; // 연빨강 (wrong 빈칸 배경)
@@ -158,7 +159,7 @@ export function FillBlankDnd({
     >
       <div className="flex h-full w-full flex-col" style={{ gap: "1.233cqw" }}>
         {/* 지시문 */}
-        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
+        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}>
           빈칸에 들어갈 알맞은 단어를 넣으세요.
         </h1>
         <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
@@ -170,7 +171,7 @@ export function FillBlankDnd({
           {/* 문장 (인라인 빈칸) */}
           <p
             className="w-full break-keep text-left"
-            style={{ fontSize: "1.976cqw", lineHeight: 1.7, maxWidth: "57.531cqw" /* figma 보기패널 텍스트 932px */, color: C_BLACK }}
+            style={{ fontSize: "1.976cqw", lineHeight: 1.7, maxWidth: "57.531cqw" /* figma 보기패널 텍스트 932px */, color: C_CANVAS_FG }}
           >
             {parts.map((text, i) => {
               const isLastPart = i === parts.length - 1;

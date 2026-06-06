@@ -33,6 +33,7 @@ type ActiveSel = { side: "left" | "right"; idx: number } | null;
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
 const C_BLACK = "var(--color-neutral-black-hex)";
+const C_CANVAS_FG = "var(--color-exam-canvas-fg)"; // 캔버스 직속 텍스트(지문) — 다크 반전
 const C_BORDER = "rgb(229 231 235)";
 const PT_DEFAULT = "#D1D5DB"; // 회색 (미선택 점)
 const PT_SELECTED = "#A78BFA"; // 연보라 (선택/연결, 채점 전)
@@ -136,7 +137,7 @@ export function MatchForm({
   return (
     <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" }}>
       {showHeader && (
-        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
+        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}>
           {questionText || t("solve.matchInstruction")}
         </h1>
       )}

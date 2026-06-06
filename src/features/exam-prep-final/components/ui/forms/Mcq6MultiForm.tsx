@@ -27,11 +27,13 @@ const PICK = 2;
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
 const C_BLACK = "var(--color-neutral-black-hex)";
+const C_CANVAS_FG = "var(--color-exam-canvas-fg)"; // 캔버스 직속 텍스트(지문) — 다크 반전
 const C_BORDER = "rgb(229 231 235)";
 const C_LETTER = "rgb(156 163 175)";
 const C_TEXT = "rgb(55 65 81)";
-const SELECTED_BG = "rgba(124, 122, 236, 0.08)"; // 연보라 (selected 배경)
-const WRONG_BG = "rgba(244, 63, 94, 0.08)";      // 연빨강 (wrong 배경)
+// selected/wrong 배경은 불투명(흰 패널 합성값) — 다크 패널 위에서도 밝은 카드라 글자가 또렷.
+const SELECTED_BG = "rgb(236, 237, 248)"; // 연보라 (selected 배경)
+const WRONG_BG = "rgb(246, 232, 237)";    // 연빨강 (wrong 배경)
 
 export function Mcq6MultiForm({
   questionText,
@@ -65,7 +67,7 @@ export function Mcq6MultiForm({
   return (
     <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" /* figma 문제~정오답~선지 8px */ }}>
       {/* 문제 텍스트 + (2개 선택) */}
-      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
+      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}>
         {questionText}
         <span
           className="ml-[0.711cqw] font-normal"
