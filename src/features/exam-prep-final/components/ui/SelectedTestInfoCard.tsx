@@ -39,7 +39,7 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
   })
 
   const [mastery, setMastery] = useState<MasteryCounts | null>(null)
-  // 1순위 주제 — 선택 시 detail fetch (summary엔 주제 없음). 주차/차시 대신 표시.
+  // 1순위 주제 — 선택 시 detail fetch (summary엔 주제 없음). 굵은 제목 자리에 표시.
   const [topic, setTopic] = useState<string>('')
 
   // 선택된 test 가 변경될 때마다 mastery summary 재조회
@@ -119,15 +119,18 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
             <span className="text-3xl font-bold leading-none text-gray-900 dark:text-gray-50 md:text-5xl">
               {numberLabel}
             </span>
+            {/* 회색 부제 — 주차/차시 (sessionLabel). 굵은 제목 자리에 1순위 주제가 오므로
+                여기는 항상 주차/차시를 표시. */}
             <span className="text-sm font-medium text-gray-400 break-keep md:text-base">
-              {topic || sessionLabel}
+              {sessionLabel}
             </span>
           </div>
+          {/* 굵은 제목 — 1순위 주제(topic). 주제 없으면(구 테스트) 회차 제목으로 폴백. */}
           <h3
             className="mt-3 text-base font-bold text-gray-900 dark:text-gray-50 md:mt-5 md:text-3xl"
-            title={test.lectureTitle}
+            title={topic || test.lectureTitle}
           >
-            {test.lectureTitle}
+            {topic || test.lectureTitle}
           </h3>
         </div>
 
