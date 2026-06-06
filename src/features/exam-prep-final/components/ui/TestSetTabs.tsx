@@ -1,6 +1,6 @@
 /**
  * @file TestSetTabs.tsx
- * @description 1, 2, 3, Final 탭 — 폴더 라벨 형태 (앞 탭은 회색 보더, 뒤로 갈수록 더 진한 보라)
+ * @description 1, 2, 3 탭 — 폴더 라벨 형태 (앞 탭은 회색 보더, 뒤로 갈수록 더 진한 보라)
  * @module features/exam-prep-final/components/ui
  */
 
@@ -19,7 +19,6 @@ interface TestSetTabsProps {
  * - 1번: 흰배경 + 회색 보더
  * - 2번: 연보라 #DEDEF8
  * - 3번: 중보라 #8F8DF0 (흰 글자)
- * - Final: 진보라 #383698 (흰 글자)
  *
  * Active 탭은 z-index 최상위 + 하단 보더 제거 (컨텐츠 박스와 이어짐)
  */
@@ -55,14 +54,6 @@ const TAB_CONFIG: Array<{
     inactiveBg: 'bg-[#8F8DF0]',
     inactiveText: 'text-white',
     activeBg: 'bg-[#8F8DF0]',
-    activeText: 'text-white',
-  },
-  {
-    id: 'final',
-    label: 'Final',
-    inactiveBg: 'bg-[#383698]',
-    inactiveText: 'text-white',
-    activeBg: 'bg-[#383698]',
     activeText: 'text-white',
   },
 ]

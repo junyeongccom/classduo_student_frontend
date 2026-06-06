@@ -21,7 +21,6 @@ import { SelectedMidTestInfoCard } from '../ui/SelectedMidTestInfoCard'
 import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
-import { FinalTestPanel } from '../ui/FinalTestPanel'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
 import type { CoreTest, ExamPrepData, MidTest, TestSetTab } from '../../types'
@@ -133,14 +132,6 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     router.push(`/studyspace/course/${courseId}/exam-prep/test/${tid}`)
   }
 
-  /** 최종 테스트 클릭 — testId 가 있을 때만 풀이 페이지로 라우팅 */
-  const handleStartFinal = () => {
-    const tid = data?.finalTest.testId
-    if (!tid) return
-    setStartError(null)
-    router.push(`/studyspace/course/${courseId}/exam-prep/test/${tid}`)
-  }
-
   // 데이터 로딩 / 에러 처리
   if (isLoading || !data) {
     return (
@@ -233,12 +224,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
                   onSelectCore={handleSelectCore}
                   onSelectMid={handleSelectMid}
                 />
-              ) : (
-                <FinalTestPanel
-                  finalTest={data.finalTest}
-                  onStart={handleStartFinal}
-                />
-              )}
+              ) : null}
             </div>
           </div>
         </div>
