@@ -41,14 +41,6 @@ import {
   computeDdaysToExam,
 } from '@/shared/constants/examPrep'
 
-/** dev 사이트(dev-*)/localhost 는 기말대비 sequential 잠금을 우회(생성된 테스트 자유 풀이),
- *  prod 는 정상 게이트 유지. course-dashboard 의 examPrepUnlock 와 동일 정책(도메인 분리상 로컬 복제). */
-function isDevOrLocalHost(): boolean {
-  if (typeof window === 'undefined') return false
-  const host = window.location.hostname
-  return host === 'localhost' || host.startsWith('127.') || host.startsWith('dev-')
-}
-
 /** lecture 1 row → CoreTest 형태로 매핑 */
 function lectureToCoreTest(args: {
   lecture: {
@@ -305,8 +297,9 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       return s === 'mastered' || s === 'empty'
     }
 
-    // dev/로컬은 sequential 잠금 + mid 게이트를 우회 — 생성된 테스트 전부 자유 풀이. prod 는 정상 게이트.
-    const bypassLock = isDevOrLocalHost()
+    // 전부 자유 풀이 정책: 핵심 순차 잠금 + 중간/최종 게이트 모두 해제(생성된 테스트는 항상 풀이 가능).
+    //   문항 미생성(0문항) 슬롯만 '콘텐츠 없음'으로 locked 유지. (구 dev/prod 분기 폐지)
+    const bypassLock = true
 
     // ─── 핵심테스트 sequential 잠금 정책 (b2c20260503 + set 경계 강화) ───
     //   1번: 항상 시작점 (단, 백엔드 문항 미생성이면 자동 locked)
@@ -396,8 +389,14 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     })
 
     // final — finalApi 의 status / test_id 를 병합. setMasterStates 는 mid 의 mastered
-    // 여부에서 도출.
-    const finalStatus = finalApi?.status ?? 'locked'
+    // 여부에서 도출. 전부 자유 풀이: 생성(test_id)됐으면 backend 게이트 무관하게 개방.
+    const rawFinalStatus = finalApi?.status ?? 'locked'
+    const finalStatus =
+      bypassLock && finalApi?.test_id
+        ? rawFinalStatus === 'mastered'
+          ? 'mastered'
+          : 'available'
+        : rawFinalStatus
     const finalUnlocked =
       finalStatus === 'available' || finalStatus === 'mastered'
     // 'empty' 도 mastered 동급 처리 (위 isMidMastered 와 동일 정책)
