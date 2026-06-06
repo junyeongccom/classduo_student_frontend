@@ -1118,6 +1118,7 @@ export function CoreTestSolveContainer({
         <div className="relative flex min-h-0 flex-1">
         <SolveSidebar
           scaled
+          hideMastery={data?.test_type === 'mid'} /* mid=서술형 자가평가 → 숙련도 무관, 사이드바 범례 숨김 */
           sessionLabel={sessionLabel}
           lectureTitle={lectureTitle}
           total={total}
@@ -1188,6 +1189,7 @@ export function CoreTestSolveContainer({
           <div className="relative flex min-h-0 flex-1 overflow-hidden bg-[#F6F7F9] dark:bg-gray-950">
             <ContentScaledCanvas>
           <PayloadQuestionPanel
+            key={currentSeq}
             question={currentQuestion}
             currentSeq={currentSeq}
             total={total}

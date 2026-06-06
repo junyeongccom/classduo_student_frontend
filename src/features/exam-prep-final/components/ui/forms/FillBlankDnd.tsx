@@ -316,7 +316,7 @@ function DroppableBlank({
         alignItems: "center",
         justifyContent: "flex-start",
         textAlign: "center",
-        padding: "1.185cqw 1.659cqw" /* figma 빈칸 높이 60px */,
+        padding: "0.711cqw 1.659cqw" /* 세로 축소 — 빈칸이 문장 줄과 겹치지 않게 거리 확보 */,
         minWidth: isEmpty ? "12.207cqw" /* figma 198px (빈칸) */ : "5cqw" /* 채우면 단어 길이에 맞게 */,
         margin: "0 0.474cqw",
         fontSize,

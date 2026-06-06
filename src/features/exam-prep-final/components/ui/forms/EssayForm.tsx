@@ -67,8 +67,8 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result }: Essay
           placeholder="답안을 작성하세요..."
           className="w-full resize-none bg-white outline-none focus:ring-2"
           style={{
-            border: "0.095cqw solid rgb(209 213 219)",
-            borderRadius: "0.711cqw",
+            border: "0.123cqw solid #4f4f4f" /* figma 답작성영역(941:9044) border-2 #4f4f4f */,
+            borderRadius: "0",
             padding: "1.422cqw 1.659cqw",
             minHeight: "11.544cqw" /* figma 답작성영역 187px */,
             fontSize: "1.233cqw",

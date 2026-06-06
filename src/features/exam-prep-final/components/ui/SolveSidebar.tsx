@@ -40,6 +40,8 @@ interface SolveSidebarProps {
   hideOnMobile?: boolean
   /** 풀이 캔버스(1920×1080 contain) 내부 렌더 — cqw 비례 + 항상 표시 + 시안 매칭. */
   scaled?: boolean
+  /** 숙련도(mastery) 범례 숨김 — mid(서술형 자가평가)처럼 mastery 무관 테스트용. */
+  hideMastery?: boolean
 }
 
 const STATE_BG: Record<MasteryState, string> = {
@@ -60,6 +62,7 @@ export function SolveSidebar({
   elapsedSec,
   hideOnMobile = false,
   scaled = false,
+  hideMastery = false,
 }: SolveSidebarProps) {
   const t = useTranslations()
   const seqs = Array.from({ length: total }, (_, i) => i + 1)
@@ -94,7 +97,8 @@ export function SolveSidebar({
           </h2>
         </div>
 
-        {/* 숙련도 범례 */}
+        {/* 숙련도 범례 — mid(서술형 자가평가)는 mastery 무관이라 숨김(hideMastery) */}
+        {!hideMastery && (
         <div className="flex flex-col" style={{ gap: 'max(7.9px, 0.552cqw)' }}>
           {legend.map(([key, color, label, count]) => (
             <div key={key} className="flex items-center" style={{ gap: 'max(8.9px, 0.620cqw)' }}>
@@ -117,6 +121,7 @@ export function SolveSidebar({
             </div>
           ))}
         </div>
+        )}
 
         {/* 문항 그리드 — 5열. 현재 문항은 더 크게 + 굵게 (사용자 요청). */}
         <div className="grid grid-cols-5" style={{ gap: 'max(8.9px, 0.620cqw)', placeItems: 'center' }}>
@@ -213,7 +218,8 @@ export function SolveSidebar({
           </h2>
         </div>
 
-        {/* 숙련도 카운트 — 현재 문항의 mastery 줄에 ring 강조 */}
+        {/* 숙련도 카운트 — mid(서술형 자가평가)는 mastery 무관이라 숨김(hideMastery) */}
+        {!hideMastery && (
         <div className="flex flex-col gap-1">
           <MasteryRow
             color="#D9D9D9"
@@ -237,6 +243,7 @@ export function SolveSidebar({
             highlighted={currentQuestionState === 'master'}
           />
         </div>
+        )}
 
         {/* 문항 그리드 — 사각 (round 30). 현재 문항은 폰트만 키움 (블러/그림자 없음) */}
         <div className="grid grid-cols-5 gap-2.5">
