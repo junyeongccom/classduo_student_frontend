@@ -516,13 +516,14 @@ export function CoreTestSolveContainer({
   // ─── 테스트 라벨 (챗봇 배지/프롬프트용) ───
   const testLabel = useMemo<string>(() => {
     if (!data) return ''
-    if (data.test_type === 'mid') return `중간테스트${data.segment_index ?? ''}`
-    if (data.test_type === 'final') return '최종테스트'
+    if (data.test_type === 'mid')
+      return t('examPrepFinal.chatLabel.mid', { n: data.segment_index ?? '' })
+    if (data.test_type === 'final') return t('examPrepFinal.chatLabel.final')
     // core: lecture_no 우선, 없으면 시즌 라벨
     return matchedLecture?.lecture_number != null
-      ? `핵심${matchedLecture.lecture_number}`
-      : (sessionLabel || '핵심테스트')
-  }, [data, matchedLecture, sessionLabel])
+      ? t('examPrepFinal.chatLabel.core', { n: matchedLecture.lecture_number })
+      : (sessionLabel || t('examPrepFinal.chatLabel.coreFallback'))
+  }, [data, matchedLecture, sessionLabel, t])
 
   // ─── 출처 클릭 → 좌측 자료 패널 점프 (cycling + page 1→0 indexed) ───
   // 출처가 여러 개면 클릭마다 다음 인덱스로 순환. 페이지 번호는 백엔드 1-indexed
@@ -1243,9 +1244,9 @@ export function CoreTestSolveContainer({
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
               <div className="flex gap-1">
                 {([
-                  ['materials', '강의자료'],
-                  ['recordings', '녹음본'],
-                  ['chat', 'AI 챗봇'],
+                  ['materials', t('examPrepFinal.rightPanel.materials')],
+                  ['recordings', t('examPrepFinal.rightPanel.recordings')],
+                  ['chat', t('examPrepFinal.rightPanel.chat')],
                 ] as const).map(([key, label]) => (
                   <button
                     key={key}
@@ -1265,7 +1266,7 @@ export function CoreTestSolveContainer({
               <button
                 type="button"
                 onClick={() => setRightTab(null)}
-                aria-label="패널 닫기"
+                aria-label={t('examPrepFinal.rightPanel.close')}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
               >
                 <X className="h-4 w-4" />
@@ -1279,7 +1280,7 @@ export function CoreTestSolveContainer({
                   <LeftPanelMaterials />
                 ) : (
                   <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
-                    이 문항에 연결된 강의자료가 없습니다.
+                    {t('examPrepFinal.rightPanel.noMaterials')}
                   </div>
                 )}
               </div>
@@ -1295,7 +1296,7 @@ export function CoreTestSolveContainer({
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
-                    이 문항에 연결된 녹음본이 없습니다.
+                    {t('examPrepFinal.rightPanel.noRecordings')}
                   </div>
                 )}
               </div>

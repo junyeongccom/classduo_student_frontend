@@ -107,6 +107,20 @@
     "hint": "Hint",
     "submit": "Submit",
     "exit": "Exit",
+    "rightPanel": {
+      "materials": "Materials",
+      "recordings": "Recordings",
+      "chat": "AI Chatbot",
+      "close": "Close panel",
+      "noMaterials": "No lecture materials are linked to this question.",
+      "noRecordings": "No recordings are linked to this question."
+    },
+    "chatLabel": {
+      "core": "Core {n}",
+      "mid": "Mid Test {n}",
+      "final": "Final Test",
+      "coreFallback": "Core Test"
+    },
     "elapsedTime": "Elapsed",
     "solveLoadError": "Failed to load questions.",
     "slotsSectionTitle": "Mid / Final Tests",

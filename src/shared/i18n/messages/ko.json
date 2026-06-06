@@ -107,6 +107,20 @@
     "hint": "힌트",
     "submit": "제출",
     "exit": "나가기",
+    "rightPanel": {
+      "materials": "강의자료",
+      "recordings": "녹음본",
+      "chat": "AI 챗봇",
+      "close": "패널 닫기",
+      "noMaterials": "이 문항에 연결된 강의자료가 없습니다.",
+      "noRecordings": "이 문항에 연결된 녹음본이 없습니다."
+    },
+    "chatLabel": {
+      "core": "핵심{n}",
+      "mid": "중간테스트{n}",
+      "final": "최종테스트",
+      "coreFallback": "핵심테스트"
+    },
     "elapsedTime": "경과 시간",
     "solveLoadError": "문항을 불러오지 못했습니다.",
     "slotsSectionTitle": "중간 / 최종 테스트",
