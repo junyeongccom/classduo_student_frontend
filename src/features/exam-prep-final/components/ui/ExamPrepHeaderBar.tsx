@@ -23,16 +23,16 @@ interface ExamPrepHeaderBarProps {
   courseId?: string | null
 }
 
-/** 백엔드 RANK_BRACKETS 와 동일한 진급 임계 (총 XP 기준). 핵심테스트 15→10 변경 반영. */
+/** 백엔드 RANK_BRACKETS 와 동일한 진급 임계 (총 XP 기준). 26 핵심테스트(491문항) 재스케일(2026-06-07). */
 const RANK_THRESHOLDS: Array<{ from: string; to: string; total: number }> = [
-  { from: 'F',  to: 'D',  total: 100 },
-  { from: 'D',  to: 'D+', total: 300 },
-  { from: 'D+', to: 'C',  total: 650 },
-  { from: 'C',  to: 'C+', total: 1100 },
-  { from: 'C+', to: 'B',  total: 1700 },
-  { from: 'B',  to: 'B+', total: 2300 },
-  { from: 'B+', to: 'A',  total: 3000 },
-  { from: 'A',  to: 'A+', total: 3750 },
+  { from: 'F',  to: 'D',  total: 400 },
+  { from: 'D',  to: 'D+', total: 900 },
+  { from: 'D+', to: 'C',  total: 1600 },
+  { from: 'C',  to: 'C+', total: 2300 },
+  { from: 'C+', to: 'B',  total: 3000 },
+  { from: 'B',  to: 'B+', total: 3700 },
+  { from: 'B+', to: 'A',  total: 4400 },
+  { from: 'A',  to: 'A+', total: 4900 },
 ]
 
 interface ProgressInfo {
@@ -100,8 +100,8 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
   const locale = useLocale()
   const totalXp = state?.total_xp ?? 0
   const currentStreak = state?.current_streak ?? 0
-  // 등급은 totalXp 로부터 derive — 백엔드 rank.code stale 시에도 일관성 보장.
-  const rankCode = deriveRankFromXp(totalXp)
+  // 등급은 백엔드 rank.code(master 게이트 반영 — 마스터=A+) 우선. 없으면 totalXp 로 derive(폴백).
+  const rankCode = state?.rank?.code ?? deriveRankFromXp(totalXp)
   const { nextTotal, ratio, isMax } = computeProgress(rankCode, totalXp)
   const barColor = RANK_COLORS[rankCode] ?? '#6366F1'
 
