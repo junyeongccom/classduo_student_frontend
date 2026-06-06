@@ -13,19 +13,19 @@ export function getKstTodayIso(): string {
 }
 
 /**
- * 백엔드 RANK_BRACKETS 미러 (rank_schema.py).
- * 핵심테스트 15→10 문항 변경에 따른 재조정 (×2/3).
- *   max master XP = 30 tests × 10 Q × 10 XP = 3000 → 새 A 목표.
+ * 백엔드 RANK_BRACKETS 미러 (rank_schema.py). 26 핵심테스트(서빙 491문항) 체계로 재스케일(2026-06-07).
+ *   master_xp 천장 = 491문항 × 10 = 4910. A+ = 전 문항 마스터(master_xp≥4900, stamp 불요), A = ~90%.
+ *   본 표는 total_xp 진급 임계 — A/A+ 의 master_xp 게이트는 백엔드 RankService 가 권위 판정.
  */
 export const RANK_THRESHOLDS: ReadonlyArray<{ from: string; to: string; total: number }> = [
-  { from: 'F',  to: 'D',  total: 100 },
-  { from: 'D',  to: 'D+', total: 300 },
-  { from: 'D+', to: 'C',  total: 650 },
-  { from: 'C',  to: 'C+', total: 1100 },
-  { from: 'C+', to: 'B',  total: 1700 },
-  { from: 'B',  to: 'B+', total: 2300 },
-  { from: 'B+', to: 'A',  total: 3000 },
-  { from: 'A',  to: 'A+', total: 3750 },
+  { from: 'F',  to: 'D',  total: 400 },
+  { from: 'D',  to: 'D+', total: 900 },
+  { from: 'D+', to: 'C',  total: 1600 },
+  { from: 'C',  to: 'C+', total: 2300 },
+  { from: 'C+', to: 'B',  total: 3000 },
+  { from: 'B',  to: 'B+', total: 3700 },
+  { from: 'B+', to: 'A',  total: 4400 },
+  { from: 'A',  to: 'A+', total: 4900 },
 ]
 
 export function getRankProgress(rankCode: string, totalXp: number) {
