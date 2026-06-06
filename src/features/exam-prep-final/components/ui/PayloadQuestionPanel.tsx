@@ -311,7 +311,7 @@ export function PayloadQuestionPanel({
   return (
     <div
       className="flex h-full min-h-0 flex-1 flex-col bg-[#F6F7F9] dark:bg-gray-950"
-      style={{ padding: '2.465cqw 21.452cqw 1.185cqw 18.205cqw' /* figma content x=595 (사이드바300+좌295), 폼폭 ~977, 하단 여백 최소(6지선다 fit) */ }}
+      style={{ padding: '2.465cqw 21.452cqw 3.5cqw 18.205cqw' /* figma content x=595 (사이드바300+좌295), 폼폭 ~977. 하단 여백 = 툴바/네비가 화면 바닥에 붙지 않게 띄움(시안 간격) */ }}
     >
       <div className="flex h-full w-full min-h-0 flex-col">
         {/* 폼 영역 (stem + body) — 상단 정렬, 남는 높이 차지 */}
