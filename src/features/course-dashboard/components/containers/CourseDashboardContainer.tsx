@@ -90,9 +90,10 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
         </nav>
       </StudyspaceTopbarSlot>
 
-      {/* 본문 — Figma content(2103×1477) 좌표 그대로 contain-스케일 (항상 한 화면 fit) */}
-      <div className="h-full w-full overflow-hidden p-3 md:p-5">
-        <ScaledCanvas designWidth={DASH_DESIGN_W} designHeight={DASH_DESIGN_H}>
+      {/* 본문 — Figma content(2103×1477) 좌표 그대로. 가로 채움(width-fit): 메인 폭을 꽉 채우고
+          창이 낮으면 세로 스크롤 (사용자 선택). 시안 내부 여백(좌32/우119 등)이 숨 쉴 공간 제공. */}
+      <div className="h-full w-full overflow-hidden">
+        <ScaledCanvas designWidth={DASH_DESIGN_W} designHeight={DASH_DESIGN_H} fit="width">
           <DashboardScaledContent
             monthGrid={monthGrid}
             examDday={examDday}
