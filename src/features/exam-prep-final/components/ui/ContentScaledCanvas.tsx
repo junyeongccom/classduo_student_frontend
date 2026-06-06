@@ -19,15 +19,17 @@ export const CONTENT_DESIGN_H = 1010
 export function ContentScaledCanvas({ children }: { children: ReactNode }) {
   return (
     <div
-      className="flex h-full w-full items-center overflow-x-auto overflow-y-hidden"
-      // 본문 박스는 높이기준 고정(가로 좁혀도 안 줄음). 영역보다 넓어지면 가로 스크롤 —
-      // safe center: 들어가면 가운데정렬(좌우 여백 균등), 넘치면 좌측정렬해 스크롤로 접근 가능.
-      style={{ containerType: 'size', justifyContent: 'safe center' }}
+      className="flex h-full w-full items-center justify-center overflow-hidden"
+      // 본문 프레임은 높이기준 풀사이즈 고정(축소 안 함) + 가운데정렬 + overflow:hidden.
+      // 영역(우측 패널/좁은 창)보다 넓어지면 프레임 양끝(=좌우 여백 padding)만 잘려나가고
+      // 본문(프레임 내 거의 중앙)은 크기 유지한 채 좁아진 영역 중앙으로 왼쪽 이동.
+      // → 가로 스크롤 없이 "문제영역 크기 유지 + 좌우 여백만 감소 + 왼쪽 이동".
+      style={{ containerType: 'size' }}
     >
       <div
         className="relative flex shrink-0 overflow-hidden"
         style={{
-          // 폭 = 높이 비례(100cqh × 종횡비). 가로폭과 무관하게 고정 → 좌우 여백만 가변.
+          // 폭 = 높이 비례(고정). cqw 캘리브레이션 유지 → 본문 크기 불변.
           width: `calc(100cqh * ${CONTENT_DESIGN_W} / ${CONTENT_DESIGN_H})`,
           aspectRatio: `${CONTENT_DESIGN_W} / ${CONTENT_DESIGN_H}`,
           containerType: 'size',
