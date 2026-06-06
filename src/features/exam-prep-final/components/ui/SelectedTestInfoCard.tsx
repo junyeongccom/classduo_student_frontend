@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react'
 import { Play, RotateCcw } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { fetchTestMasterySummary } from '../../services/examPrepService'
+import { fetchTestMasterySummary, fetchCoreTestDetail } from '../../services/examPrepService'
 import type { CoreTest } from '../../types'
 
 interface SelectedTestInfoCardProps {
@@ -39,6 +39,8 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
   })
 
   const [mastery, setMastery] = useState<MasteryCounts | null>(null)
+  // 1순위 주제 — 선택 시 detail fetch (summary엔 주제 없음). 주차/차시 대신 표시.
+  const [topic, setTopic] = useState<string>('')
 
   // 선택된 test 가 변경될 때마다 mastery summary 재조회
   useEffect(() => {
@@ -58,6 +60,23 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
         skilled: data.summary.skilled,
         master: data.summary.master,
       })
+    })
+    return () => {
+      alive = false
+    }
+  }, [test.id])
+
+  // 선택 시 detail fetch → 첫 문항 source_ref.topic_title (1순위 주제). summary엔 없어서 별도 조회.
+  useEffect(() => {
+    if (!_isBackendTestId(test.id)) {
+      setTopic('')
+      return
+    }
+    let alive = true
+    fetchCoreTestDetail(test.id).then(({ data }) => {
+      if (!alive) return
+      const q = data?.questions?.find((q) => q.source_ref?.topic_title?.trim())
+      setTopic((q?.source_ref?.topic_title ?? '').trim())
     })
     return () => {
       alive = false
@@ -96,8 +115,8 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
             <span className="text-3xl font-bold leading-none text-gray-900 dark:text-gray-50 md:text-5xl">
               {numberLabel}
             </span>
-            <span className="whitespace-nowrap text-sm font-medium text-gray-400 md:text-base">
-              {sessionLabel}
+            <span className="text-sm font-medium text-gray-400 break-keep md:text-base">
+              {topic || sessionLabel}
             </span>
           </div>
           <h3
