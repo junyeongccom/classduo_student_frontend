@@ -321,7 +321,8 @@ function CoreSetContent({
     ...tests.map((t) => ({ kind: 'core' as const, test: t })),
     ...(midTest ? [{ kind: 'mid' as const, mid: midTest }] : []),
   ]
-  const rows = chunkInto(items, 5)
+  // 2행 고정 — 아이템을 두 줄로 균등 분배 (행당 ceil(n/2)개)
+  const rows = chunkInto(items, Math.max(1, Math.ceil(items.length / 2)))
 
   const isCoreSelected = (id: string) =>
     selection?.kind === 'core' && selection.id === id
@@ -331,7 +332,7 @@ function CoreSetContent({
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
+        <div key={ri} className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 md:gap-6">
           {row.map((item) =>
             item.kind === 'core' ? (
               <CoreTestButton
