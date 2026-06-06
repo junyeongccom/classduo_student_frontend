@@ -76,6 +76,8 @@ export interface CoreTestDetailDto {
   title: string | null
   /** core 1순위 주제(exam_prep_topic). 상단 박스/풀이 헤더 표시. mid/final 은 null */
   topic_title?: string | null
+  /** topic_title 영문 버전 (한영 토글 시 사용. 백필 전 데이터는 null) */
+  topic_title_eng?: string | null
   questions: CoreTestQuestionItemDto[]
 }
 
