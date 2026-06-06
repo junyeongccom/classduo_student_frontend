@@ -472,12 +472,13 @@ export function CoreTestSolveContainer({
   }, [matchedLecture, data, sessionLabel])
 
   // 1순위 주제 — exam_prep_topic(detail.topic_title) 우선, 구 테스트는 첫 문항 source_ref.topic_title 폴백.
+  const isEn = locale === 'en'
   const topicLabel = useMemo(() => {
-    const fromTable = (data?.topic_title ?? '').trim()
+    const fromTable = ((isEn ? (data?.topic_title_eng ?? data?.topic_title) : data?.topic_title) ?? '').trim()
     if (fromTable) return fromTable
     const q = data?.questions?.find((q) => q.source_ref?.topic_title?.trim())
     return (q?.source_ref?.topic_title ?? '').trim()
-  }, [data])
+  }, [data, isEn])
   // 헤더/사이드바 라벨 — 주제 있으면 주제, 없으면 주차/차시 fallback.
   const headerLabel = topicLabel || sessionLabel
 

@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react'
 import { Play, RotateCcw } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 import { fetchTestMasterySummary, fetchCoreTestDetail } from '../../services/examPrepService'
 import type { CoreTest } from '../../types'
 
@@ -32,6 +33,8 @@ function _isBackendTestId(id: string): boolean {
 
 export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProps) {
   const t = useTranslations()
+  const { locale } = useI18n()
+  const isEn = locale === 'en'
   const numberLabel = String(test.number).padStart(2, '0')
   const sessionLabel = t('examPrepFinal.weekSession', {
     week: test.weekNo,
@@ -76,7 +79,9 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
     fetchCoreTestDetail(test.id).then(({ data }) => {
       if (!alive) return
       // 1순위 주제: exam_prep_topic(detail.topic_title) 우선. 구 테스트는 첫 문항 source_ref.topic_title 폴백.
-      const fromTable = (data?.topic_title ?? '').trim()
+      const fromTable = isEn
+        ? ((data?.topic_title_eng ?? data?.topic_title) ?? '').trim()
+        : (data?.topic_title ?? '').trim()
       const fromQuestion = (
         data?.questions?.find((q) => q.source_ref?.topic_title?.trim())?.source_ref?.topic_title ?? ''
       ).trim()
@@ -85,7 +90,7 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
     return () => {
       alive = false
     }
-  }, [test.id])
+  }, [test.id, isEn])
 
   // mastery 응답 도착 전 즉시 추정값 — isTestMastered 기반.
   //   master 도달 → 모두 master, 미도달 → 모두 learning.
