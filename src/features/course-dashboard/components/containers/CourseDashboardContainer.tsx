@@ -95,7 +95,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
             <div className="flex flex-col gap-[calc(16px*var(--u))] md:gap-3">
               <ExamPrepHeroCard
                 title={t('courseDashboard.modeExam.title')}
-                subtitle={t('courseDashboard.examSubtitle')}
                 isLocked={isExamPrepLocked}
                 lockedTooltip={t('courseDashboard.examPrepLockedTooltip')}
                 onClick={() =>

@@ -16,7 +16,7 @@
   "courseNav": {
     "dashboard": "Course Dashboard",
     "lectureStudy": "By Lecture",
-    "examPrep": "Final Exam Prep",
+    "examPrep": "Core Topics",
     "dialogue": "Dialogue Mode",
     "myQuizzes": "My Quiz Library",
     "createQuestion": "Create Question",
@@ -43,7 +43,7 @@
     },
     "modeExam": {
       "eyebrow": "EXAM · 30 TESTS · LOCK-ON",
-      "title": "Final Exam Prep",
+      "title": "Core Topics",
       "description": "Prepare for the final with 26 core, 3 mid, and 1 final test",
       "footer": "Set 1 · In progress",
       "cta": "Enter"
