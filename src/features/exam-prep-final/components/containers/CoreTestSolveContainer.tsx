@@ -1199,6 +1199,7 @@ export function CoreTestSolveContainer({
           <PayloadQuestionPanel
             key={currentSeq}
             question={currentQuestion}
+            attemptId={attemptId}
             currentSeq={currentSeq}
             total={total}
             response={responseBySeq[currentSeq]}

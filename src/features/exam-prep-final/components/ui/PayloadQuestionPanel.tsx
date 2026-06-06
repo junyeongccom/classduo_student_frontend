@@ -35,6 +35,7 @@ import { FillBlank7MultiForm } from './forms/FillBlank7MultiForm'
 import { Mcq4SingleForm } from './forms/Mcq4SingleForm'
 import { Mcq6MultiForm } from './forms/Mcq6MultiForm'
 import { EssayForm } from './forms/EssayForm'
+import { shuffleOrder } from '../../domain/shuffleOrder'
 
 const ESSAY_FORMAT = 'error_diagnosis_evaluation'
 
@@ -83,6 +84,8 @@ function buildResult(
 
 interface PayloadQuestionPanelProps {
   question: CoreTestQuestionItemDto
+  /** 현재 attempt id — 선지 결정론 셔플 시드(재진입마다 새 순서). */
+  attemptId?: string | null
   currentSeq: number
   total: number
   response: unknown
@@ -109,6 +112,7 @@ interface PayloadQuestionPanelProps {
 
 export function PayloadQuestionPanel({
   question,
+  attemptId,
   currentSeq,
   total,
   response,
@@ -141,6 +145,34 @@ export function PayloadQuestionPanel({
   const choices = (payload.choices as string[] | undefined) ?? []
   const result = buildResult(question, graded)
   const isLocked = graded !== null
+  // ── 선지 결정론 셔플 (표시 전용) — attemptId+questionId 시드. 정규 인덱스는 보존하고
+  //    표시 순서만 섞은 뒤 onChange 는 표시→정규로 되돌려 보내 채점/저장은 영향 없음.
+  //    재진입(새 attempt) → 새 시드 → 새 순서, 이어풀기(같은 attempt) → 동일 순서. ──
+  const choiceOrder =
+    choices.length > 1 && attemptId
+      ? shuffleOrder(choices.length, `${attemptId}:${question.id}`)
+      : choices.map((_, i) => i)
+  const choiceInverse: number[] = []
+  choiceOrder.forEach((ci, di) => {
+    choiceInverse[ci] = di
+  })
+  const displayChoices = choiceOrder.map((ci) => choices[ci])
+  const toDisp = (ci: number) => choiceInverse[ci] ?? ci
+  const toCanon = (di: number) => choiceOrder[di] ?? di
+  const mapIdx = (v: unknown, fn: (n: number) => number): unknown =>
+    v == null
+      ? v
+      : Array.isArray(v)
+        ? v.map((x) => (typeof x === 'number' ? fn(x) : x))
+        : typeof v === 'number'
+          ? fn(v)
+          : v
+  const dispValue = mapIdx(response, toDisp)
+  const dispResult = result
+    ? { ...result, correct_answer: mapIdx(result.correct_answer, toDisp) as typeof result.correct_answer }
+    : result
+  const dispEliminated = typeof eliminatedIdx === 'number' ? toDisp(eliminatedIdx) : eliminatedIdx
+  const onChoiceChange = (v: unknown) => onResponseChange(mapIdx(v, toCanon))
   const complete = isPayloadResponseComplete(qf, payload, response)
   // 해설 텍스트 — graded.explanation 우선, 없으면 question.explanation. key 'detailed' 우선.
   const explObj = (graded?.explanation ?? question.explanation) as Record<string, string> | null | undefined
@@ -186,12 +218,12 @@ export function PayloadQuestionPanel({
         return (
           <FillBlank5SingleForm
             questionText={stem}
-            choices={choices}
-            value={(response as number | null) ?? null}
-            onChange={(v) => onResponseChange(v)}
+            choices={displayChoices}
+            value={(dispValue as number | null) ?? null}
+            onChange={onChoiceChange}
             disabled={isLocked}
-            result={result}
-            eliminatedIdx={eliminatedIdx}
+            result={dispResult}
+            eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
           />
         )
@@ -199,12 +231,12 @@ export function PayloadQuestionPanel({
         return (
           <FillBlank7MultiForm
             questionText={stem}
-            choices={choices}
-            value={(response as (number | null)[] | null) ?? null}
-            onChange={(v) => onResponseChange(v)}
+            choices={displayChoices}
+            value={(dispValue as (number | null)[] | null) ?? null}
+            onChange={onChoiceChange}
             disabled={isLocked}
-            result={result}
-            eliminatedIdx={eliminatedIdx}
+            result={dispResult}
+            eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
           />
         )
@@ -212,12 +244,12 @@ export function PayloadQuestionPanel({
         return (
           <Mcq6MultiForm
             questionText={stem}
-            choices={choices}
-            value={(response as number[] | null) ?? null}
-            onChange={(v) => onResponseChange(v)}
+            choices={displayChoices}
+            value={(dispValue as number[] | null) ?? null}
+            onChange={onChoiceChange}
             disabled={isLocked}
-            result={result}
-            eliminatedIdx={eliminatedIdx}
+            result={dispResult}
+            eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
           />
         )
@@ -243,12 +275,12 @@ export function PayloadQuestionPanel({
         return (
           <Mcq4SingleForm
             questionText={stem}
-            choices={choices}
-            value={(response as number | null) ?? null}
-            onChange={(v) => onResponseChange(v)}
+            choices={displayChoices}
+            value={(dispValue as number | null) ?? null}
+            onChange={onChoiceChange}
             disabled={isLocked}
-            result={result}
-            eliminatedIdx={eliminatedIdx}
+            result={dispResult}
+            eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
           />
         )
