@@ -270,7 +270,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
           <span className="text-base font-bold text-gray-900">OX</span>
           <div className="grid grid-cols-5 gap-1.5">
             {questionDeltas
-              .slice(0, 10)
+              .slice()
               .sort((a, b) => a.seq - b.seq)
               .map((d) => {
                 const ok = d.isCorrect === true
