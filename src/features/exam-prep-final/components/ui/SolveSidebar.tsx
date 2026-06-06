@@ -75,42 +75,42 @@ export function SolveSidebar({
       <aside
         className="flex h-full shrink-0 flex-col bg-white dark:bg-gray-900"
         style={{
-          width: '15.625cqw' /* 300/1920 (figma 사이드바 폭) */,
-          borderRight: '0.052cqw solid rgb(233 235 239)',
-          padding: '2.599cqw 1.458cqw' /* 50 / 28 px @1920 */,
-          gap: '1.771cqw',
+          width: 'max(225.0px, 15.625cqw)' /* 300/1920 (figma 사이드바 폭) */,
+          borderRight: 'max(0.7px, 0.052cqw) solid rgb(233 235 239)',
+          padding: 'max(37.4px, 2.599cqw) max(21.0px, 1.458cqw)' /* 50 / 28 px @1920 */,
+          gap: 'max(25.5px, 1.771cqw)',
         }}
       >
         {/* 회차 정보 */}
         <div>
-          <p className="text-gray-400" style={{ fontSize: '0.781cqw', lineHeight: 1.3 }}>
+          <p className="text-gray-400" style={{ fontSize: 'max(11.2px, 0.781cqw)', lineHeight: 1.3 }}>
             {sessionLabel}
           </p>
           <h2
             className="font-bold text-gray-900 dark:text-gray-50 break-keep"
-            style={{ fontSize: '1.510cqw', marginTop: '0.260cqw', lineHeight: 1.2 }}
+            style={{ fontSize: 'max(21.7px, 1.510cqw)', marginTop: 'max(3.7px, 0.260cqw)', lineHeight: 1.2 }}
           >
             {lectureTitle}
           </h2>
         </div>
 
         {/* 숙련도 범례 */}
-        <div className="flex flex-col" style={{ gap: '0.552cqw' }}>
+        <div className="flex flex-col" style={{ gap: 'max(7.9px, 0.552cqw)' }}>
           {legend.map(([key, color, label, count]) => (
-            <div key={key} className="flex items-center" style={{ gap: '0.620cqw' }}>
+            <div key={key} className="flex items-center" style={{ gap: 'max(8.9px, 0.620cqw)' }}>
               <span
                 className="inline-block shrink-0 rounded-full"
-                style={{ width: '0.729cqw', height: '0.729cqw', backgroundColor: color }}
+                style={{ width: 'max(10.5px, 0.729cqw)', height: 'max(10.5px, 0.729cqw)', backgroundColor: color }}
               />
               <span
                 className="font-bold text-gray-800 dark:text-gray-200"
-                style={{ fontSize: '0.781cqw' }}
+                style={{ fontSize: 'max(11.2px, 0.781cqw)' }}
               >
                 {label}
               </span>
               <span
                 className="ml-auto tabular-nums text-gray-700 dark:text-gray-300"
-                style={{ fontSize: '0.781cqw' }}
+                style={{ fontSize: 'max(11.2px, 0.781cqw)' }}
               >
                 {count}
               </span>
@@ -119,14 +119,14 @@ export function SolveSidebar({
         </div>
 
         {/* 문항 그리드 — 5열. 현재 문항은 더 크게 + 굵게 (사용자 요청). */}
-        <div className="grid grid-cols-5" style={{ gap: '0.620cqw', placeItems: 'center' }}>
+        <div className="grid grid-cols-5" style={{ gap: 'max(8.9px, 0.620cqw)', placeItems: 'center' }}>
           {seqs.map((seq) => {
             const isCurrent = seq === currentSeq
             const state = seqStateMap.get(seq)
             const bg =
               state === 'master' ? '#A78BFA' : state === 'skilled' ? '#FFCD36' : '#F0F1F4'
             const fg = state === 'master' ? '#ffffff' : '#1F2937'
-            const size = isCurrent ? '2.552cqw' : '2.078cqw'
+            const size = isCurrent ? 'max(36.7px, 2.552cqw)' : 'max(29.9px, 2.078cqw)'
             return (
               <button
                 key={seq}
@@ -138,7 +138,7 @@ export function SolveSidebar({
                   height: size,
                   backgroundColor: bg,
                   color: fg,
-                  fontSize: isCurrent ? '1.042cqw' : '0.781cqw',
+                  fontSize: isCurrent ? 'max(15.0px, 1.042cqw)' : 'max(11.2px, 0.781cqw)',
                   fontWeight: isCurrent ? 800 : 600,
                 }}
               >
@@ -149,7 +149,7 @@ export function SolveSidebar({
         </div>
 
         {/* 경과 시간 */}
-        <div className="flex items-center justify-between" style={{ fontSize: '0.828cqw' }}>
+        <div className="flex items-center justify-between" style={{ fontSize: 'max(11.9px, 0.828cqw)' }}>
           <span className="font-bold text-gray-500 dark:text-gray-400">
             {t('examPrepFinal.elapsedTime')}
           </span>
