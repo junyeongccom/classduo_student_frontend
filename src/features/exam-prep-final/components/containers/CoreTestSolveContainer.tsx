@@ -267,7 +267,7 @@ export function CoreTestSolveContainer({
       const a = attemptRes.data
       const aerr = attemptRes.error
       if (aerr || !a) {
-        setPhaseError(aerr || '응시를 시작하지 못했습니다.')
+        setPhaseError(aerr || t('examPrepFinal.solve.startFailed'))
         setPhase('error')
         return
       }
@@ -821,11 +821,11 @@ export function CoreTestSolveContainer({
         // attempt — 새 attempt 시작 (다시풀기 와 동일 흐름). 사용자가 답변하지 않은
         // 문항을 다시 풀 수 있게 됨.
         console.warn('[Solve] attempt already submitted — auto-restarting')
-        setPhaseError('이전 응시가 완료되어 새 응시를 시작합니다.')
+        setPhaseError(t('examPrepFinal.solve.attemptCompletedNew'))
         setRestartTrigger((r) => r + 1)
       } else {
         console.error('[Solve] grade failed:', error)
-        setPhaseError(error || '채점 중 오류가 발생했습니다')
+        setPhaseError(error || t('examPrepFinal.solve.gradeError'))
       }
       return
     }

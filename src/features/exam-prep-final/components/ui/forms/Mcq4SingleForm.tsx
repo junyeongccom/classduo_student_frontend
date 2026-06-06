@@ -9,6 +9,7 @@
  */
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import type { QuizFormResult } from "./types";
 
@@ -43,6 +44,7 @@ export function Mcq4SingleForm({
   eliminatedIdx,
   feedbackSlot,
 }: Mcq4SingleFormProps) {
+  const t = useTranslations("examPrepFinal");
   const correct =
     result && typeof result.correct_answer === "number" ? result.correct_answer : null;
 
@@ -106,7 +108,7 @@ export function Mcq4SingleForm({
               type="button"
               onClick={() => onChange(idx)}
               disabled={disabled || isEliminated}
-              aria-label={isEliminated ? "힌트로 제거된 선택지" : undefined}
+              aria-label={isEliminated ? t("solve.eliminatedChoice") : undefined}
               className={cn(
                 "relative flex w-full items-center transition-colors",
                 isEliminated && "cursor-not-allowed opacity-[0.45]",

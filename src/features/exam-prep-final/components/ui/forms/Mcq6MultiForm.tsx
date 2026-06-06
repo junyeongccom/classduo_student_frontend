@@ -8,6 +8,7 @@
  */
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 import type { QuizFormResult } from "./types";
 
@@ -42,6 +43,7 @@ export function Mcq6MultiForm({
   eliminatedIdx,
   feedbackSlot,
 }: Mcq6MultiFormProps) {
+  const t = useTranslations("examPrepFinal");
   const selected = new Set(value ?? []);
   const correctSet = new Set(
     Array.isArray(result?.correct_answer) ? (result?.correct_answer as number[]) : [],
@@ -122,7 +124,7 @@ export function Mcq6MultiForm({
               type="button"
               onClick={() => toggle(idx)}
               disabled={disabled || isEliminated}
-              aria-label={isEliminated ? "힌트로 제거된 선택지" : undefined}
+              aria-label={isEliminated ? t("solve.eliminatedChoice") : undefined}
               aria-pressed={isSelected}
               className={cn(
                 "relative flex w-full items-center transition-colors",

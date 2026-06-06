@@ -28,6 +28,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 
 const C_BLACK = "var(--color-neutral-black-hex)";
@@ -249,6 +250,7 @@ function DraggableChip({
   fontSize: string;
   highlight?: boolean;
 }) {
+  const t = useTranslations("examPrepFinal");
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `chip-${chipIdx}`,
     disabled,
@@ -260,7 +262,7 @@ function DraggableChip({
       {...listeners}
       type="button"
       disabled={disabled}
-      aria-label={eliminated ? "힌트로 제거된 선택지" : undefined}
+      aria-label={eliminated ? t("solve.eliminatedChoice") : undefined}
       style={{
         opacity: isDragging ? 0 : eliminated ? 0.45 : 1,
         touchAction: "none",

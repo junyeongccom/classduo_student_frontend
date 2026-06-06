@@ -10,6 +10,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/shared/lib/utils";
 import type { QuizFormResult } from "./types";
@@ -68,6 +69,7 @@ export function MatchForm({
   feedbackSlot,
   showHeader = true,
 }: MatchFormProps) {
+  const t = useTranslations("examPrepFinal");
   const pairs = value ?? [];
   const [active, setActive] = useState<ActiveSel>(null);
 
@@ -135,7 +137,7 @@ export function MatchForm({
     <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" }}>
       {showHeader && (
         <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_BLACK }}>
-          {questionText || "좌측 개념을 클릭한 뒤, 우측에서 알맞은 정의를 클릭하세요."}
+          {questionText || t("solve.matchInstruction")}
         </h1>
       )}
 

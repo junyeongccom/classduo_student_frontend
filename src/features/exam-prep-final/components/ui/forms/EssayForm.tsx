@@ -10,6 +10,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import type { PrincipleQuiz, PrincipleQuizPayload, QuizFormResult } from "./types";
 
@@ -32,6 +33,7 @@ function getBodyText(payload: PrincipleQuizPayload, subType: string): string {
 }
 
 export function EssayForm({ quiz, value, onChange, hasSubmitted, result }: EssayFormProps) {
+  const t = useTranslations("examPrepFinal");
   const bodyText = getBodyText(quiz.payload, quiz.sub_type);
   const modelAnswer =
     ((result?.payload as PrincipleQuizPayload | null) ?? quiz.payload)?.model_answer ?? "";
@@ -64,7 +66,7 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result }: Essay
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="답안을 작성하세요..."
+          placeholder={t("solve.essayPlaceholder")}
           className="w-full resize-none bg-white outline-none focus:ring-2"
           style={{
             border: "0.123cqw solid #4f4f4f" /* figma 답작성영역(941:9044) border-2 #4f4f4f */,

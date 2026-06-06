@@ -186,14 +186,14 @@ export function PayloadQuestionPanel({
           className="flex items-center rounded-full bg-violet-100 font-semibold text-violet-700"
           style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
         >
-          <Check style={{ width: '1.067cqw', height: '1.067cqw' }} /> 정답
+          <Check style={{ width: '1.067cqw', height: '1.067cqw' }} /> {t('examPrepFinal.solve.correct')}
         </span>
       ) : (
         <span
           className="flex items-center rounded-full bg-rose-100 font-semibold text-rose-700"
           style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
         >
-          <XIcon style={{ width: '1.067cqw', height: '1.067cqw' }} /> 오답
+          <XIcon style={{ width: '1.067cqw', height: '1.067cqw' }} /> {t('examPrepFinal.solve.incorrect')}
         </span>
       )
     ) : null
@@ -296,10 +296,10 @@ export function PayloadQuestionPanel({
   const hasMaterial = sourcePages.length > 0
   const hasRecording = sourceChunks.length > 0
   const materialTooltip = hasMaterial
-    ? `강의자료 ${sourcePages.map((p) => `p.${p}`).join(', ')}`
+    ? t('examPrepFinal.solve.materialTooltip', { pages: sourcePages.map((p) => `p.${p}`).join(', ') })
     : null
   const recordingTooltip = hasRecording
-    ? `녹음본 청크 ${sourceChunks.map((c) => `#${c}`).join(', ')}`
+    ? t('examPrepFinal.solve.recordingTooltip', { chunks: sourceChunks.map((c) => `#${c}`).join(', ') })
     : null
 
   // 하단 좌측 아이콘 버튼 공통 스타일 (cqw)
@@ -323,7 +323,7 @@ export function PayloadQuestionPanel({
                 className="rounded-full bg-violet-100 font-semibold text-violet-700"
                 style={{ padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
               >
-                제출 완료 · 모범답안 확인
+                {t('examPrepFinal.solve.submittedModelAnswer')}
               </span>
             </div>
           )}
@@ -335,7 +335,7 @@ export function PayloadQuestionPanel({
           {showExplanation && (
             <div className="mt-[2cqw] flex w-full flex-col border-t border-gray-200 pt-[1.5cqw]" style={{ gap: '1.5cqw' }}>
               <p className="font-bold" style={{ fontSize: '1.5cqw', color: 'var(--color-neutral-black-hex)' }}>
-                해설
+                {t('examPrepFinal.solve.explanation')}
               </p>
               {qf === 'term_definition_match3' && (
                 <MatchForm
@@ -370,7 +370,7 @@ export function PayloadQuestionPanel({
               onClick={onBookmarkToggle}
               className={cn(iconBtn, isBookmarked && 'text-violet-500 hover:text-violet-600')}
               style={iconBtnStyle}
-              aria-label={isBookmarked ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+              aria-label={isBookmarked ? t('examPrepFinal.solve.bookmarkRemove') : t('examPrepFinal.solve.bookmarkAdd')}
             >
               <Bookmark style={iconSize} className={cn(isBookmarked && 'fill-current')} />
             </button>
@@ -381,7 +381,7 @@ export function PayloadQuestionPanel({
                 disabled={!hasMaterial || !onSourceClick}
                 className={iconBtn}
                 style={iconBtnStyle}
-                aria-label="강의자료 출처 보기"
+                aria-label={t('examPrepFinal.solve.sourceMaterialsAria')}
               >
                 <FileText style={iconSize} />
               </button>
@@ -402,7 +402,7 @@ export function PayloadQuestionPanel({
                 disabled={!hasRecording || !onSourceClick}
                 className={iconBtn}
                 style={iconBtnStyle}
-                aria-label="녹음본 출처 보기"
+                aria-label={t('examPrepFinal.solve.sourceRecordingsAria')}
               >
                 <Mic style={iconSize} />
               </button>
@@ -422,7 +422,7 @@ export function PayloadQuestionPanel({
               disabled={!onAskChatbot}
               className={iconBtn}
               style={iconBtnStyle}
-              aria-label="AI 챗봇에게 물어보기"
+              aria-label={t('examPrepFinal.solve.askChatbotAria')}
             >
               <MessageSquareText style={iconSize} />
             </button>
@@ -437,7 +437,7 @@ export function PayloadQuestionPanel({
                   onClick={onHint}
                   className="flex items-center justify-center text-amber-400 transition-transform hover:scale-110"
                   style={{ width: '2.844cqw', height: '2.844cqw' }}
-                  aria-label="힌트"
+                  aria-label={t('examPrepFinal.solve.hint')}
                 >
                   <Lightbulb style={{ width: '2.015cqw', height: '2.015cqw' }} className="fill-amber-200" />
                 </button>
@@ -446,7 +446,7 @@ export function PayloadQuestionPanel({
                   className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap bg-gray-900 font-medium text-white opacity-0 transition-opacity duration-150 group-hover/hint:opacity-100 dark:bg-gray-700"
                   style={{ bottom: 'calc(100% + 0.4cqw)', fontSize: '1cqw', padding: '0.3cqw 0.6cqw', borderRadius: '0.4cqw' }}
                 >
-                  힌트보기
+                  {t('examPrepFinal.solve.hintTooltip')}
                 </div>
               </div>
             )}
@@ -465,7 +465,7 @@ export function PayloadQuestionPanel({
                   fontSize: '1.233cqw',
                 }}
               >
-                {isGrading ? '채점 중...' : t('examPrepFinal.submit')}
+                {isGrading ? t('examPrepFinal.solve.grading') : t('examPrepFinal.submit')}
               </button>
             )}
             {/* 해설보기 / 닫기 (채점 후, 서술형 제외 — 서술형은 모범답안이 폼에 노출) */}
@@ -482,7 +482,7 @@ export function PayloadQuestionPanel({
                   fontSize: '1.233cqw',
                 }}
               >
-                {showExplanation ? '닫기' : '해설보기'}
+                {showExplanation ? t('examPrepFinal.solve.hideExplanation') : t('examPrepFinal.solve.showExplanation')}
               </button>
             )}
           </div>
