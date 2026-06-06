@@ -1065,8 +1065,8 @@ export function CoreTestSolveContainer({
         />
         <div className="flex min-h-0 flex-1">
           <SolveSidebar
-            sessionLabel={headerLabel}
-            lectureTitle={lectureTitle}
+            sessionLabel={sessionLabel}
+            lectureTitle={headerLabel}
             total={total}
             currentSeq={currentSeq}
             seqStateMap={seqStateMap}
@@ -1131,8 +1131,8 @@ export function CoreTestSolveContainer({
         <SolveSidebar
           scaled
           hideMastery={data?.test_type === 'mid'} /* mid=서술형 자가평가 → 숙련도 무관, 사이드바 범례 숨김 */
-          sessionLabel={headerLabel}
-          lectureTitle={lectureTitle}
+          sessionLabel={sessionLabel}
+          lectureTitle={headerLabel}
           total={total}
           currentSeq={currentSeq}
           seqStateMap={seqStateMap}

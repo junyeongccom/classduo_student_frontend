@@ -443,13 +443,18 @@ export function PayloadQuestionPanel({
           </div>
 
           <div className="flex items-center" style={{ gap: '1.185cqw' }}>
-            {/* 힌트(전구) — 객관식/빈칸채우기에서 오답 1개 제거. 선택지 없는 유형(매칭/서술형)·사용 후 숨김. */}
-            {!isLocked && onHint && choices.length > 0 && eliminatedIdx == null && (
+            {/* 힌트(전구) — 객관식/빈칸채우기에서 오답 1개 제거. 선택지 없는 유형(매칭/서술형)은 미노출.
+                사용 후에도 숨기지 않고 연하게(opacity-40) + 비활성. hover 시 효과/숙련도 패널티 안내 툴팁. */}
+            {!isLocked && onHint && choices.length > 0 && (
               <div className="group/hint relative flex items-center">
                 <button
                   type="button"
-                  onClick={onHint}
-                  className="flex items-center justify-center text-amber-400 transition-transform hover:scale-110"
+                  onClick={eliminatedIdx == null ? onHint : undefined}
+                  aria-disabled={eliminatedIdx != null}
+                  className={cn(
+                    'flex items-center justify-center text-amber-400 transition-transform',
+                    eliminatedIdx == null ? 'hover:scale-110' : 'cursor-default opacity-40',
+                  )}
                   style={{ width: '2.844cqw', height: '2.844cqw' }}
                   aria-label={t('examPrepFinal.solve.hint')}
                 >
@@ -457,8 +462,8 @@ export function PayloadQuestionPanel({
                 </button>
                 <div
                   role="tooltip"
-                  className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-nowrap bg-gray-900 font-medium text-white opacity-0 transition-opacity duration-150 group-hover/hint:opacity-100 dark:bg-gray-700"
-                  style={{ bottom: 'calc(100% + 0.4cqw)', fontSize: '1cqw', padding: '0.3cqw 0.6cqw', borderRadius: '0.4cqw' }}
+                  className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 whitespace-normal break-keep bg-gray-900 text-center font-medium text-white opacity-0 transition-opacity duration-150 group-hover/hint:opacity-100 dark:bg-gray-700"
+                  style={{ bottom: 'calc(100% + 0.4cqw)', width: '16cqw', fontSize: '1cqw', lineHeight: 1.45, padding: '0.5cqw 0.7cqw', borderRadius: '0.4cqw' }}
                 >
                   {t('examPrepFinal.solve.hintTooltip')}
                 </div>

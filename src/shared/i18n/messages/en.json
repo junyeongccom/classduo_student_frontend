@@ -135,7 +135,7 @@
       "sourceRecordingsAria": "View recording source",
       "askChatbotAria": "Ask the AI chatbot",
       "hint": "Hint",
-      "hintTooltip": "Hint",
+      "hintTooltip": "Removes one wrong choice. Note: this question won't count toward your mastery even if answered correctly.",
       "materialTooltip": "Materials {pages}",
       "recordingTooltip": "Recording chunks {chunks}",
       "eliminatedChoice": "Eliminated by hint",
