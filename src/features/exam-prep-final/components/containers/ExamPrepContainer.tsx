@@ -299,16 +299,29 @@ function CoreSetContent({
   const tests = getCoreTestsBySet(data.coreTests, setNumber)
   const midTest = data.midTests.find((m) => m.setNumber === setNumber)
 
-  // 핵심테스트 + 중간테스트(있으면)를 하나의 시퀀스로 합쳐 그리드에 흘림
+  // 핵심테스트 + 중간테스트(있으면)를 그리드에 흘림
   type GridItem =
     | { kind: 'core'; test: (typeof tests)[number] }
     | { kind: 'mid'; mid: NonNullable<typeof midTest> }
-  const items: GridItem[] = [
-    ...tests.map((t) => ({ kind: 'core' as const, test: t })),
-    ...(midTest ? [{ kind: 'mid' as const, mid: midTest }] : []),
-  ]
-  // 2행 고정 — 아이템을 두 줄로 균등 분배 (행당 ceil(n/2)개)
-  const rows = chunkInto(items, Math.max(1, Math.ceil(items.length / 2)))
+  const coreItems: GridItem[] = tests.map((t) => ({ kind: 'core' as const, test: t }))
+  const midItem: GridItem | null = midTest
+    ? { kind: 'mid' as const, mid: midTest }
+    : null
+
+  // 행 분할 정책:
+  //   세트 1 (핵심 10개): 핵심만 2행(5/5)으로 분배하고 중간테스트는 단독 3행으로 내림.
+  //   세트 2·3 (핵심 8개): 핵심+중간(9개)을 2행(5/4)으로 균등 분배.
+  let rows: GridItem[][]
+  if (setNumber === 1) {
+    const coreRows = chunkInto(
+      coreItems,
+      Math.max(1, Math.ceil(coreItems.length / 2)),
+    )
+    rows = midItem ? [...coreRows, [midItem]] : coreRows
+  } else {
+    const items = midItem ? [...coreItems, midItem] : coreItems
+    rows = chunkInto(items, Math.max(1, Math.ceil(items.length / 2)))
+  }
 
   const isCoreSelected = (id: string) =>
     selection?.kind === 'core' && selection.id === id

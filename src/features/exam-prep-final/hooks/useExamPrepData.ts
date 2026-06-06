@@ -61,7 +61,7 @@ function lectureToCoreTest(args: {
   fallbackTitle: (week: number, session: number) => string
 }): CoreTest {
   const { lecture, number, apiTestId, apiQuestionCount, apiIsMastered, fallbackTitle } = args
-  // 26개 정원 고정 분배 (set1=9, set2=9, set3=8) — SET_RANGES 기준
+  // 26개 정원 고정 분배 (set1=10, set2=8, set3=8) — SET_RANGES 기준
   const setNumber: 1 | 2 | 3 =
     number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
 
