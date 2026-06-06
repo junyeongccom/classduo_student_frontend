@@ -1083,10 +1083,11 @@ export function CoreTestSolveContainer({
 
   // ─── 풀이 화면 (1920×1080 캔버스 contain 스케일, 시안 매칭) ───
   return (
-    // 한계치(1440px) 미만이면 더 안 줄이고 가로 스크롤 — 사이드바/헤더/본문이 너무 작아지지 않게.
+    // 본문 영역이 자체적으로 가로 스크롤(ContentScaledCanvas) → layout floor 불필요.
+    // 사이드바/헤더는 cqw max() 클램프로 1440-크기 유지, 본문은 높이기준 고정·여백만 가변.
     <div className="h-full w-full overflow-x-auto overflow-y-hidden">
     <div
-      className="flex h-full w-full min-w-[1290px] flex-col bg-[#F9F9FB] dark:bg-gray-950"
+      className="flex h-full w-full flex-col bg-[#F9F9FB] dark:bg-gray-950"
       style={{ containerType: 'inline-size' }}
     >
         {/* 상단바 — 얇은 흰 바 (px 고정) */}
