@@ -103,7 +103,7 @@ export function ExamPrepHeroCard({
             color: '#383698',
             // 흰 외곽선(Dev Mode design_context 누락분) — 획을 fill '뒤'로(paint-order) 돌려
             // 코어는 #383698 그대로 또렷하게, 바깥에만 흰 테두리. + 보라 그림자.
-            WebkitTextStroke: '0.11em #ffffff',
+            WebkitTextStroke: '0.15em #ffffff',
             paintOrder: 'stroke fill',
             textShadow: '0 0.6cqw 0.6cqw #716fdc',
             fontFamily: 'Pretendard, sans-serif',
