@@ -74,7 +74,8 @@ export function ExamPrepHeroCard({
           className="pointer-events-none absolute"
           style={{ left: '71.27cqw', top: '-0.302cqw', width: '29.71cqw' }}
         />
-        {/* 캐릭터 */}
+        {/* 캐릭터 — figma 노드 "캐릭터흰테두리". 제공 PNG엔 테두리 없어 CSS 다방향
+            drop-shadow 스택으로 흰 스티커 외곽선 + 보라 소프트 그림자(카드 폭 cqw 비례). */}
         <img
           src="/topic_test/character.png"
           alt=""
@@ -85,7 +86,8 @@ export function ExamPrepHeroCard({
             left: '2.489cqw',
             top: '5.43cqw',
             width: '94.87cqw',
-            filter: 'drop-shadow(0 4px 10px rgba(113,111,220,0.45))',
+            filter:
+              'drop-shadow(0.45cqw 0 0 #fff) drop-shadow(-0.45cqw 0 0 #fff) drop-shadow(0 0.45cqw 0 #fff) drop-shadow(0 -0.45cqw 0 #fff) drop-shadow(0.32cqw 0.32cqw 0 #fff) drop-shadow(-0.32cqw 0.32cqw 0 #fff) drop-shadow(0.32cqw -0.32cqw 0 #fff) drop-shadow(-0.32cqw -0.32cqw 0 #fff) drop-shadow(0 0.7cqw 1.2cqw rgba(113,111,220,0.45))',
           }}
         />
       </div>
@@ -97,10 +99,11 @@ export function ExamPrepHeroCard({
           style={{
             maxWidth: '92cqw',
             fontSize: '10.558cqw',
-            color: '#8f8df0',
-            // 시안: 페리윙클 fill + 흰 외곽선(Dev Mode design_context 누락분). 획을 fill 뒤로
-            // (paint-order) 돌려 fill 은 또렷하게 두고 바깥에 흰 테두리만 둘러 시안 매칭.
-            WebkitTextStroke: '0.12em #ffffff',
+            // figma 정확 fill (design_context, 변수 바인딩 없음 → 하드코딩 해시값)
+            color: '#383698',
+            // 흰 외곽선(Dev Mode design_context 누락분) — 획을 fill '뒤'로(paint-order) 돌려
+            // 코어는 #383698 그대로 또렷하게, 바깥에만 흰 테두리. + 보라 그림자.
+            WebkitTextStroke: '0.11em #ffffff',
             paintOrder: 'stroke fill',
             textShadow: '0 0.6cqw 0.6cqw #716fdc',
             fontFamily: 'Pretendard, sans-serif',
