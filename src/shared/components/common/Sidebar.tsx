@@ -8,6 +8,8 @@ import { cn } from '@/shared/lib/utils'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import { SIDEBAR_MENU, NEW_SIDEBAR_MENU, PROFILE_MENU, COURSE_SIDEBAR_MENU } from '@/shared/constants/nav'
 import { computeDdaysToExam } from '@/shared/constants/examPrep'
+import { isExamPrepLockedNow } from '@/features/course-dashboard'
+import { useAuthStore } from '@/features/auth/store/authStore'
 import {
   AI_TUTOR_NEW_CHAT_EVENT,
   AI_TUTOR_NEW_CHAT_FLAG,
@@ -22,7 +24,7 @@ import {
 } from '@/shared/components/ui/Tooltip'
 import { useSidebarStore, useTabletDetector } from '@/shared/store/useSidebarStore'
 import { useFeedbackStore } from '@/features/error-report'
-import { ChevronsLeft, Menu } from 'lucide-react'
+import { ChevronsLeft, Menu, Lock } from 'lucide-react'
 import { GameSelectionModal } from './GameSelectionModal'
 
 export function Sidebar() {
@@ -287,6 +289,14 @@ function CourseContextNav({
   openFeedback,
   t,
 }: CourseContextNavProps) {
+  // 기말대비학습(핵심 주제 학습) 버튼 잠금 — prod 에서 6/10 이전·비-allowlist 사용자는 잠금.
+  // 자정 경계 hydration 안전을 위해 client mount 후 계산. allowlist 반영 위해 full_name 사용.
+  const examPrepFullName = useAuthStore((s) => s.user?.full_name)
+  const [examPrepLocked, setExamPrepLocked] = useState(false)
+  useEffect(() => {
+    setExamPrepLocked(isExamPrepLockedNow(examPrepFullName))
+  }, [examPrepFullName])
+
   // 그룹별로 묶기
   const groups = useMemo(() => {
     const result: Record<'course' | 'resources' | 'global', typeof COURSE_SIDEBAR_MENU[number][]> = {
@@ -302,6 +312,8 @@ function CourseContextNav({
     const Icon = item.icon
     const href = item.hrefFor(courseId)
     const matchPath = item.matchFor(courseId)
+    // 잠긴 기말대비학습 — 클릭 무효 + 흐리게 + D-Day 배지 대신 자물쇠.
+    const isLockedItem = item.id === 'exam-prep' && examPrepLocked
 
     // my-quizzes(저장소) ↔ create-question(문제 만들기)는 같은 path를 공유하므로 ?tab=create 로 분기.
     // dashboard는 정확 일치, dialogue는 lecture/[id]/dialogue 까지 포함, 그 외는 startsWith.
@@ -326,7 +338,13 @@ function CourseContextNav({
       <Link
         key={item.id}
         href={href}
+        aria-disabled={isLockedItem || undefined}
+        tabIndex={isLockedItem ? -1 : undefined}
         onClick={(event) => {
+          if (isLockedItem) {
+            event.preventDefault()
+            return
+          }
           if (item.action === 'feedback-modal') {
             event.preventDefault()
             openFeedback()
@@ -343,6 +361,7 @@ function CourseContextNav({
           isActive
             ? 'bg-gray-100 font-bold dark:bg-gray-800'
             : 'hover:bg-gray-100 dark:hover:bg-gray-800',
+          isLockedItem && 'cursor-not-allowed opacity-50 hover:bg-transparent dark:hover:bg-transparent',
         )}
       >
         {item.iconSrc ? (
@@ -386,7 +405,9 @@ function CourseContextNav({
                   2~7:   #FFCD36 (노랑, 다크 텍스트)
                   ≤1:    #DC2626 (빨강, 흰 텍스트)
                   >50:   #DEDEF8 (가장 옅은 톤 fallback) */}
-            {item.showDdayBadge && (() => {
+            {isLockedItem ? (
+              <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+            ) : item.showDdayBadge ? (() => {
               const d = computeDdaysToExam()
               let bg = '#DEDEF8'
               let fg = '#1F1F1F'
@@ -409,7 +430,7 @@ function CourseContextNav({
                   D-{d}
                 </span>
               )
-            })()}
+            })() : null}
           </>
         )}
       </Link>
