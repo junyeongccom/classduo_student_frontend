@@ -10,6 +10,8 @@
 
 'use client'
 
+import { useState } from 'react'
+
 interface ExamPrepHeroCardProps {
   /** 카드 제목 (i18n: courseDashboard.modeExam.title = "핵심 주제 학습") */
   title: string
@@ -30,10 +32,21 @@ export function ExamPrepHeroCard({
   lockedTooltip,
 }: ExamPrepHeroCardProps) {
   const dim = isLocked ? 'opacity-40' : ''
+  // 아케이드 눌림 — 핵심테스트 버튼처럼 누르면 표면(+제목)이 아래로 내려가 하단 양각(#716fdc)을 덮음.
+  const [pressed, setPressed] = useState(false)
+  const press = () => {
+    if (!isLocked) setPressed(true)
+  }
+  const release = () => setPressed(false)
+  const faceTransform = pressed ? 'translateY(3.167cqw)' : undefined
   return (
     <button
       type="button"
       onClick={isLocked ? undefined : onClick}
+      onPointerDown={press}
+      onPointerUp={release}
+      onPointerLeave={release}
+      onPointerCancel={release}
       aria-label={ariaLabel ?? title}
       aria-disabled={isLocked}
       className={`group relative mx-auto block w-full max-w-[663px] ${isLocked ? 'cursor-not-allowed' : ''}`}
@@ -54,6 +67,8 @@ export function ExamPrepHeroCard({
           height: '69.08cqw',
           borderRadius: '6.033cqw',
           backgroundImage: 'linear-gradient(to bottom, #f0efff, #dbdafb)',
+          transform: faceTransform,
+          transition: 'transform 110ms ease-out',
         }}
       >
         {/* DNA 좌상단 */}
@@ -93,7 +108,10 @@ export function ExamPrepHeroCard({
       </div>
 
       {/* 제목 — 표면 위 중앙 상단 (#383698) */}
-      <div className={`pointer-events-none absolute inset-x-0 flex justify-center ${dim}`} style={{ top: '3.167cqw' }}>
+      <div
+        className={`pointer-events-none absolute inset-x-0 flex justify-center ${dim}`}
+        style={{ top: '3.167cqw', transform: faceTransform, transition: 'transform 110ms ease-out' }}
+      >
         <span
           className="text-center font-semibold leading-tight break-keep"
           style={{
