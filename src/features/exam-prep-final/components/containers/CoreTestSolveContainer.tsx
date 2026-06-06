@@ -471,6 +471,14 @@ export function CoreTestSolveContainer({
     )
   }, [matchedLecture, data, sessionLabel])
 
+  // 1순위 주제 — 문항 source_ref.topic_title (코어 테스트 문항은 동일 주제). 주차/차시 대신 표시.
+  const topicLabel = useMemo(() => {
+    const q = data?.questions?.find((q) => q.source_ref?.topic_title?.trim())
+    return (q?.source_ref?.topic_title ?? '').trim()
+  }, [data])
+  // 헤더/사이드바 라벨 — 주제 있으면 주제, 없으면 주차/차시 fallback.
+  const headerLabel = topicLabel || sessionLabel
+
   // 현재 문항 — 4지선다 보장
   const currentQuestion: CoreTestQuestionItemDto | null = useMemo(() => {
     if (!data) return null
@@ -1047,13 +1055,13 @@ export function CoreTestSolveContainer({
           courseId={courseId}
           courseTitle={courseTitle}
           currentLectureLabel={
-            sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle
+            headerLabel ? `${headerLabel} · ${lectureTitle}` : lectureTitle
           }
           onExit={handleExit}
         />
         <div className="flex min-h-0 flex-1">
           <SolveSidebar
-            sessionLabel={sessionLabel}
+            sessionLabel={headerLabel}
             lectureTitle={lectureTitle}
             total={total}
             currentSeq={currentSeq}
@@ -1103,7 +1111,7 @@ export function CoreTestSolveContainer({
             className="min-w-0 flex-1 truncate text-gray-400"
             style={{ fontSize: 'max(12.0px, 0.833cqw)' }}
           >
-            {sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle}
+            {headerLabel ? `${headerLabel} · ${lectureTitle}` : lectureTitle}
           </span>
           <button
             type="button"
@@ -1119,7 +1127,7 @@ export function CoreTestSolveContainer({
         <SolveSidebar
           scaled
           hideMastery={data?.test_type === 'mid'} /* mid=서술형 자가평가 → 숙련도 무관, 사이드바 범례 숨김 */
-          sessionLabel={sessionLabel}
+          sessionLabel={headerLabel}
           lectureTitle={lectureTitle}
           total={total}
           currentSeq={currentSeq}
