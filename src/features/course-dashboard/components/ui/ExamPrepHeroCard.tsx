@@ -155,7 +155,16 @@ export function ExamPrepHeroCard({
           className="pointer-events-none absolute inset-x-0 z-30 flex justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100"
           style={{ bottom: '6cqw' }}
         >
-          <div className="rounded-lg bg-white/95 px-4 py-2 text-sm font-semibold text-gray-900 shadow-lg backdrop-blur-sm">
+          {/* 안내 문구 — 카드 폭(cqw) 비례로 키워 잠금 상태가 또렷이 보이도록. */}
+          <div
+            className="whitespace-nowrap bg-white/95 font-semibold text-gray-900 shadow-lg backdrop-blur-sm"
+            style={{
+              fontSize: '4cqw',
+              lineHeight: 1.25,
+              padding: '1.6cqw 3cqw',
+              borderRadius: '2cqw',
+            }}
+          >
             {lockedTooltip}
           </div>
         </div>
