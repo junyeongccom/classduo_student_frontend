@@ -471,8 +471,10 @@ export function CoreTestSolveContainer({
     )
   }, [matchedLecture, data, sessionLabel])
 
-  // 1순위 주제 — 문항 source_ref.topic_title (코어 테스트 문항은 동일 주제). 주차/차시 대신 표시.
+  // 1순위 주제 — exam_prep_topic(detail.topic_title) 우선, 구 테스트는 첫 문항 source_ref.topic_title 폴백.
   const topicLabel = useMemo(() => {
+    const fromTable = (data?.topic_title ?? '').trim()
+    if (fromTable) return fromTable
     const q = data?.questions?.find((q) => q.source_ref?.topic_title?.trim())
     return (q?.source_ref?.topic_title ?? '').trim()
   }, [data])

@@ -74,6 +74,8 @@ export interface CoreTestDetailDto {
   segment_index?: number | null
   /** core: 회차 제목 / mid: "중간 테스트 N" / final: "최종 테스트" */
   title: string | null
+  /** core 1순위 주제(exam_prep_topic). 상단 박스/풀이 헤더 표시. mid/final 은 null */
+  topic_title?: string | null
   questions: CoreTestQuestionItemDto[]
 }
 

@@ -75,8 +75,12 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
     let alive = true
     fetchCoreTestDetail(test.id).then(({ data }) => {
       if (!alive) return
-      const q = data?.questions?.find((q) => q.source_ref?.topic_title?.trim())
-      setTopic((q?.source_ref?.topic_title ?? '').trim())
+      // 1순위 주제: exam_prep_topic(detail.topic_title) 우선. 구 테스트는 첫 문항 source_ref.topic_title 폴백.
+      const fromTable = (data?.topic_title ?? '').trim()
+      const fromQuestion = (
+        data?.questions?.find((q) => q.source_ref?.topic_title?.trim())?.source_ref?.topic_title ?? ''
+      ).trim()
+      setTopic(fromTable || fromQuestion)
     })
     return () => {
       alive = false
