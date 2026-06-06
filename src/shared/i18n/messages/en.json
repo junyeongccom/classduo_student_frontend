@@ -62,13 +62,13 @@
       "footer": "",
       "cta": "Enter"
     },
-    "examPrepPlaceholderTitle": "Final Exam Prep (Coming soon)",
+    "examPrepPlaceholderTitle": "Core Topics (Coming soon)",
     "examPrepPlaceholderDescription": "A focused mode with 26 core tests to maximize mastery before exam day.",
     "courseDialoguePlaceholderTitle": "Dialogue Mode",
     "courseDialoguePlaceholderDescription": "Select a lecture to chat freely with the AI tutor.",
     "examSubtitle": "10 questions · 30 sets · daily reward boost",
     "examPrepLockedTooltip": "Available from early June",
-    "gradeLockedNotice": "Your grade badge will appear when exam prep opens",
+    "gradeLockedNotice": "Your grade badge will appear when Core Topics opens",
     "weeklyShortDescription": "Review what you learned each week.",
     "dialogueShortDescription": "Ask the AI anything you don't understand.",
     "myQuizSaved": "My Quiz Library",
@@ -77,7 +77,7 @@
     "maxRankReached": "Top rank reached!",
     "xpToNext": "{xp} XP to next rank",
     "gradeDisclaimer": "Not the actual grade for {course}. This rank is used only within Aplus.",
-    "startExamPrepAria": "Start final-exam prep",
+    "startExamPrepAria": "Start Core Topics",
     "monthLabel": "{month}",
     "streakInProgress": "{days}-day streak",
     "todayLabel": "Today",
@@ -95,7 +95,7 @@
     "midTestTitle": "Mid Test",
     "midTestMeta": "{minutes} min  {questions} questions",
     "midTestDescription": "A diagnostic test based on items you missed in core tests {start}~{end}.",
-    "finalTitle": "Final\nExam Prep",
+    "finalTitle": "Final\nTest",
     "finalMeta": "{minutes} min",
     "finalQuestions": "{questions} questions",
     "finalUnlockHint": "Unlocks D-3 before exam",
@@ -1322,7 +1322,7 @@
       "source": "Source",
       "sourceLabels": {
         "lectureContent": "Lecture Study",
-        "examPrep": "Final Exam Prep",
+        "examPrep": "Core Topics",
         "customize": "My Quizzes"
       },
       "typeLabels": {
