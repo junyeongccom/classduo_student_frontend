@@ -61,7 +61,7 @@ function lectureToCoreTest(args: {
   fallbackTitle: (week: number, session: number) => string
 }): CoreTest {
   const { lecture, number, apiTestId, apiQuestionCount, apiIsMastered, fallbackTitle } = args
-  // 26개 정원 고정 분배 (set1=9, set2=9, set3=8) — SET_RANGES 기준
+  // 26개 정원 고정 분배 (set1=10, set2=8, set3=8) — SET_RANGES 기준
   const setNumber: 1 | 2 | 3 =
     number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
 
@@ -297,6 +297,10 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       return s === 'mastered' || s === 'empty'
     }
 
+    // 전부 자유 풀이 정책: 핵심 순차 잠금 + 중간/최종 게이트 모두 해제(생성된 테스트는 항상 풀이 가능).
+    //   문항 미생성(0문항) 슬롯만 '콘텐츠 없음'으로 locked 유지. (구 dev/prod 분기 폐지)
+    const bypassLock = true
+
     // ─── 핵심테스트 sequential 잠금 정책 (b2c20260503 + set 경계 강화) ───
     //   1번: 항상 시작점 (단, 백엔드 문항 미생성이면 자동 locked)
     //   같은 set 내 N번(>1): 직전 핵심테스트(N-1) master 시 unlock
@@ -314,7 +318,7 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
           allowed = false
         }
       }
-      if (!allowed) {
+      if (!allowed && !bypassLock) {
         coreTests[i] = {
           ...t,
           status: 'locked',
@@ -360,9 +364,14 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
       // 2) 세트 완성 → backend status 사용 (단 'empty' → 'mastered' 변환)
       let status: typeof rawStatus
       let unlocked: boolean
-      if (!isSetComplete(set)) {
+      if (!isSetComplete(set) && !bypassLock) {
         status = 'locked'
         unlocked = false
+      } else if (bypassLock && apiItem?.test_id) {
+        // dev/로컬: 백엔드가 shared mid 를 게이트(status='locked')해도 test_id 가 있으면(생성됨)
+        // 강제 개방 — 생성된 mid 를 자유롭게 풀게.
+        status = rawStatus === 'mastered' ? 'mastered' : 'available'
+        unlocked = true
       } else {
         status = rawStatus === 'empty' ? 'mastered' : rawStatus
         unlocked = status === 'available' || status === 'mastered'
@@ -380,8 +389,14 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
     })
 
     // final — finalApi 의 status / test_id 를 병합. setMasterStates 는 mid 의 mastered
-    // 여부에서 도출.
-    const finalStatus = finalApi?.status ?? 'locked'
+    // 여부에서 도출. 전부 자유 풀이: 생성(test_id)됐으면 backend 게이트 무관하게 개방.
+    const rawFinalStatus = finalApi?.status ?? 'locked'
+    const finalStatus =
+      bypassLock && finalApi?.test_id
+        ? rawFinalStatus === 'mastered'
+          ? 'mastered'
+          : 'available'
+        : rawFinalStatus
     const finalUnlocked =
       finalStatus === 'available' || finalStatus === 'mastered'
     // 'empty' 도 mastered 동급 처리 (위 isMidMastered 와 동일 정책)

@@ -1,8 +1,9 @@
 /**
  * @file CourseDashboardContainer.tsx
- * @description 과목 대시보드 — 기말대비 hero + 회차별/대화형 + 캘린더 + 학점/XP
+ * @description 과목 대시보드 — Figma(991:3348) content 좌표(2103×1477) 그대로 ScaledCanvas contain.
+ *   사이드바/상단바는 고정, 본문만 한 화면에 contain-스케일(절대 스크롤 없음 + 시안 비율 유지).
  * @module features/course-dashboard/components/containers
- * @dependencies useCourseDashboard, useDashboardMock, hero/mid/quick 카드, 캘린더, 학점 카드
+ * @dependencies useCourseDashboard, useDashboardMock, ScaledCanvas, DashboardScaledContent
  */
 
 'use client'
@@ -11,17 +12,19 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { ChevronRight, Loader2, PencilLine, Bookmark } from 'lucide-react'
+import { ChevronRight, Loader2 } from 'lucide-react'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 import { useCourseDashboard } from '../../hooks/useCourseDashboard'
 import { useDashboardMock } from '../../hooks/useDashboardMock'
 import { isExamPrepLockedNow } from '../../domain/examPrepUnlock'
-import { ExamPrepHeroCard } from '../ui/ExamPrepHeroCard'
-import { StudyModeMidCard } from '../ui/StudyModeMidCard'
-import { QuickActionLink } from '../ui/QuickActionLink'
-import { AttendanceCalendarCard } from '../ui/AttendanceCalendarCard'
-import { GradeProgressCard } from '../ui/GradeProgressCard'
+import { useAuthStore } from '@/features/auth/store/authStore'
+import { ScaledCanvas } from '../ui/ScaledCanvas'
+import {
+  DashboardScaledContent,
+  DASH_DESIGN_W,
+  DASH_DESIGN_H,
+} from '../ui/DashboardScaledContent'
 
 export function CourseDashboardContainer({ courseId }: { courseId: string }) {
   const t = useTranslations()
@@ -35,11 +38,13 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
   } = useCourseDashboard(courseId)
   const { user, streak, monthGrid, rankCode } = useDashboardMock(courseId)
 
-  // 기말대비학습 카드 잠금 — 자정 경계 hydration 안전을 위해 client mount 시 1회 계산.
+  // 기말대비학습 카드 잠금 — 자정 경계 hydration 안전을 위해 client mount 시 계산.
+  // allowlist 사용자(천준영/테스트계정/테스트)는 prod 에서도 오픈되므로 full_name 을 함께 반영.
+  const examPrepFullName = useAuthStore((s) => s.user?.full_name)
   const [isExamPrepLocked, setIsExamPrepLocked] = useState(false)
   useEffect(() => {
-    setIsExamPrepLocked(isExamPrepLockedNow())
-  }, [])
+    setIsExamPrepLocked(isExamPrepLockedNow(examPrepFullName))
+  }, [examPrepFullName])
 
   useEffect(() => {
     trackPageEnter('course_dashboard', { courseId })
@@ -88,84 +93,29 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
         </nav>
       </StudyspaceTopbarSlot>
 
-      <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-6xl px-0 py-4 md:px-6 md:py-5 lg:px-10">
-          <div className="grid grid-cols-1 gap-[calc(16px*var(--u))] md:gap-5 lg:grid-cols-[5fr_6fr]">
-            {/* ───── 좌측 컬럼 ───── */}
-            <div className="flex flex-col gap-[calc(16px*var(--u))] md:gap-3">
-              <ExamPrepHeroCard
-                title={t('courseDashboard.modeExam.title')}
-                subtitle={t('courseDashboard.examSubtitle')}
-                isLocked={isExamPrepLocked}
-                lockedTooltip={t('courseDashboard.examPrepLockedTooltip')}
-                onClick={() =>
-                  router.push(`/studyspace/course/${courseId}/exam-prep`)
-                }
-              />
-
-              <StudyModeMidCard
-                eyebrow={t('courseDashboard.modeWeekly.eyebrow')}
-                title={t('courseDashboard.modeWeekly.title')}
-                description={t('courseDashboard.weeklyShortDescription')}
-                onClick={() =>
-                  router.push(`/studyspace/course/${courseId}/lectures`)
-                }
-              />
-
-              <StudyModeMidCard
-                eyebrow={t('courseDashboard.modeDialogue.eyebrow')}
-                title={t('courseDashboard.modeDialogue.title')}
-                description={t('courseDashboard.dialogueShortDescription')}
-                onClick={() =>
-                  router.push(`/studyspace/course/${courseId}/dialogue`)
-                }
-              />
-
-              <div className="mx-auto grid w-[calc(343px*var(--u))] grid-cols-2 gap-[calc(16px*var(--u))] py-[calc(14px*var(--u))] sm:w-full sm:gap-4 sm:py-0">
-                <QuickActionLink
-                  icon={PencilLine}
-                  label={t('courseNav.createQuestion')}
-                  onClick={() =>
-                    router.push(
-                      `/studyspace/course/${courseId}/my-quizzes?tab=create`,
-                    )
-                  }
-                />
-                <QuickActionLink
-                  icon={Bookmark}
-                  label={t('courseDashboard.myQuizSaved')}
-                  onClick={() =>
-                    router.push(`/studyspace/course/${courseId}/my-quizzes`)
-                  }
-                />
-              </div>
-            </div>
-
-            {/* ───── 우측 컬럼 ───── */}
-            <div className="flex flex-col gap-[calc(16px*var(--u))] md:gap-3">
-              <AttendanceCalendarCard
-                monthGrid={monthGrid}
-                examDday={examDday}
-                currentStreak={streak.currentStreak}
-              />
-              {isExamPrepLocked ? (
-                <section className="rounded-2xl bg-white px-8 py-8 text-center shadow-[0_4px_20px_rgba(15,23,42,0.06)] dark:bg-gray-900">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 md:text-base">
-                    {t('courseDashboard.gradeLockedNotice')}
-                  </p>
-                </section>
-              ) : (
-                <GradeProgressCard
-                  displayName={user.displayName}
-                  xp={user.xp}
-                  rankCode={rankCode}
-                  courseTitle={courseTitle ?? undefined}
-                  onStartExamPrep={() => router.push(`/studyspace/course/${courseId}/exam-prep`)}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+      {/* 본문 — Figma content(2103×1477) 좌표 그대로. 가로 채움(width-fit): 메인 폭을 꽉 채우고
+          창이 낮으면 세로 스크롤 (사용자 선택). 시안 내부 여백(좌32/우119 등)이 숨 쉴 공간 제공. */}
+      <div className="h-full w-full overflow-hidden">
+        <ScaledCanvas designWidth={DASH_DESIGN_W} designHeight={DASH_DESIGN_H} fit="width">
+          <DashboardScaledContent
+            monthGrid={monthGrid}
+            examDday={examDday}
+            currentStreak={streak.currentStreak}
+            displayName={user.displayName}
+            xp={user.xp}
+            rankCode={rankCode}
+            courseTitle={courseTitle ?? undefined}
+            isExamPrepLocked={isExamPrepLocked}
+            examPrepLockedTooltip={t('courseDashboard.examPrepLockedTooltip')}
+            onHero={() => router.push(`/studyspace/course/${courseId}/exam-prep`)}
+            onWeekly={() => router.push(`/studyspace/course/${courseId}/lectures`)}
+            onDialogue={() => router.push(`/studyspace/course/${courseId}/dialogue`)}
+            onCreate={() =>
+              router.push(`/studyspace/course/${courseId}/my-quizzes?tab=create`)
+            }
+            onMyQuiz={() => router.push(`/studyspace/course/${courseId}/my-quizzes`)}
+          />
+        </ScaledCanvas>
       </div>
     </>
   )

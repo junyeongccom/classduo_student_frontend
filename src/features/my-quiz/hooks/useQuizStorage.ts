@@ -282,7 +282,7 @@ export function useQuizStorage({
           } else if (tt === 'final') {
             displayLectureName = '최종테스트'
           } else {
-            displayLectureName = '기말대비학습'
+            displayLectureName = '핵심 주제 학습'
           }
         }
 

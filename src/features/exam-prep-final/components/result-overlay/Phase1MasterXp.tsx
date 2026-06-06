@@ -1,7 +1,7 @@
 /**
  * @file Phase1MasterXp.tsx
  * @description 테스트 종료 1단계 풀화면 — 마스터 달성 경험치 집계 모션
- *   10문항 그리드(5x2) + 우측 카운터(0 XP). 풀이 전 숙련도(회색/노랑/보라) 에서
+ *   문항 그리드(5열, 문항 수만큼 줄바꿈) + 우측 카운터(0 XP). 풀이 전 숙련도(회색/노랑/보라) 에서
  *   풀이 후 숙련도까지 squish-pop 애니메이션을 무작위로 재생. 마스터 도달 이벤트 시
  *   문항 중앙에서 보라 물방울이 호를 그리며 카운터로 빨려들어가고 +10 가산.
  * @module features/exam-prep-final/components/result-overlay
@@ -203,8 +203,8 @@ export function Phase1MasterXp({ deltas, onDone }: Phase1Props) {
 
   // ─── 렌더 데이터 ───
   const orderedSeqs = useMemo(() => deltas.map((d) => d.seq).sort((a, b) => a - b), [deltas])
-  // 최대 10개만 표시 (handoff: 5x2)
-  const gridSeqs = orderedSeqs.slice(0, 10)
+  // 전체 문항 표시 — 5열 그리드로 문항 수만큼 줄바꿈 (테스트별 문항 수 가변).
+  const gridSeqs = orderedSeqs
 
   return (
     <div
@@ -212,7 +212,7 @@ export function Phase1MasterXp({ deltas, onDone }: Phase1Props) {
       className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-8 bg-white px-4 py-6 md:flex-row md:gap-0 md:px-0 md:py-12"
       style={{ fontFamily: 'Pretendard, sans-serif' }}
     >
-      {/* 좌측: 문항 그리드 5x2 */}
+      {/* 좌측: 문항 그리드 (5열, 문항 수만큼 줄바꿈) */}
       <div className="grid grid-cols-5 gap-4">
         {gridSeqs.map((seq) => {
           const state = perSeqState[seq] ?? 'learning'

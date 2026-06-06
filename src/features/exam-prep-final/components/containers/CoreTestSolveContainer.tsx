@@ -36,8 +36,10 @@ import {
   type GradeSingleResponseDto,
 } from '../../services/examPrepService'
 import { SolveTopBar } from '../ui/SolveTopBar'
+import { ContentScaledCanvas } from '../ui/ContentScaledCanvas'
 import { SolveSidebar } from '../ui/SolveSidebar'
 import { SolveQuestionPanel } from '../ui/SolveQuestionPanel'
+import { PayloadQuestionPanel } from '../ui/PayloadQuestionPanel'
 import { ExamPrepChatPanel } from '../ui/ExamPrepChatPanel'
 import { TestEndOverlay } from '../result-overlay/TestEndOverlay'
 import { Phase5FinalResult } from '../result-overlay/Phase5FinalResult'
@@ -81,19 +83,16 @@ export function CoreTestSolveContainer({
   const { courseTitle, lectures } = useLectures(courseId)
   const { data, isLoading: detailLoading, error: detailError } = useCoreTestDetail(testId)
 
+  // ─── 우측 통합 패널(출처+챗봇 2탭) 활성 탭 — null=닫힘 (UI 순간 상태) ───
+  const [rightTab, setRightTab] = useState<'materials' | 'recordings' | 'chat' | null>(null)
+
   // ─── 챗봇 store (testId 단위 키잉) ───
-  const isChatPanelOpen = useExamPrepSolveStore((s) => s.isChatPanelOpen)
-  const toggleChatPanel = useExamPrepSolveStore((s) => s.toggleChatPanel)
   const setStoreTestId = useExamPrepSolveStore((s) => s.setTestId)
   const quizChatContext = useExamPrepSolveStore((s) => s.quizChatContext)
   const setQuizChatContext = useExamPrepSolveStore((s) => s.setQuizChatContext)
   const clearQuizChatContext = useExamPrepSolveStore((s) => s.clearQuizChatContext)
 
-  // ─── 좌측 자료 패널 store (콘텐츠 학습과 공유 — LeftPanelMaterials/Recordings 재사용) ───
-  const isLeftPanelOpen = useLectureStudyStore((s) => s.isLeftPanelOpen)
-  const leftTab = useLectureStudyStore((s) => s.leftTab)
-  const setLeftTab = useLectureStudyStore((s) => s.setLeftTab)
-  const toggleLeftPanel = useLectureStudyStore((s) => s.toggleLeftPanel)
+  // ─── 출처 자료 패널 store (콘텐츠 학습과 공유 — LeftPanelMaterials/Recordings 재사용) ───
   const setLectureStudyLectureId = useLectureStudyStore((s) => s.setLectureId)
   const setTargetPage = useLectureStudyStore((s) => s.setTargetPage)
   const setTargetChunkIndex = useLectureStudyStore((s) => s.setTargetChunkIndex)
@@ -103,10 +102,9 @@ export function CoreTestSolveContainer({
     setStoreTestId(testId)
   }, [testId, setStoreTestId])
 
-  // 페이지 진입 시 두 패널 닫힘 + 코스/lecture id 초기화
+  // 페이지(테스트) 진입 시 우측 패널 닫힘
   useEffect(() => {
-    useLectureStudyStore.setState({ isLeftPanelOpen: false })
-    useExamPrepSolveStore.setState({ isChatPanelOpen: false })
+    setRightTab(null)
   }, [testId])
 
   // ─── attempt 라이프사이클 ───
@@ -121,6 +119,8 @@ export function CoreTestSolveContainer({
   // ─── 풀이 상태 (seq 기반) ───
   /** 학생이 선택한 옵션 (0-based 인덱스) — 즉시 채점 후 disable */
   const [selectedBySeq, setSelectedBySeq] = useState<Record<number, number>>({})
+  /** payload 유형(매칭/빈칸/복수/서술형) 응답 — 유형별 polymorphic 값. 제출 시 JSON 직렬화. */
+  const [responseBySeq, setResponseBySeq] = useState<Record<number, unknown>>({})
   /** 채점 결과 (seq → GradeSingleResponseDto) — 정오답 + mastery 변동 */
   const [gradedBySeq, setGradedBySeq] = useState<
     Record<number, GradeSingleResponseDto>
@@ -245,6 +245,7 @@ export function CoreTestSolveContainer({
       setPhaseError(null)
       // 다시풀기 트리거 시 로컬 상태 초기화
       setSelectedBySeq({})
+      setResponseBySeq({})
       setGradedBySeq({})
       setHintUsedSeqs(new Set())
       setHintDisabledBySeq({})
@@ -266,7 +267,7 @@ export function CoreTestSolveContainer({
       const a = attemptRes.data
       const aerr = attemptRes.error
       if (aerr || !a) {
-        setPhaseError(aerr || '응시를 시작하지 못했습니다.')
+        setPhaseError(aerr || t('examPrepFinal.solve.startFailed'))
         setPhase('error')
         return
       }
@@ -330,6 +331,7 @@ export function CoreTestSolveContainer({
     })
 
     const newSelected: Record<number, number> = {}
+    const newResponse: Record<number, unknown> = {}
     const newGraded: Record<number, GradeSingleResponseDto> = {}
     const newHintUsed = new Set<number>()
 
@@ -339,10 +341,19 @@ export function CoreTestSolveContainer({
       const question = data.questions.find((q) => q.seq === seq)
       if (!question) continue
 
-      // selected 는 백엔드에 0-indexed string 으로 저장 ("0"~"3")
-      const selectedIdx = parseInt(r.selected, 10)
-      if (Number.isInteger(selectedIdx)) {
-        newSelected[seq] = selectedIdx
+      // payload 유형(매칭/빈칸/복수/서술형)은 selected 에 JSON 직렬화 저장 → responseBySeq 복원.
+      // 레거시 4지선다는 0-indexed string("0"~"3") → selectedBySeq.
+      if (question.question_format) {
+        try {
+          newResponse[seq] = JSON.parse(r.selected)
+        } catch {
+          /* 파싱 실패 시 무시 */
+        }
+      } else {
+        const selectedIdx = parseInt(r.selected, 10)
+        if (Number.isInteger(selectedIdx)) {
+          newSelected[seq] = selectedIdx
+        }
       }
 
       if (r.is_correct === true || r.is_correct === false) {
@@ -371,6 +382,7 @@ export function CoreTestSolveContainer({
     }
 
     if (Object.keys(newSelected).length > 0) setSelectedBySeq(newSelected)
+    if (Object.keys(newResponse).length > 0) setResponseBySeq(newResponse)
     if (Object.keys(newGraded).length > 0) setGradedBySeq(newGraded)
     if (newHintUsed.size > 0) setHintUsedSeqs(newHintUsed)
 
@@ -459,6 +471,17 @@ export function CoreTestSolveContainer({
     )
   }, [matchedLecture, data, sessionLabel])
 
+  // 1순위 주제 — exam_prep_topic(detail.topic_title) 우선, 구 테스트는 첫 문항 source_ref.topic_title 폴백.
+  const isEn = locale === 'en'
+  const topicLabel = useMemo(() => {
+    const fromTable = ((isEn ? (data?.topic_title_eng ?? data?.topic_title) : data?.topic_title) ?? '').trim()
+    if (fromTable) return fromTable
+    const q = data?.questions?.find((q) => q.source_ref?.topic_title?.trim())
+    return (q?.source_ref?.topic_title ?? '').trim()
+  }, [data, isEn])
+  // 헤더/사이드바 라벨 — 주제 있으면 주제, 없으면 주차/차시 fallback.
+  const headerLabel = topicLabel || sessionLabel
+
   // 현재 문항 — 4지선다 보장
   const currentQuestion: CoreTestQuestionItemDto | null = useMemo(() => {
     if (!data) return null
@@ -494,13 +517,14 @@ export function CoreTestSolveContainer({
   // ─── 테스트 라벨 (챗봇 배지/프롬프트용) ───
   const testLabel = useMemo<string>(() => {
     if (!data) return ''
-    if (data.test_type === 'mid') return `중간테스트${data.segment_index ?? ''}`
-    if (data.test_type === 'final') return '최종테스트'
+    if (data.test_type === 'mid')
+      return t('examPrepFinal.chatLabel.mid', { n: data.segment_index ?? '' })
+    if (data.test_type === 'final') return t('examPrepFinal.chatLabel.final')
     // core: lecture_no 우선, 없으면 시즌 라벨
     return matchedLecture?.lecture_number != null
-      ? `핵심${matchedLecture.lecture_number}`
-      : (sessionLabel || '핵심테스트')
-  }, [data, matchedLecture, sessionLabel])
+      ? t('examPrepFinal.chatLabel.core', { n: matchedLecture.lecture_number })
+      : (sessionLabel || t('examPrepFinal.chatLabel.coreFallback'))
+  }, [data, matchedLecture, sessionLabel, t])
 
   // ─── 출처 클릭 → 좌측 자료 패널 점프 (cycling + page 1→0 indexed) ───
   // 출처가 여러 개면 클릭마다 다음 인덱스로 순환. 페이지 번호는 백엔드 1-indexed
@@ -519,9 +543,8 @@ export function CoreTestSolveContainer({
         | null
       if (!sr) return
       const sectionKey = `q-${currentSeq}`
-      // 좌측 패널 자동 열기 + 탭 전환
-      if (!isLeftPanelOpen) toggleLeftPanel()
-      setLeftTab(kind)
+      // 우측 패널을 해당 탭(강의자료/녹음본)으로 직접 열기
+      setRightTab(kind)
       if (kind === 'materials') {
         // #0(또는 음수) 페이지는 UI/네비게이션에서 제외 — #1 부터 시작.
         const pages = (sr.source_pages ?? []).filter((p) => p > 0)
@@ -545,9 +568,7 @@ export function CoreTestSolveContainer({
     [
       currentQuestion,
       currentSeq,
-      isLeftPanelOpen,
-      toggleLeftPanel,
-      setLeftTab,
+      setRightTab,
       setTargetPage,
       setTargetChunkIndex,
     ],
@@ -556,6 +577,7 @@ export function CoreTestSolveContainer({
   // ─── 챗봇 트리거 → 우측 패널 열림 + 문항 컨텍스트 주입 ───
   const handleAskChatbot = useCallback(() => {
     if (!currentQuestion) return
+    setRightTab('chat')
     const qid = seqToQuestionId.get(currentSeq) ?? currentQuestion.id ?? ''
     setQuizChatContext({
       testId,
@@ -578,6 +600,7 @@ export function CoreTestSolveContainer({
     currentSeq,
     seqToQuestionId,
     setQuizChatContext,
+    setRightTab,
     testId,
     testLabel,
     courseTitle,
@@ -679,28 +702,78 @@ export function CoreTestSolveContainer({
     [currentSeq, gradedBySeq],
   )
 
-  // ─── 액션: 힌트 클릭 → 오답 1개 random disable ───
+  // ─── 액션: payload 유형 응답 변경 (채점 전) ───
+  const handleResponseChange = useCallback(
+    (value: unknown) => {
+      if (gradedBySeq[currentSeq]) return  // 이미 채점된 문항은 변경 X
+      setResponseBySeq((prev) => ({ ...prev, [currentSeq]: value }))
+    },
+    [currentSeq, gradedBySeq],
+  )
+
+  // ─── 액션: 힌트 클릭 → 오답 1개 random disable (레거시 4지선다 + payload 객관식/빈칸채우기) ───
   const handleHintClick = useCallback(() => {
     if (gradedBySeq[currentSeq]) return  // 채점된 문항은 무시
     if (hintDisabledBySeq[currentSeq] != null) return  // 이미 힌트 사용
     if (!currentQuestion) return
-    const correctIdx = parseInt(currentQuestion.answer, 10)
-    const wrongOptions = currentQuestion.options
-      .map((_, i) => i)
-      .filter((i) => i !== correctIdx)
-    if (wrongOptions.length === 0) return
-    const pickIdx = wrongOptions[Math.floor(Math.random() * wrongOptions.length)]
+
+    const qf = currentQuestion.question_format
+    let pickIdx: number
+    if (qf) {
+      // payload 유형 — payload.choices + correct_answer 로 오답 인덱스 산출.
+      // 매칭/서술형 등 choices 없는 유형은 무시.
+      const payload = (currentQuestion.payload ?? {}) as Record<string, unknown>
+      const choices = (payload.choices as string[] | undefined) ?? []
+      if (choices.length === 0) return
+      const rawCorrect = payload.correct_answer
+      const correctSet = new Set<number>(
+        Array.isArray(rawCorrect)
+          ? (rawCorrect as unknown[]).filter((x): x is number => typeof x === 'number')
+          : typeof rawCorrect === 'number'
+            ? [rawCorrect]
+            : [],
+      )
+      const wrong = choices.map((_, i) => i).filter((i) => !correctSet.has(i))
+      if (wrong.length === 0) return
+      pickIdx = wrong[Math.floor(Math.random() * wrong.length)]
+    } else {
+      // 레거시 단일 4지선다
+      const correctIdx = parseInt(currentQuestion.answer, 10)
+      const wrong = currentQuestion.options
+        .map((_, i) => i)
+        .filter((i) => i !== correctIdx)
+      if (wrong.length === 0) return
+      pickIdx = wrong[Math.floor(Math.random() * wrong.length)]
+    }
+
     setHintDisabledBySeq((prev) => ({ ...prev, [currentSeq]: pickIdx }))
     setHintUsedSeqs((prev) => {
       const next = new Set(prev)
       next.add(currentSeq)
       return next
     })
-    // 학생이 disable된 선지를 선택했었다면 해제
+    // 레거시: 제거된 선지를 선택했었다면 해제
     setSelectedBySeq((prev) => {
       if (prev[currentSeq] === pickIdx) {
         const { [currentSeq]: _drop, ...rest } = prev
         return rest
+      }
+      return prev
+    })
+    // payload: 응답에 제거된 인덱스가 있으면 해제 (number / number[] / (number|null)[])
+    setResponseBySeq((prev) => {
+      const r = prev[currentSeq]
+      if (typeof r === 'number') {
+        if (r !== pickIdx) return prev
+        const { [currentSeq]: _drop, ...rest } = prev
+        return rest
+      }
+      if (Array.isArray(r) && r.includes(pickIdx)) {
+        const next =
+          qf === 'category_fill_blank7_multi'
+            ? (r as (number | null)[]).map((x) => (x === pickIdx ? null : x))
+            : (r as number[]).filter((x) => x !== pickIdx)
+        return { ...prev, [currentSeq]: next }
       }
       return prev
     })
@@ -710,8 +783,18 @@ export function CoreTestSolveContainer({
   const handleSubmit = useCallback(async () => {
     if (!attemptId || isGrading) return
     if (gradedBySeq[currentSeq]) return  // 이미 채점됨
-    const selected = selectedBySeq[currentSeq]
-    if (selected == null) return
+    // payload 유형은 responseBySeq(JSON 직렬화), 레거시 단일4지선다는 selectedBySeq(인덱스 문자열).
+    const qf = currentQuestion?.question_format ?? null
+    let selectedStr: string
+    if (qf) {
+      const resp = responseBySeq[currentSeq]
+      if (resp == null) return
+      selectedStr = JSON.stringify(resp)
+    } else {
+      const selected = selectedBySeq[currentSeq]
+      if (selected == null) return
+      selectedStr = String(selected)
+    }
     const qid = seqToQuestionId.get(currentSeq)
     if (!qid) {
       // 매핑 안된 문항 (마스터된 문항) — 채점 대상 아님. 다음 문항으로 이동만.
@@ -724,7 +807,7 @@ export function CoreTestSolveContainer({
     const { data: result, error, errorCode } = await gradeAttemptResponse(
       attemptId,
       qid,
-      String(selected),
+      selectedStr,
       hintUsed,
     )
     setIsGrading(false)
@@ -739,11 +822,11 @@ export function CoreTestSolveContainer({
         // attempt — 새 attempt 시작 (다시풀기 와 동일 흐름). 사용자가 답변하지 않은
         // 문항을 다시 풀 수 있게 됨.
         console.warn('[Solve] attempt already submitted — auto-restarting')
-        setPhaseError('이전 응시가 완료되어 새 응시를 시작합니다.')
+        setPhaseError(t('examPrepFinal.solve.attemptCompletedNew'))
         setRestartTrigger((r) => r + 1)
       } else {
         console.error('[Solve] grade failed:', error)
-        setPhaseError(error || '채점 중 오류가 발생했습니다')
+        setPhaseError(error || t('examPrepFinal.solve.gradeError'))
       }
       return
     }
@@ -788,6 +871,8 @@ export function CoreTestSolveContainer({
     isGrading,
     gradedBySeq,
     selectedBySeq,
+    responseBySeq,
+    currentQuestion,
     currentSeq,
     seqToQuestionId,
     hintUsedSeqs,
@@ -974,14 +1059,14 @@ export function CoreTestSolveContainer({
           courseId={courseId}
           courseTitle={courseTitle}
           currentLectureLabel={
-            sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle
+            headerLabel ? `${headerLabel} · ${lectureTitle}` : lectureTitle
           }
           onExit={handleExit}
         />
         <div className="flex min-h-0 flex-1">
           <SolveSidebar
             sessionLabel={sessionLabel}
-            lectureTitle={lectureTitle}
+            lectureTitle={headerLabel}
             total={total}
             currentSeq={currentSeq}
             seqStateMap={seqStateMap}
@@ -1008,22 +1093,46 @@ export function CoreTestSolveContainer({
     )
   }
 
-  // ─── 풀이 화면 ───
+  // ─── 풀이 화면 (1920×1080 캔버스 contain 스케일, 시안 매칭) ───
   return (
-    <div className="flex h-full flex-col">
-      <SolveTopBar
-        courseId={courseId}
-        courseTitle={courseTitle}
-        currentLectureLabel={
-          sessionLabel ? `${sessionLabel} · ${lectureTitle}` : lectureTitle
-        }
-        onExit={handleExit}
-      />
+    // 본문 영역이 자체적으로 가로 스크롤(ContentScaledCanvas) → layout floor 불필요.
+    // 사이드바/헤더는 cqw max() 클램프로 1440-크기 유지, 본문은 높이기준 고정·여백만 가변.
+    <div className="h-full w-full overflow-x-auto overflow-y-hidden">
+    <div
+      className="flex h-full w-full flex-col bg-[#F9F9FB] dark:bg-gray-950"
+      style={{ containerType: 'inline-size' }}
+    >
+        {/* 상단바 — 얇은 흰 바 (px 고정) */}
+        <header
+          className="flex shrink-0 items-center justify-between bg-white dark:bg-gray-900"
+          style={{
+            height: 'max(52.5px, 3.646cqw)',
+            padding: '0 max(25.5px, 1.771cqw)',
+            borderBottom: 'max(0.7px, 0.052cqw) solid rgb(233 235 239)',
+          }}
+        >
+          <span
+            className="min-w-0 flex-1 truncate text-gray-400"
+            style={{ fontSize: 'max(12.0px, 0.833cqw)' }}
+          >
+            {headerLabel ? `${headerLabel} · ${lectureTitle}` : lectureTitle}
+          </span>
+          <button
+            type="button"
+            onClick={handleExit}
+            className="shrink-0 border border-gray-300 bg-white font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+            style={{ fontSize: 'max(11.2px, 0.781cqw)', padding: 'max(6.0px, 0.417cqw) max(13.5px, 0.938cqw)', borderRadius: 'max(6.0px, 0.417cqw)' }}
+          >
+            {t('examPrepFinal.exit')}
+          </button>
+        </header>
 
-      <div className="flex flex-col md:flex-row min-h-0 flex-1">
+        <div className="relative flex min-h-0 flex-1">
         <SolveSidebar
+          scaled
+          hideMastery={data?.test_type === 'mid'} /* mid=서술형 자가평가 → 숙련도 무관, 사이드바 범례 숨김 */
           sessionLabel={sessionLabel}
-          lectureTitle={lectureTitle}
+          lectureTitle={headerLabel}
           total={total}
           currentSeq={currentSeq}
           seqStateMap={seqStateMap}
@@ -1039,62 +1148,7 @@ export function CoreTestSolveContainer({
           elapsedSec={elapsedSec}
         />
 
-        {/* 강의자료/녹음본 패널 (출처 클릭 시 자동 열림) — 사이드바 와 문제 영역 사이에 삽입.
-            사이드바는 항상 가장 왼쪽 고정, 본 패널은 사이드바 오른쪽에 떠야 함. */}
-        {isLeftPanelOpen && currentLectureId && (
-          <div className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:relative md:inset-auto md:h-full md:w-[360px] md:rounded-none md:border-t-0 md:border-r md:shadow-none shrink-0 dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() => setLeftTab('materials')}
-                  className={cn(
-                    'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
-                    leftTab === 'materials'
-                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
-                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
-                  )}
-                >
-                  강의자료
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLeftTab('recordings')}
-                  className={cn(
-                    'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
-                    leftTab === 'recordings'
-                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
-                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
-                  )}
-                >
-                  녹음본
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={toggleLeftPanel}
-                aria-label="자료 패널 닫기"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-hidden">
-              {leftTab === 'materials' ? (
-                <LeftPanelMaterials />
-              ) : (
-                <LeftPanelRecordings
-                  recordings={leftPanelRecordings ?? []}
-                  targetChunkIndex={targetChunkIndex}
-                  onTargetConsumed={resetNavigationState}
-                  lectureId={currentLectureId ?? undefined}
-                />
-              )}
-            </div>
-          </div>
-        )}
-
-        {currentQuestion && (
+        {currentQuestion && !currentQuestion.question_format && (
           <SolveQuestionPanel
             question={currentQuestion}
             currentSeq={currentSeq}
@@ -1126,7 +1180,7 @@ export function CoreTestSolveContainer({
             }
             onSourceClick={handleSourceClick}
             onAskChatbot={handleAskChatbot}
-            mobileBottomSpacer={isLeftPanelOpen || isChatPanelOpen}
+            mobileBottomSpacer={rightTab !== null}
             // 모든 채점 가능한 문항이 채점됐거나 backend 가 attempt_completed 신호 또는
             // 모든 문항이 master 상태(다시풀 필요 없음) → 퀴즈 종료 버튼 활성화 (이슈 8)
             canFinish={
@@ -1141,32 +1195,126 @@ export function CoreTestSolveContainer({
           />
         )}
 
-        {/* 우측: AI 챗봇 패널 (챗봇 아이콘 클릭 시 자동 열림). */}
-        {isChatPanelOpen && (
-          <div className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:relative md:inset-auto md:h-full md:w-[360px] md:rounded-none md:border-t-0 md:border-l md:shadow-none shrink-0 dark:border-gray-700 dark:bg-gray-900">
+        {/* payload 유형(매칭/빈칸/복수/서술형) — question_format 디스패처 패널.
+            본문만 비례: ContentScaledCanvas(1620×1080) 안에서 폼 cqw 스케일. */}
+        {currentQuestion && !!currentQuestion.question_format && (
+          <div className="relative flex min-h-0 flex-1 overflow-hidden bg-[#F6F7F9] dark:bg-gray-950">
+            <ContentScaledCanvas>
+          <PayloadQuestionPanel
+            key={currentSeq}
+            question={currentQuestion}
+            attemptId={attemptId}
+            currentSeq={currentSeq}
+            total={total}
+            response={responseBySeq[currentSeq]}
+            graded={gradedBySeq[currentSeq] ?? null}
+            isGrading={isGrading}
+            isBookmarked={bookmarkedQuestionIds.has(seqToQuestionId.get(currentSeq) ?? '')}
+            onBookmarkToggle={handleBookmarkToggle}
+            onResponseChange={handleResponseChange}
+            onSubmit={handleSubmit}
+            onPrev={() => setCurrentSeq((s) => Math.max(1, s - 1))}
+            onNext={handleNext}
+            hasPrev={currentSeq > 1}
+            hasNext={
+              currentSeq < total ||
+              Object.keys(gradedBySeq).length >= total ||
+              attemptCompletedFromBackend
+            }
+            onSourceClick={handleSourceClick}
+            onAskChatbot={handleAskChatbot}
+            onHint={handleHintClick}
+            eliminatedIdx={hintDisabledBySeq[currentSeq] ?? undefined}
+            mobileBottomSpacer={rightTab !== null}
+            canFinish={
+              total > 0 &&
+              (Object.keys(gradedBySeq).length >= total || attemptCompletedFromBackend)
+            }
+            onFinish={() => setPhase('completed')}
+          />
+            </ContentScaledCanvas>
+          </div>
+        )}
+
+        {/* 우측: 강의자료 / 녹음본 / AI 챗봇 3탭 패널.
+            데스크탑은 in-flow(공간 차지) — 열리면 본문 영역이 좁아진 만큼 왼쪽으로 밀려서 패널에 안 가려짐.
+            세 탭 콘텐츠는 모두 마운트 유지 + hidden 토글(탭 전환 시 챗봇 히스토리/입력·자료 스크롤 보존). */}
+        {rightTab && (
+          <div className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:relative md:inset-auto md:h-full md:w-[max(360px,28.125cqw)] md:rounded-none md:border-t-0 md:border-l md:shadow-none shrink-0 dark:border-gray-700 dark:bg-gray-900">
+            {/* 상단 3탭 헤더: 강의자료 / 녹음본 / AI 챗봇 */}
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                AI 챗봇
-              </span>
+              <div className="flex gap-1">
+                {([
+                  ['materials', t('examPrepFinal.rightPanel.materials')],
+                  ['recordings', t('examPrepFinal.rightPanel.recordings')],
+                  ['chat', t('examPrepFinal.rightPanel.chat')],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setRightTab(key)}
+                    className={cn(
+                      'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
+                      rightTab === key
+                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
+                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
-                onClick={toggleChatPanel}
-                aria-label="챗봇 패널 닫기"
+                onClick={() => setRightTab(null)}
+                aria-label={t('examPrepFinal.rightPanel.close')}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
+
             <div className="min-h-0 flex-1 overflow-hidden">
-              <ExamPrepChatPanel
-                testId={testId}
-                currentLectureId={currentLectureId}
-                quizChatContext={quizChatContext}
-                onClearQuizContext={clearQuizChatContext}
-              />
+              {/* 강의자료 */}
+              <div className={cn('h-full', rightTab === 'materials' ? 'block' : 'hidden')}>
+                {currentLectureId ? (
+                  <LeftPanelMaterials />
+                ) : (
+                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
+                    {t('examPrepFinal.rightPanel.noMaterials')}
+                  </div>
+                )}
+              </div>
+
+              {/* 녹음본 */}
+              <div className={cn('h-full', rightTab === 'recordings' ? 'block' : 'hidden')}>
+                {currentLectureId ? (
+                  <LeftPanelRecordings
+                    recordings={leftPanelRecordings ?? []}
+                    targetChunkIndex={targetChunkIndex}
+                    onTargetConsumed={resetNavigationState}
+                    lectureId={currentLectureId ?? undefined}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
+                    {t('examPrepFinal.rightPanel.noRecordings')}
+                  </div>
+                )}
+              </div>
+
+              {/* AI 챗봇 */}
+              <div className={cn('h-full', rightTab === 'chat' ? 'block' : 'hidden')}>
+                <ExamPrepChatPanel
+                  testId={testId}
+                  currentLectureId={currentLectureId}
+                  quizChatContext={quizChatContext}
+                  onClearQuizContext={clearQuizChatContext}
+                />
+              </div>
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   )

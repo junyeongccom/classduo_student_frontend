@@ -14,6 +14,7 @@ import { Loader2, BookOpen, ChevronRight } from 'lucide-react'
 import { trackPageEnter, trackPageLeave, navigationAnalytics, courseLectureAnalytics } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '../../hooks/useLectures'
+import { isLectureDateLockedNow } from '../../domain/lectureUnlock'
 import { LectureRow } from '../ui/LectureRow'
 import { RecordingChunksModal } from '../ui/RecordingChunksModal'
 import { MaterialsModal } from '../ui/MaterialsModal'
@@ -47,6 +48,13 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
     trackPageEnter('course_select', { courseId })
     return () => { trackPageLeave('course_select', { courseId }) }
   }, [courseId])
+
+  // 28·29회차 날짜 게이트 — SSR/CSR hydration mismatch 방지를 위해 mount 후에만 적용.
+  // (prod 6/8 KST 이전엔 잠금, dev/로컬은 항상 오픈. mount 전엔 게이트 미적용.)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // 보상(불꽃) 획득 회차 조회
   const [rewardedLectureIds, setRewardedLectureIds] = useState<Set<string>>(new Set())
@@ -229,7 +237,11 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                     </div>
                   )}
                   {lectures.map(lecture => {
-                    const status = lectureStatuses.get(lecture.id) ?? 'upcoming'
+                    // 28·29회차는 prod 6/8 KST 이전이면 '예정'(잠금)으로 강제.
+                    const status: LectureStatus =
+                      mounted && isLectureDateLockedNow(lecture.lecture_number)
+                        ? 'upcoming'
+                        : lectureStatuses.get(lecture.id) ?? 'upcoming'
                     return (
                       <LectureRow
                         key={lecture.id}

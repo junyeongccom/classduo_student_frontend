@@ -21,7 +21,6 @@ import { SelectedMidTestInfoCard } from '../ui/SelectedMidTestInfoCard'
 import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
-import { FinalTestPanel } from '../ui/FinalTestPanel'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
 import type { CoreTest, ExamPrepData, MidTest, TestSetTab } from '../../types'
@@ -133,14 +132,6 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     router.push(`/studyspace/course/${courseId}/exam-prep/test/${tid}`)
   }
 
-  /** 최종 테스트 클릭 — testId 가 있을 때만 풀이 페이지로 라우팅 */
-  const handleStartFinal = () => {
-    const tid = data?.finalTest.testId
-    if (!tid) return
-    setStartError(null)
-    router.push(`/studyspace/course/${courseId}/exam-prep/test/${tid}`)
-  }
-
   // 데이터 로딩 / 에러 처리
   if (isLoading || !data) {
     return (
@@ -233,12 +224,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
                   onSelectCore={handleSelectCore}
                   onSelectMid={handleSelectMid}
                 />
-              ) : (
-                <FinalTestPanel
-                  finalTest={data.finalTest}
-                  onStart={handleStartFinal}
-                />
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -313,15 +299,29 @@ function CoreSetContent({
   const tests = getCoreTestsBySet(data.coreTests, setNumber)
   const midTest = data.midTests.find((m) => m.setNumber === setNumber)
 
-  // 핵심테스트 + 중간테스트(있으면)를 하나의 시퀀스로 합쳐 그리드에 흘림
+  // 핵심테스트 + 중간테스트(있으면)를 그리드에 흘림
   type GridItem =
     | { kind: 'core'; test: (typeof tests)[number] }
     | { kind: 'mid'; mid: NonNullable<typeof midTest> }
-  const items: GridItem[] = [
-    ...tests.map((t) => ({ kind: 'core' as const, test: t })),
-    ...(midTest ? [{ kind: 'mid' as const, mid: midTest }] : []),
-  ]
-  const rows = chunkInto(items, 5)
+  const coreItems: GridItem[] = tests.map((t) => ({ kind: 'core' as const, test: t }))
+  const midItem: GridItem | null = midTest
+    ? { kind: 'mid' as const, mid: midTest }
+    : null
+
+  // 행 분할 정책:
+  //   세트 1 (핵심 10개): 핵심만 2행(5/5)으로 분배하고 중간테스트는 단독 3행으로 내림.
+  //   세트 2·3 (핵심 8개): 핵심+중간(9개)을 2행(5/4)으로 균등 분배.
+  let rows: GridItem[][]
+  if (setNumber === 1) {
+    const coreRows = chunkInto(
+      coreItems,
+      Math.max(1, Math.ceil(coreItems.length / 2)),
+    )
+    rows = midItem ? [...coreRows, [midItem]] : coreRows
+  } else {
+    const items = midItem ? [...coreItems, midItem] : coreItems
+    rows = chunkInto(items, Math.max(1, Math.ceil(items.length / 2)))
+  }
 
   const isCoreSelected = (id: string) =>
     selection?.kind === 'core' && selection.id === id
@@ -331,7 +331,7 @@ function CoreSetContent({
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
+        <div key={ri} className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 md:gap-6">
           {row.map((item) =>
             item.kind === 'core' ? (
               <CoreTestButton

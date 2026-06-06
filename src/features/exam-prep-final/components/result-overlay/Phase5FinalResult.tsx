@@ -144,7 +144,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
     testType === 'mid'
       ? t('examPrepFinal.midTestOfSet', { testNumber: testNumber ?? '' })
       : testType === 'final'
-        ? '최종 테스트'
+        ? t('examPrepFinal.finalSlotLabel')
         : sessionLabel
   // 3번째 줄(회차제목) — core 만 노출, mid/final 은 빈 문자열
   const titleLine = testType === 'core' ? lectureTitle : ''
@@ -270,7 +270,7 @@ export function Phase5FinalResult({ data, onRestart, onNext, onExit, startAnimat
           <span className="text-base font-bold text-gray-900">OX</span>
           <div className="grid grid-cols-5 gap-1.5">
             {questionDeltas
-              .slice(0, 10)
+              .slice()
               .sort((a, b) => a.seq - b.seq)
               .map((d) => {
                 const ok = d.isCorrect === true

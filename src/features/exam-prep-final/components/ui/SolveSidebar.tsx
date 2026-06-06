@@ -38,6 +38,10 @@ interface SolveSidebarProps {
   elapsedSec: number
   /** Phase5 결과 화면처럼 모바일에서 progress bar 불필요한 케이스에서 모바일 부분 통째로 숨김 */
   hideOnMobile?: boolean
+  /** 풀이 캔버스(1920×1080 contain) 내부 렌더 — cqw 비례 + 항상 표시 + 시안 매칭. */
+  scaled?: boolean
+  /** 숙련도(mastery) 범례 숨김 — mid(서술형 자가평가)처럼 mastery 무관 테스트용. */
+  hideMastery?: boolean
 }
 
 const STATE_BG: Record<MasteryState, string> = {
@@ -57,9 +61,110 @@ export function SolveSidebar({
   onSelectSeq,
   elapsedSec,
   hideOnMobile = false,
+  scaled = false,
+  hideMastery = false,
 }: SolveSidebarProps) {
   const t = useTranslations()
   const seqs = Array.from({ length: total }, (_, i) => i + 1)
+
+  // ─── 풀이 캔버스 내부 렌더 (cqw 비례, 시안 매칭) ───
+  if (scaled) {
+    const legend = [
+      ['learning', '#D9D9D9', 'Learning', masterySummary.learning],
+      ['skilled', '#FFCD36', 'Skilled', masterySummary.skilled],
+      ['master', '#A78BFA', 'Master', masterySummary.master],
+    ] as const
+    return (
+      <aside
+        className="flex h-full shrink-0 flex-col bg-white dark:bg-gray-900"
+        style={{
+          width: 'max(225.0px, 15.625cqw)' /* 300/1920 (figma 사이드바 폭) */,
+          borderRight: 'max(0.7px, 0.052cqw) solid rgb(233 235 239)',
+          padding: 'max(37.4px, 2.599cqw) max(21.0px, 1.458cqw)' /* 50 / 28 px @1920 */,
+          gap: 'max(25.5px, 1.771cqw)',
+        }}
+      >
+        {/* 회차 정보 */}
+        <div>
+          <p className="text-gray-400" style={{ fontSize: 'max(11.2px, 0.781cqw)', lineHeight: 1.3 }}>
+            {sessionLabel}
+          </p>
+          <h2
+            className="font-bold text-gray-900 dark:text-gray-50 break-keep"
+            style={{ fontSize: 'max(21.7px, 1.510cqw)', marginTop: 'max(3.7px, 0.260cqw)', lineHeight: 1.2 }}
+          >
+            {lectureTitle}
+          </h2>
+        </div>
+
+        {/* 숙련도 범례 — mid(서술형 자가평가)는 mastery 무관이라 숨김(hideMastery) */}
+        {!hideMastery && (
+        <div className="flex flex-col" style={{ gap: 'max(7.9px, 0.552cqw)' }}>
+          {legend.map(([key, color, label, count]) => (
+            <div key={key} className="flex items-center" style={{ gap: 'max(8.9px, 0.620cqw)' }}>
+              <span
+                className="inline-block shrink-0 rounded-full"
+                style={{ width: 'max(10.5px, 0.729cqw)', height: 'max(10.5px, 0.729cqw)', backgroundColor: color }}
+              />
+              <span
+                className="font-bold text-gray-800 dark:text-gray-200"
+                style={{ fontSize: 'max(11.2px, 0.781cqw)' }}
+              >
+                {label}
+              </span>
+              <span
+                className="ml-auto tabular-nums text-gray-700 dark:text-gray-300"
+                style={{ fontSize: 'max(11.2px, 0.781cqw)' }}
+              >
+                {count}
+              </span>
+            </div>
+          ))}
+        </div>
+        )}
+
+        {/* 문항 그리드 — 5열. 현재 문항은 더 크게 + 굵게 (사용자 요청). */}
+        <div className="grid grid-cols-5" style={{ gap: 'max(8.9px, 0.620cqw)', placeItems: 'center' }}>
+          {seqs.map((seq) => {
+            const isCurrent = seq === currentSeq
+            const state = seqStateMap.get(seq)
+            const bg =
+              state === 'master' ? '#A78BFA' : state === 'skilled' ? '#FFCD36' : '#F0F1F4'
+            const fg = state === 'master' ? '#ffffff' : '#1F2937'
+            const size = isCurrent ? 'max(36.7px, 2.552cqw)' : 'max(29.9px, 2.078cqw)'
+            return (
+              <button
+                key={seq}
+                type="button"
+                onClick={() => onSelectSeq(seq)}
+                className="flex items-center justify-center rounded-full leading-none"
+                style={{
+                  width: size,
+                  height: size,
+                  backgroundColor: bg,
+                  color: fg,
+                  fontSize: isCurrent ? 'max(15.0px, 1.042cqw)' : 'max(11.2px, 0.781cqw)',
+                  fontWeight: isCurrent ? 800 : 600,
+                }}
+              >
+                {seq}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 경과 시간 */}
+        <div className="flex items-center justify-between" style={{ fontSize: 'max(11.9px, 0.828cqw)' }}>
+          <span className="font-bold text-gray-500 dark:text-gray-400">
+            {t('examPrepFinal.elapsedTime')}
+          </span>
+          <span className="tabular-nums text-gray-900 dark:text-gray-50">
+            {formatElapsed(elapsedSec)}
+          </span>
+        </div>
+      </aside>
+    )
+  }
 
   return (
     <>
@@ -113,7 +218,8 @@ export function SolveSidebar({
           </h2>
         </div>
 
-        {/* 숙련도 카운트 — 현재 문항의 mastery 줄에 ring 강조 */}
+        {/* 숙련도 카운트 — mid(서술형 자가평가)는 mastery 무관이라 숨김(hideMastery) */}
+        {!hideMastery && (
         <div className="flex flex-col gap-1">
           <MasteryRow
             color="#D9D9D9"
@@ -137,6 +243,7 @@ export function SolveSidebar({
             highlighted={currentQuestionState === 'master'}
           />
         </div>
+        )}
 
         {/* 문항 그리드 — 사각 (round 30). 현재 문항은 폰트만 키움 (블러/그림자 없음) */}
         <div className="grid grid-cols-5 gap-2.5">

@@ -11,7 +11,8 @@
 import { useEffect, useState } from 'react'
 import { Play, RotateCcw } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import { fetchTestMasterySummary } from '../../services/examPrepService'
+import { useI18n } from '@/shared/i18n/I18nProvider'
+import { fetchTestMasterySummary, fetchCoreTestDetail } from '../../services/examPrepService'
 import type { CoreTest } from '../../types'
 
 interface SelectedTestInfoCardProps {
@@ -32,6 +33,8 @@ function _isBackendTestId(id: string): boolean {
 
 export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProps) {
   const t = useTranslations()
+  const { locale } = useI18n()
+  const isEn = locale === 'en'
   const numberLabel = String(test.number).padStart(2, '0')
   const sessionLabel = t('examPrepFinal.weekSession', {
     week: test.weekNo,
@@ -39,6 +42,8 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
   })
 
   const [mastery, setMastery] = useState<MasteryCounts | null>(null)
+  // 1순위 주제 — 선택 시 detail fetch (summary엔 주제 없음). 굵은 제목 자리에 표시.
+  const [topic, setTopic] = useState<string>('')
 
   // 선택된 test 가 변경될 때마다 mastery summary 재조회
   useEffect(() => {
@@ -63,6 +68,29 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
       alive = false
     }
   }, [test.id])
+
+  // 선택 시 detail fetch → 첫 문항 source_ref.topic_title (1순위 주제). summary엔 없어서 별도 조회.
+  useEffect(() => {
+    if (!_isBackendTestId(test.id)) {
+      setTopic('')
+      return
+    }
+    let alive = true
+    fetchCoreTestDetail(test.id).then(({ data }) => {
+      if (!alive) return
+      // 1순위 주제: exam_prep_topic(detail.topic_title) 우선. 구 테스트는 첫 문항 source_ref.topic_title 폴백.
+      const fromTable = isEn
+        ? ((data?.topic_title_eng ?? data?.topic_title) ?? '').trim()
+        : (data?.topic_title ?? '').trim()
+      const fromQuestion = (
+        data?.questions?.find((q) => q.source_ref?.topic_title?.trim())?.source_ref?.topic_title ?? ''
+      ).trim()
+      setTopic(fromTable || fromQuestion)
+    })
+    return () => {
+      alive = false
+    }
+  }, [test.id, isEn])
 
   // mastery 응답 도착 전 즉시 추정값 — isTestMastered 기반.
   //   master 도달 → 모두 master, 미도달 → 모두 learning.
@@ -96,15 +124,18 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
             <span className="text-3xl font-bold leading-none text-gray-900 dark:text-gray-50 md:text-5xl">
               {numberLabel}
             </span>
-            <span className="whitespace-nowrap text-sm font-medium text-gray-400 md:text-base">
+            {/* 회색 부제 — 주차/차시 (sessionLabel). 굵은 제목 자리에 1순위 주제가 오므로
+                여기는 항상 주차/차시를 표시. */}
+            <span className="text-sm font-medium text-gray-400 break-keep md:text-base">
               {sessionLabel}
             </span>
           </div>
+          {/* 굵은 제목 — 1순위 주제(topic). 주제 없으면(구 테스트) 회차 제목으로 폴백. */}
           <h3
             className="mt-3 text-base font-bold text-gray-900 dark:text-gray-50 md:mt-5 md:text-3xl"
-            title={test.lectureTitle}
+            title={topic || test.lectureTitle}
           >
-            {test.lectureTitle}
+            {topic || test.lectureTitle}
           </h3>
         </div>
 

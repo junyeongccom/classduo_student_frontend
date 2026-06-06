@@ -255,8 +255,9 @@ export async function fetchQuizContent(
         rawChoices = (ch ?? []) as RawChoice[]
       }
     } else if (quizSource === 'exam_prep') {
-      // exam_prep_question 은 별도 스키마 — quiz_type/explanation/choices 컬럼이 없으므로
-      // 응답을 통합 QuizItem 모양으로 어댑트한다 (quiz_type='EXAM_PREP', choices 는 options 배열 변환).
+      // exam_prep_question 은 레거시 단일 4지선다(options/answer/explanation)와
+      // 신규 payload형(question_format + payload: 매칭/빈칸/복수선택)이 공존한다.
+      // 저장소 카드가 쓰는 통합 모양(choices[] + answer + explanation)으로 양쪽을 어댑트한다.
       interface ExamPrepRow {
         id: string
         stem: string
@@ -264,47 +265,92 @@ export async function fetchQuizContent(
         answer: string | null
         explanation: Record<string, string> | null
         difficulty: number | null
+        question_format: string | null
+        payload: Record<string, unknown> | null
       }
       const { data, error: err } = await supabase
         .from('exam_prep_question')
-        .select('id, stem, options, answer, explanation, difficulty')
+        .select('id, stem, options, answer, explanation, difficulty, question_format, payload')
         .in('id', quizIds)
       if (err) {
         if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
         return { data: null, error: new Error(getErrorMessage(err)) }
       }
       const examRows = (data ?? []) as ExamPrepRow[]
+
+      // explanation dict → 표시 텍스트.
+      //   레거시 선지별 키(opt0~optN) 는 "N번: ..." 으로, payload형 단일 키(text/detailed) 는 값만.
+      const examExplanationText = (exp: Record<string, string> | null): string | null => {
+        if (!exp) return null
+        const entries = Object.entries(exp)
+        if (entries.length === 0) return null
+        if (entries.every(([k]) => /^opt\d+$/.test(k))) {
+          return entries
+            .map(([k, v]) => `${parseInt(k.slice(3), 10) + 1}번: ${v}`)
+            .join('\n')
+        }
+        return exp.detailed ?? exp.text ?? entries.map(([, v]) => v).join('\n')
+      }
+
+      // 한 문항 → choices[](텍스트+정답여부) + 정답 텍스트. 레거시/payload 공통 어댑터.
+      type DerivedChoice = { choice_text: string; is_correct: boolean }
+      const deriveExam = (r: ExamPrepRow): { choices: DerivedChoice[]; answer: string | null } => {
+        const qf = r.question_format ?? null
+        const p = (r.payload ?? {}) as Record<string, unknown>
+        // 매칭 — 정답 연결쌍을 "좌항 → 우항" 행으로 표시 (모두 정답 배지).
+        if (qf === 'term_definition_match3') {
+          const left = (p.left_items as string[] | undefined) ?? []
+          const right = (p.right_items as string[] | undefined) ?? []
+          const pairs = (p.correct_pairs as [number, number][] | undefined) ?? []
+          const choices = pairs.map(([li, ri]) => ({
+            choice_text: `${left[li] ?? ''} → ${right[ri] ?? ''}`.trim(),
+            is_correct: true,
+          }))
+          return { choices, answer: choices.map((c) => c.choice_text).join('\n') || null }
+        }
+        // 선택지형(빈칸/복수/4지) — payload.choices + correct_answer(number | number[]).
+        const pChoices = p.choices as string[] | undefined
+        if (Array.isArray(pChoices) && pChoices.length > 0) {
+          const ca = p.correct_answer
+          const correctSet = new Set<number>(
+            Array.isArray(ca)
+              ? (ca as unknown[]).filter((v): v is number => typeof v === 'number')
+              : typeof ca === 'number'
+                ? [ca]
+                : [],
+          )
+          const choices = pChoices.map((text, i) => ({ choice_text: text, is_correct: correctSet.has(i) }))
+          const answer = choices.filter((c) => c.is_correct).map((c) => c.choice_text).join(', ') || null
+          return { choices, answer }
+        }
+        // 레거시 단일 4지선다 — options + answer(인덱스 문자열).
+        const opts = r.options ?? []
+        const correctIdx = r.answer != null && r.answer !== '' ? parseInt(r.answer, 10) : -1
+        const choices = opts.map((opt, i) => ({ choice_text: opt, is_correct: i === correctIdx }))
+        return { choices, answer: correctIdx >= 0 ? (opts[correctIdx] ?? null) : null }
+      }
+
+      const examDerived = new Map<string, { choices: DerivedChoice[]; answer: string | null }>()
+      for (const r of examRows) examDerived.set(r.id, deriveExam(r))
+
       rawItems = examRows.map(r => ({
         quiz_id: r.id,
         quiz_type: 'EXAM_PREP',
         question: r.stem,
-        // 0-based answer index → options 배열에서 정답 텍스트 추출 (주관식 표시용)
-        answer: r.answer != null && r.options ? (r.options[parseInt(r.answer, 10)] ?? null) : null,
-        // explanation dict (opt0/opt1/opt2/opt3) 를 사람이 읽을 수 있는 한 덩어리로.
-        //   "opt0:" → "1번:" 형식으로 변환 (인덱스 1-based 표기).
-        explanation: r.explanation
-          ? Object.entries(r.explanation)
-              .map(([k, v]) => {
-                const m = /^opt(\d+)$/.exec(k)
-                return m
-                  ? `${parseInt(m[1], 10) + 1}번: ${v}`
-                  : `${k}: ${v}`
-              })
-              .join('\n')
-          : null,
+        answer: examDerived.get(r.id)?.answer ?? null,
+        explanation: examExplanationText(r.explanation),
         difficulty: r.difficulty != null ? String(r.difficulty) : null,
       }))
-      // exam_prep options[]를 QuizChoice 형태로 직접 만든다 (별도 _choices 테이블 없음).
-      // choice_explanation 은 explanation.opt{i} 에서 추출 (DB 키는 opt0~opt3, 언더스코어 없음).
+      // exam_prep choices 를 QuizChoice 형태로 직접 만든다 (별도 _choices 테이블 없음).
+      // payload형은 선지별 해설을 통합 explanation 텍스트에 담으므로 choice_explanation 은 레거시 opt{i} 만.
       rawChoices = examRows.flatMap(r => {
-        const opts = r.options ?? []
-        const correctIdx = r.answer != null ? parseInt(r.answer, 10) : -1
-        return opts.map((opt, i) => ({
+        const choices = examDerived.get(r.id)?.choices ?? []
+        return choices.map((c, i) => ({
           quiz_id: r.id,
           choice_id: `${r.id}:${i}`,
           choice_order: i + 1,
-          choice_text: opt,
-          is_correct: i === correctIdx,
+          choice_text: c.choice_text,
+          is_correct: c.is_correct,
           choice_explanation: r.explanation?.[`opt${i}`] ?? null,
         }))
       })

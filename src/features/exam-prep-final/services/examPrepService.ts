@@ -41,14 +41,20 @@ export interface CoreTestQuestionItemDto {
   options: string[]
   /** 영문 선지 배열 (한국어와 1:1 대응, 정답 인덱스 동일) */
   options_eng?: string[] | null
-  /** "0"~"3" 문자열 인덱스 */
+  /** "0"~"3" 문자열 인덱스 (레거시 단일 4지선다). payload 유형은 미사용. */
   answer: string
   explanation: Record<string, string>
   /** 영문 해설 (선지별 키 opt0~opt3, 한국어와 동일 구조) */
   explanation_eng?: Record<string, string> | null
+  /** B2C식 유형. null/undefined = 레거시 단일 4지선다(options/answer 사용). 그 외는 payload 사용 */
+  question_format?: string | null
+  /** 유형별 구조 데이터 (choices/correct_answer/left_items/right_items/correct_pairs/model_answer 등) */
+  payload?: Record<string, unknown> | null
+  /** payload 영문 버전 (한영 토글) */
+  payload_eng?: Record<string, unknown> | null
   hint?: string | null
   hint_eng?: string | null
-  source_ref?: { source_pages?: number[]; source_chunks?: number[] } | null
+  source_ref?: { source_pages?: number[]; source_chunks?: number[]; topic_title?: string } | null
   /** 강의자료 패널 점프 대상 lecture_id (core: 부모 test 의 lecture, mid: 원본 question lecture, final: LLM 추론) */
   source_lecture_id?: string | null
   difficulty?: number | null
@@ -68,6 +74,10 @@ export interface CoreTestDetailDto {
   segment_index?: number | null
   /** core: 회차 제목 / mid: "중간 테스트 N" / final: "최종 테스트" */
   title: string | null
+  /** core 1순위 주제(exam_prep_topic). 상단 박스/풀이 헤더 표시. mid/final 은 null */
+  topic_title?: string | null
+  /** topic_title 영문 버전 (한영 토글 시 사용. 백필 전 데이터는 null) */
+  topic_title_eng?: string | null
   questions: CoreTestQuestionItemDto[]
 }
 

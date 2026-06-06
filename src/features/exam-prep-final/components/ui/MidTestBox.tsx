@@ -1,21 +1,19 @@
 /**
  * @file MidTestBox.tsx
  * @description 중간 테스트 책 버튼 — 핵심 테스트 그리드 마지막 셀
- *   stage state machine (locked → unlocking → pages)
- *   - locked: 책 + 자물쇠 + 4-piece 체인 (사슬 4개 분리 PNG)
- *   - unlocking: 1.6s — 체인 fly-off, 자물쇠 wobble→낙하, 책 흔들림, sparkle×5
+ *   stage: locked → pages (잠금해제 'unlocking' 모션 제거 — unlocked 면 즉시 pages)
+ *   - locked: 책 + 자물쇠 + 4-piece 체인 (사슬 4개 분리 PNG, 정적)
  *   - pages: 책만, hover/선택 시 표지 살짝 열림 + glow 비침
  *   - mastered: MASTER 도장
  *   클릭 시 책이 펼쳐지는 모션 없음 — 부모에서 선택 상태(isSelected)를 토글하면
  *   호버와 동일한 표지 들림 + glow 가 유지됨. 다시 클릭 → 닫힘.
- *   localStorage 플래그로 첫 진입 1회만 자동 잠금풀림 재생.
  * @module features/exam-prep-final/components/ui
  * @dependencies globals.css mid-* keyframes, public/midtest/*.png
  */
 
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import type { MidTest } from '../../types'
@@ -64,8 +62,6 @@ const CHAINS = {
   br: '/midtest/우측사슬-2.png',
 }
 
-const UNLOCK_MS = 1600
-
 /**
  * 잠금 해제 모션은 "잠겨있던 상태에서 풀린 시점" 을 잡아서 한 번 재생한다.
  *  방식: localStorage 에 직전에 본 unlocked 값을 저장 → 현재가 true 인데 이전이 false
@@ -87,19 +83,6 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
 
   // 초기 stage — 마운트 후 useEffect 에서 결정
   const [stage, setStage] = useState<Stage>('locked')
-  /** 잠금 해제 모션 재생 시 박스가 뷰포트 밖이면 자동 스크롤로 노출하기 위한 ref */
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-
-  // 잠금 해제 모션 트리거 시 — 박스가 뷰포트에 온전히 안 들어오면 가운데로 자동 스크롤.
-  useEffect(() => {
-    if (stage !== 'unlocking') return
-    const el = buttonRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const fullyVisible = rect.top >= 0 && rect.bottom <= window.innerHeight
-    if (fullyVisible) return
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [stage])
 
   useEffect(() => {
     if (isMastered) {
@@ -117,10 +100,9 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
     }
 
     const prevKey = PREV_UNLOCKED_KEY(courseId, midTest.setNumber)
-    const prevUnlocked = window.localStorage.getItem(prevKey) === '1'
 
     if (!midTest.unlocked) {
-      // 잠금 상태 — 표시 + prev='0' 기록 (다음 unlock 시 motion 재생용)
+      // 잠금 상태 — 정적 자물쇠 표시 + prev='0' 기록
       setStage('locked')
       try {
         window.localStorage.setItem(prevKey, '0')
@@ -130,36 +112,16 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
       return
     }
 
-    // 풀이 종료 직후 신호 (이슈 4) — CoreTestSolveContainer handleExit 가 저장한 hint 가 있으면
-    // prev 값과 무관하게 unlocking 모션 한 번 재생. 신호는 동일 set 의 첫 MidTestBox 가 소비.
-    let consumedUnlockHint = false
+    // 잠금해제 모션 제거 — unlocked 면 'unlocking' 단계(1.6s 자물쇠/사슬/sparkle + 풀스크린 dim)
+    // 없이 즉시 'pages' 로 전환한다. 구 unlockHint 신호는 더 이상 모션에 쓰지 않으므로,
+    // 남아있으면 정리만 하고 prev='1' 기록.
     try {
-      const hintRaw = window.sessionStorage.getItem(`examPrep:unlockHint:${courseId}`)
-      if (hintRaw) {
-        consumedUnlockHint = true
-        window.sessionStorage.removeItem(`examPrep:unlockHint:${courseId}`)
-      }
+      window.sessionStorage.removeItem(`examPrep:unlockHint:${courseId}`)
+      window.localStorage.setItem(prevKey, '1')
     } catch {
       // 무시
     }
-
-    // unlocked=true. prev=true 이고 hint 도 없으면 이미 모션 본 상태 → pages 로 직행.
-    if (prevUnlocked && !consumedUnlockHint) {
-      setStage('pages')
-      return
-    }
-
-    // (false→true 전환) 또는 (hint consumed) → unlocking 모션 재생 + prev='1' 기록
-    setStage('unlocking')
-    const t = setTimeout(() => {
-      setStage('pages')
-      try {
-        window.localStorage.setItem(prevKey, '1')
-      } catch {
-        // 무시
-      }
-    }, UNLOCK_MS)
-    return () => clearTimeout(t)
+    setStage('pages')
   }, [midTest.unlocked, midTest.setNumber, isMastered, courseId])
 
   // pages 단계면 클릭 허용 (locked/unlocking 중에는 차단).
@@ -187,18 +149,7 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
   }
 
   return (
-    <>
-      {/* 잠금해제 모션 중에는 다른 영역을 dim 처리해서 시선을 mid-test 박스로 모음.
-       *  fixed 풀스크린 backdrop + pointer-events 로 다른 클릭 차단.
-       *  본 box 는 z-[60] 으로 backdrop(z-[50]) 위로 끌어올려 부각. */}
-      {stage === 'unlocking' && (
-        <div
-          className="fixed inset-0 z-[50] bg-black/60 transition-opacity duration-300 motion-safe:animate-[te-fade-up_240ms_ease-out]"
-          aria-hidden
-        />
-      )}
     <button
-      ref={buttonRef}
       type="button"
       onClick={handleClick}
       disabled={!isClickable}
@@ -209,9 +160,6 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
       className={cn(
         'mid-scene group/midbook relative h-28 w-28 disabled:cursor-default md:h-44 md:w-44',
         isClickable && 'cursor-pointer',
-        // 잠금해제 중: backdrop 위로 끌어올림 + 살짝 확대 → 포커스 부각
-        stage === 'unlocking' &&
-          'z-[60] scale-110 transition-transform duration-500 ease-out',
       )}
     >
       {/* 책 컨테이너 — book-open + glow + book-cover 3-layer */}
@@ -324,6 +272,5 @@ export function MidTestBox({ midTest, courseId, isSelected = false, onClick }: M
         />
       )}
     </button>
-    </>
   )
 }
