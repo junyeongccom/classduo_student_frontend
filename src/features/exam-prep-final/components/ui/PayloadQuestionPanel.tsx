@@ -141,8 +141,11 @@ export function PayloadQuestionPanel({
   const qf = question.question_format ?? null
   const isEssay = qf === ESSAY_FORMAT
   const payload = (question.payload ?? {}) as Record<string, unknown>
+  const payloadEng = (question.payload_eng ?? {}) as Record<string, unknown>
   const stem = (isEn && question.stem_eng) ? question.stem_eng : question.stem
-  const choices = (payload.choices as string[] | undefined) ?? []
+  const choices = (isEn
+    ? ((payloadEng.choices as string[] | undefined) ?? (payload.choices as string[] | undefined))
+    : (payload.choices as string[] | undefined)) ?? []
   const result = buildResult(question, graded)
   const isLocked = graded !== null
   // ── 선지 결정론 셔플 (표시 전용) — attemptId+questionId 시드. 정규 인덱스는 보존하고
@@ -175,7 +178,10 @@ export function PayloadQuestionPanel({
   const onChoiceChange = (v: unknown) => onResponseChange(mapIdx(v, toCanon))
   const complete = isPayloadResponseComplete(qf, payload, response)
   // 해설 텍스트 — graded.explanation 우선, 없으면 question.explanation. key 'detailed' 우선.
-  const explObj = (graded?.explanation ?? question.explanation) as Record<string, string> | null | undefined
+  // EN 모드: graded.explanation_eng → question.explanation_eng → KO fallback.
+  const explObj = isEn
+    ? ((graded?.explanation_eng ?? question.explanation_eng ?? graded?.explanation ?? question.explanation) as Record<string, string> | null | undefined)
+    : ((graded?.explanation ?? question.explanation) as Record<string, string> | null | undefined)
   const explanationText = explObj?.detailed ?? (explObj ? Object.values(explObj)[0] ?? '' : '')
 
   // 정/오답 배지 — 채점 후 각 폼의 feedbackSlot(문제/지시문 밑)에 표시 (시안: 라벨이 문제 밑). Essay 제외.
@@ -205,8 +211,12 @@ export function PayloadQuestionPanel({
         return (
           <MatchForm
             questionText={stem}
-            leftItems={(payload.left_items as string[]) ?? []}
-            rightItems={(payload.right_items as string[]) ?? []}
+            leftItems={(isEn
+              ? ((payloadEng.left_items as string[] | undefined) ?? (payload.left_items as string[] | undefined))
+              : (payload.left_items as string[] | undefined)) ?? []}
+            rightItems={(isEn
+              ? ((payloadEng.right_items as string[] | undefined) ?? (payload.right_items as string[] | undefined))
+              : (payload.right_items as string[] | undefined)) ?? []}
             value={(response as [number, number][] | null) ?? null}
             onChange={(v) => onResponseChange(v)}
             disabled={isLocked}
@@ -341,8 +351,12 @@ export function PayloadQuestionPanel({
                 <MatchForm
                   questionText=""
                   showHeader={false}
-                  leftItems={(payload.left_items as string[]) ?? []}
-                  rightItems={(payload.right_items as string[]) ?? []}
+                  leftItems={(isEn
+                    ? ((payloadEng.left_items as string[] | undefined) ?? (payload.left_items as string[] | undefined))
+                    : (payload.left_items as string[] | undefined)) ?? []}
+                  rightItems={(isEn
+                    ? ((payloadEng.right_items as string[] | undefined) ?? (payload.right_items as string[] | undefined))
+                    : (payload.right_items as string[] | undefined)) ?? []}
                   value={(payload.correct_pairs as [number, number][]) ?? null}
                   onChange={() => {}}
                   disabled
