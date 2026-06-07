@@ -39,6 +39,36 @@ import { shuffleOrder } from '../../domain/shuffleOrder'
 
 const ESSAY_FORMAT = 'error_diagnosis_evaluation'
 
+/**
+ * 번호식 보기별 해설('1: …\n2: …')을 표시 순서로 재배열·재번호.
+ * 백엔드 _reorder_numbered_explanation 의 프론트 포팅 — 선지를 프론트에서 다시 셔플할 때
+ * 저장된 순서로 번호 매겨진 해설이 표시 순서와 어긋나는 문제(선지↔해설 불일치) 보정.
+ *
+ * @param text       저장된 해설 텍스트 (저장 순서 기준 '1: …\n2: …').
+ * @param toCanon    표시 위치(0-based) → 정규(저장) 위치(0-based).
+ * @param n          선지 개수.
+ * @returns 표시 순서로 재번호된 텍스트. 번호식 n줄 형식이 아니면 null(콘텐츠 기반 → 그대로 사용).
+ */
+function reorderNumberedExplanation(
+  text: string,
+  toCanon: (displayIdx: number) => number,
+  n: number,
+): string | null {
+  if (!text) return null
+  const bodies: Record<number, string> = {}
+  for (const line of text.split('\n')) {
+    const s = line.trim()
+    if (!s) continue
+    const m = /^(\d+)\s*[:.)]\s*(.+)$/.exec(s)
+    if (!m) return null
+    const oldIdx = parseInt(m[1], 10) - 1
+    if (!(oldIdx >= 0 && oldIdx < n) || oldIdx in bodies) return null
+    bodies[oldIdx] = m[2].trim()
+  }
+  if (Object.keys(bodies).length !== n) return null
+  return Array.from({ length: n }, (_, pos) => `${pos + 1}: ${bodies[toCanon(pos)]}`).join('\n')
+}
+
 /** 유형별 응답이 제출 가능한 상태인지 (submit 버튼 활성 판정). */
 export function isPayloadResponseComplete(
   questionFormat: string | null | undefined,
@@ -182,7 +212,14 @@ export function PayloadQuestionPanel({
   const explObj = isEn
     ? ((graded?.explanation_eng ?? question.explanation_eng ?? graded?.explanation ?? question.explanation) as Record<string, string> | null | undefined)
     : ((graded?.explanation ?? question.explanation) as Record<string, string> | null | undefined)
-  const explanationText = explObj?.detailed ?? (explObj ? Object.values(explObj)[0] ?? '' : '')
+  const rawExplanationText = explObj?.detailed ?? (explObj ? Object.values(explObj)[0] ?? '' : '')
+  // 선지를 프론트에서 셔플했다면(같은 시드로) 번호식 보기별 해설도 동일 permutation 으로 재배열.
+  // 번호식이 아닌 일반 해설(detailed/text 프로즈)은 reorder 가 null → 원문 그대로 사용.
+  const reorderedExplanation =
+    choices.length > 1 && attemptId
+      ? reorderNumberedExplanation(rawExplanationText, toCanon, choices.length)
+      : null
+  const explanationText = reorderedExplanation ?? rawExplanationText
 
   // 정/오답 배지 — 채점 후 각 폼의 feedbackSlot(문제/지시문 밑)에 표시 (시안: 라벨이 문제 밑). Essay 제외.
   const feedbackBadge =
