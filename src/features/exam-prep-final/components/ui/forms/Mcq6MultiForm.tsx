@@ -21,9 +21,65 @@ export type Mcq6MultiFormProps = {
   result?: QuizFormResult | null;
   eliminatedIdx?: number;
   feedbackSlot?: React.ReactNode;
+  /** 모바일(<768px) — cqw 대신 고정 px 레이아웃 (Figma 942:9052 박스 스타일). */
+  mobile?: boolean;
 };
 
 const PICK = 2;
+
+/** 치수 토큰 — 데스크탑 cqw(1620 baseline) / 모바일 고정 px. */
+type Sizing6 = {
+  rootGap: string;
+  stem: string;
+  pickMl: string;
+  pickFs: string;
+  feedbackMinH: string;
+  fieldsetGap: string;
+  boxMinH: string;
+  boxRadius: string;
+  boxPad: string;
+  boxGap: string;
+  borderEmph: string;
+  borderNorm: string;
+  letterFs: string;
+  letterW: string;
+  textFs: string;
+};
+const DESKTOP_SZ6: Sizing6 = {
+  rootGap: "0.498cqw",
+  stem: "2.222cqw",
+  pickMl: "0.711cqw",
+  pickFs: "1.233cqw",
+  feedbackMinH: "3.390cqw",
+  fieldsetGap: "0.735cqw",
+  boxMinH: "5.867cqw",
+  boxRadius: "0.865cqw",
+  boxPad: "0 1.730cqw",
+  boxGap: "1.233cqw",
+  borderEmph: "0.154cqw",
+  borderNorm: "0.062cqw",
+  letterFs: "1.233cqw",
+  letterW: "1.541cqw",
+  textFs: "1.173cqw",
+};
+const MOBILE_SZ6: Sizing6 = {
+  rootGap: "8px",
+  stem: "21.6px",
+  pickMl: "6px",
+  pickFs: "12px",
+  feedbackMinH: "28px",
+  fieldsetGap: "8px",
+  boxMinH: "44px",
+  boxRadius: "11.25px",
+  boxPad: "0 14px",
+  boxGap: "14px",
+  borderEmph: "2px",
+  borderNorm: "1px",
+  letterFs: "13px",
+  letterW: "15px",
+  textFs: "12px",
+};
+const MOBILE_BOX_SHADOW6 = "0px 1.5px 2.5px rgba(0,0,0,0.15)";
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
 const C_BLACK = "var(--color-neutral-black-hex)";
@@ -44,8 +100,10 @@ export function Mcq6MultiForm({
   result,
   eliminatedIdx,
   feedbackSlot,
+  mobile = false,
 }: Mcq6MultiFormProps) {
   const t = useTranslations("examPrepFinal");
+  const SZ = mobile ? MOBILE_SZ6 : DESKTOP_SZ6;
   const selected = new Set(value ?? []);
   const correctSet = new Set(
     Array.isArray(result?.correct_answer) ? (result?.correct_answer as number[]) : [],
@@ -65,24 +123,24 @@ export function Mcq6MultiForm({
   };
 
   return (
-    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" /* figma 문제~정오답~선지 8px */ }}>
+    <div className="flex w-full flex-col items-stretch" style={{ gap: SZ.rootGap /* figma 문제~정오답~선지 8px */ }}>
       {/* 문제 텍스트 + (2개 선택) */}
-      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}>
+      <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: SZ.stem, color: C_CANVAS_FG }}>
         {questionText}
         <span
-          className="ml-[0.711cqw] font-normal"
-          style={{ fontSize: "1.233cqw", color: "rgb(var(--color-neutral-gray-500))" }}
+          className="font-normal"
+          style={{ marginLeft: SZ.pickMl, fontSize: SZ.pickFs, color: "rgb(var(--color-neutral-gray-500))" }}
         >
           (2개 선택)
         </span>
       </h1>
 
-      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
+      <div className="flex w-full shrink-0 items-center" style={{ minHeight: SZ.feedbackMinH /* figma 정오답칸 */ }}>
         {feedbackSlot}
       </div>
 
       {/* 6개 선지 */}
-      <fieldset className="flex w-full flex-col" style={{ gap: "0.735cqw" }} disabled={disabled}>
+      <fieldset className="flex w-full flex-col" style={{ gap: SZ.fieldsetGap }} disabled={disabled}>
         {choices.map((choice, idx) => {
           const letter = String.fromCharCode(65 + idx);
           const isSelected = selected.has(idx);
@@ -101,8 +159,10 @@ export function Mcq6MultiForm({
                 ? C_MASTER
                 : isOtherAfterResult
                   ? "rgb(var(--color-neutral-gray-300))"
-                  : C_BORDER;
-          const borderWidth = isCorrect || isSelected ? "0.154cqw" : "0.062cqw";
+                  : mobile
+                    ? "transparent" /* 모바일 기본은 보더 대신 그림자로 분리 (figma) */
+                    : C_BORDER;
+          const borderWidth = isCorrect || isSelected ? SZ.borderEmph : SZ.borderNorm;
           const backgroundColor = isWrongPick
             ? WRONG_BG
             : isSelected
@@ -134,19 +194,21 @@ export function Mcq6MultiForm({
                 !isEliminated && !isEmphasized && !isOtherAfterResult && "hover:border-[var(--color-mastery-master)]",
               )}
               style={{
-                minHeight: "5.867cqw" /* figma 선지박스 95px */,
-                borderRadius: "0.865cqw",
+                minHeight: SZ.boxMinH /* figma 선지박스 */,
+                borderRadius: SZ.boxRadius,
                 border: `${borderWidth} solid ${borderColor}`,
                 backgroundColor,
-                padding: "0 1.730cqw",
-                gap: "1.233cqw",
+                padding: SZ.boxPad,
+                gap: SZ.boxGap,
+                boxShadow:
+                  mobile && !isOtherAfterResult && !isWrongPick ? MOBILE_BOX_SHADOW6 : undefined,
               }}
             >
               <span
                 className="shrink-0 text-center"
                 style={{
-                  fontSize: "1.233cqw",
-                  width: "1.541cqw",
+                  fontSize: SZ.letterFs,
+                  width: SZ.letterW,
                   color: letterColor,
                   fontWeight: isEmphasized ? 700 : 500,
                 }}
@@ -156,7 +218,7 @@ export function Mcq6MultiForm({
               <span
                 className="flex-1 text-left break-keep leading-snug"
                 style={{
-                  fontSize: "1.173cqw",
+                  fontSize: SZ.textFs,
                   color: textColor,
                   fontWeight: isSelected || isCorrect ? 600 : 400,
                 }}

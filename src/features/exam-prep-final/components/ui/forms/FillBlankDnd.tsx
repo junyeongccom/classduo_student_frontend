@@ -56,6 +56,88 @@ export type FillBlankDndProps = {
   feedbackSlot?: React.ReactNode;
   /** Active Recall 게이트 — 제공되면 하단 칩(선지) 풀 대신 이 노드를 렌더(문장은 유지). */
   recallSlot?: React.ReactNode;
+  /** 모바일(<768px) — cqw 대신 fluid px 레이아웃. */
+  mobile?: boolean;
+};
+
+/** 치수 토큰 — 데스크탑 cqw(1620 baseline) / 모바일 고정 px. */
+type SizingFB = {
+  rootGap: string;
+  instr: string;
+  feedbackMinH: string;
+  sentenceGap: string;
+  sentenceFs: string;
+  sentenceMaxW: string;
+  chipPad: string;
+  chipMinW: string;
+  chipMaxW: string;
+  chipBorderHi: string;
+  chipRadius: string;
+  chipShadow: string;
+  blankPad: string;
+  blankMinWEmpty: string;
+  blankMinWFilled: string;
+  blankMargin: string;
+  blankBorderCorrect: string;
+  blankBorderNormal: string;
+  blankRadius: string;
+  badgeTop: string;
+  badgeLeft: string;
+  badgeSize: string;
+  badgeFs: string;
+  containerGap: string;
+};
+const DESKTOP_FB: SizingFB = {
+  rootGap: "1.233cqw",
+  instr: "2.222cqw",
+  feedbackMinH: "3.390cqw",
+  sentenceGap: "1.481cqw",
+  sentenceFs: "1.976cqw",
+  sentenceMaxW: "57.531cqw",
+  chipPad: "1.363cqw 1.778cqw",
+  chipMinW: "8.083cqw",
+  chipMaxW: "23.704cqw",
+  chipBorderHi: "0.185cqw",
+  chipRadius: "0.711cqw",
+  chipShadow: "0 0.119cqw 0.593cqw rgba(17,24,39,0.12)",
+  blankPad: "0.711cqw 1.659cqw",
+  blankMinWEmpty: "12.207cqw",
+  blankMinWFilled: "5cqw",
+  blankMargin: "0 0.474cqw",
+  blankBorderCorrect: "0.185cqw",
+  blankBorderNormal: "0.095cqw",
+  blankRadius: "0.593cqw",
+  badgeTop: "-0.864cqw",
+  badgeLeft: "-0.802cqw",
+  badgeSize: "1.728cqw",
+  badgeFs: "0.988cqw",
+  containerGap: "1.363cqw",
+};
+const MOBILE_FB: SizingFB = {
+  rootGap: "12px",
+  instr: "20px",
+  feedbackMinH: "28px",
+  sentenceGap: "16px",
+  sentenceFs: "16px",
+  sentenceMaxW: "100%",
+  chipPad: "9px 13px",
+  chipMinW: "60px",
+  chipMaxW: "160px",
+  chipBorderHi: "2px",
+  chipRadius: "8px",
+  chipShadow: "0 1px 5px rgba(17,24,39,0.12)",
+  blankPad: "5px 10px",
+  blankMinWEmpty: "78px",
+  blankMinWFilled: "32px",
+  blankMargin: "0 4px",
+  blankBorderCorrect: "2px",
+  blankBorderNormal: "1px",
+  blankRadius: "5px",
+  badgeTop: "-9px",
+  badgeLeft: "-8px",
+  badgeSize: "18px",
+  badgeFs: "11px",
+  containerGap: "10px",
 };
 
 /** 선지 길이에 따른 폰트 스케일 — 긴 선지일수록 약간 축소(겹침 방지). */
@@ -78,7 +160,9 @@ export function FillBlankDnd({
   eliminatedIdx,
   feedbackSlot,
   recallSlot,
+  mobile = false,
 }: FillBlankDndProps) {
+  const SZ = mobile ? MOBILE_FB : DESKTOP_FB;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }),
@@ -86,7 +170,9 @@ export function FillBlankDnd({
   const [draggingChipIdx, setDraggingChipIdx] = useState<number | null>(null);
 
   const fontScale = useMemo(() => computeChipFontScale(choices), [choices]);
-  const chipFontSize = `${(1.5 * fontScale).toFixed(3)}cqw`;
+  const chipFontSize = mobile
+    ? `${(14 * fontScale).toFixed(1)}px`
+    : `${(1.5 * fontScale).toFixed(3)}cqw`;
 
   const parts = useMemo(() => questionText.split(/_{2,}/), [questionText]);
 
@@ -163,8 +249,18 @@ export function FillBlankDnd({
   // 그 외(7지 등): content-sized flex-wrap (폭에 맞춰 4+3 등).
   const maxChoiceLen = choices.reduce((m, c) => Math.max(m, c.length), 0);
   const fiveSingle = blanksCount === 1 && choices.length === 5;
-  const chipContainerStyle: React.CSSProperties =
-    fiveSingle && maxChoiceLen <= 5
+  const chipContainerStyle: React.CSSProperties = mobile
+    ? // 모바일: 칩 폭이 작아 그리드 강제 불필요 — flex-wrap 가운데 정렬.
+      {
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: SZ.containerGap,
+        maxWidth: "100%",
+        margin: "0 auto",
+      }
+    : fiveSingle && maxChoiceLen <= 5
       ? { display: "grid", gridTemplateColumns: "repeat(5, max-content)", justifyContent: "center", gap: "1.363cqw" }
       : fiveSingle
         ? {
@@ -185,21 +281,21 @@ export function FillBlankDnd({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className="flex h-full w-full flex-col" style={{ gap: "1.233cqw" }}>
+      <div className="flex h-full w-full flex-col" style={{ gap: SZ.rootGap }}>
         {/* 지시문 */}
-        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}>
+        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: SZ.instr, color: C_CANVAS_FG }}>
           빈칸에 들어갈 알맞은 단어를 넣으세요.
         </h1>
-        <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
+        <div className="flex w-full shrink-0 items-center" style={{ minHeight: SZ.feedbackMinH /* figma 정오답칸 55px */ }}>
           {feedbackSlot}
         </div>
 
         {/* 문장 + 칩 — figma 문제영역(942:10284) 오토레이아웃 items-center: 가로 중앙 + 위쪽 정렬, 보기패널~선지 24px */}
-        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-start" style={{ gap: "1.481cqw" }}>
+        <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-start" style={{ gap: SZ.sentenceGap }}>
           {/* 문장 (인라인 빈칸) */}
           <p
             className="w-full break-keep text-left"
-            style={{ fontSize: "1.976cqw", lineHeight: 1.7, maxWidth: "57.531cqw" /* figma 보기패널 텍스트 932px */, color: C_CANVAS_FG }}
+            style={{ fontSize: SZ.sentenceFs, lineHeight: 1.7, maxWidth: SZ.sentenceMaxW /* figma 보기패널 텍스트 932px */, color: C_CANVAS_FG }}
           >
             {parts.map((text, i) => {
               const isLastPart = i === parts.length - 1;
@@ -222,6 +318,7 @@ export function FillBlankDnd({
                       }
                       orderNo={blankIdx + 1}
                       fontSize={chipFontSize}
+                      sz={SZ}
                     />
                   ) : null}
                 </Fragment>
@@ -245,6 +342,7 @@ export function FillBlankDnd({
                   fontSize={chipFontSize}
                   highlight={graded && correctIndexes.includes(c.idx)}
                   orderNo={graded && choicePosition.has(c.idx) ? (choicePosition.get(c.idx) as number) + 1 : undefined}
+                  sz={SZ}
                 />
               ))}
             </div>
@@ -255,9 +353,10 @@ export function FillBlankDnd({
       <DragOverlay>
         {draggingLabel ? (
           <span
-            className="select-none rounded-[0.711cqw] bg-white font-medium shadow-lg"
+            className="select-none bg-white font-medium shadow-lg"
             style={{
-              padding: "0.735cqw 1.659cqw",
+              padding: SZ.chipPad,
+              borderRadius: SZ.chipRadius,
               fontSize: chipFontSize,
               lineHeight: 1.2,
               color: C_BLACK,
@@ -279,6 +378,7 @@ function DraggableChip({
   fontSize,
   highlight,
   orderNo,
+  sz,
 }: {
   chipIdx: number;
   label: string;
@@ -288,6 +388,7 @@ function DraggableChip({
   highlight?: boolean;
   /** 정답 선지일 때 표시할 순서 번호(1-based). */
   orderNo?: number;
+  sz: SizingFB;
 }) {
   const t = useTranslations("examPrepFinal");
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -306,26 +407,27 @@ function DraggableChip({
         position: "relative",
         opacity: isDragging ? 0 : eliminated ? 0.45 : 1,
         touchAction: "none",
-        padding: "1.363cqw 1.778cqw" /* figma 칩 높이 66px */,
-        minWidth: "8.083cqw" /* figma 131px */,
-        maxWidth: "23.704cqw",
+        padding: sz.chipPad /* figma 칩 높이 66px */,
+        minWidth: sz.chipMinW /* figma 131px */,
+        maxWidth: sz.chipMaxW,
+        borderRadius: sz.chipRadius,
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
         color: highlight ? C_MASTER : C_BLACK,
         border: highlight
-          ? "0.185cqw solid var(--color-mastery-master)" /* figma 정답 3px 보라 */
-          : "0.062cqw solid transparent",
-        boxShadow: "0 0.119cqw 0.593cqw rgba(17,24,39,0.12)",
+          ? `${sz.chipBorderHi} solid var(--color-mastery-master)` /* figma 정답 3px 보라 */
+          : `${sz.blankBorderNormal} solid transparent`,
+        boxShadow: sz.chipShadow,
       }}
       className={cn(
-        "select-none rounded-[0.711cqw] bg-white text-center font-medium",
+        "select-none bg-white text-center font-medium",
         !disabled && "cursor-grab active:cursor-grabbing hover:shadow-md",
         disabled && !eliminated && "opacity-60",
         eliminated && "cursor-not-allowed",
       )}
     >
-      {highlight && orderNo !== undefined ? <OrderBadge n={orderNo} /> : null}
+      {highlight && orderNo !== undefined ? <OrderBadge n={orderNo} sz={sz} /> : null}
       {label}
     </button>
   );
@@ -340,6 +442,7 @@ function DroppableBlank({
   isCorrect,
   orderNo,
   fontSize,
+  sz,
 }: {
   blankIdx: number;
   chipIdx: number | null;
@@ -350,6 +453,7 @@ function DroppableBlank({
   /** 정답 빈칸일 때 표시할 순서 번호(1-based). */
   orderNo?: number;
   fontSize: string;
+  sz: SizingFB;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `blank-${blankIdx}` });
   const isEmpty = chipIdx === null;
@@ -367,48 +471,49 @@ function DroppableBlank({
         alignItems: "center",
         justifyContent: "flex-start",
         textAlign: "center",
-        padding: "0.711cqw 1.659cqw" /* 세로 축소 — 빈칸이 문장 줄과 겹치지 않게 거리 확보 */,
-        minWidth: isEmpty ? "12.207cqw" /* figma 198px (빈칸) */ : "5cqw" /* 채우면 단어 길이에 맞게 */,
-        margin: "0 0.474cqw",
+        padding: sz.blankPad /* 세로 축소 — 빈칸이 문장 줄과 겹치지 않게 거리 확보 */,
+        minWidth: isEmpty ? sz.blankMinWEmpty /* figma 198px (빈칸) */ : sz.blankMinWFilled /* 채우면 단어 길이에 맞게 */,
+        margin: sz.blankMargin,
+        borderRadius: sz.blankRadius,
         fontSize,
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
         backgroundColor: isCorrect === false ? WRONG_BG : "#ffffff",
         border:
           isCorrect === true
-            ? `0.185cqw solid ${C_MASTER}` /* 정답: 흰 배경 + 보라 3px 테두리 (figma) */
-            : `0.095cqw solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
+            ? `${sz.blankBorderCorrect} solid ${C_MASTER}` /* 정답: 흰 배경 + 보라 3px 테두리 (figma) */
+            : `${sz.blankBorderNormal} solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
         boxShadow: isEmpty ? "inset 0 0.095cqw 0.356cqw rgba(17,24,39,0.06)" : "0 0.119cqw 0.474cqw rgba(17,24,39,0.1)",
         color: isEmpty ? "transparent" : textColor,
         fontWeight: isCorrect === true ? 600 : isCorrect === false ? 400 : 500,
       }}
       className={cn(
-        "select-none rounded-[0.593cqw] cursor-pointer transition-colors",
+        "select-none cursor-pointer transition-colors",
         isOver && isEmpty && "ring-2 ring-[var(--color-mastery-master)]",
         disabled && "cursor-not-allowed",
       )}
     >
-      {isCorrect === true && orderNo !== undefined ? <OrderBadge n={orderNo} /> : null}
+      {isCorrect === true && orderNo !== undefined ? <OrderBadge n={orderNo} sz={sz} /> : null}
       {chipLabel ?? " "}
     </span>
   );
 }
 
 /** 정답 칩/빈칸 좌상단 순서 번호 배지 — figma 28px 보라 원 + 흰 16px 숫자, 모서리에 걸침. */
-function OrderBadge({ n }: { n: number }) {
+function OrderBadge({ n, sz }: { n: number; sz: SizingFB }) {
   return (
     <span
       aria-hidden
       style={{
         position: "absolute",
-        top: "-0.864cqw" /* figma: 칩 좌상단 모서리 (-14px) */,
-        left: "-0.802cqw" /* -13px */,
-        width: "1.728cqw" /* figma 28px */,
-        height: "1.728cqw",
+        top: sz.badgeTop /* figma: 칩 좌상단 모서리 (-14px) */,
+        left: sz.badgeLeft /* -13px */,
+        width: sz.badgeSize /* figma 28px */,
+        height: sz.badgeSize,
         borderRadius: "9999px",
         backgroundColor: C_MASTER,
         color: "#ffffff",
-        fontSize: "0.988cqw" /* figma 16px */,
+        fontSize: sz.badgeFs /* figma 16px */,
         fontWeight: 600,
         lineHeight: 1,
         display: "flex",

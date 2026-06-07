@@ -180,6 +180,8 @@ interface PayloadQuestionPanelProps {
   canFinish: boolean
   onFinish: () => void
   mobileBottomSpacer?: boolean
+  /** 모바일(<768px) — cqw 캔버스 대신 fluid px 레이아웃으로 렌더 (Figma 942:9052). */
+  mobile?: boolean
 }
 
 export function PayloadQuestionPanel({
@@ -205,6 +207,7 @@ export function PayloadQuestionPanel({
   eliminatedIdx,
   canFinish,
   onFinish,
+  mobile = false,
 }: PayloadQuestionPanelProps) {
   const t = useTranslations()
   const { locale } = useI18n()
@@ -289,7 +292,17 @@ export function PayloadQuestionPanel({
   // 정/오답 배지 — 채점 후 각 폼의 feedbackSlot(문제/지시문 밑)에 표시 (시안: 라벨이 문제 밑). Essay 제외.
   const feedbackBadge =
     graded && !isEssay ? (
-      graded.is_correct ? (
+      mobile ? (
+        graded.is_correct ? (
+          <span className="flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
+            <Check className="h-3.5 w-3.5" /> {t('examPrepFinal.solve.correct')}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+            <XIcon className="h-3.5 w-3.5" /> {t('examPrepFinal.solve.incorrect')}
+          </span>
+        )
+      ) : graded.is_correct ? (
         <span
           className="flex items-center rounded-full bg-violet-100 font-semibold text-violet-700"
           style={{ gap: '0.356cqw', padding: '0.356cqw 0.948cqw', fontSize: '0.924cqw' }}
@@ -324,6 +337,7 @@ export function PayloadQuestionPanel({
             disabled={formDisabled}
             result={result}
             feedbackSlot={feedbackBadge}
+            mobile={mobile}
           />
         )
       case 'category_fill_blank5_single':
@@ -338,6 +352,7 @@ export function PayloadQuestionPanel({
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
             recallSlot={recallNode}
+            mobile={mobile}
           />
         )
       case 'category_fill_blank7_multi':
@@ -352,6 +367,7 @@ export function PayloadQuestionPanel({
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
             recallSlot={recallNode}
+            mobile={mobile}
           />
         )
       case 'description_mcq6_multi':
@@ -365,6 +381,7 @@ export function PayloadQuestionPanel({
             result={dispResult}
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
+            mobile={mobile}
           />
         )
       case 'error_diagnosis_evaluation': {
@@ -381,6 +398,7 @@ export function PayloadQuestionPanel({
             onChange={(v) => onResponseChange(v)}
             hasSubmitted={isLocked}
             result={result}
+            mobile={mobile}
           />
         )
       }
@@ -399,6 +417,7 @@ export function PayloadQuestionPanel({
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
             recallSlot={recallNode}
+            mobile={mobile}
           />
         )
     }
@@ -424,6 +443,164 @@ export function PayloadQuestionPanel({
     'flex items-center justify-center rounded-[0.498cqw] text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/10'
   const iconBtnStyle = { width: '2.714cqw', height: '2.714cqw' } as const /* figma 44px */
   const iconSize = { width: '1.481cqw', height: '1.481cqw' } as const /* figma 24px */
+
+  // ─── 모바일(<768px) — cqw 캔버스 대신 fluid px 레이아웃 (Figma 942:9052) ───
+  if (mobile) {
+    const mIconBtn =
+      'flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/10'
+    const mNavBtn =
+      'flex h-12 w-12 items-center justify-center rounded-[10px] bg-white text-gray-600 shadow-[0px_3px_4px_0px_rgba(0,0,0,0.1)] transition-colors hover:bg-gray-50 disabled:opacity-40 dark:bg-gray-800 dark:text-gray-300'
+    const mPrimaryBtn =
+      'flex h-8 min-w-[70px] items-center justify-center rounded-md bg-[#8b5cf6] px-4 text-sm font-semibold text-white transition-colors hover:brightness-95 disabled:opacity-40'
+    return (
+      <div
+        className="flex h-full min-h-0 flex-1 flex-col bg-white px-5 pb-3 pt-3 dark:bg-gray-950"
+        style={{ fontFamily: 'Pretendard, sans-serif' }}
+      >
+        {/* 폼 영역 (stem + body) — 스크롤 */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          {graded && isEssay && (
+            <div className="mb-3 flex items-center gap-2">
+              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
+                {t('examPrepFinal.solve.submittedModelAnswer')}
+              </span>
+            </div>
+          )}
+
+          {renderForm()}
+
+          {showExplanation && (
+            <div className="mt-5 flex w-full flex-col gap-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+              <p className="text-base font-bold" style={{ color: 'var(--color-exam-canvas-fg)' }}>
+                {t('examPrepFinal.solve.explanation')}
+              </p>
+              {qf === 'term_definition_match3' && (
+                <MatchForm
+                  questionText=""
+                  showHeader={false}
+                  mobile
+                  leftItems={(isEn
+                    ? ((payloadEng.left_items as string[] | undefined) ?? (payload.left_items as string[] | undefined))
+                    : (payload.left_items as string[] | undefined)) ?? []}
+                  rightItems={(isEn
+                    ? ((payloadEng.right_items as string[] | undefined) ?? (payload.right_items as string[] | undefined))
+                    : (payload.right_items as string[] | undefined)) ?? []}
+                  value={(payload.correct_pairs as [number, number][]) ?? null}
+                  onChange={() => {}}
+                  disabled
+                  result={{
+                    is_correct: true,
+                    correct_answer: (payload.correct_pairs as [number, number][]) ?? null,
+                    payload: payload as never,
+                  }}
+                />
+              )}
+              {explanationText && (
+                <p className="whitespace-pre-line break-keep text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                  {explanationText}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 하단 세트 — 좌: 보조 아이콘 / 우: 힌트 + 제출 (Figma 942:9310) */}
+        <div className="mt-3 flex shrink-0 items-center justify-between">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onBookmarkToggle}
+              className={cn(mIconBtn, isBookmarked && 'text-violet-500 hover:text-violet-600')}
+              aria-label={isBookmarked ? t('examPrepFinal.solve.bookmarkRemove') : t('examPrepFinal.solve.bookmarkAdd')}
+            >
+              <Bookmark className={cn('h-4 w-4', isBookmarked && 'fill-current')} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSourceClick?.('materials')}
+              disabled={!hasMaterial || !onSourceClick}
+              className={mIconBtn}
+              aria-label={t('examPrepFinal.solve.sourceMaterialsAria')}
+            >
+              <FileText className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSourceClick?.('recordings')}
+              disabled={!hasRecording || !onSourceClick}
+              className={mIconBtn}
+              aria-label={t('examPrepFinal.solve.sourceRecordingsAria')}
+            >
+              <Mic className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onAskChatbot}
+              disabled={!onAskChatbot}
+              className={mIconBtn}
+              aria-label={t('examPrepFinal.solve.askChatbotAria')}
+            >
+              <MessageSquareText className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {!isLocked && !isMastered && !recallGated && onHint && choices.length > 0 && (
+              <button
+                type="button"
+                onClick={eliminatedIdx == null ? onHint : undefined}
+                aria-disabled={eliminatedIdx != null}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center text-amber-400 transition-transform',
+                  eliminatedIdx == null ? 'active:scale-95' : 'cursor-default opacity-40',
+                )}
+                aria-label={t('examPrepFinal.solve.hint')}
+              >
+                <Lightbulb className="h-5 w-5 fill-amber-200" />
+              </button>
+            )}
+            {!isLocked && !isMastered && !recallGated && (
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={!complete || isGrading}
+                className={mPrimaryBtn}
+              >
+                {isGrading ? t('examPrepFinal.solve.grading') : t('examPrepFinal.submit')}
+              </button>
+            )}
+            {(isLocked || isMastered) && !isEssay && (
+              <button type="button" onClick={() => setShowExplanation((s) => !s)} className={mPrimaryBtn}>
+                {showExplanation ? t('examPrepFinal.solve.hideExplanation') : t('examPrepFinal.solve.showExplanation')}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* 네비게이션 — 이전/다음 (+ 종료) (Figma 942:9333) */}
+        <div className="mt-2 flex shrink-0 items-center justify-between">
+          <button type="button" onClick={onPrev} disabled={!hasPrev} aria-label="prev" className={mNavBtn}>
+            <ChevronLeft className="h-7 w-7" />
+          </button>
+          <div className="flex items-center gap-2">
+            {canFinish && (
+              <button
+                type="button"
+                onClick={onFinish}
+                aria-label={t('examPrepFinal.endQuizAria')}
+                className="flex h-12 items-center justify-center rounded-[10px] bg-[#8b5cf6] px-4 text-sm font-bold text-white transition-colors hover:brightness-95"
+              >
+                {t('examPrepFinal.endQuiz')}
+              </button>
+            )}
+            <button type="button" onClick={onNext} disabled={!hasNext} aria-label="next" className={mNavBtn}>
+              <ChevronRight className="h-7 w-7" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -472,6 +649,7 @@ export function PayloadQuestionPanel({
                     correct_answer: (payload.correct_pairs as [number, number][]) ?? null,
                     payload: payload as never,
                   }}
+                  mobile={mobile}
                 />
               )}
               {explanationText && (

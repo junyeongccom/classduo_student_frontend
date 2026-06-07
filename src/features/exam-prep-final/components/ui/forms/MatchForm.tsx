@@ -26,9 +26,63 @@ export type MatchFormProps = {
   feedbackSlot?: React.ReactNode;
   /** false면 문제 텍스트·정오답칸 숨김 (해설 정답 다이어그램용). */
   showHeader?: boolean;
+  /** 모바일(<768px) — cqw 대신 fluid px/% 레이아웃. */
+  mobile?: boolean;
 };
 
 type ActiveSel = { side: "left" | "right"; idx: number } | null;
+
+/** 치수 토큰 — 데스크탑 cqw(1620 baseline) / 모바일 fluid px·%. */
+type SizingM = {
+  rootGap: string;
+  stem: string;
+  feedbackMinH: string;
+  maxW: string;
+  leftW: string;
+  rightW: string;
+  colGap: string;
+  cardMinH: string;
+  cardRadius: string;
+  borderEmph: string;
+  borderNorm: string;
+  leftPad: string;
+  rightPad: string;
+  leftFs: string;
+};
+const DESKTOP_M: SizingM = {
+  rootGap: "0.498cqw",
+  stem: "2.222cqw",
+  feedbackMinH: "3.390cqw",
+  maxW: "51.728cqw",
+  leftW: "14.317cqw",
+  rightW: "24.383cqw",
+  colGap: "2.347cqw",
+  cardMinH: "7.716cqw",
+  cardRadius: "0.984cqw",
+  borderEmph: "0.154cqw",
+  borderNorm: "0.062cqw",
+  leftPad: "0.711cqw 1.067cqw",
+  rightPad: "0.711cqw 1.358cqw",
+  leftFs: "1.233cqw",
+};
+// 모바일: 좌/우 컬럼은 컨테이너 비율(%)로 desktop 과 동일 비율 유지 → SVG 점/선 정렬 보존.
+//   카드높이:행간 = 56:17 ≈ 125:38(viewBox) 이라 점이 카드 중앙에 맞음.
+const MOBILE_M: SizingM = {
+  rootGap: "8px",
+  stem: "18px",
+  feedbackMinH: "28px",
+  maxW: "100%",
+  leftW: "27.7%",
+  rightW: "47.1%",
+  colGap: "17px",
+  cardMinH: "56px",
+  cardRadius: "10px",
+  borderEmph: "2px",
+  borderNorm: "1px",
+  leftPad: "6px 8px",
+  rightPad: "6px 10px",
+  leftFs: "13px",
+};
 
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
@@ -49,9 +103,16 @@ const LEFT_PX = 285; // 좌측 점 x — 가운데 공간으로 이동
 const RIGHT_PX = 390; // 우측 점 x — 가운데 공간으로 이동
 const rowY = (i: number) => i * (CARD_H + ROW_GAP) + CARD_H / 2; // 62.5 / 225.5 / 388.5
 
-/** 우측 정의 텍스트 길이에 따라 폰트 크기(cqw) 동적 결정. */
-function getRightFontSizeCqw(text: string): string {
+/** 우측 정의 텍스트 길이에 따라 폰트 크기 동적 결정 (데스크탑 cqw / 모바일 px). */
+function getRightFontSize(text: string, mobile: boolean): string {
   const len = text.length;
+  if (mobile) {
+    if (len <= 22) return "13px";
+    if (len <= 38) return "12px";
+    if (len <= 58) return "11px";
+    if (len <= 86) return "10px";
+    return "9px";
+  }
   if (len <= 22) return "1.233cqw";
   if (len <= 38) return "1.114cqw";
   if (len <= 58) return "0.984cqw";
@@ -69,8 +130,10 @@ export function MatchForm({
   result,
   feedbackSlot,
   showHeader = true,
+  mobile = false,
 }: MatchFormProps) {
   const t = useTranslations("examPrepFinal");
+  const SZ = mobile ? MOBILE_M : DESKTOP_M;
   const pairs = value ?? [];
   const [active, setActive] = useState<ActiveSel>(null);
 
@@ -135,23 +198,23 @@ export function MatchForm({
   };
 
   return (
-    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" }}>
+    <div className="flex w-full flex-col items-stretch" style={{ gap: SZ.rootGap }}>
       {showHeader && (
-        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}>
+        <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: SZ.stem, color: C_CANVAS_FG }}>
           {questionText || t("solve.matchInstruction")}
         </h1>
       )}
 
       {showHeader && (
-        <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" }}>
+        <div className="flex w-full shrink-0 items-center" style={{ minHeight: SZ.feedbackMinH }}>
           {feedbackSlot}
         </div>
       )}
 
-      <div className="relative mx-auto w-full" style={{ maxWidth: "51.728cqw" /* 838px */ }}>
+      <div className="relative mx-auto w-full" style={{ maxWidth: SZ.maxW /* 838px */ }}>
         <div className="flex justify-between">
           {/* 좌측 개념 컬럼 */}
-          <div className="flex shrink-0 flex-col" style={{ width: "14.317cqw" /* 232 */, gap: "2.347cqw" /* 38 */ }}>
+          <div className="flex shrink-0 flex-col" style={{ width: SZ.leftW /* 232 */, gap: SZ.colGap /* 38 */ }}>
             {leftItems.map((item, i) => {
               const emph = leftEmph(i);
               const isWrong = showResult && emph === C_DELETE;
@@ -166,21 +229,21 @@ export function MatchForm({
                     !disabled && !emph && "cursor-pointer hover:border-[var(--color-mastery-master)]",
                   )}
                   style={{
-                    minHeight: "7.716cqw" /* 125 */,
-                    borderRadius: "0.984cqw",
-                    border: `${emph ? "0.154cqw" : "0.062cqw"} solid ${emph ?? C_BORDER}`,
+                    minHeight: SZ.cardMinH /* 125 */,
+                    borderRadius: SZ.cardRadius,
+                    border: `${emph ? SZ.borderEmph : SZ.borderNorm} solid ${emph ?? C_BORDER}`,
                     backgroundColor: isWrong ? WRONG_BG : "#ffffff",
-                    padding: "0.711cqw 1.067cqw",
+                    padding: SZ.leftPad,
                   }}
                 >
-                  <span style={{ fontSize: "1.233cqw", fontWeight: 700, color: emph ?? C_BLACK }}>{item}</span>
+                  <span style={{ fontSize: SZ.leftFs, fontWeight: 700, color: emph ?? C_BLACK }}>{item}</span>
                 </button>
               );
             })}
           </div>
 
           {/* 우측 정의 컬럼 (고정 순서) */}
-          <div className="flex shrink-0 flex-col" style={{ width: "24.383cqw" /* 395 */, gap: "2.347cqw" }}>
+          <div className="flex shrink-0 flex-col" style={{ width: SZ.rightW /* 395 */, gap: SZ.colGap }}>
             {rightItems.map((item, j) => {
               const emph = rightEmph(j);
               const isWrong = showResult && emph === C_DELETE;
@@ -195,14 +258,14 @@ export function MatchForm({
                     !disabled && !emph && "cursor-pointer hover:border-[var(--color-mastery-master)]",
                   )}
                   style={{
-                    minHeight: "7.716cqw",
-                    borderRadius: "0.984cqw",
-                    border: `${emph ? "0.154cqw" : "0.062cqw"} solid ${emph ?? C_BORDER}`,
+                    minHeight: SZ.cardMinH,
+                    borderRadius: SZ.cardRadius,
+                    border: `${emph ? SZ.borderEmph : SZ.borderNorm} solid ${emph ?? C_BORDER}`,
                     backgroundColor: isWrong ? WRONG_BG : "#ffffff",
-                    padding: "0.711cqw 1.358cqw",
+                    padding: SZ.rightPad,
                   }}
                 >
-                  <span className="leading-snug" style={{ fontSize: getRightFontSizeCqw(item), color: emph ?? C_BLACK }}>
+                  <span className="leading-snug" style={{ fontSize: getRightFontSize(item, mobile), color: emph ?? C_BLACK }}>
                     {item}
                   </span>
                 </button>

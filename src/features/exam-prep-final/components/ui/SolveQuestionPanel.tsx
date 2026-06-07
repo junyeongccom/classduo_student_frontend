@@ -64,6 +64,8 @@ interface SolveQuestionPanelProps {
   onFinish: () => void
   /** 모바일에서 좌/우 panel(강의자료·AI챗봇)이 열려있을 때, 마지막 액션이 panel 뒤로 가리지 않도록 하단 spacer 추가 */
   mobileBottomSpacer?: boolean
+  /** 모바일 레이아웃 — 패딩 축소 + 상단 정렬 + Figma 페이지네이션(흰 카드 chevron). 진행률/경과는 하단 푸터로 이동. */
+  mobile?: boolean
 }
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D']
@@ -94,6 +96,7 @@ export function SolveQuestionPanel({
   canFinish,
   onFinish,
   mobileBottomSpacer = false,
+  mobile = false,
 }: SolveQuestionPanelProps) {
   const t = useTranslations()
   const { locale } = useI18n()
@@ -244,8 +247,18 @@ export function SolveQuestionPanel({
   ])
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-y-auto bg-[#F5F7F8] dark:bg-gray-950">
-      <div className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-8 py-8">
+    <div
+      className={cn(
+        'flex h-full flex-1 flex-col overflow-y-auto dark:bg-gray-950',
+        mobile ? 'bg-white' : 'bg-[#F5F7F8]',
+      )}
+    >
+      <div
+        className={cn(
+          'relative mx-auto flex w-full max-w-3xl flex-1 flex-col',
+          mobile ? 'justify-start px-5 py-5' : 'justify-center px-8 py-8',
+        )}
+      >
         {/* 마스터 도달 도장 — 첫 마스터 시 문제 우상단에 표시. 등장 모션 X, 원본 비율 유지, alpha 0.5. */}
         {graded?.mastery.first_master_transition && (
           <img
@@ -571,44 +584,79 @@ export function SolveQuestionPanel({
           </div>
         </div>
 
-        {/* 페이지네이션 */}
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-base font-semibold text-gray-700 dark:text-gray-300">
-            <span className="text-gray-900 dark:text-gray-50">{currentSeq}</span>
-            <span className="mx-1.5 text-gray-300">/</span>
-            <span className="text-gray-400">{total}</span>
-          </p>
-          <div className="flex items-center gap-2">
+        {/* 페이지네이션 — 모바일은 진행률(1/10)을 하단 푸터로 옮기고 흰 카드 chevron만 (Figma 942:9333) */}
+        {mobile ? (
+          <div className="mt-6 flex items-center justify-between">
             <button
               type="button"
               onClick={onPrev}
               disabled={!hasPrev}
               aria-label="prev"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              className="flex size-12 items-center justify-center rounded-[10px] bg-white text-gray-700 shadow-[0px_3px_4px_0px_rgba(0,0,0,0.1)] transition-colors disabled:opacity-40 dark:bg-gray-800 dark:text-gray-200"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="size-7" />
             </button>
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={!hasNext}
-              aria-label="next"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            {canFinish && (
+            <div className="flex items-center gap-3">
+              {canFinish && (
+                <button
+                  type="button"
+                  onClick={onFinish}
+                  aria-label={t('examPrepFinal.endQuizAria')}
+                  className="flex h-12 items-center justify-center rounded-[10px] bg-violet-600 px-5 text-sm font-bold text-white transition-colors hover:bg-violet-700"
+                >
+                  {t('examPrepFinal.endQuiz')}
+                </button>
+              )}
               <button
                 type="button"
-                onClick={onFinish}
-                aria-label={t('examPrepFinal.endQuizAria')}
-                className="flex h-9 items-center justify-center rounded-lg bg-violet-600 px-4 text-sm font-bold text-white transition-colors hover:bg-violet-700"
+                onClick={onNext}
+                disabled={!hasNext}
+                aria-label="next"
+                className="flex size-12 items-center justify-center rounded-[10px] bg-white text-gray-700 shadow-[0px_3px_4px_0px_rgba(0,0,0,0.1)] transition-colors disabled:opacity-40 dark:bg-gray-800 dark:text-gray-200"
               >
-                {t('examPrepFinal.endQuiz')}
+                <ChevronRight className="size-7" />
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-6 flex items-center justify-between">
+            <p className="text-base font-semibold text-gray-700 dark:text-gray-300">
+              <span className="text-gray-900 dark:text-gray-50">{currentSeq}</span>
+              <span className="mx-1.5 text-gray-300">/</span>
+              <span className="text-gray-400">{total}</span>
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onPrev}
+                disabled={!hasPrev}
+                aria-label="prev"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={!hasNext}
+                aria-label="next"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              {canFinish && (
+                <button
+                  type="button"
+                  onClick={onFinish}
+                  aria-label={t('examPrepFinal.endQuizAria')}
+                  className="flex h-9 items-center justify-center rounded-lg bg-violet-600 px-4 text-sm font-bold text-white transition-colors hover:bg-violet-700"
+                >
+                  {t('examPrepFinal.endQuiz')}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
         {/* 모바일에서 좌/우 panel(강의자료·AI챗봇) 떠 있을 때, 마지막 액션이 panel 뒤로 가려지지 않도록 spacer */}
         {mobileBottomSpacer && <div className="h-[60dvh] shrink-0 md:hidden" aria-hidden />}
       </div>
