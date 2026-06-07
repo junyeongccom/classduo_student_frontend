@@ -11,7 +11,7 @@
  */
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -168,6 +168,8 @@ export function FillBlankDnd({
     useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }),
   );
   const [draggingChipIdx, setDraggingChipIdx] = useState<number | null>(null);
+  // 드래그 종료 직후 발생하는 합성 click 으로 탭-채우기가 중복 발동하는 것을 막는 가드.
+  const dragJustEndedRef = useRef(false);
 
   const fontScale = useMemo(() => computeChipFontScale(choices), [choices]);
   const chipFontSize = mobile
@@ -209,6 +211,11 @@ export function FillBlankDnd({
 
   const onDragEnd = (e: DragEndEvent) => {
     setDraggingChipIdx(null);
+    // 실제 드래그가 끝났음을 기록 → 직후의 합성 click(탭-채우기)을 1틱 동안 무시.
+    dragJustEndedRef.current = true;
+    setTimeout(() => {
+      dragJustEndedRef.current = false;
+    }, 0);
     if (disabled) return;
     if (!e.over) return;
     const overId = e.over.id;
@@ -229,6 +236,20 @@ export function FillBlankDnd({
     if (disabled) return;
     const next = [...value];
     next[blankIdx] = null;
+    onChange(next);
+  };
+
+  // 모바일 탭-채우기: 칩을 탭하면 첫 번째 빈 칸을 채운다(모두 차 있으면 무시 — 칸 탭으로 해제 후 재선택).
+  const fillFirstEmptyBlank = (chipIdx: number) => {
+    if (disabled) return;
+    if (dragJustEndedRef.current) return; // 드래그 직후 합성 click 방어
+    const firstEmpty = value.findIndex((v) => v === null);
+    if (firstEmpty === -1) return;
+    const next = [...value];
+    next.forEach((v, i) => {
+      if (v === chipIdx) next[i] = null; // 혹시 다른 칸에 있던 칩이면 제거(중복 방지)
+    });
+    next[firstEmpty] = chipIdx;
     onChange(next);
   };
 
@@ -343,6 +364,7 @@ export function FillBlankDnd({
                   highlight={graded && correctIndexes.includes(c.idx)}
                   orderNo={graded && choicePosition.has(c.idx) ? (choicePosition.get(c.idx) as number) + 1 : undefined}
                   sz={SZ}
+                  onSelect={mobile ? () => fillFirstEmptyBlank(c.idx) : undefined}
                 />
               ))}
             </div>
@@ -379,6 +401,7 @@ function DraggableChip({
   highlight,
   orderNo,
   sz,
+  onSelect,
 }: {
   chipIdx: number;
   label: string;
@@ -389,6 +412,8 @@ function DraggableChip({
   /** 정답 선지일 때 표시할 순서 번호(1-based). */
   orderNo?: number;
   sz: SizingFB;
+  /** 모바일 탭-채우기 — 제공되면 칩 탭 시 첫 빈칸 채움(드래그도 그대로 동작). */
+  onSelect?: () => void;
 }) {
   const t = useTranslations("examPrepFinal");
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -400,6 +425,7 @@ function DraggableChip({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      onClick={onSelect}
       type="button"
       disabled={disabled}
       aria-label={eliminated ? t("solve.eliminatedChoice") : undefined}

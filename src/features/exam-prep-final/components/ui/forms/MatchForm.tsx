@@ -65,15 +65,16 @@ const DESKTOP_M: SizingM = {
   rightPad: "0.711cqw 1.358cqw",
   leftFs: "1.233cqw",
 };
-// 모바일: 좌/우 컬럼은 컨테이너 비율(%)로 desktop 과 동일 비율 유지 → SVG 점/선 정렬 보존.
-//   카드높이:행간 = 56:17 ≈ 125:38(viewBox) 이라 점이 카드 중앙에 맞음.
+// 모바일: 좁은 폭에서 데스크탑 비율(가운데 연결영역 25%)을 그대로 쓰면 카드가 작고 가운데가 휑함.
+//   카드를 키우고(좌 34%·우 52%) 가운데 연결영역을 14%로 축소. SVG 점 x 는 모바일 전용(LEFT_PX_M/RIGHT_PX_M).
+//   카드높이:행간 = 56:17 ≈ 125:38(viewBox) 비율 유지 → 점이 카드 세로 중앙에 맞음.
 const MOBILE_M: SizingM = {
   rootGap: "8px",
   stem: "18px",
   feedbackMinH: "28px",
   maxW: "100%",
-  leftW: "27.7%",
-  rightW: "47.1%",
+  leftW: "34%",
+  rightW: "52%",
   colGap: "17px",
   cardMinH: "56px",
   cardRadius: "10px",
@@ -98,9 +99,12 @@ const VB_W = 838;
 const CARD_H = 125;
 const ROW_GAP = 38;
 const VB_H = 3 * CARD_H + 2 * ROW_GAP; // 451
-// 점/연결선은 카드 가장자리가 아니라 가운데 공간(232~443) 안쪽으로 배치.
-const LEFT_PX = 285; // 좌측 점 x — 가운데 공간으로 이동
-const RIGHT_PX = 390; // 우측 점 x — 가운데 공간으로 이동
+// 점/연결선은 카드 가장자리가 아니라 가운데 공간 안쪽으로 배치.
+const LEFT_PX = 285; // 데스크탑 좌측 점 x (좌카드 27.7% → 가운데 232~443)
+const RIGHT_PX = 390; // 데스크탑 우측 점 x
+// 모바일은 카드가 더 넓어(좌 34%·우 52%) 가운데 공간 285~402. 그 안쪽에 점 배치.
+const LEFT_PX_M = 309; // 모바일 좌측 점 x
+const RIGHT_PX_M = 378; // 모바일 우측 점 x
 const rowY = (i: number) => i * (CARD_H + ROW_GAP) + CARD_H / 2; // 62.5 / 225.5 / 388.5
 
 /** 우측 정의 텍스트 길이에 따라 폰트 크기 동적 결정 (데스크탑 cqw / 모바일 px). */
@@ -134,6 +138,8 @@ export function MatchForm({
 }: MatchFormProps) {
   const t = useTranslations("examPrepFinal");
   const SZ = mobile ? MOBILE_M : DESKTOP_M;
+  const leftDotX = mobile ? LEFT_PX_M : LEFT_PX;
+  const rightDotX = mobile ? RIGHT_PX_M : RIGHT_PX;
   const pairs = value ?? [];
   const [active, setActive] = useState<ActiveSel>(null);
 
@@ -284,9 +290,9 @@ export function MatchForm({
           {pairs.map(([l, r], k) => (
             <line
               key={k}
-              x1={LEFT_PX}
+              x1={leftDotX}
               y1={rowY(l)}
-              x2={RIGHT_PX}
+              x2={rightDotX}
               y2={rowY(r)}
               stroke={pairColor(l, r)}
               strokeWidth={5}
@@ -297,11 +303,11 @@ export function MatchForm({
           ))}
           {/* 좌측 점 */}
           {leftItems.map((_, i) => (
-            <circle key={`lp${i}`} cx={LEFT_PX} cy={rowY(i)} r={7.5} fill={leftEmph(i) ?? PT_DEFAULT} />
+            <circle key={`lp${i}`} cx={leftDotX} cy={rowY(i)} r={7.5} fill={leftEmph(i) ?? PT_DEFAULT} />
           ))}
           {/* 우측 점 */}
           {rightItems.map((_, j) => (
-            <circle key={`rp${j}`} cx={RIGHT_PX} cy={rowY(j)} r={7.5} fill={rightEmph(j) ?? PT_DEFAULT} />
+            <circle key={`rp${j}`} cx={rightDotX} cy={rowY(j)} r={7.5} fill={rightEmph(j) ?? PT_DEFAULT} />
           ))}
         </svg>
       </div>
