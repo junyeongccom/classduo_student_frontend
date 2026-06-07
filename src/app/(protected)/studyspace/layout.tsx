@@ -236,7 +236,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                   courseId={examPrepCourseId}
                 />
               </div>
-            ) : isLectureStudyPage ? (
+            ) : isLectureStudyPage && !isDialoguePage ? (
               <div ref={flameRef} className="relative hidden md:block">
                 <button
                   id="flame-badge"
