@@ -10,7 +10,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { ChevronRight, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { fetchCoreTestDetail } from '../../services/examPrepService'
@@ -20,6 +20,8 @@ interface CoreTestListModalProps {
   /** 핵심테스트 26개 (서술형 중간테스트 제외 — coreTests만 전달). */
   coreTests: CoreTest[]
   onClose: () => void
+  /** 행 클릭 시 해당 테스트 풀이 페이지로 이동 (컨테이너 handleStartTest 재사용). */
+  onSelectTest: (test: CoreTest) => void
 }
 
 /** test.id 가 백엔드 UUID 인지 (lecture-/placeholder- prefix 가 아닌지) */
@@ -27,7 +29,11 @@ function isBackendTestId(id: string): boolean {
   return !id.startsWith('lecture-') && !id.startsWith('placeholder-')
 }
 
-export function CoreTestListModal({ coreTests, onClose }: CoreTestListModalProps) {
+export function CoreTestListModal({
+  coreTests,
+  onClose,
+  onSelectTest,
+}: CoreTestListModalProps) {
   const t = useTranslations('examPrepFinal')
   const { locale } = useI18n()
   const isEn = locale === 'en'
@@ -136,11 +142,10 @@ export function CoreTestListModal({ coreTests, onClose }: CoreTestListModalProps
                 (test.lectureTitle ?? '').trim() ||
                 t('weekSession', { week: test.weekNo, session: test.sessionNo })
               const topic = prefetched(test) || (topics[test.id] ?? '')
-              return (
-                <li
-                  key={test.id}
-                  className="flex items-center gap-3 border-b border-gray-50 py-3 last:border-b-0 dark:border-gray-800/60"
-                >
+              // 백엔드 생성된 테스트만 풀이 페이지로 이동 가능. 미생성 슬롯은 비활성.
+              const clickable = isBackendTestId(test.id)
+              const rowInner = (
+                <>
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm font-bold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
                     {numberLabel}
                   </span>
@@ -152,6 +157,27 @@ export function CoreTestListModal({ coreTests, onClose }: CoreTestListModalProps
                       {topic || '—'}
                     </span>
                   </div>
+                  {clickable && (
+                    <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 transition-colors group-hover:text-[#6366F1] dark:text-gray-600 dark:group-hover:text-[#818CF8]" />
+                  )}
+                </>
+              )
+              return (
+                <li
+                  key={test.id}
+                  className="border-b border-gray-50 last:border-b-0 dark:border-gray-800/60"
+                >
+                  {clickable ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectTest(test)}
+                      className="group flex w-full items-center gap-3 rounded-lg py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                    >
+                      {rowInner}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-3 py-3">{rowInner}</div>
+                  )}
                 </li>
               )
             })
