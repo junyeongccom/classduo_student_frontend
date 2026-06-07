@@ -18,6 +18,7 @@ export const EXAM_PREP_UNLOCK_DATE_MS = new Date(
  */
 export const EXAM_PREP_ALLOWLIST_NAMES: readonly string[] = [
   '천준영',
+  '윤건재',
   '테스트계정',
   '테스트',
 ]
