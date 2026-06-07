@@ -9,7 +9,15 @@
 'use client'
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Loader2, HelpCircle, Sparkles, Bot } from 'lucide-react'
+import { Loader2, HelpCircle, Sparkles, Bot, RotateCcw } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from '@/shared/components/ui/Dialog'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { trackQuizAttempt } from '@/shared/hooks/useAnalytics'
@@ -74,6 +82,9 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showRewardModal, setShowRewardModal] = useState(false)
+  // 전체 다시 풀기: 확인 모달 표시 + 카드 강제 리마운트용 키
+  const [showRetryConfirm, setShowRetryConfirm] = useState(false)
+  const [resetKey, setResetKey] = useState(0)
   const t = useTranslations('lectureStudy.quiz')
   const tSummary = useTranslations('lectureStudy.summary')
   const { locale } = useI18n()
@@ -308,6 +319,43 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
     [statusMap, lectureId],
   )
 
+  // 전체 다시 풀기: 현재 회차의 모든 content 퀴즈 풀이 상태를 초기화한다.
+  // user_quiz_response 는 누적 INSERT 구조라, null 응답을 새로 INSERT 하면
+  // "최신 응답 = null" 이 되어 미풀이 상태로 보인다(기존 정답/오답 기록은 보존).
+  const handleRetryAll = useCallback(async () => {
+    setShowRetryConfirm(false)
+    const prevMap = statusMap
+
+    // 낙관적 업데이트: 모든 상태 리셋 + 카드 리마운트 + 풀이 시작시간 갱신
+    const now = Date.now()
+    setStatusMap((prev) => {
+      const next = new Map(prev)
+      for (const quiz of quizzes) {
+        next.set(quiz.quiz_id, {
+          quiz_id: quiz.quiz_id,
+          quiz_source: 'content',
+          correct: null,
+          answer: null,
+        })
+        quizStartTimeRef.current.set(quiz.quiz_id, now)
+      }
+      return next
+    })
+    setResetKey((prev) => prev + 1)
+    rewardCheckingRef.current = false
+
+    const results = await Promise.allSettled(
+      quizzes.map((quiz) => updateCorrect('content', quiz.quiz_id, lectureId, null, null)),
+    )
+    const hasError = results.some(
+      (r) => r.status === 'rejected' || (r.status === 'fulfilled' && r.value.error),
+    )
+    if (hasError) {
+      // 일부 실패 시 직전 상태로 롤백
+      setStatusMap(prevMap)
+    }
+  }, [quizzes, lectureId, statusMap])
+
   // 유형별로 그룹화 (정의된 순서대로)
   const groupedQuizzes = useMemo(() => {
     const groups: { type: InstructorQuizType; items: InstructorQuizItem[] }[] = []
@@ -367,6 +415,16 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
           {t('aiGeneratedNotice')}
         </p>
       </div>
+
+      {/* 전체 다시 풀기 */}
+      <button
+        type="button"
+        onClick={() => setShowRetryConfirm(true)}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
+      >
+        <RotateCcw className="h-4 w-4" />
+        {t('retryAll')}
+      </button>
       {groupedQuizzes.map((group) => (
         <section key={group.type}>
           {/* 유형 섹션 헤더 */}
@@ -386,7 +444,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
               const status = statusMap.get(quiz.quiz_id)
               return (
                 <StudentQuizCard
-                  key={quiz.quiz_id}
+                  key={`${quiz.quiz_id}-${resetKey}`}
                   quiz={toStudentQuiz(quiz)}
                   index={idx}
                   isBookmarked={bookmarkSet.has(quiz.quiz_id)}
@@ -466,6 +524,37 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
           </div>
         </section>
       ))}
+
+      {/* 전체 다시 풀기 확인 모달 */}
+      <Dialog open={showRetryConfirm} onOpenChange={setShowRetryConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('retryAllConfirmTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('retryAllConfirm')}
+              <span className="mt-2 block text-xs text-gray-400 dark:text-gray-500">
+                {t('retryAllConfirmNote')}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setShowRetryConfirm(false)}
+              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 transition hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              {t('retryAllCancel')}
+            </button>
+            <button
+              type="button"
+              onClick={handleRetryAll}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+            >
+              {t('retryAllConfirmCta')}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

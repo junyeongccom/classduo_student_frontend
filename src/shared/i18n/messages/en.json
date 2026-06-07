@@ -739,7 +739,13 @@
         "message": "You have completed all quizzes for {courseName} {weekSession}",
         "confirm": "OK"
       },
-      "askAiChatbot": "Ask AI Chatbot"
+      "askAiChatbot": "Ask AI Chatbot",
+      "retryAll": "Retry All",
+      "retryAllConfirmTitle": "Retry all quizzes",
+      "retryAllConfirm": "Reset all answers in this lecture and start over?",
+      "retryAllConfirmNote": "Your correct/incorrect history will be preserved.",
+      "retryAllConfirmCta": "Reset",
+      "retryAllCancel": "Cancel"
     },
     "contentsChat": {
       "errorGenerate": "Failed to generate a response. Please try again.",
