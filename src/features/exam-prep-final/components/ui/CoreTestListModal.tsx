@@ -1,8 +1,8 @@
 /**
  * @file CoreTestListModal.tsx
  * @description '테스트 세트' 옆 "목록" 클릭 시 노출되는 핵심테스트 26개 주제 목록 모달.
- *   각 행 = 테스트번호 · 강의자료명 · 주제명. 주제명은 summary에 없어 test별 detail fetch
- *   (SelectedTestInfoCard와 동일 소스)로 채우며, 백엔드 미생성 슬롯은 강의자료명/폴백만 표시.
+ *   각 행 = 테스트번호 · 강의자료명 · 주제명. 주제명은 목록 API가 프리페치(test.topicTitle)로
+ *   주면 즉시 표시. 아직 안 주는(구 백엔드) 슬롯만 detail fetch 폴백으로 채운다.
  * @module features/exam-prep-final/components/ui
  * @dependencies next-intl, I18nProvider, examPrepService.fetchCoreTestDetail
  */
@@ -32,16 +32,22 @@ export function CoreTestListModal({ coreTests, onClose }: CoreTestListModalProps
   const { locale } = useI18n()
   const isEn = locale === 'en'
 
-  // test.id → 1순위 주제(주제명). 미해결/미생성 슬롯은 키 없음.
+  // locale 우선 주제명 — 목록 API 프리페치 값(test.topicTitle/Eng)을 즉시 사용.
+  const prefetched = (test: CoreTest): string =>
+    ((isEn ? test.topicTitleEng ?? test.topicTitle : test.topicTitle) ?? '').trim()
+
+  // test.id → detail fetch 폴백 주제명 (프리페치 없는 구 백엔드 슬롯만).
   const [topics, setTopics] = useState<Record<string, string>>({})
 
   // 번호순 정렬 (data.coreTests 는 이미 1~26 순서지만 방어적으로 정렬)
   const sorted = [...coreTests].sort((a, b) => a.number - b.number)
 
-  // 모달 오픈 시 백엔드 생성된 테스트의 주제명을 병렬 조회. (summary 응답엔 주제 없음)
+  // 프리페치가 없는 백엔드 테스트만 detail 조회로 폴백. (목록 API가 주제명 주면 fetch 0건)
   useEffect(() => {
     let alive = true
-    const ids = sorted.filter((c) => isBackendTestId(c.id)).map((c) => c.id)
+    const ids = sorted
+      .filter((c) => isBackendTestId(c.id) && !prefetched(c))
+      .map((c) => c.id)
     if (ids.length === 0) return
     Promise.all(
       ids.map(async (id) => {
@@ -129,7 +135,7 @@ export function CoreTestListModal({ coreTests, onClose }: CoreTestListModalProps
               const lectureName =
                 (test.lectureTitle ?? '').trim() ||
                 t('weekSession', { week: test.weekNo, session: test.sessionNo })
-              const topic = topics[test.id] ?? ''
+              const topic = prefetched(test) || (topics[test.id] ?? '')
               return (
                 <li
                   key={test.id}

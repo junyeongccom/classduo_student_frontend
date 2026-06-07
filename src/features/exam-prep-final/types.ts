@@ -23,6 +23,10 @@ export interface CoreTest {
   metaCounts: { gray: number; cyan: number; green: number }
   /** 학생-test 단위 master 도달 여부 (모든 문항 master 후 잠금) — 우상단 배지 표시용 */
   isTestMastered: boolean
+  /** 주제명 (목록 모달 프리페치용) — 목록 API가 주면 채워짐. 없으면 모달이 상세 폴백. */
+  topicTitle?: string
+  /** 영문 주제명 (한영 토글) */
+  topicTitleEng?: string
 }
 
 /** 백엔드 list-mid-tests / final-test 응답의 status — 디버그 트리거 분기에도 사용 */
