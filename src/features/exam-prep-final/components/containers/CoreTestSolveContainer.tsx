@@ -1270,6 +1270,13 @@ export function CoreTestSolveContainer({
             key={currentSeq}
             question={currentQuestion}
             attemptId={attemptId}
+            currentQuestionState={
+              (byQuestionState[seqToQuestionId.get(currentSeq) ?? ''] as
+                | 'learning'
+                | 'skilled'
+                | 'master'
+                | undefined) ?? null
+            }
             currentSeq={currentSeq}
             total={total}
             response={responseBySeq[currentSeq]}

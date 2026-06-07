@@ -112,10 +112,19 @@ function buildResult(
   }
 }
 
+/** Active Recall 게이트 대상 question_format — skilled 숙련도일 때 선지 전 '먼저 떠올려보기' 노출. */
+const ACTIVE_RECALL_FORMATS = new Set([
+  'category_fill_blank5_single', // 기억-5지선다 단수 빈칸채우기-종류/구성요소
+  'category_fill_blank7_multi', // 기억-7지선다 복수 빈칸채우기-종류/구성요소
+  'reason_purpose_mcq4', // 이해-4지선다 단수 객관식-원인/이유
+])
+
 interface PayloadQuestionPanelProps {
   question: CoreTestQuestionItemDto
   /** 현재 attempt id — 선지 결정론 셔플 시드(재진입마다 새 순서). */
   attemptId?: string | null
+  /** 현재 문항 mastery state — 'skilled' + 대상 유형이면 Active Recall 게이트 노출. */
+  currentQuestionState?: 'learning' | 'skilled' | 'master' | null
   currentSeq: number
   total: number
   response: unknown
@@ -143,6 +152,7 @@ interface PayloadQuestionPanelProps {
 export function PayloadQuestionPanel({
   question,
   attemptId,
+  currentQuestionState,
   currentSeq,
   total,
   response,
@@ -167,6 +177,9 @@ export function PayloadQuestionPanel({
   const { locale } = useI18n()
   const isEn = locale === 'en'
   const [showExplanation, setShowExplanation] = useState(false)
+  // Active Recall 게이트 — '선지 보기' 클릭 전엔 false(박스 노출). 문항 전환 시 패널이
+  // key={currentSeq} 로 리마운트되므로 자동 리셋 → 매 skilled 문항마다 다시 떠올리기 유도.
+  const [recallRevealed, setRecallRevealed] = useState(false)
 
   const qf = question.question_format ?? null
   const isEssay = qf === ESSAY_FORMAT
@@ -178,6 +191,17 @@ export function PayloadQuestionPanel({
     : (payload.choices as string[] | undefined)) ?? []
   const result = buildResult(question, graded)
   const isLocked = graded !== null
+  // ── Active Recall 게이트 — skilled 숙련도 + 대상 유형(빈칸5/빈칸7/원인이유mcq4)에서
+  //    채점 전·미공개 동안 선지를 가리고 '먼저 떠올려보기' 박스 노출. 클릭 시 선지 공개. ──
+  const recallGated =
+    currentQuestionState === 'skilled' &&
+    qf != null &&
+    ACTIVE_RECALL_FORMATS.has(qf) &&
+    !isLocked &&
+    !recallRevealed
+  const recallNode = recallGated ? (
+    <ActiveRecallGate onReveal={() => setRecallRevealed(true)} t={t} />
+  ) : undefined
   // ── 선지 결정론 셔플 (표시 전용) — attemptId+questionId 시드. 정규 인덱스는 보존하고
   //    표시 순서만 섞은 뒤 onChange 는 표시→정규로 되돌려 보내 채점/저장은 영향 없음.
   //    재진입(새 attempt) → 새 시드 → 새 순서, 이어풀기(같은 attempt) → 동일 순서. ──
@@ -272,6 +296,7 @@ export function PayloadQuestionPanel({
             result={dispResult}
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
+            recallSlot={recallNode}
           />
         )
       case 'category_fill_blank7_multi':
@@ -285,6 +310,7 @@ export function PayloadQuestionPanel({
             result={dispResult}
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
+            recallSlot={recallNode}
           />
         )
       case 'description_mcq6_multi':
@@ -318,6 +344,8 @@ export function PayloadQuestionPanel({
         )
       }
       // compare_contrast_mcq4 / reason_purpose_mcq4 / description_mcq4_single
+      // recallNode 는 reason_purpose_mcq4(ACTIVE_RECALL_FORMATS) + skilled 일 때만 비어있지 않음 →
+      // 나머지 mcq4 유형은 recallSlot=undefined 로 게이트 미적용 (안전).
       default:
         return (
           <Mcq4SingleForm
@@ -329,6 +357,7 @@ export function PayloadQuestionPanel({
             result={dispResult}
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
+            recallSlot={recallNode}
           />
         )
     }
@@ -482,7 +511,7 @@ export function PayloadQuestionPanel({
           <div className="flex items-center" style={{ gap: '1.185cqw' }}>
             {/* 힌트(전구) — 객관식/빈칸채우기에서 오답 1개 제거. 선택지 없는 유형(매칭/서술형)은 미노출.
                 사용 후에도 숨기지 않고 연하게(opacity-40) + 비활성. hover 시 효과/숙련도 패널티 안내 툴팁. */}
-            {!isLocked && onHint && choices.length > 0 && (
+            {!isLocked && !recallGated && onHint && choices.length > 0 && (
               <div className="group/hint relative flex items-center">
                 <button
                   type="button"
@@ -506,8 +535,8 @@ export function PayloadQuestionPanel({
                 </div>
               </div>
             )}
-            {/* 제출 (채점 후엔 숨김 — 서술형은 제출=모범답안 노출) */}
-            {!isLocked && (
+            {/* 제출 (채점 후엔 숨김 — 서술형은 제출=모범답안 노출. Active Recall 게이트 중에도 숨김) */}
+            {!isLocked && !recallGated && (
               <button
                 type="button"
                 onClick={onSubmit}
@@ -586,6 +615,61 @@ export function PayloadQuestionPanel({
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Active Recall 게이트 박스 — skilled 숙련도 대상 유형에서 선지(칩) 자리에 노출.
+ * 전구 아이콘(연보라 원) + 안내문 + 구분선 + '선지 보기' 버튼. 클릭 시 onReveal → 선지 공개.
+ * 치수는 SolveCanvas 기준 cqw — 다른 폼과 동일 비례 스케일. 다크모드 대응.
+ */
+function ActiveRecallGate({
+  onReveal,
+  t,
+}: {
+  onReveal: () => void
+  t: ReturnType<typeof useTranslations>
+}) {
+  return (
+    <div
+      className="flex w-full flex-col items-center justify-center rounded-[0.984cqw] border border-dashed border-violet-300 bg-violet-50/60 dark:border-violet-500/40 dark:bg-violet-500/10"
+      style={{ padding: '3.210cqw 1.730cqw', gap: '1.234cqw' }}
+    >
+      {/* 전구 — 연보라 원 안 */}
+      <span
+        className="flex items-center justify-center rounded-full bg-violet-100 text-violet-500 dark:bg-violet-500/20 dark:text-violet-300"
+        style={{ width: '4.444cqw', height: '4.444cqw' }}
+      >
+        <Lightbulb style={{ width: '2.222cqw', height: '2.222cqw' }} />
+      </span>
+      {/* 안내문 */}
+      <p
+        className="text-center font-semibold break-keep"
+        style={{ fontSize: '1.481cqw', color: 'var(--color-exam-canvas-fg)' }}
+      >
+        {t('examPrepFinal.solve.activeRecallPrompt')}
+      </p>
+      {/* 구분선 */}
+      <div
+        className="border-t border-violet-200/70 dark:border-violet-500/20"
+        style={{ width: '60%', marginTop: '0.494cqw', marginBottom: '0.494cqw' }}
+      />
+      {/* 선지 보기 버튼 */}
+      <button
+        type="button"
+        onClick={onReveal}
+        className="flex items-center justify-center bg-[#7c7aec] font-semibold text-white transition-colors hover:brightness-95"
+        style={{
+          minWidth: '12cqw',
+          height: '3.704cqw',
+          borderRadius: '0.747cqw',
+          padding: '0 2.222cqw',
+          fontSize: '1.233cqw',
+        }}
+      >
+        {t('examPrepFinal.solve.activeRecallShowOptions')}
+      </button>
     </div>
   )
 }

@@ -54,6 +54,8 @@ export type FillBlankDndProps = {
   isCorrect?: boolean;
   eliminatedIdx?: number;
   feedbackSlot?: React.ReactNode;
+  /** Active Recall 게이트 — 제공되면 하단 칩(선지) 풀 대신 이 노드를 렌더(문장은 유지). */
+  recallSlot?: React.ReactNode;
 };
 
 /** 선지 길이에 따른 폰트 스케일 — 긴 선지일수록 약간 축소(겹침 방지). */
@@ -75,6 +77,7 @@ export function FillBlankDnd({
   isCorrect,
   eliminatedIdx,
   feedbackSlot,
+  recallSlot,
 }: FillBlankDndProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -226,21 +229,26 @@ export function FillBlankDnd({
             })}
           </p>
 
-          {/* 칩 — 5지: 짧으면 1행/길면 2열, 그 외: wrap (chipContainerStyle). */}
-          <div className="w-full" style={chipContainerStyle}>
-            {availableChips.map((c) => (
-              <DraggableChip
-                key={c.idx}
-                chipIdx={c.idx}
-                label={c.label}
-                disabled={disabled || eliminatedIdx === c.idx}
-                eliminated={eliminatedIdx === c.idx && !isCorrect && isCorrect !== false}
-                fontSize={chipFontSize}
-                highlight={graded && correctIndexes.includes(c.idx)}
-                orderNo={graded && choicePosition.has(c.idx) ? (choicePosition.get(c.idx) as number) + 1 : undefined}
-              />
-            ))}
-          </div>
+          {/* Active Recall 게이트면 칩(선지) 풀 대신 박스 노출 (문장은 위에 유지). */}
+          {recallSlot ? (
+            recallSlot
+          ) : (
+            /* 칩 — 5지: 짧으면 1행/길면 2열, 그 외: wrap (chipContainerStyle). */
+            <div className="w-full" style={chipContainerStyle}>
+              {availableChips.map((c) => (
+                <DraggableChip
+                  key={c.idx}
+                  chipIdx={c.idx}
+                  label={c.label}
+                  disabled={disabled || eliminatedIdx === c.idx}
+                  eliminated={eliminatedIdx === c.idx && !isCorrect && isCorrect !== false}
+                  fontSize={chipFontSize}
+                  highlight={graded && correctIndexes.includes(c.idx)}
+                  orderNo={graded && choicePosition.has(c.idx) ? (choicePosition.get(c.idx) as number) + 1 : undefined}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

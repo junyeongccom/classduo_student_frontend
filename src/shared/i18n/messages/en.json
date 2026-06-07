@@ -144,7 +144,9 @@
       "matchInstruction": "Click a concept on the left, then click its matching definition on the right.",
       "startFailed": "Failed to start the attempt.",
       "attemptCompletedNew": "The previous attempt was completed, so a new one is starting.",
-      "gradeError": "An error occurred while grading."
+      "gradeError": "An error occurred while grading.",
+      "activeRecallPrompt": "Think of the answer first to do active recall",
+      "activeRecallShowOptions": "Show options"
     },
     "elapsedTime": "Elapsed",
     "solveLoadError": "Failed to load questions.",
