@@ -43,6 +43,7 @@
     },
     "modeExam": {
       "eyebrow": "EXAM · 30 TESTS · LOCK-ON",
+      "heroSubtitle": "26 topics · 3-5 min each",
       "title": "Core Topics",
       "description": "Prepare for the final with 26 core, 3 mid, and 1 final test",
       "footer": "Set 1 · In progress",
@@ -198,6 +199,14 @@
     "questionMasteredAlt": "Q{seq} mastered",
     "masterXpEarned": "Master XP Earned",
     "skipLabel": "Skip",
+    "difficulty": {
+      "title": "How was this test?",
+      "subtitle": "Your feedback helps us improve your learning",
+      "hard": "Hard",
+      "normal": "Just right",
+      "easy": "Easy",
+      "dismiss": "Maybe later"
+    },
     "showExplanation": "Show explanation",
     "hideExplanation": "Hide explanation",
     "endQuizAria": "End quiz",

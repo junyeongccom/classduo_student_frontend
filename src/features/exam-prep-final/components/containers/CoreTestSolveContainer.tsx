@@ -31,8 +31,10 @@ import {
   getAttempt,
   gradeAttemptResponse,
   fetchTestMasterySummary,
+  saveDifficultyLabel,
   type AttemptResponseItemDto,
   type CoreTestQuestionItemDto,
+  type DifficultyLabel,
   type GradeSingleResponseDto,
 } from '../../services/examPrepService'
 import { SolveTopBar } from '../ui/SolveTopBar'
@@ -43,6 +45,7 @@ import { PayloadQuestionPanel } from '../ui/PayloadQuestionPanel'
 import { ExamPrepChatPanel } from '../ui/ExamPrepChatPanel'
 import { TestEndOverlay } from '../result-overlay/TestEndOverlay'
 import { Phase5FinalResult } from '../result-overlay/Phase5FinalResult'
+import { DifficultyPromptModal } from '../result-overlay/DifficultyPromptModal'
 import type { FinalResultData, MasteryState, PreSnapshot } from '../result-overlay/types'
 import {
   getKstTodayIso,
@@ -154,6 +157,10 @@ export function CoreTestSolveContainer({
    *  비교, grade 응답의 attempt_completed=true 시 갱신. local gradedBySeq 가 부족해도
    *  hasNext / handleNext 가 결과 화면 전환을 허용하도록 보조. */
   const [attemptCompletedFromBackend, setAttemptCompletedFromBackend] = useState(false)
+  // 핵심 테스트 첫 완료 시 백엔드(should_prompt_difficulty)가 true 면 Phase5 위에 난이도 팝업 1회.
+  const [shouldPromptDifficulty, setShouldPromptDifficulty] = useState(false)
+  // 이번 결과 화면에서 난이도 응답(또는 dismiss)을 마쳤는지 — 중복 노출 방지.
+  const [difficultyAnswered, setDifficultyAnswered] = useState(false)
   /** 즐겨찾기된 question.id 집합 — exam_prep quiz_source 로 user_quiz_status 에 저장. */
   const [bookmarkedQuestionIds, setBookmarkedQuestionIds] = useState<Set<string>>(
     new Set(),
@@ -627,6 +634,8 @@ export function CoreTestSolveContainer({
     setPostState(null)
     setTodayTestCount(0)
     setCalendarTestCounts({})
+    setShouldPromptDifficulty(false)
+    setDifficultyAnswered(false)
     incrementedRef.current = false
   }, [restartTrigger])
 
@@ -838,6 +847,10 @@ export function CoreTestSolveContainer({
     // total_count 도달했을 때 발화.)
     if (result.attempt_completed) {
       setAttemptCompletedFromBackend(true)
+      // 핵심 테스트 첫 완료 — 백엔드 판정 시 Phase5 에서 난이도 팝업 노출 예약.
+      if (result.should_prompt_difficulty) {
+        setShouldPromptDifficulty(true)
+      }
     }
 
     // 문항별 mastery state 갱신 — Issue 2/3 의 현재 문항 상태 표시 데이터 소스
@@ -1087,6 +1100,17 @@ export function CoreTestSolveContainer({
           <TestEndOverlay
             data={finalData}
             onAnimationComplete={() => setAnimationDone(true)}
+          />
+        )}
+        {/* 핵심 테스트 첫 완료 — Phase5 가 보이는 동안(Phase1~4 종료 후) 난이도 팝업 1회 */}
+        {shouldPromptDifficulty && !difficultyAnswered && (animationDone || !preSnapshot) && (
+          <DifficultyPromptModal
+            onSelect={(label: DifficultyLabel) => {
+              setDifficultyAnswered(true)
+              // best-effort 저장 — 실패해도 사용자 흐름은 막지 않음(백엔드가 PK 멱등).
+              void saveDifficultyLabel(testId, label)
+            }}
+            onDismiss={() => setDifficultyAnswered(true)}
           />
         )}
       </div>
