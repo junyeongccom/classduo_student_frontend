@@ -69,6 +69,31 @@ function reorderNumberedExplanation(
   return Array.from({ length: n }, (_, pos) => `${pos + 1}: ${bodies[toCanon(pos)]}`).join('\n')
 }
 
+/**
+ * 번호식 보기별 해설('1: …')의 줄머리 번호를 선지 표기(A, B, …)에 맞춰 영문 라벨로 변환.
+ * ABCD letter 선지를 쓰는 객관식에서 해설 번호(1234)와 선지 표기가 어긋나는 문제 보정.
+ * reorderNumberedExplanation 과 동일한 엄격 검증(1..n 연속 번호 n줄)일 때만 변환, 아니면 원문 유지.
+ *
+ * @param text 해설 텍스트(표시 순서 기준 '1: …\n2: …').
+ * @param n    선지 개수.
+ */
+function letterizeNumberedExplanation(text: string, n: number): string {
+  if (!text || n < 1) return text
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+  if (lines.length !== n) return text
+  const out: string[] = []
+  const seen = new Set<number>()
+  for (const line of lines) {
+    const m = /^(\d+)\s*[:.)]\s*(.+)$/.exec(line)
+    if (!m) return text
+    const idx = parseInt(m[1], 10) - 1
+    if (!(idx >= 0 && idx < n) || seen.has(idx)) return text
+    seen.add(idx)
+    out.push(`${String.fromCharCode(65 + idx)}: ${m[2].trim()}`)
+  }
+  return out.join('\n')
+}
+
 /** 유형별 응답이 제출 가능한 상태인지 (submit 버튼 활성 판정). */
 export function isPayloadResponseComplete(
   questionFormat: string | null | undefined,
@@ -111,6 +136,14 @@ function buildResult(
     payload: payload as never,
   }
 }
+
+/** ABCD(letter) 표기로 선지를 노출하는 객관식 — 해설의 보기 번호(1234)도 letter 로 맞춤. */
+const LETTER_CHOICE_FORMATS = new Set([
+  'description_mcq6_multi', // A~F 6지선다 복수 (Mcq6MultiForm)
+  'compare_contrast_mcq4', // A~D 4지선다 단수 (Mcq4SingleForm, default)
+  'reason_purpose_mcq4',
+  'description_mcq4_single',
+])
 
 /** Active Recall 게이트 대상 question_format — skilled 숙련도일 때 선지 전 '먼저 떠올려보기' 노출. */
 const ACTIVE_RECALL_FORMATS = new Set([
@@ -243,7 +276,11 @@ export function PayloadQuestionPanel({
     choices.length > 1 && attemptId
       ? reorderNumberedExplanation(rawExplanationText, toCanon, choices.length)
       : null
-  const explanationText = reorderedExplanation ?? rawExplanationText
+  // ABCD letter 선지를 쓰는 객관식은 해설 보기 번호(1234)도 선지 표기에 맞춰 letter 로 변환.
+  const explanationText =
+    qf != null && LETTER_CHOICE_FORMATS.has(qf)
+      ? letterizeNumberedExplanation(reorderedExplanation ?? rawExplanationText, choices.length)
+      : (reorderedExplanation ?? rawExplanationText)
 
   // 정/오답 배지 — 채점 후 각 폼의 feedbackSlot(문제/지시문 밑)에 표시 (시안: 라벨이 문제 밑). Essay 제외.
   const feedbackBadge =
