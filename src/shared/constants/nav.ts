@@ -44,8 +44,6 @@ export interface CourseMenuItem {
   group: 'course' | 'resources' | 'global'
   /** 특수 액션 (예: feedback modal trigger) */
   action?: 'feedback-modal'
-  /** D-Day 배지 표시 여부 (외부 데이터로 제어) */
-  showDdayBadge?: boolean
 }
 
 /**
@@ -126,12 +124,10 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     icon: GraduationCap,
     // 사이드바에서 fallback Icon 대신 PNG 사용
     iconSrc: '/IMG_8435.png',
-    // D-Day 배지 자체 색은 별도 (bg-[#F97316] 유지)
     hrefFor: (id) => `/studyspace/course/${id}/exam-prep`,
     matchFor: (id) => `/studyspace/course/${id}/exam-prep`,
     color: '#7C3AED',
     group: 'course',
-    showDdayBadge: true,
   },
   {
     id: 'lecture-study',

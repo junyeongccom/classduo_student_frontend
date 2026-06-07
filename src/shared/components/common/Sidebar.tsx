@@ -7,7 +7,6 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import { SIDEBAR_MENU, NEW_SIDEBAR_MENU, PROFILE_MENU, COURSE_SIDEBAR_MENU } from '@/shared/constants/nav'
-import { computeDdaysToExam } from '@/shared/constants/examPrep'
 import { isExamPrepLockedNow } from '@/features/course-dashboard'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import {
@@ -397,40 +396,10 @@ function CourseContextNav({
             >
               {label}
             </span>
-            {/* D-Day 배지 — EXAM_DATE_ISO 기반 동적 계산.
-                남은 일수 구간별 배경색:
-                  31~50: #DEDEF8 (연보라, 다크 텍스트)
-                  15~30: #8F8DF0 (중보라, 흰 텍스트)
-                  8~14:  #383698 (진보라, 흰 텍스트)
-                  2~7:   #FFCD36 (노랑, 다크 텍스트)
-                  ≤1:    #DC2626 (빨강, 흰 텍스트)
-                  >50:   #DEDEF8 (가장 옅은 톤 fallback) */}
+            {/* 잠긴 기말대비학습 — 자물쇠 아이콘 */}
             {isLockedItem ? (
               <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-            ) : item.showDdayBadge ? (() => {
-              const d = computeDdaysToExam()
-              let bg = '#DEDEF8'
-              let fg = '#1F1F1F'
-              if (d <= 1) {
-                bg = '#DC2626'; fg = '#FFFFFF'
-              } else if (d <= 7) {
-                bg = '#FFCD36'; fg = '#1F1F1F'
-              } else if (d <= 14) {
-                bg = '#383698'; fg = '#FFFFFF'
-              } else if (d <= 30) {
-                bg = '#8F8DF0'; fg = '#FFFFFF'
-              } else {
-                bg = '#DEDEF8'; fg = '#1F1F1F'
-              }
-              return (
-                <span
-                  className="rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none"
-                  style={{ backgroundColor: bg, color: fg }}
-                >
-                  D-{d}
-                </span>
-              )
-            })() : null}
+            ) : null}
           </>
         )}
       </Link>
