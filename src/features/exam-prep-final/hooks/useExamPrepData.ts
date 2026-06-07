@@ -57,10 +57,21 @@ function lectureToCoreTest(args: {
   apiTestId: string | null  // exam_prep_test.id (백엔드 매칭 결과)
   apiQuestionCount: number  // 백엔드 question_count (없으면 0)
   apiIsMastered: boolean  // 백엔드 is_mastered (test_user_state.mastered_at)
+  apiTopicTitle: string | null  // 백엔드 topic_title (목록 프리페치용, 미배포 백엔드는 null)
+  apiTopicTitleEng: string | null  // 백엔드 topic_title_eng
   /** locale-aware fallback 생성용 — '{week}주차 {session}차시' / 'W{week} S{session}' */
   fallbackTitle: (week: number, session: number) => string
 }): CoreTest {
-  const { lecture, number, apiTestId, apiQuestionCount, apiIsMastered, fallbackTitle } = args
+  const {
+    lecture,
+    number,
+    apiTestId,
+    apiQuestionCount,
+    apiIsMastered,
+    apiTopicTitle,
+    apiTopicTitleEng,
+    fallbackTitle,
+  } = args
   // 26개 정원 고정 분배 (set1=10, set2=8, set3=8) — SET_RANGES 기준
   const setNumber: 1 | 2 | 3 =
     number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
@@ -88,6 +99,8 @@ function lectureToCoreTest(args: {
       green: 0,
     },
     isTestMastered: apiIsMastered,
+    topicTitle: apiTopicTitle?.trim() || undefined,
+    topicTitleEng: apiTopicTitleEng?.trim() || undefined,
   }
 }
 
@@ -265,6 +278,8 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
           apiTestId: api?.test_id ?? null,
           apiQuestionCount: api?.question_count ?? 0,
           apiIsMastered: api?.is_mastered ?? false,
+          apiTopicTitle: api?.topic_title ?? null,
+          apiTopicTitleEng: api?.topic_title_eng ?? null,
           fallbackTitle: (week, session) =>
             t('examPrepFinal.weekSession', { week, session }),
         })
