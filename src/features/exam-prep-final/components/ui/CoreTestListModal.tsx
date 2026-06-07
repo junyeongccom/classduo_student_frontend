@@ -133,7 +133,7 @@ export function CoreTestListModal({ coreTests, onClose }: CoreTestListModalProps
               return (
                 <li
                   key={test.id}
-                  className="flex items-start gap-3 border-b border-gray-50 py-3 last:border-b-0 dark:border-gray-800/60"
+                  className="flex items-center gap-3 border-b border-gray-50 py-3 last:border-b-0 dark:border-gray-800/60"
                 >
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm font-bold text-gray-700 dark:bg-gray-800 dark:text-gray-200">
                     {numberLabel}
