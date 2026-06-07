@@ -42,6 +42,9 @@ import { ContentScaledCanvas } from '../ui/ContentScaledCanvas'
 import { SolveSidebar } from '../ui/SolveSidebar'
 import { SolveQuestionPanel } from '../ui/SolveQuestionPanel'
 import { PayloadQuestionPanel } from '../ui/PayloadQuestionPanel'
+import { MobileMasteryStrip } from '../ui/MobileMasteryStrip'
+import { MobileSolveFooter } from '../ui/MobileSolveFooter'
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { ExamPrepChatPanel } from '../ui/ExamPrepChatPanel'
 import { TestEndOverlay } from '../result-overlay/TestEndOverlay'
 import { Phase5FinalResult } from '../result-overlay/Phase5FinalResult'
@@ -89,6 +92,9 @@ export function CoreTestSolveContainer({
   const router = useRouter()
   const { courseTitle, lectures } = useLectures(courseId)
   const { data, isLoading: detailLoading, error: detailError } = useCoreTestDetail(testId)
+  // 모바일(<768px) 분기 — 풀이 페이지는 데이터 로드 후 렌더라 SSR 플래시 없음.
+  // CSS display 토글 대신 JS 분기로 우측 패널 이중 마운트(네트워크/상태 중복) 회피.
+  const isMobile = useMediaQuery('(max-width: 767px)')
 
   // ─── 우측 통합 패널(출처+챗봇 2탭) 활성 탭 — null=닫힘 (UI 순간 상태) ───
   const [rightTab, setRightTab] = useState<'materials' | 'recordings' | 'chat' | null>(null)
@@ -1182,6 +1188,249 @@ export function CoreTestSolveContainer({
     )
   }
 
+  // ─── 문제 영역 (MCQ 레거시 패널 + payload 디스패처) — 데스크탑/모바일 공용 ───
+  const currentState =
+    (byQuestionState[seqToQuestionId.get(currentSeq) ?? ''] as
+      | 'learning'
+      | 'skilled'
+      | 'master'
+      | undefined) ?? null
+  const isBookmarkedNow = bookmarkedQuestionIds.has(seqToQuestionId.get(currentSeq) ?? '')
+
+  const renderQuestionArea = (mobile: boolean) => (
+    <>
+      {currentQuestion && !currentQuestion.question_format && (
+        <SolveQuestionPanel
+          question={currentQuestion}
+          currentSeq={currentSeq}
+          total={total}
+          selectedChoice={selectedBySeq[currentSeq] ?? null}
+          graded={gradedBySeq[currentSeq] ?? null}
+          hintDisabledOption={hintDisabledBySeq[currentSeq] ?? null}
+          isGrading={isGrading}
+          currentQuestionState={currentState}
+          isBookmarked={isBookmarkedNow}
+          onBookmarkToggle={handleBookmarkToggle}
+          onSelectChoice={handleSelectChoice}
+          onSubmit={handleSubmit}
+          onHint={handleHintClick}
+          onPrev={goPrev}
+          onNext={handleNext}
+          hasPrev={hasPrevNav}
+          // 마지막 문항 + 모두 채점됨(local 또는 backend) → 결과 화면 진입 허용
+          hasNext={hasNextNav || canFinishNav}
+          onSourceClick={handleSourceClick}
+          onAskChatbot={handleAskChatbot}
+          mobileBottomSpacer={rightTab !== null}
+          mobile={mobile}
+          // 모든 채점 가능한 문항이 채점됐거나 backend 가 attempt_completed 신호 또는
+          // 모든 문항이 master 상태(다시풀 필요 없음) → 퀴즈 종료 버튼 활성화 (이슈 8)
+          canFinish={canFinishNav}
+          onFinish={() => setPhase('completed')}
+        />
+      )}
+
+      {/* payload 유형(매칭/빈칸/복수/서술형) — question_format 디스패처 패널.
+          데스크탑: 본문만 비례 ContentScaledCanvas(1620×1080) 안 cqw 스케일.
+          모바일: 캔버스 우회 → PayloadQuestionPanel 이 fluid px 로 직접 렌더 (Figma 942:9052). */}
+      {currentQuestion &&
+        !!currentQuestion.question_format &&
+        (() => {
+          const panel = (
+            <PayloadQuestionPanel
+              key={currentSeq}
+              question={currentQuestion}
+              attemptId={attemptId}
+              currentQuestionState={currentState}
+              currentSeq={currentSeq}
+              total={total}
+              response={responseBySeq[currentSeq]}
+              graded={gradedBySeq[currentSeq] ?? null}
+              isGrading={isGrading}
+              isBookmarked={isBookmarkedNow}
+              onBookmarkToggle={handleBookmarkToggle}
+              onResponseChange={handleResponseChange}
+              onSubmit={handleSubmit}
+              onPrev={goPrev}
+              onNext={handleNext}
+              hasPrev={hasPrevNav}
+              hasNext={hasNextNav || canFinishNav}
+              onSourceClick={handleSourceClick}
+              onAskChatbot={handleAskChatbot}
+              onHint={handleHintClick}
+              eliminatedIdx={hintDisabledBySeq[currentSeq] ?? undefined}
+              mobileBottomSpacer={rightTab !== null}
+              mobile={mobile}
+              canFinish={canFinishNav}
+              onFinish={() => setPhase('completed')}
+            />
+          )
+          return mobile ? (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-950">
+              {panel}
+            </div>
+          ) : (
+            <div className="relative flex min-h-0 flex-1 overflow-hidden bg-[#F6F7F9] dark:bg-gray-950">
+              <ContentScaledCanvas>{panel}</ContentScaledCanvas>
+            </div>
+          )
+        })()}
+    </>
+  )
+
+  // ─── 우측 3탭 패널 (강의자료/녹음본/AI챗봇) — 데스크탑 absolute, 모바일 하단 시트 ───
+  const rightPanelEl = (
+    <>
+      {/* 데스크탑 전용 in-flow 스페이서 — 기본 폭만큼 문제영역(flex-1)을 양보시켜 기본 크기 패널은
+          문제를 안 가린다. 패널을 기본보다 넓히면 reserve 는 상한(기본 폭)에 고정돼 초과분만 문제 위로 덮음.
+          모바일(하단 시트)은 가로 차지 없음 → md 에서만 노출. */}
+      {rightTab && (
+        <div
+          aria-hidden
+          className="hidden shrink-0 md:block"
+          style={{ width: 'var(--rpw-reserve)' }}
+        />
+      )}
+
+      {/* 우측: 강의자료 / 녹음본 / AI 챗봇 3탭 패널.
+          데스크탑은 absolute 오버레이. 기본 폭(스페이서)까지는 문제영역이 비워둔 자리에 들어가 안 가리고,
+          넓히면 초과분만 문제 위를 덮는다.
+          세 탭 콘텐츠는 모두 마운트 유지 + hidden 토글(탭 전환 시 챗봇 히스토리/입력·자료 스크롤 보존). */}
+      {rightTab && (
+        <div
+          style={{ '--rpw': `${rightPanelWidth}px` } as React.CSSProperties}
+          className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-x-auto md:left-auto md:right-0 md:top-0 md:bottom-0 md:h-auto md:w-[var(--rpw)] md:min-w-[320px] md:max-w-[70vw] md:rounded-none md:border-t-0 md:border-l md:shadow-xl dark:border-gray-700 dark:bg-gray-900"
+        >
+          {/* 좌측 경계 리사이즈 핸들 (데스크탑) — 드래그로 폭 조절. 기본 폭 초과분은 문제영역 위로 덮인다. */}
+          <div
+            onPointerDown={startResize}
+            role="separator"
+            aria-orientation="vertical"
+            className="absolute left-0 top-0 bottom-0 z-50 hidden w-2 -translate-x-1/2 cursor-col-resize transition-colors hover:bg-[#6366F1]/30 active:bg-[#6366F1]/40 md:block"
+          />
+          {/* 상단 3탭 헤더: 강의자료 / 녹음본 / AI 챗봇 */}
+          <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
+            <div className="flex gap-1">
+              {([
+                ['materials', t('examPrepFinal.rightPanel.materials')],
+                ['recordings', t('examPrepFinal.rightPanel.recordings')],
+                ['chat', t('examPrepFinal.rightPanel.chat')],
+              ] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRightTab(key)}
+                  className={cn(
+                    'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
+                    rightTab === key
+                      ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
+                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={closeRightPanel}
+              aria-label={t('examPrepFinal.rightPanel.close')}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-hidden">
+            {/* 강의자료 */}
+            <div className={cn('h-full', rightTab === 'materials' ? 'block' : 'hidden')}>
+              {currentLectureId ? (
+                <LeftPanelMaterials />
+              ) : (
+                <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
+                  {t('examPrepFinal.rightPanel.noMaterials')}
+                </div>
+              )}
+            </div>
+
+            {/* 녹음본 */}
+            <div className={cn('h-full', rightTab === 'recordings' ? 'block' : 'hidden')}>
+              {currentLectureId ? (
+                <LeftPanelRecordings
+                  recordings={leftPanelRecordings ?? []}
+                  targetChunkIndex={targetChunkIndex}
+                  onTargetConsumed={resetNavigationState}
+                  lectureId={currentLectureId ?? undefined}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
+                  {t('examPrepFinal.rightPanel.noRecordings')}
+                </div>
+              )}
+            </div>
+
+            {/* AI 챗봇 */}
+            <div className={cn('h-full', rightTab === 'chat' ? 'block' : 'hidden')}>
+              <ExamPrepChatPanel
+                testId={testId}
+                currentLectureId={currentLectureId}
+                quizChatContext={quizChatContext}
+                onClearQuizContext={clearQuizChatContext}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+
+  // ─── 모바일 풀이 화면 (<768px) — 데스크탑 좌측 사이드바를 하단 푸터로 재배치 (Figma 942:9052) ───
+  if (isMobile) {
+    return (
+      <div className="flex h-full w-full flex-col bg-white dark:bg-gray-950">
+        {/* 헤더 — 닫기(X)만 (Figma Frame 75) */}
+        <header className="flex shrink-0 items-center justify-end px-3 py-2">
+          <button
+            type="button"
+            onClick={handleExit}
+            aria-label={t('examPrepFinal.exit')}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+
+        {/* 숙련도 스트립 — mid(서술형 자가평가)는 mastery 무관이라 숨김 */}
+        {data?.test_type !== 'mid' && (
+          <div className="shrink-0 px-4 pb-1">
+            <MobileMasteryStrip
+              learning={masterySummary.learning}
+              skilled={masterySummary.skilled}
+              master={masterySummary.master}
+            />
+          </div>
+        )}
+
+        {/* 문제 영역 — 스크롤 (우측 패널은 하단 시트로 오버레이) */}
+        <div className="relative flex min-h-0 flex-1">
+          {renderQuestionArea(true)}
+          {rightPanelEl}
+        </div>
+
+        {/* 하단 푸터 — 데스크탑 좌측 사이드바 재배치 (회차/테스트명 + 문항그리드 + 진행률/경과) */}
+        <MobileSolveFooter
+          sessionLabel={sessionLabel}
+          lectureTitle={headerLabel}
+          total={total}
+          currentSeq={currentSeq}
+          seqStateMap={seqStateMap}
+          onSelectSeq={(seq) => setCurrentSeq(seq)}
+          elapsedSec={elapsedSec}
+        />
+      </div>
+    )
+  }
+
   // ─── 풀이 화면 (1920×1080 캔버스 contain 스케일, 시안 매칭) ───
   return (
     // 본문 영역이 자체적으로 가로 스크롤(ContentScaledCanvas) → layout floor 불필요.
@@ -1229,194 +1478,14 @@ export function CoreTestSolveContainer({
           currentSeq={currentSeq}
           seqStateMap={seqStateMap}
           masterySummary={masterySummary}
-          currentQuestionState={
-            (byQuestionState[seqToQuestionId.get(currentSeq) ?? ''] as
-              | 'learning'
-              | 'skilled'
-              | 'master'
-              | undefined) ?? null
-          }
+          currentQuestionState={currentState}
           onSelectSeq={(seq) => setCurrentSeq(seq)}
           elapsedSec={elapsedSec}
         />
 
-        {currentQuestion && !currentQuestion.question_format && (
-          <SolveQuestionPanel
-            question={currentQuestion}
-            currentSeq={currentSeq}
-            total={total}
-            selectedChoice={selectedBySeq[currentSeq] ?? null}
-            graded={gradedBySeq[currentSeq] ?? null}
-            hintDisabledOption={hintDisabledBySeq[currentSeq] ?? null}
-            isGrading={isGrading}
-            currentQuestionState={
-              (byQuestionState[seqToQuestionId.get(currentSeq) ?? ''] as
-                | 'learning'
-                | 'skilled'
-                | 'master'
-                | undefined) ?? null
-            }
-            isBookmarked={bookmarkedQuestionIds.has(seqToQuestionId.get(currentSeq) ?? '')}
-            onBookmarkToggle={handleBookmarkToggle}
-            onSelectChoice={handleSelectChoice}
-            onSubmit={handleSubmit}
-            onHint={handleHintClick}
-            onPrev={goPrev}
-            onNext={handleNext}
-            hasPrev={hasPrevNav}
-            // 마지막 문항 + 모두 채점됨(local 또는 backend) → 결과 화면 진입 허용
-            hasNext={hasNextNav || canFinishNav}
-            onSourceClick={handleSourceClick}
-            onAskChatbot={handleAskChatbot}
-            mobileBottomSpacer={rightTab !== null}
-            // 모든 채점 가능한 문항이 채점됐거나 backend 가 attempt_completed 신호 또는
-            // 모든 문항이 master 상태(다시풀 필요 없음) → 퀴즈 종료 버튼 활성화 (이슈 8)
-            canFinish={canFinishNav}
-            onFinish={() => setPhase('completed')}
-          />
-        )}
+        {renderQuestionArea(false)}
 
-        {/* payload 유형(매칭/빈칸/복수/서술형) — question_format 디스패처 패널.
-            본문만 비례: ContentScaledCanvas(1620×1080) 안에서 폼 cqw 스케일. */}
-        {currentQuestion && !!currentQuestion.question_format && (
-          <div className="relative flex min-h-0 flex-1 overflow-hidden bg-[#F6F7F9] dark:bg-gray-950">
-            <ContentScaledCanvas>
-          <PayloadQuestionPanel
-            key={currentSeq}
-            question={currentQuestion}
-            attemptId={attemptId}
-            currentQuestionState={
-              (byQuestionState[seqToQuestionId.get(currentSeq) ?? ''] as
-                | 'learning'
-                | 'skilled'
-                | 'master'
-                | undefined) ?? null
-            }
-            currentSeq={currentSeq}
-            total={total}
-            response={responseBySeq[currentSeq]}
-            graded={gradedBySeq[currentSeq] ?? null}
-            isGrading={isGrading}
-            isBookmarked={bookmarkedQuestionIds.has(seqToQuestionId.get(currentSeq) ?? '')}
-            onBookmarkToggle={handleBookmarkToggle}
-            onResponseChange={handleResponseChange}
-            onSubmit={handleSubmit}
-            onPrev={goPrev}
-            onNext={handleNext}
-            hasPrev={hasPrevNav}
-            hasNext={hasNextNav || canFinishNav}
-            onSourceClick={handleSourceClick}
-            onAskChatbot={handleAskChatbot}
-            onHint={handleHintClick}
-            eliminatedIdx={hintDisabledBySeq[currentSeq] ?? undefined}
-            mobileBottomSpacer={rightTab !== null}
-            canFinish={canFinishNav}
-            onFinish={() => setPhase('completed')}
-          />
-            </ContentScaledCanvas>
-          </div>
-        )}
-
-        {/* 데스크탑 전용 in-flow 스페이서 — 기본 폭만큼 문제영역(flex-1)을 양보시켜 기본 크기 패널은
-            문제를 안 가린다. 패널을 기본보다 넓히면 reserve 는 상한(기본 폭)에 고정돼 초과분만 문제 위로 덮음.
-            모바일(하단 시트)은 가로 차지 없음 → md 에서만 노출. */}
-        {rightTab && (
-          <div
-            aria-hidden
-            className="hidden shrink-0 md:block"
-            style={{ width: 'var(--rpw-reserve)' }}
-          />
-        )}
-
-        {/* 우측: 강의자료 / 녹음본 / AI 챗봇 3탭 패널.
-            데스크탑은 absolute 오버레이. 기본 폭(스페이서)까지는 문제영역이 비워둔 자리에 들어가 안 가리고,
-            넓히면 초과분만 문제 위를 덮는다.
-            세 탭 콘텐츠는 모두 마운트 유지 + hidden 토글(탭 전환 시 챗봇 히스토리/입력·자료 스크롤 보존). */}
-        {rightTab && (
-          <div
-            style={{ '--rpw': `${rightPanelWidth}px` } as React.CSSProperties}
-            className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-x-auto md:left-auto md:right-0 md:top-0 md:bottom-0 md:h-auto md:w-[var(--rpw)] md:min-w-[320px] md:max-w-[70vw] md:rounded-none md:border-t-0 md:border-l md:shadow-xl dark:border-gray-700 dark:bg-gray-900"
-          >
-            {/* 좌측 경계 리사이즈 핸들 (데스크탑) — 드래그로 폭 조절. 기본 폭 초과분은 문제영역 위로 덮인다. */}
-            <div
-              onPointerDown={startResize}
-              role="separator"
-              aria-orientation="vertical"
-              className="absolute left-0 top-0 bottom-0 z-50 hidden w-2 -translate-x-1/2 cursor-col-resize transition-colors hover:bg-[#6366F1]/30 active:bg-[#6366F1]/40 md:block"
-            />
-            {/* 상단 3탭 헤더: 강의자료 / 녹음본 / AI 챗봇 */}
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
-              <div className="flex gap-1">
-                {([
-                  ['materials', t('examPrepFinal.rightPanel.materials')],
-                  ['recordings', t('examPrepFinal.rightPanel.recordings')],
-                  ['chat', t('examPrepFinal.rightPanel.chat')],
-                ] as const).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setRightTab(key)}
-                    className={cn(
-                      'rounded-md px-3 py-1 text-xs font-semibold transition-colors',
-                      rightTab === key
-                        ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-200'
-                        : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800',
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={closeRightPanel}
-                aria-label={t('examPrepFinal.rightPanel.close')}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-hidden">
-              {/* 강의자료 */}
-              <div className={cn('h-full', rightTab === 'materials' ? 'block' : 'hidden')}>
-                {currentLectureId ? (
-                  <LeftPanelMaterials />
-                ) : (
-                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
-                    {t('examPrepFinal.rightPanel.noMaterials')}
-                  </div>
-                )}
-              </div>
-
-              {/* 녹음본 */}
-              <div className={cn('h-full', rightTab === 'recordings' ? 'block' : 'hidden')}>
-                {currentLectureId ? (
-                  <LeftPanelRecordings
-                    recordings={leftPanelRecordings ?? []}
-                    targetChunkIndex={targetChunkIndex}
-                    onTargetConsumed={resetNavigationState}
-                    lectureId={currentLectureId ?? undefined}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
-                    {t('examPrepFinal.rightPanel.noRecordings')}
-                  </div>
-                )}
-              </div>
-
-              {/* AI 챗봇 */}
-              <div className={cn('h-full', rightTab === 'chat' ? 'block' : 'hidden')}>
-                <ExamPrepChatPanel
-                  testId={testId}
-                  currentLectureId={currentLectureId}
-                  quizChatContext={quizChatContext}
-                  onClearQuizContext={clearQuizChatContext}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        {rightPanelEl}
         </div>
       </div>
     </div>

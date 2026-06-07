@@ -29,6 +29,8 @@ export type FillBlank7MultiFormProps = {
   feedbackSlot?: React.ReactNode;
   /** Active Recall 게이트 — 칩(선지) 풀 대신 노출할 박스. */
   recallSlot?: React.ReactNode;
+  /** 모바일(<768px) — fluid px 레이아웃. */
+  mobile?: boolean;
 };
 
 export function FillBlank7MultiForm({
@@ -41,6 +43,7 @@ export function FillBlank7MultiForm({
   eliminatedIdx,
   feedbackSlot,
   recallSlot,
+  mobile = false,
 }: FillBlank7MultiFormProps) {
   // questionText 의 ___ 갯수를 동적으로 파싱 — 통상 2 지만 1·3 인 데이터도 안전하게 지원.
   //   "category_fill_blank7_multi" 이름이 빈칸 2개를 가정하나 실제 데이터가 1개인 quiz 가 있을 경우
@@ -80,6 +83,7 @@ export function FillBlank7MultiForm({
       eliminatedIdx={result ? undefined : eliminatedIdx}
       feedbackSlot={feedbackSlot}
       recallSlot={recallSlot}
+      mobile={mobile}
     />
   );
 }

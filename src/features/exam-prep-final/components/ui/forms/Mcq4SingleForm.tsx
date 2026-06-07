@@ -25,7 +25,57 @@ export type Mcq4SingleFormProps = {
   feedbackSlot?: React.ReactNode;
   /** Active Recall 게이트 — 제공되면 선지 대신 이 노드를 렌더(문제만 노출, 선지 가림). */
   recallSlot?: React.ReactNode;
+  /** 모바일(<768px) — cqw 대신 고정 px 레이아웃 (Figma 942:9052). */
+  mobile?: boolean;
 };
+
+/** 치수 토큰 — 데스크탑은 cqw(1620 baseline), 모바일은 Figma 942:9052 고정 px. */
+type Sizing = {
+  rootGap: string;
+  stem: string;
+  feedbackMinH: string;
+  fieldsetGap: string;
+  boxMinH: string;
+  boxRadius: string;
+  boxPad: string;
+  boxGap: string;
+  borderEmph: string;
+  borderNorm: string;
+  letterFs: string;
+  letterW: string;
+  textFs: string;
+};
+const DESKTOP_SZ: Sizing = {
+  rootGap: "0.498cqw",
+  stem: "2.222cqw",
+  feedbackMinH: "3.390cqw",
+  fieldsetGap: "1.481cqw",
+  boxMinH: "5.867cqw",
+  boxRadius: "0.984cqw",
+  boxPad: "0 1.730cqw",
+  boxGap: "1.363cqw",
+  borderEmph: "0.154cqw",
+  borderNorm: "0.062cqw",
+  letterFs: "1.363cqw",
+  letterW: "1.659cqw",
+  textFs: "1.233cqw",
+};
+const MOBILE_SZ: Sizing = {
+  rootGap: "8px",
+  stem: "21.6px",
+  feedbackMinH: "28px",
+  fieldsetGap: "12px",
+  boxMinH: "47px",
+  boxRadius: "11.25px",
+  boxPad: "0 15px",
+  boxGap: "17.25px",
+  borderEmph: "2px",
+  borderNorm: "1px",
+  letterFs: "13.5px",
+  letterW: "16px",
+  textFs: "12px",
+};
+const MOBILE_BOX_SHADOW = "0px 1.5px 2.5px rgba(0,0,0,0.15)";
 
 const C_MASTER = "var(--color-mastery-master)";
 const C_DELETE = "rgb(var(--color-semantic-delete))";
@@ -49,23 +99,25 @@ export function Mcq4SingleForm({
   eliminatedIdx,
   feedbackSlot,
   recallSlot,
+  mobile = false,
 }: Mcq4SingleFormProps) {
   const t = useTranslations("examPrepFinal");
+  const SZ = mobile ? MOBILE_SZ : DESKTOP_SZ;
   const correct =
     result && typeof result.correct_answer === "number" ? result.correct_answer : null;
 
   return (
-    <div className="flex w-full flex-col items-stretch" style={{ gap: "0.498cqw" /* figma 문제~정오답~선지 8px */ }}>
-      {/* 문제 텍스트 — SemiBold 36px @1920 */}
+    <div className="flex w-full flex-col items-stretch" style={{ gap: SZ.rootGap /* figma 문제~정오답~선지 8px */ }}>
+      {/* 문제 텍스트 — SemiBold 36px @1920 / 21.6px @mobile */}
       <h1
         className="font-semibold leading-snug break-keep"
-        style={{ fontSize: "2.222cqw", color: C_CANVAS_FG }}
+        style={{ fontSize: SZ.stem, color: C_CANVAS_FG }}
       >
         {questionText}
       </h1>
 
       {/* 정/오답 표시 슬롯 — 채점 전에도 자리 잡음 (레이아웃 shift 방지) */}
-      <div className="flex w-full shrink-0 items-center" style={{ minHeight: "3.390cqw" /* figma 정오답칸 55px */ }}>
+      <div className="flex w-full shrink-0 items-center" style={{ minHeight: SZ.feedbackMinH /* figma 정오답칸 */ }}>
         {feedbackSlot}
       </div>
 
@@ -73,8 +125,8 @@ export function Mcq4SingleForm({
       {recallSlot ? (
         recallSlot
       ) : (
-      /* 4개 선지 — 분리된 흰 라운드 박스 + letter + 세로 구분선 + 텍스트 */
-      <fieldset className="flex w-full flex-col" style={{ gap: "1.481cqw" /* figma 선지 간격 24px */ }} disabled={disabled}>
+      /* 4개 선지 — 분리된 흰 라운드 박스 + letter + 텍스트 */
+      <fieldset className="flex w-full flex-col" style={{ gap: SZ.fieldsetGap /* figma 선지 간격 */ }} disabled={disabled}>
         {choices.map((choice, idx) => {
           const letter = String.fromCharCode(65 + idx);
           const isSelected = value === idx;
@@ -93,8 +145,10 @@ export function Mcq4SingleForm({
                 ? C_MASTER
                 : isOtherAfterResult
                   ? "rgb(var(--color-neutral-gray-300))"
-                  : C_BORDER;
-          const borderWidth = isCorrect || isSelected ? "0.154cqw" : "0.062cqw";
+                  : mobile
+                    ? "transparent" /* 모바일 기본은 보더 대신 그림자로 분리 (figma) */
+                    : C_BORDER;
+          const borderWidth = isCorrect || isSelected ? SZ.borderEmph : SZ.borderNorm;
           const backgroundColor = isWrongPick
             ? WRONG_BG
             : isSelected
@@ -125,20 +179,22 @@ export function Mcq4SingleForm({
                 !isEliminated && !isEmphasized && !isOtherAfterResult && "hover:border-[var(--color-mastery-master)]",
               )}
               style={{
-                minHeight: "5.867cqw" /* figma 선지박스 95px */,
-                borderRadius: "0.984cqw",
+                minHeight: SZ.boxMinH /* figma 선지박스 */,
+                borderRadius: SZ.boxRadius,
                 border: `${borderWidth} solid ${borderColor}`,
                 backgroundColor,
-                padding: "0 1.730cqw",
-                gap: "1.363cqw",
+                padding: SZ.boxPad,
+                gap: SZ.boxGap,
+                boxShadow:
+                  mobile && !isOtherAfterResult && !isWrongPick ? MOBILE_BOX_SHADOW : undefined,
               }}
             >
               {/* letter */}
               <span
                 className="shrink-0 text-center"
                 style={{
-                  fontSize: "1.363cqw",
-                  width: "1.659cqw",
+                  fontSize: SZ.letterFs,
+                  width: SZ.letterW,
                   color: letterColor,
                   fontWeight: isEmphasized ? 700 : 500,
                 }}
@@ -149,7 +205,7 @@ export function Mcq4SingleForm({
               <span
                 className="flex-1 text-left break-keep leading-snug"
                 style={{
-                  fontSize: "1.233cqw",
+                  fontSize: SZ.textFs,
                   color: textColor,
                   fontWeight: isSelected || isCorrect ? 600 : 400,
                 }}
