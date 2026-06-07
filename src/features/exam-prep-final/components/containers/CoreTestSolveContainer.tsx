@@ -324,6 +324,27 @@ export function CoreTestSolveContainer({
     return map
   }, [data])
 
+  // ─── 풀이 대상(비마스터) seq 목록 — 화살표 네비/시작/종료 판정 기준 ───
+  // attemptQuestionIds = 시작 시점의 미마스터 문항(풀이 대상). 마스터 문항은 화살표로 건너뛰고
+  // (사이드바 클릭으로는 열람 가능), 비마스터를 모두 풀면 퀴즈종료.
+  const solvableSeqs = useMemo(() => {
+    const idSet = new Set(attemptQuestionIds)
+    const out: number[] = []
+    seqToQuestionId.forEach((qid, seq) => {
+      if (idSet.has(qid)) out.push(seq)
+    })
+    return out.sort((a, b) => a - b)
+  }, [attemptQuestionIds, seqToQuestionId])
+
+  // 시작/다시풀기 시 첫 풀이 대상(비마스터)으로 이동 — attempt당 1회. (예: 5번만 Learning이면 5부터)
+  const startSeqAppliedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (phase !== 'solving' || !attemptId || solvableSeqs.length === 0) return
+    if (startSeqAppliedRef.current === attemptId) return
+    startSeqAppliedRef.current = attemptId
+    if (!solvableSeqs.includes(currentSeq)) setCurrentSeq(solvableSeqs[0])
+  }, [phase, attemptId, solvableSeqs, currentSeq])
+
   // resume 응답 복원: 백엔드 saveAttemptResponse(임시저장) + gradeAttemptResponse(채점) 결과를
   // selectedBySeq / gradedBySeq / hintUsedSeqs 로 UI 에 그대로 복원. data(question 메타) 가
   // 로드된 뒤 1회 실행 후 resumeResponses 폐기.
@@ -891,32 +912,48 @@ export function CoreTestSolveContainer({
     hintUsedSeqs,
   ])
 
+  // 화살표 ▶ / [다음] — 다음 풀이 대상(비마스터)으로 점프. 마스터 문항은 건너뜀.
   const goNext = useCallback(() => {
-    setCurrentSeq((s) => Math.min(total, s + 1))
-  }, [total])
+    const nextSeq = solvableSeqs.find((s) => s > currentSeq)
+    if (nextSeq != null) setCurrentSeq(nextSeq)
+  }, [solvableSeqs, currentSeq])
 
-  /** [다음] 버튼 동작:
-   *  - 다음 문항(seq+1) 이 있으면 단순 이동
-   *  - 마지막 문항이고 모든 문항이 채점됐으면(local 또는 backend 신호) 결과 화면으로 전환
-   *  - 그 외 (마지막 문항이지만 미채점 문항 남아있음) → 미채점 문항으로 이동
+  // 화살표 ◀ — 이전 풀이 대상(비마스터)으로 점프. 마스터 건너뜀.
+  const goPrev = useCallback(() => {
+    let prevSeq: number | null = null
+    for (const s of solvableSeqs) {
+      if (s < currentSeq) prevSeq = s
+      else break
+    }
+    if (prevSeq != null) setCurrentSeq(prevSeq)
+  }, [solvableSeqs, currentSeq])
+
+  /** [다음] 동작 (마스터 스킵):
+   *  - 다음 비마스터 문항이 있으면 그쪽으로
+   *  - 더 없으면: 미채점 비마스터가 남았으면 그쪽, 다 풀었으면(또는 backend 신호) 퀴즈종료
+   *    (예: 13=Skilled·14·15=Master → 13 풀면 다음 비마스터 없음 → 종료)
    */
   const handleNext = useCallback(() => {
-    const allGradedLocal = Object.keys(gradedBySeq).length >= total
-    const allGraded = allGradedLocal || attemptCompletedFromBackend
-    // 마지막 문항이면 결과 또는 미채점 문항 점프
-    if (currentSeq >= total) {
-      if (allGraded) {
-        setPhase('completed')
-        return
-      }
-      // 미채점 문항이 있으면 그쪽으로
-      const allSeqs = Array.from({ length: total }, (_, i) => i + 1)
-      const remaining = allSeqs.filter((s) => !gradedBySeq[s])
-      if (remaining.length > 0) setCurrentSeq(remaining[0])
+    const nextSeq = solvableSeqs.find((s) => s > currentSeq)
+    if (nextSeq != null) {
+      setCurrentSeq(nextSeq)
       return
     }
-    setCurrentSeq((s) => Math.min(total, s + 1))
-  }, [currentSeq, total, gradedBySeq, attemptCompletedFromBackend])
+    const ungraded = solvableSeqs.filter((s) => !gradedBySeq[s])
+    if (ungraded.length === 0 || attemptCompletedFromBackend) {
+      setPhase('completed')
+      return
+    }
+    setCurrentSeq(ungraded[0])
+  }, [currentSeq, solvableSeqs, gradedBySeq, attemptCompletedFromBackend])
+
+  // 네비게이션 화살표/퀴즈종료 버튼 활성 판정 — 모두 풀이 대상(비마스터) 기준.
+  const hasPrevNav = solvableSeqs.some((s) => s < currentSeq)
+  const hasNextNav = solvableSeqs.some((s) => s > currentSeq)
+  const canFinishNav =
+    solvableSeqs.length === 0 ||
+    attemptCompletedFromBackend ||
+    solvableSeqs.every((s) => gradedBySeq[s])
 
   const handleExit = useCallback(() => {
     // 마지막 핵심테스트를 마스터한 직후 종료라면 ExamPrepContainer 가 진입 시 mid 잠금해제 모션을
@@ -1193,28 +1230,17 @@ export function CoreTestSolveContainer({
             onSelectChoice={handleSelectChoice}
             onSubmit={handleSubmit}
             onHint={handleHintClick}
-            onPrev={() => setCurrentSeq((s) => Math.max(1, s - 1))}
+            onPrev={goPrev}
             onNext={handleNext}
-            hasPrev={currentSeq > 1}
+            hasPrev={hasPrevNav}
             // 마지막 문항 + 모두 채점됨(local 또는 backend) → 결과 화면 진입 허용
-            hasNext={
-              currentSeq < total ||
-              Object.keys(gradedBySeq).length >= total ||
-              attemptCompletedFromBackend
-            }
+            hasNext={hasNextNav || canFinishNav}
             onSourceClick={handleSourceClick}
             onAskChatbot={handleAskChatbot}
             mobileBottomSpacer={rightTab !== null}
             // 모든 채점 가능한 문항이 채점됐거나 backend 가 attempt_completed 신호 또는
             // 모든 문항이 master 상태(다시풀 필요 없음) → 퀴즈 종료 버튼 활성화 (이슈 8)
-            canFinish={
-              total > 0 &&
-              (Object.keys(gradedBySeq).length >= total ||
-                attemptCompletedFromBackend ||
-                Array.from(seqToQuestionId.values()).every(
-                  (qid) => byQuestionState[qid] === 'master',
-                ))
-            }
+            canFinish={canFinishNav}
             onFinish={() => setPhase('completed')}
           />
         )}
@@ -1237,23 +1263,16 @@ export function CoreTestSolveContainer({
             onBookmarkToggle={handleBookmarkToggle}
             onResponseChange={handleResponseChange}
             onSubmit={handleSubmit}
-            onPrev={() => setCurrentSeq((s) => Math.max(1, s - 1))}
+            onPrev={goPrev}
             onNext={handleNext}
-            hasPrev={currentSeq > 1}
-            hasNext={
-              currentSeq < total ||
-              Object.keys(gradedBySeq).length >= total ||
-              attemptCompletedFromBackend
-            }
+            hasPrev={hasPrevNav}
+            hasNext={hasNextNav || canFinishNav}
             onSourceClick={handleSourceClick}
             onAskChatbot={handleAskChatbot}
             onHint={handleHintClick}
             eliminatedIdx={hintDisabledBySeq[currentSeq] ?? undefined}
             mobileBottomSpacer={rightTab !== null}
-            canFinish={
-              total > 0 &&
-              (Object.keys(gradedBySeq).length >= total || attemptCompletedFromBackend)
-            }
+            canFinish={canFinishNav}
             onFinish={() => setPhase('completed')}
           />
             </ContentScaledCanvas>
