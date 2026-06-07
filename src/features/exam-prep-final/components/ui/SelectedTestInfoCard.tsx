@@ -40,6 +40,9 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
     week: test.weekNo,
     session: test.sessionNo,
   })
+  // 회차명(강의 제목) — 회색 부제로 노출. 회차명이 비어있는 구 데이터는 주차/차시로 폴백.
+  const lectureName = (test.lectureTitle ?? '').trim()
+  const subtitle = lectureName || sessionLabel
 
   const [mastery, setMastery] = useState<MasteryCounts | null>(null)
   // 1순위 주제 — 선택 시 detail fetch (summary엔 주제 없음). 굵은 제목 자리에 표시.
@@ -124,18 +127,17 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
             <span className="text-3xl font-bold leading-none text-gray-900 dark:text-gray-50 md:text-5xl">
               {numberLabel}
             </span>
-            {/* 회색 부제 — 주차/차시 (sessionLabel). 굵은 제목 자리에 1순위 주제가 오므로
-                여기는 항상 주차/차시를 표시. */}
+            {/* 회색 부제 — 회차명(강의 제목). 회차명이 비어있는 구 데이터는 주차/차시로 폴백. */}
             <span className="text-sm font-medium text-gray-400 break-keep md:text-base">
-              {sessionLabel}
+              {subtitle}
             </span>
           </div>
-          {/* 굵은 제목 — 1순위 주제(topic). 주제 없으면(구 테스트) 회차 제목으로 폴백. */}
+          {/* 굵은 제목 — 1순위 주제(exam_prep_topic.topic_title; 구 테스트는 source_ref 폴백). */}
           <h3
             className="mt-3 text-base font-bold text-gray-900 dark:text-gray-50 md:mt-5 md:text-3xl"
-            title={topic || test.lectureTitle}
+            title={topic || lectureName}
           >
-            {topic || test.lectureTitle}
+            {topic || lectureName}
           </h3>
         </div>
 
