@@ -129,6 +129,18 @@ export function FillBlankDnd({
     return [correctAnswer];
   }, [correctAnswer]);
 
+  // 채점 완료 여부 (isCorrect 가 boolean 으로 도착). 빈칸별 정/오답은 전체 isCorrect 와 무관하게
+  // 위치별 일치(value[i]===correctIndexes[i])로 판정 — 한 칸만 맞아도 그 칸은 정답 처리(시안).
+  const graded = typeof isCorrect === "boolean";
+  // 정답 choice index → 빈칸 위치(0-based). 순서 배지 번호 = position+1. (정답 선지에 1·2 배지)
+  const choicePosition = useMemo(() => {
+    const m = new Map<number, number>();
+    correctIndexes.forEach((ci, i) => {
+      if (typeof ci === "number" && !m.has(ci)) m.set(ci, i);
+    });
+    return m;
+  }, [correctIndexes]);
+
   const draggingLabel = draggingChipIdx !== null ? choices[draggingChipIdx] : null;
 
   // 칩 배치 — 5지선다(빈칸 1개): 짧으면 1행(5개), 길면 2열 그리드(시안/요청).
@@ -188,10 +200,11 @@ export function FillBlankDnd({
                       onClear={() => clearBlank(blankIdx)}
                       disabled={disabled}
                       isCorrect={
-                        typeof isCorrect === "boolean"
-                          ? isCorrect && correctIndexes.includes(value[blankIdx] as number)
+                        graded
+                          ? value[blankIdx] !== null && value[blankIdx] === correctIndexes[blankIdx]
                           : null
                       }
+                      orderNo={blankIdx + 1}
                       fontSize={chipFontSize}
                     />
                   ) : null}
@@ -210,7 +223,8 @@ export function FillBlankDnd({
                 disabled={disabled || eliminatedIdx === c.idx}
                 eliminated={eliminatedIdx === c.idx && !isCorrect && isCorrect !== false}
                 fontSize={chipFontSize}
-                highlight={typeof isCorrect === "boolean" && correctIndexes.includes(c.idx)}
+                highlight={graded && correctIndexes.includes(c.idx)}
+                orderNo={graded && choicePosition.has(c.idx) ? (choicePosition.get(c.idx) as number) + 1 : undefined}
               />
             ))}
           </div>
@@ -243,6 +257,7 @@ function DraggableChip({
   eliminated,
   fontSize,
   highlight,
+  orderNo,
 }: {
   chipIdx: number;
   label: string;
@@ -250,6 +265,8 @@ function DraggableChip({
   eliminated?: boolean;
   fontSize: string;
   highlight?: boolean;
+  /** 정답 선지일 때 표시할 순서 번호(1-based). */
+  orderNo?: number;
 }) {
   const t = useTranslations("examPrepFinal");
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -265,6 +282,7 @@ function DraggableChip({
       disabled={disabled}
       aria-label={eliminated ? t("solve.eliminatedChoice") : undefined}
       style={{
+        position: "relative",
         opacity: isDragging ? 0 : eliminated ? 0.45 : 1,
         touchAction: "none",
         padding: "1.363cqw 1.778cqw" /* figma 칩 높이 66px */,
@@ -274,7 +292,9 @@ function DraggableChip({
         lineHeight: 1.2,
         whiteSpace: "nowrap" as const,
         color: highlight ? C_MASTER : C_BLACK,
-        border: highlight ? "0.154cqw solid var(--color-mastery-master)" : "0.062cqw solid transparent",
+        border: highlight
+          ? "0.185cqw solid var(--color-mastery-master)" /* figma 정답 3px 보라 */
+          : "0.062cqw solid transparent",
         boxShadow: "0 0.119cqw 0.593cqw rgba(17,24,39,0.12)",
       }}
       className={cn(
@@ -284,6 +304,7 @@ function DraggableChip({
         eliminated && "cursor-not-allowed",
       )}
     >
+      {highlight && orderNo !== undefined ? <OrderBadge n={orderNo} /> : null}
       {label}
     </button>
   );
@@ -296,6 +317,7 @@ function DroppableBlank({
   onClear,
   disabled,
   isCorrect,
+  orderNo,
   fontSize,
 }: {
   blankIdx: number;
@@ -304,16 +326,21 @@ function DroppableBlank({
   onClear: () => void;
   disabled?: boolean;
   isCorrect: boolean | null;
+  /** 정답 빈칸일 때 표시할 순서 번호(1-based). */
+  orderNo?: number;
   fontSize: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `blank-${blankIdx}` });
   const isEmpty = chipIdx === null;
-  const textColor = isCorrect === false ? C_DELETE : C_BLACK;
+  // 시안: 정답=보라 텍스트 / 오답=빨강 / 미채점=검정
+  const textColor =
+    isCorrect === false ? C_DELETE : isCorrect === true ? C_MASTER : C_BLACK;
   return (
     <span
       ref={setNodeRef}
       onClick={onClear}
       style={{
+        position: "relative",
         display: "inline-flex",
         verticalAlign: "middle",
         alignItems: "center",
@@ -328,11 +355,11 @@ function DroppableBlank({
         backgroundColor: isCorrect === false ? WRONG_BG : "#ffffff",
         border:
           isCorrect === true
-            ? `0.154cqw solid ${C_MASTER}` /* 정답: 흰 배경 + 보라 테두리 진하게 (시안) */
+            ? `0.185cqw solid ${C_MASTER}` /* 정답: 흰 배경 + 보라 3px 테두리 (figma) */
             : `0.095cqw solid ${isEmpty ? "rgb(209 213 219)" : "transparent"}`,
         boxShadow: isEmpty ? "inset 0 0.095cqw 0.356cqw rgba(17,24,39,0.06)" : "0 0.119cqw 0.474cqw rgba(17,24,39,0.1)",
         color: isEmpty ? "transparent" : textColor,
-        fontWeight: isCorrect === true || isCorrect === false ? 700 : 500,
+        fontWeight: isCorrect === true ? 600 : isCorrect === false ? 400 : 500,
       }}
       className={cn(
         "select-none rounded-[0.593cqw] cursor-pointer transition-colors",
@@ -340,7 +367,37 @@ function DroppableBlank({
         disabled && "cursor-not-allowed",
       )}
     >
+      {isCorrect === true && orderNo !== undefined ? <OrderBadge n={orderNo} /> : null}
       {chipLabel ?? " "}
+    </span>
+  );
+}
+
+/** 정답 칩/빈칸 좌상단 순서 번호 배지 — figma 28px 보라 원 + 흰 16px 숫자, 모서리에 걸침. */
+function OrderBadge({ n }: { n: number }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        position: "absolute",
+        top: "-0.864cqw" /* figma: 칩 좌상단 모서리 (-14px) */,
+        left: "-0.802cqw" /* -13px */,
+        width: "1.728cqw" /* figma 28px */,
+        height: "1.728cqw",
+        borderRadius: "9999px",
+        backgroundColor: C_MASTER,
+        color: "#ffffff",
+        fontSize: "0.988cqw" /* figma 16px */,
+        fontWeight: 600,
+        lineHeight: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxShadow: "0 0.119cqw 0.356cqw rgba(0,0,0,0.18)",
+        pointerEvents: "none",
+      }}
+    >
+      {n}
     </span>
   );
 }
