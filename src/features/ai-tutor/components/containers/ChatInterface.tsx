@@ -1318,7 +1318,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     )
   }
 
-  const hasSuggestions = selectedLectureIds.length === 1 && (hookingQuestions.length > 0 || pqmQuestions.length > 0)
+  // 후킹 질문(맨 위 제안)을 전 회차에서 노출 중단. 재노출하려면 true 로.
+  const SHOW_HOOKING_QUESTIONS = false
+  const hasSuggestions =
+    selectedLectureIds.length === 1 &&
+    ((SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) || pqmQuestions.length > 0)
 
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
   if (messages.length === 0 && !isLoading) {
@@ -1360,7 +1364,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 if (hasSuggestions && !showSuggestionsPanel) {
                   setShowSuggestionsPanel(true)
                   const lectureId = selectedLectureIds[0]
-                  if (hookingQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: hookingQuestions.length })
+                  if (SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: hookingQuestions.length })
                   if (pqmQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: pqmQuestions.length })
                 }
                 chatAnalytics.inputFocus(selectedLectureIds[0])
@@ -1376,8 +1380,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           {/* 제안 질문 목록 — 안내 문구 클릭 또는 입력바 포커스 시 표시 */}
           {showSuggestionsPanel && hasSuggestions && (
           <div className="mt-6 w-full max-w-[680px] 2xl:max-w-[820px] space-y-2 animate-fade-in-up">
-              {/* 후킹 질문 (1개) */}
-              {hookingQuestions.length > 0 && (
+              {/* 후킹 질문 (1개) — 전 회차 노출 중단 (SHOW_HOOKING_QUESTIONS) */}
+              {SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0 && (
                 <>
                   {hookingQuestions.slice(0, 1).map((hooking, index) => (
                     <button
