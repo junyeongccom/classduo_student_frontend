@@ -156,7 +156,7 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
   const expTooltipConfirm = isKo ? '확인' : 'OK'
   const badgePopupTitle = isKo ? 'A+ 랭크에 도전하세요!' : 'Aim for the A+ rank!'
   const badgePopupSubtitle = isKo
-    ? '각 학점 진급에 필요한 누적 XP'
+    ? '각 랭크 진급에 필요한 누적 XP'
     : 'Total XP thresholds for each grade promotion'
   // "240 / 300 XP" — 현재 누적 XP / 다음 등급 도달 임계 XP. A+ 면 "/ MAX".
   const xpDisplay = loading
