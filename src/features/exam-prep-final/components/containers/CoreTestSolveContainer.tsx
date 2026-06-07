@@ -76,6 +76,10 @@ interface MasterySummary {
   master: number
 }
 
+/** 우측 패널 기본 폭(px). 이 폭까지는 문제영역이 자리를 양보(안 가림),
+ *  이보다 넓히면 초과분만 문제 위로 덮음. 패널을 닫으면 이 값으로 초기화. */
+const DEFAULT_RIGHT_PANEL_WIDTH = 420
+
 export function CoreTestSolveContainer({
   courseId,
   testId,
@@ -88,9 +92,16 @@ export function CoreTestSolveContainer({
 
   // ─── 우측 통합 패널(출처+챗봇 2탭) 활성 탭 — null=닫힘 (UI 순간 상태) ───
   const [rightTab, setRightTab] = useState<'materials' | 'recordings' | 'chat' | null>(null)
-  // 우측 패널 폭(px, 데스크탑) — 좌측 경계 드래그로 리사이즈. 패널은 absolute 오버레이라
-  // 문제 영역은 줄지 않고 패널이 그 위를 덮는다 (사용자 요청).
-  const [rightPanelWidth, setRightPanelWidth] = useState(420)
+  // 우측 패널 폭(px, 데스크탑) — 좌측 경계 드래그로 리사이즈. 기본 폭(DEFAULT_RIGHT_PANEL_WIDTH)
+  // 까지는 문제 영역이 그만큼 자리를 비워줘(스페이서) 안 가리고, 그보다 넓히면 초과분만 문제 위로 덮는다.
+  const [rightPanelWidth, setRightPanelWidth] = useState(DEFAULT_RIGHT_PANEL_WIDTH)
+  // 문제영역이 양보하는 폭 — 기본 폭까지만 양보(상한). 그 이상 넓히면 초과분이 문제를 덮음.
+  const reservedRightWidth = Math.min(rightPanelWidth, DEFAULT_RIGHT_PANEL_WIDTH)
+  // 우측 패널 닫기 — 폭을 기본값으로 초기화해 다음 열 때 크기가 유지되지 않도록 (사용자 요청).
+  const closeRightPanel = useCallback(() => {
+    setRightTab(null)
+    setRightPanelWidth(DEFAULT_RIGHT_PANEL_WIDTH)
+  }, [])
   const startResize = useCallback((e: React.PointerEvent) => {
     e.preventDefault()
     const onMove = (ev: PointerEvent) => {
@@ -121,9 +132,10 @@ export function CoreTestSolveContainer({
     setStoreTestId(testId)
   }, [testId, setStoreTestId])
 
-  // 페이지(테스트) 진입 시 우측 패널 닫힘
+  // 페이지(테스트) 진입 시 우측 패널 닫힘 + 폭 초기화
   useEffect(() => {
     setRightTab(null)
+    setRightPanelWidth(DEFAULT_RIGHT_PANEL_WIDTH)
   }, [testId])
 
   // ─── attempt 라이프사이클 ───
@@ -1204,7 +1216,10 @@ export function CoreTestSolveContainer({
           </button>
         </header>
 
-        <div className="relative flex min-h-0 flex-1">
+        <div
+          className="relative flex min-h-0 flex-1"
+          style={{ '--rpw-reserve': rightTab ? `${reservedRightWidth}px` : '0px' } as React.CSSProperties}
+        >
         <SolveSidebar
           scaled
           hideMastery={data?.test_type === 'mid'} /* mid=서술형 자가평가 → 숙련도 무관, 사이드바 범례 숨김 */
@@ -1302,15 +1317,27 @@ export function CoreTestSolveContainer({
           </div>
         )}
 
+        {/* 데스크탑 전용 in-flow 스페이서 — 기본 폭만큼 문제영역(flex-1)을 양보시켜 기본 크기 패널은
+            문제를 안 가린다. 패널을 기본보다 넓히면 reserve 는 상한(기본 폭)에 고정돼 초과분만 문제 위로 덮음.
+            모바일(하단 시트)은 가로 차지 없음 → md 에서만 노출. */}
+        {rightTab && (
+          <div
+            aria-hidden
+            className="hidden shrink-0 md:block"
+            style={{ width: 'var(--rpw-reserve)' }}
+          />
+        )}
+
         {/* 우측: 강의자료 / 녹음본 / AI 챗봇 3탭 패널.
-            데스크탑은 in-flow(공간 차지) — 열리면 본문 영역이 좁아진 만큼 왼쪽으로 밀려서 패널에 안 가려짐.
+            데스크탑은 absolute 오버레이. 기본 폭(스페이서)까지는 문제영역이 비워둔 자리에 들어가 안 가리고,
+            넓히면 초과분만 문제 위를 덮는다.
             세 탭 콘텐츠는 모두 마운트 유지 + hidden 토글(탭 전환 시 챗봇 히스토리/입력·자료 스크롤 보존). */}
         {rightTab && (
           <div
             style={{ '--rpw': `${rightPanelWidth}px` } as React.CSSProperties}
             className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-x-auto md:left-auto md:right-0 md:top-0 md:bottom-0 md:h-auto md:w-[var(--rpw)] md:min-w-[320px] md:max-w-[70vw] md:rounded-none md:border-t-0 md:border-l md:shadow-xl dark:border-gray-700 dark:bg-gray-900"
           >
-            {/* 좌측 경계 리사이즈 핸들 (데스크탑) — 드래그로 폭 조절. 패널은 오버레이라 문제영역은 안 줄어듦. */}
+            {/* 좌측 경계 리사이즈 핸들 (데스크탑) — 드래그로 폭 조절. 기본 폭 초과분은 문제영역 위로 덮인다. */}
             <div
               onPointerDown={startResize}
               role="separator"
@@ -1342,7 +1369,7 @@ export function CoreTestSolveContainer({
               </div>
               <button
                 type="button"
-                onClick={() => setRightTab(null)}
+                onClick={closeRightPanel}
                 aria-label={t('examPrepFinal.rightPanel.close')}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800"
               >
