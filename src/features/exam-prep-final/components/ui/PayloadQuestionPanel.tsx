@@ -224,6 +224,10 @@ export function PayloadQuestionPanel({
     : (payload.choices as string[] | undefined)) ?? []
   const result = buildResult(question, graded)
   const isLocked = graded !== null
+  // ── 이미 master 숙련도로 진입한 문항 — 풀이 없이 해설만 열람. 선지(드래그/클릭) 비활성 +
+  //    제출 버튼 대신 '해설보기'만 노출. 이번 풀이로 채점된 경우(isLocked)는 일반 채점 경로 우선. ──
+  const isMastered = currentQuestionState === 'master' && !isLocked
+  const formDisabled = isLocked || isMastered
   // ── Active Recall 게이트 — skilled 숙련도 + 대상 유형(빈칸5/빈칸7/원인이유mcq4)에서
   //    채점 전·미공개 동안 선지를 가리고 '먼저 떠올려보기' 박스 노출. 클릭 시 선지 공개. ──
   const recallGated =
@@ -317,7 +321,7 @@ export function PayloadQuestionPanel({
               : (payload.right_items as string[] | undefined)) ?? []}
             value={(response as [number, number][] | null) ?? null}
             onChange={(v) => onResponseChange(v)}
-            disabled={isLocked}
+            disabled={formDisabled}
             result={result}
             feedbackSlot={feedbackBadge}
           />
@@ -329,7 +333,7 @@ export function PayloadQuestionPanel({
             choices={displayChoices}
             value={(dispValue as number | null) ?? null}
             onChange={onChoiceChange}
-            disabled={isLocked}
+            disabled={formDisabled}
             result={dispResult}
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
@@ -343,7 +347,7 @@ export function PayloadQuestionPanel({
             choices={displayChoices}
             value={(dispValue as (number | null)[] | null) ?? null}
             onChange={onChoiceChange}
-            disabled={isLocked}
+            disabled={formDisabled}
             result={dispResult}
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
@@ -357,7 +361,7 @@ export function PayloadQuestionPanel({
             choices={displayChoices}
             value={(dispValue as number[] | null) ?? null}
             onChange={onChoiceChange}
-            disabled={isLocked}
+            disabled={formDisabled}
             result={dispResult}
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
@@ -390,7 +394,7 @@ export function PayloadQuestionPanel({
             choices={displayChoices}
             value={(dispValue as number | null) ?? null}
             onChange={onChoiceChange}
-            disabled={isLocked}
+            disabled={formDisabled}
             result={dispResult}
             eliminatedIdx={dispEliminated}
             feedbackSlot={feedbackBadge}
@@ -548,7 +552,7 @@ export function PayloadQuestionPanel({
           <div className="flex items-center" style={{ gap: '1.185cqw' }}>
             {/* 힌트(전구) — 객관식/빈칸채우기에서 오답 1개 제거. 선택지 없는 유형(매칭/서술형)은 미노출.
                 사용 후에도 숨기지 않고 연하게(opacity-40) + 비활성. hover 시 효과/숙련도 패널티 안내 툴팁. */}
-            {!isLocked && !recallGated && onHint && choices.length > 0 && (
+            {!isLocked && !isMastered && !recallGated && onHint && choices.length > 0 && (
               <div className="group/hint relative flex items-center">
                 <button
                   type="button"
@@ -572,8 +576,8 @@ export function PayloadQuestionPanel({
                 </div>
               </div>
             )}
-            {/* 제출 (채점 후엔 숨김 — 서술형은 제출=모범답안 노출. Active Recall 게이트 중에도 숨김) */}
-            {!isLocked && !recallGated && (
+            {/* 제출 (채점 후엔 숨김 — 서술형은 제출=모범답안 노출. Active Recall 게이트·master 진입 시에도 숨김) */}
+            {!isLocked && !isMastered && !recallGated && (
               <button
                 type="button"
                 onClick={onSubmit}
@@ -590,8 +594,8 @@ export function PayloadQuestionPanel({
                 {isGrading ? t('examPrepFinal.solve.grading') : t('examPrepFinal.submit')}
               </button>
             )}
-            {/* 해설보기 / 닫기 (채점 후, 서술형 제외 — 서술형은 모범답안이 폼에 노출) */}
-            {isLocked && !isEssay && (
+            {/* 해설보기 / 닫기 (채점 후 또는 master 진입, 서술형 제외 — 서술형은 모범답안이 폼에 노출) */}
+            {(isLocked || isMastered) && !isEssay && (
               <button
                 type="button"
                 onClick={() => setShowExplanation((s) => !s)}
