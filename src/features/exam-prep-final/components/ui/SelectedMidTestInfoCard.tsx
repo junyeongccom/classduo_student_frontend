@@ -32,10 +32,6 @@ export function SelectedMidTestInfoCard({
 }: SelectedMidTestInfoCardProps) {
   const t = useTranslations()
   const numberLabel = String(midTest.setNumber).padStart(2, '0')
-  const subtitle = t('examPrepFinal.midTestMetaSlash', {
-    minutes: midTest.minutes,
-    questions: midTest.questions,
-  })
   const isMastered = midTest.status === 'mastered'
   const canStart = !!midTest.testId && (midTest.status === 'available' || midTest.status === 'mastered')
 
@@ -90,7 +86,6 @@ export function SelectedMidTestInfoCard({
             <span className="text-3xl font-bold leading-none text-gray-900 dark:text-gray-50 md:text-5xl">
               {numberLabel}
             </span>
-            <span className="whitespace-nowrap text-sm font-medium text-gray-400 md:text-base">{subtitle}</span>
           </div>
           <h3 className="mt-3 text-base font-bold text-gray-900 dark:text-gray-50 md:mt-5 md:text-3xl">
             {t('examPrepFinal.midTestSetTitle', { setNumber: midTest.setNumber })}
