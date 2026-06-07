@@ -267,10 +267,15 @@ export async function fetchQuizContent(
         difficulty: number | null
         question_format: string | null
         payload: Record<string, unknown> | null
+        // 영어 번역 — exam_prep_question 에 prod 생성 완료 (stem_eng/options_eng/explanation_eng/payload_eng).
+        stem_eng: string | null
+        options_eng: string[] | null
+        explanation_eng: Record<string, string> | null
+        payload_eng: Record<string, unknown> | null
       }
       const { data, error: err } = await supabase
         .from('exam_prep_question')
-        .select('id, stem, options, answer, explanation, difficulty, question_format, payload')
+        .select('id, stem, options, answer, explanation, difficulty, question_format, payload, stem_eng, options_eng, explanation_eng, payload_eng')
         .in('id', quizIds)
       if (err) {
         if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
@@ -293,24 +298,41 @@ export async function fetchQuizContent(
       }
 
       // 한 문항 → choices[](텍스트+정답여부) + 정답 텍스트. 레거시/payload 공통 어댑터.
-      type DerivedChoice = { choice_text: string; is_correct: boolean }
-      const deriveExam = (r: ExamPrepRow): { choices: DerivedChoice[]; answer: string | null } => {
+      // 영어(_eng) 는 한국어와 동일 인덱스/구조(payload_eng.choices, left/right_items, options_eng)이므로
+      // 같은 인덱스로 zip 해 choice_text_eng / answer_eng 를 병행 산출. 영어 없으면 null fallback.
+      type DerivedChoice = { choice_text: string; is_correct: boolean; choice_text_eng: string | null }
+      const deriveExam = (
+        r: ExamPrepRow,
+      ): { choices: DerivedChoice[]; answer: string | null; answer_eng: string | null } => {
         const qf = r.question_format ?? null
         const p = (r.payload ?? {}) as Record<string, unknown>
+        const pe = (r.payload_eng ?? {}) as Record<string, unknown>
         // 매칭 — 정답 연결쌍을 "좌항 → 우항" 행으로 표시 (모두 정답 배지).
         if (qf === 'term_definition_match3') {
           const left = (p.left_items as string[] | undefined) ?? []
           const right = (p.right_items as string[] | undefined) ?? []
+          const leftE = (pe.left_items as string[] | undefined) ?? []
+          const rightE = (pe.right_items as string[] | undefined) ?? []
+          const hasEng = leftE.length > 0 || rightE.length > 0
           const pairs = (p.correct_pairs as [number, number][] | undefined) ?? []
           const choices = pairs.map(([li, ri]) => ({
             choice_text: `${left[li] ?? ''} → ${right[ri] ?? ''}`.trim(),
             is_correct: true,
+            choice_text_eng: hasEng ? `${leftE[li] ?? ''} → ${rightE[ri] ?? ''}`.trim() : null,
           }))
-          return { choices, answer: choices.map((c) => c.choice_text).join('\n') || null }
+          return {
+            choices,
+            answer: choices.map((c) => c.choice_text).join('\n') || null,
+            answer_eng: hasEng
+              ? choices.map((c) => c.choice_text_eng ?? '').join('\n') || null
+              : null,
+          }
         }
         // 선택지형(빈칸/복수/4지) — payload.choices + correct_answer(number | number[]).
         const pChoices = p.choices as string[] | undefined
         if (Array.isArray(pChoices) && pChoices.length > 0) {
+          const peChoices = pe.choices as string[] | undefined
+          const hasEng = Array.isArray(peChoices) && peChoices.length > 0
           const ca = p.correct_answer
           const correctSet = new Set<number>(
             Array.isArray(ca)
@@ -319,18 +341,38 @@ export async function fetchQuizContent(
                 ? [ca]
                 : [],
           )
-          const choices = pChoices.map((text, i) => ({ choice_text: text, is_correct: correctSet.has(i) }))
+          const choices = pChoices.map((text, i) => ({
+            choice_text: text,
+            is_correct: correctSet.has(i),
+            choice_text_eng: hasEng ? (peChoices[i] ?? null) : null,
+          }))
           const answer = choices.filter((c) => c.is_correct).map((c) => c.choice_text).join(', ') || null
-          return { choices, answer }
+          const answer_eng = hasEng
+            ? choices.filter((c) => c.is_correct).map((c) => c.choice_text_eng ?? '').join(', ') || null
+            : null
+          return { choices, answer, answer_eng }
         }
         // 레거시 단일 4지선다 — options + answer(인덱스 문자열).
         const opts = r.options ?? []
+        const optsE = r.options_eng ?? []
+        const hasEng = optsE.length > 0
         const correctIdx = r.answer != null && r.answer !== '' ? parseInt(r.answer, 10) : -1
-        const choices = opts.map((opt, i) => ({ choice_text: opt, is_correct: i === correctIdx }))
-        return { choices, answer: correctIdx >= 0 ? (opts[correctIdx] ?? null) : null }
+        const choices = opts.map((opt, i) => ({
+          choice_text: opt,
+          is_correct: i === correctIdx,
+          choice_text_eng: hasEng ? (optsE[i] ?? null) : null,
+        }))
+        return {
+          choices,
+          answer: correctIdx >= 0 ? (opts[correctIdx] ?? null) : null,
+          answer_eng: hasEng && correctIdx >= 0 ? (optsE[correctIdx] ?? null) : null,
+        }
       }
 
-      const examDerived = new Map<string, { choices: DerivedChoice[]; answer: string | null }>()
+      const examDerived = new Map<
+        string,
+        { choices: DerivedChoice[]; answer: string | null; answer_eng: string | null }
+      >()
       for (const r of examRows) examDerived.set(r.id, deriveExam(r))
 
       rawItems = examRows.map(r => ({
@@ -340,6 +382,9 @@ export async function fetchQuizContent(
         answer: examDerived.get(r.id)?.answer ?? null,
         explanation: examExplanationText(r.explanation),
         difficulty: r.difficulty != null ? String(r.difficulty) : null,
+        question_eng: r.stem_eng ?? null,
+        answer_eng: examDerived.get(r.id)?.answer_eng ?? null,
+        explanation_eng: examExplanationText(r.explanation_eng),
       }))
       // exam_prep choices 를 QuizChoice 형태로 직접 만든다 (별도 _choices 테이블 없음).
       // payload형은 선지별 해설을 통합 explanation 텍스트에 담으므로 choice_explanation 은 레거시 opt{i} 만.
@@ -352,6 +397,8 @@ export async function fetchQuizContent(
           choice_text: c.choice_text,
           is_correct: c.is_correct,
           choice_explanation: r.explanation?.[`opt${i}`] ?? null,
+          choice_text_eng: c.choice_text_eng ?? null,
+          choice_explanation_eng: r.explanation_eng?.[`opt${i}`] ?? null,
         }))
       })
     } else {
