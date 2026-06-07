@@ -15,7 +15,7 @@ import { useState } from 'react'
 interface ExamPrepHeroCardProps {
   /** 카드 제목 (i18n: courseDashboard.modeExam.title = "핵심 주제 학습") */
   title: string
-  /** 제목 위 부제 (i18n: courseDashboard.modeExam.heroSubtitle = "26개 주제 · 3~5분씩 학습") */
+  /** 제목 위 부제 (i18n: courseDashboard.modeExam.heroSubtitle = "26개 주제 · 5~10분씩 학습") */
   subtitle?: string
   onClick: () => void
   ariaLabel?: string
@@ -117,7 +117,7 @@ export function ExamPrepHeroCard({
         className={`pointer-events-none absolute inset-x-0 flex flex-col items-center ${dim}`}
         style={{ top: '5cqw', transform: faceTransform, transition: 'transform 110ms ease-out' }}
       >
-        {/* 부제 — "26개 주제 · 3~5분씩 학습" */}
+        {/* 부제 — "26개 주제 · 5~10분씩 학습" */}
         {subtitle && (
           <span
             className="text-center font-semibold break-keep"
