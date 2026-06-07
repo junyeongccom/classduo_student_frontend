@@ -149,6 +149,10 @@ export function ExamPrepChatPanel({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // 한글(IME) 조합 중 Enter 가드 — 조합 중에는 keydown 의 keyCode 가 229.
+      // 이 가드가 없으면 마지막 글자 조합이 끝나기 전에 submit→setInput('') 이 돌고,
+      // 직후 compositionend 가 마지막 글자를 입력바에 되살려 "마지막 글자 잔류" 버그가 난다.
+      if (e.nativeEvent.isComposing || e.keyCode === 229) return
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         handleSubmit()

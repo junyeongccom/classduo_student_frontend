@@ -17,8 +17,44 @@ type MarkdownMessageProps = {
   headingSize?: 'default' | 'compact'
 }
 
-export function MarkdownMessage({ markdown, className, headingSize = 'default' }: MarkdownMessageProps) {
+/**
+ * CJK(한글 등) 인접 강조(`**bold**`) 보정.
+ *
+ * CommonMark 의 right-flanking 규칙상, 닫는 `**` 가 구두점 바로 뒤(예: 닫는 괄호)에 오고
+ * 그 뒤에 공백 없이 한글 조사(는/은/이/가 등)가 붙으면 — 예: `...(De novo variant)**는` —
+ * 닫는 구분자로 인정되지 않아 `**` 가 굵게 표시되지 못하고 그대로 노출된다.
+ * 구두점과 `*` 런 사이에 폭 0 공백(U+200B)을 끼워 "구두점 바로 뒤" 조건을 깨면 정상 파싱된다.
+ * (U+200B 는 right-flanking 을 막던 구두점 조건만 무효화하므로 강조를 '추가로 허용'할 뿐
+ *  기존에 정상 파싱되던 강조를 깨뜨리지 않는다.)
+ *
+ * 코드/수식(`` `inline` ``, 펜스 코드, `$inline$`, `$$block$$`)은 마스킹으로 보존한다.
+ * 마스킹 sentinel 은 U+0000(NUL) — 답변 본문에 등장 불가능하므로 실제 숫자와 충돌하지 않는다.
+ * lookbehind 미사용 — 구형 Safari 호환.
+ */
+function cjkFriendlyEmphasis(md: string): string {
+  if (!md || md.indexOf('*') === -1) return md
+  const masked: string[] = []
+  const protectedText = md.replace(
+    /```[\s\S]*?```|`[^`]*`|\$\$[\s\S]*?\$\$|\$[^$\n]*\$/g,
+    (m) => {
+      masked.push(m)
+      return `\u0000${masked.length - 1}\u0000`
+    },
+  )
+  const fixed = protectedText.replace(
+    /([\p{P}])(\*{1,3})(?=[^\s*])/gu,
+    (full, punct: string, stars: string) =>
+      punct === '*' ? full : `${punct}\u200B${stars}`,
+  )
+  return fixed.replace(/\u0000(\d+)\u0000/g, (_m, i) => masked[Number(i)])
+}
+
+// React.memo: 부모(풀이화면)가 "경과 시간" 타이머로 매초 리렌더돼도 markdown/className 이
+// 그대로면 이 컴포넌트는 리렌더하지 않는다. (리렌더 시 react-markdown 이 텍스트 노드를 재생성 →
+// 드래그 중이던 텍스트 선택이 풀리며 "다른 범위로 튀는" 버그가 났음)
+export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, className, headingSize = 'default' }: MarkdownMessageProps) {
   const isCompact = headingSize === 'compact'
+  const content = cjkFriendlyEmphasis(markdown ?? '')
   return (
     <div className={className}>
       <ReactMarkdown
@@ -104,8 +140,8 @@ export function MarkdownMessage({ markdown, className, headingSize = 'default' }
           td: ({ children }) => <td className="border border-gray-200 dark:border-gray-700 px-3 py-2 align-top">{children}</td>,
         }}
       >
-        {markdown ?? ''}
+        {content}
       </ReactMarkdown>
     </div>
   )
-}
+})

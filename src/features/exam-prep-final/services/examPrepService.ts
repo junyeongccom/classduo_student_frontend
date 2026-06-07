@@ -276,6 +276,8 @@ export interface GradeSingleResponseDto {
   attempt_completed: boolean
   test_mastered_now: boolean
   test_mastered_at: string | null
+  /** 핵심 테스트 첫 완료 + 체감 난이도 미수집 시 true → Phase5 에서 난이도 팝업 1회 노출 */
+  should_prompt_difficulty?: boolean
 }
 
 // ─────────────────────────────────────────
@@ -341,4 +343,20 @@ export async function gradeAttemptResponse(
     }
   }
   return { data: result.data ?? null, error: null, errorCode: null }
+}
+
+export type DifficultyLabel = 'hard' | 'normal' | 'easy'
+
+/** 체감 난이도 라벨 저장 — 핵심 테스트 첫 완료 시 1회 (best-effort).
+ *  PK(user,test) 로 백엔드가 멱등 처리. 실패해도 사용자 흐름은 막지 않는다. */
+export async function saveDifficultyLabel(
+  testId: string,
+  label: DifficultyLabel,
+): Promise<{ ok: boolean; error: string | null }> {
+  const result = await apiRequest<unknown>(
+    `/exam-prep/tests/${testId}/difficulty`,
+    { method: 'POST', auth: true, body: { label } },
+  )
+  if (result.error) return { ok: false, error: result.error.message }
+  return { ok: true, error: null }
 }
