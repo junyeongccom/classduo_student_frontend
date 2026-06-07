@@ -15,6 +15,8 @@ import { useState } from 'react'
 interface ExamPrepHeroCardProps {
   /** 카드 제목 (i18n: courseDashboard.modeExam.title = "핵심 주제 학습") */
   title: string
+  /** 제목 위 부제 (i18n: courseDashboard.modeExam.heroSubtitle = "26개 주제 · 3~5분씩 학습") */
+  subtitle?: string
   onClick: () => void
   ariaLabel?: string
   /** 잠금 상태 — 자물쇠 오버레이 + 클릭 비활성 + 호버 시 lockedTooltip 표시 */
@@ -26,6 +28,7 @@ interface ExamPrepHeroCardProps {
 // Figma 기준 좌표/치수는 카드 폭(663) 대비 cqw(=폭 1%). aspect-ratio 663/479 로 높이 동반 스케일.
 export function ExamPrepHeroCard({
   title,
+  subtitle,
   onClick,
   ariaLabel,
   isLocked = false,
@@ -98,25 +101,44 @@ export function ExamPrepHeroCard({
           draggable={false}
           className="pointer-events-none absolute"
           style={{
-            left: '2.489cqw',
-            top: '5.43cqw',
-            width: '94.87cqw',
+            // 절반 크기(94.87→47.435cqw) + 가로 중앙 정렬((100-47.435)/2≈26.28cqw).
+            // 외곽선/그림자 필터 오프셋도 절반으로 비례 축소해 스티커 외곽선 두께를 유지.
+            left: '26.28cqw',
+            top: '24cqw',
+            width: '47.435cqw',
             filter:
-              'drop-shadow(0.45cqw 0 0 #fff) drop-shadow(-0.45cqw 0 0 #fff) drop-shadow(0 0.45cqw 0 #fff) drop-shadow(0 -0.45cqw 0 #fff) drop-shadow(0.32cqw 0.32cqw 0 #fff) drop-shadow(-0.32cqw 0.32cqw 0 #fff) drop-shadow(0.32cqw -0.32cqw 0 #fff) drop-shadow(-0.32cqw -0.32cqw 0 #fff) drop-shadow(0 0.7cqw 1.2cqw rgba(113,111,220,0.45))',
+              'drop-shadow(0.225cqw 0 0 #fff) drop-shadow(-0.225cqw 0 0 #fff) drop-shadow(0 0.225cqw 0 #fff) drop-shadow(0 -0.225cqw 0 #fff) drop-shadow(0.16cqw 0.16cqw 0 #fff) drop-shadow(-0.16cqw 0.16cqw 0 #fff) drop-shadow(0.16cqw -0.16cqw 0 #fff) drop-shadow(-0.16cqw -0.16cqw 0 #fff) drop-shadow(0 0.35cqw 0.6cqw rgba(113,111,220,0.45))',
           }}
         />
       </div>
 
-      {/* 제목 — 표면 위 중앙 상단 (#383698) */}
+      {/* 부제 + 제목 — 표면 위 중앙 상단. 부제를 제목 위에 두고, 제목은 폰트 20%↑ 후 조금 더 아래로. */}
       <div
-        className={`pointer-events-none absolute inset-x-0 flex justify-center ${dim}`}
-        style={{ top: '3.167cqw', transform: faceTransform, transition: 'transform 110ms ease-out' }}
+        className={`pointer-events-none absolute inset-x-0 flex flex-col items-center ${dim}`}
+        style={{ top: '5cqw', transform: faceTransform, transition: 'transform 110ms ease-out' }}
       >
+        {/* 부제 — "26개 주제 · 3~5분씩 학습" */}
+        {subtitle && (
+          <span
+            className="text-center font-semibold break-keep"
+            style={{
+              maxWidth: '92cqw',
+              fontSize: '4cqw',
+              marginBottom: '1cqw',
+              color: '#5b59b8',
+              textShadow: '0 0.3cqw 0.4cqw rgba(255,255,255,0.8)',
+              fontFamily: 'Pretendard, sans-serif',
+            }}
+          >
+            {subtitle}
+          </span>
+        )}
+        {/* 제목 — figma 기준 10.558cqw 에서 20% 증가(=12.67cqw) */}
         <span
           className="text-center font-semibold leading-tight break-keep"
           style={{
             maxWidth: '92cqw',
-            fontSize: '10.558cqw',
+            fontSize: '12.67cqw',
             // figma 정확 fill (design_context, 변수 바인딩 없음 → 하드코딩 해시값)
             color: '#383698',
             // 흰 외곽선(Dev Mode design_context 누락분) — 획을 fill '뒤'로(paint-order) 돌려

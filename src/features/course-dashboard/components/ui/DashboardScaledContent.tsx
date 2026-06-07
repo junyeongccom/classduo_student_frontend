@@ -79,6 +79,7 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
       <Slot left={139.5} top={102} width={663} height={479}>
         <ExamPrepHeroCard
           title={t('courseDashboard.modeExam.title')}
+          subtitle={t('courseDashboard.modeExam.heroSubtitle')}
           isLocked={isExamPrepLocked}
           lockedTooltip={examPrepLockedTooltip}
           onClick={onHero}
