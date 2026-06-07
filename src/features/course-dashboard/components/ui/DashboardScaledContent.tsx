@@ -1,6 +1,6 @@
 /**
  * @file DashboardScaledContent.tsx
- * @description 과목 대시보드 본문 — Figma(991:3348) content 프레임(2103×1477) 좌표 그대로 절대배치.
+ * @description 과목 대시보드 본문 — Figma(991:3348) content 프레임(2103×1271) 좌표 그대로 절대배치.
  *   ScaledCanvas 안에서 contain-스케일되어 항상 한 화면 fit + 시안 비율 유지.
  *   좌: 핵심주제학습 히어로 / 회차별·대화형 카드 / 문제만들기·내퀴즈. 우: 캘린더 / 예상학점.
  * @module features/course-dashboard/components/ui
@@ -18,7 +18,9 @@ import { resolveDayTone, MAX_BOOKS_PER_CELL, type MonthGrid } from '../../domain
 import { resolveDdayTone } from '../../domain/dday'
 
 export const DASH_DESIGN_W = 2103
-export const DASH_DESIGN_H = 1477
+// 좌하단 QuickActions가 캘린더 밑으로 이동해 하단이 비면서 1477→1271로 단축.
+// 최하단 콘텐츠=대화형 카드 bottom(921+248=1169) + 상단여백 대칭(102) = 1271. contain fit 으로 스크롤 0.
+export const DASH_DESIGN_H = 1271
 
 interface DashboardScaledContentProps {
   monthGrid: MonthGrid
