@@ -93,6 +93,15 @@
     "recommendedTitle": "Recommended",
     "recommendedStart": "Start now",
     "testSets": "Test Sets",
+    "coreTestList": {
+      "trigger": "List",
+      "title": "Test Topics",
+      "colNumber": "No.",
+      "colLecture": "Lecture",
+      "colTopic": "Topic",
+      "empty": "No tests to display.",
+      "close": "Close"
+    },
     "midTestTitle": "Mid Test",
     "midTestMeta": "{minutes} min  {questions} questions",
     "midTestDescription": "A diagnostic test based on items you missed in core tests {start}~{end}.",
