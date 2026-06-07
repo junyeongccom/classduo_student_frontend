@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { ChevronRight, Loader2 as LoaderIcon } from 'lucide-react'
+import { ChevronRight, List as ListIcon, Loader2 as LoaderIcon } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
@@ -21,6 +21,7 @@ import { SelectedMidTestInfoCard } from '../ui/SelectedMidTestInfoCard'
 import { TestSetTabs } from '../ui/TestSetTabs'
 import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
+import { CoreTestListModal } from '../ui/CoreTestListModal'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
 import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
 import type { CoreTest, ExamPrepData, MidTest, TestSetTab } from '../../types'
@@ -65,6 +66,8 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   const [activeTab, setActiveTab] = useState<TestSetTab>(1)
   const [selection, setSelection] = useState<Selection>(null)
   const [startError, setStartError] = useState<string | null>(null)
+  // '테스트 세트' 옆 "목록" 트리거 — 핵심테스트 26개 주제 목록 모달 오픈 상태.
+  const [listOpen, setListOpen] = useState(false)
 
   const selectedCoreTest: CoreTest | null = useMemo(() => {
     if (!data || selection?.kind !== 'core') return null
@@ -200,9 +203,20 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
 
           {/* 테스트 세트 섹션 */}
           <div className="mt-10">
-            <h3 className="mb-4 text-lg font-bold text-gray-900 dark:text-gray-50">
-              {t('examPrepFinal.testSets')}
-            </h3>
+            <div className="mb-4 flex items-center gap-3">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                {t('examPrepFinal.testSets')}
+              </h3>
+              {/* 목록 — 핵심테스트 26개 주제 목록 모달 트리거 */}
+              <button
+                type="button"
+                onClick={() => setListOpen(true)}
+                className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-sm font-medium text-gray-600 transition-colors hover:border-[#6366F1] hover:text-[#6366F1] dark:border-gray-700 dark:text-gray-300 dark:hover:border-[#6366F1] dark:hover:text-[#818CF8]"
+              >
+                <ListIcon className="h-4 w-4" />
+                {t('examPrepFinal.coreTestList.trigger')}
+              </button>
+            </div>
 
             <TestSetTabs active={activeTab} onChange={handleTabChange} />
 
@@ -229,6 +243,14 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
           </div>
         </div>
       </div>
+
+      {/* 목록 모달 — 핵심테스트 26개 (서술형 중간테스트 제외) 주제 목록 */}
+      {listOpen && (
+        <CoreTestListModal
+          coreTests={data.coreTests}
+          onClose={() => setListOpen(false)}
+        />
+      )}
     </>
   )
 }

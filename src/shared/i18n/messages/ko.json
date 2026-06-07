@@ -93,6 +93,15 @@
     "recommendedTitle": "추천 학습",
     "recommendedStart": "바로 시작",
     "testSets": "테스트 세트",
+    "coreTestList": {
+      "trigger": "목록",
+      "title": "테스트 주제 목록",
+      "colNumber": "번호",
+      "colLecture": "강의자료명",
+      "colTopic": "주제명",
+      "empty": "표시할 테스트가 없습니다.",
+      "close": "닫기"
+    },
     "midTestTitle": "중간 테스트",
     "midTestMeta": "{minutes}분  {questions}문제",
     "midTestDescription": "핵심 테스트 {start}~{end}에서 틀렸던 문제를 기반으로 세트 {setNumber}을 점검하는 테스트를 생성합니다",
