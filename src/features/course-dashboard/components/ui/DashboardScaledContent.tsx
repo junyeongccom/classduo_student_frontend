@@ -14,7 +14,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import type { LucideIcon } from 'lucide-react'
 
 import { ExamPrepHeroCard } from './ExamPrepHeroCard'
-import { resolveDayTone, MAX_BOOKS_PER_CELL, type MonthGrid } from '../../domain/calendar'
+import { resolveDayTone, type MonthGrid } from '../../domain/calendar'
 import { resolveDdayTone } from '../../domain/dday'
 
 export const DASH_DESIGN_W = 2103
@@ -263,15 +263,12 @@ function CalendarCard({
   )
 }
 
-const CAL_BOOK_SRC = '/calender/캘린더-책.png'
-
 function DayCell({ cell }: { cell: MonthGrid['cells'][number] }) {
   if (cell.display === 0) return <div className="h-full w-full" aria-hidden />
   const tone = resolveDayTone(cell.state)
-  const books = Math.min(MAX_BOOKS_PER_CELL, cell.state.books ?? 0)
   return (
     <div
-      className="relative flex h-full w-full items-start justify-start overflow-visible rounded-[24px]"
+      className="relative flex h-full w-full items-start justify-start overflow-hidden rounded-[24px]"
       style={{
         padding: 12,
         backgroundColor: tone.bg,
@@ -279,20 +276,6 @@ function DayCell({ cell }: { cell: MonthGrid['cells'][number] }) {
         boxShadow: tone.withStroke ? 'inset 0 0 0 3px #FFFFFF' : 'none',
       }}
     >
-      {tone.bookColor && books > 0 && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-1 z-0 flex flex-col-reverse items-center" aria-hidden>
-          {Array.from({ length: books }).map((_, i) => (
-            <img
-              key={i}
-              src={CAL_BOOK_SRC}
-              alt=""
-              draggable={false}
-              className="block w-[80%] select-none"
-              style={{ marginTop: i === 0 ? 0 : -4, transform: `translateX(${i % 2 === 0 ? -4 : 4}px)` }}
-            />
-          ))}
-        </div>
-      )}
       <span className="relative z-20 font-bold leading-none" style={{ fontSize: 28, fontFamily: 'Pretendard, sans-serif' }}>
         {cell.display}
       </span>

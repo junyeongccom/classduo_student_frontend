@@ -1,6 +1,6 @@
 /**
  * @file calendar.ts
- * @description 캘린더 그리드 상태/색상 매핑 — streak 기반 출석 표시
+ * @description 캘린더 그리드 상태/색상 매핑 — 출석일(테스트 풀이=XP 획득)만 보라색 배경
  * @module features/course-dashboard/domain
  * @dependencies none
  */
@@ -123,45 +123,18 @@ export function resolveDayTone(state: DayState): DayCellTone {
   if (state.kind === 'next-month') {
     return { bg: '#F0F0F0', text: '#BFBFBF', withStroke: false, bookColor: null }
   }
-  if (state.kind === 'missed') {
+  if (state.kind === 'missed' || state.kind === 'future') {
     return { bg: '#F0F0F0', text: '#676767', withStroke: false, bookColor: null }
   }
-  if (state.kind === 'future') {
-    return { bg: '#F0F0F0', text: '#676767', withStroke: false, bookColor: null }
+  // completed(과거 출석) | today.
+  // 출석 = 그날 XP 획득(이 과목 테스트 풀이 기록 존재). completed 는 항상 출석,
+  // today 는 풀이 수(books)>0 일 때만 출석. 출석한 날만 보라색 배경(책 표시 없음).
+  const attended = state.kind === 'completed' || (state.books ?? 0) > 0
+  if (attended) {
+    return { bg: '#8F8DF0', text: '#FFFFFF', withStroke: state.kind === 'today', bookColor: null }
   }
-  // completed | today — streakDay 기반 색
-  const day = state.streakDay ?? 0
-  if (day >= 5) {
-    return {
-      bg: '#383698',
-      text: '#FFFFFF',
-      withStroke: state.kind === 'today',
-      bookColor: '#FFFFFF',
-    }
-  }
-  if (day >= 2) {
-    return {
-      bg: '#8F8DF0',
-      text: '#4A49A1',
-      withStroke: state.kind === 'today',
-      bookColor: '#FFFFFF',
-    }
-  }
-  if (day === 1) {
-    return {
-      bg: '#DEDEF8',
-      text: '#4A49A1',
-      withStroke: state.kind === 'today',
-      bookColor: '#FFFFFF',
-    }
-  }
-  // today인데 미참여 (streakDay=0)
-  return {
-    bg: '#F0F0F0',
-    text: '#383698',
-    withStroke: state.kind === 'today',
-    bookColor: null,
-  }
+  // today 인데 미출석
+  return { bg: '#F0F0F0', text: '#383698', withStroke: state.kind === 'today', bookColor: null }
 }
 
 /** 한 셀에 표시할 책 권수 cap */
