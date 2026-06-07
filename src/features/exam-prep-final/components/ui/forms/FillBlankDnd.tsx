@@ -86,7 +86,27 @@ export function FillBlankDnd({
   const chipFontSize = `${(1.5 * fontScale).toFixed(3)}cqw`;
 
   const parts = useMemo(() => questionText.split(/_{2,}/), [questionText]);
-  const usedChipIndexes = new Set(value.filter((v): v is number => v !== null));
+
+  // 채점 완료 여부 (isCorrect 가 boolean 으로 도착).
+  const graded = typeof isCorrect === "boolean";
+  const correctIndexes = useMemo(() => {
+    if (correctAnswer === null || correctAnswer === undefined) return [];
+    if (Array.isArray(correctAnswer)) return correctAnswer as number[];
+    return [correctAnswer];
+  }, [correctAnswer]);
+  const correctSet = useMemo(
+    () => new Set(correctIndexes.filter((x): x is number => typeof x === "number")),
+    [correctIndexes],
+  );
+
+  // 하단 칩 풀에서 숨길 칩(=빈칸에 놓인 칩). 단, 채점 후 정답 칩을 '제 위치가 아닌'
+  // 빈칸에 잘못 넣은 경우엔 풀에 남겨 정답(순서 배지)으로 다시 노출한다. (오배치된 정답 누락 방지)
+  const usedChipIndexes = new Set<number>();
+  value.forEach((v, i) => {
+    if (v === null) return;
+    if (graded && correctSet.has(v) && correctIndexes[i] !== v) return;
+    usedChipIndexes.add(v);
+  });
   const availableChips = choices
     .map((label, idx) => ({ label, idx }))
     .filter((c) => !usedChipIndexes.has(c.idx));
@@ -123,15 +143,8 @@ export function FillBlankDnd({
     onChange(next);
   };
 
-  const correctIndexes = useMemo(() => {
-    if (correctAnswer === null || correctAnswer === undefined) return [];
-    if (Array.isArray(correctAnswer)) return correctAnswer as number[];
-    return [correctAnswer];
-  }, [correctAnswer]);
-
-  // 채점 완료 여부 (isCorrect 가 boolean 으로 도착). 빈칸별 정/오답은 전체 isCorrect 와 무관하게
-  // 위치별 일치(value[i]===correctIndexes[i])로 판정 — 한 칸만 맞아도 그 칸은 정답 처리(시안).
-  const graded = typeof isCorrect === "boolean";
+  // 빈칸별 정/오답은 전체 isCorrect 와 무관하게 위치별 일치(value[i]===correctIndexes[i])로 판정
+  // — 한 칸만 맞아도 그 칸은 정답 처리(시안). graded/correctIndexes 는 상단에서 계산.
   // 정답 choice index → 빈칸 위치(0-based). 순서 배지 번호 = position+1. (정답 선지에 1·2 배지)
   const choicePosition = useMemo(() => {
     const m = new Map<number, number>();
