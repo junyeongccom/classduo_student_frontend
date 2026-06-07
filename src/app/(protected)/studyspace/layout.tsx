@@ -158,6 +158,10 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const examPrepCourseId = examPrepMatch?.[1] ?? null
   const isExamPrepPage = !!examPrepCourseId
 
+  // 회차별 학습 페이지 감지 (/lectures 목록 + /lecture/[id] 상세).
+  // 불꽃(연속 학습 보상)은 회차별 학습에서만 노출 — 과목 대시보드·대화형 등에서는 숨김.
+  const isLectureStudyPage = /^\/studyspace\/course\/[^/]+\/lectures?(?:\/|$)/.test(pathname)
+
   const [gamificationState, setGamificationState] = useState<StudentCourseStateDto | null>(null)
   const [gamificationLoading, setGamificationLoading] = useState(false)
 
@@ -232,7 +236,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                   courseId={examPrepCourseId}
                 />
               </div>
-            ) : (
+            ) : isLectureStudyPage ? (
               <div ref={flameRef} className="relative hidden md:block">
                 <button
                   id="flame-badge"
@@ -273,7 +277,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
             <div ref={profileRef} className="relative flex items-center gap-3 md:border-l md:border-gray-200 dark:border-gray-700 md:pl-3">
               <img src="/KU_logo.png" alt="" className="hidden md:block h-9 shrink-0 object-contain" />
               <div className="hidden md:block">

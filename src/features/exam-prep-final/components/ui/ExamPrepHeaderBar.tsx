@@ -154,7 +154,7 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
     ? '경험치를 모으고 A+ 뱃지를 달성하세요!\n추첨 이벤트 예정!'
     : 'Earn XP and unlock the A+ badge!\nRaffle event coming soon!'
   const expTooltipConfirm = isKo ? '확인' : 'OK'
-  const badgePopupTitle = isKo ? '학점 뱃지 시스템' : 'Grade Badge System'
+  const badgePopupTitle = isKo ? 'A+ 랭크에 도전하세요!' : 'Aim for the A+ rank!'
   const badgePopupSubtitle = isKo
     ? '각 학점 진급에 필요한 누적 XP'
     : 'Total XP thresholds for each grade promotion'
