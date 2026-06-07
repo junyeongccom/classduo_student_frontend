@@ -249,6 +249,10 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
         <CoreTestListModal
           coreTests={data.coreTests}
           onClose={() => setListOpen(false)}
+          onSelectTest={(test) => {
+            setListOpen(false)
+            handleStartTest(test)
+          }}
         />
       )}
     </>
