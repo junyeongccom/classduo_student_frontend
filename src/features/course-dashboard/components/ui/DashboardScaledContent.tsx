@@ -9,16 +9,13 @@
 
 'use client'
 
-import Image from 'next/image'
 import { Bookmark, ChevronRight, PencilLine } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { LucideIcon } from 'lucide-react'
 
 import { ExamPrepHeroCard } from './ExamPrepHeroCard'
 import { resolveDayTone, MAX_BOOKS_PER_CELL, type MonthGrid } from '../../domain/calendar'
-import { resolveGradeTier } from '../../domain/grade'
 import { resolveDdayTone } from '../../domain/dday'
-import { RANK_THRESHOLDS } from '@/features/exam-prep-final/components/result-overlay/utils'
 
 export const DASH_DESIGN_W = 2103
 export const DASH_DESIGN_H = 1477
@@ -66,10 +63,6 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
     monthGrid,
     examDday,
     currentStreak,
-    displayName,
-    xp,
-    rankCode,
-    courseTitle,
     isExamPrepLocked,
     examPrepLockedTooltip,
     onHero,
@@ -110,26 +103,21 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
         />
       </Slot>
 
-      <Slot left={115} top={1229} width={350} height={146}>
-        <QuickAction icon={PencilLine} label={t('courseNav.createQuestion')} onClick={onCreate} />
-      </Slot>
-      <Slot left={477} top={1229} width={350} height={146}>
-        <QuickAction icon={Bookmark} label={t('courseDashboard.myQuizSaved')} onClick={onMyQuiz} />
-      </Slot>
-
       {/* ── 우측 ── */}
       <Slot left={1040.875} top={124} width={899.25} height={688.875}>
         <CalendarCard monthGrid={monthGrid} examDday={examDday} currentStreak={currentStreak} />
       </Slot>
 
+      {/* 예상학점 카드 자리 — 문제 만들기 / 내 퀴즈 저장소 2장 (세로 스택, 987×480) */}
       <Slot left={997} top={872.875} width={987} height={480}>
-        {isExamPrepLocked ? (
-          <div className="flex h-full w-full items-center justify-center rounded-[20px] bg-white px-10 text-center shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
-            <p className="text-[28px] font-medium text-gray-500">{t('courseDashboard.gradeLockedNotice')}</p>
+        <div className="flex h-full w-full flex-col gap-[28px]">
+          <div className="flex-1 rounded-[20px] bg-white px-[48px] shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_6px_28px_rgba(15,23,42,0.1)]">
+            <QuickAction icon={PencilLine} label={t('courseNav.createQuestion')} onClick={onCreate} />
           </div>
-        ) : (
-          <GradeCard displayName={displayName} xp={xp} rankCode={rankCode} courseTitle={courseTitle} />
-        )}
+          <div className="flex-1 rounded-[20px] bg-white px-[48px] shadow-[0_4px_20px_rgba(15,23,42,0.06)] transition-shadow hover:shadow-[0_6px_28px_rgba(15,23,42,0.1)]">
+            <QuickAction icon={Bookmark} label={t('courseDashboard.myQuizSaved')} onClick={onMyQuiz} />
+          </div>
+        </div>
       </Slot>
     </div>
   )
@@ -313,59 +301,4 @@ function DayCell({ cell }: { cell: MonthGrid['cells'][number] }) {
   )
 }
 
-/* ─────────────────────────────────────────────────────────────
-   예상 학점 카드 (987×480) — Figma 991:3391
-   ───────────────────────────────────────────────────────────── */
-function GradeCard({
-  displayName,
-  xp,
-  rankCode,
-  courseTitle,
-}: {
-  displayName: string
-  xp: number
-  rankCode: string
-  courseTitle?: string
-}) {
-  const t = useTranslations()
-  const step = RANK_THRESHOLDS.find((s) => s.from === rankCode)
-  const isMax = !step
-  const prevTotal = RANK_THRESHOLDS.find((s) => s.to === rankCode)?.total ?? 0
-  const nextTotal = step?.total ?? xp
-  const span = nextTotal - prevTotal
-  const earned = Math.max(0, xp - prevTotal)
-  const progressRatio = span > 0 ? Math.min(1, earned / span) : 1
-  const xpToNext = isMax ? 0 : Math.max(0, nextTotal - xp)
-  const tier = resolveGradeTier(rankCode)
-
-  return (
-    <div
-      className="flex h-full w-full flex-col justify-center rounded-[20px] bg-white px-[40px] shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
-      style={{ fontFamily: 'Pretendard, sans-serif' }}
-    >
-      <p className="px-[12px] text-[40px] font-bold text-black">
-        {t('courseDashboard.expectedGradeTitle', { name: displayName })}
-      </p>
-      <div className="mt-[8px] flex items-center gap-[8px] px-[18px]">
-        {/* F 뱃지 */}
-        <div className="relative flex shrink-0 items-center justify-center" style={{ width: 298, height: 304 }}>
-          <Image src={tier.badgeSrc} alt={t('courseDashboard.rankBadgeAlt', { rank: rankCode })} width={280} height={280} className="object-contain" />
-        </div>
-        {/* 우측 — 경험치 + 바 + 면책 */}
-        <div className="flex flex-1 flex-col items-center gap-[20px] px-[28px]">
-          <div className="flex items-end gap-[8px]">
-            <span className="pb-[10px] text-[36px] font-bold text-black">{t('courseDashboard.toNextRank')}</span>
-            <span className="text-[100px] font-bold leading-[1.1] text-black">{isMax ? '★' : xpToNext}</span>
-            <span className="pb-[14px] text-[48px] font-bold text-black">XP</span>
-          </div>
-          <div className="relative w-full overflow-hidden rounded-[20px] bg-[#f0f0f0]" style={{ height: 25 }}>
-            <div className="absolute inset-y-0 left-0 rounded-[20px] bg-[#f74d4d]" style={{ width: `${Math.round(progressRatio * 100)}%` }} />
-          </div>
-          <p className="text-center text-[20px] leading-[1.3] text-[#404040]">
-            {t('courseDashboard.gradeDisclaimer', { course: courseTitle ?? '' })}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
+/* 예상 학점 카드(GradeCard)는 과목 대시보드에서 제거됨 — 해당 자리에 문제 만들기 / 내 퀴즈 저장소 배치. */
