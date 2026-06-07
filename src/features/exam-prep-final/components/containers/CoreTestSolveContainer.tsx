@@ -88,6 +88,22 @@ export function CoreTestSolveContainer({
 
   // ─── 우측 통합 패널(출처+챗봇 2탭) 활성 탭 — null=닫힘 (UI 순간 상태) ───
   const [rightTab, setRightTab] = useState<'materials' | 'recordings' | 'chat' | null>(null)
+  // 우측 패널 폭(px, 데스크탑) — 좌측 경계 드래그로 리사이즈. 패널은 absolute 오버레이라
+  // 문제 영역은 줄지 않고 패널이 그 위를 덮는다 (사용자 요청).
+  const [rightPanelWidth, setRightPanelWidth] = useState(420)
+  const startResize = useCallback((e: React.PointerEvent) => {
+    e.preventDefault()
+    const onMove = (ev: PointerEvent) => {
+      const w = window.innerWidth - ev.clientX // 좌측 핸들 → 왼쪽으로 끌수록 넓어짐
+      setRightPanelWidth(Math.min(Math.round(window.innerWidth * 0.7), Math.max(320, w)))
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }, [])
 
   // ─── 챗봇 store (testId 단위 키잉) ───
   const setStoreTestId = useExamPrepSolveStore((s) => s.setTestId)
@@ -1283,7 +1299,17 @@ export function CoreTestSolveContainer({
             데스크탑은 in-flow(공간 차지) — 열리면 본문 영역이 좁아진 만큼 왼쪽으로 밀려서 패널에 안 가려짐.
             세 탭 콘텐츠는 모두 마운트 유지 + hidden 토글(탭 전환 시 챗봇 히스토리/입력·자료 스크롤 보존). */}
         {rightTab && (
-          <div className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:relative md:inset-auto md:h-full md:w-[max(360px,28.125cqw)] md:rounded-none md:border-t-0 md:border-l md:shadow-none shrink-0 dark:border-gray-700 dark:bg-gray-900">
+          <div
+            style={{ '--rpw': `${rightPanelWidth}px` } as React.CSSProperties}
+            className="fixed inset-x-0 bottom-0 z-40 flex h-[55dvh] w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-x-auto md:left-auto md:right-0 md:top-0 md:bottom-0 md:h-auto md:w-[var(--rpw)] md:min-w-[320px] md:max-w-[70vw] md:rounded-none md:border-t-0 md:border-l md:shadow-xl dark:border-gray-700 dark:bg-gray-900"
+          >
+            {/* 좌측 경계 리사이즈 핸들 (데스크탑) — 드래그로 폭 조절. 패널은 오버레이라 문제영역은 안 줄어듦. */}
+            <div
+              onPointerDown={startResize}
+              role="separator"
+              aria-orientation="vertical"
+              className="absolute left-0 top-0 bottom-0 z-50 hidden w-2 -translate-x-1/2 cursor-col-resize transition-colors hover:bg-[#6366F1]/30 active:bg-[#6366F1]/40 md:block"
+            />
             {/* 상단 3탭 헤더: 강의자료 / 녹음본 / AI 챗봇 */}
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700">
               <div className="flex gap-1">
