@@ -23,6 +23,8 @@ export type Mcq4SingleFormProps = {
   /** 힌트로 제거된 오답 인덱스 — 해당 선택지는 비활성/취소선 표시. */
   eliminatedIdx?: number;
   feedbackSlot?: React.ReactNode;
+  /** Active Recall 게이트 — 제공되면 선지 대신 이 노드를 렌더(문제만 노출, 선지 가림). */
+  recallSlot?: React.ReactNode;
 };
 
 const C_MASTER = "var(--color-mastery-master)";
@@ -46,6 +48,7 @@ export function Mcq4SingleForm({
   result,
   eliminatedIdx,
   feedbackSlot,
+  recallSlot,
 }: Mcq4SingleFormProps) {
   const t = useTranslations("examPrepFinal");
   const correct =
@@ -66,7 +69,11 @@ export function Mcq4SingleForm({
         {feedbackSlot}
       </div>
 
-      {/* 4개 선지 — 분리된 흰 라운드 박스 + letter + 세로 구분선 + 텍스트 */}
+      {/* Active Recall 게이트 — 선지 대신 '먼저 떠올려보기' 박스 노출 (skilled 숙련도 한정). */}
+      {recallSlot ? (
+        recallSlot
+      ) : (
+      /* 4개 선지 — 분리된 흰 라운드 박스 + letter + 세로 구분선 + 텍스트 */
       <fieldset className="flex w-full flex-col" style={{ gap: "1.481cqw" /* figma 선지 간격 24px */ }} disabled={disabled}>
         {choices.map((choice, idx) => {
           const letter = String.fromCharCode(65 + idx);
@@ -153,6 +160,7 @@ export function Mcq4SingleForm({
           );
         })}
       </fieldset>
+      )}
     </div>
   );
 }

@@ -144,7 +144,9 @@
       "matchInstruction": "좌측 개념을 클릭한 뒤, 우측에서 알맞은 정의를 클릭하세요.",
       "startFailed": "응시를 시작하지 못했습니다.",
       "attemptCompletedNew": "이전 응시가 완료되어 새 응시를 시작합니다.",
-      "gradeError": "채점 중 오류가 발생했습니다"
+      "gradeError": "채점 중 오류가 발생했습니다",
+      "activeRecallPrompt": "정답을 먼저 떠올려 보세요",
+      "activeRecallShowOptions": "선지 보기"
     },
     "elapsedTime": "경과 시간",
     "solveLoadError": "문항을 불러오지 못했습니다.",

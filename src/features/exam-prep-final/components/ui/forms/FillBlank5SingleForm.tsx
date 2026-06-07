@@ -24,6 +24,8 @@ export type FillBlank5SingleFormProps = {
   /** 힌트로 제거된 오답 chip index. */
   eliminatedIdx?: number;
   feedbackSlot?: React.ReactNode;
+  /** Active Recall 게이트 — 칩(선지) 풀 대신 노출할 박스. */
+  recallSlot?: React.ReactNode;
 };
 
 export function FillBlank5SingleForm({
@@ -35,6 +37,7 @@ export function FillBlank5SingleForm({
   result,
   eliminatedIdx,
   feedbackSlot,
+  recallSlot,
 }: FillBlank5SingleFormProps) {
   const blanksValue: (number | null)[] = [value];
   const handleChange = (next: (number | null)[]) => {
@@ -55,6 +58,7 @@ export function FillBlank5SingleForm({
       isCorrect={result?.is_correct}
       eliminatedIdx={result ? undefined : eliminatedIdx}
       feedbackSlot={feedbackSlot}
+      recallSlot={recallSlot}
     />
   );
 }
