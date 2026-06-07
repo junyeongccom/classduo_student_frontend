@@ -281,7 +281,7 @@
   },
   "aiTutorChat": {
     "selectLectureTitle": "Please select a class",
-    "selectLectureDescription": "Select a class on the right to start chatting with the AI tutor",
+    "selectLectureDescription": "Select a class on the left to start chatting with the AI tutor",
     "askAnythingPlaceholder": "Ask me anything.",
     "simpleHelpText": "SIMPLE: More concise and accuracy-focused, grounded in the lecture materials.",
     "deepHelpText": "DEEP: Longer and gentler explanations, with more use of general knowledge.",
