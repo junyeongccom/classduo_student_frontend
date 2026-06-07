@@ -104,17 +104,17 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
         />
       </Slot>
 
-      {/* 좌하단 — 문제 만들기 / 내 퀴즈 저장소 2열 (흰 박스 없이, Figma 350×146) */}
-      <Slot left={115} top={1229} width={350} height={146}>
-        <QuickAction icon={PencilLine} label={t('courseNav.createQuestion')} onClick={onCreate} />
-      </Slot>
-      <Slot left={477} top={1229} width={350} height={146}>
-        <QuickAction icon={Bookmark} label={t('courseDashboard.myQuizSaved')} onClick={onMyQuiz} />
-      </Slot>
-
       {/* ── 우측 ── */}
       <Slot left={1040.875} top={124} width={899.25} height={688.875}>
         <CalendarCard monthGrid={monthGrid} examDday={examDday} currentStreak={currentStreak} />
+      </Slot>
+
+      {/* 캘린더 밑 — 문제 만들기 / 내 퀴즈 저장소 2열 (흰 박스 없이, Figma 350×146) */}
+      <Slot left={1040.875} top={864} width={350} height={146}>
+        <QuickAction icon={PencilLine} label={t('courseNav.createQuestion')} onClick={onCreate} />
+      </Slot>
+      <Slot left={1402.875} top={864} width={350} height={146}>
+        <QuickAction icon={Bookmark} label={t('courseDashboard.myQuizSaved')} onClick={onMyQuiz} />
       </Slot>
     </div>
   )
