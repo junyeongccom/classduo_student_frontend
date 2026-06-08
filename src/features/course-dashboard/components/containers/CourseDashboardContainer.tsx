@@ -8,7 +8,7 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -17,8 +17,6 @@ import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 import { useCourseDashboard } from '../../hooks/useCourseDashboard'
 import { useDashboardMock } from '../../hooks/useDashboardMock'
-import { isExamPrepLockedNow } from '../../domain/examPrepUnlock'
-import { useAuthStore } from '@/features/auth/store/authStore'
 import { ScaledCanvas } from '../ui/ScaledCanvas'
 import {
   DashboardScaledContent,
@@ -37,14 +35,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     examDday,
   } = useCourseDashboard(courseId)
   const { user, streak, monthGrid, rankCode } = useDashboardMock(courseId)
-
-  // 기말대비학습 카드 잠금 — 자정 경계 hydration 안전을 위해 client mount 시 계산.
-  // allowlist 사용자(천준영/테스트계정/테스트)는 prod 에서도 오픈되므로 full_name 을 함께 반영.
-  const examPrepFullName = useAuthStore((s) => s.user?.full_name)
-  const [isExamPrepLocked, setIsExamPrepLocked] = useState(false)
-  useEffect(() => {
-    setIsExamPrepLocked(isExamPrepLockedNow(examPrepFullName))
-  }, [examPrepFullName])
 
   useEffect(() => {
     trackPageEnter('course_dashboard', { courseId })
@@ -105,8 +95,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
             xp={user.xp}
             rankCode={rankCode}
             courseTitle={courseTitle ?? undefined}
-            isExamPrepLocked={isExamPrepLocked}
-            examPrepLockedTooltip={t('courseDashboard.examPrepLockedTooltip')}
             onHero={() => router.push(`/studyspace/course/${courseId}/exam-prep`)}
             onWeekly={() => router.push(`/studyspace/course/${courseId}/lectures`)}
             onDialogue={() => router.push(`/studyspace/course/${courseId}/dialogue`)}

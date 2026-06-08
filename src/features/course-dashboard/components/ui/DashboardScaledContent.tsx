@@ -30,8 +30,6 @@ interface DashboardScaledContentProps {
   xp: number
   rankCode: string
   courseTitle?: string
-  isExamPrepLocked: boolean
-  examPrepLockedTooltip: string
   onHero: () => void
   onWeekly: () => void
   onDialogue: () => void
@@ -65,8 +63,6 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
     monthGrid,
     examDday,
     currentStreak,
-    isExamPrepLocked,
-    examPrepLockedTooltip,
     onHero,
     onWeekly,
     onDialogue,
@@ -82,8 +78,6 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
         <ExamPrepHeroCard
           title={t('courseDashboard.modeExam.title')}
           subtitle={t('courseDashboard.modeExam.heroSubtitle')}
-          isLocked={isExamPrepLocked}
-          lockedTooltip={examPrepLockedTooltip}
           onClick={onHero}
         />
       </Slot>
