@@ -78,7 +78,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
   const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>([])
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
-  const [isInputFocused, setIsInputFocused] = useState(false) // 입력창 포커스 상태
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false) // 질문 리스트 표시 상태
   const [hasTypedInSession, setHasTypedInSession] = useState(false) // 세션 내 타이핑 여부
   // v1.0: DEEP 모드 안내 배너 제거 — 관련 state 삭제
@@ -157,9 +156,17 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }, [isLoading, selectedLectureIds, locale, reviewKeyAnswersByLocale, setReviewKeyAnswersCache])
 
-  // lecture_ids/locale 변경 시 후킹 질문과 PQM 질문 로드 (단일 선택 시에만)
+  // 제안 질문 패널은 회차/locale 이 실제로 바뀔 때만 닫는다.
+  // (아래 로딩 effect 는 Zustand 캐시 객체 identity 변화 — 반대 locale 백그라운드 프리페치의
+  //  setHookingCache/setPqmCache — 로 재실행되는데, 거기서 패널을 닫으면 사용자가 막 연 패널이
+  //  깜빡이며 사라지는 버그가 생긴다. 그래서 닫기 책임을 식별자 의존 effect 로 분리.)
+  const lectureKey = selectedLectureIds.join(',')
   useEffect(() => {
     setShowSuggestionsPanel(false)
+  }, [lectureKey, locale])
+
+  // lecture_ids/locale 변경 시 후킹 질문과 PQM 질문 로드 (단일 선택 시에만)
+  useEffect(() => {
     if (selectedLectureIds.length !== 1) {
       setHookingQuestions([])
       setPQMQuestions([])
@@ -1360,7 +1367,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               simpleHelpText={t('simpleHelpText')}
               deepHelpText={t('deepHelpText')}
               onFocus={() => {
-                setIsInputFocused(true)
                 if (hasSuggestions && !showSuggestionsPanel) {
                   setShowSuggestionsPanel(true)
                   const lectureId = selectedLectureIds[0]
@@ -1368,11 +1374,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   if (pqmQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: pqmQuestions.length })
                 }
                 chatAnalytics.inputFocus(selectedLectureIds[0])
-              }}
-              onBlur={() => {
-                setTimeout(() => {
-                  setIsInputFocused(false)
-                }, 200)
               }}
             />
           </div>
