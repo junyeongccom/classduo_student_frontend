@@ -1367,11 +1367,16 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               simpleHelpText={t('simpleHelpText')}
               deepHelpText={t('deepHelpText')}
               onFocus={() => {
-                if (hasSuggestions && !showSuggestionsPanel) {
+                // 포커스(=사용자 의도)면 패널을 연다. 아직 PQM 로딩 전이어도 열어두면, 로드 완료 시
+                // hasSuggestions 가 true 가 되며 패널이 자동으로 나타난다. (포커스가 로딩보다 빨라도
+                // '안 뜨고 다시 눌러야 뜨는' 문제 방지 — 노출 분석만 데이터가 준비됐을 때 보낸다.)
+                if (!showSuggestionsPanel) {
                   setShowSuggestionsPanel(true)
-                  const lectureId = selectedLectureIds[0]
-                  if (SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: hookingQuestions.length })
-                  if (pqmQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: pqmQuestions.length })
+                  if (hasSuggestions) {
+                    const lectureId = selectedLectureIds[0]
+                    if (SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: hookingQuestions.length })
+                    if (pqmQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: pqmQuestions.length })
+                  }
                 }
                 chatAnalytics.inputFocus(selectedLectureIds[0])
               }}
