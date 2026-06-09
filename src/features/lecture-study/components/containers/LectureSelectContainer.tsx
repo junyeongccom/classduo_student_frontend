@@ -37,6 +37,11 @@ function getLectureLabel(lecture: Lecture, locale: string): string {
   return lecture.title ?? `${lecture.lecture_number ?? '?'}`
 }
 
+/** '생명과학의 세계' 과목은 데모상 진도율을 항상 100%로 노출 (콘텐츠 미오픈 회차 무관). */
+function isFullProgressCourse(title?: string | null): boolean {
+  return !!title && (title.includes('생명과학의 세계') || title.includes('World of Life Science'))
+}
+
 export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const t = useTranslations()
   const locale = useLocale()
@@ -98,6 +103,8 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const progressPercent = lectures.length > 0
     ? Math.round((activeLectureCount / lectures.length) * 100)
     : 0
+  // '생명과학의 세계' 과목은 데모상 진도율을 항상 100%로 표시.
+  const displayProgressPercent = isFullProgressCourse(courseTitle) ? 100 : progressPercent
 
   // 학기 라벨 — useCourses 에서 매칭
   const { courses } = useCourses()
@@ -202,13 +209,13 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#A78BFA] to-[#6366F1] transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
+                  style={{ width: `${displayProgressPercent}%` }}
                 />
               </div>
               <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
                 {locale === 'ko' ? `진도율 ` : `Progress `}
                 <span className="font-bold text-gray-900 dark:text-gray-50">
-                  {progressPercent}%
+                  {displayProgressPercent}%
                 </span>
               </span>
             </div>
