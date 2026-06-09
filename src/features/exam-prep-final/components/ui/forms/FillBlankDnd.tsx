@@ -195,7 +195,9 @@ export function FillBlankDnd({
   const usedChipIndexes = new Set<number>();
   value.forEach((v, i) => {
     if (v === null) return;
-    if (graded && correctSet.has(v) && correctIndexes[i] !== v) return;
+    // 전체 정답이면(순서무관 swap 포함) 배치를 그대로 인정 → 칩 숨김.
+    // 오답일 때만 '제 위치 아닌' 칸의 정답 칩을 풀에 남겨 정답으로 재노출.
+    if (graded && isCorrect !== true && correctSet.has(v) && correctIndexes[i] !== v) return;
     usedChipIndexes.add(v);
   });
   const availableChips = choices
@@ -253,8 +255,8 @@ export function FillBlankDnd({
     onChange(next);
   };
 
-  // 빈칸별 정/오답은 전체 isCorrect 와 무관하게 위치별 일치(value[i]===correctIndexes[i])로 판정
-  // — 한 칸만 맞아도 그 칸은 정답 처리(시안). graded/correctIndexes 는 상단에서 계산.
+  // 빈칸별 정/오답: 전체 정답이면 모든 칸을 정답으로(순서무관 문항이 swap 으로 정답인 경우 포함),
+  // 아니면 위치별 일치(value[i]===correctIndexes[i]) — 한 칸만 맞아도 그 칸은 정답(시안).
   // 정답 choice index → 빈칸 위치(0-based). 순서 배지 번호 = position+1. (정답 선지에 1·2 배지)
   const choicePosition = useMemo(() => {
     const m = new Map<number, number>();
@@ -334,7 +336,9 @@ export function FillBlankDnd({
                       disabled={disabled}
                       isCorrect={
                         graded
-                          ? value[blankIdx] !== null && value[blankIdx] === correctIndexes[blankIdx]
+                          ? value[blankIdx] !== null &&
+                            (isCorrect === true ||
+                              value[blankIdx] === correctIndexes[blankIdx])
                           : null
                       }
                       orderNo={blankIdx + 1}
