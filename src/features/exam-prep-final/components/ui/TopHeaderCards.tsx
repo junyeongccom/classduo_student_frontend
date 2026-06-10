@@ -26,9 +26,9 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
   const formattedExamDate = formatExamDate(data.examDate, locale)
 
   return (
-    <div className="grid h-full grid-cols-1 gap-5 md:grid-cols-3">
-      {/* D-day card (보라 그라데이션) */}
-      <div className="relative h-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] px-7 py-7 text-white shadow-md shadow-indigo-500/20">
+    <div className="grid h-full grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+      {/* D-day card (보라 그라데이션) — 모바일은 상단 전체폭(2열 span), 데스크톱은 1열 */}
+      <div className="relative col-span-2 h-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] px-6 py-6 text-white shadow-md shadow-indigo-500/20 md:col-span-1 md:px-7 md:py-7">
         <p className="mb-3 text-sm font-medium uppercase tracking-wider opacity-80">
           {t('examPrepFinal.ddayCardTitle')}
         </p>
@@ -40,12 +40,12 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
       </div>
 
       {/* Mastery progress card */}
-      <div className="flex h-full flex-col justify-between rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex h-full flex-col justify-between rounded-3xl border border-gray-200 bg-white px-5 py-5 dark:border-gray-700 dark:bg-gray-900 md:px-7 md:py-7">
         <div>
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
             {t('examPrepFinal.masteryCardTitle')}
           </p>
-          <p className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-50">
+          <p className="mt-3 text-base font-semibold text-gray-900 dark:text-gray-50 md:text-lg">
             {t('examPrepFinal.masteryReached')}{' '}
             <span className="font-bold">
               {data.masteredCount} / {data.totalCoreTests}
@@ -67,7 +67,7 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
       </div>
 
       {/* Recommended card */}
-      <div className="flex h-full flex-col rounded-3xl border border-gray-200 bg-white px-7 py-7 dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex h-full flex-col rounded-3xl border border-gray-200 bg-white px-5 py-5 dark:border-gray-700 dark:bg-gray-900 md:px-7 md:py-7">
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
           {t('examPrepFinal.recommendedTitle')}
         </p>
@@ -98,7 +98,7 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
         <button
           type="button"
           onClick={onRecommendedClick}
-          className="mt-auto rounded-xl bg-[#6366F1] py-3.5 text-base font-semibold text-white transition-colors hover:bg-[#5558E6]"
+          className="mt-auto rounded-xl bg-[#6366F1] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#5558E6] md:py-3.5 md:text-base"
         >
           {t('examPrepFinal.recommendedStart')}
         </button>

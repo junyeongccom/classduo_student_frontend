@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl'
 import { ChevronRight, List as ListIcon, Loader2 as LoaderIcon } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
 import { TopHeaderCards } from '../ui/TopHeaderCards'
 import { SelectedTestInfoCard } from '../ui/SelectedTestInfoCard'
@@ -322,6 +323,9 @@ function CoreSetContent({
   onSelectCore: (id: string) => void
   onSelectMid: (setNumber: 1 | 2 | 3) => void
 }) {
+  // 모바일(<768px)에서는 한 줄에 핵심테스트 3개만 배치 → 5개 논리행이 3+2 로 갈라지며
+  // 4/1/4/1 대신 시안(1041:3708)의 3/2/3/2 배열이 된다. 데스크톱은 5개 한 줄 그대로.
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const tests = getCoreTestsBySet(data.coreTests, setNumber)
   const midTest = data.midTests.find((m) => m.setNumber === setNumber)
 
@@ -349,6 +353,9 @@ function CoreSetContent({
     rows = chunkInto(items, Math.max(1, Math.ceil(items.length / 2)))
   }
 
+  // 모바일: 각 논리행(최대 5개)을 3개씩 다시 쪼개 3/2 로 분배. 데스크톱은 원본 유지.
+  const displayRows = isMobile ? rows.flatMap((row) => chunkInto(row, 3)) : rows
+
   const isCoreSelected = (id: string) =>
     selection?.kind === 'core' && selection.id === id
   const isMidSelected = (setNum: 1 | 2 | 3) =>
@@ -356,7 +363,7 @@ function CoreSetContent({
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
-      {rows.map((row, ri) => (
+      {displayRows.map((row, ri) => (
         <div key={ri} className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 md:gap-6">
           {row.map((item) =>
             item.kind === 'core' ? (
