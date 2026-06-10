@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl'
 import { ChevronRight, List as ListIcon, Loader2 as LoaderIcon } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
 import { TopHeaderCards } from '../ui/TopHeaderCards'
 import { SelectedTestInfoCard } from '../ui/SelectedTestInfoCard'
@@ -53,6 +54,9 @@ const PRELOAD_ASSETS = [
 export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
   const t = useTranslations()
   const router = useRouter()
+  // 모바일(<768px): 테스트 선택 시 상단 3박스를 유지한 채, 선택 정보 카드를
+  // 하단 사이드바 버튼 위에 floating 으로 띄운다(시안 1041:3796). 데스크톱은 기존대로 상단 스왑.
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const { courseTitle } = useLectures(courseId)
   const { data, isLoading, error, refresh } = useExamPrepData(courseId)
   // 페이지 마운트 시 PNG 자산 prefetch — 첫 클릭 딜레이 방지
@@ -169,7 +173,13 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
       </StudyspaceTopbarSlot>
 
       <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-3 py-5 md:px-10 md:py-10">
+        <div
+          className={cn(
+            'mx-auto max-w-5xl px-3 py-5 md:px-10 md:py-10',
+            // 모바일에서 floating 카드가 뜰 때, 마지막 테스트 버튼이 카드에 가리지 않도록 하단 여백 확보
+            isMobile && (selectedCoreTest || selectedMidTest) && 'pb-44',
+          )}
+        >
           {startError && (
             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               {startError}
@@ -179,12 +189,12 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
               세 가지 변형의 자연 높이가 달라 스왑 시 하단 컨텐츠가 들썩이는 문제 →
               고정 높이 래퍼로 묶고 내부는 h-full 로 채워 레이아웃 시프트 방지. */}
           <div className="md:h-[200px]">
-            {selectedCoreTest ? (
+            {!isMobile && selectedCoreTest ? (
               <SelectedTestInfoCard
                 test={selectedCoreTest}
                 onStart={() => handleStartTest(selectedCoreTest)}
               />
-            ) : selectedMidTest ? (
+            ) : !isMobile && selectedMidTest ? (
               <SelectedMidTestInfoCard
                 midTest={selectedMidTest}
                 onStart={() => handleStartMid(selectedMidTest)}
@@ -243,6 +253,27 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
           </div>
         </div>
       </div>
+
+      {/* 모바일 floating 정보 카드 — 테스트 선택 시 하단 사이드바 버튼(좌하단 z-[48]) 위에 띄움.
+          --u 는 --app-w(min(100vw,430px))/390 이라 1.10 으로 캡 → 햄버거 버튼 상단이 뷰포트 하단에서
+          최대 ~62px → bottom 80px + safe-area 면 전 모바일 폭에서 버튼과 겹치지 않는다. (시안 1041:3796) */}
+      {isMobile && (selectedCoreTest || selectedMidTest) && (
+        <div className="fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom))] z-[45] flex justify-center px-4">
+          <div className="w-full max-w-[480px] rounded-3xl shadow-[0_8px_30px_rgba(15,23,42,0.18)]">
+            {selectedCoreTest ? (
+              <SelectedTestInfoCard
+                test={selectedCoreTest}
+                onStart={() => handleStartTest(selectedCoreTest)}
+              />
+            ) : selectedMidTest ? (
+              <SelectedMidTestInfoCard
+                midTest={selectedMidTest}
+                onStart={() => handleStartMid(selectedMidTest)}
+              />
+            ) : null}
+          </div>
+        </div>
+      )}
 
       {/* 목록 모달 — 핵심테스트 26개 (서술형 중간테스트 제외) 주제 목록 */}
       {listOpen && (
@@ -322,6 +353,9 @@ function CoreSetContent({
   onSelectCore: (id: string) => void
   onSelectMid: (setNumber: 1 | 2 | 3) => void
 }) {
+  // 모바일(<768px)에서는 한 줄에 핵심테스트 3개만 배치 → 5개 논리행이 3+2 로 갈라지며
+  // 4/1/4/1 대신 시안(1041:3708)의 3/2/3/2 배열이 된다. 데스크톱은 5개 한 줄 그대로.
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const tests = getCoreTestsBySet(data.coreTests, setNumber)
   const midTest = data.midTests.find((m) => m.setNumber === setNumber)
 
@@ -349,6 +383,9 @@ function CoreSetContent({
     rows = chunkInto(items, Math.max(1, Math.ceil(items.length / 2)))
   }
 
+  // 모바일: 각 논리행(최대 5개)을 3개씩 다시 쪼개 3/2 로 분배. 데스크톱은 원본 유지.
+  const displayRows = isMobile ? rows.flatMap((row) => chunkInto(row, 3)) : rows
+
   const isCoreSelected = (id: string) =>
     selection?.kind === 'core' && selection.id === id
   const isMidSelected = (setNum: 1 | 2 | 3) =>
@@ -356,7 +393,7 @@ function CoreSetContent({
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
-      {rows.map((row, ri) => (
+      {displayRows.map((row, ri) => (
         <div key={ri} className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 md:gap-6">
           {row.map((item) =>
             item.kind === 'core' ? (

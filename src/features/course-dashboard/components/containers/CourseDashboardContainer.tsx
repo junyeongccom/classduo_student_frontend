@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl'
 import { ChevronRight, Loader2 } from 'lucide-react'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { useCourseDashboard } from '../../hooks/useCourseDashboard'
 import { useDashboardMock } from '../../hooks/useDashboardMock'
 import { ScaledCanvas } from '../ui/ScaledCanvas'
@@ -23,10 +24,12 @@ import {
   DASH_DESIGN_W,
   DASH_DESIGN_H,
 } from '../ui/DashboardScaledContent'
+import { DashboardMobileContent } from '../ui/DashboardMobileContent'
 
 export function CourseDashboardContainer({ courseId }: { courseId: string }) {
   const t = useTranslations()
   const router = useRouter()
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const {
     isLoading,
     error,
@@ -35,6 +38,13 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     examDday,
   } = useCourseDashboard(courseId)
   const { user, streak, monthGrid, rankCode } = useDashboardMock(courseId)
+
+  const goHero = () => router.push(`/studyspace/course/${courseId}/exam-prep`)
+  const goWeekly = () => router.push(`/studyspace/course/${courseId}/lectures`)
+  const goDialogue = () => router.push(`/studyspace/course/${courseId}/dialogue`)
+  const goCreate = () =>
+    router.push(`/studyspace/course/${courseId}/my-quizzes?tab=create`)
+  const goMyQuiz = () => router.push(`/studyspace/course/${courseId}/my-quizzes`)
 
   useEffect(() => {
     trackPageEnter('course_dashboard', { courseId })
@@ -83,28 +93,39 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
         </nav>
       </StudyspaceTopbarSlot>
 
-      {/* 본문 — Figma content 좌표 그대로. contain-fit: 항상 한 화면에 들어가 세로 스크롤 0
-          (넓은 창에선 좌우 약간 여백). 프레임 높이를 콘텐츠에 맞춰 단축해 여백 최소화. */}
-      <div className="h-full w-full overflow-hidden">
-        <ScaledCanvas designWidth={DASH_DESIGN_W} designHeight={DASH_DESIGN_H} fit="contain">
-          <DashboardScaledContent
-            monthGrid={monthGrid}
-            examDday={examDday}
-            currentStreak={streak.currentStreak}
-            displayName={user.displayName}
-            xp={user.xp}
-            rankCode={rankCode}
-            courseTitle={courseTitle ?? undefined}
-            onHero={() => router.push(`/studyspace/course/${courseId}/exam-prep`)}
-            onWeekly={() => router.push(`/studyspace/course/${courseId}/lectures`)}
-            onDialogue={() => router.push(`/studyspace/course/${courseId}/dialogue`)}
-            onCreate={() =>
-              router.push(`/studyspace/course/${courseId}/my-quizzes?tab=create`)
-            }
-            onMyQuiz={() => router.push(`/studyspace/course/${courseId}/my-quizzes`)}
-          />
-        </ScaledCanvas>
-      </div>
+      {/* 모바일(<768px): ScaledCanvas 대신 네이티브 세로 스크롤 스택.
+          데스크톱: Figma content 좌표 그대로 contain-fit (세로 스크롤 0, 시안 비율 유지). */}
+      {isMobile ? (
+        <DashboardMobileContent
+          monthGrid={monthGrid}
+          examDday={examDday}
+          currentStreak={streak.currentStreak}
+          onHero={goHero}
+          onWeekly={goWeekly}
+          onDialogue={goDialogue}
+          onCreate={goCreate}
+          onMyQuiz={goMyQuiz}
+        />
+      ) : (
+        <div className="h-full w-full overflow-hidden">
+          <ScaledCanvas designWidth={DASH_DESIGN_W} designHeight={DASH_DESIGN_H} fit="contain">
+            <DashboardScaledContent
+              monthGrid={monthGrid}
+              examDday={examDday}
+              currentStreak={streak.currentStreak}
+              displayName={user.displayName}
+              xp={user.xp}
+              rankCode={rankCode}
+              courseTitle={courseTitle ?? undefined}
+              onHero={goHero}
+              onWeekly={goWeekly}
+              onDialogue={goDialogue}
+              onCreate={goCreate}
+              onMyQuiz={goMyQuiz}
+            />
+          </ScaledCanvas>
+        </div>
+      )}
     </>
   )
 }
