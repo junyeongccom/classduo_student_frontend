@@ -33,20 +33,21 @@ export async function getSessionDetail(sessionId: string) {
   )
 }
 
-/** 세션 생성 (HTTP 202) */
+/**
+ * 세션 생성 (HTTP 202) — 다중 회차 지원.
+ * 신규 엔드포인트 `POST /customize-quiz/sessions` 로 `lecture_ids` 전송.
+ * 단일 회차 선택도 길이 1 배열(`[lectureId]`)로 호출하면 된다.
+ */
 export async function createSession(
-  lectureId: string,
+  lectureIds: string[],
   typeCounts: Record<string, number>,
   language: string = 'ko',
 ) {
-  return apiRequest<SessionCreateResponse>(
-    `/customize-quiz/lectures/${encodeURIComponent(lectureId)}/sessions`,
-    {
-      method: 'POST',
-      auth: true,
-      body: { type_counts: typeCounts, language },
-    },
-  )
+  return apiRequest<SessionCreateResponse>('/customize-quiz/sessions', {
+    method: 'POST',
+    auth: true,
+    body: { lecture_ids: lectureIds, type_counts: typeCounts, language },
+  })
 }
 
 /** 세션 삭제 */

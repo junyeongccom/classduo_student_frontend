@@ -205,7 +205,8 @@ export default function QuizGenerationTab() {
     customQuizAnalytics.generate({ lecture_id: selectedLectureId, type_counts: safeCounts, course_id: selectedCourseId ?? undefined })
 
     // 생성 언어는 폼 토글 값(language)을 사용. 헤더의 사이트 전체 locale 과 무관.
-    const result = await myQuizService.createSession(selectedLectureId, safeCounts, language)
+    // createSession 은 다중 회차(lecture_ids) 시그니처 — 단일 선택은 길이 1 배열로 전송.
+    const result = await myQuizService.createSession([selectedLectureId], safeCounts, language)
     if (result.error || !result.data) {
       const errorMsg = result.status === 400
         ? t('create.noSnapshot')

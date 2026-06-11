@@ -695,6 +695,7 @@
       "examPointsTitle": "요점 정리(시험 대비)"
     },
     "quiz": {
+      "lectureBadge": "{no}주차",
       "typeLabel": {
         "RECALL": "내용 기억",
         "STRUCTURE": "구조 이해",
@@ -714,7 +715,8 @@
         "STRUCTURE_OBJ": "구조 이해 퀴즈 (객관식)",
         "MISCONCEPTION": "오개념 탐지 퀴즈",
         "RECALL": "내용 기억 퀴즈 (단답형)",
-        "STRUCTURE": "구조 이해 퀴즈 (서술형)"
+        "STRUCTURE": "구조 이해 퀴즈 (서술형)",
+        "EXAM_PREP": "시험 대비 퀴즈"
       },
       "aiGeneratedNotice": "AI가 해당 회차 강의내용에 기반해 생성한 퀴즈입니다.",
       "loading": "퀴즈를 불러오는 중입니다...",
@@ -1206,6 +1208,7 @@
       "pollingTimeout": "생성이 지연되고 있습니다. 나중에 확인해 주세요",
       "sessionDeleted": "세션이 삭제되었습니다",
       "quizCount": "{count}문항",
+      "multiLectureCount": "{count}개 회차",
       "generatingProgress": "생성 중 {current}/{total}",
       "estimatedMinutes": "예상 약 {minutes}분",
       "back": "목록으로",
@@ -1338,6 +1341,7 @@
       "title": "새 퀴즈 만들기",
       "step1Title": "회차 선택",
       "step1Desc": "퀴즈를 만들 회차를 1개 골라주세요",
+      "selectedCountSuffix": "{count}개 선택됨",
       "materialReady": "자료 준비됨",
       "typeLabel": {
         "DEF_TO_TERM": "정의 → 용어",
@@ -1370,6 +1374,7 @@
       "submitting": "생성 시작 중...",
       "selectedLecture": "선택한 회차",
       "notSelected": "선택 안 됨",
+      "lectureSummaryWithCount": "{summary} ({count}개 회차)",
       "totalQuestions": "총 문항",
       "estimatedTime": "예상 소요"
     },

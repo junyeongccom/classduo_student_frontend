@@ -229,6 +229,22 @@ export default function SessionDetailView({
     return { correct, incorrect, unanswered, total, answered, progressPercent }
   }, [quizzes, statusMap])
 
+  // 표시용 회차 라벨 — 응답에 lecture_titles 가 있으면 우선 사용(다중 회차, 전체 표시).
+  // 없으면 컨테이너가 내려준 lectureName prop 폴백(단일/하위 호환).
+  const displayLectureName = useMemo(() => {
+    const titles = sessionData?.lecture_titles
+    if (titles && titles.length > 0) {
+      // 선택한 회차 전체 제목 표시 (압축하지 않음)
+      return titles.join(' · ')
+    }
+    const ids = sessionData?.lecture_ids
+    if (ids && ids.length > 1) {
+      // 제목이 없고 lecture_ids 만 있는 경우 개수만 표기 (이름 매핑은 컨테이너 prop 에 위임)
+      return lectureName || t('session.multiLectureCount', { count: ids.length })
+    }
+    return lectureName
+  }, [sessionData?.lecture_titles, sessionData?.lecture_ids, lectureName, t])
+
   const firstUnansweredId = useMemo(() => {
     for (const group of grouped) {
       for (const quiz of group.items) {
@@ -343,13 +359,13 @@ export default function SessionDetailView({
                 </p>
               )
             })()}
-            {(courseName || lectureName) && (
+            {(courseName || displayLectureName) && (
               <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                {courseName}{courseName && lectureName ? ' · ' : ''}{lectureName} {t('session.title').replace('내 퀴즈 ', '')}
+                {courseName}{courseName && displayLectureName ? ' · ' : ''}{displayLectureName} {t('session.title').replace('내 퀴즈 ', '')}
               </p>
             )}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {t('session.unitLabel')}: {lectureName || t('session.unknownUnit')} | {t('session.completionSummary', { total: stats.total, completed: stats.answered })}
+              {t('session.unitLabel')}: {displayLectureName || t('session.unknownUnit')} | {t('session.completionSummary', { total: stats.total, completed: stats.answered })}
             </p>
           </div>
 
@@ -398,6 +414,8 @@ export default function SessionDetailView({
                     answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
                     explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
                     difficulty: quiz.difficulty ?? null,
+                    // 출처 회차 번호 — 백엔드가 내려주면 카드 헤더에 "N주차" 배지 표시 (없으면 미표시)
+                    lectureNo: quiz.lecture_no ?? null,
                     choices: quiz.choices.map(c => ({
                       ...c,
                       choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,

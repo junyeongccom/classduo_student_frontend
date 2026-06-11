@@ -242,17 +242,19 @@ export default function QuizCreatorContainer() {
   // ─── 위저드 제출 ───
   const handleWizardSubmit = useCallback(
     async (
-      lectureId: string,
+      lectureIds: string[],
       typeCounts: Record<string, number>,
       language: 'ko' | 'en',
     ) => {
       if (isCreating) return
+      if (lectureIds.length === 0) return
       setIsCreating(true)
       setCreateError(null)
 
       const safeCounts: Record<string, number> = {}
       for (const type of ALLOWED_QUIZ_TYPES) {
-        safeCounts[type] = Math.max(0, Math.min(20, typeCounts[type] ?? 0))
+        // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT=60)은 위저드에서 제한.
+        safeCounts[type] = Math.max(0, typeCounts[type] ?? 0)
       }
       const totalCount = Object.values(safeCounts).reduce((a, b) => a + b, 0)
       if (totalCount === 0) {
@@ -261,14 +263,15 @@ export default function QuizCreatorContainer() {
         return
       }
 
+      // analytics.generate 는 단일 lecture_id 시그니처 — 대표(첫) 회차로 기록.
       customQuizAnalytics.generate({
-        lecture_id: lectureId,
+        lecture_id: lectureIds[0],
         type_counts: safeCounts,
         course_id: selectedCourseId ?? undefined,
       })
 
       const result = await myQuizService.createSession(
-        lectureId,
+        lectureIds,
         safeCounts,
         language,
       )
@@ -283,7 +286,8 @@ export default function QuizCreatorContainer() {
       const newSession: QuizSession = {
         session_id: result.data.session_id,
         student_id: '',
-        lecture_id: lectureId,
+        lecture_id: lectureIds[0],
+        lecture_ids: lectureIds,
         course_id: selectedCourseId ?? '',
         generation_batch_id: null,
         language,
@@ -349,6 +353,31 @@ export default function QuizCreatorContainer() {
     [selectedCourse, t],
   )
 
+  // ─── 세션 회차 라벨 (다중 회차 지원) ───
+  // lecture_ids 가 있으면 회차 번호들을 "1·2·3주차" 형식으로 전체 표시(압축 없음).
+  // 없으면 기존 단일 lecture_id 폴백 (하위 호환).
+  const getSessionLectureLabel = useCallback(
+    (session: QuizSession): string => {
+      const ids =
+        session.lecture_ids && session.lecture_ids.length > 0
+          ? session.lecture_ids
+          : [session.lecture_id]
+      if (ids.length <= 1) return getLectureLabel(ids[0])
+      if (!selectedCourse) return t('session.multiLectureCount', { count: ids.length })
+      const nos = ids
+        .map(
+          (id) =>
+            selectedCourse.lectures.find((l) => l.lecture_id === id)?.lecture_no,
+        )
+        .filter((n): n is number => n != null)
+        .sort((a, b) => a - b)
+      if (nos.length === 0) return t('session.multiLectureCount', { count: ids.length })
+      // 선택한 회차 전체를 "1·2·3주차" 형식으로 표시 (압축하지 않음)
+      return t('landing.lectureWeek', { no: nos.join('·') })
+    },
+    [getLectureLabel, selectedCourse, t],
+  )
+
   // ─── 뷰 분기 ───
   if (view === 'session-detail' && selectedSessionId) {
     const session = sessions.find((s) => s.session_id === selectedSessionId)
@@ -361,14 +390,18 @@ export default function QuizCreatorContainer() {
     const lecture = selectedCourse?.lectures.find(
       (l) => l.lecture_id === detailLectureId,
     )
-    const lectureLabel = lecture
-      ? lecture.title
-        ? t('selector.lectureLabelWithTitle', {
-            no: lecture.lecture_no,
-            title: lecture.title,
-          })
-        : t('selector.lectureLabel', { no: lecture.lecture_no })
-      : ''
+    // 다중 회차 세션이면 회차 라벨을 합쳐서 표시, 단일이면 기존 단일 라벨.
+    const isMultiLecture = (session?.lecture_ids?.length ?? 0) > 1
+    const lectureLabel = isMultiLecture
+      ? getSessionLectureLabel(session!)
+      : lecture
+        ? lecture.title
+          ? t('selector.lectureLabelWithTitle', {
+              no: lecture.lecture_no,
+              title: lecture.title,
+            })
+          : t('selector.lectureLabel', { no: lecture.lecture_no })
+        : ''
     const courseName = selectedCourse
       ? selectedCourse.section
         ? `${selectedCourse.title} (${selectedCourse.section})`
@@ -602,7 +635,7 @@ export default function QuizCreatorContainer() {
                     key={s.session_id}
                     session={s}
                     stats={solvingStatsMap.get(s.session_id) ?? null}
-                    lectureLabel={getLectureLabel(s.lecture_id)}
+                    lectureLabel={getSessionLectureLabel(s)}
                     onSelect={() => {
                       setSelectedSessionId(s.session_id)
                       setView('session-detail')
@@ -637,7 +670,7 @@ export default function QuizCreatorContainer() {
                     key={s.session_id}
                     session={s}
                     stats={solvingStatsMap.get(s.session_id) ?? null}
-                    lectureLabel={getLectureLabel(s.lecture_id)}
+                    lectureLabel={getSessionLectureLabel(s)}
                     onSelect={() => {
                       setSelectedSessionId(s.session_id)
                       setView('session-detail')
