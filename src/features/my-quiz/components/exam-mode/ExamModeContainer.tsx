@@ -28,6 +28,17 @@ import {
   shuffle,
   type ExamSetOptions,
 } from '../../domain/buildExamSet'
+import {
+  gradePayloadResponse,
+  isSupportedPayloadFormat,
+} from '../../domain/gradePayloadAnswer'
+// 핵심주제학습(exam_prep) 특수 유형 풀이 폼 재사용 — 시험모드에서 유형별 UI/채점 정합.
+import { Mcq4SingleForm } from '@/features/exam-prep-final/components/ui/forms/Mcq4SingleForm'
+import { Mcq6MultiForm } from '@/features/exam-prep-final/components/ui/forms/Mcq6MultiForm'
+import { FillBlank5SingleForm } from '@/features/exam-prep-final/components/ui/forms/FillBlank5SingleForm'
+import { FillBlank7MultiForm } from '@/features/exam-prep-final/components/ui/forms/FillBlank7MultiForm'
+import { MatchForm } from '@/features/exam-prep-final/components/ui/forms/MatchForm'
+import type { QuizFormResult } from '@/features/exam-prep-final/components/ui/forms/types'
 
 type Translate = (key: string, values?: Record<string, string | number>) => string
 
@@ -35,10 +46,81 @@ type Phase = 'setup' | 'running' | 'result'
 
 interface AnswerRecord {
   item: QuizStorageItem
-  /** 1-based choice_order (미선택 시 null) */
+  /** 레거시 단일 4지선다 — 1-based choice_order (미선택 시 null). 특수 유형이면 null. */
   selectedOrder: number | null
+  /**
+   * exam_prep 특수 유형 응답 (polymorphic). 단일선택 유형이면 undefined.
+   *  - mcq4 / fill_blank5_single → number
+   *  - mcq6_multi               → number[]
+   *  - fill_blank7_multi        → (number|null)[]
+   *  - match                    → [number, number][]
+   */
+  payloadResponse?: unknown
   isCorrect: boolean
   durationMs: number
+}
+
+/** 시험모드에서 핵심주제학습 폼으로 풀 특수 유형인지 (exam_prep + 지원 question_format). */
+function isPayloadItem(it: QuizStorageItem): boolean {
+  return it.quiz_source === 'exam_prep' && isSupportedPayloadFormat(it.question_format)
+}
+
+/** 유형별 응답이 제출 가능한 상태인지 (다음/제출 버튼 활성 판정). */
+function isPayloadResponseReady(
+  questionFormat: string | null | undefined,
+  payload: Record<string, unknown> | null | undefined,
+  response: unknown,
+): boolean {
+  if (!questionFormat) return false
+  switch (questionFormat) {
+    case 'term_definition_match3': {
+      const left = Array.isArray(payload?.left_items) ? (payload!.left_items as unknown[]).length : 3
+      return Array.isArray(response) && response.length >= left
+    }
+    case 'category_fill_blank7_multi':
+      return (
+        Array.isArray(response) &&
+        response.length >= 2 &&
+        response.every((v) => typeof v === 'number')
+      )
+    case 'description_mcq6_multi':
+      return Array.isArray(response) && response.length === 2
+    default: // 단수 객관식 / 단일 빈칸
+      return typeof response === 'number'
+  }
+}
+
+/** payload(한/영) — locale 에 따라 영문 payload 우선. choices/left_items 등 텍스트만 영문, 인덱스 동일. */
+function payloadForLocale(
+  it: QuizStorageItem,
+  locale: string,
+): Record<string, unknown> {
+  const ko = (it.payload ?? {}) as Record<string, unknown>
+  const en = (it.payload_eng ?? {}) as Record<string, unknown>
+  if (locale === 'en' && Object.keys(en).length > 0) {
+    // 텍스트(choices/left_items/right_items)는 영문, 정답 인덱스(correct_answer/correct_pairs)는 KO 보존.
+    return { ...ko, ...en, correct_answer: ko.correct_answer, correct_pairs: ko.correct_pairs }
+  }
+  return ko
+}
+
+/** payload 정답을 폼 result.correct_answer 형태로 변환 (리뷰 하이라이트용). */
+function payloadCorrectAnswer(
+  it: QuizStorageItem,
+): number | number[] | [number, number][] | null {
+  const p = (it.payload ?? {}) as Record<string, unknown>
+  if (it.question_format === 'term_definition_match3') {
+    return (p.correct_pairs as [number, number][] | undefined) ?? null
+  }
+  const ca = p.correct_answer
+  if (typeof ca === 'number') return ca
+  if (Array.isArray(ca)) {
+    const nums = ca.filter((x): x is number => typeof x === 'number')
+    // 단수 빈칸(fill_blank5_single)도 백엔드가 [n] 으로 줄 수 있어 단일이면 number 로 평탄화.
+    if (it.question_format === 'category_fill_blank5_single' && nums.length === 1) return nums[0]
+    return nums
+  }
+  return null
 }
 
 function qText(it: QuizStorageItem, locale: string): string {
@@ -64,6 +146,96 @@ function formatDuration(ms: number, t: Translate): string {
   const m = Math.floor(total / 60)
   const s = total % 60
   return t('examMode.duration', { m, s: s.toString().padStart(2, '0') })
+}
+
+/**
+ * exam_prep 특수 유형 풀이/리뷰 폼 디스패처 — 핵심주제학습 폼을 mobile(fluid px) 레이아웃으로 재사용.
+ * 시험모드 컬럼(max-w-3xl)은 1920 캔버스가 아니므로 cqw 의존이 없는 mobile 레이아웃이 적합.
+ *  - result=null → 풀이 중(정답 숨김). result 제공 → 리뷰(정/오답 하이라이트).
+ */
+function PayloadFormView({
+  item,
+  locale,
+  value,
+  onChange,
+  result,
+}: {
+  item: QuizStorageItem
+  locale: string
+  value: unknown
+  onChange: (v: unknown) => void
+  result: QuizFormResult | null
+}) {
+  const qf = item.question_format ?? null
+  const p = payloadForLocale(item, locale)
+  const stem = locale === 'en' && item.question_eng ? item.question_eng : item.question
+  const choices = (p.choices as string[] | undefined) ?? []
+  const disabled = result !== null
+
+  switch (qf) {
+    case 'term_definition_match3':
+      return (
+        <MatchForm
+          mobile
+          questionText={stem}
+          leftItems={(p.left_items as string[] | undefined) ?? []}
+          rightItems={(p.right_items as string[] | undefined) ?? []}
+          value={(value as [number, number][] | null) ?? null}
+          onChange={(v) => onChange(v)}
+          disabled={disabled}
+          result={result}
+        />
+      )
+    case 'category_fill_blank5_single':
+      return (
+        <FillBlank5SingleForm
+          mobile
+          questionText={stem}
+          choices={choices}
+          value={(value as number | null) ?? null}
+          onChange={(v) => onChange(v)}
+          disabled={disabled}
+          result={result}
+        />
+      )
+    case 'category_fill_blank7_multi':
+      return (
+        <FillBlank7MultiForm
+          mobile
+          questionText={stem}
+          choices={choices}
+          value={(value as (number | null)[] | null) ?? null}
+          onChange={(v) => onChange(v)}
+          disabled={disabled}
+          result={result}
+        />
+      )
+    case 'description_mcq6_multi':
+      return (
+        <Mcq6MultiForm
+          mobile
+          questionText={stem}
+          choices={choices}
+          value={(value as number[] | null) ?? null}
+          onChange={(v) => onChange(v)}
+          disabled={disabled}
+          result={result}
+        />
+      )
+    // compare_contrast_mcq4 / reason_purpose_mcq4 / description_mcq4_single
+    default:
+      return (
+        <Mcq4SingleForm
+          mobile
+          questionText={stem}
+          choices={choices}
+          value={(value as number | null) ?? null}
+          onChange={(v) => onChange(v)}
+          disabled={disabled}
+          result={result}
+        />
+      )
+  }
 }
 
 export default function ExamModeContainer({
@@ -100,6 +272,8 @@ export default function ExamModeContainer({
   // 인덱스별 답안 (앞뒤 이동·재선택 지원). null = 미응답.
   const [answers, setAnswers] = useState<(AnswerRecord | null)[]>([])
   const selectedOrder = answers[index]?.selectedOrder ?? null
+  // 특수 유형 응답값 (polymorphic) — 폼 value 로 전달. 미응답이면 null.
+  const payloadResponse = answers[index]?.payloadResponse ?? null
   const questionStartRef = useRef<number>(0)
   const startedAtRef = useRef<number>(0)
   const finishedAtRef = useRef<number>(0)
@@ -153,7 +327,7 @@ export default function ExamModeContainer({
     setPhase('result')
   }
 
-  // 선택 즉시 해당 인덱스에 기록 (재선택 시 덮어씀).
+  // 선택 즉시 해당 인덱스에 기록 (재선택 시 덮어씀). 레거시 단일 4지선다.
   const handleSelect = (order: number) => {
     const cur = examSet[index]
     const chosen = cur.choices.find((c) => c.choice_order === order)
@@ -169,12 +343,51 @@ export default function ExamModeContainer({
     })
   }
 
+  // exam_prep 특수 유형 응답 변경 — 매 변경마다 클라이언트 채점하여 기록(재선택 시 덮어씀).
+  // 정/오답은 payload 의 correct_answer/correct_pairs 로 핵심주제학습과 동일하게 판정.
+  const handlePayloadChange = (value: unknown) => {
+    const cur = examSet[index]
+    const payload = (cur.payload ?? {}) as Record<string, unknown>
+    const ready = isPayloadResponseReady(cur.question_format, payload, value)
+    const isCorrect = ready
+      ? gradePayloadResponse(cur.question_format, payload, value)
+      : false
+    setAnswers((prev) => {
+      const next = [...prev]
+      next[index] = {
+        item: cur,
+        selectedOrder: null,
+        payloadResponse: value,
+        isCorrect,
+        durationMs: Date.now() - questionStartRef.current,
+      }
+      return next
+    })
+  }
+
   const handlePrev = () => {
     if (index > 0) setIndex(index - 1)
   }
 
+  // 현재 문항 응답이 다음으로 넘어갈 준비가 됐는지.
+  //  - 레거시: 선택만 있으면 됨.
+  //  - 특수 유형: 유형별 완성 조건(매칭 전부 연결 / 복수 2개 / 빈칸 다 채움)을 만족해야 함.
+  const currentAnswerReady = (() => {
+    const cur = examSet[index]
+    const rec = answers[index]
+    if (!cur || rec == null) return false
+    if (isPayloadItem(cur)) {
+      return isPayloadResponseReady(
+        cur.question_format,
+        (cur.payload ?? {}) as Record<string, unknown>,
+        rec.payloadResponse,
+      )
+    }
+    return rec.selectedOrder != null
+  })()
+
   const handleNext = () => {
-    if (answers[index] == null) return
+    if (!currentAnswerReady) return
     if (index + 1 < examSet.length) setIndex(index + 1)
     else finish(answers.filter((a): a is AnswerRecord => a != null))
   }
@@ -225,7 +438,10 @@ export default function ExamModeContainer({
             total={examSet.length}
             locale={locale}
             selectedOrder={selectedOrder}
+            payloadResponse={payloadResponse}
+            canAdvance={currentAnswerReady}
             onSelect={handleSelect}
+            onPayloadChange={handlePayloadChange}
             onPrev={handlePrev}
             onNext={handleNext}
           />
@@ -474,7 +690,10 @@ function RunPhase({
   total,
   locale,
   selectedOrder,
+  payloadResponse,
+  canAdvance,
   onSelect,
+  onPayloadChange,
   onPrev,
   onNext,
 }: {
@@ -484,13 +703,18 @@ function RunPhase({
   total: number
   locale: string
   selectedOrder: number | null
+  payloadResponse: unknown
+  canAdvance: boolean
   onSelect: (order: number) => void
+  onPayloadChange: (value: unknown) => void
   onPrev: () => void
   onNext: () => void
 }) {
   const choices = sortedChoices(item)
   const isLast = index + 1 >= total
   const progress = Math.round(((index + 1) / total) * 100)
+  // exam_prep 특수 유형 — 핵심주제학습 폼으로 풀이 (정답은 결과 화면에서만 공개).
+  const isPayload = isPayloadItem(item)
 
   return (
     <div className="space-y-5">
@@ -512,38 +736,51 @@ function RunPhase({
 
       {/* 문제 */}
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 md:p-6">
-        <h3 className="mb-5 text-base font-bold leading-relaxed text-gray-900 dark:text-gray-100">
-          {qText(item, locale)}
-        </h3>
+        {isPayload ? (
+          // 유형별 폼 (풀이 중 — result=null 로 정답 숨김). question_format 디스패치.
+          <PayloadFormView
+            item={item}
+            locale={locale}
+            value={payloadResponse}
+            onChange={onPayloadChange}
+            result={null}
+          />
+        ) : (
+          <>
+            <h3 className="mb-5 text-base font-bold leading-relaxed text-gray-900 dark:text-gray-100">
+              {qText(item, locale)}
+            </h3>
 
-        <ol className="space-y-2">
-          {choices.map((c) => {
-            const selected = c.choice_order === selectedOrder
-            return (
-              <li key={c.choice_id}>
-                <button
-                  onClick={() => onSelect(c.choice_order)}
-                  className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
-                    selected
-                      ? 'border-[#6366F1] bg-[#EEF2FF] text-gray-900 dark:bg-indigo-950/30 dark:text-gray-100'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  <span
-                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${
-                      selected
-                        ? 'border-[#6366F1] bg-[#6366F1] text-white'
-                        : 'border-gray-300 text-gray-400 dark:border-gray-600'
-                    }`}
-                  >
-                    {c.choice_order}
-                  </span>
-                  <span className="flex-1">{cText(c, locale)}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ol>
+            <ol className="space-y-2">
+              {choices.map((c) => {
+                const selected = c.choice_order === selectedOrder
+                return (
+                  <li key={c.choice_id}>
+                    <button
+                      onClick={() => onSelect(c.choice_order)}
+                      className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
+                        selected
+                          ? 'border-[#6366F1] bg-[#EEF2FF] text-gray-900 dark:bg-indigo-950/30 dark:text-gray-100'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      <span
+                        className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${
+                          selected
+                            ? 'border-[#6366F1] bg-[#6366F1] text-white'
+                            : 'border-gray-300 text-gray-400 dark:border-gray-600'
+                        }`}
+                      >
+                        {c.choice_order}
+                      </span>
+                      <span className="flex-1">{cText(c, locale)}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+          </>
+        )}
       </div>
 
       {/* 하단 액션 — 이전/다음 자유 이동 */}
@@ -558,7 +795,7 @@ function RunPhase({
         </button>
         <button
           onClick={onNext}
-          disabled={selectedOrder == null}
+          disabled={!canAdvance}
           className="inline-flex items-center gap-1.5 rounded-xl bg-[#6366F1] px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#4F46E5] disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-gray-700"
         >
           {isLast ? t('examMode.submit') : t('examMode.next')}
@@ -705,9 +942,14 @@ function ReviewCard({
   locale: string
 }) {
   const [open, setOpen] = useState(false)
-  const { item, selectedOrder, isCorrect } = answer
+  const { item, selectedOrder, payloadResponse, isCorrect } = answer
   const choices = sortedChoices(item)
   const explanation = eText(item, locale)
+  // exam_prep 특수 유형 — 핵심주제학습 폼으로 정/오답 하이라이트 렌더(legacy 선지 목록 대신).
+  const isPayload = isPayloadItem(item)
+  const payloadResult: QuizFormResult | null = isPayload
+    ? { is_correct: isCorrect, correct_answer: payloadCorrectAnswer(item) }
+    : null
 
   return (
     <div
@@ -730,28 +972,41 @@ function ReviewCard({
         <span className="text-[11px] text-gray-400">{item.lecture_name ?? ''}</span>
       </div>
 
-      <h4 className="mb-3 text-sm font-bold leading-relaxed text-gray-900 dark:text-gray-100">
-        {qText(item, locale)}
-      </h4>
+      {isPayload ? (
+        // 폼이 stem + 본문(정/오답 하이라이트 포함)을 함께 렌더 → 별도 stem/선지 목록 미렌더.
+        <PayloadFormView
+          item={item}
+          locale={locale}
+          value={payloadResponse ?? null}
+          onChange={() => {}}
+          result={payloadResult}
+        />
+      ) : (
+        <>
+          <h4 className="mb-3 text-sm font-bold leading-relaxed text-gray-900 dark:text-gray-100">
+            {qText(item, locale)}
+          </h4>
 
-      <ul className="space-y-1.5">
-        {choices.map((c) => {
-          const mine = c.choice_order === selectedOrder
-          const correct = c.is_correct
-          let cls =
-            'flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300'
-          if (correct) cls += ' bg-emerald-100/60 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200'
-          else if (mine) cls += ' bg-rose-100/60 text-rose-800 dark:bg-rose-900/30 dark:text-rose-200'
-          return (
-            <li key={c.choice_id} className={cls}>
-              <span className="mt-0.5 text-[11px] font-bold">{c.choice_order}</span>
-              <span className="flex-1">{cText(c, locale)}</span>
-              {correct && <span className="text-[10px] font-bold">{t('examMode.correct')}</span>}
-              {mine && !correct && <span className="text-[10px] font-bold">{t('examMode.mySelection')}</span>}
-            </li>
-          )
-        })}
-      </ul>
+          <ul className="space-y-1.5">
+            {choices.map((c) => {
+              const mine = c.choice_order === selectedOrder
+              const correct = c.is_correct
+              let cls =
+                'flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm text-gray-600 dark:text-gray-300'
+              if (correct) cls += ' bg-emerald-100/60 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200'
+              else if (mine) cls += ' bg-rose-100/60 text-rose-800 dark:bg-rose-900/30 dark:text-rose-200'
+              return (
+                <li key={c.choice_id} className={cls}>
+                  <span className="mt-0.5 text-[11px] font-bold">{c.choice_order}</span>
+                  <span className="flex-1">{cText(c, locale)}</span>
+                  {correct && <span className="text-[10px] font-bold">{t('examMode.correct')}</span>}
+                  {mine && !correct && <span className="text-[10px] font-bold">{t('examMode.mySelection')}</span>}
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      )}
 
       {explanation && (
         <div className="mt-3 border-t border-gray-200/60 pt-2 dark:border-gray-700/60">

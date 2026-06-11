@@ -211,6 +211,12 @@ export async function fetchQuizContent(
 
     let rawItems: RawItem[] = []
     let rawChoices: RawChoice[] = []
+    // exam_prep 한정 — 특수 유형(매칭/빈칸/복수선택) 풀이/채점 재사용을 위해 question_format/payload 를
+    // QuizItem 으로 함께 실어보낸다. quiz_id → {question_format, payload, payload_eng}.
+    const examPayloadByQuizId = new Map<
+      string,
+      { question_format: string | null; payload: Record<string, unknown> | null; payload_eng: Record<string, unknown> | null }
+    >()
 
     if (quizSource === 'instructor') {
       const { data, error: err } = await supabase
@@ -375,6 +381,15 @@ export async function fetchQuizContent(
       >()
       for (const r of examRows) examDerived.set(r.id, deriveExam(r))
 
+      // 특수 유형 풀이/채점 재사용용 — question_format + payload(원본) 보존.
+      for (const r of examRows) {
+        examPayloadByQuizId.set(r.id, {
+          question_format: r.question_format ?? null,
+          payload: r.payload ?? null,
+          payload_eng: r.payload_eng ?? null,
+        })
+      }
+
       rawItems = examRows.map(r => ({
         quiz_id: r.id,
         quiz_type: 'EXAM_PREP',
@@ -441,19 +456,26 @@ export async function fetchQuizContent(
       choiceMap.set(c.quiz_id, arr)
     }
 
-    const quizItems: QuizItem[] = rawItems.map(item => ({
-      quiz_id: item.quiz_id,
-      quiz_type: item.quiz_type as StudentQuizType,
-      question: item.question,
-      answer: item.answer ?? null,
-      explanation: item.explanation ?? null,
-      quiz_keyword: null,
-      difficulty: item.difficulty ?? null,
-      choices: choiceMap.get(item.quiz_id) ?? [],
-      question_eng: item.question_eng ?? null,
-      answer_eng: item.answer_eng ?? null,
-      explanation_eng: item.explanation_eng ?? null,
-    }))
+    const quizItems: QuizItem[] = rawItems.map(item => {
+      const ep = examPayloadByQuizId.get(item.quiz_id)
+      return {
+        quiz_id: item.quiz_id,
+        quiz_type: item.quiz_type as StudentQuizType,
+        question: item.question,
+        answer: item.answer ?? null,
+        explanation: item.explanation ?? null,
+        quiz_keyword: null,
+        difficulty: item.difficulty ?? null,
+        choices: choiceMap.get(item.quiz_id) ?? [],
+        question_eng: item.question_eng ?? null,
+        answer_eng: item.answer_eng ?? null,
+        explanation_eng: item.explanation_eng ?? null,
+        // exam_prep 특수 유형 — 시험모드에서 핵심주제학습 폼 재사용/채점에 사용. 그 외 소스는 undefined.
+        question_format: ep?.question_format ?? null,
+        payload: ep?.payload ?? null,
+        payload_eng: ep?.payload_eng ?? null,
+      }
+    })
 
     return { data: quizItems, error: null }
   } catch (err) {

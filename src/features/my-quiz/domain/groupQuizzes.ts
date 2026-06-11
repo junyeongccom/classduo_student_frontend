@@ -39,6 +39,16 @@ export interface QuizWithMeta {
   course_id?: string
   course_name?: string
   lecture_name?: string
+  /**
+   * exam_prep 한정 — B2C식 특수 유형 식별자. null/undefined = 레거시 단일 4지선다(choices 사용).
+   * 그 외(매칭/빈칸/복수선택 등)는 payload 기반으로 PayloadQuestionPanel 폼이 렌더·채점한다.
+   * (시험모드에서 핵심주제학습 풀이 컴포넌트 재사용 — 고대 전용 신규 기능)
+   */
+  question_format?: string | null
+  /** exam_prep 한정 — 유형별 구조 데이터(choices/correct_answer/left_items/right_items/correct_pairs 등). */
+  payload?: Record<string, unknown> | null
+  /** exam_prep 한정 — payload 영문 버전(한/영 토글). */
+  payload_eng?: Record<string, unknown> | null
 }
 
 export interface QuizGroup {

@@ -68,6 +68,15 @@ export interface QuizItem {
   question_eng?: string | null
   answer_eng?: string | null
   explanation_eng?: string | null
+  /**
+   * exam_prep 한정 — B2C식 특수 유형 식별자. null/undefined = 레거시 단일 4지선다(choices 사용).
+   * 시험모드에서 핵심주제학습 풀이 폼(PayloadQuestionPanel) 재사용 분기에 쓰인다.
+   */
+  question_format?: string | null
+  /** exam_prep 한정 — 유형별 구조 데이터(choices/correct_answer/left_items/right_items/correct_pairs 등). */
+  payload?: Record<string, unknown> | null
+  /** exam_prep 한정 — payload 영문 버전(한/영 토글). */
+  payload_eng?: Record<string, unknown> | null
 }
 
 /** 퀴즈 상태 (user_quiz_status) */

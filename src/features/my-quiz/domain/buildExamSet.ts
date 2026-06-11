@@ -5,6 +5,7 @@
  * @dependencies hooks/useQuizStorage (QuizStorageItem 타입)
  */
 import type { QuizStorageItem } from '../hooks/useQuizStorage'
+import { ESSAY_PAYLOAD_FORMAT } from './gradePayloadAnswer'
 
 export interface ExamSetOptions {
   /** 선택 회차 번호. 빈 배열 = 전체 회차. */
@@ -58,6 +59,8 @@ export function selectExamItems(
   for (const it of items) {
     if (it.lecture_no == null) continue
     if (lectureSet.size > 0 && !lectureSet.has(it.lecture_no)) continue
+    // 서술형(exam_prep error_diagnosis_evaluation)은 LLM 채점이라 시험모드(클라 채점)에서 제외.
+    if (it.quiz_source === 'exam_prep' && it.question_format === ESSAY_PAYLOAD_FORMAT) continue
     const match =
       (opts.includeWrong && it.is_wrong) || (opts.includeFav && it.is_bookmark)
     if (!match) continue
