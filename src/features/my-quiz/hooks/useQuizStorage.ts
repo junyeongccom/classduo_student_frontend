@@ -279,7 +279,7 @@ export function useQuizStorage({
         if (acc.quiz_source === 'exam_prep') {
           const tt = acc.exam_prep_test_type
           if (tt === 'core' && info?.lecture_no != null) {
-            displayLectureName = `핵심테스트 ${info.lecture_no}회차`
+            displayLectureName = `핵심주제학습 ${info.lecture_no}회차`
           } else if (tt === 'mid') {
             const seg = acc.exam_prep_segment_index ?? null
             displayLectureName = seg != null ? `중간테스트 ${seg}회차` : '중간테스트'
