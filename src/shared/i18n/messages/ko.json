@@ -1356,7 +1356,7 @@
         "STRUCTURE_OBJ": "개념 관계·구조 묻기"
       },
       "step2Title": "문제 유형 · 문항 수",
-      "step2Desc": "유형별로 몇 문항씩 만들지 정해주세요 (각 0~20개)",
+      "step2Desc": "유형별로 몇 문항씩 만들지 정해주세요 (최대 {max}문항)",
       "fiveChoice": "5지선다",
       "quickSelect": "빠른 선택",
       "presetBalanced": "균형 (5·5·3·2)",
@@ -1427,10 +1427,51 @@
       "weeksAgo": "{n}주 전",
       "monthsAgo": "{n}달 전",
       "emptyTitle": "조건에 맞는 문제가 없어요",
-      "emptyDesc": "필터를 줄이거나 다른 출처/회차를 골라보세요."
+      "emptyDesc": "필터를 줄이거나 다른 출처/회차를 골라보세요.",
+      "expandAll": "모두 펼치기",
+      "collapseAll": "모두 접기",
+      "groupCount": "{count}문항",
+      "groupWeakness": "오답 {wrong}문항 · 누적 {cumulative}회",
+      "weaknessTitle": "회차 취약도"
+    },
+    "examMode": {
+      "title": "시험 모드",
+      "close": "닫기",
+      "setupTitle": "무엇을 다시 풀어볼까요?",
+      "setupDesc": "회차와 범위를 고르면 해당 문제들을 무작위 순서로 출제합니다.",
+      "scope": "범위",
+      "scopeWrong": "오답",
+      "scopeFav": "즐겨찾기",
+      "scopeRequired": "최소 1개 범위를 선택하세요.",
+      "lecture": "회차",
+      "noReplayable": "다시 풀 수 있는 문제가 없습니다.",
+      "allLectures": "전체",
+      "wrongCount": "오답 {n}",
+      "totalPrefix": "총",
+      "totalSuffix": "문항",
+      "estimate": "· 예상 약 {m}분",
+      "start": "시험 시작",
+      "prev": "이전",
+      "next": "다음",
+      "submit": "제출",
+      "resultTitle": "결과",
+      "accuracy": "정답률 {pct}%",
+      "elapsed": "소요 {time}",
+      "duration": "{m}분 {s}초",
+      "byLecture": "회차별 정오",
+      "itemReview": "문항별 리뷰",
+      "reconfigure": "범위 다시 선택",
+      "retry": "다시 풀기",
+      "closeResult": "닫기",
+      "correct": "정답",
+      "wrong": "오답",
+      "mySelection": "내 선택",
+      "hideExplanation": "해설 닫기",
+      "showExplanation": "해설 보기",
+      "exitTitle": "시험을 나갈까요?",
+      "exitDesc": "지금까지 푼 기록은 저장되지 않습니다.",
+      "exitContinue": "계속 풀기",
+      "exitLeave": "나가기"
     }
   }
 }
-
-
-

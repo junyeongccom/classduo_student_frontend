@@ -1356,7 +1356,7 @@
         "STRUCTURE_OBJ": "Asks about concept relationships and structure"
       },
       "step2Title": "Question Types · Count",
-      "step2Desc": "Choose how many questions to create per type (0–20 each)",
+      "step2Desc": "Choose how many questions to create per type (up to {max} total)",
       "fiveChoice": "5 choices",
       "quickSelect": "Quick select",
       "presetBalanced": "Balanced (5·5·3·2)",
@@ -1427,10 +1427,51 @@
       "weeksAgo": "{n} weeks ago",
       "monthsAgo": "{n} months ago",
       "emptyTitle": "No matching questions",
-      "emptyDesc": "Try reducing the filters or picking a different source/lecture."
+      "emptyDesc": "Try reducing the filters or picking a different source/lecture.",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all",
+      "groupCount": "{count} questions",
+      "groupWeakness": "{wrong} wrong · {cumulative} total",
+      "weaknessTitle": "Lecture weakness"
+    },
+    "examMode": {
+      "title": "Exam Mode",
+      "close": "Close",
+      "setupTitle": "What would you like to retry?",
+      "setupDesc": "Pick lectures and a scope, and those questions will be served in random order.",
+      "scope": "Scope",
+      "scopeWrong": "Wrong",
+      "scopeFav": "Favorites",
+      "scopeRequired": "Select at least one scope.",
+      "lecture": "Lecture",
+      "noReplayable": "No questions available to retry.",
+      "allLectures": "All",
+      "wrongCount": "{n} wrong",
+      "totalPrefix": "Total",
+      "totalSuffix": " questions",
+      "estimate": "· about {m} min",
+      "start": "Start Exam",
+      "prev": "Prev",
+      "next": "Next",
+      "submit": "Submit",
+      "resultTitle": "Result",
+      "accuracy": "{pct}% correct",
+      "elapsed": "Time {time}",
+      "duration": "{m}m {s}s",
+      "byLecture": "By lecture",
+      "itemReview": "Question review",
+      "reconfigure": "Reselect scope",
+      "retry": "Retry",
+      "closeResult": "Close",
+      "correct": "Correct",
+      "wrong": "Wrong",
+      "mySelection": "My choice",
+      "hideExplanation": "Hide explanation",
+      "showExplanation": "Show explanation",
+      "exitTitle": "Leave the exam?",
+      "exitDesc": "Your progress so far will not be saved.",
+      "exitContinue": "Keep going",
+      "exitLeave": "Leave"
     }
   }
 }
-
-
-
