@@ -20,6 +20,7 @@ import {
   EyeOff,
   Lightbulb,
   SlidersHorizontal,
+  Trash2,
   Trophy,
   X,
   XCircle,
@@ -36,6 +37,7 @@ import {
   weaknessLevel,
 } from '../../domain/groupByLecture'
 import ExamModeContainer from '../exam-mode/ExamModeContainer'
+import { dismissQuiz } from '../../services/myQuizStatusService'
 
 type SegmentValue = 'all' | 'fav' | 'wrong'
 /**
@@ -184,10 +186,15 @@ export default function QuizStorageContainer() {
   const effectiveLectureIds =
     lectureFilter.length > 0 ? lectureFilter : allLectureIds
 
-  const { items, isLoading, error } = useQuizStorage({
+  const { items, isLoading, error, refresh } = useQuizStorage({
     lectureIds: effectiveLectureIds,
     lectureInfoMap,
   })
+
+  // 저장소에서 숨김(소프트 삭제) → 즉시 새로고침. 원본 풀이 기록(user_quiz_response)은 보존.
+  const handleDelete = (q: QuizStorageItem) => {
+    dismissQuiz(q.quiz_source, q.quiz_id, q.lecture_id ?? null).then(() => refresh())
+  }
 
   // 핵심테스트 번호 → lecture_no 변환 (선택된 핵심테스트들의 lecture_no Set)
   const coreTestLectureNoSet = useMemo(() => {
@@ -632,6 +639,7 @@ export default function QuizStorageContainer() {
                             locale={locale}
                             isWrongTab={segment === 'wrong'}
                             answersMode={answersMode}
+                            onDelete={() => handleDelete(q)}
                           />
                         ))}
                       </div>
@@ -768,11 +776,13 @@ function QuizCard({
   locale,
   isWrongTab,
   answersMode,
+  onDelete,
 }: {
   item: QuizStorageItem
   locale: string
   isWrongTab: boolean
   answersMode: AnswersMode
+  onDelete: () => void
 }) {
   const t = useTranslations('myQuiz')
   const display = toDisplaySource(item.quiz_source)
@@ -793,6 +803,7 @@ function QuizCard({
   // 인라인 풀이 — 다시 들어오면 reset (component state). 오답 탭 + answersMode='off' 일 때만 가능.
   const [attemptIdx, setAttemptIdx] = useState<number | null>(null)
   const [explanationOpen, setExplanationOpen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const canSolve = isWrongTab && answersMode === 'off' && attemptIdx == null
   // 풀이 후 또는 정답표시 ON 이면 채점 결과 표시
@@ -851,8 +862,39 @@ function QuizCard({
               <Bookmark className="h-4 w-4 fill-current" />
             </span>
           )}
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="rounded-lg p-1.5 text-gray-300 transition-colors hover:bg-gray-100 hover:text-rose-500 dark:hover:bg-gray-800"
+            title={t('storage.deleteTitle')}
+            aria-label={t('storage.deleteAria')}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </div>
+
+      {/* 삭제 확인 — 소프트 삭제(숨김). 원본 풀이 기록은 보존됨. */}
+      {confirmDelete && (
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-rose-50 px-3 py-2 text-xs dark:bg-rose-950/30">
+          <span className="font-semibold text-rose-700 dark:text-rose-300">
+            {t('storage.deleteConfirm')}
+          </span>
+          <span className="flex shrink-0 gap-1.5">
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="rounded-md border border-gray-200 bg-white px-2 py-1 font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+            >
+              {t('storage.deleteCancel')}
+            </button>
+            <button
+              onClick={onDelete}
+              className="rounded-md bg-rose-500 px-2 py-1 font-bold text-white hover:bg-rose-600"
+            >
+              {t('storage.deleteConfirmBtn')}
+            </button>
+          </span>
+        </div>
+      )}
 
       {/* Question */}
       <h3 className="mb-3 text-sm font-bold leading-relaxed text-gray-900 dark:text-gray-100">

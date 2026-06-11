@@ -1432,7 +1432,12 @@
       "collapseAll": "모두 접기",
       "groupCount": "{count}문항",
       "groupWeakness": "오답 {wrong}문항 · 누적 {cumulative}회",
-      "weaknessTitle": "회차 취약도"
+      "weaknessTitle": "회차 취약도",
+      "deleteTitle": "저장소에서 삭제",
+      "deleteAria": "삭제",
+      "deleteConfirm": "저장소에서 삭제할까요? 다시 표시되지 않습니다.",
+      "deleteCancel": "취소",
+      "deleteConfirmBtn": "삭제"
     },
     "examMode": {
       "title": "시험 모드",

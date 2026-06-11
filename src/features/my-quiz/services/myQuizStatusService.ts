@@ -648,6 +648,60 @@ export async function getBookmarksByLectureIds(
   }
 }
 
+/* ── 저장소 소프트 삭제 (숨김) ── */
+
+/**
+ * 학생이 저장소에서 숨긴(소프트 삭제) 퀴즈 키 집합 ("quiz_source:quiz_id").
+ * user_quiz_dismissed (RLS: 본인 행만). 테이블 미존재/오류 시 빈 집합으로 graceful 처리 → 저장소 안 깨짐.
+ */
+export async function fetchDismissedKeys(): Promise<{
+  data: Set<string>
+  error: Error | null
+}> {
+  try {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('user_quiz_dismissed')
+      .select('quiz_source, quiz_id')
+    if (error) {
+      // 테이블 미존재/권한 등은 비치명적 — 빈 집합 반환
+      return { data: new Set(), error: null }
+    }
+    const set = new Set<string>()
+    for (const r of (data ?? []) as { quiz_source: string; quiz_id: string }[]) {
+      set.add(`${r.quiz_source}:${r.quiz_id}`)
+    }
+    return { data: set, error: null }
+  } catch {
+    return { data: new Set(), error: null }
+  }
+}
+
+/**
+ * 퀴즈를 저장소에서 숨김 (소프트 삭제). user_quiz_dismissed insert (RLS).
+ * student_id 는 DB DEFAULT(auth.uid())로 자동 채워짐.
+ * 고대는 멀티테넌트 전 단계 — tenant_id 컬럼 없음. payload 에 넣지 않는다.
+ */
+export async function dismissQuiz(
+  quizSource: QuizSource,
+  quizId: string,
+  lectureId: string | null,
+): Promise<{ error: Error | null }> {
+  try {
+    const supabase = getSupabaseClient()
+    const { error } = await supabase
+      .from('user_quiz_dismissed')
+      .insert({ quiz_source: quizSource, quiz_id: quizId, lecture_id: lectureId })
+    if (error) {
+      if (isJWTExpiredError(error)) await handleJWTExpiration()
+      return { error: new Error(getErrorMessage(error)) }
+    }
+    return { error: null }
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
 /* ── 오답노트 Supabase 조회 ── */
 
 /**

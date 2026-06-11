@@ -1432,7 +1432,12 @@
       "collapseAll": "Collapse all",
       "groupCount": "{count} questions",
       "groupWeakness": "{wrong} wrong · {cumulative} total",
-      "weaknessTitle": "Lecture weakness"
+      "weaknessTitle": "Lecture weakness",
+      "deleteTitle": "Remove from storage",
+      "deleteAria": "Delete",
+      "deleteConfirm": "Remove from storage? It won't appear again.",
+      "deleteCancel": "Cancel",
+      "deleteConfirmBtn": "Delete"
     },
     "examMode": {
       "title": "Exam Mode",
