@@ -1471,6 +1471,7 @@
       "correct": "정답",
       "wrong": "오답",
       "mySelection": "내 선택",
+      "choiceAnalysis": "선지별 분석",
       "hideExplanation": "해설 닫기",
       "showExplanation": "해설 보기",
       "exitTitle": "시험을 나갈까요?",

@@ -135,6 +135,15 @@ function cText(
 ): string {
   return locale === 'en' && c.choice_text_eng ? c.choice_text_eng : c.choice_text
 }
+/** 선지별 해설 (content/customize) — locale 우선. */
+function cExpl(
+  c: QuizStorageItem['choices'][number],
+  locale: string,
+): string | null {
+  return locale === 'en' && c.choice_explanation_eng
+    ? c.choice_explanation_eng
+    : c.choice_explanation
+}
 function sortedChoices(it: QuizStorageItem) {
   return [...it.choices].sort((a, b) => a.choice_order - b.choice_order)
 }
@@ -171,13 +180,28 @@ function sourceLabel(t: Translate, item: QuizStorageItem): string {
   }
 }
 
+/** 선지 번호(1-based) → 폼 라벨. exam_prep 폼은 A,B,C…(String.fromCharCode), legacy 리스트는 숫자. */
+function letterLabel(n: number): string {
+  return n >= 1 && n <= 26 ? String.fromCharCode(64 + n) : String(n)
+}
+function numberLabel(n: number): string {
+  return String(n)
+}
+
 /**
  * "1: … 2: … 3: …" 처럼 선지 번호로 나열된 해설을 번호마다 단락으로 끊어 가독성 개선.
- * 번호는 원본 선지 순서를 가리키므로 보존(자동 재번호 방지)하고 마크다운 단락 구분(\n\n)만 삽입한다.
+ * 번호는 원본 선지 순서를 가리키므로 toLabel 로 화면 선지 라벨(exam_prep=A,B,C / 그 외=숫자)에 맞추고,
+ * 마크다운 단락 구분(\n\n)만 삽입한다.
  * 콜론 뒤 공백이 없는 "3:30"(시간)·"4:1"(비율) 등은 매칭되지 않으며, 번호 나열이 아닌 일반 해설은 그대로 둔다.
  */
-function formatNumberedExplanation(text: string): string {
-  const out = text.replace(/\s*(\d{1,2}):[ \t]+/g, '\n\n**$1:** ')
+function formatNumberedExplanation(
+  text: string,
+  toLabel: (n: number) => string,
+): string {
+  const out = text.replace(
+    /\s*(\d{1,2}):[ \t]+/g,
+    (_m, d: string) => `\n\n**${toLabel(Number(d))}:** `,
+  )
   return out.replace(/^\s+/, '').trim()
 }
 
@@ -983,6 +1007,15 @@ function ReviewCard({
   const payloadResult: QuizFormResult | null = isPayload
     ? { is_correct: isCorrect, correct_answer: payloadCorrectAnswer(item) }
     : null
+  // 해설 라벨 정합: exam_prep 폼 선지는 A,B,C → 해설 번호도 문자로. legacy 리스트는 숫자 그대로.
+  const explLabel = isPayload ? letterLabel : numberLabel
+  // content/customize(legacy 객관식)는 선지별 해설(choice_explanation)을 시험모드에서도 노출.
+  const choiceAnalysis = !isPayload
+    ? choices
+        .map((c) => ({ order: c.choice_order, correct: c.is_correct, text: cExpl(c, locale) }))
+        .filter((c) => c.text)
+    : []
+  const hasExplanation = !!explanation || choiceAnalysis.length > 0
 
   return (
     <div
@@ -1041,7 +1074,7 @@ function ReviewCard({
         </>
       )}
 
-      {explanation && (
+      {hasExplanation && (
         <div className="mt-3 border-t border-gray-200/60 pt-2 dark:border-gray-700/60">
           <button
             onClick={() => setOpen((o) => !o)}
@@ -1050,11 +1083,40 @@ function ReviewCard({
             {open ? t('examMode.hideExplanation') : t('examMode.showExplanation')}
           </button>
           {open && (
-            <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
-              <MarkdownMessage
-                markdown={formatNumberedExplanation(explanation)}
-                headingSize="compact"
-              />
+            <div className="mt-2 space-y-3">
+              {/* 선지별 해설 (content/customize 객관식) — 선지 불릿(숫자)과 동일 라벨. */}
+              {choiceAnalysis.length > 0 && (
+                <div className="rounded-xl bg-gray-50 p-3 dark:bg-gray-800/50">
+                  <p className="mb-2 text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                    {t('examMode.choiceAnalysis')}
+                  </p>
+                  <div className="space-y-1.5">
+                    {choiceAnalysis.map((c) => (
+                      <div key={c.order} className="text-xs leading-relaxed">
+                        <span
+                          className={`mr-1 font-bold ${
+                            c.correct
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-gray-500 dark:text-gray-400'
+                          }`}
+                        >
+                          {c.order}:
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-300">{c.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* 일반 해설 (exam_prep: 선지 번호→문자 매핑 / 그 외: 그대로). */}
+              {explanation && (
+                <div className="text-sm text-gray-700 dark:text-gray-200">
+                  <MarkdownMessage
+                    markdown={formatNumberedExplanation(explanation, explLabel)}
+                    headingSize="compact"
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
