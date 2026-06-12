@@ -1434,7 +1434,7 @@
       "expandAll": "Expand all",
       "collapseAll": "Collapse all",
       "groupCount": "{count} questions",
-      "groupWeakness": "{wrong} wrong · {cumulative} total",
+      "groupWeakness": "{wrong} wrong · {cumulative} total attempts",
       "weaknessTitle": "Lecture weakness",
       "deleteTitle": "Remove from storage",
       "deleteAria": "Delete",

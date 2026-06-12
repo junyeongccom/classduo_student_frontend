@@ -1434,7 +1434,7 @@
       "expandAll": "모두 펼치기",
       "collapseAll": "모두 접기",
       "groupCount": "{count}문항",
-      "groupWeakness": "오답 {wrong}문항 · 누적 {cumulative}회",
+      "groupWeakness": "오답 {wrong}문항 · 누적 풀이 횟수 {cumulative}회",
       "weaknessTitle": "회차 취약도",
       "deleteTitle": "저장소에서 삭제",
       "deleteAria": "삭제",
