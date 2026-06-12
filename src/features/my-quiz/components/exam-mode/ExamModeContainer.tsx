@@ -149,6 +149,39 @@ function formatDuration(ms: number, t: Translate): string {
 }
 
 /**
+ * 시험모드 출처 배지 — "출처 종류 + 회차/강의". 핵심주제학습(exam_prep)은 useQuizStorage 에서
+ * 이미 "핵심주제학습 N회차" 등으로 lecture_name 에 가공돼 들어오므로 그대로 쓰고,
+ * 회차별 학습(content)·내가 만든 퀴즈(customize)는 출처 종류를 앞에 붙여 출처를 명시한다.
+ */
+function sourceLabel(t: Translate, item: QuizStorageItem): string {
+  const detail = item.lecture_name ?? ''
+  switch (item.quiz_source) {
+    case 'exam_prep':
+      return detail || t('storage.sourceLabels.examPrep')
+    case 'customize': {
+      const src = t('storage.sourceLabels.customize')
+      return detail ? `${src} ${detail}` : src
+    }
+    case 'content': {
+      const src = t('storage.sourceLabels.lectureContent')
+      return detail ? `${src} ${detail}` : src
+    }
+    default:
+      return detail
+  }
+}
+
+/**
+ * "1: … 2: … 3: …" 처럼 선지 번호로 나열된 해설을 번호마다 단락으로 끊어 가독성 개선.
+ * 번호는 원본 선지 순서를 가리키므로 보존(자동 재번호 방지)하고 마크다운 단락 구분(\n\n)만 삽입한다.
+ * 콜론 뒤 공백이 없는 "3:30"(시간)·"4:1"(비율) 등은 매칭되지 않으며, 번호 나열이 아닌 일반 해설은 그대로 둔다.
+ */
+function formatNumberedExplanation(text: string): string {
+  const out = text.replace(/\s*(\d{1,2}):[ \t]+/g, '\n\n**$1:** ')
+  return out.replace(/^\s+/, '').trim()
+}
+
+/**
  * exam_prep 특수 유형 풀이/리뷰 폼 디스패처 — 핵심주제학습 폼을 mobile(fluid px) 레이아웃으로 재사용.
  * 시험모드 컬럼(max-w-3xl)은 1920 캔버스가 아니므로 cqw 의존이 없는 mobile 레이아웃이 적합.
  *  - result=null → 풀이 중(정답 숨김). result 제공 → 리뷰(정/오답 하이라이트).
@@ -724,7 +757,7 @@ function RunPhase({
           <span>
             {index + 1} / {total}
           </span>
-          <span>{item.lecture_name ?? ''}</span>
+          <span>{sourceLabel(t, item)}</span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
           <div
@@ -969,7 +1002,7 @@ function ReviewCard({
         >
           {isCorrect ? t('examMode.correct') : t('examMode.wrong')}
         </span>
-        <span className="text-[11px] text-gray-400">{item.lecture_name ?? ''}</span>
+        <span className="text-[11px] text-gray-400">{sourceLabel(t, item)}</span>
       </div>
 
       {isPayload ? (
@@ -1018,7 +1051,10 @@ function ReviewCard({
           </button>
           {open && (
             <div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
-              <MarkdownMessage markdown={explanation} headingSize="compact" />
+              <MarkdownMessage
+                markdown={formatNumberedExplanation(explanation)}
+                headingSize="compact"
+              />
             </div>
           )}
         </div>
