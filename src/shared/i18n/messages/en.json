@@ -1322,6 +1322,8 @@
     "card": {
       "newSessionTitle": "New Quiz Session",
       "justStarted": "Just started · ~{min} min left",
+      "startedJustNow": "Just started",
+      "remainingMin": "~{min} min left",
       "aiProgress": "AI Generation",
       "aiWriting": "AI is writing questions based on the lecture content",
       "creationAttempt": "Attempt",

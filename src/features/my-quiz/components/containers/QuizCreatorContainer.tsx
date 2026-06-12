@@ -734,9 +734,10 @@ function SessionCard({
             ((session.generated_count ?? 0) / session.quiz_count) * 100,
           )
         : 0
+    // 문항당 ~5초 (60문항 ≈ 5분). 실제 생성이 그리 오래 걸리지 않음.
     const remainingMin = Math.max(
       0,
-      Math.ceil(((session.quiz_count - (session.generated_count ?? 0)) * 8) / 60),
+      Math.ceil(((session.quiz_count - (session.generated_count ?? 0)) * 5) / 60),
     )
     return (
       <article className="relative rounded-2xl border border-blue-200 bg-blue-50/30 p-5 dark:border-blue-900 dark:bg-blue-950/20">
@@ -750,17 +751,23 @@ function SessionCard({
               {t('session.quizCount', { count: session.quiz_count })}
             </span>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-600">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            {t('session.creating')}
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            {remainingMin > 0 && (
+              <span className="text-[11px] font-medium text-gray-400">
+                {t('card.remainingMin', { min: remainingMin })}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-600">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {t('session.creating')}
+            </span>
+          </div>
         </div>
         <h3 className="mb-1 truncate text-base font-bold text-gray-900 dark:text-gray-50">
           {session.title || t('card.newSessionTitle')}
         </h3>
         <p className="mb-3 text-xs text-gray-400">
-          <Calendar className="inline h-3 w-3" />{' '}
-          {t('card.justStarted', { min: remainingMin })}
+          <Calendar className="inline h-3 w-3" /> {t('card.startedJustNow')}
         </p>
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between text-xs">

@@ -124,8 +124,9 @@ export default function QuizCreatorWizard({
     return t('landing.lectureWeek', { no: nos.join('·') })
   }, [selectedLectures, t])
 
+  // 문항당 ~5초 (60문항 ≈ 5분). 생성 카드의 잔여시간 추정과 동일 기준.
   const estimatedMinutes = useMemo(
-    () => (totalCount > 0 ? Math.max(1, Math.ceil((75 + totalCount * 8) / 60)) : 0),
+    () => (totalCount > 0 ? Math.max(1, Math.ceil((totalCount * 5) / 60)) : 0),
     [totalCount],
   )
 
