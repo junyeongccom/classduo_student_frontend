@@ -9,7 +9,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Loader2, HelpCircle, Sparkles, Bot, RotateCcw } from 'lucide-react'
+import { Loader2, HelpCircle, Sparkles, Bot, RotateCcw, ArrowUp } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -104,6 +104,9 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
   // 퀴즈별 풀이 시작 시점 기록 (duration_ms 계산용)
   const quizStartTimeRef = useRef<Map<string, number>>(new Map())
+
+  // 스크롤 영역 ref — '맨 위로 이동하기' 버튼용
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const weekSessionLabel = weekNumber != null && sessionNumber != null
     ? locale === 'ko'
@@ -370,6 +373,29 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
     return groups
   }, [quizzes])
 
+  // 첫 미완료(미풀이) 문제 id — '이어풀기' 스크롤 타깃
+  const firstUnansweredId = useMemo(() => {
+    for (const group of groupedQuizzes) {
+      for (const quiz of group.items) {
+        if (statusMap.get(quiz.quiz_id)?.correct == null) return quiz.quiz_id
+      }
+    }
+    return null
+  }, [groupedQuizzes, statusMap])
+
+  // 이어풀기: 첫 미완료 문제로 부드럽게 스크롤
+  const handleContinue = useCallback(() => {
+    if (!firstUnansweredId) return
+    document
+      .getElementById(`quiz-${firstUnansweredId}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [firstUnansweredId])
+
+  // 맨 위로 이동: 퀴즈 스크롤 영역을 최상단으로
+  const handleScrollTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
   if (isLoading) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-gray-400">
@@ -400,7 +426,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   let globalIndex = 0
 
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24">
+    <div ref={scrollRef} className="flex h-full flex-col overflow-y-auto px-6 pb-24">
       {showRewardModal && (
         <FlameRewardModal
           courseName={courseTitle ?? ''}
@@ -409,22 +435,48 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         />
       )}
       {/* AI 퀴즈 안내 문구 */}
-      <div className="flex items-center gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 px-4 py-3">
+      <div className="mt-6 flex items-center gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 px-4 py-3">
         <Sparkles className="h-4 w-4 shrink-0 text-indigo-500" />
         <p className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
           {t('aiGeneratedNotice')}
         </p>
       </div>
 
-      {/* 전체 다시 풀기 */}
-      <button
-        type="button"
-        onClick={() => setShowRetryConfirm(true)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
-      >
-        <RotateCcw className="h-4 w-4" />
-        {t('retryAll')}
-      </button>
+      {/* 액션 바: 이어풀기 / 맨 위로 / 전체 다시 풀기 — 스크롤해도 탭바 밑에 항상 고정 */}
+      <div className="sticky top-0 z-20 -mx-6 mt-6 border-b border-gray-200 bg-white px-6 py-3 dark:border-gray-700 dark:bg-gray-900">
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={handleContinue}
+            disabled={firstUnansweredId === null}
+            className={
+              firstUnansweredId
+                ? 'rounded-xl bg-indigo-600 px-2 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700'
+                : 'cursor-not-allowed rounded-xl bg-gray-200 px-2 py-3 text-sm font-semibold text-gray-400 dark:bg-gray-700 dark:text-gray-500'
+            }
+          >
+            {t('continueUnanswered')}
+          </button>
+          <button
+            type="button"
+            onClick={handleScrollTop}
+            className="inline-flex items-center justify-center gap-1 rounded-xl border border-gray-300 bg-gray-50 px-2 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            <ArrowUp className="h-4 w-4 shrink-0" />
+            {t('scrollToTop')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowRetryConfirm(true)}
+            className="inline-flex items-center justify-center gap-1 rounded-xl border border-gray-300 bg-gray-50 px-2 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
+            <RotateCcw className="h-4 w-4 shrink-0" />
+            {t('retryAll')}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-6">
       {groupedQuizzes.map((group) => (
         <section key={group.type}>
           {/* 유형 섹션 헤더 */}
@@ -443,8 +495,8 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
               const idx = globalIndex++
               const status = statusMap.get(quiz.quiz_id)
               return (
+                <div key={`${quiz.quiz_id}-${resetKey}`} id={`quiz-${quiz.quiz_id}`}>
                 <StudentQuizCard
-                  key={`${quiz.quiz_id}-${resetKey}`}
                   quiz={toStudentQuiz(quiz)}
                   index={idx}
                   isBookmarked={bookmarkSet.has(quiz.quiz_id)}
@@ -519,11 +571,13 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                     </div>
                   }
                 />
+                </div>
               )
             })}
           </div>
         </section>
       ))}
+      </div>
 
       {/* 전체 다시 풀기 확인 모달 */}
       <Dialog open={showRetryConfirm} onOpenChange={setShowRetryConfirm}>
