@@ -32,6 +32,11 @@ import {
   gradePayloadResponse,
   isSupportedPayloadFormat,
 } from '../../domain/gradePayloadAnswer'
+import {
+  formatNumberedExplanation,
+  letterLabel,
+  numberLabel,
+} from '../../domain/formatExplanation'
 // 핵심주제학습(exam_prep) 특수 유형 풀이 폼 재사용 — 시험모드에서 유형별 UI/채점 정합.
 import { Mcq4SingleForm } from '@/features/exam-prep-final/components/ui/forms/Mcq4SingleForm'
 import { Mcq6MultiForm } from '@/features/exam-prep-final/components/ui/forms/Mcq6MultiForm'
@@ -180,30 +185,6 @@ function sourceLabel(t: Translate, item: QuizStorageItem): string {
   }
 }
 
-/** 선지 번호(1-based) → 폼 라벨. exam_prep 폼은 A,B,C…(String.fromCharCode), legacy 리스트는 숫자. */
-function letterLabel(n: number): string {
-  return n >= 1 && n <= 26 ? String.fromCharCode(64 + n) : String(n)
-}
-function numberLabel(n: number): string {
-  return String(n)
-}
-
-/**
- * "1: … 2: … 3: …" 처럼 선지 번호로 나열된 해설을 번호마다 단락으로 끊어 가독성 개선.
- * 번호는 원본 선지 순서를 가리키므로 toLabel 로 화면 선지 라벨(exam_prep=A,B,C / 그 외=숫자)에 맞추고,
- * 마크다운 단락 구분(\n\n)만 삽입한다.
- * 콜론 뒤 공백이 없는 "3:30"(시간)·"4:1"(비율) 등은 매칭되지 않으며, 번호 나열이 아닌 일반 해설은 그대로 둔다.
- */
-function formatNumberedExplanation(
-  text: string,
-  toLabel: (n: number) => string,
-): string {
-  const out = text.replace(
-    /\s*(\d{1,2}):[ \t]+/g,
-    (_m, d: string) => `\n\n**${toLabel(Number(d))}:** `,
-  )
-  return out.replace(/^\s+/, '').trim()
-}
 
 /**
  * exam_prep 특수 유형 풀이/리뷰 폼 디스패처 — 핵심주제학습 폼을 mobile(fluid px) 레이아웃으로 재사용.

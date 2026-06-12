@@ -30,6 +30,7 @@ import { useQuizStorage, type QuizStorageItem } from '../../hooks/useQuizStorage
 import { updateCorrect } from '@/features/lecture-study/services/quizStatusService'
 import type { StudentQuizType } from '@/shared/components/quiz'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { formatNumberedExplanation, numberLabel } from '../../domain/formatExplanation'
 import { CORE_TEST_TO_LECTURE_NO } from '@/features/exam-prep-final/domain/coreTestLectureMap'
 import {
   groupByLectureNo,
@@ -969,7 +970,11 @@ function QuizCard({
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('storage.explanation')}</p>
           {explanation ? (
             <div className="text-gray-700 dark:text-gray-200">
-              <MarkdownMessage markdown={explanation} headingSize="compact" />
+              {/* exam_prep 객관식 해설은 "1: … 2: …" 나열형 → 번호마다 줄바꿈(저장소 선지는 숫자라 라벨 유지). */}
+              <MarkdownMessage
+                markdown={formatNumberedExplanation(explanation, numberLabel)}
+                headingSize="compact"
+              />
             </div>
           ) : (
             <p className="text-gray-400">{t('storage.noExplanation')}</p>
