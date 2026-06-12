@@ -1219,6 +1219,7 @@
       "incorrectCount": "Incorrect",
       "progressRate": "Progress",
       "continueUnanswered": "Continue Unanswered",
+      "scrollToTop": "Scroll to Top",
       "retryAll": "Retry All",
       "retryAllConfirm": "Reset all answers in this session?",
       "showMore": "Show More",

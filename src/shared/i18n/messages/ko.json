@@ -1219,6 +1219,7 @@
       "incorrectCount": "오답 수",
       "progressRate": "진행률",
       "continueUnanswered": "미완료 문제 이어서 풀기",
+      "scrollToTop": "맨 위로 이동하기",
       "retryAll": "전체 문제 다시 풀기",
       "retryAllConfirm": "모든 문제의 풀이를 초기화하시겠습니까?",
       "showMore": "더 보기",

@@ -7,9 +7,9 @@
 
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslations, useFormatter, useLocale } from 'next-intl'
-import { ArrowLeft, Loader2, CheckCircle2, XCircle, TrendingUp, Calendar } from 'lucide-react'
+import { ArrowLeft, ArrowUp, Loader2, CheckCircle2, XCircle, TrendingUp, Calendar } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { cn } from '@/shared/lib/utils'
@@ -57,6 +57,11 @@ export default function SessionDetailView({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resetKey, setResetKey] = useState(0)
+  // 스크롤 영역 ref — '맨 위로 이동하기' 버튼용
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const handleScrollTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
@@ -342,7 +347,7 @@ export default function SessionDetailView({
       </div>
 
       {/* 스크롤 영역: 세션 정보 + 통계 + 퀴즈 전체 */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
         <div className="mx-auto max-w-2xl space-y-4">
           {/* 세션 정보 */}
           <div>
@@ -445,13 +450,13 @@ export default function SessionDetailView({
 
       {/* 하단 액션 버튼 */}
       <div className="shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
-        <div className="mx-auto max-w-2xl space-y-2">
+        <div className="mx-auto grid max-w-2xl grid-cols-3 gap-2">
           <button
             type="button"
             onClick={handleContinue}
             disabled={firstUnansweredId === null}
             className={cn(
-              'w-full rounded-xl py-3 text-sm font-semibold text-white transition',
+              'rounded-xl px-2 py-3 text-sm font-semibold text-white transition',
               firstUnansweredId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed',
             )}
           >
@@ -459,8 +464,16 @@ export default function SessionDetailView({
           </button>
           <button
             type="button"
+            onClick={handleScrollTop}
+            className="inline-flex items-center justify-center gap-1 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <ArrowUp className="h-4 w-4 shrink-0" />
+            {t('session.scrollToTop')}
+          </button>
+          <button
+            type="button"
             onClick={handleRetryAll}
-            className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             {t('session.retryAll')}
           </button>
