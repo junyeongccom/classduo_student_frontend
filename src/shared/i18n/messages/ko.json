@@ -740,8 +740,6 @@
         "confirm": "확인"
       },
       "askAiChatbot": "AI 챗봇에게 질문하기",
-      "continueUnanswered": "미완료 문제 이어풀기",
-      "scrollToTop": "맨 위로 이동하기",
       "retryAll": "전체 문제 다시 풀기",
       "retryAllConfirmTitle": "퀴즈 전체 다시 풀기",
       "retryAllConfirm": "이 회차 모든 문제의 풀이 상태를 초기화하고 처음부터 다시 풀까요?",
