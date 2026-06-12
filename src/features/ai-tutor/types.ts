@@ -39,6 +39,10 @@ export interface Reference {
     image_width?: number
     image_height?: number
     score: number
+    // 다중 회차 출처 표기 (단일 회차면 없음/None)
+    lecture_label?: string | null
+    lecture_no?: number | null
+    lecture_title?: string | null
   }
   citations: Array<{
     text: string
