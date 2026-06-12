@@ -139,31 +139,47 @@ export default function QuizCreatorWizard({
     )
   }
 
+  // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT)만 제한. 절대값/델타 공용 clamp.
+  const clampForType = (
+    prev: Record<QuizType, number>,
+    type: QuizType,
+    value: number,
+  ): number => {
+    const othersTotal = (Object.keys(prev) as QuizType[]).reduce(
+      (sum, k) => (k === type ? sum : sum + (prev[k] ?? 0)),
+      0,
+    )
+    const maxForType = MAX_TOTAL_COUNT - othersTotal
+    return Math.max(0, Math.min(maxForType, value))
+  }
+
   const adjustCount = (type: QuizType, delta: number) => {
-    setCounts((prev) => {
-      const othersTotal = (Object.keys(prev) as QuizType[]).reduce(
-        (sum, k) => (k === type ? sum : sum + (prev[k] ?? 0)),
-        0,
-      )
-      // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT)만 제한
-      const maxForType = MAX_TOTAL_COUNT - othersTotal
-      return {
-        ...prev,
-        [type]: Math.max(0, Math.min(maxForType, (prev[type] ?? 0) + delta)),
-      }
-    })
+    setCounts((prev) => ({
+      ...prev,
+      [type]: clampForType(prev, type, (prev[type] ?? 0) + delta),
+    }))
+  }
+
+  // 직접 입력 — 절대값으로 설정(총합 상한 내로 clamp). 빈 입력/비숫자는 0.
+  const setCount = (type: QuizType, value: number) => {
+    const safe = Number.isFinite(value) ? Math.floor(value) : 0
+    setCounts((prev) => ({ ...prev, [type]: clampForType(prev, type, safe) }))
   }
 
   const applyPreset = (key: keyof typeof PRESETS) => {
-    // 프리셋은 교체가 아니라 누적 — 남은 예산(MAX_TOTAL_COUNT - 현재합)까지만 채운다.
+    // 프리셋은 교체가 아니라 누적 — 클릭마다 해당 프리셋 값을 통째로 더한다.
+    // 더했을 때 총합이 상한(MAX_TOTAL_COUNT)을 넘으면 → 1× 프리셋(최소)으로 되돌려 순환시킨다.
+    // (예: 균형 5·5·3·2 반복 클릭 → 15 → 30 → 45 → 60 → 다시 15)
     setCounts((prev) => {
+      const preset = PRESETS[key]
+      const presetSum = Object.values(preset).reduce((a, b) => a + b, 0)
+      const currentSum = Object.values(prev).reduce((a, b) => a + b, 0)
+      if (currentSum + presetSum > MAX_TOTAL_COUNT) {
+        return { ...preset } // 상한 초과 → 최소(1×)로 순환
+      }
       const next = { ...prev }
-      let remaining =
-        MAX_TOTAL_COUNT - Object.values(prev).reduce((a, b) => a + b, 0)
-      for (const [type, add] of Object.entries(PRESETS[key]) as [QuizType, number][]) {
-        const take = Math.max(0, Math.min(add, remaining))
-        next[type] = (next[type] ?? 0) + take
-        remaining -= take
+      for (const [type, add] of Object.entries(preset) as [QuizType, number][]) {
+        next[type] = (next[type] ?? 0) + add
       }
       return next
     })
@@ -352,9 +368,18 @@ export default function QuizCreatorWizard({
                         >
                           −
                         </button>
-                        <span className="w-8 text-center text-base font-bold tabular-nums text-gray-900 dark:text-gray-50">
-                          {count}
-                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={count}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/[^0-9]/g, '')
+                            setCount(type, digits === '' ? 0 : parseInt(digits, 10))
+                          }}
+                          aria-label={t(`wizard.typeLabel.${type}`)}
+                          className="w-10 rounded-md border border-gray-200 py-0.5 text-center text-base font-bold tabular-nums text-gray-900 focus:border-[#6366F1] focus:outline-none focus:ring-1 focus:ring-[#6366F1] dark:border-gray-600 dark:bg-gray-900 dark:text-gray-50"
+                        />
                         <button
                           type="button"
                           onClick={() => adjustCount(type, +1)}
