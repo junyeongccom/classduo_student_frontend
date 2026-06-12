@@ -867,7 +867,8 @@ function ResultPhase({
 }) {
   const total = answers.length
   const correctCount = answers.filter((a) => a.isCorrect).length
-  const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0
+  // 정답률 — 소수점 1자리 (둘째 자리에서 반올림). 정수면 소수점 없이 표기 (예: 50, 12.5).
+  const pct = total > 0 ? Math.round((correctCount / total) * 1000) / 10 : 0
 
   // 회차별 정오
   const byLecture = useMemo(() => {

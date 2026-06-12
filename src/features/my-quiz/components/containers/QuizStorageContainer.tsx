@@ -804,12 +804,13 @@ function LectureGroupHeader({
   )
 }
 
-// 오답 순위 배지 색 — 빨간색 계열로 1등이 가장 진하고 등수가 낮아질수록 옅어진다.
+// 오답 순위 배지 색 — 1등만 솔리드 빨강으로 강조하고 2·3등은 톤 다운한 빨강 틴트.
+// (워시아웃된 핑크 대신 채도 있는 red 계열 + tint 배경으로 깔끔하게)
 function rankColor(rank: number): string {
-  if (rank === 1) return 'bg-rose-600 text-white'
-  if (rank === 2) return 'bg-rose-400 text-white'
-  if (rank === 3) return 'bg-rose-300 text-rose-900 dark:text-rose-950'
-  return 'bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300'
+  if (rank === 1) return 'bg-red-600 text-white shadow-sm shadow-red-600/30'
+  if (rank === 2) return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+  if (rank === 3) return 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-300'
+  return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
 }
 
 function QuizCard({
