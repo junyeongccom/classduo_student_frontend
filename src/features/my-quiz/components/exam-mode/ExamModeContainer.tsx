@@ -621,7 +621,9 @@ function SetupPhase({
                 {lectureLabel(t, opt.lectureNo)}
                 <span className="ml-1 text-[10px] font-medium text-gray-400">
                   {t('examMode.wrongCount', { n: opt.wrongCount })}
-                  {opt.favCount > 0 ? ` · ★ ${opt.favCount}` : ''}
+                  {opt.favCount > 0
+                    ? ` · ${t('examMode.favCount', { n: opt.favCount })}`
+                    : ''}
                 </span>
               </LectureChip>
             ))}
