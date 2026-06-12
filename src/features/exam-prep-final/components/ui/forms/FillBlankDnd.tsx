@@ -67,6 +67,8 @@ type SizingFB = {
   feedbackMinH: string;
   sentenceGap: string;
   sentenceFs: string;
+  /** 본문 줄간격 — 채워진 빈칸 pill 이 윗/아랫줄과 겹치지 않게 충분히 띄운다. */
+  sentenceLineHeight: number;
   sentenceMaxW: string;
   chipPad: string;
   chipMinW: string;
@@ -93,6 +95,7 @@ const DESKTOP_FB: SizingFB = {
   feedbackMinH: "3.390cqw",
   sentenceGap: "1.481cqw",
   sentenceFs: "1.976cqw",
+  sentenceLineHeight: 1.7,
   sentenceMaxW: "57.531cqw",
   chipPad: "1.363cqw 1.778cqw",
   chipMinW: "8.083cqw",
@@ -119,6 +122,7 @@ const MOBILE_FB: SizingFB = {
   feedbackMinH: "28px",
   sentenceGap: "16px",
   sentenceFs: "16px",
+  sentenceLineHeight: 2.3,
   sentenceMaxW: "100%",
   chipPad: "9px 13px",
   chipMinW: "60px",
@@ -318,7 +322,7 @@ export function FillBlankDnd({
           {/* 문장 (인라인 빈칸) */}
           <p
             className="w-full break-keep text-left"
-            style={{ fontSize: SZ.sentenceFs, lineHeight: 1.7, maxWidth: SZ.sentenceMaxW /* figma 보기패널 텍스트 932px */, color: C_CANVAS_FG }}
+            style={{ fontSize: SZ.sentenceFs, lineHeight: SZ.sentenceLineHeight, maxWidth: SZ.sentenceMaxW /* figma 보기패널 텍스트 932px */, color: C_CANVAS_FG }}
           >
             {parts.map((text, i) => {
               const isLastPart = i === parts.length - 1;

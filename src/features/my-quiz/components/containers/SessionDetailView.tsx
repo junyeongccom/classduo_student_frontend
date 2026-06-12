@@ -7,9 +7,9 @@
 
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslations, useFormatter, useLocale } from 'next-intl'
-import { ArrowLeft, Loader2, CheckCircle2, XCircle, TrendingUp, Calendar } from 'lucide-react'
+import { ArrowLeft, ArrowUp, Loader2, CheckCircle2, XCircle, TrendingUp, Calendar } from 'lucide-react'
 import { StudentQuizCard } from '@/shared/components/quiz'
 import type { StudentQuizItem } from '@/shared/components/quiz'
 import { cn } from '@/shared/lib/utils'
@@ -57,6 +57,11 @@ export default function SessionDetailView({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resetKey, setResetKey] = useState(0)
+  // 스크롤 영역 ref — '맨 위로 이동하기' 버튼용
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const handleScrollTop = useCallback(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
 
   const fetchData = useCallback(async () => {
     setIsLoading(true)
@@ -229,6 +234,22 @@ export default function SessionDetailView({
     return { correct, incorrect, unanswered, total, answered, progressPercent }
   }, [quizzes, statusMap])
 
+  // 표시용 회차 라벨 — 응답에 lecture_titles 가 있으면 우선 사용(다중 회차, 전체 표시).
+  // 없으면 컨테이너가 내려준 lectureName prop 폴백(단일/하위 호환).
+  const displayLectureName = useMemo(() => {
+    const titles = sessionData?.lecture_titles
+    if (titles && titles.length > 0) {
+      // 선택한 회차 전체 제목 표시 (압축하지 않음)
+      return titles.join(' · ')
+    }
+    const ids = sessionData?.lecture_ids
+    if (ids && ids.length > 1) {
+      // 제목이 없고 lecture_ids 만 있는 경우 개수만 표기 (이름 매핑은 컨테이너 prop 에 위임)
+      return lectureName || t('session.multiLectureCount', { count: ids.length })
+    }
+    return lectureName
+  }, [sessionData?.lecture_titles, sessionData?.lecture_ids, lectureName, t])
+
   const firstUnansweredId = useMemo(() => {
     for (const group of grouped) {
       for (const quiz of group.items) {
@@ -326,7 +347,7 @@ export default function SessionDetailView({
       </div>
 
       {/* 스크롤 영역: 세션 정보 + 통계 + 퀴즈 전체 */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
         <div className="mx-auto max-w-2xl space-y-4">
           {/* 세션 정보 */}
           <div>
@@ -343,13 +364,13 @@ export default function SessionDetailView({
                 </p>
               )
             })()}
-            {(courseName || lectureName) && (
+            {(courseName || displayLectureName) && (
               <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                {courseName}{courseName && lectureName ? ' · ' : ''}{lectureName} {t('session.title').replace('내 퀴즈 ', '')}
+                {courseName}{courseName && displayLectureName ? ' · ' : ''}{displayLectureName} {t('session.title').replace('내 퀴즈 ', '')}
               </p>
             )}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {t('session.unitLabel')}: {lectureName || t('session.unknownUnit')} | {t('session.completionSummary', { total: stats.total, completed: stats.answered })}
+              {t('session.unitLabel')}: {displayLectureName || t('session.unknownUnit')} | {t('session.completionSummary', { total: stats.total, completed: stats.answered })}
             </p>
           </div>
 
@@ -398,6 +419,8 @@ export default function SessionDetailView({
                     answer: pickLocalizedText(quiz.answer, quiz.answer_eng, locale) ?? quiz.answer ?? null,
                     explanation: pickLocalizedText(quiz.explanation, quiz.explanation_eng, locale) ?? quiz.explanation ?? null,
                     difficulty: quiz.difficulty ?? null,
+                    // 출처 회차 번호 — 백엔드가 내려주면 카드 헤더에 "N주차" 배지 표시 (없으면 미표시)
+                    lectureNo: quiz.lecture_no ?? null,
                     choices: quiz.choices.map(c => ({
                       ...c,
                       choice_text: pickLocalizedText(c.choice_text, c.choice_text_eng, locale) ?? c.choice_text,
@@ -427,13 +450,13 @@ export default function SessionDetailView({
 
       {/* 하단 액션 버튼 */}
       <div className="shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
-        <div className="mx-auto max-w-2xl space-y-2">
+        <div className="mx-auto grid max-w-2xl grid-cols-3 gap-2">
           <button
             type="button"
             onClick={handleContinue}
             disabled={firstUnansweredId === null}
             className={cn(
-              'w-full rounded-xl py-3 text-sm font-semibold text-white transition',
+              'rounded-xl px-2 py-3 text-sm font-semibold text-white transition',
               firstUnansweredId ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed',
             )}
           >
@@ -441,8 +464,16 @@ export default function SessionDetailView({
           </button>
           <button
             type="button"
+            onClick={handleScrollTop}
+            className="inline-flex items-center justify-center gap-1 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <ArrowUp className="h-4 w-4 shrink-0" />
+            {t('session.scrollToTop')}
+          </button>
+          <button
+            type="button"
             onClick={handleRetryAll}
-            className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-2 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             {t('session.retryAll')}
           </button>

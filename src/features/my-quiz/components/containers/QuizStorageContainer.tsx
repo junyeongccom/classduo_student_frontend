@@ -14,11 +14,14 @@ import {
   ArrowUpDown,
   Bookmark,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
   Eye,
   EyeOff,
   Lightbulb,
   SlidersHorizontal,
+  Trash2,
+  Trophy,
   X,
   XCircle,
 } from 'lucide-react'
@@ -26,7 +29,15 @@ import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
 import { useQuizStorage, type QuizStorageItem } from '../../hooks/useQuizStorage'
 import { updateCorrect } from '@/features/lecture-study/services/quizStatusService'
 import type { StudentQuizType } from '@/shared/components/quiz'
+import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { formatNumberedExplanation, numberLabel } from '../../domain/formatExplanation'
 import { CORE_TEST_TO_LECTURE_NO } from '@/features/exam-prep-final/domain/coreTestLectureMap'
+import {
+  groupByLectureNo,
+  computeWeaknessIndex,
+} from '../../domain/groupByLecture'
+import ExamModeContainer from '../exam-mode/ExamModeContainer'
+import { dismissQuiz } from '../../services/myQuizStatusService'
 
 type SegmentValue = 'all' | 'fav' | 'wrong'
 /**
@@ -156,8 +167,35 @@ export default function QuizStorageContainer() {
   const [sourceFilter, setSourceFilter] = useState<SourceValue>('all')
   // 정렬
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
-  // advanced filters expanded
-  const [advancedOpen, setAdvancedOpen] = useState(false)
+  // advanced filters expanded — 기본 열림 (회차/유형 필터를 바로 노출)
+  const [advancedOpen, setAdvancedOpen] = useState(true)
+  // 시험 모드 오버레이
+  const [examOpen, setExamOpen] = useState(false)
+  // 시험 모드를 history 항목으로 등록 — 브라우저 뒤로가기 시 밑 탭(문제 만들기) 으로 가지 않고
+  // 오버레이만 닫혀 "내 퀴즈 저장소" 에 머무르게 한다. Next 의 history state 는 보존(스프레드).
+  const openExam = () => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ ...window.history.state, examMode: true }, '')
+    }
+    setExamOpen(true)
+  }
+  const closeExam = () => {
+    // X/완료로 닫을 때: pushState 로 쌓은 항목을 back 으로 소비(popstate → 아래 effect 가 닫음).
+    if (typeof window !== 'undefined' && window.history.state?.examMode) {
+      window.history.back()
+    } else {
+      setExamOpen(false)
+    }
+  }
+  // 브라우저 뒤로가기(popstate) → 오버레이 닫기.
+  useEffect(() => {
+    if (!examOpen) return
+    const onPop = () => setExamOpen(false)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [examOpen])
+  // 회차 아코디언 — 펼친 회차 lecture_no 집합 (기본 접힘)
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
   // 정답 모드 — localStorage 복원 (lazy initializer로 첫 렌더부터 정확한 값 사용 → 깜빡임 방지)
   const [answersMode, setAnswersMode] = useState<AnswersMode>(() => {
     if (typeof window === 'undefined') return 'off'
@@ -171,10 +209,15 @@ export default function QuizStorageContainer() {
   const effectiveLectureIds =
     lectureFilter.length > 0 ? lectureFilter : allLectureIds
 
-  const { items, isLoading, error } = useQuizStorage({
+  const { items, isLoading, error, refresh } = useQuizStorage({
     lectureIds: effectiveLectureIds,
     lectureInfoMap,
   })
+
+  // 저장소에서 숨김(소프트 삭제) → 즉시 새로고침. 원본 풀이 기록(user_quiz_response)은 보존.
+  const handleDelete = (q: QuizStorageItem) => {
+    dismissQuiz(q.quiz_source, q.quiz_id, q.lecture_id ?? null).then(() => refresh())
+  }
 
   // 핵심테스트 번호 → lecture_no 변환 (선택된 핵심테스트들의 lecture_no Set)
   const coreTestLectureNoSet = useMemo(() => {
@@ -224,6 +267,49 @@ export default function QuizStorageContainer() {
     }
     return { fav, wrong, total: items.length }
   }, [items])
+
+  // 회차(lecture_no)별 그룹 — 현재 세그먼트/필터 적용 결과를 회차 번호순으로 묶음.
+  const lectureGroups = useMemo(() => groupByLectureNo(filtered), [filtered])
+  // 회차별 취약도 — 전체 items 기준 (세그먼트와 무관한 안정 지표).
+  const weakness = useMemo(() => computeWeaknessIndex(items), [items])
+
+  // 오답 개수(wrongItemCount) 기준 순위 — 오답 많은 회차가 1등. 동률은 같은 등수(1·2·2·4…).
+  const wrongRankByLecture = useMemo(() => {
+    const entries = lectureGroups
+      .map((g) => ({
+        lectureNo: g.lectureNo,
+        wrong: weakness.byLecture.get(g.lectureNo)?.wrongItemCount ?? 0,
+      }))
+      .filter((e) => e.wrong > 0)
+      .sort((a, b) => b.wrong - a.wrong)
+    const map = new Map<number, number>()
+    let rank = 0
+    let prevWrong: number | null = null
+    entries.forEach((e, i) => {
+      if (e.wrong !== prevWrong) {
+        rank = i + 1
+        prevWrong = e.wrong
+      }
+      map.set(e.lectureNo, rank)
+    })
+    return map
+  }, [lectureGroups, weakness])
+
+  // 회차 아코디언 토글 (기본 접힘 → 헤더만 보여 취약 회차/분포 한눈에 + 스크롤 최소)
+  const toggleGroup = (no: number) =>
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(no)) next.delete(no)
+      else next.add(no)
+      return next
+    })
+  const allExpanded =
+    lectureGroups.length > 0 &&
+    lectureGroups.every((g) => expanded.has(g.lectureNo))
+  const toggleAllGroups = () =>
+    setExpanded(
+      allExpanded ? new Set() : new Set(lectureGroups.map((g) => g.lectureNo)),
+    )
 
   const handleResetFilters = () => {
     setSegment('all')
@@ -513,6 +599,16 @@ export default function QuizStorageContainer() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* 시험 모드 진입 — 오답/즐겨찾기가 하나도 없으면 비활성 */}
+            <button
+              onClick={openExam}
+              disabled={totalCounts.wrong + totalCounts.fav === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#6366F1] px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-[#4F46E5] disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-gray-700 md:gap-2 md:px-3 md:text-xs"
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              <span>{t('examMode.title')}</span>
+            </button>
+
             {/* Answers toggle */}
             <button
               onClick={() => setAnswersMode((m) => (m === 'on' ? 'off' : 'on'))}
@@ -546,22 +642,66 @@ export default function QuizStorageContainer() {
           )}
 
           {filtered.length > 0 && (
-            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-              {filtered.map((q) => (
-                <QuizCard
-                  key={`${q.quiz_source}:${q.quiz_id}`}
-                  item={q}
-                  locale={locale}
-                  isWrongTab={segment === 'wrong'}
-                  answersMode={answersMode}
-                />
-              ))}
+            <div className="space-y-2">
+              {/* 모두 펼치기/접기 */}
+              <div className="mb-1 flex justify-end">
+                <button
+                  onClick={toggleAllGroups}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 md:text-xs"
+                >
+                  {allExpanded ? (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
+                  {allExpanded ? t('storage.collapseAll') : t('storage.expandAll')}
+                </button>
+              </div>
+              {lectureGroups.map((g) => {
+                const w = weakness.byLecture.get(g.lectureNo)
+                const isOpen = expanded.has(g.lectureNo)
+                return (
+                  <section key={g.lectureNo}>
+                    <LectureGroupHeader
+                      label={t('landing.lectureWeek', { no: g.lectureNo })}
+                      count={g.items.length}
+                      wrongItemCount={w?.wrongItemCount ?? 0}
+                      cumulativeWrong={w?.cumulativeWrong ?? 0}
+                      rank={wrongRankByLecture.get(g.lectureNo)}
+                      isOpen={isOpen}
+                      onToggle={() => toggleGroup(g.lectureNo)}
+                    />
+                    {isOpen && (
+                      <div className="mt-3 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+                        {g.items.map((q) => (
+                          <QuizCard
+                            key={`${q.quiz_source}:${q.quiz_id}`}
+                            item={q}
+                            locale={locale}
+                            isWrongTab={segment === 'wrong'}
+                            answersMode={answersMode}
+                            onDelete={() => handleDelete(q)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                )
+              })}
             </div>
           )}
         </div>
 
         <div className="h-16" />
       </div>
+
+      {examOpen && (
+        <ExamModeContainer
+          items={items}
+          locale={locale}
+          onClose={closeExam}
+        />
+      )}
     </div>
   )
 }
@@ -616,16 +756,75 @@ function Chip({
   )
 }
 
+function LectureGroupHeader({
+  label,
+  count,
+  wrongItemCount,
+  cumulativeWrong,
+  rank,
+  isOpen,
+  onToggle,
+}: {
+  label: string
+  count: number
+  wrongItemCount: number
+  cumulativeWrong: number
+  /** 오답 개수 기준 순위 (1 = 오답 최다). 오답 없는 회차는 undefined. */
+  rank?: number
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  const t = useTranslations('myQuiz')
+  return (
+    <button
+      onClick={onToggle}
+      className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800 md:px-4 md:py-3"
+    >
+      <ChevronRight
+        className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+      />
+      <h2 className="text-base font-black text-gray-900 dark:text-gray-100">{label}</h2>
+      <span className="text-xs text-gray-400">· {t('storage.groupCount', { count })}</span>
+      {wrongItemCount > 0 && (
+        <span className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-[#C2410C] dark:bg-orange-950/30">
+            {t('storage.groupWeakness', { wrong: wrongItemCount, cumulative: cumulativeWrong })}
+          </span>
+          {rank != null && (
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${rankColor(rank)}`}
+              title={t('storage.weaknessTitle')}
+            >
+              {t('storage.wrongRank', { rank })}
+            </span>
+          )}
+        </span>
+      )}
+    </button>
+  )
+}
+
+// 오답 순위 배지 색 — 1등만 솔리드 빨강으로 강조하고 2·3등은 톤 다운한 빨강 틴트.
+// (워시아웃된 핑크 대신 채도 있는 red 계열 + tint 배경으로 깔끔하게)
+function rankColor(rank: number): string {
+  if (rank === 1) return 'bg-red-600 text-white shadow-sm shadow-red-600/30'
+  if (rank === 2) return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300'
+  if (rank === 3) return 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-300'
+  return 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+}
+
 function QuizCard({
   item,
   locale,
   isWrongTab,
   answersMode,
+  onDelete,
 }: {
   item: QuizStorageItem
   locale: string
   isWrongTab: boolean
   answersMode: AnswersMode
+  onDelete: () => void
 }) {
   const t = useTranslations('myQuiz')
   const display = toDisplaySource(item.quiz_source)
@@ -646,6 +845,7 @@ function QuizCard({
   // 인라인 풀이 — 다시 들어오면 reset (component state). 오답 탭 + answersMode='off' 일 때만 가능.
   const [attemptIdx, setAttemptIdx] = useState<number | null>(null)
   const [explanationOpen, setExplanationOpen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const canSolve = isWrongTab && answersMode === 'off' && attemptIdx == null
   // 풀이 후 또는 정답표시 ON 이면 채점 결과 표시
@@ -704,8 +904,39 @@ function QuizCard({
               <Bookmark className="h-4 w-4 fill-current" />
             </span>
           )}
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="rounded-lg p-1.5 text-gray-300 transition-colors hover:bg-gray-100 hover:text-rose-500 dark:hover:bg-gray-800"
+            title={t('storage.deleteTitle')}
+            aria-label={t('storage.deleteAria')}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </div>
+
+      {/* 삭제 확인 — 소프트 삭제(숨김). 원본 풀이 기록은 보존됨. */}
+      {confirmDelete && (
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-rose-50 px-3 py-2 text-xs dark:bg-rose-950/30">
+          <span className="font-semibold text-rose-700 dark:text-rose-300">
+            {t('storage.deleteConfirm')}
+          </span>
+          <span className="flex shrink-0 gap-1.5">
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="rounded-md border border-gray-200 bg-white px-2 py-1 font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+            >
+              {t('storage.deleteCancel')}
+            </button>
+            <button
+              onClick={onDelete}
+              className="rounded-md bg-rose-500 px-2 py-1 font-bold text-white hover:bg-rose-600"
+            >
+              {t('storage.deleteConfirmBtn')}
+            </button>
+          </span>
+        </div>
+      )}
 
       {/* Question */}
       <h3 className="mb-3 text-sm font-bold leading-relaxed text-gray-900 dark:text-gray-100">
@@ -779,9 +1010,13 @@ function QuizCard({
         <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm dark:border-gray-700 dark:bg-gray-800">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">{t('storage.explanation')}</p>
           {explanation ? (
-            <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-200">
-              {explanation}
-            </p>
+            <div className="text-gray-700 dark:text-gray-200">
+              {/* exam_prep 객관식 해설은 "1: … 2: …" 나열형 → 번호마다 줄바꿈(저장소 선지는 숫자라 라벨 유지). */}
+              <MarkdownMessage
+                markdown={formatNumberedExplanation(explanation, numberLabel)}
+                headingSize="compact"
+              />
+            </div>
           ) : (
             <p className="text-gray-400">{t('storage.noExplanation')}</p>
           )}

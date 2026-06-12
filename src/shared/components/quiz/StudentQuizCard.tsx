@@ -47,6 +47,8 @@ export interface StudentQuizItem {
   explanation: string | null
   difficulty: string | null
   choices: StudentQuizChoice[]
+  /** 출처 회차 번호. 제공 시 헤더에 "N주차" 배지 표시 (다중 회차 출처 구분용). */
+  lectureNo?: number | null
 }
 
 export interface StudentQuizCardProps {
@@ -216,9 +218,14 @@ export function StudentQuizCard({
     <article
       className={`rounded-2xl border bg-white dark:bg-gray-800 p-5 shadow-sm ${getCardBorderStyle(isCorrect)}`}
     >
-      {/* 헤더: 번호 + 유형 뱃지 + 즐겨찾기 Star */}
+      {/* 헤더: 번호 + 회차 뱃지 + 유형 뱃지 + 즐겨찾기 Star */}
       <div className="flex items-center gap-2 mb-3">
         <span className="text-xs font-bold text-[#6366F1]">Q{index + 1}</span>
+        {quiz.lectureNo != null && (
+          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+            {t('lectureBadge', { no: quiz.lectureNo })}
+          </span>
+        )}
         <span
           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge}`}
         >

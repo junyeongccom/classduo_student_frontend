@@ -242,17 +242,19 @@ export default function QuizCreatorContainer() {
   // ─── 위저드 제출 ───
   const handleWizardSubmit = useCallback(
     async (
-      lectureId: string,
+      lectureIds: string[],
       typeCounts: Record<string, number>,
       language: 'ko' | 'en',
     ) => {
       if (isCreating) return
+      if (lectureIds.length === 0) return
       setIsCreating(true)
       setCreateError(null)
 
       const safeCounts: Record<string, number> = {}
       for (const type of ALLOWED_QUIZ_TYPES) {
-        safeCounts[type] = Math.max(0, Math.min(20, typeCounts[type] ?? 0))
+        // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT=60)은 위저드에서 제한.
+        safeCounts[type] = Math.max(0, typeCounts[type] ?? 0)
       }
       const totalCount = Object.values(safeCounts).reduce((a, b) => a + b, 0)
       if (totalCount === 0) {
@@ -261,14 +263,15 @@ export default function QuizCreatorContainer() {
         return
       }
 
+      // analytics.generate 는 단일 lecture_id 시그니처 — 대표(첫) 회차로 기록.
       customQuizAnalytics.generate({
-        lecture_id: lectureId,
+        lecture_id: lectureIds[0],
         type_counts: safeCounts,
         course_id: selectedCourseId ?? undefined,
       })
 
       const result = await myQuizService.createSession(
-        lectureId,
+        lectureIds,
         safeCounts,
         language,
       )
@@ -283,7 +286,8 @@ export default function QuizCreatorContainer() {
       const newSession: QuizSession = {
         session_id: result.data.session_id,
         student_id: '',
-        lecture_id: lectureId,
+        lecture_id: lectureIds[0],
+        lecture_ids: lectureIds,
         course_id: selectedCourseId ?? '',
         generation_batch_id: null,
         language,
@@ -349,6 +353,31 @@ export default function QuizCreatorContainer() {
     [selectedCourse, t],
   )
 
+  // ─── 세션 회차 라벨 (다중 회차 지원) ───
+  // lecture_ids 가 있으면 회차 번호들을 "1·2·3주차" 형식으로 전체 표시(압축 없음).
+  // 없으면 기존 단일 lecture_id 폴백 (하위 호환).
+  const getSessionLectureLabel = useCallback(
+    (session: QuizSession): string => {
+      const ids =
+        session.lecture_ids && session.lecture_ids.length > 0
+          ? session.lecture_ids
+          : [session.lecture_id]
+      if (ids.length <= 1) return getLectureLabel(ids[0])
+      if (!selectedCourse) return t('session.multiLectureCount', { count: ids.length })
+      const nos = ids
+        .map(
+          (id) =>
+            selectedCourse.lectures.find((l) => l.lecture_id === id)?.lecture_no,
+        )
+        .filter((n): n is number => n != null)
+        .sort((a, b) => a - b)
+      if (nos.length === 0) return t('session.multiLectureCount', { count: ids.length })
+      // 선택한 회차 전체를 "1·2·3주차" 형식으로 표시 (압축하지 않음)
+      return t('landing.lectureWeek', { no: nos.join('·') })
+    },
+    [getLectureLabel, selectedCourse, t],
+  )
+
   // ─── 뷰 분기 ───
   if (view === 'session-detail' && selectedSessionId) {
     const session = sessions.find((s) => s.session_id === selectedSessionId)
@@ -361,14 +390,18 @@ export default function QuizCreatorContainer() {
     const lecture = selectedCourse?.lectures.find(
       (l) => l.lecture_id === detailLectureId,
     )
-    const lectureLabel = lecture
-      ? lecture.title
-        ? t('selector.lectureLabelWithTitle', {
-            no: lecture.lecture_no,
-            title: lecture.title,
-          })
-        : t('selector.lectureLabel', { no: lecture.lecture_no })
-      : ''
+    // 다중 회차 세션이면 회차 라벨을 합쳐서 표시, 단일이면 기존 단일 라벨.
+    const isMultiLecture = (session?.lecture_ids?.length ?? 0) > 1
+    const lectureLabel = isMultiLecture
+      ? getSessionLectureLabel(session!)
+      : lecture
+        ? lecture.title
+          ? t('selector.lectureLabelWithTitle', {
+              no: lecture.lecture_no,
+              title: lecture.title,
+            })
+          : t('selector.lectureLabel', { no: lecture.lecture_no })
+        : ''
     const courseName = selectedCourse
       ? selectedCourse.section
         ? `${selectedCourse.title} (${selectedCourse.section})`
@@ -602,7 +635,7 @@ export default function QuizCreatorContainer() {
                     key={s.session_id}
                     session={s}
                     stats={solvingStatsMap.get(s.session_id) ?? null}
-                    lectureLabel={getLectureLabel(s.lecture_id)}
+                    lectureLabel={getSessionLectureLabel(s)}
                     onSelect={() => {
                       setSelectedSessionId(s.session_id)
                       setView('session-detail')
@@ -637,7 +670,7 @@ export default function QuizCreatorContainer() {
                     key={s.session_id}
                     session={s}
                     stats={solvingStatsMap.get(s.session_id) ?? null}
-                    lectureLabel={getLectureLabel(s.lecture_id)}
+                    lectureLabel={getSessionLectureLabel(s)}
                     onSelect={() => {
                       setSelectedSessionId(s.session_id)
                       setView('session-detail')
@@ -701,9 +734,10 @@ function SessionCard({
             ((session.generated_count ?? 0) / session.quiz_count) * 100,
           )
         : 0
+    // 문항당 ~5초 (60문항 ≈ 5분). 실제 생성이 그리 오래 걸리지 않음.
     const remainingMin = Math.max(
       0,
-      Math.ceil(((session.quiz_count - (session.generated_count ?? 0)) * 8) / 60),
+      Math.ceil(((session.quiz_count - (session.generated_count ?? 0)) * 5) / 60),
     )
     return (
       <article className="relative rounded-2xl border border-blue-200 bg-blue-50/30 p-5 dark:border-blue-900 dark:bg-blue-950/20">
@@ -717,17 +751,23 @@ function SessionCard({
               {t('session.quizCount', { count: session.quiz_count })}
             </span>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-600">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            {t('session.creating')}
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            {remainingMin > 0 && (
+              <span className="text-[11px] font-medium text-gray-400">
+                {t('card.remainingMin', { min: remainingMin })}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-600">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              {t('session.creating')}
+            </span>
+          </div>
         </div>
         <h3 className="mb-1 truncate text-base font-bold text-gray-900 dark:text-gray-50">
           {session.title || t('card.newSessionTitle')}
         </h3>
         <p className="mb-3 text-xs text-gray-400">
-          <Calendar className="inline h-3 w-3" />{' '}
-          {t('card.justStarted', { min: remainingMin })}
+          <Calendar className="inline h-3 w-3" /> {t('card.startedJustNow')}
         </p>
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between text-xs">

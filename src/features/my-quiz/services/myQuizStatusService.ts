@@ -211,6 +211,12 @@ export async function fetchQuizContent(
 
     let rawItems: RawItem[] = []
     let rawChoices: RawChoice[] = []
+    // exam_prep 한정 — 특수 유형(매칭/빈칸/복수선택) 풀이/채점 재사용을 위해 question_format/payload 를
+    // QuizItem 으로 함께 실어보낸다. quiz_id → {question_format, payload, payload_eng}.
+    const examPayloadByQuizId = new Map<
+      string,
+      { question_format: string | null; payload: Record<string, unknown> | null; payload_eng: Record<string, unknown> | null }
+    >()
 
     if (quizSource === 'instructor') {
       const { data, error: err } = await supabase
@@ -375,6 +381,15 @@ export async function fetchQuizContent(
       >()
       for (const r of examRows) examDerived.set(r.id, deriveExam(r))
 
+      // 특수 유형 풀이/채점 재사용용 — question_format + payload(원본) 보존.
+      for (const r of examRows) {
+        examPayloadByQuizId.set(r.id, {
+          question_format: r.question_format ?? null,
+          payload: r.payload ?? null,
+          payload_eng: r.payload_eng ?? null,
+        })
+      }
+
       rawItems = examRows.map(r => ({
         quiz_id: r.id,
         quiz_type: 'EXAM_PREP',
@@ -441,19 +456,26 @@ export async function fetchQuizContent(
       choiceMap.set(c.quiz_id, arr)
     }
 
-    const quizItems: QuizItem[] = rawItems.map(item => ({
-      quiz_id: item.quiz_id,
-      quiz_type: item.quiz_type as StudentQuizType,
-      question: item.question,
-      answer: item.answer ?? null,
-      explanation: item.explanation ?? null,
-      quiz_keyword: null,
-      difficulty: item.difficulty ?? null,
-      choices: choiceMap.get(item.quiz_id) ?? [],
-      question_eng: item.question_eng ?? null,
-      answer_eng: item.answer_eng ?? null,
-      explanation_eng: item.explanation_eng ?? null,
-    }))
+    const quizItems: QuizItem[] = rawItems.map(item => {
+      const ep = examPayloadByQuizId.get(item.quiz_id)
+      return {
+        quiz_id: item.quiz_id,
+        quiz_type: item.quiz_type as StudentQuizType,
+        question: item.question,
+        answer: item.answer ?? null,
+        explanation: item.explanation ?? null,
+        quiz_keyword: null,
+        difficulty: item.difficulty ?? null,
+        choices: choiceMap.get(item.quiz_id) ?? [],
+        question_eng: item.question_eng ?? null,
+        answer_eng: item.answer_eng ?? null,
+        explanation_eng: item.explanation_eng ?? null,
+        // exam_prep 특수 유형 — 시험모드에서 핵심주제학습 폼 재사용/채점에 사용. 그 외 소스는 undefined.
+        question_format: ep?.question_format ?? null,
+        payload: ep?.payload ?? null,
+        payload_eng: ep?.payload_eng ?? null,
+      }
+    })
 
     return { data: quizItems, error: null }
   } catch (err) {
@@ -645,6 +667,60 @@ export async function getBookmarksByLectureIds(
   } catch (err) {
     if (isJWTExpiredError(err)) { await handleJWTExpiration() }
     return { data: null, error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
+  }
+}
+
+/* ── 저장소 소프트 삭제 (숨김) ── */
+
+/**
+ * 학생이 저장소에서 숨긴(소프트 삭제) 퀴즈 키 집합 ("quiz_source:quiz_id").
+ * user_quiz_dismissed (RLS: 본인 행만). 테이블 미존재/오류 시 빈 집합으로 graceful 처리 → 저장소 안 깨짐.
+ */
+export async function fetchDismissedKeys(): Promise<{
+  data: Set<string>
+  error: Error | null
+}> {
+  try {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('user_quiz_dismissed')
+      .select('quiz_source, quiz_id')
+    if (error) {
+      // 테이블 미존재/권한 등은 비치명적 — 빈 집합 반환
+      return { data: new Set(), error: null }
+    }
+    const set = new Set<string>()
+    for (const r of (data ?? []) as { quiz_source: string; quiz_id: string }[]) {
+      set.add(`${r.quiz_source}:${r.quiz_id}`)
+    }
+    return { data: set, error: null }
+  } catch {
+    return { data: new Set(), error: null }
+  }
+}
+
+/**
+ * 퀴즈를 저장소에서 숨김 (소프트 삭제). user_quiz_dismissed insert (RLS).
+ * student_id 는 DB DEFAULT(auth.uid())로 자동 채워짐.
+ * 고대는 멀티테넌트 전 단계 — tenant_id 컬럼 없음. payload 에 넣지 않는다.
+ */
+export async function dismissQuiz(
+  quizSource: QuizSource,
+  quizId: string,
+  lectureId: string | null,
+): Promise<{ error: Error | null }> {
+  try {
+    const supabase = getSupabaseClient()
+    const { error } = await supabase
+      .from('user_quiz_dismissed')
+      .insert({ quiz_source: quizSource, quiz_id: quizId, lecture_id: lectureId })
+    if (error) {
+      if (isJWTExpiredError(error)) await handleJWTExpiration()
+      return { error: new Error(getErrorMessage(error)) }
+    }
+    return { error: null }
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error(getErrorMessage(err)) }
   }
 }
 

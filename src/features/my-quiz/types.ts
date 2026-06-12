@@ -20,7 +20,12 @@ export type QuizSource = 'instructor' | 'customize' | 'content' | 'exam_prep' | 
 export interface QuizSession {
   session_id: string
   student_id: string
+  /** 단일 회차 (하위 호환). 다중 회차 세션도 대표 회차로 유지된다. */
   lecture_id: string
+  /** 다중 회차 id 목록. 신규 세션은 항상 채워지며, 단일 선택도 길이 1 배열. */
+  lecture_ids?: string[]
+  /** 다중 회차 표시용 제목 목록 (선택). */
+  lecture_titles?: string[]
   course_id: string
   generation_batch_id: string | null
   language: string | null
@@ -55,10 +60,23 @@ export interface QuizItem {
   quiz_keyword: string | null
   difficulty?: string | null
   choices: QuizChoice[]
+  /** 출처 회차 id (다중 회차 세션에서 문항별 출처 식별). 구버전/단일 폴백 시 미존재. */
+  lecture_id?: string
+  /** 출처 회차 번호 ("N주차" 배지 표시용). 구버전/단일 폴백 시 미존재. */
+  lecture_no?: number
   /** 영어 번역 (내 퀴즈 한/영 토글용) */
   question_eng?: string | null
   answer_eng?: string | null
   explanation_eng?: string | null
+  /**
+   * exam_prep 한정 — B2C식 특수 유형 식별자. null/undefined = 레거시 단일 4지선다(choices 사용).
+   * 시험모드에서 핵심주제학습 풀이 폼(PayloadQuestionPanel) 재사용 분기에 쓰인다.
+   */
+  question_format?: string | null
+  /** exam_prep 한정 — 유형별 구조 데이터(choices/correct_answer/left_items/right_items/correct_pairs 등). */
+  payload?: Record<string, unknown> | null
+  /** exam_prep 한정 — payload 영문 버전(한/영 토글). */
+  payload_eng?: Record<string, unknown> | null
 }
 
 /** 퀴즈 상태 (user_quiz_status) */
@@ -87,9 +105,11 @@ export interface SessionDetailResponse {
   quizzes: QuizItem[]
 }
 
-/** 세션 생성 요청 */
+/** 세션 생성 요청 (신규 다중 회차 엔드포인트) */
 export interface CreateSessionRequest {
+  lecture_ids: string[]
   type_counts: Record<string, number>
+  language?: 'ko' | 'en'
 }
 
 /** 퀴즈 생성 시 선택 가능한 유형 (백엔드 ALLOWED_TYPES와 동일 — STRUCTURE_OBJ 포함) */

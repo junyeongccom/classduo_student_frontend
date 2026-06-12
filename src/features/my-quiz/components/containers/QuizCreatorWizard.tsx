@@ -65,6 +65,9 @@ const PRESETS: Record<string, Record<QuizType, number>> = {
   depth: { DEF_TO_TERM: 2, TERM_TO_DEF: 2, MISCONCEPTION: 5, STRUCTURE_OBJ: 6 },
 }
 
+// 총 문항 수 상한. 백엔드(app-service 검증 1~60 + job-service count le=60)와 일치시킨다.
+const MAX_TOTAL_COUNT = 60
+
 interface QuizCreatorWizardProps {
   lectures: LectureItem[]
   /** 외부 딥링크로 사전 선택할 회차 id (이메일 '퀴즈 생성하기' 등). 없으면 미선택. */
@@ -72,7 +75,7 @@ interface QuizCreatorWizardProps {
   isSubmitting: boolean
   error: string | null
   onSubmit: (
-    lectureId: string,
+    lectureIds: string[],
     typeCounts: Record<QuizType, number>,
     language: 'ko' | 'en',
   ) => Promise<void>
@@ -89,7 +92,9 @@ export default function QuizCreatorWizard({
 }: QuizCreatorWizardProps) {
   const t = useTranslations('myQuiz')
   const locale = useLocale()
-  const [selectedLectureId, setSelectedLectureId] = useState<string | null>(initialLectureId)
+  const [selectedLectureIds, setSelectedLectureIds] = useState<string[]>(
+    initialLectureId ? [initialLectureId] : [],
+  )
   const [counts, setCounts] = useState<Record<QuizType, number>>({
     DEF_TO_TERM: 0,
     TERM_TO_DEF: 0,
@@ -103,27 +108,82 @@ export default function QuizCreatorWizard({
     [counts],
   )
 
-  const selectedLecture = useMemo(
-    () => lectures.find((l) => l.lecture_id === selectedLectureId) ?? null,
-    [lectures, selectedLectureId],
+  // 선택된 회차들 (회차 번호 오름차순)
+  const selectedLectures = useMemo(
+    () =>
+      lectures
+        .filter((l) => selectedLectureIds.includes(l.lecture_id))
+        .sort((a, b) => a.lecture_no - b.lecture_no),
+    [lectures, selectedLectureIds],
   )
 
+  // 하단 요약용 회차 라벨 — 선택한 회차 전체를 "1·2·3주차" 형식으로 표시 (압축하지 않음)
+  const selectedLectureSummary = useMemo(() => {
+    if (selectedLectures.length === 0) return null
+    const nos = selectedLectures.map((l) => l.lecture_no)
+    return t('landing.lectureWeek', { no: nos.join('·') })
+  }, [selectedLectures, t])
+
+  // 문항당 ~5초 (60문항 ≈ 5분). 생성 카드의 잔여시간 추정과 동일 기준.
   const estimatedMinutes = useMemo(
-    () => (totalCount > 0 ? Math.max(1, Math.ceil((75 + totalCount * 8) / 60)) : 0),
+    () => (totalCount > 0 ? Math.max(1, Math.ceil((totalCount * 5) / 60)) : 0),
     [totalCount],
   )
 
-  const ready = !!selectedLectureId && totalCount > 0 && !isSubmitting
+  const ready = selectedLectureIds.length > 0 && totalCount > 0 && !isSubmitting
+
+  const toggleLecture = (lectureId: string) => {
+    setSelectedLectureIds((prev) =>
+      prev.includes(lectureId)
+        ? prev.filter((id) => id !== lectureId)
+        : [...prev, lectureId],
+    )
+  }
+
+  // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT)만 제한. 절대값/델타 공용 clamp.
+  const clampForType = (
+    prev: Record<QuizType, number>,
+    type: QuizType,
+    value: number,
+  ): number => {
+    const othersTotal = (Object.keys(prev) as QuizType[]).reduce(
+      (sum, k) => (k === type ? sum : sum + (prev[k] ?? 0)),
+      0,
+    )
+    const maxForType = MAX_TOTAL_COUNT - othersTotal
+    return Math.max(0, Math.min(maxForType, value))
+  }
 
   const adjustCount = (type: QuizType, delta: number) => {
     setCounts((prev) => ({
       ...prev,
-      [type]: Math.max(0, Math.min(20, (prev[type] ?? 0) + delta)),
+      [type]: clampForType(prev, type, (prev[type] ?? 0) + delta),
     }))
   }
 
+  // 직접 입력 — 절대값으로 설정(총합 상한 내로 clamp). 빈 입력/비숫자는 0.
+  const setCount = (type: QuizType, value: number) => {
+    const safe = Number.isFinite(value) ? Math.floor(value) : 0
+    setCounts((prev) => ({ ...prev, [type]: clampForType(prev, type, safe) }))
+  }
+
   const applyPreset = (key: keyof typeof PRESETS) => {
-    setCounts({ ...PRESETS[key] })
+    // 프리셋은 교체가 아니라 누적 — 클릭마다 해당 프리셋 값을 통째로 더한다.
+    // 더했을 때 총합이 상한(MAX_TOTAL_COUNT)을 넘으면 → 1× 프리셋(최소)으로 되돌려 순환시킨다.
+    // (예: 균형 5·5·3·2 반복 클릭 → 15 → 30 → 45 → 60 → 다시 15)
+    setCounts((prev) => {
+      const preset = PRESETS[key]
+      const presetSum = Object.values(preset).reduce((a, b) => a + b, 0)
+      const currentSum = Object.values(prev).reduce((a, b) => a + b, 0)
+      if (currentSum + presetSum > MAX_TOTAL_COUNT) {
+        return { ...preset } // 상한 초과 → 최소(1×)로 순환
+      }
+      const next = { ...prev }
+      for (const [type, add] of Object.entries(preset) as [QuizType, number][]) {
+        next[type] = (next[type] ?? 0) + add
+      }
+      return next
+    })
   }
 
   const clearCounts = () => {
@@ -131,11 +191,11 @@ export default function QuizCreatorWizard({
   }
 
   const handleSubmit = async () => {
-    if (!ready || !selectedLectureId) return
-    await onSubmit(selectedLectureId, counts, language)
+    if (!ready || selectedLectureIds.length === 0) return
+    await onSubmit(selectedLectureIds, counts, language)
   }
 
-  const step2Active = selectedLectureId != null
+  const step2Active = selectedLectureIds.length > 0
   const step3Active = step2Active
 
   return (
@@ -188,7 +248,7 @@ export default function QuizCreatorWizard({
 
           {/* ===================== STEP 1: 회차 선택 ===================== */}
           <section
-            className={`${selectedLectureId == null ? 'qcw-step-active' : ''} mb-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900`}
+            className={`${selectedLectureIds.length === 0 ? 'qcw-step-active' : ''} mb-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900`}
           >
             <div className="mb-4 flex items-center gap-3">
               <span className="qcw-step-num inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#6366F1] text-xs font-bold text-white">
@@ -198,18 +258,23 @@ export default function QuizCreatorWizard({
                 <h2 className="text-base font-bold text-gray-900 dark:text-gray-50">{t('wizard.step1Title')}</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {t('wizard.step1Desc')}
+                  {selectedLectureIds.length > 0 && (
+                    <span className="ml-1 font-semibold text-[#6366F1]">
+                      · {t('wizard.selectedCountSuffix', { count: selectedLectureIds.length })}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3 md:gap-3 lg:grid-cols-4">
               {lectures.map((l) => {
-                const selected = selectedLectureId === l.lecture_id
+                const selected = selectedLectureIds.includes(l.lecture_id)
                 const dateLabel = `${l.lecture_date ? new Date(l.lecture_date).toLocaleDateString(locale === 'en' ? 'en-US' : 'ko-KR', { month: 'long', day: 'numeric' }) : ''} · ${t('wizard.materialReady')}`
                 return (
                   <button
                     key={l.lecture_id}
-                    onClick={() => setSelectedLectureId(l.lecture_id)}
+                    onClick={() => toggleLecture(l.lecture_id)}
                     className={`qcw-lecture-card group flex items-center gap-3.5 rounded-2xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-gray-300 hover:shadow-sm md:flex-col md:items-start md:gap-0 md:rounded-xl dark:border-gray-700 dark:bg-gray-800 ${
                       selected ? 'selected' : ''
                     }`}
@@ -218,7 +283,7 @@ export default function QuizCreatorWizard({
                       <span className="qcw-lecture-num inline-flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-600 md:h-7 md:w-7 md:text-xs">
                         {l.lecture_no}
                       </span>
-                      {selected && <Check className="hidden h-4 w-4 text-[#6366F1] md:block" />}
+                      {selected && <Check className="ml-2 h-4 w-4 text-[#6366F1] md:ml-0" />}
                     </div>
                     <div className="min-w-0 flex-1 md:w-full">
                       <p className="truncate text-sm font-bold text-gray-900 dark:text-gray-50 md:mb-0.5">
@@ -259,7 +324,7 @@ export default function QuizCreatorWizard({
                   {t('wizard.step2Title')}
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {t('wizard.step2Desc')}
+                  {t('wizard.step2Desc', { max: MAX_TOTAL_COUNT })}
                 </p>
               </div>
             </div>
@@ -304,13 +369,22 @@ export default function QuizCreatorWizard({
                         >
                           −
                         </button>
-                        <span className="w-8 text-center text-base font-bold tabular-nums text-gray-900 dark:text-gray-50">
-                          {count}
-                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={count}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/[^0-9]/g, '')
+                            setCount(type, digits === '' ? 0 : parseInt(digits, 10))
+                          }}
+                          aria-label={t(`wizard.typeLabel.${type}`)}
+                          className="w-10 rounded-md border border-gray-200 py-0.5 text-center text-base font-bold tabular-nums text-gray-900 focus:border-[#6366F1] focus:outline-none focus:ring-1 focus:ring-[#6366F1] dark:border-gray-600 dark:bg-gray-900 dark:text-gray-50"
+                        />
                         <button
                           type="button"
                           onClick={() => adjustCount(type, +1)}
-                          disabled={count === 20}
+                          disabled={totalCount >= MAX_TOTAL_COUNT}
                           className="qcw-counter-btn"
                         >
                           +
@@ -424,10 +498,8 @@ export default function QuizCreatorWizard({
         {/* 모바일 전용 — 컴팩트 인라인 요약 + 풀폭 버튼 */}
         <div className="flex flex-col gap-2 md:hidden">
           <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300">
-            <span className={selectedLecture ? '' : 'text-gray-400'}>
-              {selectedLecture
-                ? t('landing.lectureWeek', { no: selectedLecture.lecture_no })
-                : t('wizard.lectureNotSelected')}
+            <span className={selectedLectureSummary ? '' : 'text-gray-400'}>
+              {selectedLectureSummary ?? t('wizard.lectureNotSelected')}
             </span>
             <span className="text-gray-300">·</span>
             <span>
@@ -458,16 +530,21 @@ export default function QuizCreatorWizard({
             <div>
               <p className="text-[11px] font-semibold text-gray-400">{t('wizard.selectedLecture')}</p>
               <p
-                className={`text-sm font-bold ${selectedLecture ? 'text-gray-900 dark:text-gray-50' : 'text-gray-400'}`}
+                className={`text-sm font-bold ${selectedLectures.length > 0 ? 'text-gray-900 dark:text-gray-50' : 'text-gray-400'}`}
               >
-                {selectedLecture
-                  ? selectedLecture.title
-                    ? t('landing.lectureWeekWithTitle', {
-                        no: selectedLecture.lecture_no,
-                        title: selectedLecture.title,
-                      })
-                    : t('landing.lectureWeek', { no: selectedLecture.lecture_no })
-                  : t('wizard.notSelected')}
+                {selectedLectures.length === 0
+                  ? t('wizard.notSelected')
+                  : selectedLectures.length === 1
+                    ? selectedLectures[0].title
+                      ? t('landing.lectureWeekWithTitle', {
+                          no: selectedLectures[0].lecture_no,
+                          title: selectedLectures[0].title,
+                        })
+                      : t('landing.lectureWeek', { no: selectedLectures[0].lecture_no })
+                    : t('wizard.lectureSummaryWithCount', {
+                        summary: selectedLectureSummary ?? '',
+                        count: selectedLectures.length,
+                      })}
               </p>
             </div>
             <div className="h-8 w-px bg-gray-200 dark:bg-gray-700" />
