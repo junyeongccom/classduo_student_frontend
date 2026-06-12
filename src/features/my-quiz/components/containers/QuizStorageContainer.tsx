@@ -171,6 +171,29 @@ export default function QuizStorageContainer() {
   const [advancedOpen, setAdvancedOpen] = useState(true)
   // 시험 모드 오버레이
   const [examOpen, setExamOpen] = useState(false)
+  // 시험 모드를 history 항목으로 등록 — 브라우저 뒤로가기 시 밑 탭(문제 만들기) 으로 가지 않고
+  // 오버레이만 닫혀 "내 퀴즈 저장소" 에 머무르게 한다. Next 의 history state 는 보존(스프레드).
+  const openExam = () => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ ...window.history.state, examMode: true }, '')
+    }
+    setExamOpen(true)
+  }
+  const closeExam = () => {
+    // X/완료로 닫을 때: pushState 로 쌓은 항목을 back 으로 소비(popstate → 아래 effect 가 닫음).
+    if (typeof window !== 'undefined' && window.history.state?.examMode) {
+      window.history.back()
+    } else {
+      setExamOpen(false)
+    }
+  }
+  // 브라우저 뒤로가기(popstate) → 오버레이 닫기.
+  useEffect(() => {
+    if (!examOpen) return
+    const onPop = () => setExamOpen(false)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [examOpen])
   // 회차 아코디언 — 펼친 회차 lecture_no 집합 (기본 접힘)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   // 정답 모드 — localStorage 복원 (lazy initializer로 첫 렌더부터 정확한 값 사용 → 깜빡임 방지)
@@ -578,7 +601,7 @@ export default function QuizStorageContainer() {
           <div className="flex items-center gap-3">
             {/* 시험 모드 진입 — 오답/즐겨찾기가 하나도 없으면 비활성 */}
             <button
-              onClick={() => setExamOpen(true)}
+              onClick={openExam}
               disabled={totalCounts.wrong + totalCounts.fav === 0}
               className="inline-flex items-center gap-1.5 rounded-lg bg-[#6366F1] px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-[#4F46E5] disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-gray-700 md:gap-2 md:px-3 md:text-xs"
             >
@@ -676,7 +699,7 @@ export default function QuizStorageContainer() {
         <ExamModeContainer
           items={items}
           locale={locale}
-          onClose={() => setExamOpen(false)}
+          onClose={closeExam}
         />
       )}
     </div>
