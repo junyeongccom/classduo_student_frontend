@@ -35,7 +35,6 @@ import { CORE_TEST_TO_LECTURE_NO } from '@/features/exam-prep-final/domain/coreT
 import {
   groupByLectureNo,
   computeWeaknessIndex,
-  weaknessLevel,
 } from '../../domain/groupByLecture'
 import ExamModeContainer from '../exam-mode/ExamModeContainer'
 import { dismissQuiz } from '../../services/myQuizStatusService'
@@ -250,6 +249,28 @@ export default function QuizStorageContainer() {
   const lectureGroups = useMemo(() => groupByLectureNo(filtered), [filtered])
   // 회차별 취약도 — 전체 items 기준 (세그먼트와 무관한 안정 지표).
   const weakness = useMemo(() => computeWeaknessIndex(items), [items])
+
+  // 오답 개수(wrongItemCount) 기준 순위 — 오답 많은 회차가 1등. 동률은 같은 등수(1·2·2·4…).
+  const wrongRankByLecture = useMemo(() => {
+    const entries = lectureGroups
+      .map((g) => ({
+        lectureNo: g.lectureNo,
+        wrong: weakness.byLecture.get(g.lectureNo)?.wrongItemCount ?? 0,
+      }))
+      .filter((e) => e.wrong > 0)
+      .sort((a, b) => b.wrong - a.wrong)
+    const map = new Map<number, number>()
+    let rank = 0
+    let prevWrong: number | null = null
+    entries.forEach((e, i) => {
+      if (e.wrong !== prevWrong) {
+        rank = i + 1
+        prevWrong = e.wrong
+      }
+      map.set(e.lectureNo, rank)
+    })
+    return map
+  }, [lectureGroups, weakness])
 
   // 회차 아코디언 토글 (기본 접힘 → 헤더만 보여 취약 회차/분포 한눈에 + 스크롤 최소)
   const toggleGroup = (no: number) =>
@@ -615,10 +636,6 @@ export default function QuizStorageContainer() {
               </div>
               {lectureGroups.map((g) => {
                 const w = weakness.byLecture.get(g.lectureNo)
-                const lvl = weaknessLevel(
-                  w?.cumulativeWrong ?? 0,
-                  weakness.maxCumulativeWrong,
-                )
                 const isOpen = expanded.has(g.lectureNo)
                 return (
                   <section key={g.lectureNo}>
@@ -627,7 +644,7 @@ export default function QuizStorageContainer() {
                       count={g.items.length}
                       wrongItemCount={w?.wrongItemCount ?? 0}
                       cumulativeWrong={w?.cumulativeWrong ?? 0}
-                      level={lvl}
+                      rank={wrongRankByLecture.get(g.lectureNo)}
                       isOpen={isOpen}
                       onToggle={() => toggleGroup(g.lectureNo)}
                     />
@@ -721,7 +738,7 @@ function LectureGroupHeader({
   count,
   wrongItemCount,
   cumulativeWrong,
-  level,
+  rank,
   isOpen,
   onToggle,
 }: {
@@ -729,7 +746,8 @@ function LectureGroupHeader({
   count: number
   wrongItemCount: number
   cumulativeWrong: number
-  level: 0 | 1 | 2 | 3 | 4
+  /** 오답 개수 기준 순위 (1 = 오답 최다). 오답 없는 회차는 undefined. */
+  rank?: number
   isOpen: boolean
   onToggle: () => void
 }) {
@@ -749,27 +767,26 @@ function LectureGroupHeader({
           <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-[#C2410C] dark:bg-orange-950/30">
             {t('storage.groupWeakness', { wrong: wrongItemCount, cumulative: cumulativeWrong })}
           </span>
-          <span className="flex items-center gap-0.5" title={t('storage.weaknessTitle')}>
-            {[0, 1, 2, 3].map((i) => (
-              <span
-                key={i}
-                className={`h-3 w-1.5 rounded-sm ${
-                  i < level ? heatColor(level) : 'bg-gray-200 dark:bg-gray-700'
-                }`}
-              />
-            ))}
-          </span>
+          {rank != null && (
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${rankColor(rank)}`}
+              title={t('storage.weaknessTitle')}
+            >
+              {t('storage.wrongRank', { rank })}
+            </span>
+          )}
         </span>
       )}
     </button>
   )
 }
 
-function heatColor(level: number): string {
-  if (level >= 4) return 'bg-rose-500'
-  if (level === 3) return 'bg-orange-500'
-  if (level === 2) return 'bg-amber-400'
-  return 'bg-yellow-300'
+// 오답 순위 배지 색 — 빨간색 계열로 1등이 가장 진하고 등수가 낮아질수록 옅어진다.
+function rankColor(rank: number): string {
+  if (rank === 1) return 'bg-rose-600 text-white'
+  if (rank === 2) return 'bg-rose-400 text-white'
+  if (rank === 3) return 'bg-rose-300 text-rose-900 dark:text-rose-950'
+  return 'bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300'
 }
 
 function QuizCard({
