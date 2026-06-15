@@ -227,6 +227,10 @@ export default function QuizCreatorContainer() {
   }, [selectedCourseId, fetchSolvingStats])
 
   // ─── 세션 액션 ───
+  // 삭제 확인 다이얼로그 — 삭제 버튼 클릭 시 바로 지우지 않고 확인을 먼저 받는다.
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const handleDelete = useCallback(
     async (sessionId: string) => {
       const result = await myQuizService.deleteSession(sessionId)
@@ -238,6 +242,14 @@ export default function QuizCreatorContainer() {
     },
     [showErrorToast, t],
   )
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!pendingDeleteId || isDeleting) return
+    setIsDeleting(true)
+    await handleDelete(pendingDeleteId)
+    setIsDeleting(false)
+    setPendingDeleteId(null)
+  }, [pendingDeleteId, isDeleting, handleDelete])
 
   // ─── 위저드 제출 ───
   const handleWizardSubmit = useCallback(
@@ -277,7 +289,11 @@ export default function QuizCreatorContainer() {
       )
       if (result.error || !result.data) {
         const errorMsg =
-          result.status === 400 ? t('create.noSnapshot') : t('error.createFailed')
+          result.status === 429
+            ? t('create.dailyLimit')
+            : result.status === 400
+              ? t('create.noSnapshot')
+              : t('error.createFailed')
         setCreateError(errorMsg)
         setIsCreating(false)
         return
@@ -640,7 +656,7 @@ export default function QuizCreatorContainer() {
                       setSelectedSessionId(s.session_id)
                       setView('session-detail')
                     }}
-                    onDelete={() => handleDelete(s.session_id)}
+                    onDelete={() => setPendingDeleteId(s.session_id)}
                     formattedDate={
                       s.created_at
                         ? format.dateTime(new Date(s.created_at), {
@@ -692,6 +708,43 @@ export default function QuizCreatorContainer() {
 
         <div className="h-16" />
       </div>
+
+      {/* 세션 삭제 확인 다이얼로그 */}
+      {pendingDeleteId && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={isDeleting ? undefined : () => setPendingDeleteId(null)}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-50">
+              {t('landing.deleteConfirmTitle')}
+            </h3>
+            <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">
+              {t('landing.deleteConfirmMessage')}
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingDeleteId(null)}
+                disabled={isDeleting}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              >
+                {t('landing.deleteConfirmCancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+              >
+                {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t('landing.deleteConfirmYes')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
