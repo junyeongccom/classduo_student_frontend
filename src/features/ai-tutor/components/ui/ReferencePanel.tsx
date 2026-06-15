@@ -29,6 +29,9 @@ interface RecordingReference {
     start_time?: number
     end_time?: number
     score?: number
+    lecture_label?: string | null
+    lecture_no?: number | null
+    lecture_title?: string | null
   }
   citations: Array<{
     text: string
@@ -50,6 +53,9 @@ interface MaterialReference {
     image_width?: number
     image_height?: number
     score?: number
+    lecture_label?: string | null
+    lecture_no?: number | null
+    lecture_title?: string | null
   }
   citations: Array<{
     text: string
@@ -334,6 +340,14 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                             {t('recordingSegmentLabel')}{displayIndex}
                           </p>
                           <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                            {(ref.metadata.lecture_no != null || ref.metadata.lecture_label) && (
+                              <span
+                                className="inline-flex items-center rounded-md bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-indigo-600"
+                                title={ref.metadata.lecture_label || undefined}
+                              >
+                                {ref.metadata.lecture_no != null ? `${ref.metadata.lecture_no}회차` : ref.metadata.lecture_label}
+                              </span>
+                            )}
                             {ref.metadata.start_time !== undefined && (
                               <div className="flex items-center gap-1">
                                 <span className="text-xs font-medium text-gray-600">
@@ -465,11 +479,21 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                           <p className="truncate text-sm font-semibold text-gray-900">
                             {ref.metadata.original_filename || `${t('materialFallback')} ${index + 1}`}
                           </p>
-                          {ref.metadata.page_number && (
-                            <p className="text-xs text-gray-500">
-                              {t('page')} {ref.metadata.page_number}
-                            </p>
-                          )}
+                          <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                            {(ref.metadata.lecture_no != null || ref.metadata.lecture_label) && (
+                              <span
+                                className="inline-flex items-center rounded-md bg-indigo-50 px-1.5 py-0.5 text-xs font-semibold text-indigo-600"
+                                title={ref.metadata.lecture_label || undefined}
+                              >
+                                {ref.metadata.lecture_no != null ? `${ref.metadata.lecture_no}회차` : ref.metadata.lecture_label}
+                              </span>
+                            )}
+                            {ref.metadata.page_number && (
+                              <p className="text-xs text-gray-500">
+                                {t('page')} {ref.metadata.page_number}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

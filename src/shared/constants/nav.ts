@@ -11,10 +11,10 @@ import {
   MessageSquare,
   BookMarked,
   Leaf,
-  GraduationCap,
   MessageCircle,
   Bookmark,
   PencilLine,
+  ClipboardList,
 } from 'lucide-react'
 
 import type { ComponentType, SVGProps } from 'react'
@@ -121,9 +121,8 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
   {
     id: 'exam-prep',
     labelKey: 'courseNav.examPrep',
-    icon: GraduationCap,
-    // 사이드바에서 fallback Icon 대신 PNG 사용
-    iconSrc: '/IMG_8435.png',
+    // 다른 메뉴 아이콘과 동일한 SVG 라인 스타일/색을 쓰도록 lucide 아이콘 사용 (기존 PNG는 색이 진했음)
+    icon: ClipboardList,
     hrefFor: (id) => `/studyspace/course/${id}/exam-prep`,
     matchFor: (id) => `/studyspace/course/${id}/exam-prep`,
     color: '#7C3AED',
