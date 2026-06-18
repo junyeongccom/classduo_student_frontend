@@ -38,6 +38,18 @@ import {
 } from '../../domain/groupByLecture'
 import ExamModeContainer from '../exam-mode/ExamModeContainer'
 import { dismissQuiz } from '../../services/myQuizStatusService'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from '@/shared/components/ui/Dialog'
+
+/** 저장소 항목 고유 키 (소프트 삭제 dismissQuiz 인자 조합). */
+const storageItemKey = (q: QuizStorageItem) =>
+  `${q.quiz_source}:${q.quiz_id}:${q.lecture_id ?? ''}`
 
 type SegmentValue = 'all' | 'fav' | 'wrong'
 /**
@@ -171,6 +183,11 @@ export default function QuizStorageContainer() {
   const [advancedOpen, setAdvancedOpen] = useState(true)
   // 시험 모드 오버레이
   const [examOpen, setExamOpen] = useState(false)
+  // 선택/일괄 삭제
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
+  const [bulkConfirm, setBulkConfirm] = useState<'all' | 'selected' | null>(null)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   // 시험 모드를 history 항목으로 등록 — 브라우저 뒤로가기 시 밑 탭(문제 만들기) 으로 가지 않고
   // 오버레이만 닫혀 "내 퀴즈 저장소" 에 머무르게 한다. Next 의 history state 는 보존(스프레드).
   const openExam = () => {
@@ -219,6 +236,19 @@ export default function QuizStorageContainer() {
     dismissQuiz(q.quiz_source, q.quiz_id, q.lecture_id ?? null).then(() => refresh())
   }
 
+  const toggleSelect = (k: string) =>
+    setSelectedKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(k)) next.delete(k)
+      else next.add(k)
+      return next
+    })
+
+  const exitSelectMode = () => {
+    setSelectMode(false)
+    setSelectedKeys(new Set())
+  }
+
   // 핵심테스트 번호 → lecture_no 변환 (선택된 핵심테스트들의 lecture_no Set)
   const coreTestLectureNoSet = useMemo(() => {
     const s = new Set<number>()
@@ -257,6 +287,35 @@ export default function QuizStorageContainer() {
     })
     return list
   }, [items, segment, sourceFilter, typeFilter, sortOrder, coreTestLectureNoSet])
+
+  // 현재 보이는 항목 중 선택된 개수
+  const selectedVisibleCount = useMemo(
+    () => filtered.reduce((n, q) => (selectedKeys.has(storageItemKey(q)) ? n + 1 : n), 0),
+    [filtered, selectedKeys],
+  )
+
+  // 일괄 삭제(소프트 삭제 반복) — scope: 'all'=현재 보이는 전체, 'selected'=선택 항목
+  const runBulkDelete = async (scope: 'all' | 'selected') => {
+    const targets =
+      scope === 'all'
+        ? filtered
+        : filtered.filter((q) => selectedKeys.has(storageItemKey(q)))
+    if (targets.length === 0) {
+      setBulkConfirm(null)
+      return
+    }
+    setIsBulkDeleting(true)
+    try {
+      await Promise.all(
+        targets.map((q) => dismissQuiz(q.quiz_source, q.quiz_id, q.lecture_id ?? null)),
+      )
+    } finally {
+      setIsBulkDeleting(false)
+      setBulkConfirm(null)
+      exitSelectMode()
+      refresh()
+    }
+  }
 
   const totalCounts = useMemo(() => {
     let fav = 0,
@@ -599,6 +658,49 @@ export default function QuizStorageContainer() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* 선택/일괄 삭제 */}
+            {selectMode ? (
+              <>
+                <button
+                  onClick={() => setBulkConfirm('selected')}
+                  disabled={selectedVisibleCount === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-2.5 py-1.5 text-[11px] font-bold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-gray-700 md:gap-2 md:px-3 md:text-xs"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>
+                    {locale === 'en'
+                      ? `Delete selected (${selectedVisibleCount})`
+                      : `선택 삭제 (${selectedVisibleCount})`}
+                  </span>
+                </button>
+                <button
+                  onClick={exitSelectMode}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 md:gap-2 md:px-3 md:text-xs"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>{locale === 'en' ? 'Cancel' : '취소'}</span>
+                </button>
+              </>
+            ) : (
+              filtered.length > 0 && (
+                <>
+                  <button
+                    onClick={() => setBulkConfirm('all')}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-red-500 transition-colors hover:bg-red-50 dark:border-red-900/50 dark:bg-gray-900 dark:text-red-400 dark:hover:bg-red-900/20 md:gap-2 md:px-3 md:text-xs"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>{locale === 'en' ? 'Delete all' : '전체 삭제'}</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectMode(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 md:gap-2 md:px-3 md:text-xs"
+                  >
+                    <span>{locale === 'en' ? 'Select' : '선택'}</span>
+                  </button>
+                </>
+              )
+            )}
+
             {/* 시험 모드 진입 — 오답/즐겨찾기가 하나도 없으면 비활성 */}
             <button
               onClick={openExam}
@@ -673,16 +775,50 @@ export default function QuizStorageContainer() {
                     />
                     {isOpen && (
                       <div className="mt-3 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-                        {g.items.map((q) => (
-                          <QuizCard
-                            key={`${q.quiz_source}:${q.quiz_id}`}
-                            item={q}
-                            locale={locale}
-                            isWrongTab={segment === 'wrong'}
-                            answersMode={answersMode}
-                            onDelete={() => handleDelete(q)}
-                          />
-                        ))}
+                        {g.items.map((q) => {
+                          const cardKey = `${q.quiz_source}:${q.quiz_id}`
+                          if (selectMode) {
+                            const k = storageItemKey(q)
+                            const checked = selectedKeys.has(k)
+                            return (
+                              <label
+                                key={cardKey}
+                                className={`relative block cursor-pointer rounded-2xl ring-2 transition-colors ${
+                                  checked
+                                    ? 'ring-[#6366F1]'
+                                    : 'ring-transparent hover:ring-gray-200 dark:hover:ring-gray-700'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleSelect(k)}
+                                  className="absolute left-3 top-3 z-10 h-5 w-5 cursor-pointer accent-[#6366F1]"
+                                />
+                                {/* 선택 모드에선 카드 내부 상호작용 비활성 (클릭=선택) */}
+                                <div className="pointer-events-none">
+                                  <QuizCard
+                                    item={q}
+                                    locale={locale}
+                                    isWrongTab={segment === 'wrong'}
+                                    answersMode={answersMode}
+                                    onDelete={() => handleDelete(q)}
+                                  />
+                                </div>
+                              </label>
+                            )
+                          }
+                          return (
+                            <QuizCard
+                              key={cardKey}
+                              item={q}
+                              locale={locale}
+                              isWrongTab={segment === 'wrong'}
+                              answersMode={answersMode}
+                              onDelete={() => handleDelete(q)}
+                            />
+                          )
+                        })}
                       </div>
                     )}
                   </section>
@@ -702,6 +838,55 @@ export default function QuizStorageContainer() {
           onClose={closeExam}
         />
       )}
+
+      {/* 일괄 삭제 확인 */}
+      <Dialog
+        open={bulkConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open && !isBulkDeleting) setBulkConfirm(null)
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {locale === 'en' ? 'Delete from storage?' : '저장소에서 삭제할까요?'}
+            </DialogTitle>
+            <DialogDescription>
+              {(() => {
+                const n =
+                  bulkConfirm === 'selected' ? selectedVisibleCount : filtered.length
+                if (locale === 'en')
+                  return `${n} item(s) will be hidden from your storage. Your solving records are kept.`
+                return `${n}개를 저장소에서 삭제(숨김)할까요? 풀이 기록은 보존돼요.`
+              })()}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <button
+              type="button"
+              onClick={() => setBulkConfirm(null)}
+              disabled={isBulkDeleting}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              {locale === 'en' ? 'Cancel' : '취소'}
+            </button>
+            <button
+              type="button"
+              onClick={() => bulkConfirm && runBulkDelete(bulkConfirm)}
+              disabled={isBulkDeleting}
+              className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+            >
+              {isBulkDeleting
+                ? locale === 'en'
+                  ? 'Deleting...'
+                  : '삭제 중...'
+                : locale === 'en'
+                  ? 'Delete'
+                  : '삭제'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
