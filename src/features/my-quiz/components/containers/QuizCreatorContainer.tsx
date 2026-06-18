@@ -49,6 +49,14 @@ import type { QuizSession } from '../../types'
 import { useCourseAndLecture } from '../../hooks/useCourseAndLecture'
 import QuizCreatorWizard from './QuizCreatorWizard'
 import SessionDetailView from './SessionDetailView'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from '@/shared/components/ui/Dialog'
 
 type View = 'landing' | 'wizard' | 'session-detail'
 type SessionsViewMode = 'cards' | 'list'
@@ -61,6 +69,42 @@ const ALLOWED_QUIZ_TYPES = [
   'MISCONCEPTION',
   'STRUCTURE_OBJ',
 ] as const
+
+/** type_counts 합계를 target 으로 비례 축소한다 (정수, 합계 정확히 target). 일일 한도 잔여만큼 부분 생성용. */
+function trimCounts(
+  counts: Record<string, number>,
+  target: number,
+): Record<string, number> {
+  const total = Object.values(counts).reduce((a, b) => a + b, 0)
+  if (total <= target) return { ...counts }
+  const scaled = Object.entries(counts)
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => [k, (v * target) / total] as [string, number])
+  const result: Record<string, number> = {}
+  let assigned = 0
+  for (const [k, val] of scaled) {
+    const floored = Math.floor(val)
+    result[k] = floored
+    assigned += floored
+  }
+  // 내림으로 남은 잔여를 소수부가 큰 순서로 +1 배분 → 합계 정확히 target.
+  let rem = target - assigned
+  const byFrac = scaled
+    .map(([k, val]) => [k, val - Math.floor(val)] as [string, number])
+    .sort((a, b) => b[1] - a[1])
+  for (let i = 0; i < byFrac.length && rem > 0; i++) {
+    result[byFrac[i][0]] += 1
+    rem--
+  }
+  return result
+}
+
+interface PartialOffer {
+  lectureIds: string[]
+  counts: Record<string, number>
+  language: 'ko' | 'en'
+  remaining: number
+}
 
 export default function QuizCreatorContainer() {
   const params = useParams<{ courseId?: string }>()
@@ -97,6 +141,8 @@ export default function QuizCreatorContainer() {
 
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
+  // 일일 한도 잔여만큼 줄여서 생성할지 확인 제안 (429 + 잔여>0 시)
+  const [partialOffer, setPartialOffer] = useState<PartialOffer | null>(null)
 
   // localStorage 복원 — lazy initializer 로 첫 렌더부터 정확한 값 사용 (깜빡임 방지)
   const [sessionsView, setSessionsView] = useState<SessionsViewMode>(() => {
@@ -251,43 +297,41 @@ export default function QuizCreatorContainer() {
     setPendingDeleteId(null)
   }, [pendingDeleteId, isDeleting, handleDelete])
 
-  // ─── 위저드 제출 ───
-  const handleWizardSubmit = useCallback(
+  // ─── 생성 실행 (위저드 제출 / 부분생성 확인 공용) ───
+  const runCreate = useCallback(
     async (
       lectureIds: string[],
-      typeCounts: Record<string, number>,
+      counts: Record<string, number>,
       language: 'ko' | 'en',
     ) => {
-      if (isCreating) return
-      if (lectureIds.length === 0) return
-      setIsCreating(true)
-      setCreateError(null)
-
-      const safeCounts: Record<string, number> = {}
-      for (const type of ALLOWED_QUIZ_TYPES) {
-        // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT=60)은 위저드에서 제한.
-        safeCounts[type] = Math.max(0, typeCounts[type] ?? 0)
-      }
-      const totalCount = Object.values(safeCounts).reduce((a, b) => a + b, 0)
+      const totalCount = Object.values(counts).reduce((a, b) => a + b, 0)
       if (totalCount === 0) {
         setCreateError(t('error.createFailed'))
         setIsCreating(false)
         return
       }
+      setIsCreating(true)
+      setCreateError(null)
 
-      // analytics.generate 는 단일 lecture_id 시그니처 — 대표(첫) 회차로 기록.
-      customQuizAnalytics.generate({
-        lecture_id: lectureIds[0],
-        type_counts: safeCounts,
-        course_id: selectedCourseId ?? undefined,
-      })
-
-      const result = await myQuizService.createSession(
-        lectureIds,
-        safeCounts,
-        language,
-      )
+      const result = await myQuizService.createSession(lectureIds, counts, language)
       if (result.error || !result.data) {
+        // 일일 한도 초과(429) + 잔여 한도가 남아있으면 "그만큼만 생성" 확인 제안.
+        if (result.status === 429) {
+          const detail = result.error as { limit?: number; used?: number } | null
+          const limit = detail?.limit ?? 1000
+          const used = detail?.used ?? limit
+          const remaining = Math.max(0, limit - used)
+          if (remaining > 0 && remaining < totalCount) {
+            setPartialOffer({
+              lectureIds,
+              counts: trimCounts(counts, remaining),
+              language,
+              remaining,
+            })
+            setIsCreating(false)
+            return
+          }
+        }
         const errorMsg =
           result.status === 429
             ? t('create.dailyLimit')
@@ -317,8 +361,48 @@ export default function QuizCreatorContainer() {
       setIsCreating(false)
       setView('landing')
     },
-    [isCreating, t, selectedCourseId],
+    [t, selectedCourseId],
   )
+
+  // ─── 위저드 제출 ───
+  const handleWizardSubmit = useCallback(
+    async (
+      lectureIds: string[],
+      typeCounts: Record<string, number>,
+      language: 'ko' | 'en',
+    ) => {
+      if (isCreating) return
+      if (lectureIds.length === 0) return
+
+      const safeCounts: Record<string, number> = {}
+      for (const type of ALLOWED_QUIZ_TYPES) {
+        // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT=60)은 위저드에서 제한.
+        safeCounts[type] = Math.max(0, typeCounts[type] ?? 0)
+      }
+      if (Object.values(safeCounts).reduce((a, b) => a + b, 0) === 0) {
+        setCreateError(t('error.createFailed'))
+        return
+      }
+
+      // analytics.generate 는 단일 lecture_id 시그니처 — 대표(첫) 회차로 기록.
+      customQuizAnalytics.generate({
+        lecture_id: lectureIds[0],
+        type_counts: safeCounts,
+        course_id: selectedCourseId ?? undefined,
+      })
+
+      await runCreate(lectureIds, safeCounts, language)
+    },
+    [isCreating, runCreate, selectedCourseId, t],
+  )
+
+  // 부분 생성 확인 → 줄인 문항 수로 재생성
+  const confirmPartial = useCallback(() => {
+    if (!partialOffer) return
+    const { lectureIds, counts, language } = partialOffer
+    setPartialOffer(null)
+    void runCreate(lectureIds, counts, language)
+  }, [partialOffer, runCreate])
 
   // ─── 통계 ───
   const stats = useMemo(() => {
@@ -475,6 +559,39 @@ export default function QuizCreatorContainer() {
           ))}
         </div>
       )}
+
+      {/* 일일 한도 잔여만큼 부분 생성 확인 */}
+      <Dialog
+        open={partialOffer !== null}
+        onOpenChange={(open) => {
+          if (!open) setPartialOffer(null)
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('create.partialTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('create.partialDesc', { remaining: partialOffer?.remaining ?? 0 })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <button
+              type="button"
+              onClick={() => setPartialOffer(null)}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              {t('create.partialCancel')}
+            </button>
+            <button
+              type="button"
+              onClick={confirmPartial}
+              className="rounded-lg bg-[#6366F1] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4F46E5]"
+            >
+              {t('create.partialConfirm', { remaining: partialOffer?.remaining ?? 0 })}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <style>{`
         .qcl-hero {
