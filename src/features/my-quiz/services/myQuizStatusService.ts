@@ -509,46 +509,53 @@ export async function getSessionSolvingStats(
 
   try {
     const supabase = getSupabaseClient()
+    const PAGE_SIZE = 1000
 
-    const { data: quizItems, error: itemErr } = await supabase
-      .from('user_customize_quiz_items')
-      .select('quiz_id, session_id')
-      .in('session_id', sessionIds)
-
-    if (itemErr) {
-      if (isJWTExpiredError(itemErr)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
-      return { data: null, error: new Error(getErrorMessage(itemErr)) }
+    // 세션 문항 수집 — PostgREST 기본 1000행 캡 회피를 위해 range 로 전 페이지 순회.
+    // (커스텀 세션이 많은 헤비 유저는 완료 세션 문항 합계가 1000 을 넘을 수 있음)
+    const quizItems: { quiz_id: string; session_id: string }[] = []
+    for (let offset = 0; ; offset += PAGE_SIZE) {
+      const { data: page, error: itemErr } = await supabase
+        .from('user_customize_quiz_items')
+        .select('quiz_id, session_id')
+        .in('session_id', sessionIds)
+        .order('created_at', { ascending: true })
+        .order('quiz_id', { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1)
+      if (itemErr) {
+        if (isJWTExpiredError(itemErr)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+        return { data: null, error: new Error(getErrorMessage(itemErr)) }
+      }
+      if (page?.length) quizItems.push(...page)
+      if (!page || page.length < PAGE_SIZE) break
     }
 
-    if (!quizItems || quizItems.length === 0) {
+    if (quizItems.length === 0) {
       const empty = new Map<string, SessionSolvingStats>()
       for (const sid of sessionIds) empty.set(sid, { answered: 0, correct: 0, total: 0 })
       return { data: empty, error: null }
     }
 
-    const quizIds = quizItems.map(q => q.quiz_id)
-    const quizToSession = new Map<string, string>()
-    for (const q of quizItems) {
-      quizToSession.set(q.quiz_id, q.session_id)
-    }
-
-    // user_quiz_response 누적 행을 created_at 오름차순으로 받고
-    // quiz_id 키로 덮어쓰면 최종적으로 latest 응답이 남는다.
-    const { data: rawResponses, error: statusErr } = await supabase
-      .from('user_quiz_response')
-      .select('quiz_id, is_correct, created_at')
-      .eq('quiz_source', 'customize')
-      .in('quiz_id', quizIds)
-      .order('created_at', { ascending: true })
-
-    if (statusErr) {
-      if (isJWTExpiredError(statusErr)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
-      return { data: null, error: new Error(getErrorMessage(statusErr)) }
-    }
-
+    // 풀이 응답 → quiz_id 별 최신(is_correct) 맵.
+    // quiz_id IN(...) 필터를 쓰지 않는다: 문항이 수백~천 개면 .in() URL 이 게이트웨이
+    // URI 한계(~16KB)를 넘어 400 → 통계 전체 실패(모든 세션 "미시작")가 됐었다(버그).
+    // RLS(uqr_select_own: auth.uid()=student_id)로 본인 응답만 반환되므로 안전하며,
+    // range 로 1000행 캡도 회피한다. created_at 오름차순 + 덮어쓰기 = 최신 응답이 남음.
     const statusByQuiz = new Map<string, boolean | null>()
-    for (const r of (rawResponses ?? [])) {
-      statusByQuiz.set(r.quiz_id, r.is_correct)
+    for (let offset = 0; ; offset += PAGE_SIZE) {
+      const { data: page, error: statusErr } = await supabase
+        .from('user_quiz_response')
+        .select('quiz_id, is_correct, created_at')
+        .eq('quiz_source', 'customize')
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1)
+      if (statusErr) {
+        if (isJWTExpiredError(statusErr)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
+        return { data: null, error: new Error(getErrorMessage(statusErr)) }
+      }
+      for (const r of (page ?? [])) statusByQuiz.set(r.quiz_id, r.is_correct)
+      if (!page || page.length < PAGE_SIZE) break
     }
 
     const result = new Map<string, SessionSolvingStats>()
