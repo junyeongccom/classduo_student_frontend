@@ -47,6 +47,9 @@ interface DialogueLectureSidebarProps {
   isLocked?: boolean
 }
 
+/** 한 번에 선택 가능한 최대 회차 수. 과다 선택 시 AI 답변 생성이 타임아웃되는 것을 방지. */
+const MAX_SELECTED_LECTURES = 10
+
 export function DialogueLectureSidebar({
   courseId,
   selectedLectureIds,
@@ -131,6 +134,8 @@ export function DialogueLectureSidebar({
       if (selectedLectureIds.includes(lectureId)) {
         onSelectLectureIds(selectedLectureIds.filter((id) => id !== lectureId))
       } else {
+        // 최대 선택 개수 초과 시 추가 선택 차단
+        if (selectedLectureIds.length >= MAX_SELECTED_LECTURES) return
         onSelectLectureIds([...selectedLectureIds, lectureId])
       }
     },
@@ -143,14 +148,16 @@ export function DialogueLectureSidebar({
   const selectedAvailableCount = availableLectureIds.filter((id) =>
     selectedLectureIds.includes(id),
   ).length
+  // 전체 선택도 최대 개수까지만. 가용 회차가 한도보다 많으면 한도(10개)가 '전체'의 상한.
+  const selectionCap = Math.min(availableLectures.length, MAX_SELECTED_LECTURES)
   const isAllSelected =
-    availableLectures.length > 0 && selectedAvailableCount === availableLectures.length
+    availableLectures.length > 0 && selectedAvailableCount >= selectionCap
 
   const handleToggleSelectAll = useCallback(() => {
     if (isAllSelected) {
       onSelectLectureIds([])
     } else {
-      onSelectLectureIds(availableLectureIds)
+      onSelectLectureIds(availableLectureIds.slice(0, MAX_SELECTED_LECTURES))
     }
   }, [isAllSelected, availableLectureIds, onSelectLectureIds])
 
@@ -193,14 +200,26 @@ export function DialogueLectureSidebar({
           <span>{t('lectureSelectHint')}</span>
         </div>
         {availableLectures.length > 0 && !isLocked && (
-          <button
-            onClick={handleToggleSelectAll}
-            className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-700 font-medium transition-colors"
-          >
-            {isAllSelected ? t('deselectAll') : t('selectAll')}
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-gray-400 dark:text-gray-500">
+              {selectedLectureIds.length}/{MAX_SELECTED_LECTURES}
+            </span>
+            <button
+              onClick={handleToggleSelectAll}
+              className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-700 font-medium transition-colors"
+            >
+              {isAllSelected ? t('deselectAll') : t('selectAll')}
+            </button>
+          </div>
         )}
       </div>
+      {!isLocked && availableLectures.length > MAX_SELECTED_LECTURES && (
+        <p className="mb-2 text-[11px] text-gray-400 dark:text-gray-500">
+          {locale === 'en'
+            ? `You can select up to ${MAX_SELECTED_LECTURES} lectures at a time.`
+            : `회차는 한 번에 최대 ${MAX_SELECTED_LECTURES}개까지 선택할 수 있어요.`}
+        </p>
+      )}
 
       {/* 회차 목록 */}
       <div className="flex-1 overflow-y-auto space-y-1.5">
@@ -209,7 +228,9 @@ export function DialogueLectureSidebar({
         ) : (
           course.lectures.map((lecture) => {
             const isSelected = selectedLectureIds.includes(lecture.lecture_id)
-            const isDisabled = isLocked || !lecture.is_available
+            const atLimit = selectedLectureIds.length >= MAX_SELECTED_LECTURES
+            const isDisabled =
+              isLocked || !lecture.is_available || (!isSelected && atLimit)
 
             return (
               <button
