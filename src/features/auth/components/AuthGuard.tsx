@@ -15,7 +15,8 @@ export function AuthGuard({
   const { isAuthenticated, isLoading, clearError } = useAuthStore()
   const t = useTranslations('auth.guard')
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup')
-  const [showNotice, setShowNotice] = useState(true)
+  // 인증코드 제거(directSignup 직가입)로 '인증 메일/관리자 승인' 공지 비표시. JSX 보존(롤백=true).
+  const [showNotice, setShowNotice] = useState(false)
 
   const handleTabChange = (tab: 'signup' | 'login') => {
     clearError()
