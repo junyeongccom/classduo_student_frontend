@@ -61,7 +61,9 @@ export function useSignup() {
   // 더블 서브밋 방지 (React 상태 업데이트 지연 대응)
   const sendingRef = useRef(false)
 
-  // 회원가입 인증 코드 전송
+  // 회원가입 처리 (모달 폼 제출 핸들러)
+  // 인증코드 단계 제거: send-code/verify-code 대신 directSignup 으로 바로 계정 생성 +
+  // 자동 로그인. (기존 인증코드 플로우 handleVerifySignupCode/verification UI 는 보존하되 미사용)
   const handleSendSignupCode = useCallback(async (data: SendSignupCodeRequest) => {
     if (sendingRef.current) return { success: false }
     sendingRef.current = true
@@ -69,7 +71,7 @@ export function useSignup() {
     setError(null)
 
     try {
-      const result = await authService.sendSignupCode(data)
+      const result = await authService.directSignup(data)
 
       if (result.error) {
         const code = result.error.error_code
@@ -77,28 +79,32 @@ export function useSignup() {
           ? (code && t.has(code) ? t(code) : result.error.message)
           : t('general')
 
-        // bounce/suppressed 에러 시 formData 저장 (관리자 승인 요청에 필요)
-        const actions = result.error.actions || []
-        if (code === 'EMAIL_BOUNCED' || code === 'EMAIL_SUPPRESSED') {
-          setFormData(data)
-        }
-
         const authError: AuthError = {
           error_code: code || 'API_ERROR',
           message,
-          actions,
+          actions: result.error.actions || [],
         }
         setError(authError)
         return { success: false, error: authError }
       }
 
       if (result.data) {
-        // 인증 코드 전송 성공 → 코드 입력 단계로 전환
-        setFormData(data)
+        // 가입 즉시 자동 로그인 (directSignup 이 토큰 반환)
+        if (result.data.access_token) {
+          localStorage.setItem(TOKEN_KEY, result.data.access_token)
+          if (result.data.refresh_token) {
+            localStorage.setItem(REFRESH_TOKEN_KEY, result.data.refresh_token)
+          }
+          login({
+            access_token: result.data.access_token,
+            refresh_token: result.data.refresh_token || '',
+            expires_in: result.data.expires_in,
+            token_type: result.data.token_type,
+          })
+        }
         setRegisteredEmail(data.email)
-        setMaskedEmail(result.data.email_masked)
-        setExpiresIn(result.data.expires_in)
-        setStep('verification')
+        setStep('success')
+        setSignupSuccess(true)
         return { success: true, data: result.data }
       }
 
@@ -114,7 +120,7 @@ export function useSignup() {
       setIsLoading(false)
       sendingRef.current = false
     }
-  }, [setError, t])
+  }, [setError, login, t])
 
   const handleVerifySignupCode = useCallback(async () => {
     if (!registeredEmail) {
