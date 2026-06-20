@@ -10,7 +10,7 @@ import { TOKEN_KEY, REFRESH_TOKEN_KEY } from '@/shared/lib/utils'
 
 export function useSignup() {
   const router = useRouter()
-  const { setError, login } = useAuthStore()
+  const { setError, login, setUser } = useAuthStore()
   const t = useTranslations('errors')
   const tMsg = useTranslations('auth.messages')
   const [isLoading, setIsLoading] = useState(false)
@@ -101,6 +101,11 @@ export function useSignup() {
             expires_in: result.data.expires_in,
             token_type: result.data.token_type,
           })
+          // 프로필(user) 로드 — 우측 상단 프로필 영역(이름/이메일) 표시용. (정상 로그인과 동일 흐름)
+          const meResult = await authService.getMe()
+          if (!meResult.error && meResult.data) {
+            setUser(meResult.data)
+          }
         }
         setRegisteredEmail(data.email)
         setStep('success')
@@ -120,7 +125,7 @@ export function useSignup() {
       setIsLoading(false)
       sendingRef.current = false
     }
-  }, [setError, login, t])
+  }, [setError, login, setUser, t])
 
   const handleVerifySignupCode = useCallback(async () => {
     if (!registeredEmail) {
