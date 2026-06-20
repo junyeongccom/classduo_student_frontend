@@ -310,8 +310,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
               </div>
             )}
 
-            {/* 이메일 수신 안내 카드 */}
-            <EmailNoticeCard />
+            {/* 이메일 수신 안내 카드 — 인증코드 제거(directSignup 직가입)로 비표시. 컴포넌트/문구는 보존(롤백 시 주석 해제). */}
+            {/* <EmailNoticeCard /> */}
 
             {/* 회원가입 폼 */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
