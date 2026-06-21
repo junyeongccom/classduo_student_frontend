@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/features/auth'
 import { Sidebar, LoginModal, SignupModal } from '@/shared/components/common'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import { MaintenanceNoticeBody } from '@/shared/components/common/MaintenanceNoticeBody'
-import { dismissNoticeForToday, isNoticeDismissedToday } from '@/shared/components/common/maintenanceNotice'
 import { X } from 'lucide-react'
 
 export function AuthGuard({
@@ -16,20 +15,10 @@ export function AuthGuard({
 }) {
   const { isAuthenticated, isLoading, clearError } = useAuthStore()
   const t = useTranslations('auth.guard')
-  const isEn = useLocale() === 'en'
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup')
-  // 서비스 장애 사과 공지 — 인증화면 좌측 별도 카드로 노출. 종료 시 false.
-  const [showNotice, setShowNotice] = useState(false)
-
-  // SSR/hydration 안전: "오늘 하루 닫기" 상태가 아닐 때만 노출.
-  useEffect(() => {
-    if (!isNoticeDismissedToday()) setShowNotice(true)
-  }, [])
-
-  const handleDismissNoticeToday = () => {
-    dismissNoticeForToday()
-    setShowNotice(false)
-  }
+  // 서버 점검 공지 — 인증화면 별도 카드. 점검 종료 시 false 로.
+  // 모두가 봐야 하므로 영구 닫기 없이 항상 노출(닫아도 새로고침하면 재표시).
+  const [showNotice, setShowNotice] = useState(true)
 
   const handleTabChange = (tab: 'signup' | 'login') => {
     clearError()
@@ -52,7 +41,7 @@ export function AuthGuard({
         {/* 배경 오버레이 */}
         <div className="absolute inset-0 bg-black/30" />
 
-        {/* 사과 공지 (인증 모달 좌측 별도 카드, 데스크탑 — 위치 안 겹침) */}
+        {/* 점검 공지 (인증 모달 좌측 별도 카드, 데스크탑 — 위치 안 겹침) */}
         {showNotice && (
           <div className="fixed z-20 top-1/2 -translate-y-1/2 left-4 lg:left-[calc(50%-280px-380px)] w-[360px] max-h-[88vh] overflow-y-auto rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-6 hidden lg:block">
             <div className="flex justify-end -mt-2 -mr-2 mb-1">
@@ -65,18 +54,10 @@ export function AuthGuard({
               </button>
             </div>
             <MaintenanceNoticeBody />
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={handleDismissNoticeToday}
-                className="rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
-              >
-                {isEn ? "Don't show today" : '오늘 하루 닫기'}
-              </button>
-            </div>
           </div>
         )}
 
-        {/* 사과 공지 (모바일, 상단 — 스크롤) */}
+        {/* 점검 공지 (모바일, 상단 — 스크롤) */}
         {showNotice && (
           <div className="fixed z-20 top-2 left-3 right-3 max-h-[45vh] overflow-y-auto rounded-2xl bg-white dark:bg-gray-900 shadow-xl p-4 lg:hidden">
             <div className="flex justify-end -mt-1 -mr-1 mb-1">
@@ -89,14 +70,6 @@ export function AuthGuard({
               </button>
             </div>
             <MaintenanceNoticeBody />
-            <div className="mt-3 flex justify-end">
-              <button
-                onClick={handleDismissNoticeToday}
-                className="rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
-              >
-                {isEn ? "Don't show today" : '오늘 하루 닫기'}
-              </button>
-            </div>
           </div>
         )}
 
