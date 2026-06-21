@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useAuthStore } from '@/features/auth'
 import { Sidebar, LoginModal, SignupModal } from '@/shared/components/common'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import { MaintenanceNoticeBody } from '@/shared/components/common/MaintenanceNoticeBody'
+import { dismissNoticeForToday, isNoticeDismissedToday } from '@/shared/components/common/maintenanceNotice'
 import { X } from 'lucide-react'
 
 export function AuthGuard({
@@ -17,7 +18,17 @@ export function AuthGuard({
   const t = useTranslations('auth.guard')
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup')
   // 서비스 장애 사과 공지 — 인증화면 좌측 별도 카드로 노출. 종료 시 false.
-  const [showNotice, setShowNotice] = useState(true)
+  const [showNotice, setShowNotice] = useState(false)
+
+  // SSR/hydration 안전: "오늘 하루 닫기" 상태가 아닐 때만 노출.
+  useEffect(() => {
+    if (!isNoticeDismissedToday()) setShowNotice(true)
+  }, [])
+
+  const handleDismissNoticeToday = () => {
+    dismissNoticeForToday()
+    setShowNotice(false)
+  }
 
   const handleTabChange = (tab: 'signup' | 'login') => {
     clearError()
@@ -53,6 +64,14 @@ export function AuthGuard({
               </button>
             </div>
             <MaintenanceNoticeBody />
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={handleDismissNoticeToday}
+                className="rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+              >
+                오늘 하루 닫기
+              </button>
+            </div>
           </div>
         )}
 
@@ -69,6 +88,14 @@ export function AuthGuard({
               </button>
             </div>
             <MaintenanceNoticeBody />
+            <div className="mt-3 flex justify-end">
+              <button
+                onClick={handleDismissNoticeToday}
+                className="rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+              >
+                오늘 하루 닫기
+              </button>
+            </div>
           </div>
         )}
 
