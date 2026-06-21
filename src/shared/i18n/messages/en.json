@@ -1354,6 +1354,7 @@
       "title": "Create New Quiz",
       "step1Title": "Select Lecture",
       "step1Desc": "Pick one lecture to create a quiz for",
+      "step1FixNote": "Fixed: unlike the single-lecture guidance, multiple lectures could previously be selected — this bug is now resolved!",
       "selectedCountSuffix": "{count} selected",
       "materialReady": "Material ready",
       "typeLabel": {

@@ -1354,6 +1354,7 @@
       "title": "새 퀴즈 만들기",
       "step1Title": "회차 선택",
       "step1Desc": "퀴즈를 만들 회차를 1개 골라주세요",
+      "step1FixNote": "기존 1개 회차를 고르는 안내와 다르게 복수 회차가 선택되었던 오류가 수정되었어요!",
       "selectedCountSuffix": "{count}개 선택됨",
       "materialReady": "자료 준비됨",
       "typeLabel": {

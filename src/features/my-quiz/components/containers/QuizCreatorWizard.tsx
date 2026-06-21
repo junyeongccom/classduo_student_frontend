@@ -132,12 +132,9 @@ export default function QuizCreatorWizard({
 
   const ready = selectedLectureIds.length > 0 && totalCount > 0 && !isSubmitting
 
+  // 단일 회차 선택만 허용 (복수 회차 선택 버그 수정). 같은 회차 재클릭 시 선택 해제.
   const toggleLecture = (lectureId: string) => {
-    setSelectedLectureIds((prev) =>
-      prev.includes(lectureId)
-        ? prev.filter((id) => id !== lectureId)
-        : [...prev, lectureId],
-    )
+    setSelectedLectureIds((prev) => (prev[0] === lectureId ? [] : [lectureId]))
   }
 
   // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT)만 제한. 절대값/델타 공용 clamp.
@@ -263,6 +260,9 @@ export default function QuizCreatorWizard({
                       · {t('wizard.selectedCountSuffix', { count: selectedLectureIds.length })}
                     </span>
                   )}
+                </p>
+                <p className="mt-1.5 inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-[#6366F1] dark:bg-indigo-900/30 dark:text-indigo-300">
+                  {t('wizard.step1FixNote')}
                 </p>
               </div>
             </div>
