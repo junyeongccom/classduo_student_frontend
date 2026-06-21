@@ -70,6 +70,10 @@ const ALLOWED_QUIZ_TYPES = [
   'STRUCTURE_OBJ',
 ] as const
 
+// 미풀이 누적 생성 제한(프론트 소프트 가드): 안 푼 생성 문항(Σ 생성−푼)이 이 값 이상이면
+// 새 퀴즈 생성을 막는다. 과생성(생성만 하고 안 푸는) 비용/DB부하 완화 목적.
+const UNSOLVED_BLOCK_THRESHOLD = 300
+
 /** type_counts 합계를 target 으로 비례 축소한다 (정수, 합계 정확히 target). 일일 한도 잔여만큼 부분 생성용. */
 function trimCounts(
   counts: Record<string, number>,
@@ -374,6 +378,17 @@ export default function QuizCreatorContainer() {
       if (isCreating) return
       if (lectureIds.length === 0) return
 
+      // 미풀이 누적 가드: 안 푼 생성 문항(Σ 생성−푼)이 임계 이상이면 새 생성 차단.
+      // solvingStatsMap 은 완료 세션의 {생성(total)/푼(answered)} 통계 — 추가 조회 없이 계산.
+      let unsolved = 0
+      for (const st of solvingStatsMap.values()) {
+        unsolved += Math.max(0, (st.total ?? 0) - (st.answered ?? 0))
+      }
+      if (unsolved >= UNSOLVED_BLOCK_THRESHOLD) {
+        setCreateError(t('create.unsolvedLimit', { count: unsolved, limit: UNSOLVED_BLOCK_THRESHOLD }))
+        return
+      }
+
       const safeCounts: Record<string, number> = {}
       for (const type of ALLOWED_QUIZ_TYPES) {
         // 유형별 상한 없음 — 총합(MAX_TOTAL_COUNT=60)은 위저드에서 제한.
@@ -393,7 +408,7 @@ export default function QuizCreatorContainer() {
 
       await runCreate(lectureIds, safeCounts, language)
     },
-    [isCreating, runCreate, selectedCourseId, t],
+    [isCreating, runCreate, selectedCourseId, t, solvingStatsMap],
   )
 
   // 부분 생성 확인 → 줄인 문항 수로 재생성
