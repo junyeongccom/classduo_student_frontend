@@ -72,7 +72,7 @@ const ALLOWED_QUIZ_TYPES = [
 
 // 미풀이 누적 생성 제한(프론트 소프트 가드): 안 푼 생성 문항(Σ 생성−푼)이 이 값 이상이면
 // 새 퀴즈 생성을 막는다. 과생성(생성만 하고 안 푸는) 비용/DB부하 완화 목적.
-const UNSOLVED_BLOCK_THRESHOLD = 300
+const UNSOLVED_BLOCK_THRESHOLD = 100
 
 /** type_counts 합계를 target 으로 비례 축소한다 (정수, 합계 정확히 target). 일일 한도 잔여만큼 부분 생성용. */
 function trimCounts(
