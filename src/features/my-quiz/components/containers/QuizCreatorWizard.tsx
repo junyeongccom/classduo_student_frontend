@@ -66,7 +66,7 @@ const PRESETS: Record<string, Record<QuizType, number>> = {
 }
 
 // 총 문항 수 상한. 백엔드(app-service 검증 1~60 + job-service count le=60)와 일치시킨다.
-const MAX_TOTAL_COUNT = 60
+const MAX_TOTAL_COUNT = 15
 
 interface QuizCreatorWizardProps {
   lectures: LectureItem[]
@@ -325,6 +325,9 @@ export default function QuizCreatorWizard({
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {t('wizard.step2Desc', { max: MAX_TOTAL_COUNT })}
+                </p>
+                <p className="mt-1.5 inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-[#6366F1] dark:bg-indigo-900/30 dark:text-indigo-300">
+                  {t('wizard.step2FixNote')}
                 </p>
               </div>
             </div>

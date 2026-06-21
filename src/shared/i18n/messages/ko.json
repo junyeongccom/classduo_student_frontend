@@ -1371,6 +1371,7 @@
       },
       "step2Title": "문제 유형 · 문항 수",
       "step2Desc": "유형별로 몇 문항씩 만들지 정해주세요 (최대 {max}문항)",
+      "step2FixNote": "로딩 개선을 위해 최대 15문항으로 수정되었어요!",
       "fiveChoice": "5지선다",
       "quickSelect": "빠른 선택",
       "presetBalanced": "균형 (5·5·3·2)",

@@ -1371,6 +1371,7 @@
       },
       "step2Title": "Question Types · Count",
       "step2Desc": "Choose how many questions to create per type (up to {max} total)",
+      "step2FixNote": "Lowered to a max of 15 questions to improve loading speed!",
       "fiveChoice": "5 choices",
       "quickSelect": "Quick select",
       "presetBalanced": "Balanced (5·5·3·2)",
