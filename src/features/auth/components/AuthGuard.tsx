@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useAuthStore } from '@/features/auth'
 import { Sidebar, LoginModal, SignupModal } from '@/shared/components/common'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
@@ -16,6 +16,7 @@ export function AuthGuard({
 }) {
   const { isAuthenticated, isLoading, clearError } = useAuthStore()
   const t = useTranslations('auth.guard')
+  const isEn = useLocale() === 'en'
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup')
   // 서비스 장애 사과 공지 — 인증화면 좌측 별도 카드로 노출. 종료 시 false.
   const [showNotice, setShowNotice] = useState(false)
@@ -69,7 +70,7 @@ export function AuthGuard({
                 onClick={handleDismissNoticeToday}
                 className="rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
               >
-                오늘 하루 닫기
+                {isEn ? "Don't show today" : '오늘 하루 닫기'}
               </button>
             </div>
           </div>
@@ -93,7 +94,7 @@ export function AuthGuard({
                 onClick={handleDismissNoticeToday}
                 className="rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
               >
-                오늘 하루 닫기
+                {isEn ? "Don't show today" : '오늘 하루 닫기'}
               </button>
             </div>
           </div>

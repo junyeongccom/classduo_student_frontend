@@ -7,6 +7,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useLocale } from 'next-intl'
 import { useAuthStore } from '@/features/auth'
 import {
   Dialog,
@@ -22,6 +23,7 @@ const SHOW_MAINTENANCE_NOTICE = true
 
 export function MaintenanceNoticeModal() {
   const { isAuthenticated } = useAuthStore()
+  const isEn = useLocale() === 'en'
   const [open, setOpen] = useState(false)
 
   // SSR/hydration 안전: 클라이언트에서 "오늘 하루 닫기" 상태가 아닐 때만 노출.
@@ -51,14 +53,14 @@ export function MaintenanceNoticeModal() {
             onClick={handleDismissToday}
             className="rounded-lg px-3 py-2.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
           >
-            오늘 하루 닫기
+            {isEn ? "Don't show today" : '오늘 하루 닫기'}
           </button>
           <button
             type="button"
             onClick={() => setOpen(false)}
             className="rounded-lg bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
           >
-            확인
+            {isEn ? 'OK' : '확인'}
           </button>
         </div>
       </DialogContent>
