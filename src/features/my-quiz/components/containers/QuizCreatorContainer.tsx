@@ -288,7 +288,13 @@ export default function QuizCreatorContainer() {
     async (sessionId: string) => {
       const result = await myQuizService.deleteSession(sessionId)
       if (result.error) {
-        showErrorToast(t('error.deleteFailed'))
+        // 409(삭제 잠금 등)는 백엔드 메시지("1시간 후 가능")를 그대로 노출.
+        const detail = result.error as { message?: string } | null
+        showErrorToast(
+          result.status === 409 && detail?.message
+            ? detail.message
+            : t('error.deleteFailed'),
+        )
         return
       }
       setSessions((prev) => prev.filter((s) => s.session_id !== sessionId))
@@ -349,12 +355,16 @@ export default function QuizCreatorContainer() {
             return
           }
         }
+        // 409(동시 생성 등)는 백엔드 메시지("이미 생성 중인 퀴즈가 있어요")를 그대로 노출.
+        const detailMsg = (result.error as { message?: string } | null)?.message
         const errorMsg =
-          result.status === 429
-            ? t('create.dailyLimit')
-            : result.status === 400
-              ? t('create.noSnapshot')
-              : t('error.createFailed')
+          result.status === 409 && detailMsg
+            ? detailMsg
+            : result.status === 429
+              ? t('create.dailyLimit')
+              : result.status === 400
+                ? t('create.noSnapshot')
+                : t('error.createFailed')
         setCreateError(errorMsg)
         setIsCreating(false)
         return
