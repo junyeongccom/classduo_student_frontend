@@ -1,6 +1,7 @@
 'use client'
 
 import { AuthGuard } from '@/features/auth'
+import { MaintenanceNoticeModal } from '@/shared/components/common/MaintenanceNoticeModal'
 
 export default function ProtectedLayout({
   children,
@@ -10,6 +11,7 @@ export default function ProtectedLayout({
   return (
     <AuthGuard>
       <div className="min-h-screen bg-white">
+        <MaintenanceNoticeModal />
         {children}
       </div>
     </AuthGuard>
