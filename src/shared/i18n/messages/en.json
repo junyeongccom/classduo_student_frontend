@@ -1245,6 +1245,7 @@
       "totalCount": "Total: {count} questions",
       "noSnapshot": "Learning data is not ready for this lecture. Unable to generate quizzes",
       "dailyLimit": "You've reached the daily quiz limit (1,000 questions). The limit resets every day at midnight (00:00 KST), so please try again tomorrow.",
+      "unsolvedLimit": "You have {count} unsolved questions piled up. Please solve some before generating new quizzes. (Generation is allowed when unsolved questions are under {limit}.)",
       "partialTitle": "Generate within your remaining limit?",
       "partialDesc": "You have {remaining} questions left in today's limit. Generate {remaining} questions instead? (The limit resets every day at midnight.)",
       "partialConfirm": "Generate {remaining}",
