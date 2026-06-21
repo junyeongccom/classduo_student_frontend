@@ -71,8 +71,9 @@ const ALLOWED_QUIZ_TYPES = [
 ] as const
 
 // 미풀이 누적 생성 제한(프론트 소프트 가드): 안 푼 생성 문항(Σ 생성−푼)이 이 값 이상이면
-// 새 퀴즈 생성을 막는다. 과생성(생성만 하고 안 푸는) 비용/DB부하 완화 목적.
-const UNSOLVED_BLOCK_THRESHOLD = 100
+// 새 퀴즈 생성을 막는다. 사행성 거래/과생성(생성만 하고 안 푸는) 비용·DB부하 방지 목적.
+// 백엔드 UNSOLVED_QUIZ_LIMIT 와 동일 임계.
+const UNSOLVED_BLOCK_THRESHOLD = 30
 
 /** type_counts 합계를 target 으로 비례 축소한다 (정수, 합계 정확히 target). 일일 한도 잔여만큼 부분 생성용. */
 function trimCounts(
@@ -145,6 +146,8 @@ export default function QuizCreatorContainer() {
 
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
+  // 미풀이(잔여) 한도 차단 전용 팝업 — 이 가드에 걸렸을 때만 노출.
+  const [unsolvedBlock, setUnsolvedBlock] = useState(false)
   // 일일 한도 잔여만큼 줄여서 생성할지 확인 제안 (429 + 잔여>0 시)
   const [partialOffer, setPartialOffer] = useState<PartialOffer | null>(null)
 
@@ -321,7 +324,17 @@ export default function QuizCreatorContainer() {
       if (result.error || !result.data) {
         // 일일 한도 초과(429) + 잔여 한도가 남아있으면 "그만큼만 생성" 확인 제안.
         if (result.status === 429) {
-          const detail = result.error as { limit?: number; used?: number } | null
+          const detail = result.error as {
+            error_code?: string
+            limit?: number
+            used?: number
+          } | null
+          // 미풀이(잔여) 한도 차단 → 전용 팝업 (이 가드에 걸렸을 때만).
+          if (detail?.error_code === 'UNSOLVED_QUIZ_LIMIT_EXCEEDED') {
+            setUnsolvedBlock(true)
+            setIsCreating(false)
+            return
+          }
           const limit = detail?.limit ?? 1000
           const used = detail?.used ?? limit
           const remaining = Math.max(0, limit - used)
@@ -385,7 +398,7 @@ export default function QuizCreatorContainer() {
         unsolved += Math.max(0, (st.total ?? 0) - (st.answered ?? 0))
       }
       if (unsolved >= UNSOLVED_BLOCK_THRESHOLD) {
-        setCreateError(t('create.unsolvedLimit', { count: unsolved, limit: UNSOLVED_BLOCK_THRESHOLD }))
+        setUnsolvedBlock(true)
         return
       }
 
@@ -538,6 +551,32 @@ export default function QuizCreatorContainer() {
     )
   }
 
+  // 미풀이(잔여) 한도 차단 팝업 — 이 가드에 걸렸을 때만 노출. wizard/landing 공용.
+  const unsolvedBlockDialog = (
+    <Dialog
+      open={unsolvedBlock}
+      onOpenChange={(open) => {
+        if (!open) setUnsolvedBlock(false)
+      }}
+    >
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t('create.gamblingBlockTitle')}</DialogTitle>
+          <DialogDescription>{t('create.gamblingBlock')}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <button
+            type="button"
+            onClick={() => setUnsolvedBlock(false)}
+            className="rounded-lg bg-[#6366F1] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#4F46E5]"
+          >
+            {t('create.gamblingBlockConfirm')}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+
   if (view === 'wizard') {
     // 콘텐츠 생성 완료 회차만 노출 (is_available !== false). 미준비 회차는 숨김.
     const lectures = (selectedCourse?.lectures ?? [])
@@ -545,17 +584,20 @@ export default function QuizCreatorContainer() {
       .slice()
       .sort((a, b) => a.lecture_no - b.lecture_no)
     return (
-      <QuizCreatorWizard
-        lectures={lectures}
-        initialLectureId={deepLinkLectureId}
-        isSubmitting={isCreating}
-        error={createError}
-        onSubmit={handleWizardSubmit}
-        onBack={() => {
-          setCreateError(null)
-          setView('landing')
-        }}
-      />
+      <>
+        {unsolvedBlockDialog}
+        <QuizCreatorWizard
+          lectures={lectures}
+          initialLectureId={deepLinkLectureId}
+          isSubmitting={isCreating}
+          error={createError}
+          onSubmit={handleWizardSubmit}
+          onBack={() => {
+            setCreateError(null)
+            setView('landing')
+          }}
+        />
+      </>
     )
   }
 
@@ -574,6 +616,9 @@ export default function QuizCreatorContainer() {
           ))}
         </div>
       )}
+
+      {/* 미풀이(잔여) 한도 차단 팝업 */}
+      {unsolvedBlockDialog}
 
       {/* 일일 한도 잔여만큼 부분 생성 확인 */}
       <Dialog
