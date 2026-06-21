@@ -18,7 +18,7 @@ import {
 import { MaintenanceNoticeBody } from './MaintenanceNoticeBody'
 
 // 공지 노출 토글 — 점검 종료 후 false 로 변경하면 즉시 비표시.
-const SHOW_MAINTENANCE_NOTICE = true
+const SHOW_MAINTENANCE_NOTICE = false
 
 export function MaintenanceNoticeModal() {
   const { isAuthenticated } = useAuthStore()

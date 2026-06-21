@@ -16,9 +16,8 @@ export function AuthGuard({
   const { isAuthenticated, isLoading, clearError } = useAuthStore()
   const t = useTranslations('auth.guard')
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup')
-  // 서버 점검 공지 — 인증화면 별도 카드. 점검 종료 시 false 로.
-  // 모두가 봐야 하므로 영구 닫기 없이 항상 노출(닫아도 새로고침하면 재표시).
-  const [showNotice, setShowNotice] = useState(true)
+  // 서버 점검 공지 — 인증화면 별도 카드. 점검 종료로 비표시(점검 시 true 로).
+  const [showNotice, setShowNotice] = useState(false)
 
   const handleTabChange = (tab: 'signup' | 'login') => {
     clearError()

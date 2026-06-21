@@ -14,7 +14,7 @@ import { useLocale } from 'next-intl'
 const START = Date.UTC(2026, 5, 21, 21, 10, 0)
 const END = Date.UTC(2026, 5, 21, 21, 45, 0)
 // 점검 조기 종료 시 false 로 배포하면 시간과 무관하게 즉시 해제.
-const MAINTENANCE_ENABLED = true
+const MAINTENANCE_ENABLED = false
 
 // 흰 스티커 외곽선 + 보라 그림자 (ExamPrepHeroCard 와 동일 톤, px 버전).
 const STICKER =
