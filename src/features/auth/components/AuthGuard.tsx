@@ -7,6 +7,9 @@ import { Sidebar, LoginModal, SignupModal } from '@/shared/components/common'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import { Info, X } from 'lucide-react'
 
+// 긴급 점검 공지 토글 — 점검 종료 후 false 로 변경하면 즉시 비표시.
+const SHOW_MAINTENANCE_NOTICE = true
+
 export function AuthGuard({
   children,
 }: {
@@ -121,6 +124,19 @@ export function AuthGuard({
 
         {/* 기존 회원가입/로그인 모달 (정중앙) */}
         <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-xl">
+          {/* 긴급 서버 점검 공지 (카드 최상단, 두 탭 공통) */}
+          {SHOW_MAINTENANCE_NOTICE && (
+            <div className="rounded-t-2xl bg-red-50 border-b border-red-200 px-6 py-4 text-center dark:bg-red-900/30 dark:border-red-800">
+              <p className="text-sm font-bold text-red-800 dark:text-red-300">서버 점검 안내</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-red-700 dark:text-red-400">
+                기말 접속 폭주로 서버 오류가 발생해 긴급 점검 중입니다. 불편을 드려 진심으로
+                죄송합니다.
+                <br />
+                <span className="font-bold">오후 10시 30분</span>에 정상 오픈 예정입니다.
+              </p>
+            </div>
+          )}
+
           {/* 탭 네비게이션 */}
           <div className="flex border-b border-gray-200 dark:border-gray-700">
             <button
