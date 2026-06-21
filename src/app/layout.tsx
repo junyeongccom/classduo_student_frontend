@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import '@/shared/styles/globals.css'
 import { AuthProvider } from '@/features/auth'
 import { I18nRootProvider } from '@/shared/i18n/I18nRootProvider'
+import { MaintenanceNoticeModal } from '@/shared/components/common/MaintenanceNoticeModal'
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
 
@@ -83,7 +84,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           </noscript>
         )}
         <I18nRootProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <MaintenanceNoticeModal />
+            {children}
+          </AuthProvider>
         </I18nRootProvider>
       </body>
     </html>
