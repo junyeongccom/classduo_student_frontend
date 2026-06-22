@@ -610,7 +610,15 @@ export async function toggleBookmark(
   )
 }
 
-/** 풀이 결과 업데이트. correct=null이면 선택 해제(리셋). */
+/**
+ * 풀이 결과 업데이트. correct=null이면 선택 해제(리셋).
+ *
+ * answer 는 user_quiz_response.selected_answer(smallint) 로 적재되며 DB CHECK
+ * 제약(chk_uqr_selected_answer: NULL 이거나 1~5)을 받는다. 6지선다(idx+1=6)나 6개+
+ * 선지 커스텀 퀴즈처럼 1~5 범위를 벗어난 선택 인덱스를 그대로 보내면 23514 위반 → 500.
+ * selected_answer 는 활동 로그 스냅샷이라 정밀 인덱스가 핵심이 아니므로, 범위를 벗어나면
+ * NULL 로 보정해 제약을 정직하게 만족시킨다(정/오답 correct 는 그대로 보존).
+ */
 export async function updateCorrect(
   quizSource: QuizSource,
   quizId: string,
@@ -622,12 +630,14 @@ export async function updateCorrect(
   if (!VALID_QUIZ_SOURCES.includes(quizSource)) {
     return { data: null, error: new Error('Invalid quiz source'), status: 400 }
   }
+  const safeAnswer =
+    typeof answer === 'number' && answer >= 1 && answer <= 5 ? answer : null
   return apiRequest<CorrectResponse>(
     `/quiz-status/${encodeURIComponent(quizSource)}/${encodeURIComponent(quizId)}/correct`,
     {
       method: 'PATCH',
       auth: true,
-      body: { lecture_id: lectureId, correct, answer, duration_ms: durationMs ?? null },
+      body: { lecture_id: lectureId, correct, answer: safeAnswer, duration_ms: durationMs ?? null },
     },
   )
 }
