@@ -6,8 +6,9 @@
  */
 'use client'
 
-// 서비스 종료 안내 — true 면 사이트 전체를 종료 공지로 덮는다. (서비스 재개 시 false)
-const SERVICE_CLOSED = true
+// 서비스 종료 안내 — PROD(wbubzj)에서만 종료 공지 표시. DEV(syzgbw)는 정상 접속 가능.
+// 완전 재개 시 아래를 false 로.
+const SERVICE_CLOSED = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').includes('wbubzj')
 
 // 흰 스티커 외곽선 + 보라 그림자 (ExamPrepHeroCard 와 동일 톤).
 const STICKER =
