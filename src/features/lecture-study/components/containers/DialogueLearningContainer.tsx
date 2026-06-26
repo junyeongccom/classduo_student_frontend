@@ -175,6 +175,15 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     mql.addEventListener('change', update)
     return () => mql.removeEventListener('change', update)
   }, [])
+  // 녹음본·강의자료 출처 패널 동시 표시는 넓은 데스크톱(>=1367)에서만 허용. 태블릿(가로 포함) 이하는 둘 중 하나만.
+  const [allowBothPanels, setAllowBothPanels] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1367px)')
+    const update = () => setAllowBothPanels(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
   const chatAreaRef = useRef<HTMLDivElement>(null)
 
   const MIN_CHAT_WIDTH = 280
@@ -349,8 +358,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     onClick={() => {
                       const nextState = !isNotesPanelOpen
                       toggleNotesPanel(nextState)
-                      // 모바일에선 둘 중 하나만 — notes 열 때 materials 자동 닫기
-                      if (nextState && !isDesktopViewport && isMaterialsPanelOpen) toggleMaterialsPanel(false)
+                      // 태블릿(가로 포함) 이하에선 둘 중 하나만 — notes 열 때 materials 자동 닫기
+                      if (nextState && !allowBothPanels && isMaterialsPanelOpen) toggleMaterialsPanel(false)
                       if (nextState) setActiveTab('notes')
                       else if (isMaterialsPanelOpen) setActiveTab('materials')
                       else setActiveTab('answer')
@@ -372,8 +381,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     onClick={() => {
                       const nextState = !isMaterialsPanelOpen
                       toggleMaterialsPanel(nextState)
-                      // 모바일에선 둘 중 하나만 — materials 열 때 notes 자동 닫기
-                      if (nextState && !isDesktopViewport && isNotesPanelOpen) toggleNotesPanel(false)
+                      // 태블릿(가로 포함) 이하에선 둘 중 하나만 — materials 열 때 notes 자동 닫기
+                      if (nextState && !allowBothPanels && isNotesPanelOpen) toggleNotesPanel(false)
                       if (nextState) setActiveTab('materials')
                       else if (isNotesPanelOpen) setActiveTab('notes')
                       else setActiveTab('answer')
@@ -407,9 +416,12 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                   onShowReferencePanel={(type) => {
                     if (type === 'notes') {
                       if (!isNotesPanelOpen) toggleNotesPanel(true)
+                      // 태블릿 이하: 한 패널만 — notes 열면 materials 닫기
+                      if (!allowBothPanels && isMaterialsPanelOpen) toggleMaterialsPanel(false)
                       setActiveTab('notes')
                     } else {
                       if (!isMaterialsPanelOpen) toggleMaterialsPanel(true)
+                      if (!allowBothPanels && isNotesPanelOpen) toggleNotesPanel(false)
                       setActiveTab('materials')
                     }
                   }}
