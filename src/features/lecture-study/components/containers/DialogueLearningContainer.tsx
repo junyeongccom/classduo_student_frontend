@@ -289,7 +289,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 <DialogueLectureSidebar
                   courseId={courseId}
                   selectedLectureIds={selectedLectureIds}
-                  onSelectLectureIds={(ids) => { setSelectedLectureIds(ids); setIsLectureSidebarOpen(false) }}
+                  onSelectLectureIds={setSelectedLectureIds}
                   isLocked={messages.length > 0}
                 />
               </div>
