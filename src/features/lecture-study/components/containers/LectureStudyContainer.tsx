@@ -18,7 +18,7 @@ import { trackPageEnter, trackPageLeave, lectureStudyAnalytics, panelAnalytics, 
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
-import { useIsMobile } from '../../hooks/useMediaQuery'
+import { useLectureLayoutMode } from '../../hooks/useMediaQuery'
 import { useSidebarStore } from '@/shared/store/useSidebarStore'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import { LeftPanelMaterials } from './LeftPanelMaterials'
@@ -42,7 +42,9 @@ interface LectureStudyContainerProps {
 
 export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectureTitle }: LectureStudyContainerProps) {
   const t = useTranslations()
-  const isMobile = useIsMobile()
+  // 레이아웃 모드: isMobile(=stacked) → 상하 스택 바텀시트(폰·태블릿 세로), !isMobile → 좌우 분할(태블릿 가로·데스크톱)
+  // twoColumnMax → 태블릿급에서 최대 2단(강의자료/챗봇 동시 열기 금지)
+  const { stacked: isMobile, twoColumnMax } = useLectureLayoutMode()
   const searchParams = useSearchParams()
   const { recordings, isLoading, error, refresh } = useLectureDetail(lectureId)
   const { lectures, courseTitle: fetchedCourseTitle } = useLectures(courseId ?? '')
@@ -61,14 +63,24 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const _toggleChatPanel = useLectureStudyStore(s => s.toggleChatPanel)
 
   const toggleLeftPanel = useCallback(() => {
+    const opening = !isLeftPanelOpen
     _toggleLeftPanel()
+    // 태블릿(최대 2단): 강의자료를 열면 챗봇은 닫아 중앙+패널1개만 유지
+    if (opening && twoColumnMax && isChatPanelOpen) {
+      useLectureStudyStore.setState({ isChatPanelOpen: false })
+    }
     panelAnalytics.toggle('material', !isLeftPanelOpen, lectureId)
-  }, [_toggleLeftPanel, isLeftPanelOpen, lectureId])
+  }, [_toggleLeftPanel, isLeftPanelOpen, isChatPanelOpen, twoColumnMax, lectureId])
 
   const toggleChatPanel = useCallback(() => {
+    const opening = !isChatPanelOpen
     _toggleChatPanel()
+    // 태블릿(최대 2단): 챗봇을 열면 강의자료는 닫아 중앙+패널1개만 유지
+    if (opening && twoColumnMax && isLeftPanelOpen) {
+      useLectureStudyStore.setState({ isLeftPanelOpen: false })
+    }
     panelAnalytics.toggle('chat', !isChatPanelOpen, lectureId)
-  }, [_toggleChatPanel, isChatPanelOpen, lectureId])
+  }, [_toggleChatPanel, isChatPanelOpen, isLeftPanelOpen, twoColumnMax, lectureId])
   const setLeftTab = useLectureStudyStore(s => s.setLeftTab)
   const setRightTab = useLectureStudyStore(s => s.setRightTab)
   const setStoreLectureId = useLectureStudyStore(s => s.setLectureId)
