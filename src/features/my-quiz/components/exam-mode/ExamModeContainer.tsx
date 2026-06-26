@@ -1076,7 +1076,7 @@ function ReviewCard({
                   </p>
                   <div className="space-y-1.5">
                     {choiceAnalysis.map((c) => (
-                      <div key={c.order} className="text-xs leading-relaxed">
+                      <div key={c.order} className="text-sm leading-relaxed">
                         <span
                           className={`mr-1 font-bold ${
                             c.correct
