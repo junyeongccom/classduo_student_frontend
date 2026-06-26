@@ -1201,6 +1201,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       content: pqmQuestion.answer,
       summary_keywords: summaryKeywords,
       follow_up_question: pqmQuestion.follow_up_question || null,
+      // 부연설명 요청 핸들러가 original_question 없으면 바로 반환(가드)하므로 PQM 질문을 원 질문으로 세팅 + 출처 부착
+      original_question: pqmQuestion.question,
+      references,
     }
     setMessages(prev => {
       const updated = [...prev, assistantMessage]
