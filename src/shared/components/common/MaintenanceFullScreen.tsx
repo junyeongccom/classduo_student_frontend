@@ -44,7 +44,7 @@ export function MaintenanceFullScreen() {
     setErr(null)
     setLoading(true)
     try {
-      const res = await authService.login({ email: email.trim(), password })
+      const res = await authService.login({ email: email.trim().toLowerCase(), password })
       if (res.error || !res.data) {
         setErr('이메일 또는 비밀번호를 확인해주세요.')
         setLoading(false)
@@ -134,6 +134,9 @@ export function MaintenanceFullScreen() {
               type="email"
               inputMode="email"
               autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="관리자 이메일"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -142,6 +145,9 @@ export function MaintenanceFullScreen() {
             <input
               type="password"
               autoComplete="current-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="비밀번호"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
