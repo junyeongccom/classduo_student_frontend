@@ -515,7 +515,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             {!isExamPrep && showRightSidebar && (
               <button
                 onClick={() => setIsMobileRightbarOpen(true)}
-                className="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 xl:hidden"
+                className="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 xl:hidden [@media(min-width:1024px)_and_(orientation:landscape)]:hidden"
                 aria-label="Open right sidebar"
               >
                 <PanelRightOpen className="h-5 w-5" />
@@ -523,7 +523,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             )}
             {/* Right Sidebar (Desktop) - Now between left menu and main */}
             {!isExamPrep && showRightSidebar && (
-              <aside className={`hidden h-full min-h-0 w-[320px] flex-col border-r ${borderTone} bg-white xl:flex`}>
+              <aside className={`hidden h-full min-h-0 w-[320px] flex-col border-r ${borderTone} bg-white xl:flex [@media(min-width:1024px)_and_(orientation:landscape)]:flex`}>
                 <div className="flex-1 overflow-y-auto overflow-x-hidden">
                   {rightbar ?? null}
                 </div>
@@ -570,12 +570,12 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             <>
               {/* Backdrop */}
               <div
-                className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm xl:hidden"
+                className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm xl:hidden [@media(min-width:1024px)_and_(orientation:landscape)]:hidden"
                 onClick={() => setIsMobileRightbarOpen(false)}
               />
               
               {/* Drawer */}
-              <aside className="fixed inset-y-0 right-0 z-50 flex w-[320px] flex-col bg-white shadow-xl transition-transform duration-300 xl:hidden">
+              <aside className="fixed inset-y-0 right-0 z-50 flex w-[320px] flex-col bg-white shadow-xl transition-transform duration-300 xl:hidden [@media(min-width:1024px)_and_(orientation:landscape)]:hidden">
                 <div className="flex h-14 items-center justify-between border-b border-gray-100 px-4 text-gray-700">
                   <span className="font-semibold text-gray-800">메뉴</span>
                   <button
