@@ -372,7 +372,7 @@ export function FillBlankDnd({
                   highlight={graded && correctIndexes.includes(c.idx)}
                   orderNo={graded && choicePosition.has(c.idx) ? (choicePosition.get(c.idx) as number) + 1 : undefined}
                   sz={SZ}
-                  onSelect={mobile ? () => fillFirstEmptyBlank(c.idx) : undefined}
+                  onSelect={() => fillFirstEmptyBlank(c.idx)}
                 />
               ))}
             </div>
