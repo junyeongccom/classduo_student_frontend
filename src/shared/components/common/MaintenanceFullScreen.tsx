@@ -1,21 +1,74 @@
 /**
  * @file MaintenanceFullScreen.tsx
- * @description 서비스 종료 안내 전체화면 (핵심주제학습 남/여 캐릭터 + 종료 공지). 사이트 접속 시 항상 표시.
+ * @description 서비스 종료 안내 전체화면 + 데모 계정(test.dev) 전용 우회 로그인. PROD에서만 표시.
  * @module shared/components/common
- * @dependencies public/topic_test/hero-{male,female}.png
+ * @dependencies public/topic_test/hero-{male,female}.png, features/auth (authService/authStore)
  */
 'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/features/auth/store/authStore'
+import { authService } from '@/features/auth/services/authService'
 
 // 서비스 종료 안내 — PROD(wbubzj)에서만 종료 공지 표시. DEV(syzgbw)는 정상 접속 가능.
 // 완전 재개 시 아래를 false 로.
 const SERVICE_CLOSED = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').includes('wbubzj')
+
+// 이 계정으로 로그인했을 때만 종료화면을 우회(데모용). 나머지 계정은 그대로 막힘.
+const DEMO_EMAIL = 'test.dev@korea.ac.kr'
 
 // 흰 스티커 외곽선 + 보라 그림자 (ExamPrepHeroCard 와 동일 톤).
 const STICKER =
   'drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(0 8px 16px rgba(63,61,191,0.35))'
 
 export function MaintenanceFullScreen() {
+  const router = useRouter()
+  const user = useAuthStore((s) => s.user)
+  const storeLogin = useAuthStore((s) => s.login)
+  const setUser = useAuthStore((s) => s.setUser)
+  const logout = useAuthStore((s) => s.logout)
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  // 훅 호출 이후에 조건부 반환 (Rules of Hooks)
   if (!SERVICE_CLOSED) return null
+  // 데모 계정으로 로그인된 상태면 종료화면을 우회 → 앱 정상 노출
+  if (user?.email?.toLowerCase() === DEMO_EMAIL) return null
+
+  const handleDemoLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErr(null)
+    setLoading(true)
+    try {
+      const res = await authService.login({ email: email.trim(), password })
+      if (res.error || !res.data) {
+        setErr('이메일 또는 비밀번호를 확인해주세요.')
+        setLoading(false)
+        return
+      }
+      // 토큰 저장 후 본인 확인
+      storeLogin(res.data)
+      const me = await authService.getMe()
+      const loggedEmail = me.data?.email?.toLowerCase()
+      if (!me.data || loggedEmail !== DEMO_EMAIL) {
+        // 데모 지정 계정이 아니면 즉시 세션 해제 → 종료화면 유지
+        logout()
+        setErr('이 데모 환경은 지정된 데모 계정으로만 접속할 수 있습니다.')
+        setLoading(false)
+        return
+      }
+      // 데모 계정 확정 → user 설정(리렌더 시 우회) 후 대시보드로 이동
+      setUser(me.data)
+      router.push('/dashboard/ai-tutor')
+    } catch {
+      setErr('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      setLoading(false)
+    }
+  }
 
   return (
     <div
@@ -67,6 +120,43 @@ export function MaintenanceFullScreen() {
             <p className="text-right font-semibold text-gray-600 dark:text-gray-300">Aplus 운영팀 드림</p>
           </div>
         </div>
+
+        {/* 데모/관리자 전용 우회 로그인 — 지정 계정만 접속됨 */}
+        <details className="mt-5 w-full max-w-lg text-left">
+          <summary className="cursor-pointer select-none text-center text-xs font-medium text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+            🔒 관리자 데모 접속
+          </summary>
+          <form
+            onSubmit={handleDemoLogin}
+            className="mt-3 space-y-2.5 rounded-2xl bg-white/70 p-5 shadow-md backdrop-blur dark:bg-gray-900/70"
+          >
+            <input
+              type="email"
+              inputMode="email"
+              autoComplete="username"
+              placeholder="관리자 이메일"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-50"
+            />
+            <input
+              type="password"
+              autoComplete="current-password"
+              placeholder="비밀번호"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-50"
+            />
+            {err && <p className="text-xs text-red-500">{err}</p>}
+            <button
+              type="submit"
+              disabled={loading || !email || !password}
+              className="w-full rounded-lg bg-[#6366F1] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#6366F1]/20 transition-all hover:scale-[1.01] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? '접속 중…' : '데모 접속'}
+            </button>
+          </form>
+        </details>
       </div>
     </div>
   )
