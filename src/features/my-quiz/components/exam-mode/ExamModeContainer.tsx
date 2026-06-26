@@ -1076,7 +1076,7 @@ function ReviewCard({
                   </p>
                   <div className="space-y-1.5">
                     {choiceAnalysis.map((c) => (
-                      <div key={c.order} className="text-sm leading-relaxed">
+                      <div key={c.order} className="text-xs leading-relaxed">
                         <span
                           className={`mr-1 font-bold ${
                             c.correct
@@ -1094,7 +1094,7 @@ function ReviewCard({
               )}
               {/* 일반 해설 (exam_prep: 선지 번호→문자 매핑 / 그 외: 그대로). */}
               {explanation && (
-                <div className="text-sm text-gray-700 dark:text-gray-200">
+                <div className="text-xs leading-relaxed text-gray-700 dark:text-gray-200 [&_p]:text-xs [&_p]:leading-relaxed [&_li]:text-xs">
                   <MarkdownMessage
                     markdown={formatNumberedExplanation(explanation, explLabel)}
                     headingSize="compact"
