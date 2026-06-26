@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   description: 'AI 기반 학습 보조 플랫폼',
   icons: {
     icon: '/Aplus_favicon.png',
+    apple: '/Aplus_favicon.png',
+  },
+  // iOS(아이패드) "홈 화면에 추가" 시 Safari 크롬 없이 전체화면(standalone)으로 실행
+  appleWebApp: {
+    capable: true,
+    title: 'Aplus',
+    statusBarStyle: 'default',
   },
   openGraph: {
     title: 'Aplus - 매일매일 A+학점을 향해!',
