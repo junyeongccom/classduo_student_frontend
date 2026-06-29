@@ -10,7 +10,7 @@ import { MaintenanceFullScreen } from '@/shared/components/common/MaintenanceFul
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://korea.classduo.io.kr'),
+  metadataBase: new URL('https://korea.aplus.io.kr'),
   title: 'Aplus - 매일매일 A+학점을 향해!',
   description: 'AI 기반 학습 보조 플랫폼',
   icons: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Aplus - 매일매일 A+학점을 향해!',
     description: 'AI 기반 학습 보조 플랫폼',
-    url: 'https://korea.classduo.io.kr',
+    url: 'https://korea.aplus.io.kr',
     siteName: 'ClassDuo',
     images: [
       {
