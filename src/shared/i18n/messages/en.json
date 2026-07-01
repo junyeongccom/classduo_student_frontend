@@ -279,14 +279,14 @@
   },
   "aiTutorChat": {
     "selectLectureTitle": "Please select a class",
-    "selectLectureDescription": "Select a class on the left to start chatting with the AI tutor",
+    "selectLectureDescription": "Select a lecture in the menu above to start chatting with the AI tutor",
     "askAnythingPlaceholder": "Ask me anything.",
     "simpleHelpText": "SIMPLE: More concise and accuracy-focused, grounded in the lecture materials.",
     "deepHelpText": "DEEP: Longer and gentler explanations, with more use of general knowledge.",
     "sendLabel": "Send",
     "simpleLabel": "SIMPLE",
     "deepLabel": "DEEP",
-    "lectureCheckGuide": "Before you ask, make sure you've selected the right lecture on the left. Topics not covered in the selected lecture can't be answered accurately.",
+    "lectureCheckGuide": "Before you ask, make sure you've selected the right lecture in the menu above. Topics not covered in the selected lecture can't be answered accurately.",
     "referenceHint": "Check recording and material sources to better understand the answer",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",
@@ -331,7 +331,8 @@
     "rewardRemaining": "Solve {count} more to earn a reward!",
     "loadError": "Failed to load data",
     "courseNotFound": "Course not found",
-    "lectureSelectTitle": "Select session"
+    "lectureSelectTitle": "Select session",
+    "selectClassTooltip": "Select a class"
   },
   "aiTutorHints": {
     "multiSelectNoHookingQuestions": "Hooking questions are not available when multiple sessions are selected"

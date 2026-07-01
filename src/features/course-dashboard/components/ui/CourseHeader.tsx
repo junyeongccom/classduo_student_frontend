@@ -7,6 +7,12 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { useI18n } from '@/shared/i18n/I18nProvider'
+
+// 교수자/소속명 한→영 표기 (백엔드 데이터가 한글일 때 영어 데모용)
+const FACULTY_EN: Record<string, string> = {
+  '학부대학': 'University College',
+}
 
 interface CourseHeaderProps {
   professorName: string | null
@@ -24,9 +30,14 @@ export function CourseHeader({
   examDday,
 }: CourseHeaderProps) {
   const t = useTranslations()
+  const { locale } = useI18n()
+  const displayProfessor =
+    professorName && locale === 'en'
+      ? FACULTY_EN[professorName] ?? professorName
+      : professorName
 
   // "교수자명 / 학기" eyebrow
-  const eyebrowParts = [professorName, termLabel].filter(Boolean) as string[]
+  const eyebrowParts = [displayProfessor, termLabel].filter(Boolean) as string[]
   const eyebrow = eyebrowParts.length > 0 ? eyebrowParts.join(' / ') : null
 
   return (
