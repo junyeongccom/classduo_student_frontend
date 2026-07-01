@@ -8,6 +8,7 @@
 import { useRef, useEffect, useState, useMemo } from 'react'
 import { ChevronDown, Loader2, BookOpen, Calendar, Gamepad2 } from 'lucide-react'
 import { useTranslations, useLocale } from 'next-intl'
+import { localizeFaculty } from '@/shared/i18n/faculty'
 import {
   calculateWeekAndSession,
   estimateTermStartDate,
@@ -304,7 +305,7 @@ export function LectureSidebarUI({
                   {course.title}
                 </span>
                 {(() => {
-                  const professorName = course.professor_name?.trim()
+                  const professorName = localizeFaculty(course.professor_name?.trim(), locale)
                   const rawSection = course.section
                   const sectionValue = rawSection === null || rawSection === undefined ? '' : String(rawSection).trim()
                   const sectionLabel = sectionValue ? t('sectionLabel', { value: sectionValue }) : ''

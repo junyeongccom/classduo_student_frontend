@@ -326,12 +326,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     >
                       <Menu className="h-4 w-4 md:h-5 md:w-5" />
                     </button>
-                    {selectedLectureIds.length === 0 && (
-                      <span className="pointer-events-none absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 animate-pulse whitespace-nowrap rounded-full bg-[#6366F1] px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">
-                        <span className="absolute right-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-r-[#6366F1]" />
-                        {t('aiTutorSidebar.selectClassTooltip')}
-                      </span>
-                    )}
+                    <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 animate-bounce whitespace-nowrap rounded-full bg-[#6366F1] px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-[#6366F1]" />
+                      {t('aiTutorSidebar.selectClassTooltip')}
+                    </span>
                   </div>
                   <button
                     onClick={handleNewChatAndResetPanels}

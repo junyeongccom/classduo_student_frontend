@@ -8,6 +8,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useLocale } from 'next-intl'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 
@@ -47,14 +48,18 @@ function daysInMonth(year: number, month0: number): number {
 }
 
 const DOW_KO = ['일', '월', '화', '수', '목', '금', '토']
+const DOW_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 export function DateTimePicker({
   value,
   onChange,
   disabled,
   className,
-  placeholder = '날짜 · 시간 선택',
+  placeholder,
 }: DateTimePickerProps) {
+  const locale = useLocale()
+  const isKo = locale === 'ko'
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -94,7 +99,7 @@ export function DateTimePicker({
   const selectedDate = value ? parseValue(value) : null
   const displayText = selectedDate
     ? `${selectedDate.getFullYear()}-${pad2(selectedDate.getMonth() + 1)}-${pad2(selectedDate.getDate())} ${pad2(selectedDate.getHours())}:${pad2(selectedDate.getMinutes())}`
-    : placeholder
+    : (placeholder ?? (isKo ? '날짜 · 시간 선택' : 'Select date & time'))
 
   const firstDow = startOfMonth(new Date(viewYear, viewMonth, 1)).getDay()
   const dim = daysInMonth(viewYear, viewMonth)
@@ -169,7 +174,7 @@ export function DateTimePicker({
               type="button"
               onClick={goPrevMonth}
               className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-              aria-label="이전 달"
+              aria-label={isKo ? '이전 달' : 'Previous month'}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -180,7 +185,7 @@ export function DateTimePicker({
                 className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm font-semibold text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               >
                 {Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map((y) => (
-                  <option key={y} value={y}>{y}년</option>
+                  <option key={y} value={y}>{isKo ? `${y}년` : y}</option>
                 ))}
               </select>
               <select
@@ -189,7 +194,7 @@ export function DateTimePicker({
                 className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm font-semibold text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
               >
                 {Array.from({ length: 12 }, (_, i) => i).map((m) => (
-                  <option key={m} value={m}>{m + 1}월</option>
+                  <option key={m} value={m}>{isKo ? `${m + 1}월` : MONTHS_EN[m]}</option>
                 ))}
               </select>
             </div>
@@ -197,7 +202,7 @@ export function DateTimePicker({
               type="button"
               onClick={goNextMonth}
               className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-              aria-label="다음 달"
+              aria-label={isKo ? '다음 달' : 'Next month'}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -205,7 +210,7 @@ export function DateTimePicker({
 
           {/* 요일 헤더 */}
           <div className="grid grid-cols-7 gap-1 pb-1 text-center text-[11px] font-semibold text-gray-400">
-            {DOW_KO.map((d, i) => (
+            {(isKo ? DOW_KO : DOW_EN).map((d, i) => (
               <div key={d} className={cn(i === 0 && 'text-rose-500', i === 6 && 'text-sky-500')}>{d}</div>
             ))}
           </div>
@@ -243,7 +248,7 @@ export function DateTimePicker({
               value={hour}
               onChange={(e) => updateHour(Number(e.target.value))}
               className="rounded-md border border-gray-200 bg-white px-2 py-2 text-sm tabular-nums text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-              aria-label="시"
+              aria-label={isKo ? '시' : 'Hour'}
             >
               {Array.from({ length: 24 }, (_, i) => i).map((h) => (
                 <option key={h} value={h}>{pad2(h)}</option>
@@ -254,7 +259,7 @@ export function DateTimePicker({
               value={minute}
               onChange={(e) => updateMinute(Number(e.target.value))}
               className="rounded-md border border-gray-200 bg-white px-2 py-2 text-sm tabular-nums text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-              aria-label="분"
+              aria-label={isKo ? '분' : 'Minute'}
             >
               {Array.from({ length: 60 }, (_, i) => i).map((m) => (
                 <option key={m} value={m}>{pad2(m)}</option>
@@ -270,13 +275,13 @@ export function DateTimePicker({
               }}
               className="ml-2 rounded-md border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
             >
-              현재시간
+              {isKo ? '현재시간' : 'Now'}
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
               className="ml-1 flex h-9 w-9 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-              aria-label="닫기"
+              aria-label={isKo ? '닫기' : 'Close'}
             >
               <X className="h-4 w-4" />
             </button>

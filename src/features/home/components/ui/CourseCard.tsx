@@ -7,6 +7,7 @@
 
 import { BookOpen, User, GraduationCap } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
+import { localizeFaculty } from '@/shared/i18n/faculty'
 import type { CourseVisual } from '../../domain/assignCourseVisual'
 
 interface CourseCardProps {
@@ -88,7 +89,7 @@ export function CourseCard({
           {professorName && (
             <span className="flex items-center gap-1.5">
               <User className="h-3.5 w-3.5" />
-              {professorName}
+              {localizeFaculty(professorName, locale)}
             </span>
           )}
           {professorName && totalLectures != null && totalLectures > 0 && (

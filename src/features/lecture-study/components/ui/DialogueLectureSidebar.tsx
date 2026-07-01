@@ -12,6 +12,7 @@ import { Loader2, BookOpen, Calendar } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useLocale } from 'next-intl'
 import { apiRequest } from '@/shared/lib/api'
+import { localizeFaculty } from '@/shared/i18n/faculty'
 import { ensureValidToken } from '@/shared/lib/supabase'
 import {
   calculateWeekAndSession,
@@ -185,7 +186,7 @@ export function DialogueLectureSidebar({
           {course.title}
         </h2>
         <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          {course.professor_name && <span>{course.professor_name}</span>}
+          {course.professor_name && <span>{localizeFaculty(course.professor_name, locale)}</span>}
           {course.professor_name && course.section && <span>·</span>}
           {course.section && (
             <span>{locale === 'ko' ? `${course.section}분반` : `Section ${course.section}`}</span>

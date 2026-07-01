@@ -28,7 +28,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/shared/lib/utils";
 
 const C_BLACK = "var(--color-neutral-black-hex)";
@@ -167,6 +167,7 @@ export function FillBlankDnd({
   mobile = false,
 }: FillBlankDndProps) {
   const SZ = mobile ? MOBILE_FB : DESKTOP_FB;
+  const locale = useLocale();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }),
@@ -311,7 +312,7 @@ export function FillBlankDnd({
       <div className="flex h-full w-full flex-col" style={{ gap: SZ.rootGap }}>
         {/* 지시문 */}
         <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: SZ.instr, color: C_CANVAS_FG }}>
-          빈칸에 들어갈 알맞은 단어를 넣으세요.
+          {locale === 'ko' ? '빈칸에 들어갈 알맞은 단어를 넣으세요.' : 'Fill in the blank with the appropriate word.'}
         </h1>
         <div className="flex w-full shrink-0 items-center" style={{ minHeight: SZ.feedbackMinH /* figma 정오답칸 55px */ }}>
           {feedbackSlot}
