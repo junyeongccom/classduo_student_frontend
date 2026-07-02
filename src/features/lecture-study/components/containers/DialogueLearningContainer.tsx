@@ -317,7 +317,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shrink-0 md:gap-4 md:px-5 md:py-2.5">
                 <div className="flex items-center gap-1.5 md:gap-2">
                   {/* 모바일/태블릿 회차 사이드바 토글 + 안내 말풍선 */}
-                  <div className="relative flex items-center xl:hidden">
+                  <div className="relative inline-flex items-center xl:hidden">
                     <button
                       onClick={() => setIsLectureSidebarOpen(true)}
                       className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -326,7 +326,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     >
                       <Menu className="h-4 w-4 md:h-5 md:w-5" />
                     </button>
-                    <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 animate-bounce whitespace-nowrap rounded-full bg-[#6366F1] px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">
+                    <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 animate-pulse whitespace-nowrap rounded-full bg-[#6366F1] px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">
                       <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-[#6366F1]" />
                       {t('aiTutorSidebar.selectClassTooltip')}
                     </span>
