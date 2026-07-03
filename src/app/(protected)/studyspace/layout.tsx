@@ -279,7 +279,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               </div>
             ) : null}
             <div ref={profileRef} className="relative flex items-center gap-3 md:border-l md:border-gray-200 dark:border-gray-700 md:pl-3">
-              <img src="/KU_logo.png" alt="" className="hidden md:block h-9 shrink-0 object-contain" />
+              <img src="/hallym_logo.png" alt="" className="hidden md:block h-9 shrink-0 object-contain" />
               <div className="hidden md:block">
                 <p className="text-sm font-bold leading-tight text-gray-900 dark:text-gray-50">{user?.full_name ?? ''}</p>
                 <p className="truncate text-xs text-gray-400 dark:text-gray-500" style={{ maxWidth: 160 }}>{user?.email ?? ''}</p>
