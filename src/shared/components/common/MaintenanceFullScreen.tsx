@@ -63,7 +63,7 @@ export function MaintenanceFullScreen() {
       }
       // 데모 계정 확정 → user 설정(리렌더 시 우회) 후 대시보드로 이동
       setUser(me.data)
-      router.push('/dashboard/ai-tutor')
+      router.push('/studyspace/home')
     } catch {
       setErr('로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
       setLoading(false)
