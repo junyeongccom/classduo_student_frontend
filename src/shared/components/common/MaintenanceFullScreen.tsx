@@ -15,8 +15,8 @@ import { authService } from '@/features/auth/services/authService'
 // 완전 재개 시 아래를 false 로.
 const SERVICE_CLOSED = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').includes('wbubzj')
 
-// 이 계정으로 로그인했을 때만 종료화면을 우회(데모용). 나머지 계정은 그대로 막힘.
-const DEMO_EMAIL = 'test.dev@korea.ac.kr'
+// 이 계정들로 로그인했을 때만 종료화면을 우회(데모용). 나머지 계정은 그대로 막힘.
+const DEMO_EMAILS = ['test.dev@korea.ac.kr', 'aplus@hallym.ac.kr']
 
 // 흰 스티커 외곽선 + 보라 그림자 (ExamPrepHeroCard 와 동일 톤).
 const STICKER =
@@ -37,7 +37,7 @@ export function MaintenanceFullScreen() {
   // 훅 호출 이후에 조건부 반환 (Rules of Hooks)
   if (!SERVICE_CLOSED) return null
   // 데모 계정으로 로그인된 상태면 종료화면을 우회 → 앱 정상 노출
-  if (user?.email?.toLowerCase() === DEMO_EMAIL) return null
+  if (user?.email && DEMO_EMAILS.includes(user.email.toLowerCase())) return null
 
   const handleDemoLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,7 +54,7 @@ export function MaintenanceFullScreen() {
       storeLogin(res.data)
       const me = await authService.getMe()
       const loggedEmail = me.data?.email?.toLowerCase()
-      if (!me.data || loggedEmail !== DEMO_EMAIL) {
+      if (!me.data || !loggedEmail || !DEMO_EMAILS.includes(loggedEmail)) {
         // 데모 지정 계정이 아니면 즉시 세션 해제 → 종료화면 유지
         logout()
         setErr('이 데모 환경은 지정된 데모 계정으로만 접속할 수 있습니다.')

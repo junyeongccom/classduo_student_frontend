@@ -85,7 +85,7 @@ export function ExamPrepHeroCard({
         {/* 여캐(우) — figma 1031:3480. 1800×1300 PNG 을 card(130.9,170) 기준 0.2316배(=62.913cqw). 제공 PNG엔 흰
             테두리 없어 CSS 다방향 drop-shadow 로 흰 스티커 외곽선 + 보라 그림자(figma 0 4 10 rgba(63,61,191,.5)). */}
         <img
-          src="/topic_test/hero-female.png"
+          src="/topic_test/hero-female-hallym.png"
           alt=""
           aria-hidden
           draggable={false}
@@ -100,7 +100,7 @@ export function ExamPrepHeroCard({
         />
         {/* 남캐(좌) — figma 1031:3481 (여캐보다 위 레이어). card(99,170) 기준 동일 스케일(=62.867cqw). */}
         <img
-          src="/topic_test/hero-male.png"
+          src="/topic_test/hero-male-hallym.png"
           alt=""
           aria-hidden
           draggable={false}
