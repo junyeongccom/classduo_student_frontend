@@ -85,7 +85,7 @@ export function ExamPrepHeroCard({
         {/* 여캐(우) — figma 1031:3480. 1800×1300 PNG 을 card(130.9,170) 기준 0.2316배(=62.913cqw). 제공 PNG엔 흰
             테두리 없어 CSS 다방향 drop-shadow 로 흰 스티커 외곽선 + 보라 그림자(figma 0 4 10 rgba(63,61,191,.5)). */}
         <img
-          src="/topic_test/hero-female-hallym.png"
+          src="/topic_test/hero-female.png"
           alt=""
           aria-hidden
           draggable={false}
@@ -94,13 +94,13 @@ export function ExamPrepHeroCard({
             left: '19.743cqw',
             top: '25.64cqw',
             width: '62.913cqw',
-            // 한림 캐릭터는 PNG에 흰 외곽선이 이미 있어 CSS 흰 스티커 외곽선 제거(이중 방지). 퍼플 그림자만 유지.
-            filter: 'drop-shadow(0 0.603cqw 1.508cqw rgba(63,61,191,0.5))',
+            filter:
+              'drop-shadow(0.35cqw 0 0 #fff) drop-shadow(-0.35cqw 0 0 #fff) drop-shadow(0 0.35cqw 0 #fff) drop-shadow(0 -0.35cqw 0 #fff) drop-shadow(0.25cqw 0.25cqw 0 #fff) drop-shadow(-0.25cqw 0.25cqw 0 #fff) drop-shadow(0.25cqw -0.25cqw 0 #fff) drop-shadow(-0.25cqw -0.25cqw 0 #fff) drop-shadow(0 0.603cqw 1.508cqw rgba(63,61,191,0.5))',
           }}
         />
         {/* 남캐(좌) — figma 1031:3481 (여캐보다 위 레이어). card(99,170) 기준 동일 스케일(=62.867cqw). */}
         <img
-          src="/topic_test/hero-male-hallym.png"
+          src="/topic_test/hero-male.png"
           alt=""
           aria-hidden
           draggable={false}
@@ -109,8 +109,8 @@ export function ExamPrepHeroCard({
             left: '14.932cqw',
             top: '25.64cqw',
             width: '62.867cqw',
-            // 한림 캐릭터는 PNG에 흰 외곽선이 이미 있어 CSS 흰 스티커 외곽선 제거(이중 방지). 퍼플 그림자만 유지.
-            filter: 'drop-shadow(0 0.603cqw 1.508cqw rgba(63,61,191,0.5))',
+            filter:
+              'drop-shadow(0.35cqw 0 0 #fff) drop-shadow(-0.35cqw 0 0 #fff) drop-shadow(0 0.35cqw 0 #fff) drop-shadow(0 -0.35cqw 0 #fff) drop-shadow(0.25cqw 0.25cqw 0 #fff) drop-shadow(-0.25cqw 0.25cqw 0 #fff) drop-shadow(0.25cqw -0.25cqw 0 #fff) drop-shadow(-0.25cqw -0.25cqw 0 #fff) drop-shadow(0 0.603cqw 1.508cqw rgba(63,61,191,0.5))',
           }}
         />
       </div>
