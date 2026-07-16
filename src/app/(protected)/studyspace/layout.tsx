@@ -197,7 +197,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   // (모든 hook 호출 뒤에 early return 두어 React Hook 규칙 준수)
   if (isSolveMode) {
     return (
-      <div className="flex h-screen bg-[#F9F9FB] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <div className="flex h-dvh bg-[#F9F9FB] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F9F9FB] dark:bg-gray-950">
           {children}
         </main>
@@ -213,7 +213,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+    <div className="flex h-dvh bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
       <Sidebar />
       <div
         className="flex min-h-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out"
@@ -504,7 +504,7 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   }, [isResizingOverlay, setMaterialsPanelWidth, isNotesPanelOpen, notesPanelWidth, setNotesPanelWidth, materialsPanelWidth])
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900">
+    <div className="flex h-dvh bg-gray-50 text-gray-900">
       <Sidebar />
 
       <div className="flex min-h-0 flex-1 transition-all duration-300">

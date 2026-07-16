@@ -18,7 +18,7 @@ export default function MaterialsPage() {
   if (isNewUI) return null
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-dvh flex-col">
       <TopTabs />
       <div className="flex-1 p-6">
         <div className="flex h-full items-center justify-center text-gray-400">

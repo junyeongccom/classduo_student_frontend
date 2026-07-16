@@ -17,7 +17,7 @@ export default function StudyspaceRepeatPage() {
   if (isNewUI) return null
 
   return (
-    <div className="flex h-full min-h-[calc(100vh-56px)] items-center justify-center bg-gray-50 text-sm text-gray-400">
+    <div className="flex h-full min-h-[calc(100dvh-56px)] items-center justify-center bg-gray-50 text-sm text-gray-400">
       간격반복학습 페이지 (준비 중)
     </div>
   )

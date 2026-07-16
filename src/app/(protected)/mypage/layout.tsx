@@ -20,7 +20,7 @@ function MyPageLayoutShell({ children }: { children: React.ReactNode }) {
     : 88
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900">
+    <div className="flex h-dvh bg-gray-50 text-gray-900">
       <Sidebar />
 
       <div className="flex-1 transition-all duration-300">

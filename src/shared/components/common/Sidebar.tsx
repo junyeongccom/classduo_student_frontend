@@ -111,7 +111,7 @@ function NewSidebar() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 flex h-screen flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden',
+          'fixed left-0 top-0 flex h-dvh flex-col border-r border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden',
           'transition-[width,padding,transform] duration-300 ease-in-out',
           isTablet && isOverlayOpen ? 'z-[51]' : 'z-50',
           // pt 는 max(safe-area, 최소값) — pt-safe(=env)가 Tailwind pt-* 를 override 하던 문제 회피
@@ -495,7 +495,7 @@ function LegacySidebar() {
       </div>
       <aside
         className={cn(
-          'fixed left-0 top-16 z-50 h-[calc(100vh-4rem)] overflow-visible bg-transparent transition-all duration-300',
+          'fixed left-0 top-16 z-50 h-[calc(100dvh-4rem)] overflow-visible bg-transparent transition-all duration-300',
           isMenuOpen ? 'w-[88px]' : 'w-0'
         )}
       >
