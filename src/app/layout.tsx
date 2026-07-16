@@ -5,7 +5,6 @@ import '@/shared/styles/globals.css'
 import { AuthProvider } from '@/features/auth'
 import { I18nRootProvider } from '@/shared/i18n/I18nRootProvider'
 import { MaintenanceNoticeModal } from '@/shared/components/common/MaintenanceNoticeModal'
-import { MaintenanceFullScreen } from '@/shared/components/common/MaintenanceFullScreen'
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
 
@@ -94,7 +93,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         <I18nRootProvider>
           <AuthProvider>
             <MaintenanceNoticeModal />
-            <MaintenanceFullScreen />
             {children}
           </AuthProvider>
         </I18nRootProvider>
