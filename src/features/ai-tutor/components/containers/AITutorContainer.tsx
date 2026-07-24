@@ -541,7 +541,9 @@ export function AITutorContainer() {
                     {tTopbar('tab.answer')}
                   </button>
                   <button
+                    disabled={isSocraticPanelOpen}
                     onClick={() => {
+                      if (isSocraticPanelOpen) return
                       const nextState = !isNotesPanelOpen
                       toggleNotesPanel(nextState)
                       if (nextState) {
@@ -557,7 +559,7 @@ export function AITutorContainer() {
                       isNotesPanelOpen
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                    } ${isSocraticPanelOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span>{tTopbar('tab.notesSources')}</span>
                     {recordingCount > 0 && (
@@ -567,7 +569,9 @@ export function AITutorContainer() {
                     )}
                   </button>
                   <button
+                    disabled={isSocraticPanelOpen}
                     onClick={() => {
+                      if (isSocraticPanelOpen) return
                       const nextState = !isMaterialsPanelOpen
                       toggleMaterialsPanel(nextState)
                       if (nextState) {
@@ -583,7 +587,7 @@ export function AITutorContainer() {
                       isMaterialsPanelOpen
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                    } ${isSocraticPanelOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span>{tTopbar('tab.materialsSources')}</span>
                     {materialCount > 0 && (
