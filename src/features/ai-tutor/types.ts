@@ -160,6 +160,9 @@ export interface StoredMessage {
   case_type?: 'A' | 'B' | 'C' | null
   message_kind?: 'simple' | 'elaboration' | 'followup' | null
   source_message_id?: string | null
+  // v2.0: 메시지가 생성된 채팅 모드 (simple/detailed/socratic). 후속 메시지는 null일 수 있어
+  // 세션의 소크라 여부 판별은 첫 메시지(또는 첫 assistant)의 값을 사용해야 함.
+  chat_mode?: ChatMode
 }
 
 export interface SessionWithMessages {
@@ -271,6 +274,8 @@ export interface SocraticStateResponse {
   total_score: number
   penalty: number
   mastered_at: string | null
+  // v2.0: 세션에서 진행 중인 소크라 주제 (히스토리 복원용). 없으면 null.
+  topic?: SocraticTopic | null
 }
 
 // GET /ai-tutor/socratic/courses/{courseId}/leaderboard 응답 항목

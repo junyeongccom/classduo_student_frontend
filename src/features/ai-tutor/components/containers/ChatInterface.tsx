@@ -512,7 +512,38 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             })
             setMessages(loadedMessages)
             setCurrentSessionId(sessionId)
-            
+
+            // v2.0: 히스토리 소크라 세션 복원 — 첫 메시지(또는 첫 assistant)의 chat_mode 로 판별.
+            // 후속 메시지는 chat_mode 가 null 일 수 있어 첫 메시지 기준으로 세션 전체 모드를 판단한다.
+            // (useAITutorSession.handleSelectSession 이 chatKey 를 증가시켜 이 컴포넌트를 remount 하며,
+            // 그 핸들러 안에서 useSocraticStore.reset() 이 동기적으로 먼저 실행되므로 아래 복원은 항상 reset 이후에 실행됨)
+            const firstMessage = data.messages[0]
+            const firstAssistantMessage = data.messages.find((m: StoredMessage) => m.role === 'assistant')
+            const sessionChatMode = firstMessage?.chat_mode ?? firstAssistantMessage?.chat_mode
+            if (sessionChatMode === 'socratic') {
+              setChatMode('socratic')
+              socraticService.fetchState(sessionId).then(({ data: stateData, error: stateError }) => {
+                if (stateError || !stateData || !stateData.topic) return
+                setSocraticActiveTopic(stateData.topic)
+                useSocraticStore.getState().applyScoreEvent({
+                  type: 'socratic_score',
+                  axis_scores: stateData.axis_scores,
+                  applied_deltas: stateData.axis_scores,
+                  total_score: stateData.total_score,
+                  penalty: stateData.penalty,
+                  abuse: false,
+                  praise: '',
+                  suggestion: '',
+                  mastered: !!stateData.mastered_at,
+                })
+                if (selectedCourseId) {
+                  socraticService.fetchLeaderboard(selectedCourseId).then(({ data: lbData }) => {
+                    if (lbData) useSocraticStore.getState().setLeaderboard(lbData.entries)
+                  })
+                }
+              })
+            }
+
             // 기존 메시지들은 타이핑 완료 상태로 설정
             const completeMap = new Map<number, boolean>()
             const progressMap = new Map<number, number>()
@@ -1335,6 +1366,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     chatMode !== 'socratic' &&
     ((SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) || pqmQuestions.length > 0)
 
+  // v2.0 모드 잠금 규칙:
+  // - 소크라 세션 진행 중(현재 모드가 socratic 이거나 활성 주제 보유)이면 simple/detailed 로 못 벗어남 (새 채팅으로만 이탈)
+  // - 이미 대화가 시작된(messages.length > 0) 세션에서는 소크라로 중간 진입 불가 (새 채팅 + 첫 발화 전에만 진입 가능)
+  const isSocraticSession = chatMode === 'socratic' || !!socraticActiveTopic
+  const socraticEntryDisabled = selectedLectureIds.length !== 1 || messages.length > 0
+
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
   if (messages.length === 0 && !isLoading) {
     return (
@@ -1362,7 +1399,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               placeholder={t('askAnythingPlaceholder')}
               chatMode={chatMode}
               onChatModeChange={handleChatModeChange}
-              socraticDisabled={selectedLectureIds.length !== 1}
+              socraticDisabled={socraticEntryDisabled}
+              simpleDetailedDisabled={isSocraticSession}
               topOverlay={chatMode === 'socratic' && !socraticActiveTopic ? (
                 <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
               ) : undefined}
@@ -1707,7 +1745,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             placeholder={t('askAnythingPlaceholder')}
             chatMode={chatMode}
             onChatModeChange={handleChatModeChange}
-            socraticDisabled={selectedLectureIds.length !== 1}
+            socraticDisabled={socraticEntryDisabled}
+            simpleDetailedDisabled={isSocraticSession}
             topOverlay={chatMode === 'socratic' && !socraticActiveTopic ? (
               <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
             ) : undefined}

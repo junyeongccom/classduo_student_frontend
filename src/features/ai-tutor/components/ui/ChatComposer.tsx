@@ -20,6 +20,8 @@ interface ChatComposerProps {
   chatMode: ChatMode
   onChatModeChange: (mode: ChatMode) => void
   socraticDisabled?: boolean
+  // v2.0: 소크라 세션 진행 중(chatMode==='socratic' 또는 활성 주제 존재) — simple/detailed 로도 못 벗어나게 잠금
+  simpleDetailedDisabled?: boolean
   onFocus?: () => void
   onBlur?: () => void
   topOverlay?: React.ReactNode
@@ -39,6 +41,7 @@ export function ChatComposer({
   chatMode,
   onChatModeChange,
   socraticDisabled,
+  simpleDetailedDisabled,
   onFocus,
   onBlur,
   topOverlay,
@@ -132,15 +135,23 @@ export function ChatComposer({
             <div className="mr-auto flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs">
               <button
                 type="button"
-                onClick={() => onChatModeChange('simple')}
-                className={`rounded-full px-3 py-1 ${chatMode === 'simple' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
+                disabled={simpleDetailedDisabled}
+                onClick={() => {
+                  if (simpleDetailedDisabled) return
+                  onChatModeChange('simple')
+                }}
+                className={`rounded-full px-3 py-1 ${chatMode === 'simple' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${simpleDetailedDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {t('simpleLabel')}
               </button>
               <button
                 type="button"
-                onClick={() => onChatModeChange('detailed')}
-                className={`rounded-full px-3 py-1 ${chatMode === 'detailed' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
+                disabled={simpleDetailedDisabled}
+                onClick={() => {
+                  if (simpleDetailedDisabled) return
+                  onChatModeChange('detailed')
+                }}
+                className={`rounded-full px-3 py-1 ${chatMode === 'detailed' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${simpleDetailedDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {t('detailedLabel')}
               </button>
