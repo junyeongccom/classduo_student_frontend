@@ -4,11 +4,13 @@
  * @module features/ai-tutor
  * @dependencies public/topic_test/hero-{female,male}.png
  */
+'use client'
+
+import { useTranslations } from 'next-intl'
 import type { SocraticTopic, SocraticAxisScores, SocraticLeaderboardEntry } from '../../types'
 
-const AXIS_LABELS: [keyof SocraticAxisScores, string][] = [
-  ['concept', '개념이해'], ['example', '예시활용'], ['logic', '논리적전개'],
-  ['self_awareness', '자기인식'], ['exploration', '적극적탐구'],
+const AXIS_KEYS: (keyof SocraticAxisScores)[] = [
+  'concept', 'example', 'logic', 'self_awareness', 'exploration',
 ]
 const AXIS_CAP = 20
 
@@ -26,23 +28,24 @@ interface Props {
 }
 
 export default function SocraticScorePanel({ topic, axisScores, totalScore, lastDeltas, praise, suggestion, abuseWarning, mastered, leaderboard, myStudentId }: Props) {
+  const t = useTranslations('aiTutorChat')
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
       {/* 주제 + 총점 */}
       <div>
-        <div className="text-xs text-gray-500">소크라 문답 · {topic.title}</div>
+        <div className="text-xs text-gray-500">{t('socraticPanelTitle')} {topic.title}</div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-3xl font-bold text-indigo-600">{totalScore}</span>
-          <span className="text-sm text-gray-400">/ 100</span>
-          {mastered && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">마스터!</span>}
+          <span className="text-sm text-gray-400">{t('socraticScoreOutOf')}</span>
+          {mastered && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{t('socraticMastered')}</span>}
         </div>
       </div>
       {/* 5축 게이지 */}
       <div className="space-y-2">
-        {AXIS_LABELS.map(([key, label]) => (
+        {AXIS_KEYS.map((key) => (
           <div key={key}>
             <div className="flex justify-between text-xs">
-              <span>{label}</span>
+              <span>{t(`socraticAxis.${key}`)}</span>
               <span className="tabular-nums">
                 {axisScores[key]}
                 {lastDeltas && lastDeltas[key] > 0 && <span className="ml-1 font-semibold text-emerald-600">+{lastDeltas[key]}</span>}
@@ -56,7 +59,7 @@ export default function SocraticScorePanel({ topic, axisScores, totalScore, last
       </div>
       {/* 동료 캐릭터 피드백 */}
       {abuseWarning && (
-        <div className="rounded-lg bg-red-50 p-2 text-xs text-red-600">비슷한 말을 반복하면 점수가 깎여요. 주제로 돌아가 볼까요?</div>
+        <div className="rounded-lg bg-red-50 p-2 text-xs text-red-600">{t('socraticAbuseWarning')}</div>
       )}
       {praise && (
         <div className="flex items-start gap-2">
@@ -72,16 +75,20 @@ export default function SocraticScorePanel({ topic, axisScores, totalScore, last
       )}
       {/* 과목 랭킹 */}
       <div>
-        <div className="mb-1 text-xs font-semibold text-gray-500">랭킹</div>
-        <ol className="space-y-1">
-          {leaderboard.map((e, i) => (
-            <li key={e.student_id}
-              className={`flex items-center justify-between rounded-lg px-2 py-1 text-xs ${e.student_id === myStudentId ? 'bg-indigo-50 font-semibold' : ''}`}>
-              <span>{i + 1}위 · {e.name}</span>
-              <span className="tabular-nums">{e.total_score}</span>
-            </li>
-          ))}
-        </ol>
+        <div className="mb-1 text-xs font-semibold text-gray-500">{t('socraticRanking')}</div>
+        {leaderboard.length === 0 ? (
+          <div className="rounded-lg px-2 py-1 text-xs text-gray-400">{t('socraticRankingEmpty')}</div>
+        ) : (
+          <ol className="space-y-1">
+            {leaderboard.map((e, i) => (
+              <li key={e.student_id}
+                className={`flex items-center justify-between rounded-lg px-2 py-1 text-xs ${e.student_id === myStudentId ? 'bg-indigo-50 font-semibold' : ''}`}>
+                <span>{t('socraticRankSuffix', { rank: i + 1 })} · {e.name}</span>
+                <span className="tabular-nums">{e.total_score}</span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
     </div>
   )

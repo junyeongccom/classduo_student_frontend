@@ -16,12 +16,12 @@ export const socraticService = {
   /**
    * 강의 회차의 소크라 문답 주제 목록 조회
    */
-  async fetchTopics(lectureId: string): Promise<{ data: SocraticTopic[] | null; error: any }> {
-    const { data, error } = await apiRequest<{ topics: SocraticTopic[] }>(
+  async fetchTopics(lectureId: string): Promise<{ data: SocraticTopic[] | null; error: any; status?: number }> {
+    const { data, error, status } = await apiRequest<{ topics: SocraticTopic[] }>(
       `/ai-tutor/lectures/${lectureId}/socratic/topics`,
       { auth: true }
     )
-    return { data: data ? data.topics : null, error }
+    return { data: data ? data.topics : null, error, status }
   },
 
   /**

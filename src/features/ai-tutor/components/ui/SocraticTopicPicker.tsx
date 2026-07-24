@@ -6,13 +6,15 @@
  */
 'use client'
 
+import { useTranslations } from 'next-intl'
 import type { SocraticTopic } from '../../types'
 
 interface Props { topics: SocraticTopic[]; onSelect: (t: SocraticTopic) => void }
 
 export default function SocraticTopicPicker({ topics, onSelect }: Props) {
+  const t = useTranslations('aiTutorChat')
   if (topics.length === 0) {
-    return <div className="mb-2 rounded-xl border bg-white p-3 text-sm text-gray-500">이 회차에는 아직 소크라 문답 주제가 없어요.</div>
+    return <div className="mb-2 rounded-xl border bg-white p-3 text-sm text-gray-500">{t('socraticNoTopics')}</div>
   }
   return (
     <div className="mb-2 grid gap-2 sm:grid-cols-2">

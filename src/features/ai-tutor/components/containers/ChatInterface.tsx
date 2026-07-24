@@ -750,6 +750,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       return
     }
 
+    setError(null)
     const seedMessage: ChatMessage = {
       role: 'assistant',
       content: data.seed_question,
@@ -769,6 +770,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   ) => {
     if (!question.trim() || isLoading || selectedLectureIds.length === 0) return
+    // 소크라 문답 모드에서 주제 미선택 시 전송 차단 (채점/패널 대상 없이 전송되는 것 방지)
+    if (chatMode === 'socratic' && !socraticActiveTopic) return
 
     setIsLoading(true)
     setError(null)

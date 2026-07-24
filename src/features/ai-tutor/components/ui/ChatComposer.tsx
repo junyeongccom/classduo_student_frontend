@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslations } from 'next-intl'
 import { Send, Loader2, Sparkles, Brain } from 'lucide-react'
 import type { ChatMode } from '@/features/ai-tutor/types'
 
@@ -45,6 +46,7 @@ export function ChatComposer({
   simpleHelpText,
   deepHelpText,
 }: ChatComposerProps) {
+  const t = useTranslations('aiTutorChat')
   const canSend = !disabled && !!value.trim()
   const formRef = useRef<HTMLFormElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -131,14 +133,14 @@ export function ChatComposer({
                 onClick={() => onChatModeChange('simple')}
                 className={`rounded-full px-3 py-1 ${chatMode !== 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
               >
-                간결한 설명
+                {t('simpleLabel')}
               </button>
               <button
                 type="button"
                 onClick={() => onChatModeChange('socratic')}
                 className={`rounded-full px-3 py-1 ${chatMode === 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
               >
-                소크라 문답
+                {t('socraticLabel')}
               </button>
             </div>
             <button
