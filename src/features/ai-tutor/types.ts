@@ -81,26 +81,6 @@ export interface ChatResponse {
   removed_orphan_tags?: string[]
 }
 
-// v1.0 Sprint 3: 부연설명 API
-export interface ElaborationRequest {
-  session_id?: string  // 있으면 DB 저장 + message_id 반환
-  original_question: string
-  simple_answer: string
-  reference_data?: { recording_chunks?: Reference[]; material_pages?: Reference[] } | Reference[] | null
-  language?: 'ko' | 'en'
-  source_message_id?: string
-  // v1.0: 원 SIMPLE 답변의 follow_up을 그대로 넘겨서 재생성 없이 echo 받음
-  source_follow_up_question?: string | null
-}
-
-export interface ElaborationResponse {
-  elaboration_text: string
-  referenced_sources: Reference[]
-  follow_up_question?: string | null
-  removed_orphan_tags?: string[]
-  message_id?: string | null  // 저장된 chat_messages.id
-}
-
 export interface HookingResponse {
   id: string  // 후킹질문 고유 ID (source_question_id로 사용)
   job_id: string

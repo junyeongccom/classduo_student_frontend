@@ -995,91 +995,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     sendMessage(retryQuestion)
   }, [sendMessage])
 
-  // v1.0 Sprint 3: 부연설명 요청
-  // SIMPLE 답변 아래 [부연설명 요청] 버튼 클릭 시 호출.
-  // Case C 메시지에서는 이 버튼을 렌더하지 않음 (아래 조건부 렌더 참조).
-  const [elaboratingIndex, setElaboratingIndex] = useState<number | null>(null)
-  const handleRequestElaboration = useCallback(async (assistantIndex: number) => {
-    const target = messages[assistantIndex] as ChatMessage & {
-      original_question?: string
-      references?: Reference[]
-      case_type?: 'A' | 'B' | 'C' | null
-    }
-    if (!target || target.role !== 'assistant') return
-    if (target.case_type === 'C') return
-    if (!target.original_question) {
-      console.warn('Elaboration: original_question missing for index', assistantIndex)
-      return
-    }
-
-    setElaboratingIndex(assistantIndex)
-
-    // v1.0: 부연설명도 SIMPLE 모드와 동일한 로딩 UI 재활용 (자료 검색은 생략)
-    // 자료 검색 없이 LLM 단일 호출이므로 2단계 정도로 체감 UX만 나타낸다.
-    setIsLoading(true)
-    setLoadingStatusItems([
-      { step: 'preparing_elaboration', message: locale === 'en' ? 'Organizing key points...' : '핵심 포인트 정리 중...', sources: [] }
-    ])
-    const stage2Timer = window.setTimeout(() => {
-      setLoadingStatusItems(prev => [
-        ...prev,
-        { step: 'generating_elaboration', message: locale === 'en' ? 'Expanding the explanation based on the lecture materials...' : '강의자료 기반으로 자세히 풀어 쓰는 중...', sources: [] },
-      ])
-    }, 800)
-
-    try {
-      // reference_data 재구성: recording과 material을 분리하여 전달
-      const refs = target.references || []
-      const recording_chunks = refs.filter(r => r.type === 'recording')
-      const material_pages = refs.filter(r => r.type === 'material')
-
-      const { data, error } = await chatService.requestElaboration({
-        session_id: currentSessionId || undefined,  // v1.0: DB 저장을 위해 세션 ID 전달
-        original_question: target.original_question,
-        simple_answer: target.content,
-        reference_data: { recording_chunks, material_pages },
-        source_message_id: target.id,
-        // v1.0: 원 SIMPLE의 follow-up을 그대로 재사용 (부연설명에서 재생성 안 함)
-        source_follow_up_question: (target as any).follow_up_question ?? null,
-      })
-
-      if (error || !data) {
-        console.error('Elaboration failed:', error)
-        return
-      }
-
-      // 원 SIMPLE 메시지 바로 아래에 elaboration 메시지 삽입
-      const elaborationMessage: ChatMessage & {
-        message_kind?: 'elaboration'
-        source_message_id?: string | null
-        references?: Reference[]
-        follow_up_question?: string | null
-      } = {
-        role: 'assistant',
-        content: data.elaboration_text,
-        message_kind: 'elaboration',
-        source_message_id: target.id || null,
-        references: (data.referenced_sources || []) as Reference[],
-        follow_up_question: data.follow_up_question ?? null,
-        // 부연설명에도 원 질문을 보존
-        original_question: target.original_question,
-        // v1.0: DB에 저장된 message_id (feedback 등에 사용)
-        id: data.message_id ?? undefined,
-      }
-
-      setMessages(prev => {
-        const next = [...prev]
-        next.splice(assistantIndex + 1, 0, elaborationMessage)
-        return next
-      })
-    } finally {
-      window.clearTimeout(stage2Timer)
-      setLoadingStatusItems([])
-      setIsLoading(false)
-      setElaboratingIndex(null)
-    }
-  }, [messages, currentSessionId, locale])
-
   const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
     // 미리 저장된 답변이 있으면 바로 표시
     if (hooking.answer) {
@@ -1583,35 +1498,23 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                         <MarkdownMessage markdown={message.content} className="markdown-content" />
                       )}
                     </div>
-                    {/* 후속 질문 + 부연설명 버튼 — 가장 마지막 답변에만 표시 */}
+                    {/* 후속 질문 버튼 — 가장 마지막 답변에만 표시 */}
                     {(() => {
                       if (!isTypingComplete || typingLength < message.content.length) return null
                       if (!isLastAssistantMessage) return null
 
+                      // v1.0 guard(과거 메시지 읽기 호환): message_kind가 누락돼도 source_message_id 가 있으면 elaboration.
+                      //   - DB reload 경로: message_kind, source_message_id 모두 조회
+                      // 부연설명 생성 경로는 제거됐지만, 과거 저장된 elaboration 메시지 판정은 유지한다.
                       const messageKind = (assistantMessage as any).message_kind as
                         | 'simple' | 'elaboration' | 'followup' | undefined
-                      // v1.0 guard: message_kind가 누락돼도 source_message_id 가 있으면 elaboration.
-                      //   - 신규 세션 insert 경로: message_kind='elaboration' (L928) + source_message_id 동시 주입
-                      //   - DB reload 경로: message_kind, source_message_id 모두 조회
-                      // 둘 중 하나만 있어도 elaboration 으로 간주하여 중복 버튼 노출 방지.
                       const hasSourceMessageId = Boolean((assistantMessage as any).source_message_id)
                       const isElaborationMsg = messageKind === 'elaboration' || hasSourceMessageId
-                      // v1.0: case_type이 DB에 null로 저장되는 경우가 있어 텍스트 기반 보조 판정 추가
-                      const contentHead = (message.content || '').trim()
-                      const CASE_C_PREFIX_KO = '제공된 강의자료에서는 해당 내용에 대한 구체적인 설명을 찾을 수 없습니다'
-                      const CASE_C_PREFIX_EN = 'The provided lecture materials do not contain specific information'
-                      const isCaseC =
-                        (assistantMessage as any).case_type === 'C' ||
-                        contentHead.startsWith(CASE_C_PREFIX_KO) ||
-                        contentHead.startsWith(CASE_C_PREFIX_EN)
+                      void isElaborationMsg
 
-                      // [부연설명 요청] 버튼 — 부연설명 메시지에는 중복 노출 금지, Case C 숨김
-                      const canElaborate = !isElaborationMsg && !isCaseC
-                      // follow-up 버튼 — 부연설명 메시지에도 허용 (elaboration 응답에 follow_up_question 들어옴)
                       const hasFollowUp = Boolean(followUpQuestion)
-                      const isElaborating = elaboratingIndex === index
 
-                      if (!hasFollowUp && !canElaborate) return null
+                      if (!hasFollowUp) return null
 
                       return (
                         <div className="mt-4 flex flex-wrap items-center justify-start gap-2 animate-fade-in-up">
@@ -1628,17 +1531,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                             >
                               <span>💡</span>
                               <span>{followUpQuestion}</span>
-                            </button>
-                          )}
-                          {canElaborate && (
-                            <button
-                              onClick={() => handleRequestElaboration(index)}
-                              disabled={isLoading || isElaborating}
-                              className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-left text-sm font-medium text-indigo-700 shadow-sm transition-all duration-200 hover:bg-indigo-100 hover:border-indigo-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={t('elaborateTitle')}
-                            >
-                              <span>📖</span>
-                              <span>{isElaborating ? t('elaborating') : t('elaborateRequest')}</span>
                             </button>
                           )}
                         </div>

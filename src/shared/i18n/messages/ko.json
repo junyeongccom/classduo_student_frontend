@@ -322,10 +322,7 @@
       "material": "강의자료 출처"
     },
     "recordingSourceDisabled": "녹음본 출처가 비활성화되어 있습니다",
-    "clickToStart": "화면을 클릭하여 시작",
-    "elaborateTitle": "이 답변을 강의 자료 범위 내에서 더 자세히 풀어서 설명받기",
-    "elaborating": "부연설명 생성 중…",
-    "elaborateRequest": "부연설명 요청"
+    "clickToStart": "화면을 클릭하여 시작"
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "수업 선택",

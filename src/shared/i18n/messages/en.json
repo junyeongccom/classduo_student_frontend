@@ -322,10 +322,7 @@
       "material": "Material source"
     },
     "recordingSourceDisabled": "Recording sources are disabled",
-    "clickToStart": "Click the screen to start",
-    "elaborateTitle": "Get a more detailed explanation of this answer within the lecture materials",
-    "elaborating": "Generating elaboration…",
-    "elaborateRequest": "Request elaboration"
+    "clickToStart": "Click the screen to start"
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "Select class",
