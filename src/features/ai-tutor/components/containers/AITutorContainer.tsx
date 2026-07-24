@@ -10,9 +10,11 @@ import { ChatInterface } from './ChatInterface'
 import { LectureSidebarContainer } from './LectureSidebarContainer'
 import ChatSidebar from '../ui/ChatSidebar'
 import { ReferencePanel } from '../ui/ReferencePanel'
+import SocraticScorePanel from '../ui/SocraticScorePanel'
 import { GameOverlay } from '../ui/GameOverlay'
 import { TabType } from '@/shared/components/common'
 import { useAuthStore } from '@/features/auth/store/authStore'
+import { useSocraticStore } from '../../store/useSocraticStore'
 import {
   hasVisitedStudyspaceTab,
   markVisitedStudyspaceTab,
@@ -33,6 +35,7 @@ import {
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 const DEFAULT_NOTES_PANEL_WIDTH = 380
+const SOCRATIC_PANEL_WIDTH = 380
 const DEFAULT_MATERIALS_PANEL_WIDTH = 360
 
 export function AITutorContainer() {
@@ -56,6 +59,30 @@ export function AITutorContainer() {
     isRecordingSourceDisabled
   } = useAITutorStore()
   const userId = useAuthStore(state => state.user?.user_id ?? null)
+  const {
+    socraticActiveTopic,
+    socraticAxisScores,
+    socraticTotalScore,
+    socraticLastDeltas,
+    socraticLastPraise,
+    socraticLastSuggestion,
+    socraticAbuseWarning,
+    socraticMastered,
+    socraticLeaderboard,
+    isSocraticPanelOpen: isSocraticPanelOpenFlag,
+  } = useSocraticStore(state => ({
+    socraticActiveTopic: state.activeTopic,
+    socraticAxisScores: state.axisScores,
+    socraticTotalScore: state.totalScore,
+    socraticLastDeltas: state.lastDeltas,
+    socraticLastPraise: state.lastPraise,
+    socraticLastSuggestion: state.lastSuggestion,
+    socraticAbuseWarning: state.abuseWarning,
+    socraticMastered: state.mastered,
+    socraticLeaderboard: state.leaderboard,
+    isSocraticPanelOpen: state.isPanelOpen,
+  }))
+  const isSocraticPanelOpen = isSocraticPanelOpenFlag && !!socraticActiveTopic
 
   // Actions
   const {
@@ -229,7 +256,8 @@ export function AITutorContainer() {
   }, [updateReferences])
 
   const overlayPanels: Array<'notes' | 'materials'> = []
-  const showInlineNotesPanel = isNotesPanelOpen
+  // 소크라 패널 우선: 소크라 패널이 열려 있으면 노트/자료 패널은 렌더하지 않는다 (버튼·토글 로직은 그대로 유지)
+  const showInlineNotesPanel = isNotesPanelOpen && !isSocraticPanelOpen
   
   const handleCloseNotesPanel = () => {
     if (isNotesPanelOpen) {
@@ -470,7 +498,7 @@ export function AITutorContainer() {
         <div ref={containerRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <main
             className="flex flex-1 min-h-0 overflow-y-hidden overflow-x-hidden p-3 sm:p-6 pr-3 sm:pr-6 md:pr-[var(--ai-pr,0px)]"
-            style={{ '--ai-pr': showInlineNotesPanel ? `${notesPanelWidth}px` : '0px' } as React.CSSProperties}
+            style={{ '--ai-pr': showInlineNotesPanel ? `${notesPanelWidth}px` : isSocraticPanelOpen ? `${SOCRATIC_PANEL_WIDTH}px` : '0px' } as React.CSSProperties}
           >
             <div className="flex h-full w-full items-center justify-center -ml-3">
               <div
@@ -622,12 +650,34 @@ export function AITutorContainer() {
               />
             </div>
           )}
+
+          {isSocraticPanelOpen && socraticActiveTopic && (
+            <div
+              className="fixed inset-x-0 bottom-0 z-30 h-[50dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-y-0 md:right-0 md:left-auto md:bottom-auto md:h-full md:w-[var(--ai-w,380px)] md:rounded-none md:border-l md:border-t-0 md:shadow-xl md:z-20"
+              style={{ '--ai-w': `${SOCRATIC_PANEL_WIDTH}px` } as React.CSSProperties}
+            >
+              {/* Mobile grip handle */}
+              <div className="md:hidden mx-auto mt-2 h-1.5 w-12 rounded-full bg-gray-300" aria-hidden />
+              <SocraticScorePanel
+                topic={socraticActiveTopic}
+                axisScores={socraticAxisScores}
+                totalScore={socraticTotalScore}
+                lastDeltas={socraticLastDeltas}
+                praise={socraticLastPraise}
+                suggestion={socraticLastSuggestion}
+                abuseWarning={socraticAbuseWarning}
+                mastered={socraticMastered}
+                leaderboard={socraticLeaderboard}
+                myStudentId={userId}
+              />
+            </div>
+          )}
         </div>
       </div>
 
       <StudyspaceRightbarSlot>{rightbarContent}</StudyspaceRightbarSlot>
 
-      {isMaterialsPanelOpen && (
+      {isMaterialsPanelOpen && !isSocraticPanelOpen && (
         <StudyspaceOverlaySlot>{materialsPanelContent}</StudyspaceOverlaySlot>
       )}
 
