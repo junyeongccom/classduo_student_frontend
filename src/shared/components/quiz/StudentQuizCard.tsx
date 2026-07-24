@@ -23,6 +23,7 @@ import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessa
 /* ───────────── 타입 ───────────── */
 
 export type StudentQuizType =
+  // 레거시 — 기존 미재생성 회차 호환
   | 'RECALL'
   | 'STRUCTURE'
   | 'STRUCTURE_OBJ'
@@ -30,6 +31,11 @@ export type StudentQuizType =
   | 'DEF_TO_TERM'
   | 'TERM_TO_DEF'
   | 'EXAM_PREP'
+  // 신규 4유형 (2026-07 개편) — 앞 2개=객관식, 뒤 2개=서술형
+  | 'TERM_MEMORY'
+  | 'CONCEPT'
+  | 'ANALYSIS_APPLY'
+  | 'JUDGE_DESIGN'
 
 export interface StudentQuizChoice {
   choice_id: string
@@ -49,6 +55,8 @@ export interface StudentQuizItem {
   choices: StudentQuizChoice[]
   /** 출처 회차 번호. 제공 시 헤더에 "N주차" 배지 표시 (다중 회차 출처 구분용). */
   lectureNo?: number | null
+  /** 'multiple_choice' | 'essay'. 미제공(레거시 로우) 시 quiz_type 기반으로 판정. */
+  answer_format?: 'multiple_choice' | 'essay'
 }
 
 export interface StudentQuizCardProps {
@@ -89,6 +97,11 @@ const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
   DEF_TO_TERM: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   TERM_TO_DEF: 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
   EXAM_PREP: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  // 신규 4유형 (2026-07 개편)
+  TERM_MEMORY: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  CONCEPT: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+  ANALYSIS_APPLY: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  JUDGE_DESIGN: 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
 }
 
 /** 풀이 상태에 따른 카드 테두리 스타일 */
@@ -118,7 +131,15 @@ export function StudentQuizCard({
     quiz.quiz_type === 'MISCONCEPTION' ||
     quiz.quiz_type === 'DEF_TO_TERM' ||
     quiz.quiz_type === 'TERM_TO_DEF' ||
-    quiz.quiz_type === 'STRUCTURE_OBJ'
+    quiz.quiz_type === 'STRUCTURE_OBJ' ||
+    quiz.quiz_type === 'TERM_MEMORY' ||
+    quiz.quiz_type === 'CONCEPT'
+
+  // 서술형(분석과적용/판단과설계) — answer_format 우선, 레거시 로우는 quiz_type 폴백
+  const isEssay =
+    quiz.answer_format === 'essay' ||
+    quiz.quiz_type === 'ANALYSIS_APPLY' ||
+    quiz.quiz_type === 'JUDGE_DESIGN'
 
   const [selectedChoiceIdx, setSelectedChoiceIdx] = useState<number | null>(() => {
     if (isCorrect !== null && isMultipleChoice && selectedAnswer != null) {
@@ -128,6 +149,8 @@ export function StudentQuizCard({
   })
   const [isSubmitted, setIsSubmitted] = useState(() => isCorrect !== null)
   const [showAnswer, setShowAnswer] = useState(false)
+  // 서술형 답안 입력 draft — 로컬 상태(백엔드 저장 API 부재, 후속 과제). 재진입/새로고침 시 초기화됨.
+  const [essayDraft, setEssayDraft] = useState('')
   // "해설 보기" 안에서 다시 펼치는 상세 설명 토글 (마크다운 렌더링)
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
   const t = useTranslations('lectureStudy.quiz')
@@ -162,6 +185,18 @@ export function StudentQuizCard({
     },
     [isSubmitted, showAnswer, selectedChoiceIdx, quiz.choices, quiz.quiz_id, onCorrectUpdate, onResetAnswer],
   )
+
+  /**
+   * 서술형 답안 제출 — LLM 채점 없이 자가평가(모범답안 병렬 노출)만 수행한다.
+   * onCorrectUpdate(correct=true, answer=0)로 "풀이 완료" 상태만 기록(전체 다시 풀기/보상 판정 유지).
+   * answer=0은 1~5 범위 밖이라 quizStatusService 에서 서버 전송 시 null 로 보정된다(선택 인덱스 없음 표현).
+   * 답안 텍스트(essayDraft) 자체는 저장 API 부재로 로컬 상태에만 유지된다.
+   */
+  const handleEssaySubmit = useCallback(() => {
+    if (isSubmitted || !essayDraft.trim()) return
+    setIsSubmitted(true)
+    onCorrectUpdate(quiz.quiz_id, true, 0)
+  }, [isSubmitted, essayDraft, quiz.quiz_id, onCorrectUpdate])
 
   const handleToggleAnswer = useCallback(() => {
     setShowAnswer((prev) => {
@@ -241,7 +276,7 @@ export function StudentQuizCard({
             {t('format.shortAnswer')}
           </span>
         )}
-        {quiz.quiz_type === 'STRUCTURE' && (
+        {(quiz.quiz_type === 'STRUCTURE' || isEssay) && (
           <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
             {t('format.essay')}
           </span>
@@ -338,6 +373,56 @@ export function StudentQuizCard({
         </div>
       )}
 
+      {/* 서술형 답안 입력 → 제출 → 학생답안+모범답안 병렬 표시 (LLM 채점 없음, 자가평가) */}
+      {isEssay && (
+        <div className="mt-4">
+          {!isSubmitted ? (
+            <div className="space-y-2">
+              <textarea
+                value={essayDraft}
+                onChange={(e) => setEssayDraft(e.target.value)}
+                placeholder={t('essayPlaceholder')}
+                rows={4}
+                className="w-full resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none transition-colors focus:border-indigo-300 dark:focus:border-indigo-600"
+              />
+              <button
+                type="button"
+                onClick={handleEssaySubmit}
+                disabled={!essayDraft.trim()}
+                className={`w-full rounded-xl py-2 text-sm font-semibold transition-colors ${
+                  essayDraft.trim()
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {t('essaySubmit')}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
+                  {t('essayMyAnswer')}
+                </p>
+                <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">
+                  {essayDraft || '—'}
+                </p>
+              </div>
+              {quiz.answer && (
+                <div className="rounded-xl bg-indigo-50/60 dark:bg-indigo-900/20 p-4">
+                  <p className="text-[11px] font-bold text-indigo-600 dark:text-indigo-300 mb-1">
+                    {t('essayModelAnswerLabel')}
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">
+                    {quiz.answer}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 정답/해설 토글 */}
       <div className="mt-4">
         <div className="group relative inline-flex">
@@ -369,8 +454,8 @@ export function StudentQuizCard({
 
         {showAnswer && (
           <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-            {/* 정답 (주관식) */}
-            {!isMultipleChoice && quiz.answer && (
+            {/* 정답 (주관식, 레거시 RECALL/STRUCTURE 전용) — 서술형(essay)은 제출 직후 위에서 이미 표시됨 */}
+            {!isMultipleChoice && !isEssay && quiz.answer && (
               <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
                 <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
                   {t('answer')}

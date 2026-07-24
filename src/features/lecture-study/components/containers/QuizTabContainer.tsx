@@ -50,6 +50,12 @@ interface QuizTabContainerProps {
 }
 
 const TYPE_ORDER: InstructorQuizType[] = [
+  // 신규 4유형 (2026-07 개편): 용어암기 → 개념이해 → 분석과적용 → 판단과설계
+  'TERM_MEMORY',
+  'CONCEPT',
+  'ANALYSIS_APPLY',
+  'JUDGE_DESIGN',
+  // 레거시 — 기존 미재생성 회차 호환 (재생성 전까지 계속 노출)
   'DEF_TO_TERM',
   'TERM_TO_DEF',
   'STRUCTURE_OBJ',
@@ -62,9 +68,10 @@ function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
     quiz_id: quiz.quiz_id,
     quiz_type: quiz.quiz_type,
     question: quiz.question,
-    answer: null,
+    answer: quiz.model_answer ?? null,
     explanation: quiz.explanation,
     difficulty: quiz.difficulty,
+    answer_format: quiz.answer_format ?? 'multiple_choice',
     choices: quiz.choices.map((c) => ({
       choice_id: c.choice_id,
       choice_order: c.choice_order,

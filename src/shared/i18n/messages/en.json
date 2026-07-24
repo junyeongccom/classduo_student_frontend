@@ -752,6 +752,10 @@
       "wrongNoteDismissDisabledTooltip": "Cannot remove while answer is incorrect. Choose the correct answer or reset first.",
       "answerDisabledTooltip": "Answer the question first to view the answer and explanation",
       "resetTooltip": "Click your selected answer again to deselect it",
+      "essayPlaceholder": "Write your answer based on what you understood",
+      "essaySubmit": "Submit",
+      "essayMyAnswer": "My Answer",
+      "essayModelAnswerLabel": "Model Answer",
       "rewardModal": {
         "title": "Congratulations!",
         "message": "You have completed all quizzes for {courseName} {weekSession}",
