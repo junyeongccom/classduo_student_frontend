@@ -1569,7 +1569,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               )
             }
           })}
-          {isLoading && (
+          {isLoading && chatMode !== 'socratic' && (
             <AnswerLoadingReviewBanner
               answers={reviewKeyAnswers}
               fallbackText={locale === 'en' ? 'Loading answer...' : '핵심 단어 준비중...'}
