@@ -10,12 +10,15 @@ import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { useTrackPendingDialogueFeedback } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'
 import { chatAnalytics } from '@/shared/lib/analytics'
-import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode } from '@/features/ai-tutor/types'
+import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode, SocraticTopic } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
+import { useSocraticStore } from '@/features/ai-tutor/store/useSocraticStore'
+import { socraticService } from '@/features/ai-tutor/services/socraticService'
 import { ChatComposer } from '../ui/ChatComposer'
+import SocraticTopicPicker from '../ui/SocraticTopicPicker'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { FeedbackButtons } from '../ui/FeedbackButtons'
 
@@ -53,9 +56,15 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
     selectedCourseId: state.selectedCourseId,
   }))
-  
+  const { socraticActiveTopic, setSocraticActiveTopic } = useSocraticStore(state => ({
+    socraticActiveTopic: state.activeTopic,
+    setSocraticActiveTopic: state.setActiveTopic,
+  }))
+
   const [input, setInput] = useState('')
   const [chatMode, setChatMode] = useState<ChatMode>('simple')
+  // 소크라 문답: 회차의 주제 목록 (모드 전환 시 조회)
+  const [socraticTopics, setSocraticTopics] = useState<SocraticTopic[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -694,6 +703,63 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     })
   }, [])
 
+  // 모드 토글 핸들러 — simple ↔ socratic 전환 (analytics 기록 + simple 복귀 시 소크라 상태 초기화)
+  const handleChatModeChange = useCallback((mode: ChatMode) => {
+    setChatMode(mode)
+    chatAnalytics.modeSwitch({ mode })
+    if (mode === 'simple') {
+      setSocraticTopics([])
+      useSocraticStore.getState().reset()
+    }
+  }, [])
+
+  // 소크라 문답 모드 진입 시 (활성 주제 없음) 회차의 주제 목록 조회
+  useEffect(() => {
+    if (chatMode !== 'socratic' || socraticActiveTopic || selectedLectureIds.length !== 1) return
+    let cancelled = false
+    socraticService.fetchTopics(selectedLectureIds[0]).then(({ data, error }) => {
+      if (cancelled) return
+      if (!error && data) setSocraticTopics(data)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [chatMode, socraticActiveTopic, selectedLectureIds])
+
+  // 소크라 문답 주제 선택 → 세션 확보(없으면 생성) → startSession → seed_question 표시
+  const handleSocraticTopicSelect = useCallback(async (topic: SocraticTopic) => {
+    let sessionIdToUse = currentSessionId
+
+    if (!sessionIdToUse) {
+      const sessionResult = await chatService.createSession(selectedLectureIds)
+      if (sessionResult.error || !sessionResult.data) {
+        setError(sessionResult.error?.message || t('sessionCreateFailed'))
+        return
+      }
+      sessionIdToUse = sessionResult.data.id
+      selfCreatedSessionId.current = sessionIdToUse
+      setCurrentSessionId(sessionIdToUse)
+      onSessionCreated?.(sessionIdToUse)
+      chatAnalytics.sessionCreate(selectedLectureIds[0], { trigger: 'direct_question', session_id: sessionIdToUse })
+    }
+
+    const { data, error } = await socraticService.startSession(sessionIdToUse, topic.id)
+    if (error || !data) {
+      // 세션/테이블 초기화 실패(503 등) — 소크라 진입 롤백. 모드는 유지하되 activeTopic은 설정하지 않는다.
+      setError(error?.message || t('chatError'))
+      return
+    }
+
+    const seedMessage: ChatMessage = {
+      role: 'assistant',
+      content: data.seed_question,
+      id: data.message_id,
+      message_kind: 'simple',
+    }
+    setMessages(prev => [...prev, seedMessage])
+    setSocraticActiveTopic(data.topic ?? topic)
+  }, [currentSessionId, selectedLectureIds, onSessionCreated, setSocraticActiveTopic, t])
+
   // 메시지 전송 (SSE 스트리밍)
   const sendMessage = useCallback(async (
     question: string,
@@ -739,6 +805,16 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         question,
         // onProgress: 진행 상황 업데이트 (누적)
         (progressData) => {
+          // 소크라 문답 채점 이벤트: 축 점수 반영 + 리더보드 갱신
+          if (progressData.type === 'socratic_score') {
+            useSocraticStore.getState().applyScoreEvent(progressData)
+            if (selectedCourseId) {
+              socraticService.fetchLeaderboard(selectedCourseId).then(({ data }) => {
+                if (data) useSocraticStore.getState().setLeaderboard(data.entries)
+              })
+            }
+            return
+          }
           // message_saved 이벤트: 마지막 assistant 메시지에 id 부여
           if (progressData.type === 'message_saved' && progressData.message_id) {
             const savedMessageId = progressData.message_id
@@ -870,6 +946,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           question_type: options?.question_type || 'direct',  // 기본값: 직접 질문
           source_question_id: options?.source_question_id,
           chat_mode: chatMode,
+          socratic_topic_id: chatMode === 'socratic' ? socraticActiveTopic?.id : undefined,
         }
       )
     } catch (err) {
@@ -892,7 +969,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       setLoadingStatusItems([])
       setIsLoading(false)
     }
-  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate, chatMode, appendErrorMessage])
+  }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate, chatMode, appendErrorMessage, selectedCourseId, socraticActiveTopic])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -1360,10 +1437,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               disabled={isLoading}
               placeholder={t('askAnythingPlaceholder')}
               chatMode={chatMode}
-              onChatModeChange={(mode: ChatMode) => {
-                setChatMode(mode)
-                chatAnalytics.modeSwitch({ mode })
-              }}
+              onChatModeChange={handleChatModeChange}
+              topOverlay={chatMode === 'socratic' && !socraticActiveTopic ? (
+                <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
+              ) : undefined}
               sendLabel={t('sendLabel')}
               simpleLabel={t('simpleLabel')}
               deepLabel={t('deepLabel')}
@@ -1716,7 +1793,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             disabled={isLoading}
             placeholder={t('askAnythingPlaceholder')}
             chatMode={chatMode}
-            onChatModeChange={setChatMode}
+            onChatModeChange={handleChatModeChange}
+            topOverlay={chatMode === 'socratic' && !socraticActiveTopic ? (
+              <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
+            ) : undefined}
             sendLabel={t('sendLabel')}
             simpleLabel={t('simpleLabel')}
             deepLabel={t('deepLabel')}

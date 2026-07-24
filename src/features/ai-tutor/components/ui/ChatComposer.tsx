@@ -124,6 +124,23 @@ export function ChatComposer({
 
           {/* Bottom half: controls (v1.0: SIMPLE/DEEP 토글 제거. SIMPLE 전용) */}
           <div className="flex items-center justify-end gap-3 px-4 py-1" style={{ minHeight: '34px' }}>
+            {/* 모드 토글 — simple ↔ socratic (deep은 계속 미노출) */}
+            <div className="mr-auto flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs">
+              <button
+                type="button"
+                onClick={() => onChatModeChange('simple')}
+                className={`rounded-full px-3 py-1 ${chatMode !== 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
+              >
+                간결한 설명
+              </button>
+              <button
+                type="button"
+                onClick={() => onChatModeChange('socratic')}
+                className={`rounded-full px-3 py-1 ${chatMode === 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
+              >
+                소크라 문답
+              </button>
+            </div>
             <button
               type="submit"
               disabled={!canSend}
