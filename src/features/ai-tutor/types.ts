@@ -272,11 +272,11 @@ export interface SocraticTopic {
 }
 
 export interface SocraticAxisScores {
-  concept: number
-  example: number
-  logic: number
-  self_awareness: number
-  exploration: number
+  clarity: number
+  accuracy: number
+  relevance: number
+  depth: number
+  reflection: number
 }
 
 // GET /ai-tutor/sessions/{sessionId}/socratic/start 응답

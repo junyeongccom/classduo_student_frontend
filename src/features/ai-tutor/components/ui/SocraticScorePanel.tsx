@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl'
 import type { SocraticTopic, SocraticAxisScores, SocraticLeaderboardEntry } from '../../types'
 
 const AXIS_KEYS: (keyof SocraticAxisScores)[] = [
-  'concept', 'example', 'logic', 'self_awareness', 'exploration',
+  'clarity', 'accuracy', 'relevance', 'depth', 'reflection',
 ]
 const AXIS_CAP = 20
 

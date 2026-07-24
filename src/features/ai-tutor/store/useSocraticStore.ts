@@ -7,7 +7,7 @@
 import { create } from 'zustand'
 import type { SocraticTopic, SocraticAxisScores, SocraticScoreEvent, SocraticLeaderboardEntry } from '../types'
 
-const ZERO: SocraticAxisScores = { concept: 0, example: 0, logic: 0, self_awareness: 0, exploration: 0 }
+const ZERO: SocraticAxisScores = { clarity: 0, accuracy: 0, relevance: 0, depth: 0, reflection: 0 }
 
 interface SocraticState {
   activeTopic: SocraticTopic | null

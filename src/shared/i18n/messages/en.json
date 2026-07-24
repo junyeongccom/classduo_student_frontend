@@ -299,11 +299,11 @@
     "socraticScoreOutOf": "/ 100",
     "socraticMastered": "Mastered!",
     "socraticAxis": {
-      "concept": "Concept",
-      "example": "Examples",
-      "logic": "Logic",
-      "self_awareness": "Self-awareness",
-      "exploration": "Inquiry"
+      "clarity": "Clarity",
+      "accuracy": "Accuracy",
+      "relevance": "Relevance",
+      "depth": "Depth",
+      "reflection": "Reflection"
     },
     "socraticAbuseWarning": "Repeating similar messages lowers your score. Let's get back to the topic.",
     "socraticRanking": "Ranking",
