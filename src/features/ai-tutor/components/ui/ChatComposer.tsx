@@ -19,6 +19,7 @@ interface ChatComposerProps {
   placeholder?: string
   chatMode: ChatMode
   onChatModeChange: (mode: ChatMode) => void
+  socraticDisabled?: boolean
   onFocus?: () => void
   onBlur?: () => void
   topOverlay?: React.ReactNode
@@ -37,6 +38,7 @@ export function ChatComposer({
   placeholder,
   chatMode,
   onChatModeChange,
+  socraticDisabled,
   onFocus,
   onBlur,
   topOverlay,
@@ -144,8 +146,12 @@ export function ChatComposer({
               </button>
               <button
                 type="button"
-                onClick={() => onChatModeChange('socratic')}
-                className={`rounded-full px-3 py-1 ${chatMode === 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
+                disabled={socraticDisabled}
+                onClick={() => {
+                  if (socraticDisabled) return
+                  onChatModeChange('socratic')
+                }}
+                className={`rounded-full px-3 py-1 ${chatMode === 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${socraticDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {t('socraticLabel')}
               </button>

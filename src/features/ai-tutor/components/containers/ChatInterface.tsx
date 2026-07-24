@@ -706,13 +706,17 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // 모드 토글 핸들러 — simple ↔ detailed ↔ socratic 전환 (analytics 기록 + socratic 이탈 시 소크라 상태 초기화)
   const handleChatModeChange = useCallback((mode: ChatMode) => {
+    if (mode === 'socratic' && selectedLectureIds.length !== 1) {
+      setError(t('socraticSingleLectureOnly'))
+      return
+    }
     setChatMode(mode)
     chatAnalytics.modeSwitch({ mode })
     if (mode !== 'socratic') {
       setSocraticTopics([])
       useSocraticStore.getState().reset()
     }
-  }, [])
+  }, [selectedLectureIds, t])
 
   // 소크라 문답 모드 진입 시 (활성 주제 없음) 회차의 주제 목록 조회
   useEffect(() => {
@@ -1328,6 +1332,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const SHOW_HOOKING_QUESTIONS = false
   const hasSuggestions =
     selectedLectureIds.length === 1 &&
+    chatMode !== 'socratic' &&
     ((SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) || pqmQuestions.length > 0)
 
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
@@ -1357,6 +1362,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               placeholder={t('askAnythingPlaceholder')}
               chatMode={chatMode}
               onChatModeChange={handleChatModeChange}
+              socraticDisabled={selectedLectureIds.length !== 1}
               topOverlay={chatMode === 'socratic' && !socraticActiveTopic ? (
                 <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
               ) : undefined}
@@ -1543,24 +1549,41 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                         }}
                       />
                     )}
-                    {/* 출처 확인 안내 멘트 - 타이핑 완료 후에만 표시 */}
-                    {isTypingComplete && typingLength >= message.content.length && (
+                    {/* 출처 확인 안내 멘트 - 타이핑 완료 후에만 표시 (simple/detailed 전용, 소크라는 회귀 방지로 숨김) */}
+                    {isTypingComplete && typingLength >= message.content.length && chatMode !== 'socratic' && (
                       <div className="mt-6 flex justify-center animate-fade-in-up">
-                        <div 
+                        <div
                           onClick={() => onShowReferencePanel?.('notes')}
                           className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-r from-gray-50 via-blue-50 to-purple-50 px-3 py-2 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-pulse-scale cursor-pointer"
                         >
-                          <ArrowUp 
-                            className="h-4 w-4 text-gray-600 animate-pulse flex-shrink-0" 
+                          <ArrowUp
+                            className="h-4 w-4 text-gray-600 animate-pulse flex-shrink-0"
                             strokeWidth={3}
                           />
                           <span className="font-serif text-[10px] font-semibold text-gray-800 italic leading-relaxed tracking-wide whitespace-nowrap">
                             {t('referenceHint')}
                           </span>
-                          <ArrowUp 
-                            className="h-4 w-4 text-gray-600 animate-pulse flex-shrink-0" 
+                          <ArrowUp
+                            className="h-4 w-4 text-gray-600 animate-pulse flex-shrink-0"
                             strokeWidth={3}
                           />
+                        </div>
+                      </div>
+                    )}
+                    {/* 소크라 유도 문구 - 출처 안내 대신, 캐릭터 + 유도 문구 */}
+                    {isTypingComplete && typingLength >= message.content.length && chatMode === 'socratic' && (
+                      <div className="mt-6 flex justify-center animate-fade-in-up">
+                        <div className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-indigo-200 bg-gradient-to-r from-indigo-50 via-white to-sky-50 px-3 py-2 shadow-md">
+                          <img
+                            src="/topic_test/hero-female.png"
+                            alt=""
+                            width={26}
+                            height={26}
+                            className="shrink-0 rounded-full bg-pink-50 object-contain"
+                          />
+                          <span className="font-serif text-[10px] font-semibold text-gray-800 italic leading-relaxed tracking-wide whitespace-nowrap">
+                            {t('socraticHint')}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -1684,6 +1707,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             placeholder={t('askAnythingPlaceholder')}
             chatMode={chatMode}
             onChatModeChange={handleChatModeChange}
+            socraticDisabled={selectedLectureIds.length !== 1}
             topOverlay={chatMode === 'socratic' && !socraticActiveTopic ? (
               <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
             ) : undefined}

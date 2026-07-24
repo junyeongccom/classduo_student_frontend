@@ -289,6 +289,8 @@
     "deepLabel": "DEEP",
     "lectureCheckGuide": "Before you ask, make sure you've selected the right lecture in the menu above. Topics not covered in the selected lecture can't be answered accurately.",
     "referenceHint": "Check recording and material sources to better understand the answer",
+    "socraticHint": "Don't worry about the right answer — just share what you think 💬",
+    "socraticSingleLectureOnly": "Socratic dialogue is available for a single lecture only.",
     "searchingSources": "Searching for relevant materials...",
     "chatError": "An error occurred while chatting",
     "retryButton": "Retry",

@@ -19,7 +19,7 @@ export default function SocraticLoading({ message }: Props) {
   return (
     <div className="flex justify-start">
       <div className="flex w-full max-w-[85%] items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 px-5 py-4">
-        <div className="relative flex shrink-0 -space-x-3">
+        <div className="relative flex shrink-0 items-center gap-2">
           <img
             src="/topic_test/hero-female.png"
             alt=""
