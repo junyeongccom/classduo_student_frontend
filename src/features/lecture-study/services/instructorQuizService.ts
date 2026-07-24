@@ -16,10 +16,16 @@ import type { AppLocale } from '@/shared/i18n/I18nProvider'
 // ── Types ──
 
 export type InstructorQuizType =
+  // 레거시 4유형 — 기존 데이터는 재생성되지 않으므로 계속 유지(확장, 대체 아님)
   | 'MISCONCEPTION'
   | 'DEF_TO_TERM'
   | 'TERM_TO_DEF'
   | 'STRUCTURE_OBJ'
+  // 신규 4유형 (2026-07 개편)
+  | 'TERM_MEMORY'
+  | 'CONCEPT'
+  | 'ANALYSIS_APPLY'
+  | 'JUDGE_DESIGN'
 
 export interface InstructorQuizChoice {
   choice_id: string
@@ -40,6 +46,10 @@ export interface InstructorQuizItem {
   created_at: string
   choices: InstructorQuizChoice[]
   source?: { source_pages?: number[]; source_chunks?: number[] }
+  /** 서술형(essay) 유형의 모범답안. 객관식은 null. */
+  model_answer?: string | null
+  /** 'multiple_choice'(객관식) | 'essay'(서술형). 미존재(레거시 로우) 시 'multiple_choice'로 취급. */
+  answer_format?: 'multiple_choice' | 'essay'
 }
 
 // ── Service ──
@@ -67,6 +77,9 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
         difficulty,
         created_at,
         source,
+        model_answer,
+        model_answer_eng,
+        answer_format,
         content_quiz_choices (
           choice_id,
           quiz_id,
@@ -104,6 +117,8 @@ export async function getInstructorQuizzes(lectureId: string, locale: AppLocale 
       difficulty: row.difficulty ?? null,
       created_at: row.created_at,
       source: row.source ?? {},
+      model_answer: pick(row.model_answer, row.model_answer_eng) || null,
+      answer_format: row.answer_format ?? 'multiple_choice',
       choices: (row.content_quiz_choices ?? [])
         .sort((a: any, b: any) => a.choice_order - b.choice_order)
         .map((c: any) => ({
