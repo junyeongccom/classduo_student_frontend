@@ -3,6 +3,7 @@
 import { useCallback } from 'react'
 import { useAITutorStore } from '../store/useAITutorStore'
 import { useDialogueFeedbackStore } from '../store/useDialogueFeedbackStore'
+import { useSocraticStore } from '../store/useSocraticStore'
 
 const STORAGE_PENDING_KEY = 'dialogueFeedback_pendingSessionId'
 
@@ -53,6 +54,7 @@ export function useAITutorSession() {
     setAllReferences(new Map())
     setMessages([])
     setActiveTab('answer')
+    useSocraticStore.getState().reset()
   }, [setCurrentSessionId, setIsSessionLocked, incrementChatKey, setAutoSelectLatest, setAllReferences, setMessages, setActiveTab, setSelectedLectureIds])
 
   const handleNewChat = useCallback(() => {
@@ -65,6 +67,7 @@ export function useAITutorSession() {
     setAllReferences(new Map())
     setMessages([])
     setActiveTab('answer')
+    useSocraticStore.getState().reset()
 
     const shouldAutoSelectLatest = selectedLectureIds.length === 0
     setAutoSelectLatest(shouldAutoSelectLatest)
