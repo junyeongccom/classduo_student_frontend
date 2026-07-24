@@ -703,11 +703,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     })
   }, [])
 
-  // 모드 토글 핸들러 — simple ↔ socratic 전환 (analytics 기록 + simple 복귀 시 소크라 상태 초기화)
+  // 모드 토글 핸들러 — simple ↔ detailed ↔ socratic 전환 (analytics 기록 + socratic 이탈 시 소크라 상태 초기화)
   const handleChatModeChange = useCallback((mode: ChatMode) => {
     setChatMode(mode)
     chatAnalytics.modeSwitch({ mode })
-    if (mode === 'simple') {
+    if (mode !== 'socratic') {
       setSocraticTopics([])
       useSocraticStore.getState().reset()
     }

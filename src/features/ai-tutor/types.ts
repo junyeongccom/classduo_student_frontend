@@ -19,9 +19,8 @@ export interface ChatMessage {
   original_question?: string
 }
 
-// v1.0: DEEP 모드 제거. 'deep'은 deprecated alias. 내부에서 simple로 처리.
-// 소크라 문답 모드('socratic') 추가 — AI튜터 소크라 문답 모드
-export type ChatMode = 'simple' | 'deep' | 'socratic'
+// v2.0: 대화 모드 3종 — simple(간결한 설명) / detailed(자세한 설명, 초등학생 수준 쉬운 설명) / socratic(소크라 문답)
+export type ChatMode = 'simple' | 'detailed' | 'socratic'
 
 export interface Reference {
   type: 'recording' | 'material'

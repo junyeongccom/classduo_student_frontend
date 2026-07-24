@@ -1,7 +1,7 @@
 /**
  * Chat composer (Pure UI)
  * - Input
- * - Bottom row: SIMPLE/DEEP icon toggle + Send button
+ * - Bottom row: simple/detailed/socratic 3-세그먼트 토글 + Send button
  */
 'use client'
 
@@ -124,16 +124,23 @@ export function ChatComposer({
             }}
           />
 
-          {/* Bottom half: controls (v1.0: SIMPLE/DEEP 토글 제거. SIMPLE 전용) */}
+          {/* Bottom half: controls (v2.0: simple/detailed/socratic 3-세그먼트 토글) */}
           <div className="flex items-center justify-end gap-3 px-4 py-1" style={{ minHeight: '34px' }}>
-            {/* 모드 토글 — simple ↔ socratic (deep은 계속 미노출) */}
+            {/* 모드 토글 — simple ↔ detailed ↔ socratic */}
             <div className="mr-auto flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs">
               <button
                 type="button"
                 onClick={() => onChatModeChange('simple')}
-                className={`rounded-full px-3 py-1 ${chatMode !== 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
+                className={`rounded-full px-3 py-1 ${chatMode === 'simple' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
               >
                 {t('simpleLabel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => onChatModeChange('detailed')}
+                className={`rounded-full px-3 py-1 ${chatMode === 'detailed' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'}`}
+              >
+                {t('detailedLabel')}
               </button>
               <button
                 type="button"
