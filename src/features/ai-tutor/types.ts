@@ -20,7 +20,8 @@ export interface ChatMessage {
 }
 
 // v1.0: DEEP 모드 제거. 'deep'은 deprecated alias. 내부에서 simple로 처리.
-export type ChatMode = 'simple' | 'deep'
+// 소크라 문답 모드('socratic') 추가 — AI튜터 소크라 문답 모드
+export type ChatMode = 'simple' | 'deep' | 'socratic'
 
 export interface Reference {
   type: 'recording' | 'material'
@@ -212,7 +213,7 @@ export interface MessageContentSearchResult {
 
 export type SearchResult = SessionTitleSearchResult | MessageContentSearchResult
 
-export interface StreamProgressData {
+export interface ChatStreamProgressData {
   type: 'status' | 'source' | 'result' | 'error' | 'message_saved'
   step: 'searching' | 'selecting' | 'generating' | 'extracting' | 'summarizing' | 'recording_disabled' | 'complete'
   message?: string
@@ -230,6 +231,10 @@ export interface StreamProgressData {
     summary_keywords?: string
   }
 }
+
+// 소크라 문답 모드: chat_mode='socratic'으로 스트리밍 시 SSE로 함께 전달되는 채점 이벤트
+// (기존 SSE 파싱의 else 분기가 onProgress로 그대로 전달)
+export type StreamProgressData = ChatStreamProgressData | SocraticScoreEvent
 
 export interface CardMatchPairSources {
   recording_chunk_ids?: string[]
@@ -252,5 +257,66 @@ export interface CardMatchSet {
   set_id?: string | null
   pairs: CardMatchPair[]
   updated_at?: string | null
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 소크라 문답 모드 (Socratic dialogue mode)
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface SocraticTopic {
+  id: string
+  title: string
+  description: string
+  seed_question: string
+  position: number
+}
+
+export interface SocraticAxisScores {
+  concept: number
+  example: number
+  logic: number
+  self_awareness: number
+  exploration: number
+}
+
+// GET /ai-tutor/sessions/{sessionId}/socratic/start 응답
+export interface SocraticStartResponse {
+  topic: SocraticTopic
+  message_id: string
+  seed_question: string
+}
+
+// GET /ai-tutor/sessions/{sessionId}/socratic/state 응답
+export interface SocraticStateResponse {
+  axis_scores: SocraticAxisScores
+  total_score: number
+  penalty: number
+  mastered_at: string | null
+}
+
+// GET /ai-tutor/socratic/courses/{courseId}/leaderboard 응답 항목
+export interface SocraticLeaderboardEntry {
+  student_id: string
+  name: string
+  total_score: number
+  mastered_topics: number
+}
+
+export interface SocraticLeaderboardResponse {
+  course_id: string
+  entries: SocraticLeaderboardEntry[]
+}
+
+// SSE 이벤트: chat_mode='socratic' 스트리밍 시 채팅 스트림에 함께 실려오는 채점 결과
+export interface SocraticScoreEvent {
+  type: 'socratic_score'
+  axis_scores: SocraticAxisScores
+  applied_deltas: SocraticAxisScores
+  total_score: number
+  penalty?: number
+  abuse: boolean
+  praise: string
+  suggestion: string
+  mastered: boolean
 }
 

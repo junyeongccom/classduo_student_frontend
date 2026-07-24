@@ -149,6 +149,7 @@ export const chatService = {
       question_type?: 'hooking' | 'pqm' | 'direct' | 'followup'
       source_question_id?: string
       chat_mode?: ChatMode
+      socratic_topic_id?: string
     }
   ): Promise<void> {
     const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
@@ -160,11 +161,12 @@ export const chatService = {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           question,
           question_type: options?.question_type,
           source_question_id: options?.source_question_id,
           chat_mode: options?.chat_mode,
+          socratic_topic_id: options?.socratic_topic_id,
         }),
       })
 

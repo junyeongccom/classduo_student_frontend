@@ -365,8 +365,8 @@ export const chatAnalytics = {
   followupClick(lectureId: string, data: { question_text?: string }) {
     trackEvent('followup_click', 'dialogue', { lectureId, data })
   },
-  /** simple/deep 모드 전환 */
-  modeSwitch(data: { mode: 'simple' | 'deep' }) {
+  /** simple/deep/socratic 모드 전환 */
+  modeSwitch(data: { mode: 'simple' | 'deep' | 'socratic' }) {
     trackEvent('chat_mode_switch', 'dialogue', { data })
   },
   /** 채팅 입력바 포커스 */
