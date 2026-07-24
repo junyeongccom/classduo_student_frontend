@@ -68,10 +68,12 @@ export interface StudentQuizCardProps {
   isCorrect: boolean | null
   /** 이전에 선택한 선지 번호 (choice_order, 1-based). 재방문 시 하이라이트 복원용 */
   selectedAnswer?: number | null
+  /** 서술형(essay) 이전 제출 답안 텍스트. 재방문 시 입력창/제출 뷰 복원용 */
+  essayAnswer?: string | null
   /** 즐겨찾기 토글 콜백 */
   onBookmarkToggle: (quizId: string) => void
-  /** 풀이 결과 업데이트 콜백 (선지 클릭 시 호출, answer는 choice_order) */
-  onCorrectUpdate: (quizId: string, isCorrect: boolean, answer: number) => void
+  /** 풀이 결과 업데이트 콜백 (선지 클릭 시 호출, answer는 choice_order). answerText는 서술형 제출 시에만 전달 */
+  onCorrectUpdate: (quizId: string, isCorrect: boolean, answer: number, answerText?: string) => void
   /** 선택 해제(리셋) 콜백 — 제공 시 이미 선택한 선지 재클릭으로 풀이 초기화 가능 */
   onResetAnswer?: (quizId: string) => void
   /** 오답노트 삭제 모드 — true면 북마크 대신 삭제 버튼 표시 */
@@ -119,6 +121,7 @@ export function StudentQuizCard({
   isBookmarked,
   isCorrect,
   selectedAnswer,
+  essayAnswer,
   onBookmarkToggle,
   onCorrectUpdate,
   onResetAnswer,
@@ -149,8 +152,11 @@ export function StudentQuizCard({
   })
   const [isSubmitted, setIsSubmitted] = useState(() => isCorrect !== null)
   const [showAnswer, setShowAnswer] = useState(false)
-  // 서술형 답안 입력 draft — 로컬 상태(백엔드 저장 API 부재, 후속 과제). 재진입/새로고침 시 초기화됨.
-  const [essayDraft, setEssayDraft] = useState('')
+  // 서술형 답안 입력 draft — 제출 이력(isCorrect !== null)이 있으면 서버에서 복원된
+  // essayAnswer(answer_text)로 초깃값을 채운다. 재진입/새로고침 시에도 유지됨.
+  const [essayDraft, setEssayDraft] = useState(() =>
+    isCorrect !== null && essayAnswer ? essayAnswer : '',
+  )
   // "해설 보기" 안에서 다시 펼치는 상세 설명 토글 (마크다운 렌더링)
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
   const t = useTranslations('lectureStudy.quiz')
@@ -188,14 +194,14 @@ export function StudentQuizCard({
 
   /**
    * 서술형 답안 제출 — LLM 채점 없이 자가평가(모범답안 병렬 노출)만 수행한다.
-   * onCorrectUpdate(correct=true, answer=0)로 "풀이 완료" 상태만 기록(전체 다시 풀기/보상 판정 유지).
+   * onCorrectUpdate(correct=true, answer=0, answerText)로 "풀이 완료" 상태 기록 +
+   * 답안 텍스트(essayDraft)를 user_quiz_response.answer_text 로 영속화(재진입 복원용).
    * answer=0은 1~5 범위 밖이라 quizStatusService 에서 서버 전송 시 null 로 보정된다(선택 인덱스 없음 표현).
-   * 답안 텍스트(essayDraft) 자체는 저장 API 부재로 로컬 상태에만 유지된다.
    */
   const handleEssaySubmit = useCallback(() => {
     if (isSubmitted || !essayDraft.trim()) return
     setIsSubmitted(true)
-    onCorrectUpdate(quiz.quiz_id, true, 0)
+    onCorrectUpdate(quiz.quiz_id, true, 0, essayDraft.trim())
   }, [isSubmitted, essayDraft, quiz.quiz_id, onCorrectUpdate])
 
   const handleToggleAnswer = useCallback(() => {

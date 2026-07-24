@@ -217,7 +217,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
   // 풀이 결과 업데이트 + 보상 판정
   const handleCorrectUpdate = useCallback(
-    async (quizId: string, isCorrect: boolean, answer: number) => {
+    async (quizId: string, isCorrect: boolean, answer: number, answerText?: string) => {
       const quiz = quizzes.find(q => q.quiz_id === quizId)
 
       // duration_ms 계산 후 시작 시간 갱신 (재풀이 대비)
@@ -244,11 +244,12 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
           quiz_source: 'content',
           correct: isCorrect,
           answer,
+          answer_text: answerText ?? null,
         })
         return next
       })
 
-      const result = await updateCorrect('content', quizId, lectureId, isCorrect, answer, durationMs)
+      const result = await updateCorrect('content', quizId, lectureId, isCorrect, answer, durationMs, answerText)
       if (result.error) {
         // 실패 시 롤백
         setStatusMap((prev) => {
@@ -457,6 +458,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                   isBookmarked={bookmarkSet.has(quiz.quiz_id)}
                   isCorrect={status?.correct ?? null}
                   selectedAnswer={status?.answer ?? null}
+                  essayAnswer={status?.answer_text ?? null}
                   onBookmarkToggle={handleBookmarkToggle}
                   onCorrectUpdate={handleCorrectUpdate}
                   onResetAnswer={handleResetAnswer}
