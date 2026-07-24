@@ -19,6 +19,7 @@ import { useSocraticStore } from '@/features/ai-tutor/store/useSocraticStore'
 import { socraticService } from '@/features/ai-tutor/services/socraticService'
 import { ChatComposer } from '../ui/ChatComposer'
 import SocraticTopicPicker from '../ui/SocraticTopicPicker'
+import SocraticLoading from '../ui/SocraticLoading'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { FeedbackButtons } from '../ui/FeedbackButtons'
 
@@ -1575,7 +1576,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               className="mb-6"
             />
           )}
-          {isLoading && loadingStatusItems.length > 0 && (
+          {isLoading && chatMode === 'socratic' && (
+            <SocraticLoading />
+          )}
+          {isLoading && chatMode !== 'socratic' && loadingStatusItems.length > 0 && (
             <div className="flex justify-start">
               <div className="rounded-2xl bg-gray-50 border border-gray-200 px-5 py-4 max-w-[85%] w-full">
                 <div className="flex items-start gap-3">

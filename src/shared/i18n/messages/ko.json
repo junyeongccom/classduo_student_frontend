@@ -311,6 +311,7 @@
     "socraticRankSuffix": "{rank}위",
     "socraticRankingEmpty": "아직 참여자가 없어요",
     "socraticNoTopics": "이 회차에는 아직 소크라 문답 주제가 없어요.",
+    "socraticLoading": "생각을 정리하는 중이에요…",
     "defaultHookingQuestions": {
       "importantConcept": "이 수업에서 가장 중요한 개념은 무엇인가요?",
       "realLifeApplication": "이 내용을 실생활에 어떻게 적용할 수 있나요?",

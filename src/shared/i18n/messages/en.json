@@ -311,6 +311,7 @@
     "socraticRankSuffix": "#{rank}",
     "socraticRankingEmpty": "No participants yet",
     "socraticNoTopics": "No Socratic topics for this lecture yet.",
+    "socraticLoading": "Thinking it through…",
     "defaultHookingQuestions": {
       "importantConcept": "What is the most important concept in this class?",
       "realLifeApplication": "How can I apply this content to real life?",
