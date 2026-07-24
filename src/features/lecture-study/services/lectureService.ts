@@ -84,12 +84,15 @@ export interface QuizContextPayload {
   quiz_id: string
   question: string
   explanation: string | null
-  choices: {
+  /** 객관식 선지. 서술형 문항은 선지가 없으므로 생략 가능. */
+  choices?: {
     choice_order: number
     choice_text: string
     is_correct: boolean
     choice_explanation: string | null
   }[]
+  /** 서술형 모범답안. 객관식은 undefined. */
+  model_answer?: string
   source: { source_pages?: number[]; source_chunks?: number[] }
 }
 

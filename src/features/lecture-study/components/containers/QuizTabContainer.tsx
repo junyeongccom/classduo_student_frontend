@@ -501,6 +501,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                         type="button"
                         onClick={() => {
                           quizExtraAnalytics.askAiClick(lectureId, { quiz_id: quiz.quiz_id, quiz_type: quiz.quiz_type })
+                          const isEssayQuiz = quiz.answer_format === 'essay'
                           setQuizChatContext({
                             quizId: quiz.quiz_id,
                             quizIndex: idx,
@@ -509,12 +510,17 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                             sessionNumber: sessionNumber ?? 0,
                             question: quiz.question,
                             explanation: quiz.explanation,
-                            choices: quiz.choices.map(c => ({
-                              choice_order: c.choice_order,
-                              choice_text: c.choice_text,
-                              is_correct: c.is_correct,
-                              choice_explanation: c.choice_explanation,
-                            })),
+                            // 서술형은 선지가 없으므로 생략하고 모범답안을 대신 전달
+                            ...(isEssayQuiz
+                              ? { modelAnswer: quiz.model_answer ?? undefined }
+                              : {
+                                  choices: quiz.choices.map(c => ({
+                                    choice_order: c.choice_order,
+                                    choice_text: c.choice_text,
+                                    is_correct: c.is_correct,
+                                    choice_explanation: c.choice_explanation,
+                                  })),
+                                }),
                             source: quiz.source ?? {},
                           })
                         }}

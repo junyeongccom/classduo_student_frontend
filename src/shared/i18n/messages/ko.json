@@ -720,7 +720,11 @@
         "STRUCTURE_OBJ": "구조 이해",
         "MISCONCEPTION": "오개념 탐지",
         "DEF_TO_TERM": "정의→용어",
-        "TERM_TO_DEF": "용어→정의"
+        "TERM_TO_DEF": "용어→정의",
+        "TERM_MEMORY": "용어암기",
+        "CONCEPT": "개념이해",
+        "ANALYSIS_APPLY": "분석과적용",
+        "JUDGE_DESIGN": "판단과설계"
       },
       "format": {
         "multipleChoice": "객관식",
@@ -734,7 +738,11 @@
         "MISCONCEPTION": "오개념 탐지 퀴즈",
         "RECALL": "내용 기억 퀴즈 (단답형)",
         "STRUCTURE": "구조 이해 퀴즈 (서술형)",
-        "EXAM_PREP": "시험 대비 퀴즈"
+        "EXAM_PREP": "시험 대비 퀴즈",
+        "TERM_MEMORY": "용어암기 퀴즈",
+        "CONCEPT": "개념이해 퀴즈",
+        "ANALYSIS_APPLY": "분석과 적용 (서술형)",
+        "JUDGE_DESIGN": "판단과 설계 (서술형)"
       },
       "aiGeneratedNotice": "AI가 해당 회차 강의내용에 기반해 생성한 퀴즈입니다.",
       "loading": "퀴즈를 불러오는 중입니다...",
