@@ -1503,15 +1503,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                       if (!isTypingComplete || typingLength < message.content.length) return null
                       if (!isLastAssistantMessage) return null
 
-                      // v1.0 guard(과거 메시지 읽기 호환): message_kind가 누락돼도 source_message_id 가 있으면 elaboration.
-                      //   - DB reload 경로: message_kind, source_message_id 모두 조회
-                      // 부연설명 생성 경로는 제거됐지만, 과거 저장된 elaboration 메시지 판정은 유지한다.
-                      const messageKind = (assistantMessage as any).message_kind as
-                        | 'simple' | 'elaboration' | 'followup' | undefined
-                      const hasSourceMessageId = Boolean((assistantMessage as any).source_message_id)
-                      const isElaborationMsg = messageKind === 'elaboration' || hasSourceMessageId
-                      void isElaborationMsg
-
                       const hasFollowUp = Boolean(followUpQuestion)
 
                       if (!hasFollowUp) return null
