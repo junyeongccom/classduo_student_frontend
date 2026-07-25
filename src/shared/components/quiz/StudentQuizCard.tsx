@@ -15,6 +15,7 @@ import {
   XCircle,
   Bookmark,
   Trash2,
+  RotateCcw,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -159,6 +160,9 @@ export function StudentQuizCard({
   )
   // "해설 보기" 안에서 다시 펼치는 상세 설명 토글 (마크다운 렌더링)
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
+  // 이번 렌더 세션에서 방금 풀었는지 여부 — "다시풀기" 버튼 노출 조건.
+  // 초깃값은 항상 false라서, 이미 풀어둔 상태로 복원(재진입/새로고침)된 문항에는 버튼이 뜨지 않는다.
+  const [justSolved, setJustSolved] = useState(false)
   const t = useTranslations('lectureStudy.quiz')
   const { locale } = useI18n()
   const detailedExplanationLabel = locale === 'en' ? 'Detailed Explanation' : '상세 설명'
@@ -176,6 +180,7 @@ export function StudentQuizCard({
       if (isSubmitted && selectedChoiceIdx === idx && onResetAnswer) {
         setSelectedChoiceIdx(null)
         setIsSubmitted(false)
+        setJustSolved(false)
         onResetAnswer(quiz.quiz_id)
         return
       }
@@ -186,6 +191,7 @@ export function StudentQuizCard({
       const selectedChoice = quiz.choices[idx]
       if (selectedChoice) {
         setIsSubmitted(true)
+        setJustSolved(true)
         onCorrectUpdate(quiz.quiz_id, selectedChoice.is_correct, selectedChoice.choice_order)
       }
     },
@@ -201,8 +207,24 @@ export function StudentQuizCard({
   const handleEssaySubmit = useCallback(() => {
     if (isSubmitted || !essayDraft.trim()) return
     setIsSubmitted(true)
+    setJustSolved(true)
     onCorrectUpdate(quiz.quiz_id, true, 0, essayDraft.trim())
   }, [isSubmitted, essayDraft, quiz.quiz_id, onCorrectUpdate])
+
+  /**
+   * 문항별 "다시풀기" — 이 문항만 풀기 전 상태로 되돌린다.
+   * 객관식은 선택 해제, 서술형은 답안 draft까지 비우고(제출 시 answer_text로 영속화되므로)
+   * 상위 상태도 onResetAnswer로 되돌려 서버 기록(correct/answer)을 취소한다.
+   */
+  const handleRetryOne = useCallback(() => {
+    setSelectedChoiceIdx(null)
+    setIsSubmitted(false)
+    setJustSolved(false)
+    setShowAnswer(false)
+    setShowDetailedExplanation(false)
+    if (isEssay) setEssayDraft('')
+    onResetAnswer?.(quiz.quiz_id)
+  }, [isEssay, onResetAnswer, quiz.quiz_id])
 
   const handleToggleAnswer = useCallback(() => {
     setShowAnswer((prev) => {
@@ -426,6 +448,20 @@ export function StudentQuizCard({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 문항별 다시풀기 — 이번 렌더 세션에서 방금 푼 직후에만 노출 (복원된 풀이에는 미노출) */}
+      {justSolved && onResetAnswer && (
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={handleRetryOne}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            {t('retryOne')}
+          </button>
         </div>
       )}
 
