@@ -63,14 +63,14 @@ export default function SocraticScorePanel({ topic, axisScores, totalScore, last
       )}
       {praise && (
         <div className="flex items-start gap-2">
-          <img src="/topic_test/hero-female.png" alt="" width={36} height={36} className="shrink-0 rounded-full bg-pink-50 object-contain" />
-          <div className="rounded-2xl rounded-tl-sm bg-pink-50 p-2.5 text-xs leading-relaxed">{praise}</div>
+          <img src="/topic_test/hero-female.png" alt="" width={36} height={36} className="shrink-0 rounded-full bg-green-50 object-contain" />
+          <div className="rounded-2xl rounded-tl-sm bg-green-50 p-2.5 text-xs leading-relaxed">{praise}</div>
         </div>
       )}
       {suggestion && (
         <div className="flex items-start gap-2">
-          <img src="/topic_test/hero-male.png" alt="" width={36} height={36} className="shrink-0 rounded-full bg-sky-50 object-contain" />
-          <div className="rounded-2xl rounded-tl-sm bg-sky-50 p-2.5 text-xs leading-relaxed">{suggestion}</div>
+          <img src="/topic_test/hero-male.png" alt="" width={36} height={36} className="shrink-0 rounded-full bg-yellow-50 object-contain" />
+          <div className="rounded-2xl rounded-tl-sm bg-yellow-50 p-2.5 text-xs leading-relaxed">{suggestion}</div>
         </div>
       )}
       {/* 과목 랭킹 */}
