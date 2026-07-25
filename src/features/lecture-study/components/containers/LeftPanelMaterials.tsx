@@ -95,7 +95,17 @@ export function LeftPanelMaterials() {
         const snapshotResult = await lectureService.getSnapshotSelections(lectureId!)
         if (cancelled) return
 
-        const materials = snapshotResult.data?.materials ?? []
+        // 자료가 2개 이상이면 API 반환 순서(스냅샷 저장 순)를 그대로 쓰면 "(2)"가 "(1)"보다
+        // 먼저 보이는 일이 생긴다. 파일명에 보통 회차 인덱스(030101/030102)가 들어가므로
+        // 파일명 기준 자연 정렬(numeric)로 고정한다. 파일명이 없으면 뒤로 보낸다.
+        const materials = [...(snapshotResult.data?.materials ?? [])].sort((a, b) => {
+          const an = a.original_filename ?? ''
+          const bn = b.original_filename ?? ''
+          if (!an && !bn) return 0
+          if (!an) return 1
+          if (!bn) return -1
+          return an.localeCompare(bn, 'ko', { numeric: true, sensitivity: 'base' })
+        })
         if (materials.length === 0) {
           setIsLoading(false)
           return
