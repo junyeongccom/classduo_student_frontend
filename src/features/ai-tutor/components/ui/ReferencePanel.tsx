@@ -321,7 +321,9 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                 const itemId = `recording-${messageIndex}-${index}`
                 const isExpanded = expandedItems.has(itemId)
                 const sortIndex = getRecordingSortIndex(ref)
-                const displayIndex = Number.isFinite(sortIndex) ? sortIndex : index
+                // chunk_index/reference_index 는 0-based 내부값. "녹음 구간 #0" 은 학습자에게 어색하므로
+                // 표시만 1-based 로 올린다(답변 본문의 [녹음본 N] 표기도 백엔드에서 1-based 로 통일됨).
+                const displayIndex = (Number.isFinite(sortIndex) ? sortIndex : index) + 1
                 return (
                   <div
                     key={itemId}
