@@ -18,11 +18,17 @@ export default function SocraticTopicPicker({ topics, onSelect }: Props) {
   }
   return (
     <div className="mb-2 grid gap-2 sm:grid-cols-2">
-      {topics.map((t) => (
-        <button key={t.id} type="button" onClick={() => onSelect(t)}
-          className="rounded-xl border bg-white p-3 text-left transition hover:border-indigo-400 hover:shadow-sm">
-          <div className="text-sm font-semibold">{t.title}</div>
-          <div className="mt-1 line-clamp-2 text-xs text-gray-500">{t.description}</div>
+      {topics.map((topic) => (
+        <button key={topic.id} type="button" onClick={() => onSelect(topic)}
+          className="relative rounded-xl border bg-white p-3 text-left transition hover:border-indigo-400 hover:shadow-sm">
+          {topic.mastered && (
+            <span className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-full bg-indigo-50 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600">
+              <span aria-hidden="true">✓</span>
+              {t('socraticMasteredBadge')}
+            </span>
+          )}
+          <div className={`text-sm font-semibold ${topic.mastered ? 'pr-16' : ''}`}>{topic.title}</div>
+          <div className="mt-1 line-clamp-2 text-xs text-gray-500">{topic.description}</div>
         </button>
       ))}
     </div>

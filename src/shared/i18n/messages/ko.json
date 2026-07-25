@@ -301,6 +301,7 @@
     "socraticPanelTitle": "소크라 문답 ·",
     "socraticScoreOutOf": "/ 100",
     "socraticMastered": "마스터!",
+    "socraticMasteredBadge": "마스터",
     "socraticAxis": {
       "clarity": "명료하게 표현",
       "accuracy": "정확한 이해",

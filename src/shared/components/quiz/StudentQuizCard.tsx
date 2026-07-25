@@ -501,8 +501,21 @@ export function StudentQuizCard({
                 </div>
               )}
 
+            {/* 서술형: 선지별 해설 표가 없어 '정답 및 해설'을 열면 상세 설명 토글 하나만 남아
+                내용이 없는 것처럼 보였다. 서술형은 중첩 토글 없이 해설을 바로 펼쳐 보여준다. */}
+            {isEssay && quiz.explanation && (
+              <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
+                <div className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                  {detailedExplanationLabel}
+                </div>
+                <div className="mt-2 text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
+                  <MarkdownMessage markdown={quiz.explanation} headingSize="compact" />
+                </div>
+              </div>
+            )}
+
             {/* 상세 설명 — 2단계 토글. 마크다운 헤더 3섹션 (오답 원인 / 혼동되기 쉬운 개념 / 추가 학습 방향) 렌더링. */}
-            {quiz.explanation && (
+            {!isEssay && quiz.explanation && (
               <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-4">
                 <button
                   type="button"
