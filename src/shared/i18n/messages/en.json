@@ -301,6 +301,7 @@
     "socraticPanelTitle": "Socratic ·",
     "socraticScoreOutOf": "/ 100",
     "socraticMastered": "Mastered!",
+    "socraticMasteredBadge": "Mastered",
     "socraticAxis": {
       "clarity": "Clarity",
       "accuracy": "Accuracy",

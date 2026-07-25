@@ -251,6 +251,8 @@ export interface SocraticTopic {
   description: string
   seed_question: string
   position: number
+  // 요청 유저가 이 주제를 100점(마스터)까지 끝냈는지. 조회 실패 시 백엔드가 false로 폴백.
+  mastered?: boolean
 }
 
 export interface SocraticAxisScores {
