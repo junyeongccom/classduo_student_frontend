@@ -771,6 +771,7 @@
         "confirm": "OK"
       },
       "askAiChatbot": "Ask AI Chatbot",
+      "retryOne": "Try Again",
       "retryAll": "Retry All",
       "retryAllConfirmTitle": "Retry all quizzes",
       "retryAllConfirm": "Reset all answers in this lecture and start over?",
