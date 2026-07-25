@@ -1367,9 +1367,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     ((SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) || pqmQuestions.length > 0)
 
   // v2.0 모드 잠금 규칙:
-  // - 소크라 세션 진행 중(현재 모드가 socratic 이거나 활성 주제 보유)이면 simple/detailed 로 못 벗어남 (새 채팅으로만 이탈)
+  // - 잠금은 **세션이 생성된 이후**에만 건다. 새 채팅 상태(세션 없음 + 발화 없음)에서는 주제를 골라둔
+  //   상태여도 3모드를 자유롭게 오갈 수 있어야 한다(모드를 고른 순간 되돌아갈 수 없으면 안 됨).
+  // - 소크라 세션이 시작된 뒤에는 simple/detailed 로 못 벗어남 (새 채팅으로만 이탈)
   // - 이미 대화가 시작된(messages.length > 0) 세션에서는 소크라로 중간 진입 불가 (새 채팅 + 첫 발화 전에만 진입 가능)
-  const isSocraticSession = chatMode === 'socratic' || !!socraticActiveTopic
+  const isSocraticSession = chatMode === 'socratic' && (messages.length > 0 || !!currentSessionId)
   const socraticEntryDisabled = selectedLectureIds.length !== 1 || messages.length > 0
 
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
