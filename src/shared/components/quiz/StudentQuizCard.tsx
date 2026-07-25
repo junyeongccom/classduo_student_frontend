@@ -160,8 +160,8 @@ export function StudentQuizCard({
   )
   // "해설 보기" 안에서 다시 펼치는 상세 설명 토글 (마크다운 렌더링)
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
-  // 이번 렌더 세션에서 방금 풀었는지 여부 — "다시풀기" 버튼 노출 조건.
-  // 초깃값은 항상 false라서, 이미 풀어둔 상태로 복원(재진입/새로고침)된 문항에는 버튼이 뜨지 않는다.
+  // 이번 렌더 세션에서 방금 풀었는지 여부. 복원된 풀이(isCorrect !== null)도 다시 풀 수 있어야 하므로
+  // 버튼 노출 조건은 justSolved || hasAnswered 로 판단한다(아래 canRetry).
   const [justSolved, setJustSolved] = useState(false)
   const t = useTranslations('lectureStudy.quiz')
   const { locale } = useI18n()
@@ -451,8 +451,8 @@ export function StudentQuizCard({
         </div>
       )}
 
-      {/* 문항별 다시풀기 — 이번 렌더 세션에서 방금 푼 직후에만 노출 (복원된 풀이에는 미노출) */}
-      {justSolved && onResetAnswer && (
+      {/* 문항별 다시풀기 — 방금 푼 직후 + 이미 풀어둔(복원된) 문항 모두 노출. 미풀이 상태에서는 숨김. */}
+      {(justSolved || hasAnswered) && onResetAnswer && (
         <div className="mt-3 flex justify-end">
           <button
             type="button"
