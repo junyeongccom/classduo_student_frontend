@@ -623,6 +623,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       isInitialMount.current = false
       if (sessionId) {
         loadSession()
+      } else {
+        // 세션 없이 새로 마운트된 경우(사이드바로 대화형 학습 재진입 등)에는 loadSession 이
+        // 아예 호출되지 않는다. 메시지/모드는 컴포넌트가 새로 뜨며 초기화되지만,
+        // 소크라 store 는 모듈 전역이라 이전 세션의 점수·주제가 그대로 남아
+        // 빈 새 채팅 화면에 점수 패널이 살아있는 문제가 있었다. 여기서 명시적으로 비운다.
+        useSocraticStore.getState().reset()
       }
     } else {
       loadSession()

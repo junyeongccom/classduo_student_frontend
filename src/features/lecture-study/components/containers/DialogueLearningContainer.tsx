@@ -121,6 +121,15 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     }
   }, [setCollapsed])
 
+  // 대화형 학습을 벗어날 때 소크라 상태 정리.
+  // 소크라 store 는 모듈 전역이라 라우트 이동만으로는 비워지지 않는다. 정리하지 않으면
+  // 사이드바로 다시 들어왔을 때 빈 새 채팅 화면에 이전 세션의 점수 패널이 남는다.
+  useEffect(() => {
+    return () => {
+      useSocraticStore.getState().reset()
+    }
+  }, [])
+
   // 대화형 학습 진입 시 새 채팅으로 초기화 + URL 파라미터로 선택 설정
   const initializedRef = useRef(false)
   useEffect(() => {
