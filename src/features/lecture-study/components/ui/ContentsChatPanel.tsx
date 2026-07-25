@@ -83,7 +83,9 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
           quiz_id: quizChatContext.quizId,
           question: quizChatContext.question,
           explanation: quizChatContext.explanation,
-          choices: quizChatContext.choices,
+          // 서술형은 choices가 없고 modelAnswer로 대체
+          ...(quizChatContext.choices ? { choices: quizChatContext.choices } : {}),
+          ...(quizChatContext.modelAnswer ? { model_answer: quizChatContext.modelAnswer } : {}),
           source: quizChatContext.source,
         }
       : undefined

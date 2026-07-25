@@ -30,7 +30,10 @@ export interface QuizChatContext {
   sessionNumber: number
   question: string
   explanation: string | null
-  choices: QuizChatChoice[]
+  /** 객관식 선지. 서술형(ANALYSIS_APPLY/JUDGE_DESIGN)은 선지가 없으므로 생략 가능. */
+  choices?: QuizChatChoice[]
+  /** 서술형 모범답안. 객관식은 undefined. */
+  modelAnswer?: string
   source: { source_pages?: number[]; source_chunks?: number[] }
 }
 

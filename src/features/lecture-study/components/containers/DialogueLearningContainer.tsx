@@ -16,10 +16,15 @@ import { useAITutorSession } from '@/features/ai-tutor/hooks/useAITutorSession'
 import { ChatInterface } from '@/features/ai-tutor/components/containers/ChatInterface'
 import ChatSidebar from '@/features/ai-tutor/components/ui/ChatSidebar'
 import { ReferencePanel } from '@/features/ai-tutor/components/ui/ReferencePanel'
+import SocraticScorePanel from '@/features/ai-tutor/components/ui/SocraticScorePanel'
+import { useSocraticStore } from '@/features/ai-tutor/store/useSocraticStore'
+import { useAuthStore } from '@/features/auth/store/authStore'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useSidebarStore } from '@/shared/store/useSidebarStore'
 import { DialogueLectureSidebar } from '../ui/DialogueLectureSidebar'
 import { useLectures } from '../../hooks/useLectures'
+
+const SOCRATIC_PANEL_WIDTH = 380
 
 interface DialogueLearningContainerProps {
   courseId: string
@@ -79,6 +84,32 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     handleSelectSession,
     handleNewChat,
   } = useAITutorSession()
+
+  const userId = useAuthStore(state => state.user?.user_id ?? null)
+  const {
+    socraticActiveTopic,
+    socraticAxisScores,
+    socraticTotalScore,
+    socraticLastDeltas,
+    socraticLastPraise,
+    socraticLastSuggestion,
+    socraticAbuseWarning,
+    socraticMastered,
+    socraticLeaderboard,
+    isSocraticPanelOpen: isSocraticPanelOpenFlag,
+  } = useSocraticStore(state => ({
+    socraticActiveTopic: state.activeTopic,
+    socraticAxisScores: state.axisScores,
+    socraticTotalScore: state.totalScore,
+    socraticLastDeltas: state.lastDeltas,
+    socraticLastPraise: state.lastPraise,
+    socraticLastSuggestion: state.lastSuggestion,
+    socraticAbuseWarning: state.abuseWarning,
+    socraticMastered: state.mastered,
+    socraticLeaderboard: state.leaderboard,
+    isSocraticPanelOpen: state.isPanelOpen,
+  }))
+  const isSocraticPanelOpen = isSocraticPanelOpenFlag && !!socraticActiveTopic
 
   // 대화형학습 진입 시 좌측 사이드바 자동 접기, 이탈 시 복원
   const setCollapsed = useSidebarStore((s) => s.setCollapsed)
@@ -237,7 +268,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
 
   // 두 패널 동시 오픈 시 paddingRight 합산
   const rightPanelsWidth =
-    (isNotesPanelOpen ? notesPanelWidth : 0) + (isMaterialsPanelOpen ? materialsPanelWidth : 0)
+    (isNotesPanelOpen ? notesPanelWidth : 0) + (isMaterialsPanelOpen ? materialsPanelWidth : 0) +
+    (isSocraticPanelOpen ? SOCRATIC_PANEL_WIDTH : 0)
 
   // 두 패널 모두 열리면 사이드바 숨김
   const hideSidebar = isNotesPanelOpen && isMaterialsPanelOpen
@@ -363,6 +395,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                   </button>
                   <button
                     onClick={() => {
+                      if (isSocraticPanelOpen) return
                       const nextState = !isNotesPanelOpen
                       toggleNotesPanel(nextState)
                       // 태블릿(가로 포함) 이하에선 둘 중 하나만 — notes 열 때 materials 자동 닫기
@@ -371,11 +404,12 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                       else if (isMaterialsPanelOpen) setActiveTab('materials')
                       else setActiveTab('answer')
                     }}
+                    disabled={isSocraticPanelOpen}
                     className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-all md:gap-1.5 md:px-3 md:py-1.5 md:text-sm ${
                       isNotesPanelOpen
                         ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                    }`}
+                    } ${isSocraticPanelOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span>{tTopbar('tab.notesSources')}</span>
                     {recordingCount > 0 && (
@@ -386,6 +420,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                   </button>
                   <button
                     onClick={() => {
+                      if (isSocraticPanelOpen) return
                       const nextState = !isMaterialsPanelOpen
                       toggleMaterialsPanel(nextState)
                       // 태블릿(가로 포함) 이하에선 둘 중 하나만 — materials 열 때 notes 자동 닫기
@@ -394,11 +429,12 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                       else if (isNotesPanelOpen) setActiveTab('notes')
                       else setActiveTab('answer')
                     }}
+                    disabled={isSocraticPanelOpen}
                     className={`flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-all md:gap-1.5 md:px-3 md:py-1.5 md:text-sm ${
                       isMaterialsPanelOpen
                         ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                    }`}
+                    } ${isSocraticPanelOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span>{tTopbar('tab.materialsSources')}</span>
                     {materialCount > 0 && (
@@ -495,6 +531,27 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 onClose={handleCloseMaterialsPanel}
                 messages={messages}
                 isRecordingSourceDisabled={isRecordingSourceDisabled}
+              />
+            </div>
+          )}
+
+          {isSocraticPanelOpen && socraticActiveTopic && (
+            <div
+              className="fixed inset-x-0 bottom-0 z-30 h-[50dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-y-0 md:right-0 md:left-auto md:bottom-auto md:h-full md:w-[var(--ai-w,380px)] md:rounded-none md:border-l md:border-t-0 md:shadow-xl md:z-20 dark:border-gray-700 dark:bg-gray-900"
+              style={{ '--ai-w': `${SOCRATIC_PANEL_WIDTH}px` } as React.CSSProperties}
+            >
+              <div className="md:hidden mx-auto mt-2 h-1.5 w-12 rounded-full bg-gray-300" aria-hidden />
+              <SocraticScorePanel
+                topic={socraticActiveTopic}
+                axisScores={socraticAxisScores}
+                totalScore={socraticTotalScore}
+                lastDeltas={socraticLastDeltas}
+                praise={socraticLastPraise}
+                suggestion={socraticLastSuggestion}
+                abuseWarning={socraticAbuseWarning}
+                mastered={socraticMastered}
+                leaderboard={socraticLeaderboard}
+                myStudentId={userId}
               />
             </div>
           )}

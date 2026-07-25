@@ -22,6 +22,8 @@ export interface QuizStatus {
   quiz_source: QuizSource
   correct: boolean | null
   answer: number | null
+  /** 서술형(essay) 학생 자유입력 답안 텍스트. 객관식 로우는 항상 null. */
+  answer_text?: string | null
 }
 
 interface BookmarkResponse {
@@ -65,7 +67,7 @@ export async function getQuizStatusByLecture(
 
     const { data, error } = await supabase
       .from('user_quiz_response')
-      .select('quiz_id, quiz_source, is_correct, selected_answer, created_at')
+      .select('quiz_id, quiz_source, is_correct, selected_answer, answer_text, created_at')
       .eq('lecture_id', lectureId)
       .eq('quiz_source', quizSource)
       .order('created_at', { ascending: false })
@@ -87,6 +89,7 @@ export async function getQuizStatusByLecture(
       quiz_source: string
       is_correct: boolean | null
       selected_answer: number | null
+      answer_text: string | null
     }>) {
       if (seen.has(row.quiz_id)) continue
       seen.add(row.quiz_id)
@@ -95,6 +98,7 @@ export async function getQuizStatusByLecture(
         quiz_source: row.quiz_source as QuizSource,
         correct: row.is_correct,
         answer: row.selected_answer,
+        answer_text: row.answer_text,
       })
     }
     return { data: dedup, error: null }
@@ -172,6 +176,9 @@ export async function toggleBookmark(
  * 처럼 1~5 범위를 벗어난 선택 인덱스를 그대로 보내면 23514 위반 → 500 으로 떨어진다.
  * selected_answer 는 활동 로그 스냅샷이라 정밀 인덱스가 핵심이 아니므로, 범위를 벗어나면
  * NULL 로 보정해 제약을 정직하게 만족시킨다(정/오답 is_correct 는 그대로 보존).
+ *
+ * answerText 는 서술형(essay) 학생 자유입력 답안 텍스트(optional) — 객관식 호출은
+ * 전달하지 않으므로 기존과 동일하게 null 로 전송되어 회귀가 없다.
  */
 export async function updateCorrect(
   quizSource: QuizSource,
@@ -180,6 +187,7 @@ export async function updateCorrect(
   correct: boolean | null,
   answer?: number | null,
   durationMs?: number | null,
+  answerText?: string | null,
 ) {
   const safeAnswer =
     typeof answer === 'number' && answer >= 1 && answer <= 5 ? answer : null
@@ -188,7 +196,13 @@ export async function updateCorrect(
     {
       method: 'PATCH',
       auth: true,
-      body: { lecture_id: lectureId, correct, answer: safeAnswer, duration_ms: durationMs ?? null },
+      body: {
+        lecture_id: lectureId,
+        correct,
+        answer: safeAnswer,
+        duration_ms: durationMs ?? null,
+        answer_text: answerText ?? null,
+      },
     },
   )
 }

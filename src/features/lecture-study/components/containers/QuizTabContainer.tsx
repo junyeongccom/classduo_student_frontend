@@ -50,6 +50,12 @@ interface QuizTabContainerProps {
 }
 
 const TYPE_ORDER: InstructorQuizType[] = [
+  // 신규 4유형 (2026-07 개편): 용어암기 → 개념이해 → 분석과적용 → 판단과설계
+  'TERM_MEMORY',
+  'CONCEPT',
+  'ANALYSIS_APPLY',
+  'JUDGE_DESIGN',
+  // 레거시 — 기존 미재생성 회차 호환 (재생성 전까지 계속 노출)
   'DEF_TO_TERM',
   'TERM_TO_DEF',
   'STRUCTURE_OBJ',
@@ -62,9 +68,10 @@ function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
     quiz_id: quiz.quiz_id,
     quiz_type: quiz.quiz_type,
     question: quiz.question,
-    answer: null,
+    answer: quiz.model_answer ?? null,
     explanation: quiz.explanation,
     difficulty: quiz.difficulty,
+    answer_format: quiz.answer_format ?? 'multiple_choice',
     choices: quiz.choices.map((c) => ({
       choice_id: c.choice_id,
       choice_order: c.choice_order,
@@ -210,7 +217,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
   // 풀이 결과 업데이트 + 보상 판정
   const handleCorrectUpdate = useCallback(
-    async (quizId: string, isCorrect: boolean, answer: number) => {
+    async (quizId: string, isCorrect: boolean, answer: number, answerText?: string) => {
       const quiz = quizzes.find(q => q.quiz_id === quizId)
 
       // duration_ms 계산 후 시작 시간 갱신 (재풀이 대비)
@@ -237,11 +244,12 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
           quiz_source: 'content',
           correct: isCorrect,
           answer,
+          answer_text: answerText ?? null,
         })
         return next
       })
 
-      const result = await updateCorrect('content', quizId, lectureId, isCorrect, answer, durationMs)
+      const result = await updateCorrect('content', quizId, lectureId, isCorrect, answer, durationMs, answerText)
       if (result.error) {
         // 실패 시 롤백
         setStatusMap((prev) => {
@@ -450,6 +458,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                   isBookmarked={bookmarkSet.has(quiz.quiz_id)}
                   isCorrect={status?.correct ?? null}
                   selectedAnswer={status?.answer ?? null}
+                  essayAnswer={status?.answer_text ?? null}
                   onBookmarkToggle={handleBookmarkToggle}
                   onCorrectUpdate={handleCorrectUpdate}
                   onResetAnswer={handleResetAnswer}
@@ -494,6 +503,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                         type="button"
                         onClick={() => {
                           quizExtraAnalytics.askAiClick(lectureId, { quiz_id: quiz.quiz_id, quiz_type: quiz.quiz_type })
+                          const isEssayQuiz = quiz.answer_format === 'essay'
                           setQuizChatContext({
                             quizId: quiz.quiz_id,
                             quizIndex: idx,
@@ -502,12 +512,17 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                             sessionNumber: sessionNumber ?? 0,
                             question: quiz.question,
                             explanation: quiz.explanation,
-                            choices: quiz.choices.map(c => ({
-                              choice_order: c.choice_order,
-                              choice_text: c.choice_text,
-                              is_correct: c.is_correct,
-                              choice_explanation: c.choice_explanation,
-                            })),
+                            // 서술형은 선지가 없으므로 생략하고 모범답안을 대신 전달
+                            ...(isEssayQuiz
+                              ? { modelAnswer: quiz.model_answer ?? undefined }
+                              : {
+                                  choices: quiz.choices.map(c => ({
+                                    choice_order: c.choice_order,
+                                    choice_text: c.choice_text,
+                                    is_correct: c.is_correct,
+                                    choice_explanation: c.choice_explanation,
+                                  })),
+                                }),
                             source: quiz.source ?? {},
                           })
                         }}

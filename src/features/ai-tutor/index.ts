@@ -8,6 +8,10 @@ export { GameOverlay } from './components/ui/GameOverlay'
 
 // Services
 export { gameScoreService } from './services/gameScoreService'
+export { socraticService } from './services/socraticService'
+
+// Store
+export { useSocraticStore } from './store/useSocraticStore'
 
 // Domain utilities
 export {

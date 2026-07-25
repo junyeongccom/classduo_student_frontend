@@ -1,12 +1,13 @@
 /**
  * Chat composer (Pure UI)
  * - Input
- * - Bottom row: SIMPLE/DEEP icon toggle + Send button
+ * - Bottom row: simple/detailed/socratic 3-세그먼트 토글 + Send button
  */
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslations } from 'next-intl'
 import { Send, Loader2, Sparkles, Brain } from 'lucide-react'
 import type { ChatMode } from '@/features/ai-tutor/types'
 
@@ -18,6 +19,9 @@ interface ChatComposerProps {
   placeholder?: string
   chatMode: ChatMode
   onChatModeChange: (mode: ChatMode) => void
+  socraticDisabled?: boolean
+  // v2.0: 소크라 세션 진행 중(chatMode==='socratic' 또는 활성 주제 존재) — simple/detailed 로도 못 벗어나게 잠금
+  simpleDetailedDisabled?: boolean
   onFocus?: () => void
   onBlur?: () => void
   topOverlay?: React.ReactNode
@@ -36,6 +40,8 @@ export function ChatComposer({
   placeholder,
   chatMode,
   onChatModeChange,
+  socraticDisabled,
+  simpleDetailedDisabled,
   onFocus,
   onBlur,
   topOverlay,
@@ -45,6 +51,7 @@ export function ChatComposer({
   simpleHelpText,
   deepHelpText,
 }: ChatComposerProps) {
+  const t = useTranslations('aiTutorChat')
   const canSend = !disabled && !!value.trim()
   const formRef = useRef<HTMLFormElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -122,8 +129,44 @@ export function ChatComposer({
             }}
           />
 
-          {/* Bottom half: controls (v1.0: SIMPLE/DEEP 토글 제거. SIMPLE 전용) */}
+          {/* Bottom half: controls (v2.0: simple/detailed/socratic 3-세그먼트 토글) */}
           <div className="flex items-center justify-end gap-3 px-4 py-1" style={{ minHeight: '34px' }}>
+            {/* 모드 토글 — simple ↔ detailed ↔ socratic */}
+            <div className="mr-auto flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs">
+              <button
+                type="button"
+                disabled={simpleDetailedDisabled}
+                onClick={() => {
+                  if (simpleDetailedDisabled) return
+                  onChatModeChange('simple')
+                }}
+                className={`rounded-full px-3 py-1 ${chatMode === 'simple' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${simpleDetailedDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {t('simpleLabel')}
+              </button>
+              <button
+                type="button"
+                disabled={simpleDetailedDisabled}
+                onClick={() => {
+                  if (simpleDetailedDisabled) return
+                  onChatModeChange('detailed')
+                }}
+                className={`rounded-full px-3 py-1 ${chatMode === 'detailed' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${simpleDetailedDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {t('detailedLabel')}
+              </button>
+              <button
+                type="button"
+                disabled={socraticDisabled}
+                onClick={() => {
+                  if (socraticDisabled) return
+                  onChatModeChange('socratic')
+                }}
+                className={`rounded-full px-3 py-1 ${chatMode === 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${socraticDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {t('socraticLabel')}
+              </button>
+            </div>
             <button
               type="submit"
               disabled={!canSend}

@@ -19,8 +19,8 @@ export interface ChatMessage {
   original_question?: string
 }
 
-// v1.0: DEEP 모드 제거. 'deep'은 deprecated alias. 내부에서 simple로 처리.
-export type ChatMode = 'simple' | 'deep'
+// v2.0: 대화 모드 3종 — simple(간결한 설명) / detailed(자세한 설명, 초등학생 수준 쉬운 설명) / socratic(소크라 문답)
+export type ChatMode = 'simple' | 'detailed' | 'socratic'
 
 export interface Reference {
   type: 'recording' | 'material'
@@ -79,26 +79,6 @@ export interface ChatResponse {
   // v1.0
   case_type?: 'A' | 'B' | 'C' | null
   removed_orphan_tags?: string[]
-}
-
-// v1.0 Sprint 3: 부연설명 API
-export interface ElaborationRequest {
-  session_id?: string  // 있으면 DB 저장 + message_id 반환
-  original_question: string
-  simple_answer: string
-  reference_data?: { recording_chunks?: Reference[]; material_pages?: Reference[] } | Reference[] | null
-  language?: 'ko' | 'en'
-  source_message_id?: string
-  // v1.0: 원 SIMPLE 답변의 follow_up을 그대로 넘겨서 재생성 없이 echo 받음
-  source_follow_up_question?: string | null
-}
-
-export interface ElaborationResponse {
-  elaboration_text: string
-  referenced_sources: Reference[]
-  follow_up_question?: string | null
-  removed_orphan_tags?: string[]
-  message_id?: string | null  // 저장된 chat_messages.id
 }
 
 export interface HookingResponse {
@@ -180,6 +160,9 @@ export interface StoredMessage {
   case_type?: 'A' | 'B' | 'C' | null
   message_kind?: 'simple' | 'elaboration' | 'followup' | null
   source_message_id?: string | null
+  // v2.0: 메시지가 생성된 채팅 모드 (simple/detailed/socratic). 후속 메시지는 null일 수 있어
+  // 세션의 소크라 여부 판별은 첫 메시지(또는 첫 assistant)의 값을 사용해야 함.
+  chat_mode?: ChatMode
 }
 
 export interface SessionWithMessages {
@@ -212,7 +195,7 @@ export interface MessageContentSearchResult {
 
 export type SearchResult = SessionTitleSearchResult | MessageContentSearchResult
 
-export interface StreamProgressData {
+export interface ChatStreamProgressData {
   type: 'status' | 'source' | 'result' | 'error' | 'message_saved'
   step: 'searching' | 'selecting' | 'generating' | 'extracting' | 'summarizing' | 'recording_disabled' | 'complete'
   message?: string
@@ -230,6 +213,10 @@ export interface StreamProgressData {
     summary_keywords?: string
   }
 }
+
+// 소크라 문답 모드: chat_mode='socratic'으로 스트리밍 시 SSE로 함께 전달되는 채점 이벤트
+// (기존 SSE 파싱의 else 분기가 onProgress로 그대로 전달)
+export type StreamProgressData = ChatStreamProgressData | SocraticScoreEvent
 
 export interface CardMatchPairSources {
   recording_chunk_ids?: string[]
@@ -252,5 +239,68 @@ export interface CardMatchSet {
   set_id?: string | null
   pairs: CardMatchPair[]
   updated_at?: string | null
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// 소크라 문답 모드 (Socratic dialogue mode)
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface SocraticTopic {
+  id: string
+  title: string
+  description: string
+  seed_question: string
+  position: number
+}
+
+export interface SocraticAxisScores {
+  clarity: number
+  accuracy: number
+  relevance: number
+  depth: number
+  reflection: number
+}
+
+// GET /ai-tutor/sessions/{sessionId}/socratic/start 응답
+export interface SocraticStartResponse {
+  topic: SocraticTopic
+  message_id: string
+  seed_question: string
+}
+
+// GET /ai-tutor/sessions/{sessionId}/socratic/state 응답
+export interface SocraticStateResponse {
+  axis_scores: SocraticAxisScores
+  total_score: number
+  penalty: number
+  mastered_at: string | null
+  // v2.0: 세션에서 진행 중인 소크라 주제 (히스토리 복원용). 없으면 null.
+  topic?: SocraticTopic | null
+}
+
+// GET /ai-tutor/socratic/courses/{courseId}/leaderboard 응답 항목
+export interface SocraticLeaderboardEntry {
+  student_id: string
+  name: string
+  total_score: number
+  mastered_topics: number
+}
+
+export interface SocraticLeaderboardResponse {
+  course_id: string
+  entries: SocraticLeaderboardEntry[]
+}
+
+// SSE 이벤트: chat_mode='socratic' 스트리밍 시 채팅 스트림에 함께 실려오는 채점 결과
+export interface SocraticScoreEvent {
+  type: 'socratic_score'
+  axis_scores: SocraticAxisScores
+  applied_deltas: SocraticAxisScores
+  total_score: number
+  penalty?: number
+  abuse: boolean
+  praise: string
+  suggestion: string
+  mastered: boolean
 }
 
