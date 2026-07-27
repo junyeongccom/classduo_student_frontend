@@ -536,6 +536,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   suggestion: '',
                   mastered: !!stateData.mastered_at,
                 })
+                // setActiveTopic이 단계를 0으로 초기화하므로 그 뒤에 서버 값으로 덮어쓴다
+                useSocraticStore.getState().setStage(
+                  stateData.current_stage ?? 0,
+                  stateData.stage_total ?? stateData.topic.stage_total ?? 0,
+                )
                 if (selectedCourseId) {
                   socraticService.fetchLeaderboard(selectedCourseId).then(({ data: lbData }) => {
                     if (lbData) useSocraticStore.getState().setLeaderboard(lbData.entries)
@@ -858,6 +863,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 if (data) useSocraticStore.getState().setLeaderboard(data.entries)
               })
             }
+            return
+          }
+          // 소크라 4단계 진행 이벤트: 정답 판정이면 다음 단계로 올라간 상태가 실려온다
+          if (progressData.type === 'socratic_stage') {
+            useSocraticStore.getState().applyStageEvent(progressData)
             return
           }
           // message_saved 이벤트: 마지막 assistant 메시지에 id 부여
@@ -1379,6 +1389,13 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   // - 이미 대화가 시작된(messages.length > 0) 세션에서는 소크라로 중간 진입 불가 (새 채팅 + 첫 발화 전에만 진입 가능)
   const isSocraticSession = chatMode === 'socratic' && (messages.length > 0 || !!currentSessionId)
   const socraticEntryDisabled = selectedLectureIds.length !== 1 || messages.length > 0
+  // 소크라 모드인데 주제를 아직 안 고른 상태 = 문답을 시작할 수 없는 상태.
+  // 입력창을 잠가(포커스/타이핑 불가) 주제 카드를 먼저 고르도록 강제한다.
+  const socraticTopicPending = chatMode === 'socratic' && !socraticActiveTopic
+  const composerDisabled = isLoading || socraticTopicPending
+  const composerPlaceholder = socraticTopicPending
+    ? t('socraticPickTopicPlaceholder')
+    : t('askAnythingPlaceholder')
 
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
   if (messages.length === 0 && !isLoading) {
@@ -1393,8 +1410,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               value={input}
               onChange={setInput}
               onSubmit={handleSubmit}
-              disabled={isLoading}
-              placeholder={t('askAnythingPlaceholder')}
+              disabled={composerDisabled}
+              placeholder={composerPlaceholder}
               chatMode={chatMode}
               onChatModeChange={handleChatModeChange}
               socraticDisabled={socraticEntryDisabled}
@@ -1739,8 +1756,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               }
             }}
             onSubmit={handleSubmit}
-            disabled={isLoading}
-            placeholder={t('askAnythingPlaceholder')}
+            disabled={composerDisabled}
+            placeholder={composerPlaceholder}
             chatMode={chatMode}
             onChatModeChange={handleChatModeChange}
             socraticDisabled={socraticEntryDisabled}

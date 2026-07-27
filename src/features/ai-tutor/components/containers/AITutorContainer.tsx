@@ -69,6 +69,8 @@ export function AITutorContainer() {
     socraticAbuseWarning,
     socraticMastered,
     socraticLeaderboard,
+    socraticCurrentStage,
+    socraticStageTotal,
     isSocraticPanelOpen: isSocraticPanelOpenFlag,
   } = useSocraticStore(state => ({
     socraticActiveTopic: state.activeTopic,
@@ -80,6 +82,8 @@ export function AITutorContainer() {
     socraticAbuseWarning: state.abuseWarning,
     socraticMastered: state.mastered,
     socraticLeaderboard: state.leaderboard,
+    socraticCurrentStage: state.currentStage,
+    socraticStageTotal: state.stageTotal,
     isSocraticPanelOpen: state.isPanelOpen,
   }))
   const isSocraticPanelOpen = isSocraticPanelOpenFlag && !!socraticActiveTopic
@@ -673,6 +677,8 @@ export function AITutorContainer() {
                 mastered={socraticMastered}
                 leaderboard={socraticLeaderboard}
                 myStudentId={userId}
+                currentStage={socraticCurrentStage}
+                stageTotal={socraticStageTotal}
               />
             </div>
           )}

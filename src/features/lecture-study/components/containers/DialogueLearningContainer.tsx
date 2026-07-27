@@ -96,6 +96,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     socraticAbuseWarning,
     socraticMastered,
     socraticLeaderboard,
+    socraticCurrentStage,
+    socraticStageTotal,
     isSocraticPanelOpen: isSocraticPanelOpenFlag,
   } = useSocraticStore(state => ({
     socraticActiveTopic: state.activeTopic,
@@ -107,6 +109,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     socraticAbuseWarning: state.abuseWarning,
     socraticMastered: state.mastered,
     socraticLeaderboard: state.leaderboard,
+    socraticCurrentStage: state.currentStage,
+    socraticStageTotal: state.stageTotal,
     isSocraticPanelOpen: state.isPanelOpen,
   }))
   const isSocraticPanelOpen = isSocraticPanelOpenFlag && !!socraticActiveTopic
@@ -561,6 +565,8 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 mastered={socraticMastered}
                 leaderboard={socraticLeaderboard}
                 myStudentId={userId}
+                currentStage={socraticCurrentStage}
+                stageTotal={socraticStageTotal}
               />
             </div>
           )}
