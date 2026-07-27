@@ -3,6 +3,11 @@
  * @description 핵심테스트 번호(1~26) ↔ 회차 번호(lecture_no) 고정 매핑 테이블
  * @module features/exam-prep-final/domain
  *
+ * ⚠️ 이 매핑은 더 이상 핵심테스트 슬롯 생성에 쓰이지 않는다.
+ *   슬롯은 백엔드가 반환한 core 테스트 목록을 그대로 사용한다 (domain/buildCoreTestSlots.ts).
+ *   현재 유일한 소비처는 내 퀴즈 저장소의 "핵심테스트 번호 → lecture_no" 필터
+ *   (features/my-quiz/components/containers/QuizStorageContainer.tsx) 이므로 export 는 보존한다.
+ *
  * 학기 일정 (모든 과목 공통, 사용자 정의):
  *   - 1주차(OT) 제외
  *   - 14·15주차(중간고사 주간) 제외

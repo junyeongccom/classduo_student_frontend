@@ -138,10 +138,18 @@ export function CoreTestListModal({
           ) : (
             sorted.map((test) => {
               const numberLabel = String(test.number).padStart(2, '0')
-              const lectureName =
-                (test.lectureTitle ?? '').trim() ||
-                t('weekSession', { week: test.weekNo, session: test.sessionNo })
               const topic = prefetched(test) || (topics[test.id] ?? '')
+              const sessionLabel = t('weekSession', {
+                week: test.weekNo,
+                session: test.sessionNo,
+              })
+              const rawLectureName = (test.lectureTitle ?? '').trim()
+              // lectureTitle 은 주제명이 있으면 주제명이 들어온다(buildCoreTestSlots).
+              // 주제명 컬럼과 같은 문자열이 두 번 찍히지 않도록 주차/차시로 폴백.
+              const lectureName =
+                !rawLectureName || rawLectureName === topic
+                  ? sessionLabel
+                  : rawLectureName
               // 백엔드 생성된 테스트만 풀이 페이지로 이동 가능. 미생성 슬롯은 비활성.
               const clickable = isBackendTestId(test.id)
               const rowInner = (
