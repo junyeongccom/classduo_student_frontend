@@ -26,83 +26,18 @@ import {
 } from '@/shared/services/gamificationService'
 import type {
   CoreTest,
-  CoreTestStatus,
   ExamPrepData,
   MidTest,
   FinalTest,
 } from '../types'
-import { SET_RANGES } from '../domain/testSetGroups'
 import {
-  CORE_TEST_TOTAL,
-  getLectureNoForCoreTest,
-} from '../domain/coreTestLectureMap'
+  buildCoreTestSlots,
+  type CoreTestSlotLecture,
+} from '../domain/buildCoreTestSlots'
 import {
   EXAM_DATE_ISO,
   computeDdaysToExam,
 } from '@/shared/constants/examPrep'
-
-/** lecture 1 row → CoreTest 형태로 매핑 */
-function lectureToCoreTest(args: {
-  lecture: {
-    id: string
-    title: string | null
-    lecture_number: number | null
-    week_number: number | null
-    session_number: number | null
-    date: string | null
-    has_content: boolean
-    essence_7words: string | null
-  }
-  number: number  // 1~26 (SET_RANGES 기반 고정)
-  apiTestId: string | null  // exam_prep_test.id (백엔드 매칭 결과)
-  apiQuestionCount: number  // 백엔드 question_count (없으면 0)
-  apiIsMastered: boolean  // 백엔드 is_mastered (test_user_state.mastered_at)
-  apiTopicTitle: string | null  // 백엔드 topic_title (목록 프리페치용, 미배포 백엔드는 null)
-  apiTopicTitleEng: string | null  // 백엔드 topic_title_eng
-  /** locale-aware fallback 생성용 — '{week}주차 {session}차시' / 'W{week} S{session}' */
-  fallbackTitle: (week: number, session: number) => string
-}): CoreTest {
-  const {
-    lecture,
-    number,
-    apiTestId,
-    apiQuestionCount,
-    apiIsMastered,
-    apiTopicTitle,
-    apiTopicTitleEng,
-    fallbackTitle,
-  } = args
-  // 26개 정원 고정 분배 (set1=10, set2=8, set3=8) — SET_RANGES 기준
-  const setNumber: 1 | 2 | 3 =
-    number <= SET_RANGES[1].end ? 1 : number <= SET_RANGES[2].end ? 2 : 3
-
-  // 1차 status — 백엔드 문항 존재 여부만 반영. 최종 status 는 useMemo 내 sequential
-  // 잠금 패스(직전 핵심 master 여부)로 재계산되므로, 여기서는 "후보 available" 의미.
-  const status: CoreTestStatus =
-    apiQuestionCount > 0 ? 'available' : 'locked'
-
-  return {
-    id: apiTestId ?? `lecture-${lecture.id}`,
-    number,
-    setNumber,
-    weekNo: lecture.week_number ?? 0,
-    sessionNo: lecture.session_number ?? 0,
-    lectureTitle:
-      lecture.title ??
-      lecture.essence_7words ??
-      fallbackTitle(lecture.week_number ?? 0, lecture.session_number ?? 0),
-    masteryLevel: 0,  // v1: mastery 데이터 없음
-    status,
-    metaCounts: {
-      gray: status === 'locked' ? 0 : apiQuestionCount,
-      cyan: 0,
-      green: 0,
-    },
-    isTestMastered: apiIsMastered,
-    topicTitle: apiTopicTitle?.trim() || undefined,
-    topicTitleEng: apiTopicTitleEng?.trim() || undefined,
-  }
-}
 
 interface UseExamPrepDataResult {
   isLoading: boolean
@@ -227,64 +162,20 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
   const data = useMemo<ExamPrepData | null>(() => {
     if (lectures.length === 0) return null
 
-    // lecture_no → Lecture 인덱스 (sortedLectures 대신)
-    // CORE_TEST_TO_LECTURE_NO 매핑이 비선형(14·15회차 skip)이라 인덱스 매핑 불가
-    const lectureByNo = new Map<number, (typeof lectures)[number]>()
-    lectures.forEach((l) => {
-      if (l.lecture_number != null) {
-        lectureByNo.set(l.lecture_number, l)
-      }
+    // lecture_session_id → 회차 메타 (주차/차시/제목 표시용)
+    const lectureById = new Map<string, CoreTestSlotLecture>()
+    lectures.forEach((l) => lectureById.set(l.id, l))
+
+    // 핵심테스트 슬롯 — 백엔드가 반환한 core 테스트를 1:1 로 그대로 노출한다.
+    //   구 방식(고정 26슬롯 × coreTestLectureMap 회차 매핑)은 폐지.
+    //   → 26개 상한이 사라져 core 테스트 29개인 운영 과목은 29개가 전부 나온다 (의도된 변화).
+    //   → 같은 회차에 core 테스트가 여러 개인 과목도 전부 개별 슬롯으로 나온다.
+    const coreTests: CoreTest[] = buildCoreTestSlots({
+      tests: apiTests,
+      lectureById,
+      fallbackTitle: (week, session) =>
+        t('examPrepFinal.weekSession', { week, session }),
     })
-
-    // api test_id 매핑 (lecture_session_id 기준)
-    const apiByLecture = new Map<string, CoreTestSummaryDto>()
-    apiTests.forEach((t) => apiByLecture.set(t.lecture_session_id, t))
-
-    // 핵심테스트 26개 슬롯 — 각 슬롯은 매핑 테이블의 lecture_no 로 lookup
-    //   1~12 → 2~13회차, 13~26 → 16~29회차 (1주차/14·15주차 제외)
-    const coreTests: CoreTest[] = Array.from(
-      { length: CORE_TEST_TOTAL },
-      (_, i) => {
-        const number = i + 1
-        const targetLectureNo = getLectureNoForCoreTest(number)
-        const lec =
-          targetLectureNo != null ? lectureByNo.get(targetLectureNo) : undefined
-
-        if (!lec) {
-          // 매핑된 회차가 lectures 에 없음 → placeholder (locked)
-          const setNumber: 1 | 2 | 3 =
-            number <= SET_RANGES[1].end
-              ? 1
-              : number <= SET_RANGES[2].end
-                ? 2
-                : 3
-          return {
-            id: `placeholder-${number}`,
-            number,
-            setNumber,
-            weekNo: 0,
-            sessionNo: 0,
-            lectureTitle: '',
-            masteryLevel: 0,
-            status: 'locked' as const,
-            metaCounts: { gray: 0, cyan: 0, green: 0 },
-            isTestMastered: false,
-          }
-        }
-        const api = apiByLecture.get(lec.id)
-        return lectureToCoreTest({
-          lecture: lec,
-          number,
-          apiTestId: api?.test_id ?? null,
-          apiQuestionCount: api?.question_count ?? 0,
-          apiIsMastered: api?.is_mastered ?? false,
-          apiTopicTitle: api?.topic_title ?? null,
-          apiTopicTitleEng: api?.topic_title_eng ?? null,
-          fallbackTitle: (week, session) =>
-            t('examPrepFinal.weekSession', { week, session }),
-        })
-      },
-    )
 
     // mid api 매핑 — sequential 잠금 패스 보다 먼저 빌드 (set 경계 mid master 검사용)
     type MidApiItem = NonNullable<typeof midApi>['items'][number]
@@ -366,7 +257,6 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
 
     const midTests: MidTest[] = [1, 2, 3].map((setNumber) => {
       const set = setNumber as 1 | 2 | 3
-      const range = SET_RANGES[set]
       const totalCoreInSet = coreTests.filter(
         (t) => t.setNumber === set,
       ).length
@@ -395,7 +285,9 @@ export function useExamPrepData(courseId: string): UseExamPrepDataResult {
         setNumber: set,
         minutes: 15,
         questions: 20,
-        totalCoreInSet: totalCoreInSet || range.end - range.start + 1,
+        // 분모는 항상 실제 슬롯 수 — SET_RANGES 정원(8/10)으로 부풀리지 않는다.
+        // (슬롯이 26개 미만인 과목에서 존재하지 않는 핵심테스트가 카운트되는 것 방지)
+        totalCoreInSet,
         masteredCount: masteredCountInSet,
         unlocked,
         testId: apiItem?.test_id ?? null,

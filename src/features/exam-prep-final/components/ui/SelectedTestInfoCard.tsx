@@ -42,7 +42,6 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
   })
   // 회차명(강의 제목) — 회색 부제로 노출. 회차명이 비어있는 구 데이터는 주차/차시로 폴백.
   const lectureName = (test.lectureTitle ?? '').trim()
-  const subtitle = lectureName || sessionLabel
 
   const [mastery, setMastery] = useState<MasteryCounts | null>(null)
   // 1순위 주제 — 선택 시 detail fetch (summary엔 주제 없음). 굵은 제목 자리에 표시.
@@ -105,6 +104,11 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
       ? { learning: 0, skilled: 0, master: totalQs }
       : { learning: totalQs, skilled: 0, master: 0 }
   )
+
+  // 회색 부제 — 회차명. lectureTitle 은 주제명이 있으면 주제명이 들어오므로(buildCoreTestSlots)
+  // 아래 굵은 제목(topic)과 같은 문자열이면 주차/차시 라벨로 폴백해 중복 노출을 막는다.
+  const subtitle =
+    !lectureName || lectureName === topic ? sessionLabel : lectureName
 
   return (
     <div className="relative flex items-stretch justify-between gap-3 rounded-3xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-900 md:min-h-[200px] md:gap-6 md:px-7 md:py-7">
