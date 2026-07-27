@@ -749,6 +749,26 @@
       "loading": "퀴즈를 불러오는 중입니다...",
       "empty": "아직 생성된 퀴즈가 없습니다.",
       "itemCount": "{count}문항",
+      "filter": {
+        "toggle": "필터",
+        "totalCount": "총 {total}문항",
+        "resultCount": "{total}문항 중 {filtered}문항",
+        "reset": "필터 초기화",
+        "noResult": "선택한 조건에 맞는 문항이 없습니다.",
+        "groupType": "인지유형",
+        "groupFormat": "문제유형",
+        "groupBookmark": "즐겨찾기",
+        "groupPage": "자료 슬라이드 페이지",
+        "bookmarkedOnly": "즐겨찾기한 문항만",
+        "pageLabel": "{page}p",
+        "pageEmpty": "페이지 정보가 있는 문항이 없습니다."
+      },
+      "scope": {
+        "label": "풀이 범위",
+        "selected": "선별 {count}문제만 풀기",
+        "all": "전체 문제 풀기",
+        "selectedNotice": "선별 {count}문항 표시 중"
+      },
       "showAnswer": "정답 및 해설 보기",
       "hideAnswer": "정답 및 해설 접기",
       "answer": "정답",

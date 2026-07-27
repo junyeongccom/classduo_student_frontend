@@ -749,6 +749,26 @@
       "loading": "Loading quizzes...",
       "empty": "No quizzes available yet.",
       "itemCount": "{count} questions",
+      "filter": {
+        "toggle": "Filters",
+        "totalCount": "{total} questions",
+        "resultCount": "{filtered} of {total} questions",
+        "reset": "Clear filters",
+        "noResult": "No questions match the selected filters.",
+        "groupType": "Cognitive type",
+        "groupFormat": "Question format",
+        "groupBookmark": "Favorites",
+        "groupPage": "Slide page",
+        "bookmarkedOnly": "Favorites only",
+        "pageLabel": "p.{page}",
+        "pageEmpty": "No questions have page references."
+      },
+      "scope": {
+        "label": "Scope",
+        "selected": "Practice {count} selected",
+        "all": "Practice all",
+        "selectedNotice": "Showing {count} selected"
+      },
       "showAnswer": "Show answer & explanation",
       "hideAnswer": "Hide answer & explanation",
       "answer": "Answer",
