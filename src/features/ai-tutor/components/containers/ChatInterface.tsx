@@ -542,6 +542,13 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   })
                 }
               })
+            } else {
+              // 소크라 세션이 아니면 전역 소크라 store 잔존분을 비운다.
+              // 주제만 고르고(세션 생성됨) 메시지 없이 이탈하면 currentSessionId 가 전역 store 에
+              // 남아, 재진입 시 isInitialMount 의 else(reset) 분기가 아닌 loadSession 으로 들어온다.
+              // 그 세션은 메시지 0개라 chat_mode 판별이 안 되어 소크라 복원도 reset 도 없이
+              // 이전 방문의 주제·패널이 빈 새 채팅 화면에 살아남는 경로가 있었다.
+              useSocraticStore.getState().reset()
             }
 
             // 기존 메시지들은 타이핑 완료 상태로 설정
@@ -595,6 +602,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             console.warn('Session not found, clearing session ID:', sessionId)
             setCurrentSessionId(undefined)
             setMessages([])
+            useSocraticStore.getState().reset() // 사라진 세션의 소크라 패널 잔존 방지
             onSessionCreated?.(undefined) // 부모에게 세션 초기화 알림
           }
         } catch (err: any) {
@@ -604,6 +612,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             console.warn('Session not found (404), clearing session ID:', sessionId)
             setCurrentSessionId(undefined)
             setMessages([])
+            useSocraticStore.getState().reset() // 사라진 세션의 소크라 패널 잔존 방지
             onSessionCreated?.(undefined as any) // 부모에게 세션 초기화 알림
           }
         } finally {
