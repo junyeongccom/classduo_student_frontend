@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
@@ -45,8 +45,6 @@ function extractCourseId(pathname: string): string | null {
 function NewSidebar() {
   const t = useTranslations()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const tabParam = searchParams?.get('tab') ?? null
   const { isCollapsed, toggle, setCollapsed, isOverlayOpen, openOverlay, closeOverlay, isTablet, isMobile } = useSidebarStore()
   const openFeedback = useFeedbackStore((s) => s.open)
   const [isGameModalOpen, setIsGameModalOpen] = useState(false)
@@ -177,7 +175,6 @@ function NewSidebar() {
             <CourseContextNav
               courseId={courseId}
               pathname={pathname}
-              tabParam={tabParam}
               visualCollapsed={visualCollapsed}
               scaled={isMobile}
               onItemClick={() => {
@@ -266,8 +263,6 @@ function NewSidebar() {
 interface CourseContextNavProps {
   courseId: string
   pathname: string
-  /** ?tab=... 값 — my-quizzes 와 create-question active 분기용 */
-  tabParam: string | null
   visualCollapsed: boolean
   /** 모바일 드로어 — 항목 크기를 --u 비례로 확대 (Figma 모바일 시안) */
   scaled?: boolean
@@ -279,7 +274,6 @@ interface CourseContextNavProps {
 function CourseContextNav({
   courseId,
   pathname,
-  tabParam,
   visualCollapsed,
   scaled = false,
   onItemClick,
@@ -302,10 +296,7 @@ function CourseContextNav({
     const href = item.hrefFor(courseId)
     const matchPath = item.matchFor(courseId)
 
-    // my-quizzes(저장소) ↔ create-question(문제 만들기)는 같은 path를 공유하므로 ?tab=create 로 분기.
     // dashboard는 정확 일치, dialogue는 lecture/[id]/dialogue 까지 포함, 그 외는 startsWith.
-    const myQuizPath = `/studyspace/course/${courseId}/my-quizzes`
-    const isOnMyQuizzes = pathname.startsWith(myQuizPath)
     const isActive =
       item.id === 'course-dashboard'
         ? pathname === matchPath
@@ -313,11 +304,7 @@ function CourseContextNav({
           ? false
           : item.id === 'course-dialogue'
             ? pathname.includes('/dialogue')
-            : item.id === 'my-quizzes'
-              ? isOnMyQuizzes && tabParam !== 'create'
-              : item.id === 'create-question'
-                ? isOnMyQuizzes && tabParam === 'create'
-                : pathname.startsWith(matchPath)
+            : pathname.startsWith(matchPath)
 
     const label = t(item.labelKey)
 

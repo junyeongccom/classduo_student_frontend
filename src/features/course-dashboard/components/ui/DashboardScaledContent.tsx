@@ -2,14 +2,14 @@
  * @file DashboardScaledContent.tsx
  * @description 과목 대시보드 본문 — Figma(991:3348) content 프레임(2103×1271) 좌표 그대로 절대배치.
  *   ScaledCanvas 안에서 contain-스케일되어 항상 한 화면 fit + 시안 비율 유지.
- *   좌: 핵심주제학습 히어로 / 회차별·대화형 카드 / 문제만들기·내퀴즈. 우: 캘린더 / 예상학점.
+ *   좌: 핵심주제학습 히어로 / 회차별·대화형 카드. 우: 캘린더 / 내 퀴즈 저장소.
  * @module features/course-dashboard/components/ui
  * @dependencies ExamPrepHeroCard, domain/calendar(resolveDayTone), domain/grade, lucide-react
  */
 
 'use client'
 
-import { Bookmark, ChevronRight, PencilLine } from 'lucide-react'
+import { Bookmark, ChevronRight } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { LucideIcon } from 'lucide-react'
 
@@ -33,7 +33,6 @@ interface DashboardScaledContentProps {
   onHero: () => void
   onWeekly: () => void
   onDialogue: () => void
-  onCreate: () => void
   onMyQuiz: () => void
 }
 
@@ -66,7 +65,6 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
     onHero,
     onWeekly,
     onDialogue,
-    onCreate,
     onMyQuiz,
   } = props
   const t = useTranslations()
@@ -105,11 +103,9 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
         <CalendarCard monthGrid={monthGrid} examDday={examDday} currentStreak={currentStreak} />
       </Slot>
 
-      {/* 캘린더 밑 — 문제 만들기 / 내 퀴즈 저장소 2열 (흰 박스 없이, Figma 350×146) */}
-      <Slot left={1040.875} top={864} width={350} height={146}>
-        <QuickAction icon={PencilLine} label={t('courseNav.createQuestion')} onClick={onCreate} />
-      </Slot>
-      <Slot left={1402.875} top={864} width={350} height={146}>
+      {/* 캘린더 밑 — 내 퀴즈 저장소 (흰 박스 없이, Figma 350×146).
+          '문제 만들기' 제거 후 남은 1개를 캘린더(1040.875 + 899.25) 기준 가운데 정렬. */}
+      <Slot left={1315.5} top={864} width={350} height={146}>
         <QuickAction icon={Bookmark} label={t('courseDashboard.myQuizSaved')} onClick={onMyQuiz} />
       </Slot>
     </div>
@@ -148,7 +144,7 @@ function StudyCard({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   문제 만들기 / 내 퀴즈 저장소 (350×146)
+   내 퀴즈 저장소 (350×146)
    ───────────────────────────────────────────────────────────── */
 function QuickAction({
   icon: Icon,

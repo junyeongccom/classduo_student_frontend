@@ -42,8 +42,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
   const goHero = () => router.push(`/studyspace/course/${courseId}/exam-prep`)
   const goWeekly = () => router.push(`/studyspace/course/${courseId}/lectures`)
   const goDialogue = () => router.push(`/studyspace/course/${courseId}/dialogue`)
-  const goCreate = () =>
-    router.push(`/studyspace/course/${courseId}/my-quizzes?tab=create`)
   const goMyQuiz = () => router.push(`/studyspace/course/${courseId}/my-quizzes`)
 
   useEffect(() => {
@@ -103,7 +101,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
           onHero={goHero}
           onWeekly={goWeekly}
           onDialogue={goDialogue}
-          onCreate={goCreate}
           onMyQuiz={goMyQuiz}
         />
       ) : (
@@ -120,7 +117,6 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
               onHero={goHero}
               onWeekly={goWeekly}
               onDialogue={goDialogue}
-              onCreate={goCreate}
               onMyQuiz={goMyQuiz}
             />
           </ScaledCanvas>

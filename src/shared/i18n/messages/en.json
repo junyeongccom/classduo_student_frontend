@@ -19,7 +19,6 @@
     "examPrep": "Core Topics",
     "dialogue": "Dialogue Mode",
     "myQuizzes": "My Quiz Library",
-    "createQuestion": "Create Question",
     "home": "Home",
     "feedback": "Feedback",
     "sectionResources": "My Quizzes",
@@ -315,6 +314,14 @@
     "socraticRankSuffix": "#{rank}",
     "socraticRankingEmpty": "No participants yet",
     "socraticNoTopics": "No Socratic topics for this lecture yet.",
+    "socraticPickTopicPlaceholder": "Pick a dialogue topic above to begin",
+    "socraticStageTitle": "Stages",
+    "socraticStage": {
+      "termMemory": "Terms",
+      "concept": "Concepts",
+      "analysisApply": "Analysis & Application",
+      "judgeDesign": "Judgment & Design"
+    },
     "socraticLoading": "Thinking it through…",
     "defaultHookingQuestions": {
       "importantConcept": "What is the most important concept in this class?",

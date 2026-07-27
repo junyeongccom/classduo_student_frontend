@@ -1,40 +1,30 @@
 /**
  * @file MyQuizContainer.tsx
- * @description 내 퀴즈 라우터 — ?tab=create 면 문제 만들기, 그 외 = 저장소
+ * @description 내 퀴즈 라우터 — 내 퀴즈 저장소 진입점
  * @module features/my-quiz
- * @dependencies QuizStorageContainer, QuizGenerationTab
+ * @dependencies QuizStorageContainer
  *
- * IA (2026-04-30 리뉴얼):
- *   - 사이드바 [내 퀴즈 저장소]   → /my-quizzes (default) → QuizStorageContainer
+ * IA:
+ *   - 사이드바 [내 퀴즈 저장소] → /my-quizzes → QuizStorageContainer
  *     (즐겨찾기 + 오답 통합 + 출처/회차/유형 필터)
- *   - 사이드바 [문제 만들기]      → /my-quizzes?tab=create → QuizGenerationTab
- *     (기존 퀴즈 생성 + 내 퀴즈 세션 관리)
+ *
+ * '문제 만들기'(학생 커스텀 퀴즈 생성)는 제거됨 — UI/서비스/백엔드 라우터 모두 삭제.
+ * 기존 데이터(custom_quiz 등)는 보존.
  */
 
 'use client'
 
 import { useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
-import QuizCreatorContainer from './QuizCreatorContainer'
 import QuizStorageContainer from './QuizStorageContainer'
 
 export default function MyQuizContainer() {
-  const searchParams = useSearchParams()
-  const tab = searchParams?.get('tab')
-  const isCreate = tab === 'create'
-
   useEffect(() => {
-    const page = isCreate ? 'create_question' : 'my_quizzes'
-    trackPageEnter(page)
+    trackPageEnter('my_quizzes')
     return () => {
-      trackPageLeave(page)
+      trackPageLeave('my_quizzes')
     }
-  }, [isCreate])
-
-  if (isCreate) {
-    return <QuizCreatorContainer />
-  }
+  }, [])
 
   return <QuizStorageContainer />
 }
