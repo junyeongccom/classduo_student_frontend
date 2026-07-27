@@ -39,6 +39,19 @@ import {
 } from '../../services/quizStatusService'
 import { StudentQuizCard, type StudentQuizItem } from '@/shared/components/quiz'
 import { FlameRewardModal } from '../ui/FlameRewardModal'
+import { QuizFilterBar } from '../ui/QuizFilterBar'
+import {
+  buildQuizSections,
+  countActiveQuizFilters,
+  getAvailableQuizFormats,
+  getAvailableQuizTypes,
+  getAvailableSourcePages,
+  toggleFilterValue,
+  EMPTY_QUIZ_FILTER,
+  type QuizAnswerFormat,
+  type QuizFilterState,
+  type QuizScopeMode,
+} from '../../domain/filterQuizzes'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 
 interface QuizTabContainerProps {
@@ -48,19 +61,6 @@ interface QuizTabContainerProps {
   weekNumber?: number | null
   sessionNumber?: number | null
 }
-
-const TYPE_ORDER: InstructorQuizType[] = [
-  // 신규 4유형 (2026-07 개편): 용어암기 → 개념이해 → 분석과적용 → 판단과설계
-  'TERM_MEMORY',
-  'CONCEPT',
-  'ANALYSIS_APPLY',
-  'JUDGE_DESIGN',
-  // 레거시 — 기존 미재생성 회차 호환 (재생성 전까지 계속 노출)
-  'DEF_TO_TERM',
-  'TERM_TO_DEF',
-  'STRUCTURE_OBJ',
-  'MISCONCEPTION',
-]
 
 /** InstructorQuizItem → StudentQuizItem 변환 */
 function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
@@ -92,6 +92,9 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   // 전체 다시 풀기: 확인 모달 표시 + 카드 강제 리마운트용 키
   const [showRetryConfirm, setShowRetryConfirm] = useState(false)
   const [resetKey, setResetKey] = useState(0)
+  // 필터 · 풀이 범위 (클라이언트 사이드 전용 — 추가 API 호출 없음)
+  const [filter, setFilter] = useState<QuizFilterState>(EMPTY_QUIZ_FILTER)
+  const [scope, setScope] = useState<QuizScopeMode>('all')
   const t = useTranslations('lectureStudy.quiz')
   const tSummary = useTranslations('lectureStudy.summary')
   const { locale } = useI18n()
@@ -112,6 +115,10 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   // 퀴즈별 풀이 시작 시점 기록 (duration_ms 계산용)
   const quizStartTimeRef = useRef<Map<string, number>>(new Map())
 
+  // 필터/풀이 범위 변경 시 스크롤 보정용
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const filterBarRef = useRef<HTMLDivElement>(null)
+
   const weekSessionLabel = weekNumber != null && sessionNumber != null
     ? locale === 'ko'
       ? `${weekNumber}주차 ${String(sessionNumber).padStart(2, '0')}차시`
@@ -126,6 +133,9 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       setError(null)
       setQuizzes([])
       setStatusMap(new Map())
+      // 회차/언어가 바뀌면 필터·풀이 범위도 초기 상태로 되돌린다
+      setFilter(EMPTY_QUIZ_FILTER)
+      setScope('all')
 
       // 퀴즈 + 상태 + 즐겨찾기를 병렬 조회
       const [quizResult, statusResult, bookmarkResult] = await Promise.all([
@@ -364,19 +374,63 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
     }
   }, [quizzes, lectureId, statusMap])
 
-  // 유형별로 그룹화 (정의된 순서대로)
-  const groupedQuizzes = useMemo(() => {
-    const groups: { type: InstructorQuizType; items: InstructorQuizItem[] }[] = []
+  // ── 필터 · 풀이 범위 ──
+  // 필터 선택지는 실제 존재하는 값만 노출한다 (레거시 유형이 섞인 미재생성 회차 대응)
+  const availableTypes = useMemo(() => getAvailableQuizTypes(quizzes), [quizzes])
+  const availableFormats = useMemo(() => getAvailableQuizFormats(quizzes), [quizzes])
+  const availablePages = useMemo(() => getAvailableSourcePages(quizzes), [quizzes])
+  const activeFilterCount = countActiveQuizFilters(filter)
 
-    for (const type of TYPE_ORDER) {
-      const items = quizzes.filter((q) => q.quiz_type === type)
-      if (items.length > 0) {
-        groups.push({ type, items })
-      }
-    }
+  // 필터(AND 조합) + 풀이 범위를 적용한 유형별 섹션
+  const { sections, filteredCount, visibleCount } = useMemo(
+    () => buildQuizSections(quizzes, filter, bookmarkSet, scope),
+    [quizzes, filter, bookmarkSet, scope],
+  )
 
-    return groups
-  }, [quizzes])
+  // 목록 길이가 바뀔 때 화면이 튀지 않도록 필터 영역 기준으로 부드럽게 맞춘다
+  const scrollListToFilterBar = useCallback(() => {
+    const container = scrollContainerRef.current
+    const filterBar = filterBarRef.current
+    if (!container || !filterBar) return
+    // offsetParent 에 의존하지 않도록 rect 차이로 컨테이너 내부 오프셋을 계산
+    const target =
+      filterBar.getBoundingClientRect().top -
+      container.getBoundingClientRect().top +
+      container.scrollTop
+    // 이미 필터 영역이 보이는 위치면 그대로 둔다 (불필요한 스크롤 방지)
+    if (container.scrollTop <= target) return
+    container.scrollTo({ top: target, behavior: 'smooth' })
+  }, [])
+
+  const handleToggleType = useCallback((type: InstructorQuizType) => {
+    setFilter((prev) => ({ ...prev, types: toggleFilterValue(prev.types, type) }))
+    scrollListToFilterBar()
+  }, [scrollListToFilterBar])
+
+  const handleToggleFormat = useCallback((format: QuizAnswerFormat) => {
+    setFilter((prev) => ({ ...prev, formats: toggleFilterValue(prev.formats, format) }))
+    scrollListToFilterBar()
+  }, [scrollListToFilterBar])
+
+  const handleToggleBookmarkedOnly = useCallback(() => {
+    setFilter((prev) => ({ ...prev, bookmarkedOnly: !prev.bookmarkedOnly }))
+    scrollListToFilterBar()
+  }, [scrollListToFilterBar])
+
+  const handleTogglePage = useCallback((page: number) => {
+    setFilter((prev) => ({ ...prev, pages: toggleFilterValue(prev.pages, page) }))
+    scrollListToFilterBar()
+  }, [scrollListToFilterBar])
+
+  const handleResetFilter = useCallback(() => {
+    setFilter(EMPTY_QUIZ_FILTER)
+    scrollListToFilterBar()
+  }, [scrollListToFilterBar])
+
+  const handleScopeChange = useCallback((next: QuizScopeMode) => {
+    setScope(next)
+    scrollListToFilterBar()
+  }, [scrollListToFilterBar])
 
   if (isLoading) {
     return (
@@ -408,7 +462,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   let globalIndex = 0
 
   return (
-    <div className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24">
+    <div ref={scrollContainerRef} className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24">
       {showRewardModal && (
         <FlameRewardModal
           courseName={courseTitle ?? ''}
@@ -433,7 +487,44 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         <RotateCcw className="h-4 w-4" />
         {t('retryAll')}
       </button>
-      {groupedQuizzes.map((group) => (
+
+      {/* 필터 + 풀이 범위 선택 */}
+      <div ref={filterBarRef}>
+        <QuizFilterBar
+          totalCount={quizzes.length}
+          filteredCount={filteredCount}
+          visibleCount={visibleCount}
+          availableTypes={availableTypes}
+          availableFormats={availableFormats}
+          availablePages={availablePages}
+          filter={filter}
+          activeFilterCount={activeFilterCount}
+          scope={scope}
+          onToggleType={handleToggleType}
+          onToggleFormat={handleToggleFormat}
+          onToggleBookmarkedOnly={handleToggleBookmarkedOnly}
+          onTogglePage={handleTogglePage}
+          onResetFilter={handleResetFilter}
+          onScopeChange={handleScopeChange}
+        />
+      </div>
+
+      {/* 필터 결과 0건 */}
+      {sections.length === 0 && (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-6 py-10 text-gray-400 dark:text-gray-500">
+          <HelpCircle className="h-8 w-8" />
+          <p className="text-sm">{t('filter.noResult')}</p>
+          <button
+            type="button"
+            onClick={handleResetFilter}
+            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+          >
+            {t('filter.reset')}
+          </button>
+        </div>
+      )}
+
+      {sections.map((group) => (
         <section key={group.type}>
           {/* 유형 섹션 헤더 */}
           <div className="mb-3 flex items-center gap-2">
