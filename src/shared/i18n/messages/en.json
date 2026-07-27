@@ -92,6 +92,7 @@
     "recommendedTitle": "Recommended",
     "recommendedStart": "Start now",
     "testSets": "Test Sets",
+    "setEmpty": "No tests are open yet. They unlock as you work through the lectures.",
     "coreTestList": {
       "trigger": "List",
       "title": "Test Topics",

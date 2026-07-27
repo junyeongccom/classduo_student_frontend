@@ -92,6 +92,7 @@
     "recommendedTitle": "추천 학습",
     "recommendedStart": "바로 시작",
     "testSets": "테스트 세트",
+    "setEmpty": "아직 열린 테스트가 없어요. 회차별 학습을 진행하면 순차적으로 열립니다.",
     "coreTestList": {
       "trigger": "목록",
       "title": "테스트 주제 목록",
