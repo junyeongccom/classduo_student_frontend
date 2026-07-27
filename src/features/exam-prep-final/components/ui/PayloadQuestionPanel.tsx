@@ -37,7 +37,13 @@ import { Mcq6MultiForm } from './forms/Mcq6MultiForm'
 import { EssayForm } from './forms/EssayForm'
 import { shuffleOrder } from '../../domain/shuffleOrder'
 
-const ESSAY_FORMAT = 'error_diagnosis_evaluation'
+/** 중간테스트 서술형 유형 — 오류탐지형(평가) + 문제해결형(분석). 둘 다 EssayForm 으로 렌더. */
+const ESSAY_FORMATS = ['error_diagnosis_evaluation', 'problem_solving_analysis'] as const
+type EssayFormat = (typeof ESSAY_FORMATS)[number]
+
+function isEssayFormat(qf: string | null): qf is EssayFormat {
+  return ESSAY_FORMATS.includes(qf as EssayFormat)
+}
 
 /**
  * 번호식 보기별 해설('1: …\n2: …')을 표시 순서로 재배열·재번호.
@@ -114,6 +120,7 @@ export function isPayloadResponseComplete(
     case 'description_mcq6_multi':
       return Array.isArray(response) && response.length === 2
     case 'error_diagnosis_evaluation':
+    case 'problem_solving_analysis':
       return typeof response === 'string' && response.trim().length > 0
     default: // 단수 객관식/단일 빈칸
       return typeof response === 'number'
@@ -218,7 +225,7 @@ export function PayloadQuestionPanel({
   const [recallRevealed, setRecallRevealed] = useState(false)
 
   const qf = question.question_format ?? null
-  const isEssay = qf === ESSAY_FORMAT
+  const isEssay = isEssayFormat(qf)
   const payload = (question.payload ?? {}) as Record<string, unknown>
   const payloadEng = (question.payload_eng ?? {}) as Record<string, unknown>
   const stem = (isEn && question.stem_eng) ? question.stem_eng : question.stem
@@ -384,10 +391,11 @@ export function PayloadQuestionPanel({
             mobile={mobile}
           />
         )
-      case 'error_diagnosis_evaluation': {
+      case 'error_diagnosis_evaluation':
+      case 'problem_solving_analysis': {
         const quiz: PrincipleQuiz = {
           id: question.id,
-          sub_type: 'error_diagnosis_evaluation',
+          sub_type: qf,
           question_text: stem,
           payload: payload as never,
         }
