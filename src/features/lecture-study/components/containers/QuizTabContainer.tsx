@@ -9,7 +9,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Loader2, HelpCircle, Sparkles, Bot, RotateCcw } from 'lucide-react'
+import { Loader2, HelpCircle, Sparkles, Bot } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import {
   type InstructorQuizItem,
   type InstructorQuizType,
 } from '../../services/instructorQuizService'
+import { lectureService } from '../../services/lectureService'
 import { SourceButton } from '../ui/SourceButton'
 import { useSourceNavigation } from '../../hooks/useSourceNavigation'
 import {
@@ -46,6 +47,8 @@ import {
   getAvailableQuizFormats,
   getAvailableQuizTypes,
   getAvailableSourcePages,
+  buildSourcePageGroups,
+  type QuizSourceMaterial,
   toggleFilterValue,
   EMPTY_QUIZ_FILTER,
   type QuizAnswerFormat,
@@ -92,6 +95,8 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   // 전체 다시 풀기: 확인 모달 표시 + 카드 강제 리마운트용 키
   const [showRetryConfirm, setShowRetryConfirm] = useState(false)
   const [resetKey, setResetKey] = useState(0)
+  // 슬라이드 페이지 필터를 자료명으로 묶기 위한 회차 강의자료 메타
+  const [sourceMaterials, setSourceMaterials] = useState<QuizSourceMaterial[]>([])
   // 필터 · 풀이 범위 (클라이언트 사이드 전용 — 추가 API 호출 없음)
   const [filter, setFilter] = useState<QuizFilterState>(EMPTY_QUIZ_FILTER)
   const [scope, setScope] = useState<QuizScopeMode>('all')
@@ -189,6 +194,27 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       cancelled = true
     }
   }, [lectureId, locale])
+
+  // 회차 강의자료 메타(파일명 · 페이지 수) — 슬라이드 페이지 필터의 자료별 그룹핑에만 쓴다.
+  // 실패 시 빈 배열로 두면 필터가 기존 평면 목록으로 폴백되므로 별도 에러 처리 없음.
+  useEffect(() => {
+    let cancelled = false
+    async function fetchMaterials() {
+      const result = await lectureService.getSnapshotSelections(lectureId)
+      if (cancelled) return
+      setSourceMaterials(
+        (result.data?.materials ?? []).map((m) => ({
+          material_id: m.material_id,
+          original_filename: m.original_filename,
+          total_pages: m.total_pages,
+        })),
+      )
+    }
+    fetchMaterials()
+    return () => {
+      cancelled = true
+    }
+  }, [lectureId])
 
   // 즐겨찾기 토글
   const handleBookmarkToggle = useCallback(
@@ -379,6 +405,12 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   const availableTypes = useMemo(() => getAvailableQuizTypes(quizzes), [quizzes])
   const availableFormats = useMemo(() => getAvailableQuizFormats(quizzes), [quizzes])
   const availablePages = useMemo(() => getAvailableSourcePages(quizzes), [quizzes])
+  // 페이지 번호는 자료들을 이어붙인 전역 번호라, 자료명으로 묶어 보여주려면 자료 메타가 필요하다.
+  // 실패해도 평면 목록으로 폴백되므로 조용히 넘어간다.
+  const pageGroups = useMemo(
+    () => (sourceMaterials.length > 0 ? buildSourcePageGroups(availablePages, sourceMaterials) : []),
+    [availablePages, sourceMaterials],
+  )
   const activeFilterCount = countActiveQuizFilters(filter)
 
   // 필터(AND 조합) + 풀이 범위를 적용한 유형별 섹션
@@ -478,17 +510,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         </p>
       </div>
 
-      {/* 전체 다시 풀기 */}
-      <button
-        type="button"
-        onClick={() => setShowRetryConfirm(true)}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 transition hover:bg-gray-100 dark:hover:bg-gray-700"
-      >
-        <RotateCcw className="h-4 w-4" />
-        {t('retryAll')}
-      </button>
-
-      {/* 필터 + 풀이 범위 선택 */}
+      {/* 필터 + 풀이 범위 선택 (전체 문제 초기화 버튼 포함) */}
       <div ref={filterBarRef}>
         <QuizFilterBar
           totalCount={quizzes.length}
@@ -497,6 +519,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
           availableTypes={availableTypes}
           availableFormats={availableFormats}
           availablePages={availablePages}
+          pageGroups={pageGroups}
           filter={filter}
           activeFilterCount={activeFilterCount}
           scope={scope}
@@ -506,6 +529,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
           onTogglePage={handleTogglePage}
           onResetFilter={handleResetFilter}
           onScopeChange={handleScopeChange}
+          onRetryAll={() => setShowRetryConfirm(true)}
         />
       </div>
 

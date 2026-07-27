@@ -377,10 +377,16 @@ function CoreSetContent({
     : null
 
   // 행 분할 정책:
+  //   한 줄에 다 들어가면(≤5) 나누지 않고 한 행에 나열 — 시연용처럼 항목이 적은 과목에서
+  //   2/1/1 로 쪼개져 보이던 문제 해소.
   //   세트 1 (핵심 10개): 핵심만 2행(5/5)으로 분배하고 중간테스트는 단독 3행으로 내림.
   //   세트 2·3 (핵심 8개): 핵심+중간(9개)을 2행(5/4)으로 균등 분배.
+  const ROW_MAX = 5
+  const allItems: GridItem[] = midItem ? [...coreItems, midItem] : coreItems
   let rows: GridItem[][]
-  if (setNumber === 1) {
+  if (allItems.length <= ROW_MAX) {
+    rows = allItems.length > 0 ? [allItems] : []
+  } else if (setNumber === 1) {
     const coreRows = chunkInto(
       coreItems,
       Math.max(1, Math.ceil(coreItems.length / 2)),

@@ -762,6 +762,7 @@
         "totalCount": "{total} questions",
         "resultCount": "{filtered} of {total} questions",
         "reset": "Clear filters",
+        "retryAll": "Reset all",
         "noResult": "No questions match the selected filters.",
         "groupType": "Cognitive type",
         "groupFormat": "Question format",
@@ -769,6 +770,8 @@
         "groupPage": "Slide page",
         "bookmarkedOnly": "Favorites only",
         "pageLabel": "p.{page}",
+        "pageLabelInMaterial": "p.{local} (of {page})",
+        "pageUnknownMaterial": "Unknown material",
         "pageEmpty": "No questions have page references."
       },
       "scope": {
@@ -800,7 +803,6 @@
       },
       "askAiChatbot": "Ask AI Chatbot",
       "retryOne": "Try Again",
-      "retryAll": "Retry All",
       "retryAllConfirmTitle": "Retry all quizzes",
       "retryAllConfirm": "Reset all answers in this lecture and start over?",
       "retryAllConfirmNote": "Your correct/incorrect history will be preserved.",
