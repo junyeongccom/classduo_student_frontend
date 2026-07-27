@@ -316,6 +316,8 @@
     "socraticNoTopics": "No Socratic topics for this lecture yet.",
     "socraticPickTopicPlaceholder": "Pick a dialogue topic above to begin",
     "socraticStageTitle": "Stages",
+    "socraticCompletedNotice": "You've completed all four stages! 🎉",
+    "socraticFinishButton": "Finish",
     "socraticStage": {
       "termMemory": "Terms",
       "concept": "Concepts",

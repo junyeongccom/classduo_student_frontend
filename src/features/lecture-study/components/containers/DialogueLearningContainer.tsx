@@ -469,6 +469,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                   onReferencesUpdate={handleReferencesUpdate}
                   onLectureIdsLoaded={handleLectureIdsLoaded}
                   onMessagesUpdate={handleMessagesUpdate}
+                  onSocraticFinish={handleNewChatAndResetPanels}
                   onShowReferencePanel={(type) => {
                     if (type === 'notes') {
                       if (!isNotesPanelOpen) toggleNotesPanel(true)

@@ -316,6 +316,8 @@
     "socraticNoTopics": "이 회차에는 아직 소크라 문답 주제가 없어요.",
     "socraticPickTopicPlaceholder": "위에서 문답 주제를 먼저 골라 주세요",
     "socraticStageTitle": "문답 단계",
+    "socraticCompletedNotice": "4단계 문답을 모두 마쳤어요! 🎉",
+    "socraticFinishButton": "종료하기",
     "socraticStage": {
       "termMemory": "용어암기",
       "concept": "개념이해",
