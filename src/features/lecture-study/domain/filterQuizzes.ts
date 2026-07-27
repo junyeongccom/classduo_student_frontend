@@ -208,3 +208,104 @@ export function buildQuizSections(
     visibleCount: visible.length,
   }
 }
+
+/* ────────────────────────────────────────────────────────────────
+   자료 슬라이드 페이지 ↔ 강의자료 매핑
+
+   퀴즈의 source_pages 는 **여러 자료를 이어붙인 전역 페이지 번호**다.
+   (LeftPanelMaterials 가 자료들을 파일명 자연정렬 순으로 concat 해 한 뷰어로 보여주고,
+    뷰어 표기도 `현재 / 전체(=합계)` 이므로 번호 자체는 전역이 맞다.)
+
+   문제는 필터에서 번호만 나열하면 "41p" 가 어느 자료의 41쪽인지 알 수 없다는 것.
+   그래서 자료별 누적 오프셋으로 구간을 나눠 **자료명 아래에 묶어** 보여준다.
+   칩의 숫자는 뷰어와 맞도록 전역 번호를 그대로 쓰고, 자료 내 쪽번호를 함께 곁들인다.
+   ──────────────────────────────────────────────────────────────── */
+
+/** 페이지 구간 계산에 필요한 자료 최소 정보 (SnapshotMaterialItem 의 부분집합) */
+export interface QuizSourceMaterial {
+  material_id: string
+  original_filename: string | null
+  total_pages: number | null
+}
+
+/** 자료 1건 + 그 자료 구간에 속하는 전역 페이지 번호들 */
+export interface QuizSourcePageGroup {
+  materialId: string
+  /** 표시용 자료명 (없으면 호출측에서 폴백 문구 사용) */
+  name: string | null
+  /** 이 자료의 첫 페이지가 전역에서 갖는 번호 - 1 (= 앞선 자료들의 페이지 합) */
+  offset: number
+  /** 이 자료 구간에 속한 전역 페이지 번호 (오름차순) */
+  pages: number[]
+}
+
+/**
+ * 강의자료 표시 순서 — LeftPanelMaterials 와 동일 규칙(파일명 자연정렬, 이름 없으면 뒤로).
+ * 뷰어의 concat 순서와 어긋나면 페이지 구간이 통째로 밀리므로 반드시 같은 규칙을 쓴다.
+ */
+export function sortMaterialsForDisplay<T extends QuizSourceMaterial>(materials: readonly T[]): T[] {
+  return [...materials].sort((a, b) => {
+    const an = a.original_filename ?? ''
+    const bn = b.original_filename ?? ''
+    if (!an && !bn) return 0
+    if (!an) return 1
+    if (!bn) return -1
+    return an.localeCompare(bn, 'ko', { numeric: true, sensitivity: 'base' })
+  })
+}
+
+/**
+ * 전역 페이지 번호 목록을 자료별 그룹으로 분해한다.
+ *
+ * @param pages     퀴즈들이 인용한 전역 페이지 번호 (getAvailableSourcePages 결과)
+ * @param materials 회차 강의자료 목록 (정렬 전이어도 됨 — 내부에서 표시 순서로 정렬)
+ * @returns 페이지가 하나라도 걸린 자료만, 표시 순서대로. 어느 구간에도 속하지 않는
+ *          페이지(자료 메타 누락·total_pages 결측 등)는 materialId '' 인 마지막 그룹으로 모은다.
+ */
+export function buildSourcePageGroups(
+  pages: readonly number[],
+  materials: readonly QuizSourceMaterial[],
+): QuizSourcePageGroup[] {
+  const sorted = sortMaterialsForDisplay(materials)
+  const ranges: { material: QuizSourceMaterial; start: number; end: number; offset: number }[] = []
+  let offset = 0
+  for (const material of sorted) {
+    const count = material.total_pages ?? 0
+    if (count > 0) {
+      ranges.push({ material, start: offset + 1, end: offset + count, offset })
+      offset += count
+    }
+  }
+
+  const groups = new Map<string, QuizSourcePageGroup>()
+  const orphans: number[] = []
+  for (const page of [...pages].sort((a, b) => a - b)) {
+    const hit = ranges.find((r) => page >= r.start && page <= r.end)
+    if (!hit) {
+      orphans.push(page)
+      continue
+    }
+    const existing = groups.get(hit.material.material_id)
+    if (existing) {
+      existing.pages.push(page)
+    } else {
+      groups.set(hit.material.material_id, {
+        materialId: hit.material.material_id,
+        name: hit.material.original_filename,
+        offset: hit.offset,
+        pages: [page],
+      })
+    }
+  }
+
+  // 표시 순서 = 자료 정렬 순서
+  const result: QuizSourcePageGroup[] = []
+  for (const range of ranges) {
+    const group = groups.get(range.material.material_id)
+    if (group) result.push(group)
+  }
+  if (orphans.length > 0) {
+    result.push({ materialId: '', name: null, offset: 0, pages: orphans })
+  }
+  return result
+}

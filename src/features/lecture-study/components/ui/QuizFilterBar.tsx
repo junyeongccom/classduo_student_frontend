@@ -15,6 +15,7 @@ import type {
   QuizAnswerFormat,
   QuizFilterState,
   QuizScopeMode,
+  QuizSourcePageGroup,
 } from '../../domain/filterQuizzes'
 import { SELECTED_SCOPE_LIMIT } from '../../domain/filterQuizzes'
 
@@ -64,6 +65,8 @@ export interface QuizFilterBarProps {
   availableTypes: InstructorQuizType[]
   availableFormats: QuizAnswerFormat[]
   availablePages: number[]
+  /** 자료별로 묶은 페이지 그룹. 비어 있으면(자료 메타 미확보) 평면 목록으로 폴백. */
+  pageGroups: QuizSourcePageGroup[]
   filter: QuizFilterState
   activeFilterCount: number
   scope: QuizScopeMode
@@ -73,6 +76,8 @@ export interface QuizFilterBarProps {
   onTogglePage: (page: number) => void
   onResetFilter: () => void
   onScopeChange: (scope: QuizScopeMode) => void
+  /** '전체 문제 초기화' — 회차 전 문항의 풀이 기록을 리셋(확인 모달은 상위에서 처리) */
+  onRetryAll: () => void
 }
 
 export function QuizFilterBar({
@@ -82,6 +87,7 @@ export function QuizFilterBar({
   availableTypes,
   availableFormats,
   availablePages,
+  pageGroups,
   filter,
   activeFilterCount,
   scope,
@@ -91,6 +97,7 @@ export function QuizFilterBar({
   onTogglePage,
   onResetFilter,
   onScopeChange,
+  onRetryAll,
 }: QuizFilterBarProps) {
   const t = useTranslations('lectureStudy.quiz')
   const [isExpanded, setIsExpanded] = useState(false)
@@ -127,16 +134,27 @@ export function QuizFilterBar({
             : t('filter.totalCount', { total: totalCount })}
         </span>
 
-        {hasActiveFilter && (
+        {/* 우측 액션 — 필터 초기화(조건부) + 전체 문제 초기화(풀이 기록 리셋) */}
+        <div className="ml-auto inline-flex items-center gap-1">
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={onResetFilter}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+            >
+              <RotateCcw className="h-3 w-3" />
+              {t('filter.reset')}
+            </button>
+          )}
           <button
             type="button"
-            onClick={onResetFilter}
-            className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+            onClick={onRetryAll}
+            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-600 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
           >
             <RotateCcw className="h-3 w-3" />
-            {t('filter.reset')}
+            {t('filter.retryAll')}
           </button>
-        )}
+        </div>
       </div>
 
       {/* 필터 패널 */}
@@ -196,6 +214,35 @@ export function QuizFilterBar({
             </p>
             {availablePages.length === 0 ? (
               <p className="text-xs text-gray-400 dark:text-gray-500">{t('filter.pageEmpty')}</p>
+            ) : pageGroups.length > 0 ? (
+              // 자료가 여러 개면 페이지 번호만으론 어느 자료인지 알 수 없어 자료명으로 묶는다.
+              // 칩 숫자는 뷰어 표기(전역 번호)와 맞추고, 자료 내 쪽번호를 괄호로 곁들인다.
+              <div className="flex max-h-56 flex-col gap-2.5 overflow-y-auto">
+                {pageGroups.map((group) => (
+                  <div key={group.materialId || 'unmapped'}>
+                    <p className="mb-1 truncate text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                      {group.name ?? t('filter.pageUnknownMaterial')}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.pages.map((page) => (
+                        <Chip
+                          key={page}
+                          label={
+                            group.materialId
+                              ? t('filter.pageLabelInMaterial', {
+                                  page,
+                                  local: page - group.offset,
+                                })
+                              : t('filter.pageLabel', { page })
+                          }
+                          active={filter.pages.includes(page)}
+                          onClick={() => onTogglePage(page)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
                 {availablePages.map((page) => (

@@ -762,6 +762,7 @@
         "totalCount": "총 {total}문항",
         "resultCount": "{total}문항 중 {filtered}문항",
         "reset": "필터 초기화",
+        "retryAll": "전체 문제 초기화",
         "noResult": "선택한 조건에 맞는 문항이 없습니다.",
         "groupType": "인지유형",
         "groupFormat": "문제유형",
@@ -769,6 +770,8 @@
         "groupPage": "자료 슬라이드 페이지",
         "bookmarkedOnly": "즐겨찾기한 문항만",
         "pageLabel": "{page}p",
+        "pageLabelInMaterial": "{local}p (전체 {page}p)",
+        "pageUnknownMaterial": "자료 미확인",
         "pageEmpty": "페이지 정보가 있는 문항이 없습니다."
       },
       "scope": {
@@ -800,7 +803,6 @@
       },
       "askAiChatbot": "AI 챗봇에게 질문하기",
       "retryOne": "다시풀기",
-      "retryAll": "전체 문제 다시 풀기",
       "retryAllConfirmTitle": "퀴즈 전체 다시 풀기",
       "retryAllConfirm": "이 회차 모든 문제의 풀이 상태를 초기화하고 처음부터 다시 풀까요?",
       "retryAllConfirmNote": "지금까지의 정답·오답 기록은 그대로 보존됩니다.",
