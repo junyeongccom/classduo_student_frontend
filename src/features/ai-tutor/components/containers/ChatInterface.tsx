@@ -19,6 +19,7 @@ import { useSocraticStore } from '@/features/ai-tutor/store/useSocraticStore'
 import { socraticService } from '@/features/ai-tutor/services/socraticService'
 import { ChatComposer } from '../ui/ChatComposer'
 import SocraticTopicPicker from '../ui/SocraticTopicPicker'
+import SocraticFinishBar from '../ui/SocraticFinishBar'
 import SocraticLoading from '../ui/SocraticLoading'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { FeedbackButtons } from '../ui/FeedbackButtons'
@@ -42,9 +43,11 @@ interface ChatInterfaceProps {
   onLectureIdsLoaded?: (lectureIds: string[]) => void // 세션 로드 시 lecture_ids 전달
   onMessagesUpdate?: (messages: ChatMessage[]) => void // 메시지 배열 업데이트
   onShowReferencePanel?: (type: 'notes' | 'materials') => void
+  // 소크라 문답 4단계를 모두 끝낸 뒤 '종료하기'를 눌렀을 때 — 새 채팅 화면으로 돌아간다.
+  onSocraticFinish?: () => void
 }
 
-export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel }: ChatInterfaceProps) {
+export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel, onSocraticFinish }: ChatInterfaceProps) {
   const t = useTranslations('aiTutorChat')
   const { locale } = useI18n()
   const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled, selectedCourseId } = useAITutorStore(state => ({
@@ -57,9 +60,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
     selectedCourseId: state.selectedCourseId,
   }))
-  const { socraticActiveTopic, setSocraticActiveTopic } = useSocraticStore(state => ({
+  const { socraticActiveTopic, setSocraticActiveTopic, socraticCurrentStage, socraticStageTotal } = useSocraticStore(state => ({
     socraticActiveTopic: state.activeTopic,
     setSocraticActiveTopic: state.setActiveTopic,
+    socraticCurrentStage: state.currentStage,
+    socraticStageTotal: state.stageTotal,
   }))
 
   const [input, setInput] = useState('')
@@ -1401,6 +1406,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   // 소크라 모드인데 주제를 아직 안 고른 상태 = 문답을 시작할 수 없는 상태.
   // 입력창을 잠가(포커스/타이핑 불가) 주제 카드를 먼저 고르도록 강제한다.
   const socraticTopicPending = chatMode === 'socratic' && !socraticActiveTopic
+  // 4단계를 모두 통과한 상태 (단계 없는 옛 주제는 stageTotal 0 이라 완료로 보지 않는다)
+  const socraticCompleted =
+    chatMode === 'socratic' && !!socraticActiveTopic &&
+    socraticStageTotal > 0 && socraticCurrentStage >= socraticStageTotal
   const composerDisabled = isLoading || socraticTopicPending
   const composerPlaceholder = socraticTopicPending
     ? t('socraticPickTopicPlaceholder')
@@ -1425,8 +1434,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               onChatModeChange={handleChatModeChange}
               socraticDisabled={socraticEntryDisabled}
               simpleDetailedDisabled={isSocraticSession}
-              topOverlay={chatMode === 'socratic' && !socraticActiveTopic ? (
+              topOverlay={socraticTopicPending ? (
                 <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
+              ) : socraticCompleted ? (
+                <SocraticFinishBar onFinish={onSocraticFinish} />
               ) : undefined}
               sendLabel={t('sendLabel')}
               simpleLabel={t('simpleLabel')}
@@ -1771,8 +1782,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             onChatModeChange={handleChatModeChange}
             socraticDisabled={socraticEntryDisabled}
             simpleDetailedDisabled={isSocraticSession}
-            topOverlay={chatMode === 'socratic' && !socraticActiveTopic ? (
+            topOverlay={socraticTopicPending ? (
               <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
+            ) : socraticCompleted ? (
+              <SocraticFinishBar onFinish={onSocraticFinish} />
             ) : undefined}
             sendLabel={t('sendLabel')}
             simpleLabel={t('simpleLabel')}
