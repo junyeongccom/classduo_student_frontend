@@ -36,6 +36,9 @@ export type QuizScopeMode = 'selected' | 'all'
 /** '선별 풀기' 모드에서 노출하는 최대 문항 수 */
 export const SELECTED_SCOPE_LIMIT = 20
 
+/** '선별 풀기' 모드에서 인지유형 1종당 뽑는 문항 수 (4유형 × 5 = SELECTED_SCOPE_LIMIT) */
+export const SELECTED_SCOPE_PER_TYPE = 5
+
 /** 선택 가능한 문제 유형 (칩 노출 순서) */
 export const ANSWER_FORMAT_ORDER: QuizAnswerFormat[] = ['multiple_choice', 'essay']
 
@@ -188,8 +191,26 @@ export function groupQuizzesByType(
 }
 
 /**
+ * '선별 풀기' 표본 추출 — 인지유형마다 앞에서부터 SELECTED_SCOPE_PER_TYPE 문항씩.
+ *
+ * 앞에서부터 20개를 그냥 자르면 문항 수가 많은 유형(개념이해 25문항 등)이 앞을 다 차지해
+ * 뒤쪽 유형이 한 문제도 안 나온다. 유형별로 고르게 뽑아 4유형을 모두 접하게 한다.
+ * 유형별 문항이 5개보다 적으면 있는 만큼만 — 부족분을 다른 유형에서 채우지 않는다
+ * (유형 간 균형이 이 모드의 목적이므로 총합이 20 미만이 될 수 있다).
+ */
+function pickBalancedByType(
+  quizzes: readonly InstructorQuizItem[],
+): InstructorQuizItem[] {
+  const picked: InstructorQuizItem[] = []
+  for (const section of groupQuizzesByType(quizzes)) {
+    picked.push(...section.items.slice(0, SELECTED_SCOPE_PER_TYPE))
+  }
+  return picked
+}
+
+/**
  * 필터 + 풀이 범위를 적용한 최종 섹션 목록.
- * 'selected' 모드는 화면 노출 순서(TYPE_ORDER 기준) 기준 앞 SELECTED_SCOPE_LIMIT 문항만 남긴다(결정론적).
+ * 'selected' 모드는 인지유형별로 앞 SELECTED_SCOPE_PER_TYPE 문항씩만 남긴다(결정론적).
  */
 export function buildQuizSections(
   quizzes: readonly InstructorQuizItem[],
@@ -199,8 +220,7 @@ export function buildQuizSections(
 ): QuizSectionsResult {
   const filtered = filterQuizzes(quizzes, filter, bookmarkSet)
   const ordered = groupQuizzesByType(filtered).flatMap((section) => section.items)
-  const visible =
-    scope === 'selected' ? ordered.slice(0, SELECTED_SCOPE_LIMIT) : ordered
+  const visible = scope === 'selected' ? pickBalancedByType(filtered) : ordered
 
   return {
     sections: groupQuizzesByType(visible),
