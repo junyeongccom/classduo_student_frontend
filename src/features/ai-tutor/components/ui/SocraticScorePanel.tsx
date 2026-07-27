@@ -13,6 +13,8 @@ const AXIS_KEYS: (keyof SocraticAxisScores)[] = [
   'clarity', 'accuracy', 'relevance', 'depth', 'reflection',
 ]
 const AXIS_CAP = 20
+// 문답 진행 4단계 — 백엔드 stage_questions 순서와 동일해야 한다
+const STAGE_KEYS = ['termMemory', 'concept', 'analysisApply', 'judgeDesign'] as const
 
 interface Props {
   topic: SocraticTopic
@@ -25,9 +27,11 @@ interface Props {
   mastered: boolean
   leaderboard: SocraticLeaderboardEntry[]
   myStudentId: string | null
+  currentStage: number
+  stageTotal: number
 }
 
-export default function SocraticScorePanel({ topic, axisScores, totalScore, lastDeltas, praise, suggestion, abuseWarning, mastered, leaderboard, myStudentId }: Props) {
+export default function SocraticScorePanel({ topic, axisScores, totalScore, lastDeltas, praise, suggestion, abuseWarning, mastered, leaderboard, myStudentId, currentStage, stageTotal }: Props) {
   const t = useTranslations('aiTutorChat')
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
@@ -40,6 +44,26 @@ export default function SocraticScorePanel({ topic, axisScores, totalScore, last
           {mastered && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{t('socraticMastered')}</span>}
         </div>
       </div>
+      {/* 4단계 순차 진행 (단계 질문이 없는 옛 주제는 stageTotal 0 → 숨김) */}
+      {stageTotal > 0 && (
+        <div>
+          <div className="mb-1 text-xs font-semibold text-gray-500">{t('socraticStageTitle')}</div>
+          <ol className="space-y-1">
+            {STAGE_KEYS.slice(0, stageTotal).map((key, i) => {
+              const done = i < currentStage
+              const active = i === currentStage
+              return (
+                <li key={key} className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs ${active ? 'bg-indigo-50 font-semibold text-indigo-700' : done ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <span aria-hidden="true" className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${done ? 'bg-indigo-500 text-white' : active ? 'border border-indigo-500 text-indigo-600' : 'border border-gray-300 text-gray-400'}`}>
+                    {done ? '✓' : i + 1}
+                  </span>
+                  <span className={done ? 'line-through' : ''}>{t(`socraticStage.${key}`)}</span>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      )}
       {/* 5축 게이지 */}
       <div className="space-y-2">
         {AXIS_KEYS.map((key) => (

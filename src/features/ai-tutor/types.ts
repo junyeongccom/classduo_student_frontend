@@ -216,7 +216,7 @@ export interface ChatStreamProgressData {
 
 // 소크라 문답 모드: chat_mode='socratic'으로 스트리밍 시 SSE로 함께 전달되는 채점 이벤트
 // (기존 SSE 파싱의 else 분기가 onProgress로 그대로 전달)
-export type StreamProgressData = ChatStreamProgressData | SocraticScoreEvent
+export type StreamProgressData = ChatStreamProgressData | SocraticScoreEvent | SocraticStageEvent
 
 export interface CardMatchPairSources {
   recording_chunk_ids?: string[]
@@ -253,6 +253,9 @@ export interface SocraticTopic {
   position: number
   // 요청 유저가 이 주제를 100점(마스터)까지 끝냈는지. 조회 실패 시 백엔드가 false로 폴백.
   mastered?: boolean
+  // 파이프라인이 미리 만들어 둔 단계 질문 수(용어암기→개념이해→분석과적용→판단과설계 = 4).
+  // 마이그레이션 이전에 생성된 옛 주제는 0 → 단계 표시를 감춘다.
+  stage_total?: number
 }
 
 export interface SocraticAxisScores {
@@ -268,6 +271,8 @@ export interface SocraticStartResponse {
   topic: SocraticTopic
   message_id: string
   seed_question: string
+  // 시작 직후 진행 단계 (항상 0 = 용어암기)
+  current_stage?: number
 }
 
 // GET /ai-tutor/sessions/{sessionId}/socratic/state 응답
@@ -278,6 +283,9 @@ export interface SocraticStateResponse {
   mastered_at: string | null
   // v2.0: 세션에서 진행 중인 소크라 주제 (히스토리 복원용). 없으면 null.
   topic?: SocraticTopic | null
+  // 4단계 진행 상태 복원용. current_stage === stage_total 이면 전 단계 통과.
+  current_stage?: number
+  stage_total?: number
 }
 
 // GET /ai-tutor/socratic/courses/{courseId}/leaderboard 응답 항목
@@ -304,5 +312,14 @@ export interface SocraticScoreEvent {
   praise: string
   suggestion: string
   mastered: boolean
+}
+
+// SSE 이벤트: 튜터가 학생 답변을 정답/오답/무관으로 판정한 뒤의 4단계 진행 상태.
+// 정답(correct)일 때만 current_stage가 한 칸 올라간다.
+export interface SocraticStageEvent {
+  type: 'socratic_stage'
+  verdict: 'correct' | 'incorrect' | 'irrelevant' | null
+  current_stage: number
+  stage_total: number
 }
 
