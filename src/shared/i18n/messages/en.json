@@ -42,11 +42,11 @@
       "cta": "Enter"
     },
     "modeExam": {
-      "eyebrow": "EXAM · 30 TESTS · LOCK-ON",
-      "heroSubtitle": "26 topics · 5-10 min each",
+      "eyebrow": "EXAM · LOCK-ON",
+      "heroSubtitle": "Core topics · 5-10 min each",
       "title": "Core Topics",
-      "description": "Prepare for the final with 26 core, 3 mid, and 1 final test",
-      "footer": "Set 1 · In progress",
+      "description": "Prepare for the final with core topic tests",
+      "footer": "Exam preparation",
       "cta": "Enter"
     },
     "modeDialogue": {

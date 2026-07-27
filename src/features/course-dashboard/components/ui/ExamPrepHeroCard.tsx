@@ -15,7 +15,7 @@ import { useState } from 'react'
 interface ExamPrepHeroCardProps {
   /** 카드 제목 (i18n: courseDashboard.modeExam.title = "핵심 주제 학습") */
   title: string
-  /** 제목 위 부제 (i18n: courseDashboard.modeExam.heroSubtitle = "26개 주제 · 5~10분씩 학습") */
+  /** 제목 위 부제 (i18n: courseDashboard.modeExam.heroSubtitle) */
   subtitle?: string
   onClick: () => void
   ariaLabel?: string
