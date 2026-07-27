@@ -20,11 +20,12 @@ import { EmptyState } from '../ui/EmptyState'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
 
-/** 과목명 → 커스텀 썸네일 경로 매핑 */
-const COURSE_THUMBNAILS: Record<string, string> = {
-  '생명과학의 세계': '/course_Thumbnail.png',
-  'The World of Life Science': '/course_Thumbnail.png',
-}
+/**
+ * 과목 썸네일 기본 이미지.
+ * courses API(CourseApiItem)에 과목별 썸네일 필드가 아직 없으므로 전 과목 공통 기본값으로 사용한다.
+ * 추후 API 가 썸네일을 내려주면 `course.thumbnail_url ?? DEFAULT_COURSE_THUMBNAIL` 로 DB 값 우선.
+ */
+const DEFAULT_COURSE_THUMBNAIL = '/course_Thumbnail.png'
 
 /** '생명과학의 세계' 과목은 데모상 진도율을 항상 100%로 노출 (콘텐츠 미오픈 회차 무관). */
 function isFullProgressCourse(title?: string | null): boolean {
@@ -127,7 +128,7 @@ export function HomeContainer() {
                         }
                       : null
                     }
-                    thumbnailUrl={COURSE_THUMBNAILS[course.name] ?? null}
+                    thumbnailUrl={DEFAULT_COURSE_THUMBNAIL}
                     locale={dateLocale}
                     onClick={() =>
                       router.push(`/studyspace/course/${course.id}`)
