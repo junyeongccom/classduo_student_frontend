@@ -2,14 +2,14 @@
  * @file DashboardMobileContent.tsx
  * @description 과목 대시보드 모바일(<768px) 뷰 — ScaledCanvas 대신 네이티브 세로 스크롤 스택.
  *   Figma(785:3844) 구성 참고: 핵심 주제 학습(히어로) → 회차별 학습 → 대화형 학습
- *   → 문제 만들기·내 퀴즈 저장소(2열) → 캘린더. 데스크톱 DashboardScaledContent 와 동일 i18n/톤 재사용.
+ *   → 내 퀴즈 저장소 → 캘린더. 데스크톱 DashboardScaledContent 와 동일 i18n/톤 재사용.
  * @module features/course-dashboard/components/ui
  * @dependencies ExamPrepHeroCard, domain/calendar(resolveDayTone), domain/dday(resolveDdayTone), lucide-react
  */
 
 'use client'
 
-import { Bookmark, ChevronRight, PencilLine } from 'lucide-react'
+import { Bookmark, ChevronRight } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { LucideIcon } from 'lucide-react'
 
@@ -24,7 +24,6 @@ interface DashboardMobileContentProps {
   onHero: () => void
   onWeekly: () => void
   onDialogue: () => void
-  onCreate: () => void
   onMyQuiz: () => void
 }
 
@@ -35,7 +34,6 @@ export function DashboardMobileContent({
   onHero,
   onWeekly,
   onDialogue,
-  onCreate,
   onMyQuiz,
 }: DashboardMobileContentProps) {
   const t = useTranslations()
@@ -66,13 +64,8 @@ export function DashboardMobileContent({
           onClick={onDialogue}
         />
 
-        {/* 4) 문제 만들기 / 내 퀴즈 저장소 (2열, 흰 박스 없음) */}
-        <div className="grid grid-cols-2 gap-3 px-1 py-1">
-          <MobileQuickAction
-            icon={PencilLine}
-            label={t('courseNav.createQuestion')}
-            onClick={onCreate}
-          />
+        {/* 4) 내 퀴즈 저장소 ('문제 만들기' 제거 후 1개, 흰 박스 없음) */}
+        <div className="grid grid-cols-1 gap-3 px-1 py-1">
           <MobileQuickAction
             icon={Bookmark}
             label={t('courseDashboard.myQuizSaved')}
@@ -123,7 +116,7 @@ function MobileStudyCard({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   문제 만들기 / 내 퀴즈 저장소 — 모바일 컴팩트 (QuickAction 모바일판)
+   내 퀴즈 저장소 — 모바일 컴팩트 (QuickAction 모바일판)
    ───────────────────────────────────────────────────────────── */
 function MobileQuickAction({
   icon: Icon,

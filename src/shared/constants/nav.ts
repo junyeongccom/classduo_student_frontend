@@ -13,7 +13,6 @@ import {
   Leaf,
   MessageCircle,
   Bookmark,
-  PencilLine,
   ClipboardList,
 } from 'lucide-react'
 
@@ -25,7 +24,6 @@ export type CourseMenuId =
   | 'exam-prep'
   | 'course-dialogue'
   | 'my-quizzes'
-  | 'create-question'
   | 'home'
   | 'feedback'
 
@@ -106,7 +104,7 @@ export const NEW_SIDEBAR_MENU = [
  * 과목 컨텍스트 사이드바 메뉴 — `/studyspace/course/[id]/...` 진입 시 표시
  *
  * course 그룹 순서: 대시보드 → 기말대비 → 회차별 → 대화형
- * resources 그룹 순서: 문제만들기 → 내 퀴즈 저장소
+ * resources 그룹: 내 퀴즈 저장소
  */
 export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
   {
@@ -145,15 +143,6 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     matchFor: (id) => `/studyspace/course/${id}/dialogue`,
     color: '#7C3AED',
     group: 'course',
-  },
-  {
-    id: 'create-question',
-    labelKey: 'courseNav.createQuestion',
-    icon: PencilLine,
-    hrefFor: (id) => `/studyspace/course/${id}/my-quizzes?tab=create`,
-    matchFor: (id) => `/studyspace/course/${id}/my-quizzes?tab=create`,
-    color: '#22C55E',
-    group: 'resources',
   },
   {
     id: 'my-quizzes',

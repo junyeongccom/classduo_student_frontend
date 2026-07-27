@@ -19,7 +19,6 @@
     "examPrep": "핵심 주제 학습",
     "dialogue": "대화형 학습",
     "myQuizzes": "내 퀴즈 저장소",
-    "createQuestion": "문제 만들기",
     "home": "홈",
     "feedback": "피드백",
     "sectionResources": "나의 퀴즈",
@@ -315,6 +314,14 @@
     "socraticRankSuffix": "{rank}위",
     "socraticRankingEmpty": "아직 참여자가 없어요",
     "socraticNoTopics": "이 회차에는 아직 소크라 문답 주제가 없어요.",
+    "socraticPickTopicPlaceholder": "위에서 문답 주제를 먼저 골라 주세요",
+    "socraticStageTitle": "문답 단계",
+    "socraticStage": {
+      "termMemory": "용어암기",
+      "concept": "개념이해",
+      "analysisApply": "분석과적용",
+      "judgeDesign": "판단과설계"
+    },
     "socraticLoading": "생각을 정리하는 중이에요…",
     "defaultHookingQuestions": {
       "importantConcept": "이 수업에서 가장 중요한 개념은 무엇인가요?",
