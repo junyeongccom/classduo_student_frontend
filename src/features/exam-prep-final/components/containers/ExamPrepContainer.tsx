@@ -275,10 +275,11 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
         </div>
       )}
 
-      {/* 목록 모달 — 핵심테스트 26개 (서술형 중간테스트 제외) 주제 목록 */}
+      {/* 목록 모달 — 핵심테스트 주제 목록 (서술형 중간테스트 제외).
+          그리드와 동일하게 잠긴(locked) 테스트는 목록에서도 제외 — 비면 모달 자체 empty 상태. */}
       {listOpen && (
         <CoreTestListModal
-          coreTests={data.coreTests}
+          coreTests={data.coreTests.filter((c) => c.status !== 'locked')}
           onClose={() => setListOpen(false)}
           onSelectTest={(test) => {
             setListOpen(false)
@@ -356,14 +357,21 @@ function CoreSetContent({
   // 모바일(<768px)에서는 한 줄에 핵심테스트 3개만 배치 → 5개 논리행이 3+2 로 갈라지며
   // 4/1/4/1 대신 시안(1041:3708)의 3/2/3/2 배열이 된다. 데스크톱은 5개 한 줄 그대로.
   const isMobile = useMediaQuery('(max-width: 767px)')
-  const tests = getCoreTestsBySet(data.coreTests, setNumber)
-  const midTest = data.midTests.find((m) => m.setNumber === setNumber)
+  const t = useTranslations()
+  // 잠금 비노출 정책: 자물쇠로 표시되던 항목(핵심 status==='locked' / 중간 unlocked===false)은
+  // 배지만 떼는 게 아니라 아예 렌더하지 않는다. 접근 권한 판정(useExamPrepData)은 그대로 유지.
+  const tests = getCoreTestsBySet(data.coreTests, setNumber).filter(
+    (test) => test.status !== 'locked',
+  )
+  const midTest = data.midTests.find(
+    (m) => m.setNumber === setNumber && m.unlocked,
+  )
 
   // 핵심테스트 + 중간테스트(있으면)를 그리드에 흘림
   type GridItem =
     | { kind: 'core'; test: (typeof tests)[number] }
     | { kind: 'mid'; mid: NonNullable<typeof midTest> }
-  const coreItems: GridItem[] = tests.map((t) => ({ kind: 'core' as const, test: t }))
+  const coreItems: GridItem[] = tests.map((test) => ({ kind: 'core' as const, test }))
   const midItem: GridItem | null = midTest
     ? { kind: 'mid' as const, mid: midTest }
     : null
@@ -390,6 +398,20 @@ function CoreSetContent({
     selection?.kind === 'core' && selection.id === id
   const isMidSelected = (setNum: 1 | 2 | 3) =>
     selection?.kind === 'mid' && selection.setNumber === setNum
+
+  // 잠긴 항목을 모두 숨겨 세트가 비면 빈 상태 안내. 세트 3 은 진보라 배경이라 대비색 분기.
+  if (displayRows.length === 0) {
+    return (
+      <p
+        className={cn(
+          'py-10 text-center text-sm font-medium md:py-16 md:text-base',
+          setNumber === 3 ? 'text-white/80' : 'text-gray-500',
+        )}
+      >
+        {t('examPrepFinal.setEmpty')}
+      </p>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
