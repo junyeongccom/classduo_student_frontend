@@ -17,11 +17,62 @@ import { trackSummaryViewed } from '@/shared/hooks/useAnalytics'
 import { summaryTabAnalytics } from '@/shared/lib/analytics'
 import { useSourceNavigation } from '../../hooks/useSourceNavigation'
 import { SourceButton } from '../ui/SourceButton'
-import type { ContentSummary, ContentSummarySection } from '../../types'
+import type {
+  ContentSummary,
+  ContentSummaryCoreSection,
+  ContentSummarySection,
+  ContentSummarySupplementarySection,
+  ContentSummaryTable,
+} from '../../types'
 
 interface SummaryTabContainerProps {
   lectureId: string
   courseId: string
+}
+
+function parseTables(raw: unknown): ContentSummaryTable[] | undefined {
+  if (!Array.isArray(raw)) return undefined
+  return raw
+    .filter((t: unknown) => {
+      const tbl = t as Record<string, unknown>
+      return Array.isArray(tbl?.headers) && Array.isArray(tbl?.rows)
+    })
+    .map((t: unknown) => {
+      const tbl = t as Record<string, unknown>
+      return {
+        title: typeof tbl.title === 'string' ? tbl.title : null,
+        headers: (tbl.headers as unknown[]).filter((h: unknown) => typeof h === 'string') as string[],
+        rows: (tbl.rows as unknown[])
+          .filter((r: unknown) => Array.isArray(r))
+          .map((r: unknown) =>
+            (r as unknown[]).map((c: unknown) =>
+              typeof c === 'string' ? c : typeof c === 'number' ? String(c) : '',
+            ),
+          ) as string[][],
+      }
+    })
+}
+
+function parseSection(s: Record<string, unknown>): ContentSummarySection {
+  return {
+    title: typeof s.title === 'string' ? s.title : '',
+    bullets: Array.isArray(s.bullets) ? s.bullets.filter((b: unknown) => typeof b === 'string') : [],
+    tables: parseTables(s.tables),
+    source_pages: Array.isArray(s.source_pages) ? s.source_pages.filter(Number.isFinite) : [],
+    source_chunks: Array.isArray(s.source_chunks) ? s.source_chunks.filter(Number.isFinite) : [],
+  }
+}
+
+function parseCoreSection(s: Record<string, unknown>): ContentSummaryCoreSection {
+  return {
+    ...parseSection(s),
+    easy_explanation: typeof s.easy_explanation === 'string' ? s.easy_explanation : '',
+    lecture_seconds: Number.isFinite(s.lecture_seconds) ? (s.lecture_seconds as number) : 0,
+    time_share_pct: Number.isFinite(s.time_share_pct) ? (s.time_share_pct as number) : 0,
+    emphasis_cues: Array.isArray(s.emphasis_cues)
+      ? s.emphasis_cues.filter((c: unknown) => typeof c === 'string')
+      : [],
+  }
 }
 
 /** 방어적 파싱: summary_json → ContentSummary (Task 774) */
@@ -30,34 +81,15 @@ function parseContentSummary(raw: string | null): ContentSummary | null {
   try {
     const parsed = JSON.parse(raw)
     const overview = typeof parsed.overview === 'string' ? parsed.overview : ''
-    const rawSections = Array.isArray(parsed.sections) ? parsed.sections : []
-    const sections: ContentSummarySection[] = rawSections.map((s: Record<string, unknown>) => ({
-      title: typeof s.title === 'string' ? s.title : '',
-      bullets: Array.isArray(s.bullets) ? s.bullets.filter((b: unknown) => typeof b === 'string') : [],
-      tables: Array.isArray(s.tables)
-        ? s.tables
-            .filter((t: unknown) => {
-              const tbl = t as Record<string, unknown>
-              return Array.isArray(tbl?.headers) && Array.isArray(tbl?.rows)
-            })
-            .map((t: unknown) => {
-              const tbl = t as Record<string, unknown>
-              return {
-                title: typeof tbl.title === 'string' ? tbl.title : null,
-                headers: (tbl.headers as unknown[]).filter((h: unknown) => typeof h === 'string') as string[],
-                rows: (tbl.rows as unknown[])
-                  .filter((r: unknown) => Array.isArray(r))
-                  .map((r: unknown) =>
-                    (r as unknown[]).map((c: unknown) =>
-                      typeof c === 'string' ? c : typeof c === 'number' ? String(c) : '',
-                    ),
-                  ) as string[][],
-              }
-            })
-        : undefined,
-      source_pages: Array.isArray(s.source_pages) ? s.source_pages.filter(Number.isFinite) : [],
-      source_chunks: Array.isArray(s.source_chunks) ? s.source_chunks.filter(Number.isFinite) : [],
+    const asArray = (v: unknown) => (Array.isArray(v) ? (v as Record<string, unknown>[]) : [])
+
+    const sections = asArray(parsed.sections).map(parseSection)
+    const core_sections = asArray(parsed.core_sections).map(parseCoreSection)
+    const supplementary_sections: ContentSummarySupplementarySection[] = asArray(parsed.supplementary_sections).map((s) => ({
+      ...parseSection(s),
+      easy_explanation: typeof s.easy_explanation === 'string' ? s.easy_explanation : '',
     }))
+
     const recent_issues = Array.isArray(parsed.recent_issues)
       ? parsed.recent_issues.filter((i: unknown) => typeof i === 'string')
       : undefined
@@ -65,7 +97,7 @@ function parseContentSummary(raw: string | null): ContentSummary | null {
       ? parsed.exam_points.filter((p: unknown) => typeof p === 'string')
       : undefined
 
-    return { overview, sections, recent_issues, exam_points }
+    return { overview, sections, core_sections, supplementary_sections, recent_issues, exam_points }
   } catch {
     return null
   }
@@ -73,7 +105,11 @@ function parseContentSummary(raw: string | null): ContentSummary | null {
 
 /** 빈 요약 체크 (Task 775) */
 function isSummaryEmpty(summary: ContentSummary): boolean {
-  return summary.sections.length === 0 && (!summary.overview || summary.overview.trim() === '')
+  const hasAnySection =
+    summary.core_sections.length > 0 ||
+    summary.supplementary_sections.length > 0 ||
+    summary.sections.length > 0
+  return !hasAnySection && (!summary.overview || summary.overview.trim() === '')
 }
 
 export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainerProps) {

@@ -70,10 +70,26 @@ export interface ContentSummaryTable {
   rows: string[][]
 }
 
+/** 교수자가 수업에서 다룬 섹션 (녹음 유래) */
+export interface ContentSummaryCoreSection extends ContentSummarySection {
+  easy_explanation: string
+  lecture_seconds: number
+  time_share_pct: number
+  emphasis_cues: string[]
+}
+
+/** 강의자료에만 있고 수업에서 다루지 않은 섹션 */
+export interface ContentSummarySupplementarySection extends ContentSummarySection {
+  easy_explanation: string
+}
+
 /** lecture_content_summaries 통합 요약 */
 export interface ContentSummary {
   overview: string
+  /** 하위호환 평탄화 배열 — core+supplementary 가 비어 있는 구버전 요약에서만 렌더에 쓴다 */
   sections: ContentSummarySection[]
+  core_sections: ContentSummaryCoreSection[]
+  supplementary_sections: ContentSummarySupplementarySection[]
   recent_issues?: string[]
   exam_points?: string[]
 }
