@@ -52,7 +52,7 @@ export function EasyExplanation({ text, lectureId, sectionKey }: EasyExplanation
       {isOpen && (
         <div
           id={panelId}
-          className="border-t border-gray-100 dark:border-gray-700 px-4 py-3 text-sm leading-relaxed text-gray-700 dark:text-gray-300"
+          className="whitespace-pre-line border-t border-gray-100 dark:border-gray-700 px-4 py-3 text-sm leading-relaxed text-gray-700 dark:text-gray-300"
         >
           {text}
         </div>
