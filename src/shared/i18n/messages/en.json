@@ -309,7 +309,7 @@
       "depth": "Depth",
       "reflection": "Reflection"
     },
-    "socraticAbuseWarning": "Repeating similar messages lowers your score. Let's get back to the topic.",
+    "socraticAbuseWarning": "Your score was lowered for repeating similar messages. Let's get back to the topic.",
     "socraticRanking": "Ranking",
     "socraticRankSuffix": "#{rank}",
     "socraticRankingEmpty": "No participants yet",
