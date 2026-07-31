@@ -302,10 +302,11 @@ export interface SocraticLeaderboardResponse {
 }
 
 // SSE 이벤트: chat_mode='socratic' 스트리밍 시 채팅 스트림에 함께 실려오는 채점 결과
+// v4: axis_scores/applied_deltas는 백엔드가 더 이상 보내지 않음(레거시 호환을 위해 optional로 유지).
 export interface SocraticScoreEvent {
   type: 'socratic_score'
-  axis_scores: SocraticAxisScores
-  applied_deltas: SocraticAxisScores
+  axis_scores?: SocraticAxisScores
+  applied_deltas?: SocraticAxisScores
   total_score: number
   penalty?: number
   abuse: boolean
@@ -316,10 +317,36 @@ export interface SocraticScoreEvent {
 
 // SSE 이벤트: 튜터가 학생 답변을 정답/오답/무관으로 판정한 뒤의 4단계 진행 상태.
 // 정답(correct)일 때만 current_stage가 한 칸 올라간다.
+// v4 이전 레거시 이벤트 — socratic_progress로 대체되지만 하위 호환을 위해 유지.
 export interface SocraticStageEvent {
   type: 'socratic_stage'
   verdict: 'correct' | 'incorrect' | 'irrelevant' | null
   current_stage: number
   stage_total: number
+}
+
+// v4: 소크라 문답 진행 단계별 판정 결과 (self/scaffold1/scaffold2/fallback 중 어느 방식으로 통과했는지)
+export interface SocraticCheckpointResult {
+  index: number
+  method: 'self' | 'scaffold1' | 'scaffold2' | 'fallback'
+  aha: boolean
+  score: number
+}
+
+// SSE 이벤트: v4 소크라 문답 진행 상태 (root→scaffold→retry_root→fallback 단계 전이 포함).
+// socratic_stage를 대체하며 checkpoint_results/phase/scaffold_depth/aha 정보를 추가로 담는다.
+export interface SocraticProgressEvent {
+  type: 'socratic_progress'
+  verdict: 'correct' | 'incorrect' | 'irrelevant' | null
+  checkpoint_index: number
+  checkpoint_total: number
+  phase: 'root' | 'scaffold' | 'retry_root' | 'fallback'
+  scaffold_depth: number
+  move: 'advance' | 'finish' | 'to_scaffold' | 'to_retry_root' | 'to_fallback' | 'hold'
+  aha: boolean
+  aha_count: number
+  checkpoint_results: SocraticCheckpointResult[]
+  total_score: number
+  mastered: boolean
 }
 
