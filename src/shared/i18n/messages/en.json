@@ -722,9 +722,9 @@
       "sourceEmptyTooltip": "No source information",
       "recentIssuesTitle": "Recent Issues",
       "examPointsTitle": "Key Points (Exam Prep)",
-      "easyExplanationLabel": "Show simple explanation",
-      "coreGroupTitle": "Covered in Class",
-      "supplementaryGroupTitle": "Only in Course Materials ({count})",
+      "easyExplanationLabel": "Simple explanation",
+      "coreGroupTitle": "Covered in class",
+      "supplementaryGroupTitle": "{count} topics only in the materials",
       "timeShareBadge": "{percent}% of class time"
     },
     "quiz": {
