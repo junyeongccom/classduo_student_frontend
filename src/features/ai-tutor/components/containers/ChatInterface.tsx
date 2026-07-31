@@ -60,11 +60,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
     selectedCourseId: state.selectedCourseId,
   }))
-  const { socraticActiveTopic, setSocraticActiveTopic, socraticCurrentStage, socraticStageTotal } = useSocraticStore(state => ({
+  const { socraticActiveTopic, setSocraticActiveTopic, socraticCurrentStage, socraticStageTotal, ahaMessageIds } = useSocraticStore(state => ({
     socraticActiveTopic: state.activeTopic,
     setSocraticActiveTopic: state.setActiveTopic,
     socraticCurrentStage: state.currentStage,
     socraticStageTotal: state.stageTotal,
+    ahaMessageIds: state.ahaMessageIds,
   }))
 
   const [input, setInput] = useState('')
@@ -839,7 +840,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setLoadingStatusItems([])
 
     // 사용자 메시지 즉시 표시
-    const userMessage: ChatMessage = { role: 'user', content: question }
+    // 클라이언트 임시 id 부여: 소크라 문답 모드에서 이 턴의 "아하" 발화를 markAhaMessage로 식별하는 데 사용
+    // (서버는 user 메시지에 별도 id를 내려주지 않으므로, 세션 재로드 전까지는 이 값이 유일한 식별자)
+    const userMessageId = crypto.randomUUID()
+    const userMessage: ChatMessage = { role: 'user', content: question, id: userMessageId }
     setMessages(prev => [...prev, userMessage])
 
     try {
@@ -880,8 +884,20 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             return
           }
           // 소크라 4단계 진행 이벤트: 정답 판정이면 다음 단계로 올라간 상태가 실려온다
+          // (레거시 — v4 이후엔 socratic_progress가 대체하지만 하위 호환을 위해 계속 반영. 중복 적용돼도 무해)
           if (progressData.type === 'socratic_stage') {
             useSocraticStore.getState().applyStageEvent(progressData)
+            return
+          }
+          // v4: 소크라 세부 진행 이벤트(root→scaffold→retry_root→fallback). socratic_stage를 대체하며
+          // checkpoint_results/phase/scaffold_depth/aha 정보를 함께 담는다.
+          // aha === true면 이 턴에 학생이 디딤돌(scaffold) 경유 후 스스로 원질문에 도달했다는 뜻이므로,
+          // 이 턴의 학생 발화(user 말풍선)를 "아하" 발화로 하이라이트한다.
+          if (progressData.type === 'socratic_progress') {
+            useSocraticStore.getState().applyProgressEvent(progressData)
+            if (progressData.aha === true) {
+              useSocraticStore.getState().markAhaMessage(userMessageId)
+            }
             return
           }
           // message_saved 이벤트: 마지막 assistant 메시지에 id 부여
@@ -1511,10 +1527,25 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           {messages.map((message, index) => {
             if (message.role === 'user') {
               // 사용자 메시지: 말풍선으로 표시 (오른쪽 정렬)
+              // 소크라 문답 모드: 디딤돌 경유 후 스스로 원질문에 도달한 "아하" 발화면 강조 표시
+              const isAhaMessage = chatMode === 'socratic' && !!message.id && ahaMessageIds.includes(message.id)
               return (
-                <div key={index} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-2xl bg-gray-200 px-4 py-3">
-                    <p className="whitespace-pre-wrap text-sm text-gray-900">{message.content}</p>
+                <div key={index} className="flex flex-col items-end gap-1">
+                  {isAhaMessage && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 animate-fade-in-up">
+                      ✨ 아하!
+                    </span>
+                  )}
+                  <div className="flex w-full justify-end">
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                        isAhaMessage
+                          ? 'border-2 border-amber-400 bg-amber-50'
+                          : 'bg-gray-200'
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap text-sm text-gray-900">{message.content}</p>
+                    </div>
                   </div>
                 </div>
               )

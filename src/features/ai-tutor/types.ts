@@ -216,7 +216,7 @@ export interface ChatStreamProgressData {
 
 // 소크라 문답 모드: chat_mode='socratic'으로 스트리밍 시 SSE로 함께 전달되는 채점 이벤트
 // (기존 SSE 파싱의 else 분기가 onProgress로 그대로 전달)
-export type StreamProgressData = ChatStreamProgressData | SocraticScoreEvent | SocraticStageEvent
+export type StreamProgressData = ChatStreamProgressData | SocraticScoreEvent | SocraticStageEvent | SocraticProgressEvent
 
 export interface CardMatchPairSources {
   recording_chunk_ids?: string[]
