@@ -737,7 +737,7 @@
       "examPointsTitle": "Key Points (Exam Prep)",
       "easyExplanationLabel": "Simple explanation",
       "coreGroupTitle": "Covered in class",
-      "supplementaryGroupTitle": "{count} topics only in the materials",
+      "supplementaryGroupTitle": "{count, plural, one {# topic} other {# topics}} only in the materials",
       "timeShareBadge": "{percent}% of class time"
     },
     "quiz": {
