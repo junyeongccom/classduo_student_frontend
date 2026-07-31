@@ -1,26 +1,42 @@
 /**
  * @file SocraticScorePanel.tsx
- * @description 소크라 문답 우측 패널 — 5축 점수(축당 20 상한) + 동료 캐릭터 피드백 + 과목 랭킹
+ * @description 소크라 문답 우측 패널 — 체크포인트 맵(통과 방식별) + 디딤돌 계단 + 아하 배지 + 총점/피드백/랭킹
  * @module features/ai-tutor
  * @dependencies public/topic_test/hero-{female,male}.png
  */
 'use client'
 
 import { useTranslations } from 'next-intl'
-import type { SocraticTopic, SocraticAxisScores, SocraticLeaderboardEntry } from '../../types'
+import type { SocraticTopic, SocraticCheckpointResult, SocraticLeaderboardEntry } from '../../types'
 
-const AXIS_KEYS: (keyof SocraticAxisScores)[] = [
-  'clarity', 'accuracy', 'relevance', 'depth', 'reflection',
-]
-const AXIS_CAP = 20
-// 문답 진행 4단계 — 백엔드 stage_questions 순서와 동일해야 한다
+// 문답 진행 4단계 — 백엔드 stage_questions(체크포인트) 순서와 동일해야 한다
 const STAGE_KEYS = ['termMemory', 'concept', 'analysisApply', 'judgeDesign'] as const
+const MAX_SCAFFOLD_DEPTH = 2
+
+type CheckpointMethod = SocraticCheckpointResult['method']
+
+// 통과 방식별 노드 표현 — self(자력)가 가장 영예로운 스타일, fallback(힌트)은 중립색
+const METHOD_STYLE: Record<CheckpointMethod, { node: string; label: string }> = {
+  self: { node: 'bg-indigo-600 text-white ring-2 ring-indigo-200', label: 'text-indigo-700' },
+  scaffold1: { node: 'bg-emerald-500 text-white', label: 'text-emerald-700' },
+  scaffold2: { node: 'bg-emerald-500 text-white', label: 'text-emerald-700' },
+  fallback: { node: 'bg-gray-200 text-gray-500', label: 'text-gray-500' },
+}
+
+/** 디딤돌 통과를 나타내는 계단 아이콘 (3칸) */
+function StairIcon() {
+  return (
+    <svg viewBox="0 0 12 12" className="h-3 w-3" fill="currentColor" aria-hidden="true">
+      <rect x="0" y="8" width="4" height="4" rx="0.5" />
+      <rect x="4" y="5" width="4" height="7" rx="0.5" />
+      <rect x="8" y="2" width="4" height="10" rx="0.5" />
+    </svg>
+  )
+}
 
 interface Props {
   topic: SocraticTopic
-  axisScores: SocraticAxisScores
   totalScore: number
-  lastDeltas: SocraticAxisScores | null
   praise: string
   suggestion: string
   abuseWarning: boolean
@@ -29,10 +45,26 @@ interface Props {
   myStudentId: string | null
   currentStage: number
   stageTotal: number
+  phase: 'root' | 'scaffold' | 'retry_root' | 'fallback'
+  scaffoldDepth: number
+  ahaCount: number
+  checkpointResults: SocraticCheckpointResult[]
 }
 
-export default function SocraticScorePanel({ topic, axisScores, totalScore, lastDeltas, praise, suggestion, abuseWarning, mastered, leaderboard, myStudentId, currentStage, stageTotal }: Props) {
+export default function SocraticScorePanel({
+  topic, totalScore, praise, suggestion, abuseWarning, mastered,
+  leaderboard, myStudentId, currentStage, stageTotal,
+  phase, scaffoldDepth, ahaCount, checkpointResults,
+}: Props) {
   const t = useTranslations('aiTutorChat')
+  // index → 통과 결과. 백엔드가 배열로 주므로 조회용 map으로 한 번 접는다.
+  const resultByIndex = new Map<number, SocraticCheckpointResult>(
+    checkpointResults.map((r) => [r.index, r]),
+  )
+  // 계단 칸 수 — phase가 root가 아니면 최소 1칸은 밟은 상태다.
+  const stepCount = Math.min(MAX_SCAFFOLD_DEPTH, Math.max(1, scaffoldDepth))
+  const phaseKey = phase === 'retry_root' ? 'retryRoot' : phase
+
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
       {/* 주제 + 총점 */}
@@ -44,43 +76,71 @@ export default function SocraticScorePanel({ topic, axisScores, totalScore, last
           {mastered && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{t('socraticMastered')}</span>}
         </div>
       </div>
-      {/* 4단계 순차 진행 (단계 질문이 없는 옛 주제는 stageTotal 0 → 숨김) */}
+
+      {/* 아하 배지 — 디딤돌을 밟고 원질문에 자력 도달한 횟수 */}
+      {ahaCount > 0 && (
+        <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-2.5 py-1.5">
+          <span aria-hidden="true" className="text-sm leading-none">
+            {'✨'.repeat(Math.min(ahaCount, 4))}
+          </span>
+          <span className="text-xs font-semibold text-amber-700">{t('socraticAhaBadge', { count: ahaCount })}</span>
+        </div>
+      )}
+
+      {/* 체크포인트 맵 (단계 질문이 없는 옛 주제는 stageTotal 0 → 숨김) */}
       {stageTotal > 0 && (
         <div>
           <div className="mb-1 text-xs font-semibold text-gray-500">{t('socraticStageTitle')}</div>
           <ol className="space-y-1">
             {STAGE_KEYS.slice(0, stageTotal).map((key, i) => {
-              const done = i < currentStage
-              const active = i === currentStage
+              const result = resultByIndex.get(i)
+              const active = !result && i === currentStage
+              const style = result ? METHOD_STYLE[result.method] : null
               return (
-                <li key={key} className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs ${active ? 'bg-indigo-50 font-semibold text-indigo-700' : done ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <span aria-hidden="true" className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${done ? 'bg-indigo-500 text-white' : active ? 'border border-indigo-500 text-indigo-600' : 'border border-gray-300 text-gray-400'}`}>
-                    {done ? '✓' : i + 1}
-                  </span>
-                  <span className={done ? 'line-through' : ''}>{t(`socraticStage.${key}`)}</span>
+                <li key={key}>
+                  <div className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs ${active ? 'bg-indigo-50 font-semibold text-indigo-700' : style ? style.label : 'text-gray-400'}`}>
+                    <span
+                      aria-hidden="true"
+                      className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                        style ? style.node : active ? 'animate-pulse border border-indigo-500 text-indigo-600' : 'border border-gray-300 text-gray-400'
+                      }`}
+                    >
+                      {result
+                        ? (result.method === 'self' ? '✓' : result.method === 'fallback' ? '◑' : <StairIcon />)
+                        : i + 1}
+                    </span>
+                    <span className="flex-1 truncate">{t(`socraticStage.${key}`)}</span>
+                    {result?.aha && <span aria-hidden="true">✨</span>}
+                    {result && <span className="shrink-0 tabular-nums text-[10px] text-gray-400">+{result.score}</span>}
+                  </div>
+                  {/* 통과 방식 라벨 */}
+                  {result && (
+                    <div className="pl-8 text-[10px] text-gray-400">{t(`socraticMethod.${result.method}`)}</div>
+                  )}
+                  {/* 진행중 노드 아래 디딤돌 계단 — 원질문(root)에 머무는 동안은 표시하지 않는다 */}
+                  {active && phase !== 'root' && (
+                    <div className="mt-1 pl-8">
+                      <div className="flex items-end gap-1" aria-hidden="true">
+                        {Array.from({ length: stepCount }, (_, s) => (
+                          <span
+                            key={s}
+                            className={`w-4 rounded-sm ${phase === 'fallback' ? 'bg-gray-300' : 'bg-emerald-400'}`}
+                            style={{ height: `${6 + s * 4}px` }}
+                          />
+                        ))}
+                      </div>
+                      <div className={`mt-0.5 text-[10px] font-medium ${phase === 'retry_root' ? 'text-indigo-600' : phase === 'fallback' ? 'text-gray-500' : 'text-emerald-600'}`}>
+                        {t(`socraticPhase.${phaseKey}`)}
+                      </div>
+                    </div>
+                  )}
                 </li>
               )
             })}
           </ol>
         </div>
       )}
-      {/* 5축 게이지 */}
-      <div className="space-y-2">
-        {AXIS_KEYS.map((key) => (
-          <div key={key}>
-            <div className="flex justify-between text-xs">
-              <span>{t(`socraticAxis.${key}`)}</span>
-              <span className="tabular-nums">
-                {axisScores[key]}
-                {lastDeltas && lastDeltas[key] > 0 && <span className="ml-1 font-semibold text-emerald-600">+{lastDeltas[key]}</span>}
-              </span>
-            </div>
-            <div className="mt-0.5 h-1.5 rounded-full bg-gray-100">
-              <div className="h-1.5 rounded-full bg-indigo-500 transition-all" style={{ width: `${(axisScores[key] / AXIS_CAP) * 100}%` }} />
-            </div>
-          </div>
-        ))}
-      </div>
+
       {/* 동료 캐릭터 피드백 */}
       {abuseWarning && (
         <div className="rounded-lg bg-red-50 p-2 text-xs text-red-600">{t('socraticAbuseWarning')}</div>

@@ -88,9 +88,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
   const userId = useAuthStore(state => state.user?.user_id ?? null)
   const {
     socraticActiveTopic,
-    socraticAxisScores,
     socraticTotalScore,
-    socraticLastDeltas,
     socraticLastPraise,
     socraticLastSuggestion,
     socraticAbuseWarning,
@@ -98,12 +96,14 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     socraticLeaderboard,
     socraticCurrentStage,
     socraticStageTotal,
+    socraticPhase,
+    socraticScaffoldDepth,
+    socraticAhaCount,
+    socraticCheckpointResults,
     isSocraticPanelOpen: isSocraticPanelOpenFlag,
   } = useSocraticStore(state => ({
     socraticActiveTopic: state.activeTopic,
-    socraticAxisScores: state.axisScores,
     socraticTotalScore: state.totalScore,
-    socraticLastDeltas: state.lastDeltas,
     socraticLastPraise: state.lastPraise,
     socraticLastSuggestion: state.lastSuggestion,
     socraticAbuseWarning: state.abuseWarning,
@@ -111,6 +111,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     socraticLeaderboard: state.leaderboard,
     socraticCurrentStage: state.currentStage,
     socraticStageTotal: state.stageTotal,
+    socraticPhase: state.phase,
+    socraticScaffoldDepth: state.scaffoldDepth,
+    socraticAhaCount: state.ahaCount,
+    socraticCheckpointResults: state.checkpointResults,
     isSocraticPanelOpen: state.isPanelOpen,
   }))
   const isSocraticPanelOpen = isSocraticPanelOpenFlag && !!socraticActiveTopic
@@ -560,9 +564,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
               <div className="md:hidden mx-auto mt-2 h-1.5 w-12 rounded-full bg-gray-300" aria-hidden />
               <SocraticScorePanel
                 topic={socraticActiveTopic}
-                axisScores={socraticAxisScores}
                 totalScore={socraticTotalScore}
-                lastDeltas={socraticLastDeltas}
                 praise={socraticLastPraise}
                 suggestion={socraticLastSuggestion}
                 abuseWarning={socraticAbuseWarning}
@@ -571,6 +573,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 myStudentId={userId}
                 currentStage={socraticCurrentStage}
                 stageTotal={socraticStageTotal}
+                phase={socraticPhase}
+                scaffoldDepth={socraticScaffoldDepth}
+                ahaCount={socraticAhaCount}
+                checkpointResults={socraticCheckpointResults}
               />
             </div>
           )}

@@ -324,6 +324,18 @@
       "analysisApply": "Analysis & Application",
       "judgeDesign": "Judgment & Design"
     },
+    "socraticMethod": {
+      "self": "Solved on your own",
+      "scaffold1": "Cleared with a stepping stone",
+      "scaffold2": "Cleared with stepping stones",
+      "fallback": "Cleared with a hint"
+    },
+    "socraticPhase": {
+      "scaffold": "Stepping-stone question in progress",
+      "retryRoot": "Back to the main question!",
+      "fallback": "Multiple-choice hint offered"
+    },
+    "socraticAhaBadge": "{count} aha moments",
     "socraticLoading": "Thinking it through…",
     "defaultHookingQuestions": {
       "importantConcept": "What is the most important concept in this class?",

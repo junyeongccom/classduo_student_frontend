@@ -324,6 +324,18 @@
       "analysisApply": "분석과적용",
       "judgeDesign": "판단과설계"
     },
+    "socraticMethod": {
+      "self": "스스로 통과",
+      "scaffold1": "디딤돌 통과",
+      "scaffold2": "디딤돌 통과",
+      "fallback": "힌트로 통과"
+    },
+    "socraticPhase": {
+      "scaffold": "디딤돌 질문 진행 중",
+      "retryRoot": "원질문 재도전!",
+      "fallback": "선택지 힌트 제시됨"
+    },
+    "socraticAhaBadge": "아하 모먼트 {count}회",
     "socraticLoading": "생각을 정리하는 중이에요…",
     "defaultHookingQuestions": {
       "importantConcept": "이 수업에서 가장 중요한 개념은 무엇인가요?",
