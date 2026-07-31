@@ -1,8 +1,6 @@
 /**
  * @file SummaryTabContainer.tsx
- * @description 회차별 학습 - 요약 탭 컨테이너
- *   lecture_content_summaries API에서 통합 요약을 조회하여 렌더링한다.
- *   각 섹션에 강의자료/녹음본 출처 버튼을 제공한다.
+ * @description 회차별 학습 - 요약 탭 컨테이너. 핵심/보충 2그룹 + 쉬운설명 구조로 강의 요약을 렌더링한다.
  * @module features/lecture-study/components/containers
  * @dependencies lectureService, useLectureStudyStore
  */
@@ -236,9 +234,8 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
     )
   }
 
-  // 구버전 요약(core/supplementary 없음)은 평탄화 배열을 그대로 단일 목록으로 렌더한다
-  const useLegacyLayout =
-    summary.core_sections.length === 0 && summary.supplementary_sections.length === 0
+  // 구버전 요약(core 없음)은 평탄화 배열(sections = core+supplementary superset)을 그대로 단일 목록으로 렌더한다
+  const useLegacyLayout = summary.core_sections.length === 0
   const hasSupplementary = summary.supplementary_sections.length > 0
 
   const handleMaterial = (key: string, pages: number[]) =>
@@ -267,6 +264,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
             key={`legacy-${index}`}
             section={section}
             sectionKey={`${section.title || ''}-${index}`}
+            idPrefix={`legacy-${index}`}
             index={index}
             lectureId={lectureId}
             onMaterialClick={handleMaterial}
@@ -286,6 +284,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
               key={`core-${index}`}
               section={section}
               sectionKey={`core-${section.title || ''}-${index}`}
+              idPrefix={`core-${index}`}
               index={index}
               lectureId={lectureId}
               easyExplanation={section.easy_explanation}
@@ -319,6 +318,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
                       key={`supp-${index}`}
                       section={section}
                       sectionKey={`supp-${section.title || ''}-${index}`}
+                      idPrefix={`supp-${index}`}
                       index={index}
                       lectureId={lectureId}
                       easyExplanation={section.easy_explanation}

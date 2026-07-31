@@ -15,6 +15,8 @@ import type { ContentSummarySection } from '../../types'
 interface SummarySectionProps {
   section: ContentSummarySection
   sectionKey: string
+  /** DOM id(aria-describedby)용 키 — 공백/한글 없는 인덱스 기반 값 (Task A 회귀 수정) */
+  idPrefix: string
   index: number
   lectureId: string
   easyExplanation?: string
@@ -26,6 +28,7 @@ interface SummarySectionProps {
 export function SummarySection({
   section,
   sectionKey,
+  idPrefix,
   index,
   lectureId,
   easyExplanation,
@@ -36,22 +39,23 @@ export function SummarySection({
   const t = useTranslations('lectureStudy')
   const hasSourcePages = section.source_pages.length > 0
   const hasSourceChunks = section.source_chunks.length > 0
-  const minutes = timeSharePct !== undefined && timeSharePct > 0 ? Math.round(timeSharePct) : null
+  const roundedPercent = timeSharePct !== undefined ? Math.round(timeSharePct) : null
+  const percent = roundedPercent !== null && roundedPercent >= 1 ? roundedPercent : null
 
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <h4 className="text-base font-semibold text-gray-900 dark:text-gray-50">{section.title}</h4>
 
-        {minutes !== null && (
+        {percent !== null && (
           <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-            {t('summary.timeShareBadge', { percent: minutes })}
+            {t('summary.timeShareBadge', { percent })}
           </span>
         )}
 
         <SourceButton
           label={t('summary.sourceButtonMaterials')}
-          tooltipId={`material-source-${sectionKey}`}
+          tooltipId={`material-source-${idPrefix}`}
           tooltipContent={
             hasSourcePages
               ? t('summary.sourceTooltipPages', { pages: section.source_pages.join(', ') })
@@ -64,7 +68,7 @@ export function SummarySection({
 
         <SourceButton
           label={t('summary.sourceButtonRecordings')}
-          tooltipId={`recording-source-${sectionKey}`}
+          tooltipId={`recording-source-${idPrefix}`}
           tooltipContent={
             hasSourceChunks
               ? t('summary.sourceTooltipChunks', { chunks: section.source_chunks.join(', ') })
