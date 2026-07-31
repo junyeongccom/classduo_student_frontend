@@ -326,8 +326,8 @@
     },
     "socraticMethod": {
       "self": "스스로 통과",
-      "scaffold1": "디딤돌 통과",
-      "scaffold2": "디딤돌 통과",
+      "scaffold1": "디딤돌 1칸 통과",
+      "scaffold2": "디딤돌 2칸 통과",
       "fallback": "힌트로 통과"
     },
     "socraticPhase": {

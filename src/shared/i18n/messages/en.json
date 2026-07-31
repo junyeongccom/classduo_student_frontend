@@ -335,7 +335,7 @@
       "retryRoot": "Back to the main question!",
       "fallback": "Multiple-choice hint offered"
     },
-    "socraticAhaBadge": "{count} aha moments",
+    "socraticAhaBadge": "{count, plural, one {# aha moment} other {# aha moments}}",
     "socraticLoading": "Thinking it through…",
     "defaultHookingQuestions": {
       "importantConcept": "What is the most important concept in this class?",

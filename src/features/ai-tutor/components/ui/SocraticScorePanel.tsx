@@ -94,20 +94,24 @@ export default function SocraticScorePanel({
           <ol className="space-y-1">
             {STAGE_KEYS.slice(0, stageTotal).map((key, i) => {
               const result = resultByIndex.get(i)
-              const active = !result && i === currentStage
+              // 세션 복원 경로는 checkpointResults를 채우지 않고 currentStage만 복원한다.
+              // 결과가 없어도 currentStage보다 앞선 체크포인트는 이미 통과한 것 —
+              // "방식 미상 통과"로 중립 표시해야 잠김(회색 번호)으로 퇴행하지 않는다.
+              const impliedPass = !result && i < currentStage
+              const active = !result && !impliedPass && i === currentStage
               const style = result ? METHOD_STYLE[result.method] : null
               return (
                 <li key={key}>
-                  <div className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs ${active ? 'bg-indigo-50 font-semibold text-indigo-700' : style ? style.label : 'text-gray-400'}`}>
+                  <div className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs ${active ? 'bg-indigo-50 font-semibold text-indigo-700' : style ? style.label : impliedPass ? 'text-gray-500' : 'text-gray-400'}`}>
                     <span
                       aria-hidden="true"
                       className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
-                        style ? style.node : active ? 'animate-pulse border border-indigo-500 text-indigo-600' : 'border border-gray-300 text-gray-400'
+                        style ? style.node : impliedPass ? 'bg-gray-300 text-white' : active ? 'animate-pulse border border-indigo-500 text-indigo-600' : 'border border-gray-300 text-gray-400'
                       }`}
                     >
                       {result
                         ? (result.method === 'self' ? '✓' : result.method === 'fallback' ? '◑' : <StairIcon />)
-                        : i + 1}
+                        : impliedPass ? '✓' : i + 1}
                     </span>
                     <span className="flex-1 truncate">{t(`socraticStage.${key}`)}</span>
                     {result?.aha && <span aria-hidden="true">✨</span>}
