@@ -735,9 +735,9 @@
       "sourceEmptyTooltip": "출처 정보가 없습니다",
       "recentIssuesTitle": "최근 쟁점",
       "examPointsTitle": "요점 정리(시험 대비)",
-      "easyExplanationLabel": "쉬운 설명 보기",
+      "easyExplanationLabel": "쉬운 설명",
       "coreGroupTitle": "교수님이 수업에서 다룬 내용",
-      "supplementaryGroupTitle": "강의자료에만 있는 내용 ({count})",
+      "supplementaryGroupTitle": "강의자료에만 있는 내용 {count}개",
       "timeShareBadge": "수업 비중 {percent}%"
     },
     "quiz": {
