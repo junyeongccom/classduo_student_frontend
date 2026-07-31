@@ -497,6 +497,16 @@ export const summaryTabAnalytics = {
   scrollDepth(lectureId: string, depthPct: number) {
     trackEvent('summary_scroll_depth', 'lecture_study', { lectureId, data: { depth_pct: depthPct, tab: 'summary' } })
   },
+
+  /** 섹션별 쉬운 설명 펼침/접힘 */
+  easyExplanationToggle(lectureId: string, data: { section_key: string; action: 'open' | 'close' }) {
+    trackEvent('summary_easy_explanation_toggle', 'lecture_study', { lectureId, data })
+  },
+
+  /** 보충 그룹(강의자료에만 있는 내용) 펼침/접힘 */
+  supplementaryToggle(lectureId: string, data: { action: 'open' | 'close' }) {
+    trackEvent('summary_supplementary_toggle', 'lecture_study', { lectureId, data })
+  },
 }
 
 /** 퀴즈 탭 해설 토글 / AI 질문 버튼 트래킹 */

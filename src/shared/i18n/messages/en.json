@@ -721,7 +721,11 @@
       "sourceTooltipChunks": "Recording {chunks}",
       "sourceEmptyTooltip": "No source information",
       "recentIssuesTitle": "Recent Issues",
-      "examPointsTitle": "Key Points (Exam Prep)"
+      "examPointsTitle": "Key Points (Exam Prep)",
+      "easyExplanationLabel": "Show simple explanation",
+      "coreGroupTitle": "Covered in Class",
+      "supplementaryGroupTitle": "Only in Course Materials ({count})",
+      "timeShareBadge": "{percent}% of class time"
     },
     "quiz": {
       "lectureBadge": "Week {no}",

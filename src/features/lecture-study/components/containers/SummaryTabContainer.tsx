@@ -11,12 +11,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Mic } from 'lucide-react'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/shared/components/ui'
 import { lectureService } from '../../services/lectureService'
 import { trackSummaryViewed } from '@/shared/hooks/useAnalytics'
 import { summaryTabAnalytics } from '@/shared/lib/analytics'
 import { useSourceNavigation } from '../../hooks/useSourceNavigation'
-import { SourceButton } from '../ui/SourceButton'
+import { SummarySection } from '../ui/SummarySection'
 import type {
   ContentSummary,
   ContentSummaryCoreSection,
@@ -119,6 +120,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
   const [summary, setSummary] = useState<ContentSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [supplementaryOpen, setSupplementaryOpen] = useState<string>('')
   const summaryViewedRef = useRef(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const reportedDepthsRef = useRef<Set<number>>(new Set())
@@ -234,6 +236,16 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
     )
   }
 
+  // 구버전 요약(core/supplementary 없음)은 평탄화 배열을 그대로 단일 목록으로 렌더한다
+  const useLegacyLayout =
+    summary.core_sections.length === 0 && summary.supplementary_sections.length === 0
+  const hasSupplementary = summary.supplementary_sections.length > 0
+
+  const handleMaterial = (key: string, pages: number[]) =>
+    handleMaterialSourceClick(key, pages, totalMaterialPages)
+  const handleRecording = (key: string, chunks: number[]) =>
+    handleRecordingSourceClick(key, chunks, totalRecordingChunks)
+
   return (
     <div ref={scrollContainerRef} className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24 text-sm text-gray-700 dark:text-gray-300">
       {/* 요약 타이틀 + overview */}
@@ -249,90 +261,77 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
       </section>
 
       {/* Sections + 출처 버튼 */}
-      {summary.sections.map((section, index) => {
-        const sectionKey = `${section.title || ''}-${index}`
-        const hasSourcePages = section.source_pages.length > 0
-        const hasSourceChunks = section.source_chunks.length > 0
+      {useLegacyLayout &&
+        summary.sections.map((section, index) => (
+          <SummarySection
+            key={`legacy-${index}`}
+            section={section}
+            sectionKey={`${section.title || ''}-${index}`}
+            index={index}
+            lectureId={lectureId}
+            onMaterialClick={handleMaterial}
+            onRecordingClick={handleRecording}
+          />
+        ))}
 
-        return (
-          <section key={`section-${index}`} className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-base font-semibold text-gray-900 dark:text-gray-50">
-                {section.title}
-              </h4>
+      {!useLegacyLayout && (
+        <>
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <Mic className="h-3.5 w-3.5" aria-hidden="true" />
+            {t('summary.coreGroupTitle')}
+          </div>
 
-              {/* 강의자료 출처 버튼 (Task 777) */}
-              <SourceButton
-                label={t('summary.sourceButtonMaterials')}
-                tooltipId={`material-source-${index}`}
-                tooltipContent={
-                  hasSourcePages
-                    ? t('summary.sourceTooltipPages', { pages: section.source_pages.join(', ') })
-                    : t('summary.sourceEmptyTooltip')
-                }
-                disabled={!hasSourcePages}
-                disabledClick={false}
-                onClick={() => handleMaterialSourceClick(sectionKey, section.source_pages, totalMaterialPages)}
-              />
+          {summary.core_sections.map((section, index) => (
+            <SummarySection
+              key={`core-${index}`}
+              section={section}
+              sectionKey={`core-${section.title || ''}-${index}`}
+              index={index}
+              lectureId={lectureId}
+              easyExplanation={section.easy_explanation}
+              timeSharePct={section.time_share_pct}
+              onMaterialClick={handleMaterial}
+              onRecordingClick={handleRecording}
+            />
+          ))}
 
-              {/* 녹음본 출처 버튼 (Task 777) */}
-              <SourceButton
-                label={t('summary.sourceButtonRecordings')}
-                tooltipId={`recording-source-${index}`}
-                tooltipContent={
-                  hasSourceChunks
-                    ? t('summary.sourceTooltipChunks', { chunks: section.source_chunks.join(', ') })
-                    : t('summary.sourceEmptyTooltip')
-                }
-                disabled={!hasSourceChunks}
-                disabledClick={false}
-                onClick={() => handleRecordingSourceClick(sectionKey, section.source_chunks, totalRecordingChunks)}
-              />
-            </div>
-
-            <ul className="list-disc space-y-1 pl-5 text-gray-700 dark:text-gray-300">
-              {section.bullets.map((bullet, bIdx) => (
-                <li key={`${sectionKey}-bullet-${bIdx}`}>{bullet}</li>
-              ))}
-            </ul>
-
-            {(section.tables ?? []).map((table, tIdx) => (
-              <div
-                key={`${sectionKey}-table-${tIdx}`}
-                className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-              >
-                {table.title && (
-                  <div className="border-b border-gray-100 dark:border-gray-700 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                    {table.title}
-                  </div>
-                )}
-                <table className="w-full text-left text-xs text-gray-600 dark:text-gray-300">
-                  <thead className="bg-gray-50 dark:bg-gray-700 text-[11px] uppercase text-gray-400 dark:text-gray-500">
-                    <tr>
-                      {table.headers.map((header) => (
-                        <th key={header} className="px-3 py-2 font-semibold">
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {table.rows.map((row, rIdx) => (
-                      <tr key={`row-${index}-${tIdx}-${rIdx}`} className="border-t border-gray-100 dark:border-gray-700">
-                        {row.map((cell, cIdx) => (
-                          <td key={`cell-${index}-${tIdx}-${rIdx}-${cIdx}`} className="px-3 py-2">
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ))}
-          </section>
-        )
-      })}
+          {hasSupplementary && (
+            <Accordion
+              type="single"
+              collapsible
+              value={supplementaryOpen}
+              onValueChange={(v) => {
+                setSupplementaryOpen(v)
+                summaryTabAnalytics.supplementaryToggle(lectureId, {
+                  action: v ? 'open' : 'close',
+                })
+              }}
+            >
+              <AccordionItem value="supplementary" className="border-t border-b-0 border-gray-200 dark:border-gray-700">
+                <AccordionTrigger className="py-3 text-sm text-gray-600 dark:text-gray-300 hover:no-underline">
+                  {t('summary.supplementaryGroupTitle', {
+                    count: summary.supplementary_sections.length,
+                  })}
+                </AccordionTrigger>
+                <AccordionContent className="space-y-6 pt-2">
+                  {summary.supplementary_sections.map((section, index) => (
+                    <SummarySection
+                      key={`supp-${index}`}
+                      section={section}
+                      sectionKey={`supp-${section.title || ''}-${index}`}
+                      index={index}
+                      lectureId={lectureId}
+                      easyExplanation={section.easy_explanation}
+                      onMaterialClick={handleMaterial}
+                      onRecordingClick={handleRecording}
+                    />
+                  ))}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
+        </>
+      )}
 
       {/* 최근 쟁점 */}
       {summary.recent_issues && summary.recent_issues.length > 0 && (
