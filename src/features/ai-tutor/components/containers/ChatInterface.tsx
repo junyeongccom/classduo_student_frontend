@@ -1533,7 +1533,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 <div key={index} className="flex flex-col items-end gap-1">
                   {isAhaMessage && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 animate-fade-in-up">
-                      ✨ 아하!
+                      ✨ {t('socraticAhaChip')}
                     </span>
                   )}
                   <div className="flex w-full justify-end">

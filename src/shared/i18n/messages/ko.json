@@ -336,6 +336,7 @@
       "fallback": "선택지 힌트 제시됨"
     },
     "socraticAhaBadge": "아하 모먼트 {count}회",
+    "socraticAhaChip": "아하!",
     "socraticLoading": "생각을 정리하는 중이에요…",
     "defaultHookingQuestions": {
       "importantConcept": "이 수업에서 가장 중요한 개념은 무엇인가요?",

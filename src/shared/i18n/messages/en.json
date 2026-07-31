@@ -336,6 +336,7 @@
       "fallback": "Multiple-choice hint offered"
     },
     "socraticAhaBadge": "{count, plural, one {# aha moment} other {# aha moments}}",
+    "socraticAhaChip": "Aha!",
     "socraticLoading": "Thinking it through…",
     "defaultHookingQuestions": {
       "importantConcept": "What is the most important concept in this class?",
