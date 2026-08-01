@@ -69,8 +69,10 @@ export function AITutorContainer() {
     socraticLeaderboard,
     socraticCurrentStage,
     socraticStageTotal,
+    socraticStageOutline,
     socraticPhase,
     socraticScaffoldDepth,
+    socraticMaxScaffoldDepth,
     socraticAhaCount,
     socraticCheckpointResults,
     isSocraticPanelOpen: isSocraticPanelOpenFlag,
@@ -84,8 +86,10 @@ export function AITutorContainer() {
     socraticLeaderboard: state.leaderboard,
     socraticCurrentStage: state.currentStage,
     socraticStageTotal: state.stageTotal,
+    socraticStageOutline: state.stageOutline,
     socraticPhase: state.phase,
     socraticScaffoldDepth: state.scaffoldDepth,
+    socraticMaxScaffoldDepth: state.maxScaffoldDepth,
     socraticAhaCount: state.ahaCount,
     socraticCheckpointResults: state.checkpointResults,
     isSocraticPanelOpen: state.isPanelOpen,
@@ -682,8 +686,10 @@ export function AITutorContainer() {
                 myStudentId={userId}
                 currentStage={socraticCurrentStage}
                 stageTotal={socraticStageTotal}
+                stageOutline={socraticStageOutline}
                 phase={socraticPhase}
                 scaffoldDepth={socraticScaffoldDepth}
+                maxScaffoldDepth={socraticMaxScaffoldDepth}
                 ahaCount={socraticAhaCount}
                 checkpointResults={socraticCheckpointResults}
               />

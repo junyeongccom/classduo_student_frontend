@@ -542,10 +542,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   suggestion: '',
                   mastered: !!stateData.mastered_at,
                 })
-                // setActiveTopic이 단계를 0으로 초기화하므로 그 뒤에 서버 값으로 덮어쓴다
+                // setActiveTopic이 단계를 0으로 초기화하므로 그 뒤에 서버 값으로 덮어쓴다.
+                // v5: 유형별 개요도 함께 복원해야 패널이 "용어암기 1/2" 를 다시 그린다.
                 useSocraticStore.getState().setStage(
                   stateData.current_stage ?? 0,
                   stateData.stage_total ?? stateData.topic.stage_total ?? 0,
+                  stateData.stage_outline ?? stateData.topic.stage_outline,
                 )
                 if (selectedCourseId) {
                   socraticService.fetchLeaderboard(selectedCourseId).then(({ data: lbData }) => {

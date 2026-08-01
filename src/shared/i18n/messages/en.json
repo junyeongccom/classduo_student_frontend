@@ -328,6 +328,7 @@
       "self": "Solved on your own",
       "scaffold1": "Cleared with a stepping stone",
       "scaffold2": "Cleared with stepping stones",
+      "scaffold3": "Cleared after three stepping stones",
       "fallback": "Cleared with a hint"
     },
     "socraticPhase": {

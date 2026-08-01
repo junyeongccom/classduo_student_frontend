@@ -245,6 +245,20 @@ export interface CardMatchSet {
 // 소크라 문답 모드 (Socratic dialogue mode)
 // ─────────────────────────────────────────────────────────────────────────
 
+// v5: 유형별 문항 개요 — 백엔드가 stage_questions를 유형 블록으로 접어 내려준다.
+// 정답 요지·힌트 정답 위치는 절대 포함되지 않는다(type/label/count/start_index 4개뿐).
+// 구 백엔드 응답에는 없으므로 프론트는 항상 결측을 견뎌야 한다.
+export interface SocraticStageOutlineItem {
+  // 'TERM_MEMORY' | 'CONCEPT' | 'ANALYSIS_APPLY' | 'JUDGE_DESIGN' — 데이터 오염 시 null.
+  type: string | null
+  // 백엔드가 주제 데이터에 저장해 둔 한국어 라벨. 없으면 프론트 i18n 라벨로 대체한다.
+  label?: string | null
+  // 이 유형에 속한 문항 수 (1~3)
+  count: number
+  // 이 유형의 첫 문항이 stage_questions 배열에서 갖는 인덱스
+  start_index: number
+}
+
 export interface SocraticTopic {
   id: string
   title: string
@@ -253,9 +267,12 @@ export interface SocraticTopic {
   position: number
   // 요청 유저가 이 주제를 100점(마스터)까지 끝냈는지. 조회 실패 시 백엔드가 false로 폴백.
   mastered?: boolean
-  // 파이프라인이 미리 만들어 둔 단계 질문 수(용어암기→개념이해→분석과적용→판단과설계 = 4).
+  // 파이프라인이 미리 만들어 둔 단계 질문 수.
+  // v4까지는 항상 4, v5부터 4~8 가변(유형 4개 × 유형당 1~3문항).
   // 마이그레이션 이전에 생성된 옛 주제는 0 → 단계 표시를 감춘다.
   stage_total?: number
+  // v5: 패널 초기 렌더용 유형별 개요. 구 백엔드에는 없다(→ 4노드 폴백).
+  stage_outline?: SocraticStageOutlineItem[]
 }
 
 export interface SocraticAxisScores {
@@ -283,9 +300,11 @@ export interface SocraticStateResponse {
   mastered_at: string | null
   // v2.0: 세션에서 진행 중인 소크라 주제 (히스토리 복원용). 없으면 null.
   topic?: SocraticTopic | null
-  // 4단계 진행 상태 복원용. current_stage === stage_total 이면 전 단계 통과.
+  // 진행 상태 복원용. current_stage === stage_total 이면 전 단계 통과.
   current_stage?: number
   stage_total?: number
+  // v5: 유형별 개요 — SSE 이벤트를 놓쳐도 패널이 유형별 진행 표시를 복구할 수 있다.
+  stage_outline?: SocraticStageOutlineItem[]
 }
 
 // GET /ai-tutor/socratic/courses/{courseId}/leaderboard 응답 항목
@@ -325,10 +344,11 @@ export interface SocraticStageEvent {
   stage_total: number
 }
 
-// v4: 소크라 문답 진행 단계별 판정 결과 (self/scaffold1/scaffold2/fallback 중 어느 방식으로 통과했는지)
+// v4: 소크라 문답 진행 단계별 판정 결과 (어느 방식으로 통과했는지)
+// v5: 디딤돌이 유형별 3회까지 가능해지면서 'scaffold3' 추가.
 export interface SocraticCheckpointResult {
   index: number
-  method: 'self' | 'scaffold1' | 'scaffold2' | 'fallback'
+  method: 'self' | 'scaffold1' | 'scaffold2' | 'scaffold3' | 'fallback'
   aha: boolean
   score: number
 }
@@ -348,5 +368,14 @@ export interface SocraticProgressEvent {
   checkpoint_results: SocraticCheckpointResult[]
   total_score: number
   mastered: boolean
+  // ── v5 추가 (전부 additive — 구 백엔드에는 없다) ──
+  // 이제 답해야 할 문항의 유형과 유형 내 위치. "개념이해 2/3" 표시용.
+  // 문답이 끝난 상태(checkpoint_index === checkpoint_total)에서는 null/0으로 내려온다.
+  checkpoint_type?: string | null
+  checkpoint_label?: string | null
+  type_index?: number
+  type_total?: number
+  // 이 유형의 디딤돌 깊이 한계 (2 또는 3). 종료 상태에서는 0.
+  max_scaffold_depth?: number
 }
 

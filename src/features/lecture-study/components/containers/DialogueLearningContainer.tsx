@@ -96,8 +96,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     socraticLeaderboard,
     socraticCurrentStage,
     socraticStageTotal,
+    socraticStageOutline,
     socraticPhase,
     socraticScaffoldDepth,
+    socraticMaxScaffoldDepth,
     socraticAhaCount,
     socraticCheckpointResults,
     isSocraticPanelOpen: isSocraticPanelOpenFlag,
@@ -111,8 +113,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     socraticLeaderboard: state.leaderboard,
     socraticCurrentStage: state.currentStage,
     socraticStageTotal: state.stageTotal,
+    socraticStageOutline: state.stageOutline,
     socraticPhase: state.phase,
     socraticScaffoldDepth: state.scaffoldDepth,
+    socraticMaxScaffoldDepth: state.maxScaffoldDepth,
     socraticAhaCount: state.ahaCount,
     socraticCheckpointResults: state.checkpointResults,
     isSocraticPanelOpen: state.isPanelOpen,
@@ -573,8 +577,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 myStudentId={userId}
                 currentStage={socraticCurrentStage}
                 stageTotal={socraticStageTotal}
+                stageOutline={socraticStageOutline}
                 phase={socraticPhase}
                 scaffoldDepth={socraticScaffoldDepth}
+                maxScaffoldDepth={socraticMaxScaffoldDepth}
                 ahaCount={socraticAhaCount}
                 checkpointResults={socraticCheckpointResults}
               />
