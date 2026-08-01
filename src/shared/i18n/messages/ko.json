@@ -339,6 +339,23 @@
     "socraticAhaBadge": "아하 모먼트 {count}회",
     "socraticAhaChip": "아하!",
     "socraticLoading": "생각을 정리하는 중이에요…",
+    "socraticOnboarding": {
+      "title": "🎓 소크라 문답은 이렇게 진행돼요",
+      "subtitle": "답을 알려 드리지 않고, 질문을 하나씩 드리며 스스로 답에 닿도록 돕는 학습이에요.",
+      "stagesHeading": "네 단계를 차례로 지나갑니다",
+      "stagesNote": "오른쪽 <b>문답 단계</b>에서 지금 어디쯤인지 볼 수 있어요.",
+      "stuckHeading": "막혀도 괜찮아요",
+      "stuckScaffold": "답이 빗나가면 <b>더 쉬운 질문</b>으로 바꿔 다시 여쭤봐요",
+      "stuckAha": "힌트를 딛고 <b>스스로 답에 닿으면</b> 아하 모먼트로 기록돼요",
+      "scoreHeading": "점수는 스스로 맞힐수록 높아져요",
+      "scoreSelf": "스스로",
+      "scoreHint1": "힌트 1번",
+      "scoreHint2": "힌트 2번",
+      "scoreChoice": "선택지",
+      "scoreNote": "두 친구가 옆에서 <b>잘한 점</b>과 <b>다음 생각거리</b>를 말해 줘요.",
+      "dontShowAgain": "다시 보지 않기",
+      "start": "시작하기"
+    },
     "defaultHookingQuestions": {
       "importantConcept": "이 수업에서 가장 중요한 개념은 무엇인가요?",
       "realLifeApplication": "이 내용을 실생활에 어떻게 적용할 수 있나요?",

@@ -15,6 +15,8 @@ import { GameOverlay } from '../ui/GameOverlay'
 import { TabType } from '@/shared/components/common'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useSocraticStore } from '../../store/useSocraticStore'
+import { SocraticOnboardingModal } from '../ui/SocraticOnboardingModal'
+import { useSocraticOnboarding } from '../../hooks/useSocraticOnboarding'
 import {
   hasVisitedStudyspaceTab,
   markVisitedStudyspaceTab,
@@ -95,6 +97,9 @@ export function AITutorContainer() {
     isSocraticPanelOpen: state.isPanelOpen,
   }))
   const isSocraticPanelOpen = isSocraticPanelOpenFlag && !!socraticActiveTopic
+
+  // 소크라 문답 첫 진입 온보딩 모달 — 주제 선택으로 세션이 시작되는 순간 표시
+  const socraticOnboarding = useSocraticOnboarding()
 
   // Actions
   const {
@@ -720,6 +725,12 @@ export function AITutorContainer() {
         courseId={game.courseId}
         lectureNo={game.lectureNo}
         courseName={game.courseName}
+      />
+
+      {/* 소크라 문답 첫 진입 온보딩 — 세션 시작을 막지 않고, 닫으면 바로 첫 질문이 보인다 */}
+      <SocraticOnboardingModal
+        isOpen={socraticOnboarding.isOpen}
+        onClose={socraticOnboarding.close}
       />
     </>
   )

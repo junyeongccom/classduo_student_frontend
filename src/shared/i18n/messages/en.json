@@ -339,6 +339,23 @@
     "socraticAhaBadge": "{count, plural, one {# aha moment} other {# aha moments}}",
     "socraticAhaChip": "Aha!",
     "socraticLoading": "Thinking it through…",
+    "socraticOnboarding": {
+      "title": "🎓 How Socratic dialogue works",
+      "subtitle": "We won't hand you the answer — we ask one question at a time so you can reach it yourself.",
+      "stagesHeading": "You'll move through four stages",
+      "stagesNote": "Check <b>Stages</b> on the right to see where you are.",
+      "stuckHeading": "It's okay to get stuck",
+      "stuckScaffold": "If your answer misses, we switch to an <b>easier question</b> and ask again",
+      "stuckAha": "Step on the hints and <b>reach the answer yourself</b> — it's logged as an aha moment",
+      "scoreHeading": "The more you solve on your own, the higher your score",
+      "scoreSelf": "On your own",
+      "scoreHint1": "1 hint",
+      "scoreHint2": "2 hints",
+      "scoreChoice": "Choices",
+      "scoreNote": "Two friends will tell you <b>what went well</b> and <b>what to think about next</b>.",
+      "dontShowAgain": "Don't show again",
+      "start": "Start"
+    },
     "defaultHookingQuestions": {
       "importantConcept": "What is the most important concept in this class?",
       "realLifeApplication": "How can I apply this content to real life?",

@@ -18,6 +18,8 @@ import ChatSidebar from '@/features/ai-tutor/components/ui/ChatSidebar'
 import { ReferencePanel } from '@/features/ai-tutor/components/ui/ReferencePanel'
 import SocraticScorePanel from '@/features/ai-tutor/components/ui/SocraticScorePanel'
 import { useSocraticStore } from '@/features/ai-tutor/store/useSocraticStore'
+import { SocraticOnboardingModal } from '@/features/ai-tutor/components/ui/SocraticOnboardingModal'
+import { useSocraticOnboarding } from '@/features/ai-tutor/hooks/useSocraticOnboarding'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useSidebarStore } from '@/shared/store/useSidebarStore'
@@ -122,6 +124,9 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     isSocraticPanelOpen: state.isPanelOpen,
   }))
   const isSocraticPanelOpen = isSocraticPanelOpenFlag && !!socraticActiveTopic
+
+  // 소크라 문답 첫 진입 온보딩 모달 — 주제 선택으로 세션이 시작되는 순간 표시
+  const socraticOnboarding = useSocraticOnboarding()
 
   // 대화형학습 진입 시 좌측 사이드바 자동 접기, 이탈 시 복원
   const setCollapsed = useSidebarStore((s) => s.setCollapsed)
@@ -596,6 +601,12 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
         onSelectSession={handleSelectSession}
         onNewChat={handleNewChatAndResetPanels}
         currentSessionId={currentSessionId}
+      />
+
+      {/* 소크라 문답 첫 진입 온보딩 — 세션 시작을 막지 않고, 닫으면 바로 첫 질문이 보인다 */}
+      <SocraticOnboardingModal
+        isOpen={socraticOnboarding.isOpen}
+        onClose={socraticOnboarding.close}
       />
     </>
   )
