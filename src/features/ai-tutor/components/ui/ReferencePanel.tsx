@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { X, FileText, Mic, ChevronDown, ChevronUp, Highlighter } from 'lucide-react'
-import { Reference } from '@/features/ai-tutor/types'
+import { Reference, SourceFocusTarget } from '@/features/ai-tutor/types'
 
 interface ReferencePanelProps {
   allReferences: Map<number, Reference[]>
@@ -15,6 +15,8 @@ interface ReferencePanelProps {
   messages: Array<{ role: 'user' | 'assistant'; content: string; summary_keywords?: string | null }>
   isRecordingSourceDisabled?: boolean
   className?: string
+  /** 답변 본문 출처 버튼 클릭 시 스크롤·펼침할 대상 (variant 가 일치하는 패널만 반응) */
+  focusTarget?: SourceFocusTarget | null
 }
 
 interface RecordingReference {
@@ -64,12 +66,23 @@ interface MaterialReference {
   }>
 }
 
-export function ReferencePanel({ allReferences, variant, onClose, messages, isRecordingSourceDisabled, className }: ReferencePanelProps) {
+export function ReferencePanel({ allReferences, variant, onClose, messages, isRecordingSourceDisabled, className, focusTarget }: ReferencePanelProps) {
   const t = useTranslations('aiTutorReference')
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [scrollPositions, setScrollPositions] = useState({ notes: 0, materials: 0 })
+  // 답변 본문 출처 버튼 클릭으로 포커스된 카드 — 잠시 링 하이라이트 표시.
+  // nonce 를 함께 담아, 같은 카드를 다시 눌러도 스크롤 effect 가 재실행된다.
+  const [focusedItem, setFocusedItem] = useState<{ id: string; nonce: number } | null>(null)
+  const focusedItemId = focusedItem?.id ?? null
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 이미 처리한 focusTarget.nonce — 리렌더로 effect 가 재실행돼도 같은 클릭을 두 번 처리하지 않는다
+  const handledNonceRef = useRef<number | null>(null)
   const notesContainerRef = useRef<HTMLDivElement>(null)
   const materialsContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => () => {
+    if (focusTimerRef.current) clearTimeout(focusTimerRef.current)
+  }, [])
 
   // 메시지에서 키워드 가져오기 (DB에서 저장된 summary_keywords 사용)
   const getKeywords = (messageIndex: number): string => {
@@ -158,6 +171,65 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
       materialsContainerRef.current.scrollTop = scrollPositionsRef.current.materials
     }
   }, [variant])
+
+  // 답변 본문 출처 버튼 클릭 → 해당 카드 펼침 + 스크롤 + 링 하이라이트.
+  // variant 가 일치하는 패널만 반응 (녹음본→notes, 페이지→materials).
+  useEffect(() => {
+    if (!focusTarget) return
+    const expectedVariant = focusTarget.type === 'recording' ? 'notes' : 'materials'
+    if (variant !== expectedVariant) return
+    if (handledNonceRef.current === focusTarget.nonce) return
+    handledNonceRef.current = focusTarget.nonce
+
+    const group = referencesByMessage.get(focusTarget.messageIndex)
+    let itemId: string | null = null
+    if (group) {
+      if (focusTarget.type === 'recording') {
+        // 카드 표시 번호(displayIndex)와 동일한 규칙: (reference_index ?? chunk_index) + 1
+        const idx = group.recordings.findIndex((ref, i) => {
+          const sortIndex = getRecordingSortIndex(ref)
+          const displayIndex = (Number.isFinite(sortIndex) ? sortIndex : i) + 1
+          return displayIndex === focusTarget.sourceNo
+        })
+        if (idx !== -1) itemId = `recording-${focusTarget.messageIndex}-${idx}`
+      } else {
+        const idx = group.materials.findIndex((ref) => ref.metadata.page_number === focusTarget.sourceNo)
+        if (idx !== -1) itemId = `material-${focusTarget.messageIndex}-${idx}`
+      }
+    }
+
+    // 아직 refs 가 도착하지 않아 대상 카드를 못 찾았으면 처리 표시를 되돌려,
+    // allReferences 가 채워진 뒤 이 effect 가 다시 시도할 수 있게 한다.
+    if (!itemId) {
+      handledNonceRef.current = null
+      return
+    }
+
+    const finalItemId = itemId
+    setExpandedItems((prev) => {
+      const next = new Set(prev)
+      next.add(finalItemId)
+      return next
+    })
+    setFocusedItem({ id: finalItemId, nonce: focusTarget.nonce })
+    if (focusTimerRef.current) clearTimeout(focusTimerRef.current)
+    focusTimerRef.current = setTimeout(() => setFocusedItem(null), 2000)
+    // referencesByMessage 는 렌더마다 재생성되므로 원본인 allReferences 를 dep 으로 쓴다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusTarget?.nonce, variant, allReferences])
+
+  // 포커스 카드가 정해지고 펼침까지 렌더된 뒤에 스크롤한다. 스크롤을 위 effect 안에서
+  // 하면 카드가 아직 접힌 레이아웃이라 위치가 어긋난다 — 별도 effect 라야 커밋 이후가 보장된다.
+  // 위치 계산은 scrollIntoView 에 맡기고, 상단 여백은 카드의 scroll-mt-3 로 준다.
+  // behavior 는 'auto' — 이 패널의 absolute inset-0 스크롤 컨테이너에서는 'smooth' 가
+  // 무시돼 아예 스크롤되지 않는다(콘솔에서 직접 호출해도 동일).
+  useEffect(() => {
+    if (!focusedItem) return
+    const container = variant === 'notes' ? notesContainerRef.current : materialsContainerRef.current
+    container
+      ?.querySelector(`[data-ref-item="${focusedItem.id}"]`)
+      ?.scrollIntoView({ block: 'start', behavior: 'auto' })
+  }, [focusedItem, variant])
 
   const toggleExpand = (id: string) => {
     setExpandedItems(prev => {
@@ -327,7 +399,10 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                 return (
                   <div
                     key={itemId}
-                    className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md"
+                    data-ref-item={itemId}
+                    className={`scroll-mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md ${
+                      focusedItemId === itemId ? 'ring-2 ring-indigo-400' : ''
+                    }`}
                   >
                     <button
                       onClick={() => toggleExpand(itemId)}
@@ -467,7 +542,10 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                 return (
                   <div
                     key={itemId}
-                    className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md"
+                    data-ref-item={itemId}
+                    className={`scroll-mt-3 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md ${
+                      focusedItemId === itemId ? 'ring-2 ring-indigo-400' : ''
+                    }`}
                   >
                     <button
                       onClick={() => toggleExpand(itemId)}

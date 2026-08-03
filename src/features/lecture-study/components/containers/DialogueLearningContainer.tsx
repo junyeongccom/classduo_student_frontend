@@ -52,6 +52,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     chatKey,
     isSessionLocked,
     isRecordingSourceDisabled,
+    sourceFocus,
   } = useAITutorStore()
 
   // AI Tutor Store — actions
@@ -532,6 +533,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 onClose={handleCloseNotesPanel}
                 messages={messages}
                 isRecordingSourceDisabled={isRecordingSourceDisabled}
+                focusTarget={sourceFocus}
               />
             </div>
           )}
@@ -561,6 +563,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 onClose={handleCloseMaterialsPanel}
                 messages={messages}
                 isRecordingSourceDisabled={isRecordingSourceDisabled}
+                focusTarget={sourceFocus}
               />
             </div>
           )}

@@ -58,7 +58,8 @@ export function AITutorContainer() {
     chatKey,
     autoSelectLatest,
     isSessionLocked,
-    isRecordingSourceDisabled
+    isRecordingSourceDisabled,
+    sourceFocus,
   } = useAITutorStore()
   const userId = useAuthStore(state => state.user?.user_id ?? null)
   const {
@@ -506,8 +507,9 @@ export function AITutorContainer() {
       messages={messages}
       isRecordingSourceDisabled={isRecordingSourceDisabled}
       className="flex-1"
+      focusTarget={sourceFocus}
     />
-  ), [allReferences, handleCloseMaterialsPanel, isRecordingSourceDisabled, messages])
+  ), [allReferences, handleCloseMaterialsPanel, isRecordingSourceDisabled, messages, sourceFocus])
 
   return (
     <>
@@ -669,6 +671,7 @@ export function AITutorContainer() {
                 onClose={handleCloseNotesPanel}
                 messages={messages}
                 isRecordingSourceDisabled={isRecordingSourceDisabled}
+                focusTarget={sourceFocus}
               />
             </div>
           )}

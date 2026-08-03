@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { TabType } from '@/shared/components/common'
 import { areLectureIdsEqual } from '@/shared/lib/studyspaceSelection'
-import { Reference, HookingResponse, PQMQuestion, CardMatchSet } from '@/features/ai-tutor/types'
+import { Reference, HookingResponse, PQMQuestion, CardMatchSet, SourceFocusTarget } from '@/features/ai-tutor/types'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
 export interface AITutorCourse {
@@ -48,6 +48,8 @@ interface GameState {
   courseName: string | undefined
 }
 
+export type { SourceFocusTarget }
+
 interface AITutorState {
   // Session
   currentSessionId: string | undefined
@@ -69,6 +71,9 @@ interface AITutorState {
   messages: ChatMessage[]
   allReferences: Map<number, Reference[]>
   isRecordingSourceDisabled: boolean
+  sourceFocus: SourceFocusTarget | null
+  /** sourceFocus.nonce 발급용 단조 증가 시퀀스 — 세션이 바뀌어도 되감지 않는다 */
+  sourceFocusSeq: number
 
   // Locale caches
   coursesByLocale: Partial<Record<AppLocale, AITutorCourse[]>>
@@ -105,6 +110,7 @@ interface AITutorActions {
   setAllReferences: (references: Map<number, Reference[]> | ((prev: Map<number, Reference[]>) => Map<number, Reference[]>)) => void
   updateReferences: (messageIndex: number, newRefs: Reference[]) => void
   setIsRecordingSourceDisabled: (disabled: boolean) => void
+  focusSource: (target: Omit<SourceFocusTarget, 'nonce'>) => void
   resetChat: () => void
 
   // Locale cache actions
@@ -143,6 +149,8 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   messages: [],
   allReferences: new Map(),
   isRecordingSourceDisabled: false,
+  sourceFocus: null,
+  sourceFocusSeq: 0,
   coursesByLocale: {},
   hookingByLocale: {},
   pqmByLocale: {},
@@ -228,6 +236,13 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
 
   setIsRecordingSourceDisabled: (disabled) => set({ isRecordingSourceDisabled: disabled }),
 
+  // nonce 는 store 수명 동안 단조 증가한다. 패널은 마지막으로 처리한 nonce 를 기억해
+  // 중복 실행만 걸러내므로, 클릭 후 sourceFocus 를 되돌릴 필요가 없다.
+  focusSource: (target) => set((state) => ({
+    sourceFocus: { ...target, nonce: state.sourceFocusSeq + 1 },
+    sourceFocusSeq: state.sourceFocusSeq + 1,
+  })),
+
   resetChat: () => set((state) => ({
     currentSessionId: undefined,
     isSessionLocked: false,
@@ -235,6 +250,7 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
     messages: [],
     allReferences: new Map(),
     isRecordingSourceDisabled: false,
+    sourceFocus: null,
     activeTab: 'answer',
   })),
 

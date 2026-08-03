@@ -6,6 +6,12 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import katex from 'katex'
 
+export type CitationTag = {
+  type: 'recording' | 'material'
+  /** 답변 표기 번호 — 녹음본은 1-based(chunk_index+1), 페이지는 실제 페이지 번호 */
+  no: number
+}
+
 type MarkdownMessageProps = {
   markdown: string
   className?: string
@@ -15,6 +21,14 @@ type MarkdownMessageProps = {
    * - 'compact': 인라인 영역용 (퀴즈 상세 설명 등). 헤더가 작고 위/아래 마진 작음.
    */
   headingSize?: 'default' | 'compact'
+  /**
+   * 출처 태그([녹음본 N]/[페이지 N], 영문 [Recording N]/[Page N]) 클릭 핸들러.
+   * 지정하면 답변 본문의 출처 표기가 텍스트 대신 클릭 가능한 칩 버튼으로 렌더링된다.
+   * 미지정 시 기존과 동일하게 일반 텍스트로 표시 (opt-in — 다른 사용처 영향 없음).
+   */
+  onCitationClick?: (citation: CitationTag, messageIndex: number) => void
+  /** onCitationClick 에 넘겨줄 메시지 인덱스 (React.memo 유지를 위해 클로저 대신 prop) */
+  citationMessageIndex?: number
 }
 
 /**
@@ -49,12 +63,50 @@ function cjkFriendlyEmphasis(md: string): string {
   return fixed.replace(/\u0000(\d+)\u0000/g, (_m, i) => masked[Number(i)])
 }
 
+/**
+ * 답변 본문의 출처 표기를 마크다운 링크(`#cite-<type>-<no>`)로 변환.
+ *
+ * 백엔드 표기 규칙(citation_extraction_service.py 와 동일 전제):
+ * - 단독: `[녹음본 5]`, `[페이지 16]`, `[Recording 6]`, `[Page 10]`
+ * - 묶음: `[녹음본 1, 녹음본 7]`, `[녹음본 1, 페이지 16]`, `[녹음본 1·7]`(타입 생략 시 직전 타입 상속)
+ * 괄호 안이 출처 토큰만으로 구성된 경우에만 변환하고, `](` 로 이어지는
+ * 기존 마크다운 링크는 건드리지 않는다. 코드/수식은 마스킹으로 보존 (sentinel = U+0000).
+ */
+function linkifyCitations(md: string): string {
+  if (!md || md.indexOf('[') === -1) return md
+  const masked: string[] = []
+  const protectedText = md.replace(
+    /```[\s\S]*?```|`[^`]*`|\$\$[\s\S]*?\$\$|\$[^$\n]*\$/g,
+    (m) => {
+      masked.push(m)
+      return `\u0000${masked.length - 1}\u0000`
+    },
+  )
+  const bracketRe = /\[((?:녹음본|페이지|Recording|Page)\s*\d+(?:\s*[,·]\s*(?:(?:녹음본|페이지|Recording|Page)\s*)?\d+)*)\](?!\()/gi
+  const replaced = protectedText.replace(bracketRe, (full, inner: string) => {
+    let prevWord = '녹음본'
+    const links: string[] = []
+    for (const part of inner.split(/[,·]/)) {
+      const m = part.trim().match(/^(녹음본|페이지|Recording|Page)?\s*(\d+)$/i)
+      if (!m) return full
+      const word = m[1] ?? prevWord
+      const no = m[2]
+      const type: 'recording' | 'material' = /녹음본|recording/i.test(word) ? 'recording' : 'material'
+      prevWord = word
+      links.push(`[${word} ${no}](#cite-${type}-${no})`)
+    }
+    return links.join('')
+  })
+  return replaced.replace(/\u0000(\d+)\u0000/g, (_m, i) => masked[Number(i)])
+}
+
 // React.memo: 부모(풀이화면)가 "경과 시간" 타이머로 매초 리렌더돼도 markdown/className 이
 // 그대로면 이 컴포넌트는 리렌더하지 않는다. (리렌더 시 react-markdown 이 텍스트 노드를 재생성 →
 // 드래그 중이던 텍스트 선택이 풀리며 "다른 범위로 튀는" 버그가 났음)
-export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, className, headingSize = 'default' }: MarkdownMessageProps) {
+// onCitationClick/citationMessageIndex 를 넘길 때는 호출부에서 stable 참조(useCallback)를 유지할 것.
+export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, className, headingSize = 'default', onCitationClick, citationMessageIndex }: MarkdownMessageProps) {
   const isCompact = headingSize === 'compact'
-  const content = cjkFriendlyEmphasis(markdown ?? '')
+  const content = cjkFriendlyEmphasis(onCitationClick ? linkifyCitations(markdown ?? '') : (markdown ?? ''))
   return (
     <div className={className}>
       <ReactMarkdown
@@ -80,6 +132,24 @@ export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, c
             }>{children}</h3>
           ),
           p: ({ children }) => <p className="mb-2 last:mb-0 leading-snug text-sm">{children}</p>,
+          a: ({ href, children }) => {
+            // linkifyCitations 가 만든 출처 링크(#cite-<type>-<no>)는 클릭 가능한 칩 버튼으로 렌더링
+            const citeMatch = href?.match(/^#cite-(recording|material)-(\d+)$/)
+            if (citeMatch && onCitationClick) {
+              const type = citeMatch[1] as 'recording' | 'material'
+              const no = Number(citeMatch[2])
+              return (
+                <button
+                  type="button"
+                  onClick={() => onCitationClick({ type, no }, citationMessageIndex ?? -1)}
+                  className="mx-0.5 inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-1.5 py-px align-baseline text-[11px] font-medium leading-tight text-gray-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:bg-indigo-950 dark:hover:text-indigo-300"
+                >
+                  {children}
+                </button>
+              )
+            }
+            return <a href={href}>{children}</a>
+          },
           strong: ({ children }) => <strong className="font-semibold text-gray-900 dark:text-gray-100">{children}</strong>,
           ul: ({ children }) => <ul className="list-disc ml-5 mb-2 space-y-0.5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal ml-5 mb-2 space-y-0.5">{children}</ol>,

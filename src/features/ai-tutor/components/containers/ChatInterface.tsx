@@ -22,7 +22,7 @@ import { ChatComposer } from '../ui/ChatComposer'
 import SocraticTopicPicker from '../ui/SocraticTopicPicker'
 import SocraticFinishBar from '../ui/SocraticFinishBar'
 import SocraticLoading from '../ui/SocraticLoading'
-import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { MarkdownMessage, type CitationTag } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { FeedbackButtons } from '../ui/FeedbackButtons'
 import TranscriptSaveButton from '../ui/TranscriptSaveButton'
 import ChatTranscriptPrintView, {
@@ -60,7 +60,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const t = useTranslations('aiTutorChat')
   const tSidebar = useTranslations('aiTutorSidebar')
   const { locale } = useI18n()
-  const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled, selectedCourseId } = useAITutorStore(state => ({
+  const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled, selectedCourseId, focusSource } = useAITutorStore(state => ({
     hookingByLocale: state.hookingByLocale,
     pqmByLocale: state.pqmByLocale,
     reviewKeyAnswersByLocale: state.reviewKeyAnswersByLocale,
@@ -69,6 +69,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     setReviewKeyAnswersCache: state.setReviewKeyAnswersCache,
     setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
     selectedCourseId: state.selectedCourseId,
+    focusSource: state.focusSource,
   }))
   const { socraticActiveTopic, setSocraticActiveTopic, socraticCurrentStage, socraticStageTotal, ahaMessageIds } = useSocraticStore(state => ({
     socraticActiveTopic: state.activeTopic,
@@ -110,6 +111,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
+
+  // 출처 버튼([녹음본 N]/[페이지 N]) 클릭 → 패널 포커스 대상 기록 + 해당 출처 패널 열기.
+  // MarkdownMessage 가 React.memo 이므로 stable 참조 유지 (onShowReferencePanel 은 ref 로 우회).
+  const onShowReferencePanelRef = useRef(onShowReferencePanel)
+  useEffect(() => {
+    onShowReferencePanelRef.current = onShowReferencePanel
+  }, [onShowReferencePanel])
+  const handleCitationClick = useCallback((citation: CitationTag, messageIndex: number) => {
+    if (messageIndex < 0) return
+    focusSource({ type: citation.type, messageIndex, sourceNo: citation.no })
+    onShowReferencePanelRef.current?.(citation.type === 'recording' ? 'notes' : 'materials')
+  }, [focusSource])
 
   // 대화형 학습 만족도 평가 — user 메시지 ≥1 인 active session 을 sessionStorage 에 등록 +
   // currentSessionId 변경 (새 채팅 / 다른 세션) 감지 시 이전 세션 평가 모달 트리거.
@@ -1699,11 +1712,11 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                     <div className="text-gray-900">
                       {typingLength < message.content.length ? (
                         <>
-                          <MarkdownMessage markdown={displayedText} className="markdown-content" />
+                          <MarkdownMessage markdown={displayedText} className="markdown-content" onCitationClick={handleCitationClick} citationMessageIndex={index} />
                           <span className="inline-block w-2 h-4 bg-gray-900 ml-1 animate-pulse" />
                         </>
                       ) : (
-                        <MarkdownMessage markdown={message.content} className="markdown-content" />
+                        <MarkdownMessage markdown={message.content} className="markdown-content" onCitationClick={handleCitationClick} citationMessageIndex={index} />
                       )}
                     </div>
                     {/* 후속 질문 버튼 — 가장 마지막 답변에만 표시 */}

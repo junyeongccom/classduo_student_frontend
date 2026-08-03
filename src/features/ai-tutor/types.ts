@@ -22,6 +22,16 @@ export interface ChatMessage {
 // v2.0: 대화 모드 3종 — simple(간결한 설명) / detailed(자세한 설명, 초등학생 수준 쉬운 설명) / socratic(소크라 문답)
 export type ChatMode = 'simple' | 'detailed' | 'socratic'
 
+// 답변 본문의 출처 버튼([녹음본 N]/[페이지 N]) 클릭 시 출처 패널이 스크롤·펼침할 대상.
+// sourceNo: 녹음본은 1-based 표시 번호(chunk_index+1), 강의자료는 실제 페이지 번호.
+// nonce: 같은 버튼을 다시 눌러도 패널이 재반응하도록 클릭마다 증가.
+export interface SourceFocusTarget {
+  type: 'recording' | 'material'
+  messageIndex: number
+  sourceNo: number
+  nonce: number
+}
+
 export interface Reference {
   type: 'recording' | 'material'
   source_id: string
