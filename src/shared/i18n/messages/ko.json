@@ -367,7 +367,28 @@
       "material": "강의자료 출처"
     },
     "recordingSourceDisabled": "녹음본 출처가 비활성화되어 있습니다",
-    "clickToStart": "화면을 클릭하여 시작"
+    "clickToStart": "화면을 클릭하여 시작",
+    "transcriptSave": "대화 내용 PDF로 저장",
+    "transcript": {
+      "docTitle": "대화형 학습 기록",
+      "summaryTitle": "문답 진행 요약",
+      "conversationTitle": "대화 내용",
+      "colStep": "단계",
+      "colType": "유형",
+      "colPassed": "통과 여부",
+      "colMethod": "통과 방식",
+      "colScore": "점수",
+      "colAha": "아하",
+      "passed": "통과",
+      "notPassed": "미통과",
+      "methodUnknown": "방식 미상",
+      "ahaYes": "✨",
+      "totalScore": "총점 {score}점",
+      "progress": "진행 {current}/{total}단계",
+      "roleStudent": "학생",
+      "roleTutor": "튜터",
+      "emptyConversation": "아직 주고받은 대화가 없습니다."
+    }
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "수업 선택",

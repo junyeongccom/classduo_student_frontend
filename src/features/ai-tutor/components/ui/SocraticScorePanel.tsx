@@ -10,24 +10,10 @@ import { useTranslations } from 'next-intl'
 import type {
   SocraticTopic, SocraticCheckpointResult, SocraticStageOutlineItem, SocraticLeaderboardEntry,
 } from '../../types'
-
-// 문답 진행 유형 4종 — 백엔드 stage_questions 의 유형 블록 순서와 동일해야 한다.
-// v5부터 유형은 그대로 4개지만 유형 안의 질문이 1~3개로 가변이다(총 4~8문항).
-const STAGE_KEYS = ['termMemory', 'concept', 'analysisApply', 'judgeDesign'] as const
-type StageKey = (typeof STAGE_KEYS)[number]
-
-// 백엔드 stage type → i18n 키. 서버 label(한국어 고정)보다 i18n 라벨을 우선한다(영어 UI 대응).
-const TYPE_TO_KEY: Record<string, StageKey> = {
-  TERM_MEMORY: 'termMemory',
-  CONCEPT: 'concept',
-  ANALYSIS_APPLY: 'analysisApply',
-  JUDGE_DESIGN: 'judgeDesign',
-}
+import { buildStageBlocks, type CheckpointMethod } from '../../domain/socraticStages'
 
 // 유형·서버값을 알 수 없을 때의 디딤돌 깊이 폴백 (v4 값)
 const FALLBACK_MAX_SCAFFOLD_DEPTH = 2
-
-type CheckpointMethod = SocraticCheckpointResult['method']
 
 // 통과 방식별 노드 표현 — self(자력)가 가장 영예로운 스타일, fallback(힌트)은 중립색
 const METHOD_STYLE: Record<CheckpointMethod, { node: string; label: string; dot: string }> = {
@@ -42,44 +28,6 @@ const METHOD_STYLE: Record<CheckpointMethod, { node: string; label: string; dot:
 // (자력만 모인 유형이 디딤돌·힌트가 섞인 유형과 같아 보이면 안 된다)
 const METHOD_RANK: Record<CheckpointMethod, number> = {
   self: 0, scaffold1: 1, scaffold2: 1, scaffold3: 1, fallback: 2,
-}
-
-interface StageBlock {
-  key: StageKey
-  count: number
-  start: number
-}
-
-/**
- * 패널에 그릴 유형 블록 4개를 만든다.
- *
- * 1순위는 서버 `stage_outline`(유형/문항수/시작인덱스). 구 백엔드·구 주제라 outline 이 없으면
- * stageTotal 을 유형 4개에 균등 배분해 폴백한다 — stageTotal 이 4면 유형당 1문항이 되어
- * v4 표현과 완전히 같아진다.
- */
-function buildStageBlocks(
-  outline: SocraticStageOutlineItem[], stageTotal: number,
-): StageBlock[] {
-  const fromOutline = outline
-    .filter((b) => b && b.count > 0 && TYPE_TO_KEY[String(b.type ?? '').toUpperCase()])
-    .map((b) => ({
-      key: TYPE_TO_KEY[String(b.type ?? '').toUpperCase()],
-      count: b.count,
-      start: b.start_index,
-    }))
-  if (fromOutline.length > 0) return fromOutline
-
-  // 폴백: 유형별 문항 수를 모르므로 균등 배분(나머지는 앞 유형에). 백엔드 배점 배분과 같은 규칙.
-  const total = Math.max(0, stageTotal)
-  const base = Math.floor(total / STAGE_KEYS.length)
-  const remainder = total % STAGE_KEYS.length
-  let cursor = 0
-  return STAGE_KEYS.map((key, i) => {
-    const count = base + (i < remainder ? 1 : 0)
-    const block = { key, count, start: cursor }
-    cursor += count
-    return block
-  }).filter((b) => b.count > 0)
 }
 
 /** 디딤돌 통과를 나타내는 계단 아이콘 (3칸) */

@@ -367,7 +367,28 @@
       "material": "Material source"
     },
     "recordingSourceDisabled": "Recording sources are disabled",
-    "clickToStart": "Click the screen to start"
+    "clickToStart": "Click the screen to start",
+    "transcriptSave": "Save conversation as PDF",
+    "transcript": {
+      "docTitle": "Dialogue Learning Transcript",
+      "summaryTitle": "Session Summary",
+      "conversationTitle": "Conversation",
+      "colStep": "Step",
+      "colType": "Type",
+      "colPassed": "Cleared",
+      "colMethod": "How",
+      "colScore": "Score",
+      "colAha": "Aha",
+      "passed": "Cleared",
+      "notPassed": "Not cleared",
+      "methodUnknown": "Unknown",
+      "ahaYes": "✨",
+      "totalScore": "Total {score} pts",
+      "progress": "Progress {current}/{total}",
+      "roleStudent": "Student",
+      "roleTutor": "Tutor",
+      "emptyConversation": "No conversation yet."
+    }
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "Select class",

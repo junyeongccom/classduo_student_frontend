@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
@@ -23,6 +24,14 @@ import SocraticFinishBar from '../ui/SocraticFinishBar'
 import SocraticLoading from '../ui/SocraticLoading'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { FeedbackButtons } from '../ui/FeedbackButtons'
+import TranscriptSaveButton from '../ui/TranscriptSaveButton'
+import ChatTranscriptPrintView, {
+  type TranscriptPrintData,
+  type TranscriptPrintTurn,
+} from '../ui/ChatTranscriptPrintView'
+import { useTranscriptPrint } from '@/features/ai-tutor/hooks/useTranscriptPrint'
+import { buildTranscriptFilename } from '@/features/ai-tutor/domain/buildTranscriptFilename'
+import { buildSocraticCheckpointRows } from '@/features/ai-tutor/domain/socraticStages'
 
 const shuffleArray = <T,>(items: T[]) => {
   const array = [...items]
@@ -49,6 +58,7 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated, onReferencesUpdate, onLectureIdsLoaded, onMessagesUpdate, onShowReferencePanel, onSocraticFinish }: ChatInterfaceProps) {
   const t = useTranslations('aiTutorChat')
+  const tSidebar = useTranslations('aiTutorSidebar')
   const { locale } = useI18n()
   const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled, selectedCourseId } = useAITutorStore(state => ({
     hookingByLocale: state.hookingByLocale,
@@ -777,6 +787,74 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }, [selectedLectureIds, t])
 
+  // ── 대화 기록 PDF 저장 (브라우저 인쇄) ─────────────────────────────────
+  // 소크라 문답 테스트 기록 보관이 주 용도라, 반복 저장해도 파일이 구분되도록 파일명에
+  // 모드·주제·저장시각을 넣는다. 세 모드 모두 동작하고 소크라일 때만 요약표가 덧붙는다.
+  const { printData, requestPrint } = useTranscriptPrint()
+  const modeLabel =
+    chatMode === 'socratic' ? t('socraticLabel')
+      : chatMode === 'detailed' ? t('detailedLabel')
+        : t('simpleLabel')
+
+  const handleSaveTranscript = useCallback(() => {
+    const printableTurns: TranscriptPrintTurn[] = messages
+      // 에러 안내 말풍선은 대화 기록이 아니라 UI 상태라 인쇄물에서 제외
+      .filter((m) => !m.isError && !!m.content?.trim())
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+        aha: m.role === 'user' && !!m.id && ahaMessageIds.includes(m.id),
+      }))
+    if (printableTurns.length === 0) return
+
+    const tutorState = useAITutorStore.getState()
+    const course = (tutorState.coursesByLocale[locale] ?? [])
+      .find((c) => c.course_id === tutorState.selectedCourseId)
+    const lecture = course?.lectures.find((l) => l.lecture_id === selectedLectureIds[0])
+    const lectureLabel = lecture
+      ? (lecture.title?.trim() || tSidebar('lectureLabel', { no: lecture.lecture_no }))
+      : null
+
+    // 소크라 요약은 우측 패널이 화면에 이미 노출하는 값만 사용한다 (내부 판정값은 넣지 않는다).
+    const socraticState = useSocraticStore.getState()
+    const topic = chatMode === 'socratic' ? socraticState.activeTopic : null
+    const socratic = topic
+      ? {
+        topicTitle: topic.title,
+        totalScore: socraticState.totalScore,
+        currentStage: socraticState.currentStage,
+        stageTotal: socraticState.stageTotal,
+        ahaCount: socraticState.ahaCount,
+        rows: buildSocraticCheckpointRows(
+          socraticState.stageOutline,
+          socraticState.stageTotal,
+          socraticState.currentStage,
+          socraticState.checkpointResults,
+        ),
+      }
+      : null
+
+    const savedAt = new Date()
+    const data: TranscriptPrintData = {
+      filename: buildTranscriptFilename({
+        modeLabel,
+        subject: topic?.title ?? lectureLabel ?? course?.title ?? null,
+        fallbackSubject: t('transcript.docTitle'),
+        at: savedAt,
+      }),
+      courseTitle: course?.title ?? null,
+      lectureLabel,
+      modeLabel,
+      savedAtLabel: new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'ko-KR', {
+        dateStyle: 'long',
+        timeStyle: 'short',
+      }).format(savedAt),
+      turns: printableTurns,
+      socratic,
+    }
+    requestPrint(data)
+  }, [messages, ahaMessageIds, locale, selectedLectureIds, chatMode, modeLabel, requestPrint, t, tSidebar])
+
   // 소크라 문답 모드 진입 시 (활성 주제 없음) 회차의 주제 목록 조회
   useEffect(() => {
     if (chatMode !== 'socratic' || socraticActiveTopic || selectedLectureIds.length !== 1) return
@@ -1437,6 +1515,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="flex h-full flex-col">
+        {/* 대화 기록 저장 — 대화가 비어 있으므로 비활성 */}
+        <div className="flex shrink-0 items-center justify-end px-4 pt-2">
+          <TranscriptSaveButton onClick={handleSaveTranscript} disabled label={t('transcriptSave')} />
+        </div>
         {/* 중앙 컨텐츠 */}
         <div className="flex flex-1 flex-col items-center justify-center px-8 py-6 max-w-full">
 
@@ -1522,9 +1604,22 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // 대화 진행 중 상태
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
+      {/* 대화 기록 저장 */}
+      <div className="flex shrink-0 items-center justify-end px-4 pt-2">
+        <TranscriptSaveButton
+          onClick={handleSaveTranscript}
+          disabled={isLoading || messages.length === 0}
+          label={t('transcriptSave')}
+        />
+      </div>
+
+      {/* 인쇄 전용 문서 — body 직계로 붙여 상위 overflow 클리핑을 피한다 (화면에서는 숨김) */}
+      {printData && typeof document !== 'undefined' &&
+        createPortal(<ChatTranscriptPrintView data={printData} />, document.body)}
+
       {/* 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
         <div className="mx-auto max-w-3xl space-y-8">
           {messages.map((message, index) => {
             if (message.role === 'user') {
