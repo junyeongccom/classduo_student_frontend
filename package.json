@@ -9,7 +9,8 @@
     "build": "next build",
     "build:clean": "npm run clean && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@blocknote/core": "^0.20.0",

@@ -8,7 +8,7 @@
 
 import { useTranslations } from 'next-intl'
 import { MarkdownMessage } from './MarkdownMessage'
-import type { SocraticCheckpointRow } from '../../domain/socraticStages'
+import type { SocraticSummary } from '../../domain/socraticStages'
 
 /** 인쇄물 루트 id — @media print 에서 이 노드만 남기고 body 의 나머지 형제를 숨긴다. */
 export const TRANSCRIPT_PRINT_ROOT_ID = 'chat-transcript-print'
@@ -20,13 +20,15 @@ export interface TranscriptPrintTurn {
   aha?: boolean
 }
 
-export interface TranscriptPrintSocratic {
+/**
+ * 요약표 입력. 점수 관련 값(rows/totalScore/ahaCount)은 SocraticSummary 를 그대로 받는다 —
+ * 총점만 다른 곳(store)에서 따로 끌어오면 단계별 점수와 합이 갈라지므로,
+ * 반드시 buildSocraticSummary() 한 번의 결과를 통째로 넘겨야 한다.
+ */
+export interface TranscriptPrintSocratic extends SocraticSummary {
   topicTitle: string
-  totalScore: number
   currentStage: number
   stageTotal: number
-  ahaCount: number
-  rows: SocraticCheckpointRow[]
 }
 
 export interface TranscriptPrintData {

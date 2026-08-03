@@ -1,6 +1,6 @@
 /**
  * @file socraticStages.ts
- * @description 소크라 문답 유형(4종) 상수 + 유형 블록/체크포인트 행 계산 — 점수 패널·인쇄 기록 공용
+ * @description 소크라 문답 유형(4종) 상수 + 유형 블록/체크포인트 행/요약 총점 계산 — 점수 패널·인쇄 기록 공용
  * @module features/ai-tutor/domain
  * @dependencies features/ai-tutor/types
  */
@@ -79,9 +79,9 @@ export interface SocraticCheckpointRow {
 /**
  * 체크포인트별 인쇄 행을 만든다.
  *
- * 세션 복원 경로는 checkpoint_results 를 채우지 않고 currentStage 만 복원한다.
- * 결과가 없어도 currentStage 보다 앞선 체크포인트는 이미 통과한 것 — 패널과 같은 규칙으로
- * "방식 미상 통과"(method null)로 표시해 미통과로 퇴행하지 않게 한다.
+ * 복원 포함 정상 경로에서는 checkpoint_results 가 전 구간 채워진다(store.restoreProgress).
+ * 그래도 결과가 결측인 구 세션이 있을 수 있어, currentStage 보다 앞선 체크포인트는
+ * 패널과 같은 규칙으로 "방식 미상 통과"(method null, 0점)로 표시해 미통과로 퇴행시키지 않는다.
  */
 export function buildSocraticCheckpointRows(
   outline: SocraticStageOutlineItem[],
@@ -108,8 +108,40 @@ export function buildSocraticCheckpointRows(
       stageCount: block?.count ?? 1,
       passed,
       method: result?.method ?? null,
-      score: result?.score ?? 0,
+      score: Number.isFinite(result?.score) ? Number(result?.score) : 0,
       aha: result?.aha ?? false,
     }
   })
+}
+
+/** 요약표 한 벌 — 총점·아하 횟수를 표의 행에서 파생시켜 "합이 총점과 다른" 상태가 생기지 않게 한다. */
+export interface SocraticSummary {
+  rows: SocraticCheckpointRow[]
+  /** Σ(행 점수) − 어뷰징 감점, 바닥 0. 백엔드 compute_total 과 같은 식이다. */
+  totalScore: number
+  ahaCount: number
+}
+
+/**
+ * 요약표에 필요한 값을 한 함수에서 만든다.
+ *
+ * 총점을 서버 값(store.totalScore)에서 따로 가져오면 단계별 점수와 출처가 갈라져
+ * "단계 0점 × 4 + 총점 80" 같은 모순이 인쇄물에 그대로 찍힌다. 그래서 총점·아하 횟수를
+ * 모두 rows 에서 파생시킨다 — 서버 총점과 같은 식(Σ점수 − 감점, 바닥 0)이라 값도 일치한다.
+ */
+export function buildSocraticSummary(
+  outline: SocraticStageOutlineItem[],
+  stageTotal: number,
+  currentStage: number,
+  results: SocraticCheckpointResult[],
+  penalty = 0,
+): SocraticSummary {
+  const rows = buildSocraticCheckpointRows(outline, stageTotal, currentStage, results)
+  const scoreSum = rows.reduce((sum, r) => sum + r.score, 0)
+  const penaltyValue = Number.isFinite(penalty) ? Number(penalty) : 0
+  return {
+    rows,
+    totalScore: Math.max(0, scoreSum - penaltyValue),
+    ahaCount: rows.filter((r) => r.aha).length,
+  }
 }

@@ -315,6 +315,13 @@ export interface SocraticStateResponse {
   stage_total?: number
   // v5: 유형별 개요 — SSE 이벤트를 놓쳐도 패널이 유형별 진행 표시를 복구할 수 있다.
   stage_outline?: SocraticStageOutlineItem[]
+  // v4: 체크포인트별 판정 결과·아하 횟수·세부 단계.
+  // 총점(total_score)은 서버에서 checkpoint_results 합 − penalty 로 산출되므로,
+  // 복원 시 이 배열을 함께 반영하지 않으면 패널·인쇄 요약표의 단계별 점수가 총점과 갈라진다.
+  checkpoint_results?: SocraticCheckpointResult[]
+  aha_count?: number
+  phase?: 'root' | 'scaffold' | 'retry_root' | 'fallback'
+  scaffold_depth?: number
 }
 
 // GET /ai-tutor/socratic/courses/{courseId}/leaderboard 응답 항목

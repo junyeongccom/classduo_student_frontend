@@ -14,6 +14,7 @@ import type {
   SocraticCheckpointResult,
   SocraticStageOutlineItem,
   SocraticLeaderboardEntry,
+  SocraticStateResponse,
 } from '../types'
 
 const ZERO: SocraticAxisScores = { clarity: 0, accuracy: 0, relevance: 0, depth: 0, reflection: 0 }
@@ -22,6 +23,8 @@ interface SocraticState {
   activeTopic: SocraticTopic | null
   axisScores: SocraticAxisScores
   totalScore: number
+  // 어뷰징 누적 감점. 총점 = Σ(체크포인트 점수) − penalty (바닥 0) — 서버와 같은 식.
+  penalty: number
   lastDeltas: SocraticAxisScores | null
   lastPraise: string
   lastSuggestion: string
@@ -55,14 +58,14 @@ interface SocraticState {
   applyStageEvent: (e: SocraticStageEvent) => void
   applyProgressEvent: (e: SocraticProgressEvent) => void
   markAhaMessage: (id: string) => void
-  setStage: (currentStage: number, stageTotal: number, stageOutline?: SocraticStageOutlineItem[]) => void
+  restoreProgress: (state: SocraticStateResponse) => void
   setLeaderboard: (entries: SocraticLeaderboardEntry[]) => void
   togglePanel: () => void
   reset: () => void
 }
 
 const EMPTY_PROGRESS = {
-  axisScores: ZERO, totalScore: 0, lastDeltas: null, lastPraise: '', lastSuggestion: '',
+  axisScores: ZERO, totalScore: 0, penalty: 0, lastDeltas: null, lastPraise: '', lastSuggestion: '',
   abuseWarning: false, mastered: false, currentStage: 0, stageTotal: 0,
   stageOutline: [] as SocraticStageOutlineItem[],
   phase: 'root' as const, scaffoldDepth: 0, maxScaffoldDepth: 0,
@@ -83,6 +86,7 @@ export const useSocraticStore = create<SocraticState>((set) => ({
   applyScoreEvent: (e) => set((s) => ({
     axisScores: e.axis_scores ?? s.axisScores,
     totalScore: e.total_score,
+    penalty: e.penalty ?? s.penalty,
     lastDeltas: e.applied_deltas ?? s.lastDeltas,
     lastPraise: e.praise,
     lastSuggestion: e.suggestion,
@@ -111,12 +115,24 @@ export const useSocraticStore = create<SocraticState>((set) => ({
   markAhaMessage: (id) => set((s) => (
     s.ahaMessageIds.includes(id) ? s : { ahaMessageIds: [...s.ahaMessageIds, id] }
   )),
-  // 세션 복원 경로. outline은 서버가 주면 덮어쓰고, 없으면(구 백엔드) 기존 값을 유지한다.
-  setStage: (currentStage, stageTotal, stageOutline) => set(
-    stageOutline && stageOutline.length > 0
-      ? { currentStage, stageTotal, stageOutline }
-      : { currentStage, stageTotal },
-  ),
+  // 세션 복원 경로 — 서버 state 응답 한 벌로 진행 상태를 통째로 되살린다.
+  // checkpointResults 를 반드시 함께 넣어야 한다: 총점과 단계별 점수의 단일 출처가
+  // checkpoint_results 이므로, 이걸 비운 채 totalScore 만 복원하면 요약표가 "0점 × N + 총점 80"
+  // 처럼 합이 안 맞는 상태로 찍힌다. setActiveTopic 직후에 호출하는 것을 전제로 한다.
+  // stageTotal/stageOutline 은 서버가 안 주면(구 백엔드) 주제에서 온 기존 값을 유지한다.
+  restoreProgress: (e) => set((s) => ({
+    currentStage: e.current_stage ?? 0,
+    stageTotal: e.stage_total || s.stageTotal,
+    stageOutline: e.stage_outline && e.stage_outline.length > 0 ? e.stage_outline : s.stageOutline,
+    axisScores: e.axis_scores ?? s.axisScores,
+    totalScore: e.total_score ?? 0,
+    penalty: e.penalty ?? 0,
+    checkpointResults: e.checkpoint_results ?? [],
+    ahaCount: e.aha_count ?? 0,
+    phase: e.phase ?? 'root',
+    scaffoldDepth: e.scaffold_depth ?? 0,
+    mastered: !!e.mastered_at,
+  })),
   setLeaderboard: (entries) => set({ leaderboard: entries }),
   togglePanel: () => set((s) => ({ isPanelOpen: !s.isPanelOpen })),
   reset: () => set({ ...EMPTY_PROGRESS, activeTopic: null, isPanelOpen: false }),

@@ -31,7 +31,8 @@ import ChatTranscriptPrintView, {
 } from '../ui/ChatTranscriptPrintView'
 import { useTranscriptPrint } from '@/features/ai-tutor/hooks/useTranscriptPrint'
 import { buildTranscriptFilename } from '@/features/ai-tutor/domain/buildTranscriptFilename'
-import { buildSocraticCheckpointRows } from '@/features/ai-tutor/domain/socraticStages'
+import { buildSocraticSummary } from '@/features/ai-tutor/domain/socraticStages'
+import { dropUnansweredUserTurns } from '@/features/ai-tutor/domain/dropUnansweredUserTurns'
 
 const shuffleArray = <T,>(items: T[]) => {
   const array = [...items]
@@ -307,7 +308,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         try {
           const { data, error } = await chatService.getSession(currentSessionId)
           if (data && !error && data.messages.length > 0) {
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
+            // 답변을 못 받은 학생 발화(실패 턴)를 걷어낸 뒤 렌더한다 — 아래 인덱스 접근도 이 배열 기준.
+            const storedMessages = dropUnansweredUserTurns(data.messages)
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = storedMessages.map((m: StoredMessage, idx, arr) => {
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
@@ -362,8 +365,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             
             // 참고자료 복원
             loadedMessages.forEach((msg, idx) => {
-              if (msg.role === 'assistant' && data.messages[idx]?.reference_data) {
-                const refs = data.messages[idx].reference_data as Reference[]
+              if (msg.role === 'assistant' && storedMessages[idx]?.reference_data) {
+                const refs = storedMessages[idx].reference_data as Reference[]
                 if (refs && refs.length > 0 && onReferencesUpdate) {
                   onReferencesUpdate(idx, refs)
                 }
@@ -391,7 +394,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           const { data, error } = await chatService.getSession(currentSessionId)
           if (data && !error) {
             // 현재 메시지 수와 로드된 메시지 수 비교
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
+            // 답변을 못 받은 학생 발화(실패 턴)를 걷어낸 뒤 렌더한다 — 아래 인덱스 접근도 이 배열 기준.
+            const storedMessages = dropUnansweredUserTurns(data.messages)
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = storedMessages.map((m: StoredMessage, idx, arr) => {
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
@@ -457,8 +462,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               
               // 참고자료 복원
               loadedMessages.forEach((msg, idx) => {
-                if (msg.role === 'assistant' && data.messages[idx]?.reference_data) {
-                  const refs = data.messages[idx].reference_data as Reference[]
+                if (msg.role === 'assistant' && storedMessages[idx]?.reference_data) {
+                  const refs = storedMessages[idx].reference_data as Reference[]
                   if (refs && refs.length > 0 && onReferencesUpdate) {
                     onReferencesUpdate(idx, refs)
                   }
@@ -499,7 +504,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           const { data, error } = await chatService.getSession(sessionId)
           if (data && !error) {
             // 메시지 로드 (summary_keywords, follow_up_question, v1.0 필드 포함)
-            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = data.messages.map((m: StoredMessage, idx, arr) => {
+            // 답변을 못 받은 학생 발화(실패 턴)를 걷어낸 뒤 렌더한다 — 아래 인덱스 접근도 이 배열 기준.
+            const storedMessages = dropUnansweredUserTurns(data.messages)
+            const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = storedMessages.map((m: StoredMessage, idx, arr) => {
               // reference_data에서 follow_up_question 추출 (첫 번째 reference의 _meta에서)
               let followUpQuestion: string | null = null
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
@@ -546,32 +553,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             // 후속 메시지는 chat_mode 가 null 일 수 있어 첫 메시지 기준으로 세션 전체 모드를 판단한다.
             // (useAITutorSession.handleSelectSession 이 chatKey 를 증가시켜 이 컴포넌트를 remount 하며,
             // 그 핸들러 안에서 useSocraticStore.reset() 이 동기적으로 먼저 실행되므로 아래 복원은 항상 reset 이후에 실행됨)
-            const firstMessage = data.messages[0]
-            const firstAssistantMessage = data.messages.find((m: StoredMessage) => m.role === 'assistant')
+            const firstMessage = storedMessages[0]
+            const firstAssistantMessage = storedMessages.find((m: StoredMessage) => m.role === 'assistant')
             const sessionChatMode = firstMessage?.chat_mode ?? firstAssistantMessage?.chat_mode
             if (sessionChatMode === 'socratic') {
               setChatMode('socratic')
               socraticService.fetchState(sessionId).then(({ data: stateData, error: stateError }) => {
                 if (stateError || !stateData || !stateData.topic) return
                 setSocraticActiveTopic(stateData.topic)
-                useSocraticStore.getState().applyScoreEvent({
-                  type: 'socratic_score',
-                  axis_scores: stateData.axis_scores,
-                  applied_deltas: stateData.axis_scores,
-                  total_score: stateData.total_score,
-                  penalty: stateData.penalty,
-                  abuse: false,
-                  praise: '',
-                  suggestion: '',
-                  mastered: !!stateData.mastered_at,
-                })
-                // setActiveTopic이 단계를 0으로 초기화하므로 그 뒤에 서버 값으로 덮어쓴다.
-                // v5: 유형별 개요도 함께 복원해야 패널이 "용어암기 1/2" 를 다시 그린다.
-                useSocraticStore.getState().setStage(
-                  stateData.current_stage ?? 0,
-                  stateData.stage_total ?? stateData.topic.stage_total ?? 0,
-                  stateData.stage_outline ?? stateData.topic.stage_outline,
-                )
+                // setActiveTopic이 진행 상태를 0으로 초기화하므로 그 뒤에 서버 값으로 덮어쓴다.
+                // 점수·단계·유형 개요에 더해 checkpoint_results/aha_count 까지 한 번에 복원한다 —
+                // 예전에는 총점만 복원하고 체크포인트 결과를 비워둬서, 복원된 세션의 인쇄 요약표가
+                // "전 단계 0점·방식 미상"인데 총점만 80으로 찍히는 모순이 있었다.
+                useSocraticStore.getState().restoreProgress(stateData)
                 if (selectedCourseId) {
                   socraticService.fetchLeaderboard(selectedCourseId).then(({ data: lbData }) => {
                     if (lbData) useSocraticStore.getState().setLeaderboard(lbData.entries)
@@ -609,7 +603,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             loadedMessages.forEach((msg, index) => {
               if (msg.role === 'assistant') {
                 // 원본 메시지 배열에서 해당 인덱스의 메시지 찾기
-                const originalMessage = data.messages[index]
+                const originalMessage = storedMessages[index]
                 if (originalMessage && originalMessage.reference_data && originalMessage.reference_data.length > 0 && onReferencesUpdate) {
                   onReferencesUpdate(index, originalMessage.reference_data)
                 }
@@ -831,18 +825,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     // 소크라 요약은 우측 패널이 화면에 이미 노출하는 값만 사용한다 (내부 판정값은 넣지 않는다).
     const socraticState = useSocraticStore.getState()
     const topic = chatMode === 'socratic' ? socraticState.activeTopic : null
+    // 총점·아하 횟수는 store 값을 따로 읽지 않고 요약표 행에서 파생시킨다(단일 출처) —
+    // 표의 단계별 점수 합과 총점이 구조적으로 항상 일치한다.
     const socratic = topic
       ? {
         topicTitle: topic.title,
-        totalScore: socraticState.totalScore,
         currentStage: socraticState.currentStage,
         stageTotal: socraticState.stageTotal,
-        ahaCount: socraticState.ahaCount,
-        rows: buildSocraticCheckpointRows(
+        ...buildSocraticSummary(
           socraticState.stageOutline,
           socraticState.stageTotal,
           socraticState.currentStage,
           socraticState.checkpointResults,
+          socraticState.penalty,
         ),
       }
       : null
