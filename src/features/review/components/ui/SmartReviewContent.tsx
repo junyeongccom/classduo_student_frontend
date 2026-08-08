@@ -7,7 +7,6 @@ import { AddReviewWordModal } from './AddReviewWordModal'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DefinitionBuilderGame } from './DefinitionBuilderGame'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
-import { GuessTheTermGameContainer } from '@/features/review/components/containers/GuessTheTermGameContainer'
 import { ReviewMatchingGame } from './ReviewMatchingGame'
 import type { DefinitionBuilderGameResponse } from '@/features/review/types'
 import { ReviewDeckView } from './ReviewDeckView'
@@ -114,7 +113,6 @@ export function SmartReviewContent({
       description: t('games.quickfill.description'),
       thumbnail: '/DB_thumbnail.png',
     },
-    // guess-the-term: 게임 선택 목록에서 숨김 (코드 보존, 향후 재활성화 가능)
   ]
   return (
     <div className="flex h-full flex-col gap-6 overflow-hidden">
@@ -396,31 +394,11 @@ export function SmartReviewContent({
                   lectureId={lectureId}
                 />
               </div>
-            ) : activeGameId === 'guess-the-term' ? (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-slate-900">{t('games.guessTheTerm.title')}</div>
-                  <button
-                    type="button"
-                    onClick={onExitGame}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                  >
-                    {t('definitionBuilder.back')}
-                  </button>
-                </div>
-                <GuessTheTermGameContainer
-                  lectureId={lectureId}
-                  locale={locale}
-                  isEnabled={hasSelectedLecture}
-                  reviewItems={reviewItems}
-                  onExitGame={onExitGame}
-                />
-              </div>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {gameItems.map(game => {
                   const isPlayable =
-                    game.id === 'definition-builder' || game.id === 'matching' || game.id === 'guess-the-term'
+                    game.id === 'definition-builder' || game.id === 'matching'
                   return (
                     <button
                       key={game.id}

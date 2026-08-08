@@ -496,10 +496,6 @@
         "quickfill": {
           "title": "Definition Builder",
           "description": "Pick tokens to complete the definition."
-        },
-        "guessTheTerm": {
-          "title": "Guess the Term",
-          "description": "Ask yes/no questions to narrow down the term."
         }
       },
       "definitionBuilder": {
@@ -543,41 +539,6 @@
         "achievedAt": "Date",
         "quiz": "Quiz",
         "pairs": "{count} pairs"
-      },
-      "guessTheTerm": {
-        "selectLecture": "Select a lecture to start the game.",
-        "instructions": "Instructions:\nThe goal of the game is to accurately guess the term chosen by the system.\nA list of terms will be displayed on the screen. The system selects a term that is not revealed to you.\nKeep asking yes-or-no questions to narrow down and eliminate terms from the list.\nWhen you're ready, click 'Select answer' to submit your guess.\nThe number of attempts for asking questions and making guesses is limited.",
-        "newGame": "New game",
-        "chatHint": "Ask yes-or-no questions in chat to guess the secret term",
-        "questionsUsed": "You have used {used} out of {total} questions.",
-        "inputPlaceholder": "Is it related to...?",
-        "giveUp": "Give up",
-        "selectAnswer": "Select answer",
-        "cancelSelect": "Cancel",
-        "choose": "Select",
-        "confirmTitle": "Confirm answer",
-        "confirmYes": "Yes",
-        "confirmNo": "No",
-        "successTitle": "Congratulations!",
-        "successFound": "You found the answer in {count} questions.",
-        "successWrong": "You made {count} wrong guesses. Try again for a perfect score!",
-        "backToList": "Back to list",
-        "showDescription": "Show description",
-        "noTerms": "No terms to display.",
-        "send": "Send",
-        "secretLoadFailed": "Couldn't load the answer term. Please start a new game.",
-        "responseLoadFailed": "Couldn't load a response.",
-        "answerTermLoadFailed": "Couldn't load the answer.",
-        "answerIsQuoted": "The answer is \"{keyword}\".",
-        "giveUpResult": "You gave up. {answer}",
-        "selectedTermFallback": "the selected term",
-        "wrongGuess": "No. {label} is not the answer.",
-        "confirmSelect": "Select {keyword} as your answer?",
-        "answerIsReveal": "The answer is {keyword}.",
-        "tryAgain": "Try again!",
-        "startChat": "Start chatting.",
-        "allQuestionsUsed": "You've used all your questions",
-        "termsTitle": "Terms"
       },
       "importTooltip": "AI trained on the lecture recording extracts and recommends key keywords for this session.",
       "guard": {
@@ -679,7 +640,6 @@
       "deck": "Deck (SRS)",
       "cardMatch": "Card Match",
       "definitionBuilder": "Definition Builder",
-      "guessTheTerm": "Guess the Term",
       "minWords": "Requires at least {n} words",
       "wordListTitle": "Word List",
       "startGame": "Start Game",
@@ -737,16 +697,6 @@
           "controlSelect": "Click a choice to auto-fill the blank",
           "controlPlace": "Correct +10 pts, wrong −10 pts",
           "previewHint": "Select the correct token from the choices"
-        },
-        "guessTheTerm": {
-          "subtitle": "Deduce the AI's secret term by asking yes/no questions",
-          "goal": "The AI picks a secret term from your word list. You have up to 5 questions and 4 guess attempts. Narrow it down with questions, then pick the answer.",
-          "controlType": "Type your questions",
-          "controlGuess": "Click a term to guess",
-          "previewAI": "I picked a secret term!",
-          "previewUser": "Is it biology-related?",
-          "previewReply": "Yes, it is!",
-          "previewHint": "Ask questions to deduce the secret term"
         }
       }
     },

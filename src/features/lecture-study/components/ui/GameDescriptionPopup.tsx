@@ -57,11 +57,6 @@ const GAME_THEMES: Record<string, GameTheme> = {
     button: 'bg-emerald-500 hover:bg-emerald-600',
     previewBg: 'bg-slate-50',
   },
-  guessTheTerm: {
-    goalBg: 'bg-pink-50 dark:bg-pink-950/30',
-    button: 'bg-pink-500 hover:bg-pink-600',
-    previewBg: 'bg-slate-50',
-  },
 }
 
 type ControlItem = {
@@ -115,11 +110,6 @@ function getControls(gameId: string): ControlItem[] {
       return [
         { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlSelect' },
         { icon: <ArrowUpDown className="h-4 w-4 text-gray-500" />, labelKey: 'controlPlace' },
-      ]
-    case 'guessTheTerm':
-      return [
-        { icon: <Keyboard className="h-4 w-4 text-gray-500" />, labelKey: 'controlType' },
-        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlGuess' },
       ]
     default:
       return []
@@ -266,62 +256,6 @@ function DefBuilderPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   )
 }
 
-/* ─── Guess The Term: Chat + Grid Preview ─── */
-function GuessTermPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
-  return (
-    <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-900">
-      <div className="grid grid-cols-5 gap-2">
-        {/* Chat area (left 2 cols) */}
-        <div className="col-span-2 flex flex-col gap-1.5 rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-800">
-          {/* System message */}
-          <div className="self-start rounded-xl bg-slate-100 px-2 py-1 text-[9px] text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-            {t('lectureStudy.game.desc.guessTheTerm.previewAI')}
-          </div>
-          {/* User message */}
-          <div className="self-end rounded-xl bg-slate-900 px-2 py-1 text-[9px] text-white">
-            {t('lectureStudy.game.desc.guessTheTerm.previewUser')}
-          </div>
-          {/* System reply */}
-          <div className="self-start rounded-xl bg-slate-100 px-2 py-1 text-[9px] text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-            {t('lectureStudy.game.desc.guessTheTerm.previewReply')}
-          </div>
-          {/* Input */}
-          <div className="mt-auto flex gap-1">
-            <div className="flex-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[8px] text-slate-400">...</div>
-            <div className="rounded-md bg-slate-900 px-1.5 py-0.5 text-[8px] text-white">&#9654;</div>
-          </div>
-        </div>
-        {/* Term grid (right 3 cols) */}
-        <div className="col-span-3 grid grid-cols-3 gap-1">
-          {[
-            { state: 'normal' },
-            { state: 'eliminated' },
-            { state: 'normal' },
-            { state: 'normal' },
-            { state: 'wrong' },
-            { state: 'normal' },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className={cn(
-                'flex h-8 items-center justify-center rounded-lg border text-[8px] font-semibold',
-                item.state === 'eliminated'
-                  ? 'border-slate-200 bg-slate-100 text-slate-300 line-through'
-                  : item.state === 'wrong'
-                    ? 'border-rose-200 bg-rose-50 text-rose-500'
-                    : 'border-slate-200 bg-white text-slate-600',
-              )}
-            >
-              {item.state === 'eliminated' ? 'term' : item.state === 'wrong' ? 'term' : 'term'}
-            </div>
-          ))}
-        </div>
-      </div>
-      <p className="mt-2 text-center text-[10px] text-slate-400">{t('lectureStudy.game.desc.guessTheTerm.previewHint')}</p>
-    </div>
-  )
-}
-
 /* ─── Preview Router ─── */
 function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTranslations> }) {
   switch (gameId) {
@@ -333,8 +267,6 @@ function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTr
       return <CardMatchPreview t={t} />
     case 'definitionBuilder':
       return <DefBuilderPreview t={t} />
-    case 'guessTheTerm':
-      return <GuessTermPreview t={t} />
     default:
       return null
   }

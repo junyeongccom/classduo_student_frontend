@@ -11,8 +11,6 @@ import type {
   DeleteLectureReviewItemResponse,
   DeleteLectureReviewItemsResponse,
   GameSubmissionResponse,
-  GuessTheTermChatRequest,
-  GuessTheTermChatResponse,
   ImportLectureKeywordsResponse,
   LectureReviewListResponse,
   MatchingRankingResponse,
@@ -187,14 +185,6 @@ export const reviewService = {
       auth: true,
     })
   },
-
-  guessTheTermChat: (lectureId: string, request: GuessTheTermChatRequest) =>
-    apiRequest<GuessTheTermChatResponse>(API_ENDPOINTS.REVIEW.GUESS_THE_TERM_CHAT(lectureId), {
-      method: 'POST',
-      auth: true,
-      body: request,
-      headers: request.locale ? { 'Accept-Language': request.locale } : undefined,
-    }),
 
   createLectureReviewItem: (lectureId: string, request: CreateLectureReviewItemRequest) =>
     apiRequest<CreateLectureReviewItemResponse>(API_ENDPOINTS.REVIEW.CREATE_REVIEW_ITEM(lectureId), {
