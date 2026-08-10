@@ -51,6 +51,8 @@ interface LectureStudyState {
   targetPage: number | null
   /** 출처 클릭 시 녹음본 청크 이동 타겟 (합산 인덱스, 0-indexed) */
   targetChunkIndex: number | null
+  /** 출처 클릭 시 타겟 청크 본문에서 하이라이트할 근거 문장 (persist 제외) */
+  targetChunkQuotes: { chunkIndex: number; quotes: string[] } | null
   /** 성공적으로 로딩된 material 전체 페이지 수 (출처 범위 검증용) */
   totalMaterialPages: number
   /** 녹음본 전체 청크 수 (출처 범위 검증용) */
@@ -71,6 +73,7 @@ interface LectureStudyActions {
   setGameWords: (words: WordItem[]) => void
   setTargetPage: (page: number | null) => void
   setTargetChunkIndex: (index: number | null) => void
+  setTargetChunkQuotes: (v: { chunkIndex: number; quotes: string[] } | null) => void
   setTotalMaterialPages: (count: number) => void
   setTotalRecordingChunks: (count: number) => void
   resetNavigationState: () => void
@@ -91,6 +94,7 @@ const initialState: LectureStudyState = {
   gameWords: [],
   targetPage: null,
   targetChunkIndex: null,
+  targetChunkQuotes: null,
   totalMaterialPages: 0,
   totalRecordingChunks: 0,
   quizChatContext: null,
@@ -111,9 +115,10 @@ export const useLectureStudyStore = create<LectureStudyState & LectureStudyActio
       setGameWords: (gameWords) => set({ gameWords }),
       setTargetPage: (targetPage) => set({ targetPage }),
       setTargetChunkIndex: (targetChunkIndex) => set({ targetChunkIndex }),
+      setTargetChunkQuotes: (targetChunkQuotes) => set({ targetChunkQuotes }),
       setTotalMaterialPages: (totalMaterialPages) => set({ totalMaterialPages }),
       setTotalRecordingChunks: (totalRecordingChunks) => set({ totalRecordingChunks }),
-      resetNavigationState: () => set({ targetPage: null, targetChunkIndex: null }),
+      resetNavigationState: () => set({ targetPage: null, targetChunkIndex: null, targetChunkQuotes: null }),
       setQuizChatContext: (quizChatContext) => set({ quizChatContext, isChatPanelOpen: true }),
       clearQuizChatContext: () => set({ quizChatContext: null }),
       reset: () => set(initialState),

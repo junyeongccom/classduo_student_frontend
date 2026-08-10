@@ -18,10 +18,47 @@ interface LeftPanelRecordingsProps {
   essence7Words?: string | null
   /** 출처 클릭 시 이동할 청크 합산 인덱스 (0-indexed) */
   targetChunkIndex?: number | null
+  /** 출처 클릭 시 해당 청크 본문에서 하이라이트할 근거 문장 (AI튜터 인용 UX와 동일) */
+  highlightQuotes?: { chunkIndex: number; quotes: string[] } | null
   /** targetChunkIndex 소비 완료 콜백 */
   onTargetConsumed?: () => void
   /** 트래킹용 lectureId */
   lectureId?: string
+}
+
+/** 청크 본문에서 근거 문장을 <mark> 로 감싼 노드 배열 생성 — 공백 차이 허용, 인용당 첫 매칭 1회 */
+function renderHighlighted(content: string, quotes: string[]): React.ReactNode[] {
+  let nodes: React.ReactNode[] = [content]
+  quotes.forEach((quote, qi) => {
+    if (!quote || quote.length < 6) return
+    const escaped = quote
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\s+/g, '\\s+')
+    let regex: RegExp
+    try {
+      regex = new RegExp(escaped)
+    } catch {
+      return
+    }
+    let replaced = false
+    nodes = nodes.flatMap((node, ni) => {
+      if (replaced || typeof node !== 'string') return [node]
+      const m = node.match(regex)
+      if (!m || m.index === undefined) return [node]
+      replaced = true
+      return [
+        node.slice(0, m.index),
+        <mark
+          key={`hl-${qi}-${ni}`}
+          className="rounded bg-yellow-200 px-0.5 dark:bg-yellow-500/40 dark:text-gray-100"
+        >
+          {m[0]}
+        </mark>,
+        node.slice(m.index + m[0].length),
+      ]
+    })
+  })
+  return nodes
 }
 
 function formatTime(seconds: number | null): string {
@@ -56,10 +93,13 @@ function ChunkAccordionItem({
   chunk,
   valueKey,
   chunkRef,
+  quotes,
 }: {
   chunk: RecordingChunkSummary
   valueKey: string
   chunkRef?: React.Ref<HTMLDivElement>
+  /** 이 청크 본문에서 하이라이트할 근거 문장 */
+  quotes?: string[]
 }) {
   const t = useTranslations()
   const hasTime = chunk.start_time != null || chunk.end_time != null
@@ -87,7 +127,9 @@ function ChunkAccordionItem({
       </AccordionTrigger>
       <AccordionContent className="px-4 pb-3">
         {chunk.content ? (
-          <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">{chunk.content}</p>
+          <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+            {quotes && quotes.length > 0 ? renderHighlighted(chunk.content, quotes) : chunk.content}
+          </p>
         ) : (
           <p className="text-xs text-gray-400 dark:text-gray-500 italic">{t('lectureStudy.leftPanel.recordingSummaryNull')}</p>
         )}
@@ -101,6 +143,7 @@ export function LeftPanelRecordings({
   essenceOneLine,
   essence7Words,
   targetChunkIndex,
+  highlightQuotes,
   onTargetConsumed,
   lectureId,
 }: LeftPanelRecordingsProps) {
@@ -254,12 +297,14 @@ export function LeftPanelRecordings({
                   {rec.chunk_summaries.map((chunk, i) => {
                     const vk = `${rec.id}-${i}`
                     const isTarget = vk === targetValueKey
+                    const globalIdx = globalOffset + i
                     return (
                       <ChunkAccordionItem
                         key={i}
                         chunk={chunk}
                         valueKey={vk}
                         chunkRef={isTarget ? targetChunkRef : undefined}
+                        quotes={highlightQuotes?.chunkIndex === globalIdx ? highlightQuotes.quotes : undefined}
                       />
                     )
                   })}
@@ -303,6 +348,7 @@ export function LeftPanelRecordings({
                 chunk={chunk}
                 valueKey={vk}
                 chunkRef={isTarget ? targetChunkRef : undefined}
+                quotes={highlightQuotes?.chunkIndex === i ? highlightQuotes.quotes : undefined}
               />
             )
           })}

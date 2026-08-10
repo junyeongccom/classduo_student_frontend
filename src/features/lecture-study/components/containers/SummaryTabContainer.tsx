@@ -59,6 +59,11 @@ function parseSection(s: Record<string, unknown>): ContentSummarySection {
     tables: parseTables(s.tables),
     source_pages: Array.isArray(s.source_pages) ? s.source_pages.filter(Number.isFinite) : [],
     source_chunks: Array.isArray(s.source_chunks) ? s.source_chunks.filter(Number.isFinite) : [],
+    source_quotes: Array.isArray(s.source_quotes)
+      ? (s.source_quotes as Record<string, unknown>[])
+          .filter((q) => q && Number.isFinite(q.chunk) && typeof q.text === 'string' && q.text)
+          .map((q) => ({ chunk: q.chunk as number, text: q.text as string }))
+      : undefined,
   }
 }
 
@@ -240,8 +245,8 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
 
   const handleMaterial = (key: string, pages: number[]) =>
     handleMaterialSourceClick(key, pages, totalMaterialPages)
-  const handleRecording = (key: string, chunks: number[]) =>
-    handleRecordingSourceClick(key, chunks, totalRecordingChunks)
+  const handleRecording = (key: string, chunks: number[], quotes?: { chunk: number; text: string }[]) =>
+    handleRecordingSourceClick(key, chunks, totalRecordingChunks, quotes)
 
   return (
     <div ref={scrollContainerRef} className="flex h-full flex-col gap-6 overflow-y-auto px-6 pt-6 pb-24 text-sm text-gray-700 dark:text-gray-300">

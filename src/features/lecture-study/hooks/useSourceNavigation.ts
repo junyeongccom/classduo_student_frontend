@@ -20,6 +20,7 @@ export function useSourceNavigation(lectureId: string) {
 
   const setTargetPage = useLectureStudyStore((s) => s.setTargetPage)
   const setTargetChunkIndex = useLectureStudyStore((s) => s.setTargetChunkIndex)
+  const setTargetChunkQuotes = useLectureStudyStore((s) => s.setTargetChunkQuotes)
   const setLeftTab = useLectureStudyStore((s) => s.setLeftTab)
   const isLeftPanelOpen = useLectureStudyStore((s) => s.isLeftPanelOpen)
   const toggleLeftPanel = useLectureStudyStore((s) => s.toggleLeftPanel)
@@ -57,7 +58,12 @@ export function useSourceNavigation(lectureId: string) {
   )
 
   const handleRecordingSourceClick = useCallback(
-    (sectionKey: string, sourceChunks: number[], totalChunkCount: number) => {
+    (
+      sectionKey: string,
+      sourceChunks: number[],
+      totalChunkCount: number,
+      sourceQuotes?: { chunk: number; text: string }[],
+    ) => {
       if (sourceChunks.length === 0) return
 
       const cursor = recordingsCursorRef.current[sectionKey] ?? 0
@@ -73,6 +79,11 @@ export function useSourceNavigation(lectureId: string) {
           if (!isLeftPanelOpen) toggleLeftPanel()
           setLeftTab('recordings')
           setTargetChunkIndex(chunkIdx)
+          // 근거 문장 하이라이팅 — 타겟 청크의 인용만 골라 전달 (없으면 해제)
+          const quotes = (sourceQuotes ?? [])
+            .filter((q) => q.chunk === chunkIdx && q.text)
+            .map((q) => q.text)
+          setTargetChunkQuotes(quotes.length ? { chunkIndex: chunkIdx, quotes } : null)
           sourceAnalytics.click(lectureId, { source_type: 'recording', section_key: sectionKey })
           return
         }
@@ -81,7 +92,7 @@ export function useSourceNavigation(lectureId: string) {
       }
       recordingsCursorRef.current[sectionKey] = (safeCursor + 1) % sourceChunks.length
     },
-    [isMobile, isLeftPanelOpen, toggleLeftPanel, setLeftTab, setTargetChunkIndex, lectureId],
+    [isMobile, isLeftPanelOpen, toggleLeftPanel, setLeftTab, setTargetChunkIndex, setTargetChunkQuotes, lectureId],
   )
 
   const resetCursors = useCallback(() => {

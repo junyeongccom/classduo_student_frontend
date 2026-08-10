@@ -45,7 +45,13 @@ export interface InstructorQuizItem {
   difficulty: string | null
   created_at: string
   choices: InstructorQuizChoice[]
-  source?: { source_pages?: number[]; source_chunks?: number[] }
+  source?: {
+    source_pages?: number[]
+    source_chunks?: number[]
+    /** 청크별 근거 문장 (서버 결정론 부착, 하이라이팅용) — ko/en 각각 */
+    source_quotes?: { chunk: number; text: string }[]
+    source_quotes_eng?: { chunk: number; text: string }[]
+  }
   /** 서술형(essay) 유형의 모범답안. 객관식은 null. */
   model_answer?: string | null
   /** 'multiple_choice'(객관식) | 'essay'(서술형). 미존재(레거시 로우) 시 'multiple_choice'로 취급. */
