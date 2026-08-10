@@ -610,6 +610,10 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                               `quiz-${quiz.quiz_id}`,
                               quiz.source?.source_chunks ?? [],
                               totalRecordingChunks,
+                              // 청크 본문이 로케일별이므로 인용도 로케일에 맞춰 전달
+                              locale === 'en'
+                                ? quiz.source?.source_quotes_eng
+                                : quiz.source?.source_quotes,
                             )
                           }
                         />

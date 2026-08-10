@@ -87,6 +87,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const setGameWords = useLectureStudyStore(s => s.setGameWords)
   const targetChunkIndex = useLectureStudyStore(s => s.targetChunkIndex)
   const setTargetChunkIndex = useLectureStudyStore(s => s.setTargetChunkIndex)
+  const targetChunkQuotes = useLectureStudyStore(s => s.targetChunkQuotes)
   const resetNavigationState = useLectureStudyStore(s => s.resetNavigationState)
   const setTotalRecordingChunks = useLectureStudyStore(s => s.setTotalRecordingChunks)
   const quizChatContext = useLectureStudyStore(s => s.quizChatContext)
@@ -485,6 +486,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                   recordings={recordings}
                   essence7Words={currentLecture?.essence_7words}
                   targetChunkIndex={targetChunkIndex}
+                  highlightQuotes={targetChunkQuotes}
                   onTargetConsumed={() => setTargetChunkIndex(null)}
                   lectureId={lectureId}
                 />
@@ -552,6 +554,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                   recordings={recordings}
                   essence7Words={currentLecture?.essence_7words}
                   targetChunkIndex={targetChunkIndex}
+                  highlightQuotes={targetChunkQuotes}
                   onTargetConsumed={() => setTargetChunkIndex(null)}
                   lectureId={lectureId}
                 />

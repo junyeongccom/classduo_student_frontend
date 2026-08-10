@@ -54,6 +54,12 @@ export interface GameInfo {
   icon: string
 }
 
+/** 출처 근거 문장 인용 — text 는 청크 표시 본문(요약)의 부분 문자열 (하이라이팅용) */
+export interface SourceQuote {
+  chunk: number
+  text: string
+}
+
 /** lecture_content_summaries 요약 섹션 (통합 요약) */
 export interface ContentSummarySection {
   title: string
@@ -61,6 +67,8 @@ export interface ContentSummarySection {
   tables?: ContentSummaryTable[]
   source_pages: number[]
   source_chunks: number[]
+  /** 청크별 근거 문장 (서버 결정론 부착, 구버전 요약에는 없음) */
+  source_quotes?: SourceQuote[]
 }
 
 /** 요약 섹션 내 테이블 */

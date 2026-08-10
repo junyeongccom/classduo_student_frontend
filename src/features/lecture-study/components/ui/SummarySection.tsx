@@ -22,7 +22,7 @@ interface SummarySectionProps {
   easyExplanation?: string
   timeSharePct?: number
   onMaterialClick: (key: string, pages: number[]) => void
-  onRecordingClick: (key: string, chunks: number[]) => void
+  onRecordingClick: (key: string, chunks: number[], quotes?: { chunk: number; text: string }[]) => void
 }
 
 export function SummarySection({
@@ -76,7 +76,7 @@ export function SummarySection({
           }
           disabled={!hasSourceChunks}
           disabledClick={false}
-          onClick={() => onRecordingClick(sectionKey, section.source_chunks)}
+          onClick={() => onRecordingClick(sectionKey, section.source_chunks, section.source_quotes)}
         />
       </div>
 
