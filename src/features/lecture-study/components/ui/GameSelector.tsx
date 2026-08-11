@@ -18,6 +18,7 @@ const GAME_LIST: GameInfo[] = [
   { id: 'definitionBuilder', name: '', description: '', minWords: 1, icon: '🧩' },
   { id: 'moleQuiz', name: '', description: '', minWords: 4, icon: '🐹' },
   { id: 'balloonPop', name: '', description: '', minWords: 5, icon: '🎈' },
+  { id: 'termCatch', name: '', description: '', minWords: 4, icon: '🎓' },
 ]
 
 /** 게임별 테마 (밝은 배경용) */
@@ -76,6 +77,15 @@ const CARD_THEMES = [
     playBg: 'bg-rose-500 group-hover:bg-rose-600',
     playText: 'text-white',
   },
+  {
+    border: 'border-indigo-200',
+    hoverBorder: 'hover:border-indigo-400',
+    glow: 'hover:shadow-lg hover:shadow-indigo-100',
+    iconBg: 'bg-indigo-50',
+    accent: 'text-indigo-600',
+    playBg: 'bg-indigo-500 group-hover:bg-indigo-600',
+    playText: 'text-white',
+  },
 ]
 
 interface GameSelectorProps {
@@ -94,6 +104,7 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
     definitionBuilder: t('lectureStudy.game.definitionBuilder'),
     moleQuiz: t('lectureStudy.game.moleQuiz'),
     balloonPop: t('lectureStudy.game.balloonPop'),
+    termCatch: t('lectureStudy.game.termCatch'),
   }
 
   return (

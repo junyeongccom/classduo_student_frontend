@@ -15,6 +15,7 @@ import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
 import { MoleQuizGame } from '../ui/MoleQuizGame'
 import { BalloonPopGame } from '../ui/BalloonPopGame'
+import { TermCatchGame } from '../ui/TermCatchGame'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
@@ -214,6 +215,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const [showDeckOverlay, setShowDeckOverlay] = useState(false)
   const [showMoleOverlay, setShowMoleOverlay] = useState(false)
   const [showBalloonOverlay, setShowBalloonOverlay] = useState(false)
+  const [showTermCatchOverlay, setShowTermCatchOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -513,6 +515,11 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       setShowBalloonOverlay(true)
       return
     }
+    if (selectedGame === 'termCatch') {
+      setGameMode('normal')
+      setShowTermCatchOverlay(true)
+      return
+    }
 
   }, [selectedGame, lectureId, loadDefBuilderData, deck])
 
@@ -652,6 +659,26 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
             gameAnalytics.complete(lectureId, { game_type: 'balloonPop', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
           }
           setShowBalloonOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Term catch overlay (normal mode only)
+  if (showTermCatchOverlay) {
+    return (
+      <TermCatchGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'termCatch', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'termCatch', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowTermCatchOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
         }}

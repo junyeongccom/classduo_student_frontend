@@ -67,6 +67,11 @@ const GAME_THEMES: Record<string, GameTheme> = {
     button: 'bg-rose-500 hover:bg-rose-600',
     previewBg: 'bg-slate-50',
   },
+  termCatch: {
+    goalBg: 'bg-indigo-50 dark:bg-indigo-950/30',
+    button: 'bg-indigo-500 hover:bg-indigo-600',
+    previewBg: 'bg-slate-50',
+  },
 }
 
 type ControlItem = {
@@ -128,6 +133,19 @@ function getControls(gameId: string): ControlItem[] {
     case 'balloonPop':
       return [
         { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlPop' },
+      ]
+    case 'termCatch':
+      return [
+        {
+          icon: (
+            <span className="flex items-center gap-1">
+              <Kbd>&larr;</Kbd>
+              <Kbd>&rarr;</Kbd>
+            </span>
+          ),
+          labelKey: 'controlMove',
+        },
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlDrag' },
       ]
     default:
       return []
@@ -320,6 +338,24 @@ function BalloonPopPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   )
 }
 
+/* ─── Term Catch: 생성 에셋 + 서비스 캐릭터 프리뷰 ─── */
+function TermCatchPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game3/campus_bg.png" alt="Term catch scene" width={800} height={447} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game3/term_card.png" alt="card" width={60} height={76} className="absolute left-[30%] top-[22%] w-[12%]" />
+        <Image src="/game3/term_card.png" alt="card" width={60} height={76} className="absolute left-[62%] top-[40%] w-[12%]" />
+        <Image src="/game3/hero_girl.png" alt="hero" width={70} height={100} className="absolute bottom-[2%] left-[44%] w-[13%]" />
+      </div>
+      <div className="flex items-center gap-2.5 rounded-lg bg-indigo-50 px-3 py-2 dark:bg-indigo-950/20">
+        <Image src="/game3/term_card.png" alt="" width={18} height={23} className="shrink-0" />
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.termCatch.objCard')}</p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Preview Router ─── */
 function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTranslations> }) {
   switch (gameId) {
@@ -335,6 +371,8 @@ function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTr
       return <MoleQuizPreview t={t} />
     case 'balloonPop':
       return <BalloonPopPreview t={t} />
+    case 'termCatch':
+      return <TermCatchPreview t={t} />
     default:
       return null
   }

@@ -710,6 +710,13 @@
           "goal": "하늘로 떠오르는 용어 풍선 중 설명에 맞는 풍선을 날아가기 전에 터뜨리세요. 정답 풍선을 놓치면 라운드 실패!",
           "controlPop": "정답 풍선 클릭/탭",
           "objBalloon": "풍선에 적힌 용어를 잘 보고 터뜨리세요"
+        },
+        "termCatch": {
+          "subtitle": "떨어지는 용어 카드를 받아요",
+          "goal": "캠퍼스에 떨어지는 용어 카드 중 위쪽 설명에 맞는 카드를 캐릭터로 받으세요. 오답 카드를 받으면 감점!",
+          "controlMove": "← → 키로 이동",
+          "controlDrag": "마우스/터치로 이동",
+          "objCard": "카드에 적힌 용어를 확인하고 받으세요"
         }
       },
       "moleQuiz": "두더지 팝 퀴즈",
@@ -719,8 +726,13 @@
         "scoreSuffix": "점",
         "accuracy": "{total}문제 중 {correct}문제 정답",
         "playAgain": "다시하기",
-        "exit": "나가기"
-      }
+        "exit": "나가기",
+        "pickHero": "함께할 캐릭터를 골라주세요",
+        "startGame": "게임 시작",
+        "catchIntro": "설명에 맞는 용어 카드를 받으세요",
+        "catchHint": "← → 키 또는 마우스로 캐릭터를 움직여요"
+      },
+      "termCatch": "정답 잡기"
     },
     "breadcrumb": {
       "courseLoading": "불러오는 중…",

@@ -710,6 +710,13 @@
           "goal": "Pop the balloon carrying the term that matches the description before it floats away. Miss the correct balloon and the round fails!",
           "controlPop": "Click/tap the correct balloon",
           "objBalloon": "Read the term on each balloon before popping"
+        },
+        "termCatch": {
+          "subtitle": "Catch the falling term cards",
+          "goal": "Catch the card whose term matches the description at the top. Catching a wrong card costs points!",
+          "controlMove": "Move with ← →",
+          "controlDrag": "Move with mouse/touch",
+          "objCard": "Read the term on each card before catching"
         }
       },
       "moleQuiz": "Whack-a-Term",
@@ -719,8 +726,13 @@
         "scoreSuffix": " pts",
         "accuracy": "{correct} of {total} correct",
         "playAgain": "Play again",
-        "exit": "Exit"
-      }
+        "exit": "Exit",
+        "pickHero": "Pick your character",
+        "startGame": "Start game",
+        "catchIntro": "Catch the card that matches the description",
+        "catchHint": "Move with ← → keys or your mouse"
+      },
+      "termCatch": "Term Catch"
     },
     "breadcrumb": {
       "courseLoading": "Loading…",
