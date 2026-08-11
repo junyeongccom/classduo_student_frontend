@@ -723,6 +723,12 @@
           "goal": "달려오는 두 개의 문 중 설명에 맞는 용어의 문으로 들어가세요. 정답이면 동료가 늘어나고, 마지막에 모은 동료로 오개념 몬스터와 대결합니다!",
           "controlLane": "← → 키 또는 화면 좌우 클릭으로 문 선택",
           "objGate": "설명에 맞는 용어의 문을 고르세요"
+        },
+        "conceptMerge": {
+          "subtitle": "같은 용어 조각을 합쳐 정의를 완성해요",
+          "goal": "같은 용어의 같은 등급 조각 2개를 겹쳐 합치세요. 3단계 황금 젬까지 키우면 그 용어의 정의가 공개됩니다. 4개 용어를 모두 완성하세요!",
+          "controlDragMerge": "조각을 드래그(또는 클릭 후 이동)해 같은 조각에 겹치기",
+          "objMerge": "같은 용어·같은 등급끼리만 합쳐져요"
         }
       },
       "moleQuiz": "두더지 팝 퀴즈",
@@ -743,10 +749,16 @@
         "allies": "동료 {n}명",
         "bossIncoming": "오개념 몬스터 등장!",
         "bossWin": "몬스터를 물리쳤어요!",
-        "bossLose": "동료가 부족했어요…"
+        "bossLose": "동료가 부족했어요…",
+        "mergeHint": "같은 용어 조각끼리 겹쳐 등급을 올리세요",
+        "mergeProgress": "완성 {done}/{total}",
+        "mergeComplete": "용어 완성!",
+        "mergeContinue": "계속하기",
+        "mergeAllDone": "{total}개 용어를 모두 완성했어요!"
       },
       "termCatch": "정답 잡기",
-      "knowledgeGate": "지식의 문"
+      "knowledgeGate": "지식의 문",
+      "conceptMerge": "개념 합치기"
     },
     "breadcrumb": {
       "courseLoading": "불러오는 중…",

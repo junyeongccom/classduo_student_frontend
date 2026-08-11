@@ -20,6 +20,7 @@ const GAME_LIST: GameInfo[] = [
   { id: 'balloonPop', name: '', description: '', minWords: 5, icon: '🎈' },
   { id: 'termCatch', name: '', description: '', minWords: 4, icon: '🎓' },
   { id: 'knowledgeGate', name: '', description: '', minWords: 4, icon: '🚪' },
+  { id: 'conceptMerge', name: '', description: '', minWords: 2, icon: '💎' },
 ]
 
 /** 게임별 테마 (밝은 배경용) */
@@ -96,6 +97,15 @@ const CARD_THEMES = [
     playBg: 'bg-cyan-500 group-hover:bg-cyan-600',
     playText: 'text-white',
   },
+  {
+    border: 'border-teal-200',
+    hoverBorder: 'hover:border-teal-400',
+    glow: 'hover:shadow-lg hover:shadow-teal-100',
+    iconBg: 'bg-teal-50',
+    accent: 'text-teal-600',
+    playBg: 'bg-teal-500 group-hover:bg-teal-600',
+    playText: 'text-white',
+  },
 ]
 
 interface GameSelectorProps {
@@ -116,6 +126,7 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
     balloonPop: t('lectureStudy.game.balloonPop'),
     termCatch: t('lectureStudy.game.termCatch'),
     knowledgeGate: t('lectureStudy.game.knowledgeGate'),
+    conceptMerge: t('lectureStudy.game.conceptMerge'),
   }
 
   return (

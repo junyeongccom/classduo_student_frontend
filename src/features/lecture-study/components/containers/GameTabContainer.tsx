@@ -17,6 +17,7 @@ import { MoleQuizGame } from '../ui/MoleQuizGame'
 import { BalloonPopGame } from '../ui/BalloonPopGame'
 import { TermCatchGame } from '../ui/TermCatchGame'
 import { KnowledgeGateGame } from '../ui/KnowledgeGateGame'
+import { ConceptMergeGame } from '../ui/ConceptMergeGame'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
@@ -218,6 +219,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const [showBalloonOverlay, setShowBalloonOverlay] = useState(false)
   const [showTermCatchOverlay, setShowTermCatchOverlay] = useState(false)
   const [showGateOverlay, setShowGateOverlay] = useState(false)
+  const [showMergeOverlay, setShowMergeOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -527,6 +529,11 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       setShowGateOverlay(true)
       return
     }
+    if (selectedGame === 'conceptMerge') {
+      setGameMode('normal')
+      setShowMergeOverlay(true)
+      return
+    }
 
   }, [selectedGame, lectureId, loadDefBuilderData, deck])
 
@@ -666,6 +673,26 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
             gameAnalytics.complete(lectureId, { game_type: 'balloonPop', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
           }
           setShowBalloonOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Concept merge overlay (normal mode only)
+  if (showMergeOverlay) {
+    return (
+      <ConceptMergeGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'conceptMerge', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'conceptMerge', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowMergeOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
         }}

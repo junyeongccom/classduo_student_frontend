@@ -723,6 +723,12 @@
           "goal": "Two gates rush toward you — run through the one whose term matches the description. Correct gates add allies, and your final squad battles the misconception monster!",
           "controlLane": "Switch gates with ← → or tap left/right",
           "objGate": "Choose the gate matching the description"
+        },
+        "conceptMerge": {
+          "subtitle": "Merge matching term shards to reveal definitions",
+          "goal": "Drag two shards of the same term and same tier together to merge them. Reach the tier-3 golden gem to reveal that term's definition. Complete all 4 terms!",
+          "controlDragMerge": "Drag (or tap then move) a shard onto a matching one",
+          "objMerge": "Only same term and same tier can merge"
         }
       },
       "moleQuiz": "Whack-a-Term",
@@ -743,10 +749,16 @@
         "allies": "{n} allies",
         "bossIncoming": "Misconception monster!",
         "bossWin": "You defeated the monster!",
-        "bossLose": "Not enough allies…"
+        "bossLose": "Not enough allies…",
+        "mergeHint": "Merge matching shards to level them up",
+        "mergeProgress": "Done {done}/{total}",
+        "mergeComplete": "Term complete!",
+        "mergeContinue": "Continue",
+        "mergeAllDone": "You completed all {total} terms!"
       },
       "termCatch": "Term Catch",
-      "knowledgeGate": "Knowledge Gates"
+      "knowledgeGate": "Knowledge Gates",
+      "conceptMerge": "Concept Merge"
     },
     "breadcrumb": {
       "courseLoading": "Loading…",

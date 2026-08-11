@@ -77,6 +77,11 @@ const GAME_THEMES: Record<string, GameTheme> = {
     button: 'bg-cyan-500 hover:bg-cyan-600',
     previewBg: 'bg-slate-50',
   },
+  conceptMerge: {
+    goalBg: 'bg-teal-50 dark:bg-teal-950/30',
+    button: 'bg-teal-500 hover:bg-teal-600',
+    previewBg: 'bg-slate-50',
+  },
 }
 
 type ControlItem = {
@@ -138,6 +143,10 @@ function getControls(gameId: string): ControlItem[] {
     case 'balloonPop':
       return [
         { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlPop' },
+      ]
+    case 'conceptMerge':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlDragMerge' },
       ]
     case 'knowledgeGate':
       return [
@@ -398,6 +407,25 @@ function KnowledgeGatePreview({ t }: { t: ReturnType<typeof useTranslations> }) 
   )
 }
 
+/* ─── Concept Merge: 머지 보드 프리뷰 ─── */
+function ConceptMergePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game5/merge_bg.png" alt="Concept merge board" width={800} height={457} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game5/merge_orb_low.png" alt="" width={44} height={44} className="absolute left-[22%] top-[26%] w-[9%]" />
+        <Image src="/game5/merge_orb_low.png" alt="" width={44} height={44} className="absolute left-[36%] top-[26%] w-[9%]" />
+        <Image src="/game5/merge_orb_mid.png" alt="" width={50} height={50} className="absolute left-[56%] top-[44%] w-[10%]" />
+        <Image src="/game5/merge_orb_high.png" alt="" width={56} height={56} className="absolute left-[74%] top-[62%] w-[11%]" />
+      </div>
+      <div className="flex items-center gap-2.5 rounded-lg bg-teal-50 px-3 py-2 dark:bg-teal-950/20">
+        <Image src="/game5/merge_orb_high.png" alt="" width={20} height={20} className="shrink-0" />
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.conceptMerge.objMerge')}</p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Preview Router ─── */
 function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTranslations> }) {
   switch (gameId) {
@@ -417,6 +445,8 @@ function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTr
       return <TermCatchPreview t={t} />
     case 'knowledgeGate':
       return <KnowledgeGatePreview t={t} />
+    case 'conceptMerge':
+      return <ConceptMergePreview t={t} />
     default:
       return null
   }
