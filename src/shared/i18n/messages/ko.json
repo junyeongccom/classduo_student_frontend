@@ -717,6 +717,12 @@
           "controlMove": "← → 키로 이동",
           "controlDrag": "마우스/터치로 이동",
           "objCard": "카드에 적힌 용어를 확인하고 받으세요"
+        },
+        "knowledgeGate": {
+          "subtitle": "정답 게이트를 통과해 동료를 모아요",
+          "goal": "달려오는 두 개의 문 중 설명에 맞는 용어의 문으로 들어가세요. 정답이면 동료가 늘어나고, 마지막에 모은 동료로 오개념 몬스터와 대결합니다!",
+          "controlLane": "← → 키 또는 화면 좌우 클릭으로 문 선택",
+          "objGate": "설명에 맞는 용어의 문을 고르세요"
         }
       },
       "moleQuiz": "두더지 팝 퀴즈",
@@ -730,9 +736,17 @@
         "pickHero": "함께할 캐릭터를 골라주세요",
         "startGame": "게임 시작",
         "catchIntro": "설명에 맞는 용어 카드를 받으세요",
-        "catchHint": "← → 키 또는 마우스로 캐릭터를 움직여요"
+        "catchHint": "← → 키 또는 마우스로 캐릭터를 움직여요",
+        "gateIntro": "설명에 맞는 문을 고르세요",
+        "gateHint": "← → 키 또는 화면 좌우를 눌러 문을 바꿔요",
+        "gateChosen": "선택",
+        "allies": "동료 {n}명",
+        "bossIncoming": "오개념 몬스터 등장!",
+        "bossWin": "몬스터를 물리쳤어요!",
+        "bossLose": "동료가 부족했어요…"
       },
-      "termCatch": "정답 잡기"
+      "termCatch": "정답 잡기",
+      "knowledgeGate": "지식의 문"
     },
     "breadcrumb": {
       "courseLoading": "불러오는 중…",

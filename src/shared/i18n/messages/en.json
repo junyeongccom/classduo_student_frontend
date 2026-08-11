@@ -717,6 +717,12 @@
           "controlMove": "Move with ← →",
           "controlDrag": "Move with mouse/touch",
           "objCard": "Read the term on each card before catching"
+        },
+        "knowledgeGate": {
+          "subtitle": "Pick the right gate, gather allies",
+          "goal": "Two gates rush toward you — run through the one whose term matches the description. Correct gates add allies, and your final squad battles the misconception monster!",
+          "controlLane": "Switch gates with ← → or tap left/right",
+          "objGate": "Choose the gate matching the description"
         }
       },
       "moleQuiz": "Whack-a-Term",
@@ -730,9 +736,17 @@
         "pickHero": "Pick your character",
         "startGame": "Start game",
         "catchIntro": "Catch the card that matches the description",
-        "catchHint": "Move with ← → keys or your mouse"
+        "catchHint": "Move with ← → keys or your mouse",
+        "gateIntro": "Pick the gate that matches",
+        "gateHint": "Use ← → or tap the left/right half",
+        "gateChosen": "Chosen",
+        "allies": "{n} allies",
+        "bossIncoming": "Misconception monster!",
+        "bossWin": "You defeated the monster!",
+        "bossLose": "Not enough allies…"
       },
-      "termCatch": "Term Catch"
+      "termCatch": "Term Catch",
+      "knowledgeGate": "Knowledge Gates"
     },
     "breadcrumb": {
       "courseLoading": "Loading…",

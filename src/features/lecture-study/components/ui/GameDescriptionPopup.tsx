@@ -72,6 +72,11 @@ const GAME_THEMES: Record<string, GameTheme> = {
     button: 'bg-indigo-500 hover:bg-indigo-600',
     previewBg: 'bg-slate-50',
   },
+  knowledgeGate: {
+    goalBg: 'bg-cyan-50 dark:bg-cyan-950/30',
+    button: 'bg-cyan-500 hover:bg-cyan-600',
+    previewBg: 'bg-slate-50',
+  },
 }
 
 type ControlItem = {
@@ -133,6 +138,18 @@ function getControls(gameId: string): ControlItem[] {
     case 'balloonPop':
       return [
         { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlPop' },
+      ]
+    case 'knowledgeGate':
+      return [
+        {
+          icon: (
+            <span className="flex items-center gap-1">
+              <Kbd>&larr;</Kbd>
+              <Kbd>&rarr;</Kbd>
+            </span>
+          ),
+          labelKey: 'controlLane',
+        },
       ]
     case 'termCatch':
       return [
@@ -356,6 +373,31 @@ function TermCatchPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   )
 }
 
+/* ─── Knowledge Gate: 러너 + 게이트 프리뷰 ─── */
+function KnowledgeGatePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game4/run_road_bg.png" alt="Knowledge gate scene" width={800} height={457} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game4/gate_arch.png" alt="gate" width={90} height={94} className="absolute left-[28%] top-[34%] w-[19%]" />
+        <Image src="/game4/gate_arch.png" alt="gate" width={90} height={94} className="absolute left-[53%] top-[34%] w-[19%]" />
+        <Image src="/game4/hero_boy.png" alt="hero" width={60} height={86} className="absolute bottom-[2%] left-[30%] w-[11%]" />
+        <Image src="/game4/hero_girl.png" alt="ally" width={48} height={69} className="absolute bottom-[1%] left-[24%] w-[9%] opacity-90" />
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <div className="flex items-center gap-2.5 rounded-lg bg-cyan-50 px-3 py-2 dark:bg-cyan-950/20">
+          <Image src="/game4/gate_arch.png" alt="" width={22} height={23} className="shrink-0" />
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.knowledgeGate.objGate')}</p>
+        </div>
+        <div className="flex items-center gap-2.5 rounded-lg bg-purple-50 px-3 py-2 dark:bg-purple-950/20">
+          <Image src="/game4/boss_bug.png" alt="" width={22} height={19} className="shrink-0" />
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.play.bossIncoming')}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Preview Router ─── */
 function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTranslations> }) {
   switch (gameId) {
@@ -373,6 +415,8 @@ function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTr
       return <BalloonPopPreview t={t} />
     case 'termCatch':
       return <TermCatchPreview t={t} />
+    case 'knowledgeGate':
+      return <KnowledgeGatePreview t={t} />
     default:
       return null
   }

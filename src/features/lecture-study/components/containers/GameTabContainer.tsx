@@ -16,6 +16,7 @@ import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
 import { MoleQuizGame } from '../ui/MoleQuizGame'
 import { BalloonPopGame } from '../ui/BalloonPopGame'
 import { TermCatchGame } from '../ui/TermCatchGame'
+import { KnowledgeGateGame } from '../ui/KnowledgeGateGame'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
@@ -216,6 +217,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const [showMoleOverlay, setShowMoleOverlay] = useState(false)
   const [showBalloonOverlay, setShowBalloonOverlay] = useState(false)
   const [showTermCatchOverlay, setShowTermCatchOverlay] = useState(false)
+  const [showGateOverlay, setShowGateOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -520,6 +522,11 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       setShowTermCatchOverlay(true)
       return
     }
+    if (selectedGame === 'knowledgeGate') {
+      setGameMode('normal')
+      setShowGateOverlay(true)
+      return
+    }
 
   }, [selectedGame, lectureId, loadDefBuilderData, deck])
 
@@ -659,6 +666,26 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
             gameAnalytics.complete(lectureId, { game_type: 'balloonPop', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
           }
           setShowBalloonOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Knowledge gate overlay (normal mode only)
+  if (showGateOverlay) {
+    return (
+      <KnowledgeGateGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'knowledgeGate', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'knowledgeGate', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowGateOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
         }}
