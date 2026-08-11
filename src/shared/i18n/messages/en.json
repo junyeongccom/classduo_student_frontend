@@ -824,7 +824,12 @@
       "generating": "Generating response...",
       "inputPlaceholder": "Type your question...",
       "quizChatBadge": "{courseTitle} W{weekNumber} S{sessionNumber} Q{quizNumber} Question",
-      "quizChatPlaceholder": "Ask more about this question"
+      "quizChatPlaceholder": "Ask more about this question",
+      "newChat": "New chat",
+      "sessionList": "Conversations",
+      "sessionUntitled": "New conversation",
+      "sessionDeleteConfirm": "Delete this conversation?",
+      "sessionDelete": "Delete conversation"
     },
     "buttons": {
       "startTest": "Start Test",
