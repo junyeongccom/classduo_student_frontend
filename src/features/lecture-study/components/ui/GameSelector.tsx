@@ -16,6 +16,8 @@ const GAME_LIST: GameInfo[] = [
   { id: 'deck', name: '', description: '', minWords: 1, icon: '🃏' },
   { id: 'cardMatch', name: '', description: '', minWords: 6, icon: '🎴' },
   { id: 'definitionBuilder', name: '', description: '', minWords: 1, icon: '🧩' },
+  { id: 'moleQuiz', name: '', description: '', minWords: 4, icon: '🐹' },
+  { id: 'balloonPop', name: '', description: '', minWords: 5, icon: '🎈' },
 ]
 
 /** 게임별 테마 (밝은 배경용) */
@@ -56,6 +58,24 @@ const CARD_THEMES = [
     playBg: 'bg-emerald-500 group-hover:bg-emerald-600',
     playText: 'text-white',
   },
+  {
+    border: 'border-amber-200',
+    hoverBorder: 'hover:border-amber-400',
+    glow: 'hover:shadow-lg hover:shadow-amber-100',
+    iconBg: 'bg-amber-50',
+    accent: 'text-amber-600',
+    playBg: 'bg-amber-500 group-hover:bg-amber-600',
+    playText: 'text-white',
+  },
+  {
+    border: 'border-rose-200',
+    hoverBorder: 'hover:border-rose-400',
+    glow: 'hover:shadow-lg hover:shadow-rose-100',
+    iconBg: 'bg-rose-50',
+    accent: 'text-rose-600',
+    playBg: 'bg-rose-500 group-hover:bg-rose-600',
+    playText: 'text-white',
+  },
 ]
 
 interface GameSelectorProps {
@@ -72,6 +92,8 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
     deck: t('lectureStudy.game.deck'),
     cardMatch: t('lectureStudy.game.cardMatch'),
     definitionBuilder: t('lectureStudy.game.definitionBuilder'),
+    moleQuiz: t('lectureStudy.game.moleQuiz'),
+    balloonPop: t('lectureStudy.game.balloonPop'),
   }
 
   return (

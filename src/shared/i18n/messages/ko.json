@@ -697,7 +697,29 @@
           "controlSelect": "보기를 클릭하면 빈칸이 자동으로 채워집니다",
           "controlPlace": "정답이면 +10점, 오답이면 −10점",
           "previewHint": "보기에서 올바른 토큰을 선택하세요"
+        },
+        "moleQuiz": {
+          "subtitle": "설명에 맞는 용어 두더지를 두드려요",
+          "goal": "화면 위 설명을 읽고, 그 설명에 맞는 용어 팻말을 든 두더지를 시간 안에 두드리세요. 빠르게 맞힐수록 보너스 점수!",
+          "controlWhack": "정답 두더지 클릭/탭",
+          "objCorrect": "정답을 맞히면 두더지가 환호해요",
+          "objWrong": "오답을 두드리면 감점 (-20점)"
+        },
+        "balloonPop": {
+          "subtitle": "설명에 맞는 용어 풍선을 터뜨려요",
+          "goal": "하늘로 떠오르는 용어 풍선 중 설명에 맞는 풍선을 날아가기 전에 터뜨리세요. 정답 풍선을 놓치면 라운드 실패!",
+          "controlPop": "정답 풍선 클릭/탭",
+          "objBalloon": "풍선에 적힌 용어를 잘 보고 터뜨리세요"
         }
+      },
+      "moleQuiz": "두더지 팝 퀴즈",
+      "balloonPop": "풍선 팝",
+      "play": {
+        "round": "{current}/{total} 라운드",
+        "scoreSuffix": "점",
+        "accuracy": "{total}문제 중 {correct}문제 정답",
+        "playAgain": "다시하기",
+        "exit": "나가기"
       }
     },
     "breadcrumb": {

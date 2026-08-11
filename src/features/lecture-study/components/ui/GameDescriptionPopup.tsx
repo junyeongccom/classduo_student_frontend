@@ -57,6 +57,16 @@ const GAME_THEMES: Record<string, GameTheme> = {
     button: 'bg-emerald-500 hover:bg-emerald-600',
     previewBg: 'bg-slate-50',
   },
+  moleQuiz: {
+    goalBg: 'bg-amber-50 dark:bg-amber-950/30',
+    button: 'bg-amber-500 hover:bg-amber-600',
+    previewBg: 'bg-slate-50',
+  },
+  balloonPop: {
+    goalBg: 'bg-rose-50 dark:bg-rose-950/30',
+    button: 'bg-rose-500 hover:bg-rose-600',
+    previewBg: 'bg-slate-50',
+  },
 }
 
 type ControlItem = {
@@ -110,6 +120,14 @@ function getControls(gameId: string): ControlItem[] {
       return [
         { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlSelect' },
         { icon: <ArrowUpDown className="h-4 w-4 text-gray-500" />, labelKey: 'controlPlace' },
+      ]
+    case 'moleQuiz':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlWhack' },
+      ]
+    case 'balloonPop':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlPop' },
       ]
     default:
       return []
@@ -256,6 +274,52 @@ function DefBuilderPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   )
 }
 
+/* ─── Mole Quiz: 생성 에셋 프리뷰 ─── */
+function MoleQuizPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game2/mole_bg.png" alt="Mole quiz scene" width={800} height={447} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game2/mole_normal.png" alt="mole" width={90} height={90}
+               className="absolute left-[42%] top-[38%] w-[16%]" />
+        <Image src="/game2/mole_correct.png" alt="mole correct" width={90} height={90}
+               className="absolute left-[14%] top-[62%] w-[15%]" />
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <div className="flex items-center gap-2.5 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-950/20">
+          <Image src="/game2/mole_correct.png" alt="" width={24} height={24} className="shrink-0" />
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.moleQuiz.objCorrect')}</p>
+        </div>
+        <div className="flex items-center gap-2.5 rounded-lg bg-rose-50 px-3 py-2 dark:bg-rose-950/20">
+          <Image src="/game2/mole_wrong.png" alt="" width={24} height={24} className="shrink-0" />
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.moleQuiz.objWrong')}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Balloon Pop: 생성 에셋 프리뷰 ─── */
+function BalloonPopPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game2/balloon_bg.png" alt="Balloon pop scene" width={800} height={447} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game2/balloon.png" alt="balloon" width={60} height={90}
+               className="absolute left-[22%] top-[18%] w-[10%]" />
+        <Image src="/game2/balloon.png" alt="balloon" width={60} height={90}
+               className="absolute left-[52%] top-[42%] w-[10%]" style={{ filter: 'hue-rotate(200deg)' }} />
+        <Image src="/game2/penguin_cheer.png" alt="penguin" width={70} height={66}
+               className="absolute bottom-1 right-2 w-[13%]" />
+      </div>
+      <div className="flex items-center gap-2.5 rounded-lg bg-sky-50 px-3 py-2 dark:bg-sky-950/20">
+        <Image src="/game2/balloon.png" alt="" width={18} height={27} className="shrink-0" />
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.balloonPop.objBalloon')}</p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Preview Router ─── */
 function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTranslations> }) {
   switch (gameId) {
@@ -267,6 +331,10 @@ function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTr
       return <CardMatchPreview t={t} />
     case 'definitionBuilder':
       return <DefBuilderPreview t={t} />
+    case 'moleQuiz':
+      return <MoleQuizPreview t={t} />
+    case 'balloonPop':
+      return <BalloonPopPreview t={t} />
     default:
       return null
   }

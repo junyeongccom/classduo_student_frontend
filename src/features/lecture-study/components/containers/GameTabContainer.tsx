@@ -13,6 +13,8 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
+import { MoleQuizGame } from '../ui/MoleQuizGame'
+import { BalloonPopGame } from '../ui/BalloonPopGame'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
@@ -210,6 +212,8 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const [showMatchingOverlay, setShowMatchingOverlay] = useState(false)
   const [showDefBuilderOverlay, setShowDefBuilderOverlay] = useState(false)
   const [showDeckOverlay, setShowDeckOverlay] = useState(false)
+  const [showMoleOverlay, setShowMoleOverlay] = useState(false)
+  const [showBalloonOverlay, setShowBalloonOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -498,6 +502,18 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       return
     }
 
+    // Mole quiz / Balloon pop (normal mode): open overlay — words는 이미 word modal 단계에서 로드됨
+    if (selectedGame === 'moleQuiz') {
+      setGameMode('normal')
+      setShowMoleOverlay(true)
+      return
+    }
+    if (selectedGame === 'balloonPop') {
+      setGameMode('normal')
+      setShowBalloonOverlay(true)
+      return
+    }
+
   }, [selectedGame, lectureId, loadDefBuilderData, deck])
 
   // Running game overlay (renders on top, no "isPlaying" needed)
@@ -600,6 +616,46 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
           </div>
         </div>
       </>
+    )
+  }
+
+  // Mole quiz overlay (normal mode only)
+  if (showMoleOverlay) {
+    return (
+      <MoleQuizGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'moleQuiz', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'moleQuiz', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowMoleOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Balloon pop overlay (normal mode only)
+  if (showBalloonOverlay) {
+    return (
+      <BalloonPopGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'balloonPop', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'balloonPop', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowBalloonOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
     )
   }
 

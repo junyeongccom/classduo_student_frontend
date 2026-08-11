@@ -697,7 +697,29 @@
           "controlSelect": "Click a choice to auto-fill the blank",
           "controlPlace": "Correct +10 pts, wrong −10 pts",
           "previewHint": "Select the correct token from the choices"
+        },
+        "moleQuiz": {
+          "subtitle": "Whack the mole holding the right term",
+          "goal": "Read the description at the top and whack the mole holding the matching term before time runs out. Faster answers earn bonus points!",
+          "controlWhack": "Click/tap the correct mole",
+          "objCorrect": "The mole cheers when you get it right",
+          "objWrong": "Whacking a wrong mole costs -20 points"
+        },
+        "balloonPop": {
+          "subtitle": "Pop the balloon with the right term",
+          "goal": "Pop the balloon carrying the term that matches the description before it floats away. Miss the correct balloon and the round fails!",
+          "controlPop": "Click/tap the correct balloon",
+          "objBalloon": "Read the term on each balloon before popping"
         }
+      },
+      "moleQuiz": "Whack-a-Term",
+      "balloonPop": "Balloon Pop",
+      "play": {
+        "round": "Round {current}/{total}",
+        "scoreSuffix": " pts",
+        "accuracy": "{correct} of {total} correct",
+        "playAgain": "Play again",
+        "exit": "Exit"
       }
     },
     "breadcrumb": {
