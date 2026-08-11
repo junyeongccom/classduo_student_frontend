@@ -21,6 +21,8 @@ const GAME_LIST: GameInfo[] = [
   { id: 'termCatch', name: '', description: '', minWords: 4, icon: '🎓' },
   { id: 'knowledgeGate', name: '', description: '', minWords: 4, icon: '🚪' },
   { id: 'conceptMerge', name: '', description: '', minWords: 2, icon: '💎' },
+  { id: 'pinPull', name: '', description: '', minWords: 4, icon: '📌' },
+  { id: 'misconceptionDefense', name: '', description: '', minWords: 4, icon: '🛡️' },
 ]
 
 /** 게임별 테마 (밝은 배경용) */
@@ -106,6 +108,24 @@ const CARD_THEMES = [
     playBg: 'bg-teal-500 group-hover:bg-teal-600',
     playText: 'text-white',
   },
+  {
+    border: 'border-lime-200',
+    hoverBorder: 'hover:border-lime-400',
+    glow: 'hover:shadow-lg hover:shadow-lime-100',
+    iconBg: 'bg-lime-50',
+    accent: 'text-lime-700',
+    playBg: 'bg-lime-500 group-hover:bg-lime-600',
+    playText: 'text-white',
+  },
+  {
+    border: 'border-purple-200',
+    hoverBorder: 'hover:border-purple-400',
+    glow: 'hover:shadow-lg hover:shadow-purple-100',
+    iconBg: 'bg-purple-50',
+    accent: 'text-purple-600',
+    playBg: 'bg-purple-500 group-hover:bg-purple-600',
+    playText: 'text-white',
+  },
 ]
 
 interface GameSelectorProps {
@@ -127,6 +147,8 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
     termCatch: t('lectureStudy.game.termCatch'),
     knowledgeGate: t('lectureStudy.game.knowledgeGate'),
     conceptMerge: t('lectureStudy.game.conceptMerge'),
+    pinPull: t('lectureStudy.game.pinPull'),
+    misconceptionDefense: t('lectureStudy.game.misconceptionDefense'),
   }
 
   return (

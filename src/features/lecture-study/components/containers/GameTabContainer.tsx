@@ -18,6 +18,8 @@ import { BalloonPopGame } from '../ui/BalloonPopGame'
 import { TermCatchGame } from '../ui/TermCatchGame'
 import { KnowledgeGateGame } from '../ui/KnowledgeGateGame'
 import { ConceptMergeGame } from '../ui/ConceptMergeGame'
+import { PinPullGame } from '../ui/PinPullGame'
+import { MisconceptionDefenseGame } from '../ui/MisconceptionDefenseGame'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
@@ -220,6 +222,8 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const [showTermCatchOverlay, setShowTermCatchOverlay] = useState(false)
   const [showGateOverlay, setShowGateOverlay] = useState(false)
   const [showMergeOverlay, setShowMergeOverlay] = useState(false)
+  const [showPinOverlay, setShowPinOverlay] = useState(false)
+  const [showDefenseOverlay, setShowDefenseOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -534,6 +538,16 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       setShowMergeOverlay(true)
       return
     }
+    if (selectedGame === 'pinPull') {
+      setGameMode('normal')
+      setShowPinOverlay(true)
+      return
+    }
+    if (selectedGame === 'misconceptionDefense') {
+      setGameMode('normal')
+      setShowDefenseOverlay(true)
+      return
+    }
 
   }, [selectedGame, lectureId, loadDefBuilderData, deck])
 
@@ -673,6 +687,46 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
             gameAnalytics.complete(lectureId, { game_type: 'balloonPop', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
           }
           setShowBalloonOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Pin pull overlay (normal mode only)
+  if (showPinOverlay) {
+    return (
+      <PinPullGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'pinPull', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'pinPull', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowPinOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Misconception defense overlay (normal mode only)
+  if (showDefenseOverlay) {
+    return (
+      <MisconceptionDefenseGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'misconceptionDefense', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'misconceptionDefense', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowDefenseOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
         }}

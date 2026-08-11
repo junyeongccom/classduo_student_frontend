@@ -729,6 +729,18 @@
           "goal": "Drag two shards of the same term and same tier together to merge them. Reach the tier-3 golden gem to reveal that term's definition. Complete all 4 terms!",
           "controlDragMerge": "Drag (or tap then move) a shard onto a matching one",
           "objMerge": "Only same term and same tier can merge"
+        },
+        "pinPull": {
+          "subtitle": "Pull pins to drop the right orb",
+          "goal": "Read the description and pull only the pin holding the orb with the matching term. Correct orbs go to the beaker; wrong pulls cost points!",
+          "controlPullPin": "Click/tap a pin to pull it",
+          "objPin": "Check the term on the orb before pulling"
+        },
+        "misconceptionDefense": {
+          "subtitle": "Shoot down misconception germs",
+          "goal": "Germs march toward your gate carrying terms. Shoot only the germ whose term matches the description. Wrong shots or leaks cost shield!",
+          "controlShoot": "Click/tap a germ to shoot",
+          "objGerm": "Check each germ's term label first"
         }
       },
       "moleQuiz": "Whack-a-Term",
@@ -754,11 +766,22 @@
         "mergeProgress": "Done {done}/{total}",
         "mergeComplete": "Term complete!",
         "mergeContinue": "Continue",
-        "mergeAllDone": "You completed all {total} terms!"
+        "mergeAllDone": "You completed all {total} terms!",
+        "pinGoodBin": "Correct beaker",
+        "pinBadBin": "Discard bin",
+        "pinCorrect": "Correct! {word}",
+        "pinWrong": "Wrong: {word}",
+        "wave": "Wave {current}/{total}",
+        "defenseIntro": "Shoot the germ with the matching term",
+        "defenseHint": "Read the term labels and shoot only the correct one!",
+        "defenseWin": "Gate defended!",
+        "defenseLose": "Your shield broke…"
       },
       "termCatch": "Term Catch",
       "knowledgeGate": "Knowledge Gates",
-      "conceptMerge": "Concept Merge"
+      "conceptMerge": "Concept Merge",
+      "pinPull": "Pin Pull",
+      "misconceptionDefense": "Misconception Defense"
     },
     "breadcrumb": {
       "courseLoading": "Loading…",

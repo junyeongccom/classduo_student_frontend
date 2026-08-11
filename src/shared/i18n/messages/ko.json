@@ -729,6 +729,18 @@
           "goal": "같은 용어의 같은 등급 조각 2개를 겹쳐 합치세요. 3단계 황금 젬까지 키우면 그 용어의 정의가 공개됩니다. 4개 용어를 모두 완성하세요!",
           "controlDragMerge": "조각을 드래그(또는 클릭 후 이동)해 같은 조각에 겹치기",
           "objMerge": "같은 용어·같은 등급끼리만 합쳐져요"
+        },
+        "pinPull": {
+          "subtitle": "핀을 뽑아 정답 구슬만 비커로",
+          "goal": "위쪽 설명을 읽고, 설명에 맞는 용어가 적힌 구슬의 핀만 뽑으세요. 정답 구슬은 비커로, 오답을 뽑으면 감점됩니다!",
+          "controlPullPin": "핀 클릭/탭으로 뽑기",
+          "objPin": "구슬의 용어를 확인하고 핀을 뽑으세요"
+        },
+        "misconceptionDefense": {
+          "subtitle": "오개념 세균을 정답으로 요격",
+          "goal": "성문으로 몰려오는 세균 중 설명에 맞는 용어를 이고 있는 세균만 클릭해 요격하세요. 오답을 쏘거나 정답을 놓치면 방어막이 깎입니다!",
+          "controlShoot": "세균 클릭/탭으로 요격",
+          "objGerm": "용어 라벨을 확인하고 정답 세균만 요격"
         }
       },
       "moleQuiz": "두더지 팝 퀴즈",
@@ -754,11 +766,22 @@
         "mergeProgress": "완성 {done}/{total}",
         "mergeComplete": "용어 완성!",
         "mergeContinue": "계속하기",
-        "mergeAllDone": "{total}개 용어를 모두 완성했어요!"
+        "mergeAllDone": "{total}개 용어를 모두 완성했어요!",
+        "pinGoodBin": "정답 비커",
+        "pinBadBin": "폐기통",
+        "pinCorrect": "정답! {word}",
+        "pinWrong": "오답 {word}",
+        "wave": "{current}/{total} 웨이브",
+        "defenseIntro": "설명에 맞는 용어의 세균을 요격하세요",
+        "defenseHint": "세균의 용어 라벨을 보고 정답만 클릭!",
+        "defenseWin": "성문을 지켰어요!",
+        "defenseLose": "방어막이 무너졌어요…"
       },
       "termCatch": "정답 잡기",
       "knowledgeGate": "지식의 문",
-      "conceptMerge": "개념 합치기"
+      "conceptMerge": "개념 합치기",
+      "pinPull": "지식 방출",
+      "misconceptionDefense": "오개념 방어전"
     },
     "breadcrumb": {
       "courseLoading": "불러오는 중…",

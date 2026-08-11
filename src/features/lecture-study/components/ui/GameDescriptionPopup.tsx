@@ -82,6 +82,16 @@ const GAME_THEMES: Record<string, GameTheme> = {
     button: 'bg-teal-500 hover:bg-teal-600',
     previewBg: 'bg-slate-50',
   },
+  pinPull: {
+    goalBg: 'bg-lime-50 dark:bg-lime-950/30',
+    button: 'bg-lime-500 hover:bg-lime-600',
+    previewBg: 'bg-slate-50',
+  },
+  misconceptionDefense: {
+    goalBg: 'bg-purple-50 dark:bg-purple-950/30',
+    button: 'bg-purple-500 hover:bg-purple-600',
+    previewBg: 'bg-slate-50',
+  },
 }
 
 type ControlItem = {
@@ -143,6 +153,14 @@ function getControls(gameId: string): ControlItem[] {
     case 'balloonPop':
       return [
         { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlPop' },
+      ]
+    case 'pinPull':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlPullPin' },
+      ]
+    case 'misconceptionDefense':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlShoot' },
       ]
     case 'conceptMerge':
       return [
@@ -426,6 +444,46 @@ function ConceptMergePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   )
 }
 
+/* ─── Pin Pull: 핀·구슬·비커 프리뷰 ─── */
+function PinPullPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game6/pin_bg.png" alt="Pin pull scene" width={800} height={457} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game6/knowledge_ball.png" alt="" width={44} height={40} className="absolute left-[44%] top-[16%] w-[10%]" />
+        <Image src="/game6/pin_bolt.png" alt="" width={52} height={23} className="absolute left-[55%] top-[20%] w-[12%]" />
+        <Image src="/game6/knowledge_ball.png" alt="" width={44} height={40} className="absolute left-[44%] top-[40%] w-[10%]" />
+        <Image src="/game6/pin_bolt.png" alt="" width={52} height={23} className="absolute left-[55%] top-[44%] w-[12%]" />
+        <Image src="/game6/beaker_good.png" alt="" width={50} height={72} className="absolute bottom-[4%] left-[20%] w-[11%]" />
+        <Image src="/game6/beaker_bad.png" alt="" width={50} height={64} className="absolute bottom-[4%] left-[68%] w-[11%]" />
+      </div>
+      <div className="flex items-center gap-2.5 rounded-lg bg-lime-50 px-3 py-2 dark:bg-lime-950/20">
+        <Image src="/game6/pin_bolt.png" alt="" width={22} height={10} className="shrink-0" />
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.pinPull.objPin')}</p>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Misconception Defense: 디펜스 프리뷰 ─── */
+function DefensePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game7/defense_bg.png" alt="Defense scene" width={800} height={457} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game7/germ_small.png" alt="" width={44} height={52} className="absolute left-[14%] top-[40%] w-[8%]" />
+        <Image src="/game7/germ_big.png" alt="" width={52} height={64} className="absolute left-[36%] top-[46%] w-[10%]" />
+        <Image src="/game7/shield_tower.png" alt="" width={60} height={54} className="absolute bottom-[14%] right-[4%] w-[12%]" />
+        <Image src="/game7/hero_boy.png" alt="" width={48} height={69} className="absolute bottom-[5%] right-[15%] w-[9%]" />
+      </div>
+      <div className="flex items-center gap-2.5 rounded-lg bg-purple-50 px-3 py-2 dark:bg-purple-950/20">
+        <Image src="/game7/germ_small.png" alt="" width={18} height={21} className="shrink-0" />
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.misconceptionDefense.objGerm')}</p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Preview Router ─── */
 function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTranslations> }) {
   switch (gameId) {
@@ -447,6 +505,10 @@ function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTr
       return <KnowledgeGatePreview t={t} />
     case 'conceptMerge':
       return <ConceptMergePreview t={t} />
+    case 'pinPull':
+      return <PinPullPreview t={t} />
+    case 'misconceptionDefense':
+      return <DefensePreview t={t} />
     default:
       return null
   }
