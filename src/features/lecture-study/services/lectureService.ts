@@ -78,6 +78,20 @@ export interface MaterialPagesResponse {
 
 export interface ContentsStudyChatResponse {
   answer: string
+  /** 이 대화가 속한 세션 — 새 세션이 lazy 생성된 경우 프론트가 이어받는다 */
+  session_id?: string | null
+}
+
+/** 채팅 세션 1건 */
+export interface ChatSessionItem {
+  session_id: string
+  title: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export interface ContentsStudyChatSessionsResponse {
+  sessions: ChatSessionItem[]
 }
 
 export interface QuizContextPayload {
@@ -105,6 +119,8 @@ export interface ChatMessageItem {
 
 export interface ContentsStudyChatHistoryResponse {
   messages: ChatMessageItem[]
+  /** 조회된 세션 (미지정 조회 시 최신 세션으로 폴백된 결과) */
+  session_id?: string | null
 }
 
 /** GET /content/lectures/{lectureId}/content-summary 응답 */
@@ -194,7 +210,7 @@ export const lectureService = {
     })
   },
 
-  contentsStudyChat: (question: string, lectureId: string, quizContext?: QuizContextPayload) => {
+  contentsStudyChat: (question: string, lectureId: string, quizContext?: QuizContextPayload, sessionId?: string | null) => {
     return apiRequest<ContentsStudyChatResponse>('/contents-study/chat', {
       method: 'POST',
       auth: true,
@@ -202,16 +218,36 @@ export const lectureService = {
         question,
         lecture_id: lectureId,
         ...(quizContext && { quiz_context: quizContext }),
+        // 없으면 서버가 새 세션을 lazy 생성한다 ("새 채팅")
+        ...(sessionId && { session_id: sessionId }),
       },
     })
   },
 
-  contentsStudyChatHistory: (lectureId: string) => {
+  contentsStudyChatHistory: (lectureId: string, sessionId?: string | null) => {
     if (!isUUID(lectureId)) {
       return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
     }
-    return apiRequest<ContentsStudyChatHistoryResponse>(`/contents-study/chat/history/${lectureId}`, {
+    const query = sessionId ? `?session_id=${sessionId}` : ''
+    return apiRequest<ContentsStudyChatHistoryResponse>(`/contents-study/chat/history/${lectureId}${query}`, {
       method: 'GET',
+      auth: true,
+    })
+  },
+
+  contentsStudyChatSessions: (lectureId: string) => {
+    if (!isUUID(lectureId)) {
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+    }
+    return apiRequest<ContentsStudyChatSessionsResponse>(`/contents-study/chat/sessions/${lectureId}`, {
+      method: 'GET',
+      auth: true,
+    })
+  },
+
+  contentsStudyDeleteChatSession: (sessionId: string) => {
+    return apiRequest<{ success: boolean }>(`/contents-study/chat/sessions/${sessionId}`, {
+      method: 'DELETE',
       auth: true,
     })
   },

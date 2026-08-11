@@ -828,7 +828,12 @@
       "generating": "답변 생성 중...",
       "inputPlaceholder": "질문을 입력하세요...",
       "quizChatBadge": "{courseTitle} {weekNumber}주차 {sessionNumber}차시 Q{quizNumber} 문제 질문",
-      "quizChatPlaceholder": "이 문제에 대해 더 물어보세요"
+      "quizChatPlaceholder": "이 문제에 대해 더 물어보세요",
+      "newChat": "새 채팅",
+      "sessionList": "대화 목록",
+      "sessionUntitled": "새 대화",
+      "sessionDeleteConfirm": "이 대화를 삭제할까요?",
+      "sessionDelete": "대화 삭제"
     },
     "buttons": {
       "startTest": "테스트 시작하기",

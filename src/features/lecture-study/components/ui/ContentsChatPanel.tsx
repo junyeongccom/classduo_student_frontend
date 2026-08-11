@@ -1,6 +1,6 @@
 /**
  * @file ContentsChatPanel.tsx
- * @description 콘텐츠 학습 AI 채팅 패널 — 단발 질의응답 UI
+ * @description 콘텐츠 학습 AI 채팅 패널 — 세션 관리(새 채팅·목록·전환·삭제) + 질의응답 UI
  * @module features/lecture-study/components/ui
  * @dependencies lectureService, react-markdown
  */
@@ -8,12 +8,12 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Loader2, Send, X } from 'lucide-react'
+import { History, Loader2, Send, SquarePen, Trash2, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
 import { trackEvent } from '@/shared/lib/analytics'
 import { lectureService } from '../../services/lectureService'
-import type { QuizContextPayload } from '../../services/lectureService'
+import type { ChatSessionItem, QuizContextPayload } from '../../services/lectureService'
 import type { QuizChatContext } from '../../store/useLectureStudyStore'
 
 interface ChatMessage {
@@ -32,32 +32,104 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [sessions, setSessions] = useState<ChatSessionItem[]>([])
+  /** null = 새 채팅 (첫 전송 시 서버가 세션 lazy 생성) */
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+  const [isSessionListOpen, setIsSessionListOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const sessionListRef = useRef<HTMLDivElement>(null)
   const prevLectureIdRef = useRef<string>('')
   const t = useTranslations('lectureStudy.contentsChat')
 
-  // 페이지 진입 시 최근 대화 이력 로드
+  // 페이지 진입 시 최근 세션의 대화 이력 로드
   useEffect(() => {
     if (!lectureId || lectureId === prevLectureIdRef.current) return
     prevLectureIdRef.current = lectureId
     setHistoryLoaded(false)
     setMessages([])
+    setSessions([])
+    setActiveSessionId(null)
 
-    lectureService.contentsStudyChatHistory(lectureId).then((result) => {
-      if (result.data?.messages?.length) {
-        setMessages(
-          result.data.messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          }))
-        )
+    const load = async () => {
+      try {
+        const sess = await lectureService.contentsStudyChatSessions(lectureId)
+        if (sess.data?.sessions) setSessions(sess.data.sessions)
+        const result = await lectureService.contentsStudyChatHistory(lectureId)
+        if (result.data?.messages?.length) {
+          setMessages(
+            result.data.messages.map((m) => ({
+              role: m.role,
+              content: m.content,
+            }))
+          )
+          setActiveSessionId(result.data.session_id ?? null)
+        }
+      } finally {
+        setHistoryLoaded(true)
+      }
+    }
+    void load()
+  }, [lectureId])
+
+  // 세션 목록 드롭다운 바깥 클릭 시 닫기
+  useEffect(() => {
+    if (!isSessionListOpen) return
+    const close = (e: MouseEvent) => {
+      if (!sessionListRef.current?.contains(e.target as Node)) setIsSessionListOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [isSessionListOpen])
+
+  const refreshSessions = useCallback(() => {
+    lectureService.contentsStudyChatSessions(lectureId).then((sess) => {
+      if (sess.data?.sessions) setSessions(sess.data.sessions)
+    }).catch(() => {})
+  }, [lectureId])
+
+  // 새 채팅 — 화면 비우고 세션 미지정 (첫 전송 시 서버가 생성)
+  const handleNewChat = useCallback(() => {
+    if (isLoading) return
+    setActiveSessionId(null)
+    setMessages([])
+    setIsSessionListOpen(false)
+    inputRef.current?.focus()
+    trackEvent('chat_new_session', 'lecture_study', { lectureId })
+  }, [isLoading, lectureId])
+
+  // 세션 전환 — 해당 세션 이력 로드
+  const handleSelectSession = useCallback((sessionId: string) => {
+    if (isLoading || sessionId === activeSessionId) {
+      setIsSessionListOpen(false)
+      return
+    }
+    setIsSessionListOpen(false)
+    setActiveSessionId(sessionId)
+    setMessages([])
+    setHistoryLoaded(false)
+    lectureService.contentsStudyChatHistory(lectureId, sessionId).then((result) => {
+      if (result.data?.messages) {
+        setMessages(result.data.messages.map((m) => ({ role: m.role, content: m.content })))
       }
       setHistoryLoaded(true)
-    }).catch(() => {
-      setHistoryLoaded(true)
-    })
-  }, [lectureId])
+    }).catch(() => setHistoryLoaded(true))
+    trackEvent('chat_switch_session', 'lecture_study', { lectureId })
+  }, [isLoading, activeSessionId, lectureId])
+
+  // 세션 삭제 — 활성 세션이면 새 채팅 상태로
+  const handleDeleteSession = useCallback((sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!window.confirm(t('sessionDeleteConfirm'))) return
+    lectureService.contentsStudyDeleteChatSession(sessionId).then(() => {
+      setSessions((prev) => prev.filter((s) => s.session_id !== sessionId))
+      if (sessionId === activeSessionId) {
+        setActiveSessionId(null)
+        setMessages([])
+      }
+    }).catch(() => {})
+    trackEvent('chat_delete_session', 'lecture_study', { lectureId })
+  }, [activeSessionId, lectureId, t])
 
   // 히스토리 로드 후 스크롤
   useEffect(() => {
@@ -112,9 +184,14 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
     trackEvent('chat_message', 'lecture_study', { lectureId, data: { message_length: question.length, question_type: 'content_study_chat' } })
 
     try {
-      const result = await lectureService.contentsStudyChat(question, lectureId, quizPayload)
+      const result = await lectureService.contentsStudyChat(question, lectureId, quizPayload, activeSessionId)
       if (result.data?.answer) {
         setMessages(prev => [...prev, { role: 'assistant', content: result.data!.answer }])
+        // 새 세션이 lazy 생성된 경우 이어받기 + 목록 갱신
+        if (result.data.session_id && result.data.session_id !== activeSessionId) {
+          setActiveSessionId(result.data.session_id)
+        }
+        refreshSessions()
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: t('errorGenerate') }])
       }
@@ -124,7 +201,7 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
       setIsLoading(false)
       scrollToBottom()
     }
-  }, [input, isLoading, lectureId, quizChatContext, onClearQuizContext, scrollToBottom, t])
+  }, [input, isLoading, lectureId, quizChatContext, onClearQuizContext, scrollToBottom, t, activeSessionId, refreshSessions])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -133,8 +210,69 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
     }
   }, [handleSubmit])
 
+  const activeTitle = sessions.find((s) => s.session_id === activeSessionId)?.title
+
   return (
     <div className="flex h-full flex-col">
+      {/* Session toolbar */}
+      <div className="relative flex shrink-0 items-center gap-1 border-b border-gray-200 dark:border-gray-700 px-2 py-1.5">
+        <div ref={sessionListRef} className="relative min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={() => setIsSessionListOpen((v) => !v)}
+            className="flex w-full min-w-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            title={t('sessionList')}
+          >
+            <History className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+            <span className="truncate">
+              {activeSessionId ? (activeTitle || t('sessionUntitled')) : t('newChat')}
+            </span>
+          </button>
+
+          {isSessionListOpen && (
+            <div className="absolute left-0 top-full z-20 mt-1 max-h-64 w-72 max-w-[80vw] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg">
+              {sessions.length === 0 ? (
+                <p className="px-3 py-2 text-xs text-gray-400">{t('sessionUntitled')}</p>
+              ) : (
+                sessions.map((s) => (
+                  <div
+                    key={s.session_id}
+                    onClick={() => handleSelectSession(s.session_id)}
+                    className={`group flex cursor-pointer items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                      s.session_id === activeSessionId
+                        ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{s.title || t('sessionUntitled')}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteSession(s.session_id, e)}
+                      className="shrink-0 rounded p-1 text-gray-400 opacity-0 transition-opacity hover:bg-gray-200 hover:text-red-500 dark:hover:bg-gray-600 group-hover:opacity-100"
+                      aria-label={t('sessionDelete')}
+                      title={t('sessionDelete')}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleNewChat}
+          disabled={isLoading}
+          className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors disabled:opacity-40"
+          title={t('newChat')}
+        >
+          <SquarePen className="h-3.5 w-3.5" />
+          {t('newChat')}
+        </button>
+      </div>
+
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
         {messages.length === 0 && (
