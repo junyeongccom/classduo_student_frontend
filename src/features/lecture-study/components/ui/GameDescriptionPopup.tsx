@@ -92,6 +92,21 @@ const GAME_THEMES: Record<string, GameTheme> = {
     button: 'bg-purple-500 hover:bg-purple-600',
     previewBg: 'bg-slate-50',
   },
+  knowledgeTower: {
+    goalBg: 'bg-yellow-50 dark:bg-yellow-950/30',
+    button: 'bg-yellow-500 hover:bg-yellow-600',
+    previewBg: 'bg-slate-50',
+  },
+  conceptSort: {
+    goalBg: 'bg-fuchsia-50 dark:bg-fuchsia-950/30',
+    button: 'bg-fuchsia-500 hover:bg-fuchsia-600',
+    previewBg: 'bg-slate-50',
+  },
+  conceptLink: {
+    goalBg: 'bg-blue-50 dark:bg-blue-950/30',
+    button: 'bg-blue-500 hover:bg-blue-600',
+    previewBg: 'bg-slate-50',
+  },
 }
 
 type ControlItem = {
@@ -153,6 +168,18 @@ function getControls(gameId: string): ControlItem[] {
     case 'balloonPop':
       return [
         { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlPop' },
+      ]
+    case 'knowledgeTower':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlPickBlock' },
+      ]
+    case 'conceptSort':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlSortDrag' },
+      ]
+    case 'conceptLink':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlLinkTap' },
       ]
     case 'pinPull':
       return [
@@ -484,6 +511,75 @@ function DefensePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   )
 }
 
+/* ─── Knowledge Tower: 스택 프리뷰 ─── */
+function TowerPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game8/tower_bg.png" alt="Tower scene" width={800} height={457} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game8/block_good.png" alt="" width={110} height={55} className="absolute bottom-[14%] left-1/2 w-[26%] -translate-x-1/2" />
+        <Image src="/game8/block_good.png" alt="" width={110} height={55} className="absolute bottom-[24%] left-1/2 w-[26%] -translate-x-1/2" />
+        <Image src="/game8/block_bad.png" alt="" width={110} height={48} className="absolute bottom-[34%] left-1/2 w-[26%] -translate-x-1/2" />
+        <Image src="/game8/block_good.png" alt="" width={90} height={45} className="absolute left-[16%] top-[10%] w-[20%]" />
+        <Image src="/game8/hero_girl.png" alt="" width={44} height={63} className="absolute bottom-[8%] left-[10%] w-[9%]" />
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <div className="flex items-center gap-2.5 rounded-lg bg-yellow-50 px-3 py-2 dark:bg-yellow-950/20">
+          <Image src="/game8/block_good.png" alt="" width={24} height={12} className="shrink-0" />
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.knowledgeTower.objTower')}</p>
+        </div>
+        <div className="flex items-center gap-2.5 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-950/20">
+          <Image src="/game8/crown_top.png" alt="" width={20} height={16} className="shrink-0" />
+          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.play.towerWin')}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Concept Sort: 시험관 프리뷰 ─── */
+function SortPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game9/sort_bg.png" alt="Sort scene" width={800} height={457} className="w-full" style={{ display: 'block' }} />
+        {[22, 40, 58, 76].map((x, i) => (
+          <Image key={x} src="/game9/tube_empty.png" alt="" width={36} height={120} className="absolute w-[7%]"
+                 style={{ left: `${x}%`, top: '18%' }} />
+        ))}
+        <Image src="/game9/flask_label.png" alt="" width={54} height={84} className="absolute bottom-[8%] left-[20%] w-[11%]" />
+      </div>
+      <div className="flex items-center gap-2.5 rounded-lg bg-fuchsia-50 px-3 py-2 dark:bg-fuchsia-950/20">
+        <Image src="/game9/tube_empty.png" alt="" width={12} height={40} className="shrink-0" />
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.conceptSort.objSort')}</p>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Concept Link: 별자리 연결 프리뷰 ─── */
+function LinkPreview({ t }: { t: ReturnType<typeof useTranslations> }) {
+  return (
+    <div className="space-y-2">
+      <div className="relative overflow-hidden rounded-xl">
+        <Image src="/game10/link_bg.png" alt="Link scene" width={800} height={457} className="w-full" style={{ display: 'block' }} />
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <line x1="18" y1="30" x2="82" y2="52" stroke="rgba(103,232,249,0.8)" strokeWidth="0.6" strokeLinecap="round" />
+          <line x1="18" y1="62" x2="82" y2="26" stroke="rgba(103,232,249,0.45)" strokeWidth="0.6" strokeLinecap="round" />
+        </svg>
+        <Image src="/game10/node_term.png" alt="" width={30} height={30} className="absolute left-[12%] top-[26%] w-[6%]" />
+        <Image src="/game10/node_term.png" alt="" width={30} height={30} className="absolute left-[12%] top-[58%] w-[6%]" />
+        <Image src="/game10/node_def.png" alt="" width={26} height={30} className="absolute right-[12%] top-[22%] w-[5%]" />
+        <Image src="/game10/node_def.png" alt="" width={26} height={30} className="absolute right-[12%] top-[48%] w-[5%]" />
+      </div>
+      <div className="flex items-center gap-2.5 rounded-lg bg-blue-50 px-3 py-2 dark:bg-blue-950/20">
+        <Image src="/game10/node_term.png" alt="" width={18} height={18} className="shrink-0" />
+        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('lectureStudy.game.desc.conceptLink.objLink')}</p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Preview Router ─── */
 function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTranslations> }) {
   switch (gameId) {
@@ -509,6 +605,12 @@ function GamePreview({ gameId, t }: { gameId: string; t: ReturnType<typeof useTr
       return <PinPullPreview t={t} />
     case 'misconceptionDefense':
       return <DefensePreview t={t} />
+    case 'knowledgeTower':
+      return <TowerPreview t={t} />
+    case 'conceptSort':
+      return <SortPreview t={t} />
+    case 'conceptLink':
+      return <LinkPreview t={t} />
     default:
       return null
   }

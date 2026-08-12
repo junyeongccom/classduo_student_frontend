@@ -23,6 +23,9 @@ const GAME_LIST: GameInfo[] = [
   { id: 'conceptMerge', name: '', description: '', minWords: 2, icon: '💎' },
   { id: 'pinPull', name: '', description: '', minWords: 4, icon: '📌' },
   { id: 'misconceptionDefense', name: '', description: '', minWords: 4, icon: '🛡️' },
+  { id: 'knowledgeTower', name: '', description: '', minWords: 3, icon: '🏗️' },
+  { id: 'conceptSort', name: '', description: '', minWords: 3, icon: '🧪' },
+  { id: 'conceptLink', name: '', description: '', minWords: 3, icon: '🔗' },
 ]
 
 /** 게임별 테마 (밝은 배경용) */
@@ -126,6 +129,33 @@ const CARD_THEMES = [
     playBg: 'bg-purple-500 group-hover:bg-purple-600',
     playText: 'text-white',
   },
+  {
+    border: 'border-yellow-200',
+    hoverBorder: 'hover:border-yellow-400',
+    glow: 'hover:shadow-lg hover:shadow-yellow-100',
+    iconBg: 'bg-yellow-50',
+    accent: 'text-yellow-700',
+    playBg: 'bg-yellow-500 group-hover:bg-yellow-600',
+    playText: 'text-white',
+  },
+  {
+    border: 'border-fuchsia-200',
+    hoverBorder: 'hover:border-fuchsia-400',
+    glow: 'hover:shadow-lg hover:shadow-fuchsia-100',
+    iconBg: 'bg-fuchsia-50',
+    accent: 'text-fuchsia-600',
+    playBg: 'bg-fuchsia-500 group-hover:bg-fuchsia-600',
+    playText: 'text-white',
+  },
+  {
+    border: 'border-blue-200',
+    hoverBorder: 'hover:border-blue-400',
+    glow: 'hover:shadow-lg hover:shadow-blue-100',
+    iconBg: 'bg-blue-50',
+    accent: 'text-blue-600',
+    playBg: 'bg-blue-500 group-hover:bg-blue-600',
+    playText: 'text-white',
+  },
 ]
 
 interface GameSelectorProps {
@@ -149,6 +179,9 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
     conceptMerge: t('lectureStudy.game.conceptMerge'),
     pinPull: t('lectureStudy.game.pinPull'),
     misconceptionDefense: t('lectureStudy.game.misconceptionDefense'),
+    knowledgeTower: t('lectureStudy.game.knowledgeTower'),
+    conceptSort: t('lectureStudy.game.conceptSort'),
+    conceptLink: t('lectureStudy.game.conceptLink'),
   }
 
   return (

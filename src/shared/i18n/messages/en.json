@@ -741,6 +741,24 @@
           "goal": "Germs march toward your gate carrying terms. Shoot only the germ whose term matches the description. Wrong shots or leaks cost shield!",
           "controlShoot": "Click/tap a germ to shoot",
           "objGerm": "Check each germ's term label first"
+        },
+        "knowledgeTower": {
+          "subtitle": "Stack only the correct term blocks",
+          "goal": "Pick the block whose term matches the description and stack it. Wrong blocks crack the tower and cost shield. The higher you go, the bigger the bonus!",
+          "controlPickBlock": "Click/tap a block to stack",
+          "objTower": "Read the term on the block first"
+        },
+        "conceptSort": {
+          "subtitle": "Sort definition shards into the right tube",
+          "goal": "Read each definition shard in the tray and drop it into the tube of the term it defines. Place every shard to finish!",
+          "controlSortDrag": "Select a shard, then click a tube (drag works too)",
+          "objSort": "Definition shard → matching term tube"
+        },
+        "conceptLink": {
+          "subtitle": "Link terms to their definitions",
+          "goal": "Pick a term node on the left, then tap its definition node on the right. Correct links draw a constellation line; wrong ones cost points.",
+          "controlLinkTap": "Tap term first, then definition",
+          "objLink": "Compare both sides to find the pair"
         }
       },
       "moleQuiz": "Whack-a-Term",
@@ -775,13 +793,28 @@
         "defenseIntro": "Shoot the germ with the matching term",
         "defenseHint": "Read the term labels and shoot only the correct one!",
         "defenseWin": "Gate defended!",
-        "defenseLose": "Your shield broke…"
+        "defenseLose": "Your shield broke…",
+        "floor": "Floor {current}/{total}",
+        "towerIntro": "Stack the block matching the description",
+        "towerHint": "Pick the correct swaying block!",
+        "towerWin": "Tower complete!",
+        "towerLose": "The tower collapsed…",
+        "sortProgress": "Sorted {done}/{total}",
+        "sortHint": "Drop each shard into the right term tube",
+        "sortAllDone": "You sorted all {total} terms!",
+        "linkProgress": "Linked {done}/{total}",
+        "linkHint": "Pick a term, then link its definition",
+        "linkPicked": "'{word}' selected — tap its definition",
+        "linkAllDone": "{total} pairs linked ({attempts} tries)"
       },
       "termCatch": "Term Catch",
       "knowledgeGate": "Knowledge Gates",
       "conceptMerge": "Concept Merge",
       "pinPull": "Pin Pull",
-      "misconceptionDefense": "Misconception Defense"
+      "misconceptionDefense": "Misconception Defense",
+      "knowledgeTower": "Knowledge Tower",
+      "conceptSort": "Concept Sort",
+      "conceptLink": "Concept Link"
     },
     "breadcrumb": {
       "courseLoading": "Loading…",

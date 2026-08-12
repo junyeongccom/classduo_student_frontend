@@ -741,6 +741,24 @@
           "goal": "성문으로 몰려오는 세균 중 설명에 맞는 용어를 이고 있는 세균만 클릭해 요격하세요. 오답을 쏘거나 정답을 놓치면 방어막이 깎입니다!",
           "controlShoot": "세균 클릭/탭으로 요격",
           "objGerm": "용어 라벨을 확인하고 정답 세균만 요격"
+        },
+        "knowledgeTower": {
+          "subtitle": "정답 용어 블록만 쌓아 탑을 올려요",
+          "goal": "위쪽에 흔들리는 블록 중 설명에 맞는 용어 블록을 골라 쌓으세요. 오답을 쌓으면 탑이 흔들리고 방어막이 깎입니다. 높이 쌓을수록 보너스!",
+          "controlPickBlock": "블록 클릭/탭으로 쌓기",
+          "objTower": "블록의 용어를 확인하고 쌓으세요"
+        },
+        "conceptSort": {
+          "subtitle": "정의 조각을 알맞은 용어 시험관에",
+          "goal": "아래 대기열의 정의 조각을 읽고, 그 정의에 해당하는 용어 시험관에 담으세요. 모든 조각을 제자리에 담으면 완료!",
+          "controlSortDrag": "조각 선택 후 시험관 클릭(드래그도 가능)",
+          "objSort": "정의 조각 → 알맞은 용어 시험관"
+        },
+        "conceptLink": {
+          "subtitle": "용어와 정의를 선으로 연결해요",
+          "goal": "왼쪽 용어 노드를 고르고 오른쪽 정의 노드를 눌러 짝을 연결하세요. 맞으면 별자리 선이 이어지고, 틀리면 감점됩니다.",
+          "controlLinkTap": "용어 → 정의 순서로 클릭/탭",
+          "objLink": "양쪽을 대조하며 짝을 찾으세요"
         }
       },
       "moleQuiz": "두더지 팝 퀴즈",
@@ -775,13 +793,28 @@
         "defenseIntro": "설명에 맞는 용어의 세균을 요격하세요",
         "defenseHint": "세균의 용어 라벨을 보고 정답만 클릭!",
         "defenseWin": "성문을 지켰어요!",
-        "defenseLose": "방어막이 무너졌어요…"
+        "defenseLose": "방어막이 무너졌어요…",
+        "floor": "{current}/{total}층",
+        "towerIntro": "설명에 맞는 용어 블록을 쌓으세요",
+        "towerHint": "흔들리는 블록 중 정답을 골라 클릭!",
+        "towerWin": "지식 타워 완성!",
+        "towerLose": "탑이 무너졌어요…",
+        "sortProgress": "분류 {done}/{total}",
+        "sortHint": "정의 조각을 알맞은 용어 시험관에 담으세요",
+        "sortAllDone": "{total}개 용어를 모두 분류했어요!",
+        "linkProgress": "연결 {done}/{total}",
+        "linkHint": "용어를 먼저 고르고 정의를 연결하세요",
+        "linkPicked": "'{word}' 선택 — 맞는 정의를 누르세요",
+        "linkAllDone": "{total}쌍 연결 완료 (시도 {attempts}회)"
       },
       "termCatch": "정답 잡기",
       "knowledgeGate": "지식의 문",
       "conceptMerge": "개념 합치기",
       "pinPull": "지식 방출",
-      "misconceptionDefense": "오개념 방어전"
+      "misconceptionDefense": "오개념 방어전",
+      "knowledgeTower": "지식 타워",
+      "conceptSort": "개념 분류",
+      "conceptLink": "개념 연결"
     },
     "breadcrumb": {
       "courseLoading": "불러오는 중…",

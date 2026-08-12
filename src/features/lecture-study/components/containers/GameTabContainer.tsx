@@ -20,6 +20,9 @@ import { KnowledgeGateGame } from '../ui/KnowledgeGateGame'
 import { ConceptMergeGame } from '../ui/ConceptMergeGame'
 import { PinPullGame } from '../ui/PinPullGame'
 import { MisconceptionDefenseGame } from '../ui/MisconceptionDefenseGame'
+import { KnowledgeTowerGame } from '../ui/KnowledgeTowerGame'
+import { ConceptSortGame } from '../ui/ConceptSortGame'
+import { ConceptLinkGame } from '../ui/ConceptLinkGame'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
@@ -224,6 +227,9 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const [showMergeOverlay, setShowMergeOverlay] = useState(false)
   const [showPinOverlay, setShowPinOverlay] = useState(false)
   const [showDefenseOverlay, setShowDefenseOverlay] = useState(false)
+  const [showTowerOverlay, setShowTowerOverlay] = useState(false)
+  const [showSortOverlay, setShowSortOverlay] = useState(false)
+  const [showLinkOverlay, setShowLinkOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -548,6 +554,21 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       setShowDefenseOverlay(true)
       return
     }
+    if (selectedGame === 'knowledgeTower') {
+      setGameMode('normal')
+      setShowTowerOverlay(true)
+      return
+    }
+    if (selectedGame === 'conceptSort') {
+      setGameMode('normal')
+      setShowSortOverlay(true)
+      return
+    }
+    if (selectedGame === 'conceptLink') {
+      setGameMode('normal')
+      setShowLinkOverlay(true)
+      return
+    }
 
   }, [selectedGame, lectureId, loadDefBuilderData, deck])
 
@@ -687,6 +708,66 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
             gameAnalytics.complete(lectureId, { game_type: 'balloonPop', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
           }
           setShowBalloonOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Knowledge tower overlay (normal mode only)
+  if (showTowerOverlay) {
+    return (
+      <KnowledgeTowerGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'knowledgeTower', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'knowledgeTower', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowTowerOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Concept sort overlay (normal mode only)
+  if (showSortOverlay) {
+    return (
+      <ConceptSortGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'conceptSort', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'conceptSort', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowSortOverlay(false)
+          setSelectedGame(null)
+          setGameMode(null)
+        }}
+      />
+    )
+  }
+
+  // Concept link overlay (normal mode only)
+  if (showLinkOverlay) {
+    return (
+      <ConceptLinkGame
+        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
+        onClose={(score) => {
+          const elapsed = Date.now() - gameStartTime.current
+          if (score === null) {
+            gameAbandonAnalytics.abandon(lectureId, { game_type: 'conceptLink', elapsed_ms: elapsed })
+          } else {
+            gameAnalytics.complete(lectureId, { game_type: 'conceptLink', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
+          }
+          setShowLinkOverlay(false)
           setSelectedGame(null)
           setGameMode(null)
         }}
