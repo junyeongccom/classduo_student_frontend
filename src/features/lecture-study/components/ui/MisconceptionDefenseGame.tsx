@@ -34,28 +34,35 @@ interface MisconceptionDefenseGameProps {
 /* ── 가상 좌표계 ── */
 const VW = 1344
 const VH = 768
-/** 플레이어 y 위치 */
-const PLAYER_Y = 656
-/** 체인 사행 진폭 / 파장 (경로 파라미터 u 기준) */
-const CHAIN_AMP = 420
-const CHAIN_WAVE = 340
-/** 경로 진행 u 대비 실제 y 하강 비율 — 낮을수록 체인이 화면에 오래 머문다 */
-const Y_SCALE = 0.42
-/** 마디 간격 (u) */
-const SEG_SPACING = 104
+/** 플레이어(=나선의 중심) */
+const CX = VW / 2
+const CY = VH / 2
+/** x 반지름 배수 — 보드가 가로로 넓으므로 나선을 타원으로 그린다 */
+const RING_ASPECT = 1.5
+/**
+ * 나선 구조: 머리는 t(=나선 각도)가 클수록 안쪽, 꼬리는 t 가 작아 바깥에 있다.
+ *   r(t) = SPIRAL_OUT - SPIRAL_B * t
+ * 머리의 t 가 시간에 따라 커지므로, 긴 몬스터가 원을 그리며 중심(캐릭터)으로 감겨 들어온다.
+ */
+const SPIRAL_OUT = 360
+/** 한 바퀴(2π)당 반지름 감소량 — 나선 바퀴 간격 */
+const SPIRAL_GAP = 142
+const SPIRAL_B = SPIRAL_GAP / (2 * Math.PI)
+/** 머리가 이 반지름 안으로 들어오면 방어막 손실 */
+const DANGER_R = 118
+/** 머리 각속도 (rad/s) */
+const ROT_PER_SEC = 0.28
+/** 마디 사이의 호 길이 — 각도 대신 호 길이를 고정해 종이 띠가 끊기지 않게 한다 */
+const SEG_ARC = 128
 /** 마디 충돌 반경 */
-const SEG_R = 32
-/** 마디 렌더 폭 (가상 단위) */
-const SEG_W = 78
+const SEG_R = 46
+/** 마디 렌더 폭 (가상 단위) — SEG_ARC 보다 커야 띠가 이어져 보인다 */
+const SEG_W = 164
 const TOTAL_SEGMENTS = 22
-/** 선두가 이 y 를 넘으면 방어막 손실 */
-const DANGER_Y = 588
-/** 초당 전진 거리 (u) — 화면상 하강은 × Y_SCALE */
-const ADVANCE_PER_SEC = 64
-/** 마디 하나 격파 시 뒤로 밀리는 거리 (u) */
-const PUSHBACK = 180
-/** 체인이 화면 위 밖에 있는 동안은 피격되지 않는다 (y 최소선) */
-const ENGAGE_Y = 14
+/** 마디 하나 격파 시 몬스터가 되돌려지는 나선 각도 */
+const PUSHBACK_RAD = 0.95
+/** 피격 시 되돌려지는 나선 각도 */
+const KNOCKBACK_RAD = 3.2
 const START_HP = 3
 /** 연필 기본 속도 (가상 단위/초) */
 const PENCIL_SPEED = 660
@@ -165,9 +172,26 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-/** 체인 경로 — 진행도 u 에 대한 좌표 (위에서 아래로 사행) */
-function pathPos(u: number) {
-  return { x: VW / 2 + CHAIN_AMP * Math.sin(u / CHAIN_WAVE), y: u * Y_SCALE }
+/** 나선 각도 t 에서의 반지름 (t 가 클수록 중심에 가깝다) */
+function spiralR(t: number) {
+  return SPIRAL_OUT - SPIRAL_B * t
+}
+
+/** 나선 각도 t 의 화면 좌표 */
+function spiralPoint(t: number) {
+  const r = spiralR(t)
+  return { x: CX + r * RING_ASPECT * Math.cos(t), y: CY + r * Math.sin(t), th: t, r }
+}
+
+/**
+ * 한 마디 뒤(바깥)로 물러날 각도 폭.
+ * 각도를 균등 분할하면 장축과 바깥쪽에서 마디가 벌어지므로, 그 지점의 호 미분 길이로 나눠
+ * "호 길이 균등" 배치를 만든다 → 몸통이 하나의 띠로 이어진다.
+ */
+function spiralStep(t: number) {
+  const r = spiralR(t)
+  const dl = Math.hypot(r * RING_ASPECT * Math.sin(t), r * Math.cos(t))
+  return SEG_ARC / Math.max(50, dl)
 }
 
 export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefenseGameProps) {
@@ -203,8 +227,10 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
 
   /* ── 게임 상태 (ref 가 권위) ── */
   const segsRef = useRef<Segment[]>([])
-  const travelRef = useRef(120)
-  const playerXRef = useRef(VW / 2)
+  /** 머리의 나선 각도 — 커질수록 몬스터가 중심(플레이어)으로 감겨 들어온다 */
+  const headTRef = useRef(0)
+  /** 프레임마다 계산한 마디 좌표 캐시 (충돌 판정과 렌더가 같은 값을 쓴다) */
+  const posRef = useRef<({ x: number; y: number; th: number } | null)[]>([])
   /** 조준 지점 — null 이면 선두 마디를 자동 조준 */
   const aimRef = useRef<{ x: number; y: number } | null>(null)
   const shotsRef = useRef<Shot[]>([])
@@ -219,6 +245,7 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
   const boardRef = useRef<HTMLDivElement>(null)
   const segElsRef = useRef<(HTMLDivElement | null)[]>([])
   const segHpElsRef = useRef<(HTMLSpanElement | null)[]>([])
+  const segImgElsRef = useRef<(HTMLImageElement | null)[]>([])
   const bulletElsRef = useRef<(HTMLDivElement | null)[]>([])
   const specialElsRef = useRef<(HTMLDivElement | null)[]>([])
   const dmgElsRef = useRef<(HTMLDivElement | null)[]>([])
@@ -253,8 +280,8 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
 
   const resetWorld = useCallback(() => {
     segsRef.current = buildSegments()
-    travelRef.current = 120
-    playerXRef.current = VW / 2
+    headTRef.current = 0
+    posRef.current = []
     aimRef.current = null
     shotsRef.current = Array.from({ length: BULLET_POOL }, newShot)
     specialsRef.current = Array.from({ length: SPECIAL_POOL }, newShot)
@@ -276,6 +303,7 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
 
   const beginGame = useCallback(() => {
     setStarted(true)
+    pausedRef.current = false
     lastFrameRef.current = performance.now()
     lastShotRef.current = performance.now()
   }, [])
@@ -383,12 +411,17 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
     }
   }, [])
 
+  /** 루프에서 참조할 최신 퀴즈 오픈 함수 (의존성으로 넣으면 rAF 가 매번 재시작된다) */
+  const openChestQuizRef = useRef(openChestQuiz)
+  useEffect(() => { openChestQuizRef.current = openChestQuiz }, [openChestQuiz])
+
   /* ── 메인 루프 ── */
   useEffect(() => {
     if (!started || phase === 'finished') return
     let raf = 0
 
     const loop = () => {
+      try {
       const now = performance.now()
       const dt = Math.min(0.05, (now - lastFrameRef.current) / 1000)
       lastFrameRef.current = now
@@ -398,41 +431,43 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
         const wpn = weaponsRef.current
         const segs = segsRef.current
 
-        // 1) 체인 전진 + 마디 위치 갱신
-        travelRef.current += ADVANCE_PER_SEC * dt
-        let headY = -999
+        // 1) 몬스터가 나선을 그리며 중심으로 다가온다 + 마디 배치
+        //    머리(가장 앞 살아있는 마디)부터 뒤로 가며 t 를 줄이면 꼬리가 바깥에 놓인다
+        headTRef.current += ROT_PER_SEC * dt
+        let th = headTRef.current
         for (let i = 0; i < segs.length; i++) {
-          const s = segs[i]
-          if (!s.alive) continue
-          const u = travelRef.current - i * SEG_SPACING
-          const { x, y } = pathPos(u)
-          if (headY === -999) headY = y
+          if (!segs[i].alive) { posRef.current[i] = null; continue }
+          const p = spiralPoint(th)
+          th -= spiralStep(th)
+          posRef.current[i] = p
           const el = segElsRef.current[i]
           if (el) {
-            el.style.left = `${(x / VW) * 100}%`
-            el.style.top = `${(y / VH) * 100}%`
+            el.style.left = `${(p.x / VW) * 100}%`
+            el.style.top = `${(p.y / VH) * 100}%`
           }
+          // 이미지만 접선 방향으로 회전 — HP 숫자는 똑바로 유지된다
+          const img = segImgElsRef.current[i]
+          if (img) img.style.transform = `rotate(${p.th + Math.PI / 2}rad)`
         }
 
-        // 2) 조준 방향 — 포인터가 없으면 선두 마디 자동 조준
-        const firstIdx = segs.findIndex(s => s.alive)
+        // 2) 조준 방향 — 포인터가 없으면 가장 가까운 마디를 자동 조준. 플레이어는 링 중심에 고정
         let tx: number, ty: number
         if (aimRef.current) {
           tx = aimRef.current.x; ty = aimRef.current.y
-        } else if (firstIdx >= 0) {
-          const p = pathPos(travelRef.current - firstIdx * SEG_SPACING)
-          tx = p.x; ty = p.y
         } else {
-          tx = VW / 2; ty = 0
+          let best: { x: number; y: number } | null = null
+          let bestD = Infinity
+          for (let i = 0; i < segs.length; i++) {
+            const p = posRef.current[i]
+            if (!p) continue
+            const d = (p.x - CX) ** 2 + (p.y - CY) ** 2
+            if (d < bestD) { bestD = d; best = p }
+          }
+          tx = best ? best.x : CX
+          ty = best ? best.y : CY - 100
         }
-        // 플레이어는 조준 x 를 부드럽게 추종 (이동감 + 조준각 확보)
-        const wantX = Math.max(180, Math.min(VW - 180, VW / 2 + (tx - VW / 2) * 0.4))
-        playerXRef.current += (wantX - playerXRef.current) * Math.min(1, dt * 6)
-        const px = playerXRef.current
-        if (playerElRef.current) playerElRef.current.style.left = `${(px / VW) * 100}%`
-
-        // 위쪽(적)만 겨눈다 — 아래로는 쏘지 않는다
-        let ang = Math.atan2(Math.min(ty, PLAYER_Y - 60) - PLAYER_Y, tx - px)
+        // 링 중심에서 360° 어느 방향으로든 쏜다
+        const ang = Math.atan2(ty - CY, tx - CX) || 0
         if (gunElRef.current) gunElRef.current.style.transform = `translate(-50%,-50%) rotate(${ang + Math.PI / 2}rad)`
 
         /** 발사체 하나 생성 */
@@ -442,8 +477,8 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
           const b = arr.find(x => !x.active)
           if (!b) return
           b.active = true
-          b.x = px + Math.cos(a) * 46
-          b.y = PLAYER_Y - 26 + Math.sin(a) * 46
+          b.x = CX + Math.cos(a) * 46
+          b.y = CY + Math.sin(a) * 46
           b.vx = Math.cos(a) * cfg.speed
           b.vy = Math.sin(a) * cfg.speed
           b.dmg = cfg.dmg ?? 0
@@ -504,8 +539,8 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
             for (let i = 0; i < segs.length; i++) {
               const s = segs[i]
               if (!s.alive || b.hit.has(s.id)) continue
-              const p = pathPos(travelRef.current - i * SEG_SPACING)
-              if (p.y < ENGAGE_Y) continue          // 아직 화면 위 밖 — 사거리 밖
+              const p = posRef.current[i]
+              if (!p) continue
               const dx = b.x - p.x
               const dy = b.y - p.y
               if (dx * dx + dy * dy > reach * reach) continue
@@ -516,8 +551,8 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
               if (b.splash > 0) {
                 for (let j = 0; j < segs.length; j++) {
                   if (j === i || !segs[j].alive) continue
-                  const q = pathPos(travelRef.current - j * SEG_SPACING)
-                  if (q.y < ENGAGE_Y) continue
+                  const q = posRef.current[j]
+                  if (!q) continue
                   const qx = q.x - p.x, qy = q.y - p.y
                   if (qx * qx + qy * qy <= b.splash * b.splash) {
                     targets.push({ idx: j, dmg: Math.round(b.dmg * 0.6), pos: q })
@@ -540,7 +575,7 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
                   const segEl = segElsRef.current[tg.idx]
                   if (segEl) segEl.style.display = 'none'
                   playFx(burstElsRef, burstCursor, BURST_POOL, tg.pos.x, tg.pos.y, 'burstpop 420ms ease-out forwards')
-                  travelRef.current = Math.max(0, travelRef.current - PUSHBACK)
+                  headTRef.current = Math.max(0, headTRef.current - PUSHBACK_RAD)
                 } else {
                   const hpEl = segHpElsRef.current[tg.idx]
                   if (hpEl) hpEl.textContent = String(seg.hp)
@@ -592,20 +627,24 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
             setPhase('finished')
             return
           }
-          if (chestHit) openChestQuiz(chestHit)
+          if (chestHit) openChestQuizRef.current(chestHit)
         }
 
-        // 6) 선두가 위험선을 넘으면 방어막 손실
-        if (headY >= DANGER_Y) {
-          travelRef.current = Math.max(0, travelRef.current - 460)
+        // 6) 머리가 위험 반경 안으로 들어오면 방어막 손실 + 몬스터를 밀어낸다
+        if (spiralR(headTRef.current) <= DANGER_R) {
+          headTRef.current = Math.max(0, headTRef.current - KNOCKBACK_RAD)
           setHp(h => Math.max(0, h - 1))
         }
+      }
+      } catch (err) {
+        // 한 프레임의 예외로 게임이 정지하지 않도록 방어 (원인은 콘솔로 노출)
+        console.error('[defense] frame error', err)
       }
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [started, phase, openChestQuiz])
+  }, [started, phase])
 
   // HP 소진 → 종료
   useEffect(() => {
@@ -642,10 +681,10 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
   }[id])
 
   const segSprite = (kind: Segment['kind']) => ({
-    head: '/game7/seg_head.png',
-    elite: '/game7/seg_node_elite.png',
-    tough: '/game7/seg_node_tough.png',
-    normal: '/game7/seg_node.png',
+    head: '/game7/paper_head.png',
+    elite: '/game7/paper_seg_elite.png',
+    tough: '/game7/paper_seg_tough.png',
+    normal: '/game7/paper_seg.png',
   }[kind])
 
   const segPct = (SEG_W / VW) * 100
@@ -707,14 +746,19 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
           className="relative w-full cursor-crosshair select-none overflow-hidden rounded-2xl shadow-2xl"
           style={{
             aspectRatio: `${VW}/${VH}`,
-            backgroundImage: 'url(/game7/defense_arena.png)',
+            backgroundImage: 'url(/game7/school_bg.png)',
             backgroundSize: 'cover',
             touchAction: 'none',
           }}
         >
-          {/* 위험선 */}
-          <div className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed border-rose-400/60"
-               style={{ top: `${(DANGER_Y / VH) * 100}%` }} />
+          {/* 위험 반경 — 링이 이 안까지 조여들면 방어막을 잃는다 */}
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[50%] border-2 border-dashed border-rose-400/50"
+            style={{
+              width: `${(DANGER_R * RING_ASPECT * 2 / VW) * 100}%`,
+              height: `${(DANGER_R * 2 / VH) * 100}%`,
+            }}
+          />
 
           {/* 오개념 군체 — 위치는 루프에서 DOM 직접 갱신 */}
           {segsRef.current.map((seg, i) => (
@@ -725,7 +769,13 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
               style={{ width: `${segPct}%`, zIndex: 40 - i }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={segSprite(seg.kind)} alt="" className="w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]" draggable={false} />
+              <img
+                ref={el => { segImgElsRef.current[i] = el }}
+                src={segSprite(seg.kind)}
+                alt=""
+                className="w-full drop-shadow-[0_2px_5px_rgba(0,0,0,0.4)]"
+                draggable={false}
+              />
               {/* HP — 마디 스프라이트 밝기가 제각각이므로 어두운 pill 을 깔아 대비를 고정한다 */}
               <span className="absolute inset-0 flex items-center justify-center">
                 <span
@@ -790,7 +840,7 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
             <div
               ref={playerElRef}
               className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ left: '50%', top: `${(PLAYER_Y / VH) * 100}%`, width: '7.5%', zIndex: 55 }}
+              style={{ left: '50%', top: '50%', width: '7.5%', zIndex: 55 }}
             >
               {/* 조준 방향으로 회전하는 연필(총구) */}
               <div ref={gunElRef} className="absolute left-1/2 w-[34%]" style={{ top: '-14%', transform: 'translate(-50%,-50%)' }}>
@@ -868,7 +918,7 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-black/70 backdrop-blur-[2px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={cleared ? '/game7/shield_tower.png' : '/game7/seg_head.png'}
+                src={cleared ? '/game7/shield_tower.png' : '/game7/paper_head.png'}
                 alt=""
                 className="w-20 animate-bounce"
                 draggable={false}

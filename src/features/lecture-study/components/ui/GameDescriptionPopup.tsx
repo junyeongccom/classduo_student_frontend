@@ -497,7 +497,7 @@ function DefensePreview({ t }: { t: ReturnType<typeof useTranslations> }) {
   return (
     <div className="space-y-2">
       <div className="relative overflow-hidden rounded-xl">
-        <Image src="/game7/defense_arena.png" alt="Defense scene" width={1344} height={768} className="w-full" style={{ display: 'block' }} />
+        <Image src="/game7/school_bg.png" alt="Defense scene" width={1344} height={768} className="w-full" style={{ display: 'block' }} />
         <Image src="/game7/germ_small.png" alt="" width={44} height={52} className="absolute left-[14%] top-[40%] w-[8%]" />
         <Image src="/game7/germ_big.png" alt="" width={52} height={64} className="absolute left-[36%] top-[46%] w-[10%]" />
         <Image src="/game7/shield_tower.png" alt="" width={60} height={54} className="absolute bottom-[14%] right-[4%] w-[12%]" />
