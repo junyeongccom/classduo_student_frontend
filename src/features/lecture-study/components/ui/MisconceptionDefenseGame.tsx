@@ -1,19 +1,24 @@
 /**
  * @file MisconceptionDefenseGame.tsx
- * @description 오개념 방어전 — 마디별 HP를 가진 오개념 군체를 자동 사격으로 격파하고, 보물상자 마디에서
- *              퀴즈를 맞혀 무기를 업그레이드하는 디펜스 학습 게임 (세포특공대 방식)
+ * @description 오개념 방어전 — 연필을 날려 마디별 HP를 가진 오개념 군체를 격파하고, 보물상자 마디에서
+ *              퀴즈를 맞혀 학습도구 무기를 강화·획득하는 슈팅 학습 게임 (세포특공대 방식)
  * @module features/lecture-study/components/ui
- * @dependencies next-intl, /public/game7 에셋(히어로=서비스 캐릭터)
+ * @dependencies next-intl, /public/game7 에셋(히어로=서비스 캐릭터, 무기=학용품)
  *
- * 학습 접목: 무기 강화는 "보물상자 마디 격파 → 용어 퀴즈 정답"으로만 얻는다.
- * 뒤쪽 마디 HP가 급격히 커지도록 설계해, 퀴즈를 맞혀 업그레이드하지 않으면 클리어가 불가능하다
- * → 게임을 이기려면 반드시 용어를 학습해야 한다.
+ * 학습 접목:
+ * 1) 무기는 전부 학습도구 — 기본탄 연필, 보조무기 지우개 폭탄·형광펜 빔·자 부메랑.
+ * 2) 강화는 "보물상자 마디 격파 → 용어 퀴즈 정답"으로만 얻는다. 뒤쪽 마디 HP가 급격히 커지므로
+ *    퀴즈를 맞혀 강화하지 않으면 클리어가 불가능하다 → 이기려면 반드시 용어를 학습해야 한다.
+ *
+ * 구현 구조: 모든 좌표 계산은 가상 좌표계(VW×VH)에서 하고, 렌더는 % 로 변환해 DOM 을 직접 갱신한다.
+ * 탄·데미지숫자·이펙트는 고정 크기 풀(pool)로 미리 렌더해두고 활성/비활성만 토글하므로 프레임마다
+ * 리렌더가 발생하지 않는다. React state 는 HUD·페이즈 전환용으로만 쓴다.
  */
 
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { X, Heart, Sparkles } from 'lucide-react'
+import { X, Heart, Sparkles, Crosshair } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 interface GameWord {
@@ -26,43 +31,130 @@ interface MisconceptionDefenseGameProps {
   onClose: (score: number | null) => void
 }
 
-/** 마디 총 개수 */
+/* ── 가상 좌표계 ── */
+const VW = 1344
+const VH = 768
+/** 플레이어 y 위치 */
+const PLAYER_Y = 656
+/** 체인 사행 진폭 / 파장 (경로 파라미터 u 기준) */
+const CHAIN_AMP = 420
+const CHAIN_WAVE = 340
+/** 경로 진행 u 대비 실제 y 하강 비율 — 낮을수록 체인이 화면에 오래 머문다 */
+const Y_SCALE = 0.42
+/** 마디 간격 (u) */
+const SEG_SPACING = 104
+/** 마디 충돌 반경 */
+const SEG_R = 32
+/** 마디 렌더 폭 (가상 단위) */
+const SEG_W = 78
 const TOTAL_SEGMENTS = 22
-/** 한 줄에 배치할 마디 수 (지그재그) */
-const PER_ROW = 6
-/** 줄 간격 (보드 높이 %) */
-const ROW_H = 13
-/** 군체가 1초에 전진하는 거리 (%) */
-const ADVANCE_PER_SEC = 1.25
-/** 마디 하나를 격파했을 때 뒤로 밀리는 거리 (%) */
-const PUSHBACK = 4.6
-/** 군체 선두가 이 y(%)를 넘으면 플레이어 피격 */
-const DANGER_Y = 76
+/** 선두가 이 y 를 넘으면 방어막 손실 */
+const DANGER_Y = 588
+/** 초당 전진 거리 (u) — 화면상 하강은 × Y_SCALE */
+const ADVANCE_PER_SEC = 64
+/** 마디 하나 격파 시 뒤로 밀리는 거리 (u) */
+const PUSHBACK = 180
+/** 체인이 화면 위 밖에 있는 동안은 피격되지 않는다 (y 최소선) */
+const ENGAGE_Y = 14
 const START_HP = 3
+/** 연필 기본 속도 (가상 단위/초) */
+const PENCIL_SPEED = 660
+
+/** 풀 크기 */
+const BULLET_POOL = 64
+const SPECIAL_POOL = 14
+const DMG_POOL = 24
+const SPARK_POOL = 12
+const BURST_POOL = 6
+
+type WeaponId = 'eraser' | 'highlighter' | 'ruler'
+
+/** 보조 무기(학습도구) 스펙 — 레벨업하면 피해량↑ 쿨다운↓ */
+const WEAPON_SPEC: Record<WeaponId, {
+  cd: number; dmg: number; speed: number; r: number; splash: number; pierce: number; w: number; sprite: string
+}> = {
+  // 지우개 폭탄 — 느리지만 광역으로 오개념을 "지운다"
+  eraser: { cd: 3.4, dmg: 58, speed: 300, r: 1.9, splash: 132, pierce: 0, w: 5.6, sprite: '/game7/wpn_eraser.png' },
+  // 형광펜 빔 — 초고속 관통, 지나가는 마디 전부에 밑줄을 긋는다
+  highlighter: { cd: 4.6, dmg: 36, speed: 1560, r: 1.3, splash: 0, pierce: 99, w: 3.4, sprite: '/game7/wpn_highlighter.png' },
+  // 자 부메랑 — 넓은 히트박스로 여러 마디를 훑는다
+  ruler: { cd: 2.8, dmg: 40, speed: 540, r: 2.2, splash: 0, pierce: 3, w: 5.2, sprite: '/game7/wpn_ruler.png' },
+}
 
 interface Segment {
   id: number
   hp: number
   maxHp: number
-  tough: boolean
-  chest: boolean
+  kind: 'head' | 'elite' | 'tough' | 'normal'
+  /** 보물상자 등급 (없으면 null) */
+  chest: 'blue' | 'purple' | null
+  alive: boolean
 }
 
+interface Shot {
+  active: boolean
+  x: number
+  y: number
+  vx: number
+  vy: number
+  dmg: number
+  crit: boolean
+  pierce: number
+  /** 히트박스 배수 */
+  r: number
+  /** 광역 반경 (0 = 단일 타격) */
+  splash: number
+  /** 이미 명중한 마디 (관통 시 중복 타격 방지) */
+  hit: Set<number>
+  /** 보조무기 종류 (연필은 null) */
+  kind: WeaponId | null
+}
+
+type UpgradeId =
+  | 'pencilCount' | 'pencilDamage' | 'pencilSpeed' | 'pencilRate' | 'pencilPierce' | 'pencilCrit'
+  | 'wpnEraser' | 'wpnHighlighter' | 'wpnRuler'
+
 interface Upgrade {
-  id: 'rapid' | 'power' | 'speed'
+  id: UpgradeId
   icon: string
+  tier: 'common' | 'rare'
+  /** 보조무기 획득 카드면 해당 무기 id */
+  weapon?: WeaponId
 }
 
 const UPGRADES: Upgrade[] = [
-  { id: 'rapid', icon: '/game7/upg_rapid.png' },
-  { id: 'power', icon: '/game7/upg_power.png' },
-  { id: 'speed', icon: '/game7/upg_speed.png' },
+  // 연필 강화 (일반)
+  { id: 'pencilCount', icon: '/game7/upg_pencil_count.png', tier: 'common' },
+  { id: 'pencilDamage', icon: '/game7/upg_pencil_damage.png', tier: 'common' },
+  { id: 'pencilSpeed', icon: '/game7/upg_pencil_speed.png', tier: 'common' },
+  { id: 'pencilRate', icon: '/game7/upg_pencil_rate.png', tier: 'common' },
+  // 연필 강화 (희귀)
+  { id: 'pencilPierce', icon: '/game7/upg_pencil_pierce.png', tier: 'rare' },
+  { id: 'pencilCrit', icon: '/game7/upg_crit.png', tier: 'rare' },
+  // 학습도구 보조무기 (희귀)
+  { id: 'wpnEraser', icon: '/game7/wpn_eraser.png', tier: 'rare', weapon: 'eraser' },
+  { id: 'wpnHighlighter', icon: '/game7/wpn_highlighter.png', tier: 'rare', weapon: 'highlighter' },
+  { id: 'wpnRuler', icon: '/game7/wpn_ruler.png', tier: 'rare', weapon: 'ruler' },
 ]
 
 interface QuizSet {
   answer: GameWord
   options: GameWord[]
+  /** 이 퀴즈를 띄운 상자 등급 — 희귀 상자는 희귀 강화만 제시 */
+  tier: 'blue' | 'purple'
 }
+
+interface Stats {
+  damage: number
+  fireRate: number
+  bullets: number
+  pierce: number
+  speedMul: number
+  crit: number
+}
+
+const BASE_STATS: Stats = { damage: 9, fireRate: 1.1, bullets: 1, pierce: 0, speedMul: 1, crit: 0 }
+const BASE_WEAPONS: Record<WeaponId, number> = { eraser: 0, highlighter: 0, ruler: 0 }
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr]
@@ -71,6 +163,11 @@ function shuffle<T>(arr: T[]): T[] {
     ;[a[i], a[j]] = [a[j], a[i]]
   }
   return a
+}
+
+/** 체인 경로 — 진행도 u 에 대한 좌표 (위에서 아래로 사행) */
+function pathPos(u: number) {
+  return { x: VW / 2 + CHAIN_AMP * Math.sin(u / CHAIN_WAVE), y: u * Y_SCALE }
 }
 
 export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefenseGameProps) {
@@ -90,46 +187,89 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
   const [hp, setHp] = useState(START_HP)
   const [score, setScore] = useState(0)
   const [killed, setKilled] = useState(0)
+  const [left, setLeft] = useState(TOTAL_SEGMENTS)
   const [phase, setPhase] = useState<'battle' | 'quiz' | 'reward' | 'finished'>('battle')
   const [quiz, setQuiz] = useState<QuizSet | null>(null)
   const [quizResult, setQuizResult] = useState<'correct' | 'wrong' | null>(null)
   const [rewardChoices, setRewardChoices] = useState<Upgrade[]>([])
+  const [stats, setStats] = useState<Stats>(BASE_STATS)
+  const [weapons, setWeapons] = useState<Record<WeaponId, number>>(BASE_WEAPONS)
   const [cleared, setCleared] = useState(false)
 
-  /** 무기 스탯 — 업그레이드로만 성장 */
-  const [stats, setStats] = useState({ damage: 12, fireRate: 1.6, bulletSpeed: 1 })
   const statsRef = useRef(stats)
+  const weaponsRef = useRef(weapons)
   useEffect(() => { statsRef.current = stats }, [stats])
+  useEffect(() => { weaponsRef.current = weapons }, [weapons])
 
-  /** 마디 배열·전진 거리는 ref 가 권위 (프레임 갱신은 DOM 직접) */
+  /* ── 게임 상태 (ref 가 권위) ── */
   const segsRef = useRef<Segment[]>([])
-  const advanceRef = useRef(0)
-  const [, forceRender] = useState(0)
-  const chainElRef = useRef<HTMLDivElement>(null)
-  const segElsRef = useRef<Map<number, HTMLElement>>(new Map())
-  const lastShotRef = useRef(0)
-  const lastFrameRef = useRef(0)
+  const travelRef = useRef(120)
+  const playerXRef = useRef(VW / 2)
+  /** 조준 지점 — null 이면 선두 마디를 자동 조준 */
+  const aimRef = useRef<{ x: number; y: number } | null>(null)
+  const shotsRef = useRef<Shot[]>([])
+  const specialsRef = useRef<Shot[]>([])
+  const wpnCdRef = useRef<Record<WeaponId, number>>({ eraser: 0, highlighter: 0, ruler: 0 })
   const pausedRef = useRef(false)
-  const [bullets, setBullets] = useState<{ id: number; born: number; dur: number }[]>([])
-  const idRef = useRef(0)
+  const lastFrameRef = useRef(0)
+  const lastShotRef = useRef(0)
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  /* ── DOM 참조 ── */
+  const boardRef = useRef<HTMLDivElement>(null)
+  const segElsRef = useRef<(HTMLDivElement | null)[]>([])
+  const segHpElsRef = useRef<(HTMLSpanElement | null)[]>([])
+  const bulletElsRef = useRef<(HTMLDivElement | null)[]>([])
+  const specialElsRef = useRef<(HTMLDivElement | null)[]>([])
+  const dmgElsRef = useRef<(HTMLDivElement | null)[]>([])
+  const sparkElsRef = useRef<(HTMLDivElement | null)[]>([])
+  const burstElsRef = useRef<(HTMLDivElement | null)[]>([])
+  const playerElRef = useRef<HTMLDivElement>(null)
+  const gunElRef = useRef<HTMLDivElement>(null)
+  const dmgCursor = useRef(0)
+  const sparkCursor = useRef(0)
+  const burstCursor = useRef(0)
 
   const clearTimers = () => {
     timersRef.current.forEach(clearTimeout)
     timersRef.current = []
   }
 
-  /** 마디 생성 — 뒤로 갈수록 HP 급증, 4번째마다 보물상자 */
+  /** 마디 생성 — 뒤로 갈수록 HP 급증, 4번째마다 보물상자(8번째는 희귀) */
   const buildSegments = useCallback((): Segment[] => {
     return Array.from({ length: TOTAL_SEGMENTS }, (_, i) => {
-      const hp = Math.round(24 * Math.pow(1.19, i))   // 24 → 약 1,000
-      const tough = i >= TOTAL_SEGMENTS * 0.6
-      return { id: i + 1, hp, maxHp: hp, tough, chest: i > 0 && i % 4 === 3 }
+      const hp = Math.round(18 * Math.pow(1.15, i))   // 18 → 약 345 (총합 ≈ 2,240)
+      const kind: Segment['kind'] =
+        i === 0 ? 'head' : i >= TOTAL_SEGMENTS * 0.75 ? 'elite' : i >= TOTAL_SEGMENTS * 0.4 ? 'tough' : 'normal'
+      const chest: Segment['chest'] = i > 0 && i % 4 === 3 ? (i % 8 === 7 ? 'purple' : 'blue') : null
+      return { id: i, hp, maxHp: hp, kind, chest, alive: true }
     })
   }, [])
 
-  useEffect(() => {
+  const newShot = (): Shot => ({
+    active: false, x: 0, y: 0, vx: 0, vy: 0, dmg: 0, crit: false,
+    pierce: 0, r: 1, splash: 0, hit: new Set<number>(), kind: null,
+  })
+
+  const resetWorld = useCallback(() => {
     segsRef.current = buildSegments()
+    travelRef.current = 120
+    playerXRef.current = VW / 2
+    aimRef.current = null
+    shotsRef.current = Array.from({ length: BULLET_POOL }, newShot)
+    specialsRef.current = Array.from({ length: SPECIAL_POOL }, newShot)
+    wpnCdRef.current = { eraser: 0, highlighter: 0, ruler: 0 }
+    bulletElsRef.current.forEach(el => { if (el) el.style.display = 'none' })
+    specialElsRef.current.forEach(el => { if (el) el.style.display = 'none' })
+    segElsRef.current.forEach(el => { if (el) el.style.display = '' })
+    segsRef.current.forEach((s, i) => {
+      const hpEl = segHpElsRef.current[i]
+      if (hpEl) hpEl.textContent = String(s.hp)
+    })
+  }, [buildSegments])
+
+  useEffect(() => {
+    resetWorld()
     return clearTimers
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -140,16 +280,58 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
     lastShotRef.current = performance.now()
   }, [])
 
-  /** 보물상자 격파 → 퀴즈 출제 (정답만 업그레이드 획득) */
-  const openChestQuiz = useCallback(() => {
+  /* ── 이펙트 재생 (풀 재사용 — 애니메이션 재시작 트릭) ── */
+  const playFx = (
+    refs: React.MutableRefObject<(HTMLDivElement | null)[]>,
+    cursor: React.MutableRefObject<number>,
+    size: number,
+    x: number,
+    y: number,
+    anim: string,
+    opts?: { text?: string; color?: string; scale?: number },
+  ) => {
+    const idx = cursor.current % size
+    cursor.current += 1
+    const el = refs.current[idx]
+    if (!el) return
+    el.style.left = `${(x / VW) * 100}%`
+    el.style.top = `${(y / VH) * 100}%`
+    el.style.display = 'block'
+    if (opts?.text !== undefined) el.textContent = opts.text
+    if (opts?.color) el.style.color = opts.color
+    if (opts?.scale) el.style.width = `${opts.scale}%`
+    el.style.animation = 'none'
+    void el.offsetWidth
+    el.style.animation = anim
+  }
+
+  /** 전투 일시정지 시 날아가던 발사체를 모두 회수한다 (화면에 정지 잔상이 남지 않게) */
+  const clearShots = useCallback(() => {
+    for (const arr of [shotsRef.current, specialsRef.current]) arr.forEach(b => { b.active = false })
+    bulletElsRef.current.forEach(el => { if (el) el.style.display = 'none' })
+    specialElsRef.current.forEach(el => { if (el) el.style.display = 'none' })
+  }, [])
+
+  /** 보물상자 격파 → 퀴즈 출제 (정답만 강화 획득) */
+  const openChestQuiz = useCallback((tier: 'blue' | 'purple') => {
     if (pool.length < 2) return
     const answer = pool[Math.floor(Math.random() * pool.length)]
     const distractors = shuffle(pool.filter(w => w.keyword !== answer.keyword)).slice(0, 3)
     pausedRef.current = true
-    setQuiz({ answer, options: shuffle([answer, ...distractors]) })
+    clearShots()
+    setQuiz({ answer, options: shuffle([answer, ...distractors]), tier })
     setQuizResult(null)
     setPhase('quiz')
-  }, [pool])
+  }, [pool, clearShots])
+
+  const resumeBattle = useCallback(() => {
+    setQuiz(null)
+    setRewardChoices([])
+    setPhase('battle')
+    pausedRef.current = false
+    lastFrameRef.current = performance.now()
+    lastShotRef.current = performance.now()
+  }, [])
 
   const answerQuiz = useCallback((picked: GameWord) => {
     if (!quiz || quizResult) return
@@ -157,91 +339,265 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
     setQuizResult(ok ? 'correct' : 'wrong')
     if (ok) {
       setScore(s => s + 150)
+      const tier = quiz.tier
       const timer = setTimeout(() => {
-        setRewardChoices(shuffle(UPGRADES))
+        // 희귀 상자 → 희귀 강화(관통·치명타·학습도구 무기) 3택, 일반 상자 → 전체에서 3택
+        const src = tier === 'purple' ? UPGRADES.filter(u => u.tier === 'rare') : UPGRADES
+        setRewardChoices(shuffle(src).slice(0, 3))
         setPhase('reward')
-      }, 900)
+      }, 800)
       timersRef.current.push(timer)
     } else {
-      // 오답 — 업그레이드 없이 전투 재개 (무기가 안 세지므로 뒤 마디에서 막힌다)
-      const timer = setTimeout(() => {
-        setQuiz(null)
-        setPhase('battle')
-        pausedRef.current = false
-        lastFrameRef.current = performance.now()
-      }, 1500)
+      const timer = setTimeout(resumeBattle, 1500)
       timersRef.current.push(timer)
     }
-  }, [quiz, quizResult])
+  }, [quiz, quizResult, resumeBattle])
 
   const pickUpgrade = useCallback((u: Upgrade) => {
-    setStats(prev => {
-      if (u.id === 'rapid') return { ...prev, fireRate: prev.fireRate + 0.9 }
-      if (u.id === 'power') return { ...prev, damage: Math.round(prev.damage * 1.8) }
-      return { ...prev, bulletSpeed: prev.bulletSpeed * 1.45 }
-    })
-    setQuiz(null)
-    setRewardChoices([])
-    setPhase('battle')
-    pausedRef.current = false
-    lastFrameRef.current = performance.now()
+    if (u.weapon) {
+      const w = u.weapon
+      setWeapons(prev => ({ ...prev, [w]: prev[w] + 1 }))
+    } else {
+      setStats(prev => {
+        switch (u.id) {
+          case 'pencilDamage': return { ...prev, damage: Math.round(prev.damage * 1.7) }
+          case 'pencilRate': return { ...prev, fireRate: Math.round((prev.fireRate + 0.7) * 10) / 10 }
+          case 'pencilSpeed': return { ...prev, speedMul: Math.round(prev.speedMul * 1.35 * 100) / 100 }
+          case 'pencilCount': return { ...prev, bullets: prev.bullets + 1 }
+          case 'pencilPierce': return { ...prev, pierce: prev.pierce + 1 }
+          case 'pencilCrit': return { ...prev, crit: Math.min(0.75, prev.crit + 0.2) }
+          default: return prev
+        }
+      })
+    }
+    resumeBattle()
+  }, [resumeBattle])
+
+  /* ── 포인터 조준 ── */
+  const handlePointer = useCallback((e: React.PointerEvent) => {
+    const r = boardRef.current?.getBoundingClientRect()
+    if (!r || r.width === 0) return
+    aimRef.current = {
+      x: ((e.clientX - r.left) / r.width) * VW,
+      y: ((e.clientY - r.top) / r.height) * VH,
+    }
   }, [])
 
-  // ── 메인 루프: 자동 사격 + 마디 피격 + 군체 전진 ──
+  /* ── 메인 루프 ── */
   useEffect(() => {
     if (!started || phase === 'finished') return
     let raf = 0
+
     const loop = () => {
       const now = performance.now()
       const dt = Math.min(0.05, (now - lastFrameRef.current) / 1000)
       lastFrameRef.current = now
 
       if (!pausedRef.current) {
-        // 1) 전진
-        advanceRef.current += ADVANCE_PER_SEC * dt
-        if (chainElRef.current) {
-          chainElRef.current.style.transform = `translateY(${advanceRef.current}%)`
+        const st = statsRef.current
+        const wpn = weaponsRef.current
+        const segs = segsRef.current
+
+        // 1) 체인 전진 + 마디 위치 갱신
+        travelRef.current += ADVANCE_PER_SEC * dt
+        let headY = -999
+        for (let i = 0; i < segs.length; i++) {
+          const s = segs[i]
+          if (!s.alive) continue
+          const u = travelRef.current - i * SEG_SPACING
+          const { x, y } = pathPos(u)
+          if (headY === -999) headY = y
+          const el = segElsRef.current[i]
+          if (el) {
+            el.style.left = `${(x / VW) * 100}%`
+            el.style.top = `${(y / VH) * 100}%`
+          }
         }
 
-        // 2) 자동 사격 — 선두 마디에 데미지
-        const { damage, fireRate, bulletSpeed } = statsRef.current
-        if (now - lastShotRef.current >= 1000 / fireRate) {
+        // 2) 조준 방향 — 포인터가 없으면 선두 마디 자동 조준
+        const firstIdx = segs.findIndex(s => s.alive)
+        let tx: number, ty: number
+        if (aimRef.current) {
+          tx = aimRef.current.x; ty = aimRef.current.y
+        } else if (firstIdx >= 0) {
+          const p = pathPos(travelRef.current - firstIdx * SEG_SPACING)
+          tx = p.x; ty = p.y
+        } else {
+          tx = VW / 2; ty = 0
+        }
+        // 플레이어는 조준 x 를 부드럽게 추종 (이동감 + 조준각 확보)
+        const wantX = Math.max(180, Math.min(VW - 180, VW / 2 + (tx - VW / 2) * 0.4))
+        playerXRef.current += (wantX - playerXRef.current) * Math.min(1, dt * 6)
+        const px = playerXRef.current
+        if (playerElRef.current) playerElRef.current.style.left = `${(px / VW) * 100}%`
+
+        // 위쪽(적)만 겨눈다 — 아래로는 쏘지 않는다
+        let ang = Math.atan2(Math.min(ty, PLAYER_Y - 60) - PLAYER_Y, tx - px)
+        if (gunElRef.current) gunElRef.current.style.transform = `translate(-50%,-50%) rotate(${ang + Math.PI / 2}rad)`
+
+        /** 발사체 하나 생성 */
+        const spawn = (
+          arr: Shot[], a: number, cfg: Partial<Shot> & { speed: number },
+        ) => {
+          const b = arr.find(x => !x.active)
+          if (!b) return
+          b.active = true
+          b.x = px + Math.cos(a) * 46
+          b.y = PLAYER_Y - 26 + Math.sin(a) * 46
+          b.vx = Math.cos(a) * cfg.speed
+          b.vy = Math.sin(a) * cfg.speed
+          b.dmg = cfg.dmg ?? 0
+          b.crit = cfg.crit ?? false
+          b.pierce = cfg.pierce ?? 0
+          b.r = cfg.r ?? 1
+          b.splash = cfg.splash ?? 0
+          b.kind = cfg.kind ?? null
+          b.hit.clear()
+        }
+
+        // 3) 연필 발사
+        if (now - lastShotRef.current >= 1000 / st.fireRate) {
           lastShotRef.current = now
-          idRef.current += 1
-          const bid = idRef.current
-          const dur = 420 / bulletSpeed
-          setBullets(prev => [...prev.slice(-7), { id: bid, born: now, dur }])
-          const rm = setTimeout(() => setBullets(prev => prev.filter(b => b.id !== bid)), dur + 60)
-          timersRef.current.push(rm)
-
-          const hit = setTimeout(() => {
-            const head = segsRef.current[0]
-            if (!head || pausedRef.current) return
-            head.hp -= damage
-            if (head.hp <= 0) {
-              const wasChest = head.chest
-              segsRef.current = segsRef.current.slice(1)
-              segElsRef.current.delete(head.id)
-              advanceRef.current = Math.max(0, advanceRef.current - PUSHBACK)
-              setScore(s => s + 20)
-              setKilled(k => k + 1)
-              if (segsRef.current.length === 0) {
-                setCleared(true)
-                setPhase('finished')
-              } else if (wasChest) {
-                openChestQuiz()
-              }
-            }
-            forceRender(v => v + 1)
-          }, dur)
-          timersRef.current.push(hit)
+          const n = st.bullets
+          for (let k = 0; k < n; k++) {
+            const crit = Math.random() < st.crit
+            spawn(shotsRef.current, ang + (k - (n - 1) / 2) * 0.13, {
+              speed: PENCIL_SPEED * st.speedMul,
+              dmg: crit ? Math.round(st.damage * 2.5) : st.damage,
+              crit, pierce: st.pierce, r: 1,
+            })
+          }
         }
 
-        // 3) 선두가 위험선을 넘으면 피격
-        const headRow = 0
-        const headY = 6 + headRow * ROW_H + advanceRef.current
+        // 4) 보조 무기(학습도구) 자동 발사
+        for (const id of Object.keys(WEAPON_SPEC) as WeaponId[]) {
+          const lvl = wpn[id]
+          if (lvl <= 0) continue
+          const sp = WEAPON_SPEC[id]
+          const cd = sp.cd * Math.max(0.5, 1 - 0.12 * (lvl - 1)) * 1000
+          if (now - wpnCdRef.current[id] < cd) continue
+          wpnCdRef.current[id] = now
+          spawn(specialsRef.current, ang, {
+            speed: sp.speed, dmg: Math.round(sp.dmg * lvl), pierce: sp.pierce,
+            r: sp.r, splash: sp.splash, kind: id,
+          })
+        }
+
+        // 5) 발사체 이동 + 충돌
+        let deaths = 0
+        let gained = 0
+        let chestHit: 'blue' | 'purple' | null = null
+
+        const step = (arr: Shot[], els: React.MutableRefObject<(HTMLDivElement | null)[]>) => {
+          for (let bi = 0; bi < arr.length; bi++) {
+            const b = arr[bi]
+            const el = els.current[bi]
+            if (!b.active) continue
+            b.x += b.vx * dt
+            b.y += b.vy * dt
+            if (b.x < -60 || b.x > VW + 60 || b.y < -12 || b.y > VH + 60) {
+              b.active = false
+              if (el) el.style.display = 'none'
+              continue
+            }
+            const reach = SEG_R * b.r
+            for (let i = 0; i < segs.length; i++) {
+              const s = segs[i]
+              if (!s.alive || b.hit.has(s.id)) continue
+              const p = pathPos(travelRef.current - i * SEG_SPACING)
+              if (p.y < ENGAGE_Y) continue          // 아직 화면 위 밖 — 사거리 밖
+              const dx = b.x - p.x
+              const dy = b.y - p.y
+              if (dx * dx + dy * dy > reach * reach) continue
+
+              // 명중 — 광역이면 반경 내 다른 마디에도 60% 피해
+              const targets: { idx: number; dmg: number; pos: { x: number; y: number } }[] =
+                [{ idx: i, dmg: b.dmg, pos: p }]
+              if (b.splash > 0) {
+                for (let j = 0; j < segs.length; j++) {
+                  if (j === i || !segs[j].alive) continue
+                  const q = pathPos(travelRef.current - j * SEG_SPACING)
+                  if (q.y < ENGAGE_Y) continue
+                  const qx = q.x - p.x, qy = q.y - p.y
+                  if (qx * qx + qy * qy <= b.splash * b.splash) {
+                    targets.push({ idx: j, dmg: Math.round(b.dmg * 0.6), pos: q })
+                  }
+                }
+              }
+
+              for (const tg of targets) {
+                const seg = segs[tg.idx]
+                b.hit.add(seg.id)
+                seg.hp -= tg.dmg
+                playFx(dmgElsRef, dmgCursor, DMG_POOL, tg.pos.x + 10, tg.pos.y - 20,
+                       `dmgfloat ${b.crit ? 820 : 640}ms ease-out forwards`,
+                       { text: String(tg.dmg), color: b.crit ? '#fde047' : b.kind ? '#7dd3fc' : '#ffffff' })
+                if (seg.hp <= 0) {
+                  seg.alive = false
+                  deaths += 1
+                  gained += 20
+                  if (seg.chest) chestHit = seg.chest
+                  const segEl = segElsRef.current[tg.idx]
+                  if (segEl) segEl.style.display = 'none'
+                  playFx(burstElsRef, burstCursor, BURST_POOL, tg.pos.x, tg.pos.y, 'burstpop 420ms ease-out forwards')
+                  travelRef.current = Math.max(0, travelRef.current - PUSHBACK)
+                } else {
+                  const hpEl = segHpElsRef.current[tg.idx]
+                  if (hpEl) hpEl.textContent = String(seg.hp)
+                }
+              }
+              playFx(sparkElsRef, sparkCursor, SPARK_POOL, b.x, b.y,
+                     'sparkpop 260ms ease-out forwards', { scale: b.splash > 0 ? 9 : 3.4 })
+
+              if (b.pierce > 0) b.pierce -= 1
+              else {
+                b.active = false
+                if (el) el.style.display = 'none'
+              }
+              break
+            }
+            if (b.active && el) {
+              if (el.style.display === 'none') {
+                el.style.display = 'block'
+                // 보조무기 풀은 스프라이트 3종을 모두 품고 있다 — 해당 종류만 보인다
+                if (b.kind) {
+                  el.style.width = `${b.kind ? WEAPON_SPEC[b.kind].w : 5}%`
+                  const imgs = el.querySelectorAll<HTMLImageElement>('img[data-w]')
+                  imgs.forEach(img => { img.style.display = img.dataset.w === b.kind ? 'block' : 'none' })
+                }
+              }
+              el.style.left = `${(b.x / VW) * 100}%`
+              el.style.top = `${(b.y / VH) * 100}%`
+              const rot = b.kind === 'ruler'
+                ? (now / 90) % (Math.PI * 2)                       // 자는 회전
+                : Math.atan2(b.vy, b.vx) + Math.PI / 2
+              el.style.transform = `translate(-50%,-50%) rotate(${rot}rad)`
+              el.style.filter = b.crit ? 'saturate(1.7) brightness(1.2) drop-shadow(0 0 5px #fde047)' : ''
+            }
+          }
+        }
+
+        step(shotsRef.current, bulletElsRef)
+        step(specialsRef.current, specialElsRef)
+
+        if (deaths > 0) {
+          setScore(s => s + gained)
+          setKilled(k => k + deaths)
+          const remain = segs.filter(s => s.alive).length
+          setLeft(remain)
+          if (remain === 0) {
+            clearTimers()
+            pausedRef.current = true
+            setCleared(true)
+            setPhase('finished')
+            return
+          }
+          if (chestHit) openChestQuiz(chestHit)
+        }
+
+        // 6) 선두가 위험선을 넘으면 방어막 손실
         if (headY >= DANGER_Y) {
-          advanceRef.current = Math.max(0, advanceRef.current - 16)
+          travelRef.current = Math.max(0, travelRef.current - 460)
           setHp(h => Math.max(0, h - 1))
         }
       }
@@ -262,48 +618,67 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
 
   const handleReplay = useCallback(() => {
     clearTimers()
-    segsRef.current = buildSegments()
-    advanceRef.current = 0
-    if (chainElRef.current) chainElRef.current.style.transform = 'translateY(0%)'
-    setStats({ damage: 12, fireRate: 1.6, bulletSpeed: 1 })
-    setHp(START_HP); setScore(0); setKilled(0); setCleared(false)
+    resetWorld()
+    setStats(BASE_STATS)
+    setWeapons(BASE_WEAPONS)
+    setHp(START_HP); setScore(0); setKilled(0); setLeft(TOTAL_SEGMENTS); setCleared(false)
     setQuiz(null); setRewardChoices([]); setQuizResult(null)
     setPhase('battle')
     pausedRef.current = false
     lastFrameRef.current = performance.now()
     lastShotRef.current = performance.now()
-    forceRender(v => v + 1)
-  }, [buildSegments])
+  }, [resetWorld])
 
-  /** 마디 지그재그 좌표 — 선두(index 0)가 가장 아래 */
-  const segPos = (idx: number) => {
-    const row = Math.floor(idx / PER_ROW)
-    const colRaw = idx % PER_ROW
-    const col = row % 2 === 0 ? colRaw : PER_ROW - 1 - colRaw
-    return {
-      x: 10 + col * (80 / (PER_ROW - 1)),
-      y: 6 + row * ROW_H,
-    }
-  }
-
-  const upgradeLabel = (id: Upgrade['id']) => ({
-    rapid: { title: t('upgRapidTitle'), effect: t('upgRapidEffect') },
-    power: { title: t('upgPowerTitle'), effect: t('upgPowerEffect') },
-    speed: { title: t('upgSpeedTitle'), effect: t('upgSpeedEffect') },
+  const upgradeLabel = (id: UpgradeId) => ({
+    pencilCount: { title: t('upgPencilCountTitle'), effect: t('upgPencilCountEffect') },
+    pencilDamage: { title: t('upgPencilDamageTitle'), effect: t('upgPencilDamageEffect') },
+    pencilSpeed: { title: t('upgPencilSpeedTitle'), effect: t('upgPencilSpeedEffect') },
+    pencilRate: { title: t('upgPencilRateTitle'), effect: t('upgPencilRateEffect') },
+    pencilPierce: { title: t('upgPencilPierceTitle'), effect: t('upgPencilPierceEffect') },
+    pencilCrit: { title: t('upgPencilCritTitle'), effect: t('upgPencilCritEffect') },
+    wpnEraser: { title: t('wpnEraserTitle'), effect: t('wpnEraserEffect') },
+    wpnHighlighter: { title: t('wpnHighlighterTitle'), effect: t('wpnHighlighterEffect') },
+    wpnRuler: { title: t('wpnRulerTitle'), effect: t('wpnRulerEffect') },
   }[id])
+
+  const segSprite = (kind: Segment['kind']) => ({
+    head: '/game7/seg_head.png',
+    elite: '/game7/seg_node_elite.png',
+    tough: '/game7/seg_node_tough.png',
+    normal: '/game7/seg_node.png',
+  }[kind])
+
+  const segPct = (SEG_W / VW) * 100
+  const ownedWeapons = (Object.keys(WEAPON_SPEC) as WeaponId[]).filter(w => weapons[w] > 0)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3">
-      <div className="relative w-full max-w-4xl">
+      <div className="relative isolate w-full max-w-4xl">
         {/* HUD */}
         <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/95 px-4 py-2.5 shadow-lg">
           <span className="shrink-0 rounded-lg bg-purple-100 px-2.5 py-1 text-xs font-bold text-purple-700">
-            {t('segmentsLeft', { n: segsRef.current.length })}
+            {t('segmentsLeft', { n: left })}
           </span>
           <span className="hidden shrink-0 items-center gap-2 text-[11px] font-semibold text-gray-500 sm:flex">
             <span>{t('statDamage', { n: stats.damage })}</span>
-            <span>{t('statRate', { n: stats.fireRate.toFixed(1) })}</span>
+            <span>{t('statBullets', { n: stats.bullets })}</span>
+            {stats.pierce > 0 && <span className="text-fuchsia-500">{t('statPierce', { n: stats.pierce })}</span>}
+            {stats.crit > 0 && <span className="text-amber-500">{t('statCrit', { n: Math.round(stats.crit * 100) })}</span>}
           </span>
+          {/* 보유 학습도구 무기 */}
+          {ownedWeapons.length > 0 && (
+            <span className="hidden shrink-0 items-center gap-1 sm:flex">
+              {ownedWeapons.map(w => (
+                <span key={w} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={WEAPON_SPEC[w].sprite} alt="" className="h-5 w-auto" draggable={false} />
+                  <span className="absolute -bottom-1 -right-1 rounded-full bg-fuchsia-500 px-1 text-[8px] font-extrabold text-white">
+                    {weapons[w]}
+                  </span>
+                </span>
+              ))}
+            </span>
+          )}
           <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-gray-800">
             {started ? t('defenseIntro2') : t('defenseIntro')}
           </p>
@@ -326,80 +701,142 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
 
         {/* 보드 */}
         <div
-          className="relative w-full select-none overflow-hidden rounded-2xl shadow-2xl"
-          style={{ aspectRatio: '1344/768', backgroundImage: 'url(/game7/defense_bg.png)', backgroundSize: 'cover' }}
+          ref={boardRef}
+          onPointerMove={handlePointer}
+          onPointerDown={handlePointer}
+          className="relative w-full cursor-crosshair select-none overflow-hidden rounded-2xl shadow-2xl"
+          style={{
+            aspectRatio: `${VW}/${VH}`,
+            backgroundImage: 'url(/game7/defense_arena.png)',
+            backgroundSize: 'cover',
+            touchAction: 'none',
+          }}
         >
           {/* 위험선 */}
           <div className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed border-rose-400/60"
-               style={{ top: `${DANGER_Y}%` }} />
+               style={{ top: `${(DANGER_Y / VH) * 100}%` }} />
 
-          {/* 오개념 군체 (지그재그 체인) */}
-          <div ref={chainElRef} className="absolute inset-0" style={{ transform: 'translateY(0%)' }}>
-            {segsRef.current.map((seg, idx) => {
-              const { x, y } = segPos(idx)
-              const isHead = idx === 0
-              return (
-                <div
-                  key={seg.id}
-                  ref={(el) => { if (el) segElsRef.current.set(seg.id, el); else segElsRef.current.delete(seg.id) }}
-                  className={`absolute w-[11%] ${isHead ? 'drop-shadow-[0_0_10px_rgba(244,63,94,0.55)]' : ''}`}
-                  style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)', zIndex: 100 - idx }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={seg.tough ? '/game7/seg_node_tough.png' : '/game7/seg_node.png'}
-                    alt=""
-                    className="w-full"
-                    draggable={false}
-                  />
-                  {/* 남은 HP 숫자 */}
-                  {/* 남은 HP — 마디 색이 진해 보라색 텍스트는 안 읽힌다. 흰색 + 외곽 그림자로 대비 확보 */}
-                  <span
-                    className="absolute inset-0 flex items-center justify-center text-[12px] font-extrabold text-white sm:text-base"
-                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.6)' }}
-                  >
-                    {Math.max(0, seg.hp)}
-                  </span>
-                  {/* 보물상자 표식 */}
-                  {seg.chest && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src="/game7/chest_gold.png"
-                      alt=""
-                      className="absolute -right-[18%] -top-[26%] w-[62%] animate-pulse"
-                      draggable={false}
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* 자동 발사 탄 */}
-          {bullets.map(b => (
+          {/* 오개념 군체 — 위치는 루프에서 DOM 직접 갱신 */}
+          {segsRef.current.map((seg, i) => (
             <div
-              key={b.id}
-              className="pointer-events-none absolute bottom-[16%] left-1/2 w-[4%] -translate-x-1/2"
-              style={{ animation: `boltup ${b.dur}ms linear forwards` }}
+              key={seg.id}
+              ref={el => { segElsRef.current[i] = el }}
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+              style={{ width: `${segPct}%`, zIndex: 40 - i }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/game7/bolt_shot.png" alt="" className="w-full -rotate-90" draggable={false} />
+              <img src={segSprite(seg.kind)} alt="" className="w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)]" draggable={false} />
+              {/* HP — 마디 스프라이트 밝기가 제각각이므로 어두운 pill 을 깔아 대비를 고정한다 */}
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span
+                  ref={el => { segHpElsRef.current[i] = el }}
+                  className="rounded-full bg-black/55 px-1.5 py-[1px] text-[10px] font-extrabold leading-tight text-white sm:text-[13px]"
+                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}
+                >
+                  {seg.hp}
+                </span>
+              </span>
+              {seg.chest && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={seg.chest === 'purple' ? '/game7/chest_purple.png' : '/game7/chest_blue.png'}
+                  alt=""
+                  className="absolute -top-[44%] left-1/2 w-[62%] -translate-x-1/2 animate-bounce"
+                  draggable={false}
+                />
+              )}
             </div>
           ))}
 
-          {/* 방어탑 + 주인공 (하단 중앙) */}
+          {/* 연필 탄 풀 */}
+          {Array.from({ length: BULLET_POOL }).map((_, i) => (
+            <div
+              key={`b${i}`}
+              ref={el => { bulletElsRef.current[i] = el }}
+              className="pointer-events-none absolute"
+              style={{ width: '2.6%', display: 'none', zIndex: 60 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/game7/pencil_shot.png" alt="" className="w-full" draggable={false} />
+              <span className="absolute left-1/2 top-full h-4 w-[3px] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-300/80 to-transparent" />
+            </div>
+          ))}
+
+          {/* 보조 무기(학습도구) 발사체 풀 — kind 에 따라 스프라이트 토글 */}
+          {Array.from({ length: SPECIAL_POOL }).map((_, i) => (
+            <div
+              key={`sp${i}`}
+              ref={el => { specialElsRef.current[i] = el }}
+              className="pointer-events-none absolute"
+              style={{ width: '5%', display: 'none', zIndex: 61 }}
+            >
+              {(Object.keys(WEAPON_SPEC) as WeaponId[]).map(w => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={w}
+                  src={WEAPON_SPEC[w].sprite}
+                  alt=""
+                  data-w={w}
+                  className="w-full"
+                  style={{ display: 'none' }}
+                  draggable={false}
+                />
+              ))}
+            </div>
+          ))}
+
+          {/* 플레이어 (조준 x 를 추종) */}
           {started && (
-            <>
-              <div className="absolute bottom-[13%] left-1/2 w-[10%] -translate-x-1/2">
+            <div
+              ref={playerElRef}
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+              style={{ left: '50%', top: `${(PLAYER_Y / VH) * 100}%`, width: '7.5%', zIndex: 55 }}
+            >
+              {/* 조준 방향으로 회전하는 연필(총구) */}
+              <div ref={gunElRef} className="absolute left-1/2 w-[34%]" style={{ top: '-14%', transform: 'translate(-50%,-50%)' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/game7/shield_tower.png" alt="" className="w-full drop-shadow" draggable={false} />
+                <img src="/game7/pencil_shot.png" alt="" className="w-full" draggable={false} />
               </div>
-              <div className="absolute bottom-[2%] left-[38%] w-[9%]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/game7/hero_${hero}.png`} alt="" className="w-full drop-shadow" draggable={false} />
-              </div>
-            </>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/game7/hero_${hero}.png`} alt="" className="w-full drop-shadow-[0_3px_6px_rgba(0,0,0,0.5)]" draggable={false} />
+            </div>
           )}
+
+          {/* 데미지 숫자 풀 */}
+          {Array.from({ length: DMG_POOL }).map((_, i) => (
+            <div
+              key={`d${i}`}
+              ref={el => { dmgElsRef.current[i] = el }}
+              className="pointer-events-none absolute text-[11px] font-extrabold sm:text-sm"
+              style={{ display: 'none', zIndex: 70, textShadow: '0 1px 3px rgba(0,0,0,0.95)' }}
+            />
+          ))}
+
+          {/* 스파크 풀 */}
+          {Array.from({ length: SPARK_POOL }).map((_, i) => (
+            <div
+              key={`s${i}`}
+              ref={el => { sparkElsRef.current[i] = el }}
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+              style={{ width: '3.4%', display: 'none', zIndex: 65 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/game7/hit_spark.png" alt="" className="w-full" draggable={false} />
+            </div>
+          ))}
+
+          {/* 폭발 풀 */}
+          {Array.from({ length: BURST_POOL }).map((_, i) => (
+            <div
+              key={`e${i}`}
+              ref={el => { burstElsRef.current[i] = el }}
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+              style={{ width: '9%', display: 'none', zIndex: 66 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/game7/pop_burst.png" alt="" className="w-full" draggable={false} />
+            </div>
+          ))}
 
           {/* 시작 화면 */}
           {!started && (
@@ -415,7 +852,7 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/game7/hero_${h}.png`} alt={h} className="h-28 w-auto" draggable={false} />
+                    <img src={`/game7/hero_${h}.png`} alt={h} className="h-24 w-auto sm:h-28" draggable={false} />
                   </button>
                 ))}
               </div>
@@ -426,89 +863,12 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
             </div>
           )}
 
-          {/* 퀴즈 (보물상자) */}
-          {phase === 'quiz' && quiz && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-              <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
-                <div className="mb-3 flex items-center justify-center gap-2 text-amber-600">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/game7/chest_gold.png" alt="" className="h-7 w-auto" draggable={false} />
-                  <span className="text-sm font-bold">{t('chestQuizTitle')}</span>
-                </div>
-                <p className="mb-4 text-center text-sm leading-relaxed text-gray-700">{quiz.answer.description}</p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {quiz.options.map(opt => {
-                    const isAnswer = opt.keyword === quiz.answer.keyword
-                    const showResult = quizResult !== null
-                    return (
-                      <button
-                        key={opt.keyword}
-                        onClick={() => answerQuiz(opt)}
-                        disabled={showResult}
-                        className={`rounded-xl border-2 px-3 py-2.5 text-sm font-bold transition-all ${
-                          showResult
-                            ? isAnswer
-                              ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
-                              : 'border-gray-200 bg-gray-50 text-gray-400'
-                            : 'border-purple-200 bg-white text-gray-800 hover:border-purple-400 hover:bg-purple-50'
-                        }`}
-                      >
-                        {opt.keyword}
-                      </button>
-                    )
-                  })}
-                </div>
-                {quizResult && (
-                  <p className={`mt-3 text-center text-sm font-bold ${quizResult === 'correct' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {quizResult === 'correct' ? t('quizCorrect') : t('quizWrong')}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* 업그레이드 3택 */}
-          {phase === 'reward' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 p-4 backdrop-blur-sm">
-              <div className="flex items-center gap-1.5 text-amber-300">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-sm font-bold">{t('rewardTitle')}</span>
-              </div>
-              <div className="flex w-full max-w-2xl justify-center gap-3">
-                {rewardChoices.map((u, i) => {
-                  const label = upgradeLabel(u.id)
-                  const isFeatured = i === 1
-                  return (
-                    <button
-                      key={u.id}
-                      onClick={() => pickUpgrade(u)}
-                      className={`flex flex-1 flex-col items-center gap-2 rounded-2xl border-2 px-2 py-4 transition-all hover:-translate-y-1 ${
-                        isFeatured
-                          ? 'border-fuchsia-400 bg-gradient-to-b from-fuchsia-600/90 to-fuchsia-800/90 shadow-[0_0_24px_rgba(232,121,249,0.5)]'
-                          : 'border-teal-400 bg-gradient-to-b from-teal-600/90 to-teal-800/90'
-                      }`}
-                    >
-                      <div className={`flex h-16 w-16 items-center justify-center rounded-full border-2 ${
-                        isFeatured ? 'border-fuchsia-300 bg-fuchsia-900/60' : 'border-teal-300 bg-teal-900/60'
-                      }`}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={u.icon} alt="" className="h-10 w-auto" draggable={false} />
-                      </div>
-                      <p className="text-sm font-extrabold text-yellow-200 drop-shadow">{label.title}</p>
-                      <p className="text-[11px] font-semibold text-emerald-200">{label.effect}</p>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
           {/* 종료 화면 */}
           {phase === 'finished' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-black/70 backdrop-blur-[2px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={cleared ? '/game7/shield_tower.png' : '/game7/seg_node_tough.png'}
+                src={cleared ? '/game7/shield_tower.png' : '/game7/seg_head.png'}
                 alt=""
                 className="w-20 animate-bounce"
                 draggable={false}
@@ -531,10 +891,134 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
         </div>
       </div>
 
+      {/* 퀴즈 — 보드 밖 최상위 레이어 (보드 안에 두면 aspect-ratio 높이에 잘린다) */}
+      {phase === 'quiz' && quiz && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-black/75 p-4 backdrop-blur-sm">
+          <div className="my-auto w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="mb-3 flex items-center justify-center gap-2 text-amber-600">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={quiz.tier === 'purple' ? '/game7/chest_purple.png' : '/game7/chest_blue.png'}
+                alt=""
+                className="h-8 w-auto"
+                draggable={false}
+              />
+              <span className="text-sm font-bold">{t('chestQuizTitle')}</span>
+              {quiz.tier === 'purple' && (
+                <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-extrabold text-fuchsia-600">
+                  {t('rareBadge')}
+                </span>
+              )}
+            </div>
+            <p className="mb-4 max-h-40 overflow-y-auto rounded-xl bg-gray-50 p-3 text-center text-sm leading-relaxed text-gray-700">
+              {quiz.answer.description}
+            </p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {quiz.options.map(opt => {
+                const isAnswer = opt.keyword === quiz.answer.keyword
+                const showResult = quizResult !== null
+                return (
+                  <button
+                    key={opt.keyword}
+                    onClick={() => answerQuiz(opt)}
+                    disabled={showResult}
+                    className={`break-keep rounded-xl border-2 px-3 py-3 text-sm font-bold transition-all ${
+                      showResult
+                        ? isAnswer
+                          ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                          : 'border-gray-200 bg-gray-50 text-gray-400'
+                        : 'border-purple-200 bg-white text-gray-800 hover:border-purple-400 hover:bg-purple-50'
+                    }`}
+                  >
+                    {opt.keyword}
+                  </button>
+                )
+              })}
+            </div>
+            {quizResult && (
+              <p className={`mt-3 text-center text-sm font-bold ${quizResult === 'correct' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {quizResult === 'correct' ? t('quizCorrect') : t('quizWrong')}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 강화 3택 — 세로 배너 카드 (보드 밖 최상위) */}
+      {phase === 'reward' && (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 overflow-y-auto bg-black/85 p-4 backdrop-blur-sm">
+          <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 px-5 py-1.5 shadow-lg">
+            <Sparkles className="h-4 w-4 text-white" />
+            <span className="text-sm font-extrabold text-white drop-shadow">{t('rewardTitle')}</span>
+          </div>
+          <div className="flex w-full max-w-2xl items-stretch justify-center gap-2 sm:gap-4">
+            {rewardChoices.map(u => {
+              const label = upgradeLabel(u.id)
+              const rare = u.tier === 'rare'
+              const owned = u.weapon ? weapons[u.weapon] : 0
+              return (
+                <button
+                  key={u.id}
+                  onClick={() => pickUpgrade(u)}
+                  className="group relative flex-1 transition-transform hover:-translate-y-2"
+                  style={{ maxWidth: 168 }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={rare ? '/game7/card_frame_rare.png' : '/game7/card_frame_common.png'}
+                    alt=""
+                    className={`w-full ${rare ? 'drop-shadow-[0_0_18px_rgba(232,121,249,0.75)]' : 'drop-shadow-[0_0_14px_rgba(52,211,153,0.6)]'}`}
+                    draggable={false}
+                  />
+                  {/* 프레임 위 오버레이 — 상단 메달리온에 아이콘, 패널에 이름·효과 */}
+                  <div className="absolute inset-0 flex flex-col items-center px-[14%]">
+                    <div className="flex h-[17%] w-full items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={u.icon} alt="" className="max-h-[74%] w-auto drop-shadow" draggable={false} />
+                    </div>
+                    <p className={`mt-[4%] text-center text-[11px] font-extrabold leading-tight drop-shadow sm:text-[13px] ${rare ? 'text-fuchsia-50' : 'text-emerald-50'}`}>
+                      {label.title}
+                    </p>
+                    <p className={`mt-[6%] text-center text-[10px] font-bold leading-snug sm:text-[11px] ${rare ? 'text-yellow-200' : 'text-lime-100'}`}>
+                      {label.effect}
+                    </p>
+                    <div className="mt-auto mb-[13%] flex flex-col items-center gap-1">
+                      {owned > 0 && (
+                        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-extrabold text-amber-950">
+                          {t('wpnLevelUp', { n: owned + 1 })}
+                        </span>
+                      )}
+                      {rare && (
+                        <span className="rounded-full bg-fuchsia-500/90 px-2 py-0.5 text-[9px] font-extrabold text-white">
+                          {t('rareBadge')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+          <p className="flex items-center gap-1.5 text-center text-xs text-white/80">
+            <Crosshair className="h-3.5 w-3.5 shrink-0" />
+            {t('rewardHint')}
+          </p>
+        </div>
+      )}
+
       <style jsx global>{`
-        @keyframes boltup {
-          from { transform: translate(-50%, 0) scale(1); opacity: 1; }
-          to { transform: translate(-50%, -420%) scale(0.9); opacity: 0.85; }
+        @keyframes dmgfloat {
+          0%   { transform: translate(-50%, 0) scale(1.25); opacity: 1; }
+          100% { transform: translate(-50%, -42px) scale(0.95); opacity: 0; }
+        }
+        @keyframes sparkpop {
+          0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+        @keyframes burstpop {
+          0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+          60%  { transform: translate(-50%, -50%) scale(1.15); opacity: 0.95; }
+          100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
       `}</style>
     </div>
