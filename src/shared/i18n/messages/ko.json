@@ -737,10 +737,10 @@
           "objPin": "구슬의 용어를 확인하고 핀을 뽑으세요"
         },
         "misconceptionDefense": {
-          "subtitle": "오개념 세균을 정답으로 요격",
-          "goal": "성문으로 몰려오는 세균 중 설명에 맞는 용어를 이고 있는 세균만 클릭해 요격하세요. 오답을 쏘거나 정답을 놓치면 방어막이 깎입니다!",
-          "controlShoot": "세균 클릭/탭으로 요격",
-          "objGerm": "용어 라벨을 확인하고 정답 세균만 요격"
+          "subtitle": "마디를 격파하고 퀴즈로 무기를 강화해요",
+          "goal": "오개념 군체가 마디마다 체력을 갖고 몰려옵니다. 캐릭터가 자동으로 사격해 선두 마디를 깎고, 격파하면 군체가 뒤로 밀립니다. 보물상자 마디를 깨면 용어 퀴즈가 나오고 정답을 맞혀야 무기를 강화할 수 있어요 — 강화 없이는 뒤쪽 마디를 뚫을 수 없습니다!",
+          "controlShoot": "자동 사격 (조작 없음) · 퀴즈는 클릭/탭",
+          "objGerm": "보물상자 마디를 노려 퀴즈 기회를 얻으세요"
         },
         "knowledgeTower": {
           "subtitle": "정답 용어 블록만 쌓아 탑을 올려요",
@@ -805,7 +805,23 @@
         "linkProgress": "연결 {done}/{total}",
         "linkHint": "용어를 먼저 고르고 정의를 연결하세요",
         "linkPicked": "'{word}' 선택 — 맞는 정의를 누르세요",
-        "linkAllDone": "{total}쌍 연결 완료 (시도 {attempts}회)"
+        "linkAllDone": "{total}쌍 연결 완료 (시도 {attempts}회)",
+        "segmentsLeft": "남은 마디 {n}",
+        "segmentsKilled": "{total}마디 중 {n}마디 격파",
+        "statDamage": "공격력 {n}",
+        "statRate": "연사 {n}/초",
+        "defenseIntro2": "자동 사격 중 — 보물상자 마디를 격파하세요",
+        "defenseHint2": "캐릭터가 자동으로 사격합니다. 보물상자 마디를 깨면 퀴즈가 나오고, 정답을 맞히면 무기를 강화할 수 있어요. 강화하지 않으면 뒤쪽 마디를 뚫을 수 없습니다!",
+        "chestQuizTitle": "보물상자 — 설명에 맞는 용어는?",
+        "quizCorrect": "정답! 무기를 강화하세요",
+        "quizWrong": "오답… 이번 상자는 놓쳤어요",
+        "rewardTitle": "무기 강화 선택",
+        "upgRapidTitle": "연속 사격",
+        "upgRapidEffect": "연사 +0.9/초",
+        "upgPowerTitle": "공격 강화",
+        "upgPowerEffect": "공격력 +80%",
+        "upgSpeedTitle": "사격 가속",
+        "upgSpeedEffect": "탄속 +45%"
       },
       "termCatch": "정답 잡기",
       "knowledgeGate": "지식의 문",

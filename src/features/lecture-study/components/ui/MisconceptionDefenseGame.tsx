@@ -1,17 +1,19 @@
 /**
  * @file MisconceptionDefenseGame.tsx
- * @description 오개념 방어전 — 몰려오는 오개념 세균을 '정답 용어' 방어탑으로 요격하는 타워 디펜스 학습 게임
+ * @description 오개념 방어전 — 마디별 HP를 가진 오개념 군체를 자동 사격으로 격파하고, 보물상자 마디에서
+ *              퀴즈를 맞혀 무기를 업그레이드하는 디펜스 학습 게임 (세포특공대 방식)
  * @module features/lecture-study/components/ui
  * @dependencies next-intl, /public/game7 에셋(히어로=서비스 캐릭터)
  *
- * 세포특공대류 디펜스 포맷을 학습에 접목: 세균이 용어를 이고 몰려오고, 화면 하단의 정의(설명)에 맞는
- * 용어 세균만 요격해야 한다. 오답을 쏘면 방어막이 깎이고, 정답 세균이 성문에 닿으면 실점.
+ * 학습 접목: 무기 강화는 "보물상자 마디 격파 → 용어 퀴즈 정답"으로만 얻는다.
+ * 뒤쪽 마디 HP가 급격히 커지도록 설계해, 퀴즈를 맞혀 업그레이드하지 않으면 클리어가 불가능하다
+ * → 게임을 이기려면 반드시 용어를 학습해야 한다.
  */
 
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { X, Heart } from 'lucide-react'
+import { X, Heart, Sparkles } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 interface GameWord {
@@ -24,21 +26,42 @@ interface MisconceptionDefenseGameProps {
   onClose: (score: number | null) => void
 }
 
-const WAVES = 6
-const ENEMIES_PER_WAVE = 4
-const MARCH_MS = 13000       // 오른쪽(성문)까지 도달 시간 (용어 라벨을 읽을 여유)
-const SPAWN_GAP_MS = 1800
+/** 마디 총 개수 */
+const TOTAL_SEGMENTS = 22
+/** 한 줄에 배치할 마디 수 (지그재그) */
+const PER_ROW = 6
+/** 줄 간격 (보드 높이 %) */
+const ROW_H = 13
+/** 군체가 1초에 전진하는 거리 (%) */
+const ADVANCE_PER_SEC = 1.25
+/** 마디 하나를 격파했을 때 뒤로 밀리는 거리 (%) */
+const PUSHBACK = 4.6
+/** 군체 선두가 이 y(%)를 넘으면 플레이어 피격 */
+const DANGER_Y = 76
 const START_HP = 3
 
-interface Enemy {
+interface Segment {
   id: number
-  word: GameWord
-  isTarget: boolean
-  bornAt: number
-  /** 진행 레인 (y %) */
-  y: number
-  big: boolean
-  state: 'march' | 'hit' | 'leaked'
+  hp: number
+  maxHp: number
+  tough: boolean
+  chest: boolean
+}
+
+interface Upgrade {
+  id: 'rapid' | 'power' | 'speed'
+  icon: string
+}
+
+const UPGRADES: Upgrade[] = [
+  { id: 'rapid', icon: '/game7/upg_rapid.png' },
+  { id: 'power', icon: '/game7/upg_power.png' },
+  { id: 'speed', icon: '/game7/upg_speed.png' },
+]
+
+interface QuizSet {
+  answer: GameWord
+  options: GameWord[]
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -62,26 +85,33 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
     })
   }, [words])
 
-  const totalWaves = Math.min(WAVES, pool.length)
   const [hero, setHero] = useState<'boy' | 'girl'>('boy')
   const [started, setStarted] = useState(false)
-  const [wave, setWave] = useState(0)
-  const [target, setTarget] = useState<GameWord | null>(null)
   const [hp, setHp] = useState(START_HP)
   const [score, setScore] = useState(0)
-  const [defeated, setDefeated] = useState(0)
-  const [phase, setPhase] = useState<'battle' | 'waveEnd' | 'finished'>('battle')
-  const [shots, setShots] = useState<{ id: number; x: number; y: number }[]>([])
+  const [killed, setKilled] = useState(0)
+  const [phase, setPhase] = useState<'battle' | 'quiz' | 'reward' | 'finished'>('battle')
+  const [quiz, setQuiz] = useState<QuizSet | null>(null)
+  const [quizResult, setQuizResult] = useState<'correct' | 'wrong' | null>(null)
+  const [rewardChoices, setRewardChoices] = useState<Upgrade[]>([])
+  const [cleared, setCleared] = useState(false)
 
-  /** 적 배열 권위는 ref — 행진은 DOM 직접 갱신(리렌더로는 프레임이 안 나온다) */
-  const enemiesRef = useRef<Enemy[]>([])
+  /** 무기 스탯 — 업그레이드로만 성장 */
+  const [stats, setStats] = useState({ damage: 12, fireRate: 1.6, bulletSpeed: 1 })
+  const statsRef = useRef(stats)
+  useEffect(() => { statsRef.current = stats }, [stats])
+
+  /** 마디 배열·전진 거리는 ref 가 권위 (프레임 갱신은 DOM 직접) */
+  const segsRef = useRef<Segment[]>([])
+  const advanceRef = useRef(0)
   const [, forceRender] = useState(0)
-  const enemyElsRef = useRef<Map<number, HTMLDivElement>>(new Map())
+  const chainElRef = useRef<HTMLDivElement>(null)
+  const segElsRef = useRef<Map<number, HTMLElement>>(new Map())
+  const lastShotRef = useRef(0)
+  const lastFrameRef = useRef(0)
+  const pausedRef = useRef(false)
+  const [bullets, setBullets] = useState<{ id: number; born: number; dur: number }[]>([])
   const idRef = useRef(0)
-  const waveRef = useRef(0)
-  const spawnedRef = useRef(0)
-  const targetHitRef = useRef(false)
-  const orderRef = useRef<GameWord[]>([])
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const clearTimers = () => {
@@ -89,156 +119,178 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
     timersRef.current = []
   }
 
-  const startWave = useCallback((idx: number) => {
-    waveRef.current = idx
-    spawnedRef.current = 0
-    targetHitRef.current = false
-    enemiesRef.current = []
-    enemyElsRef.current.clear()
-    setWave(idx)
-    setTarget(orderRef.current[idx])
-    setPhase('battle')
-    forceRender(v => v + 1)
+  /** 마디 생성 — 뒤로 갈수록 HP 급증, 4번째마다 보물상자 */
+  const buildSegments = useCallback((): Segment[] => {
+    return Array.from({ length: TOTAL_SEGMENTS }, (_, i) => {
+      const hp = Math.round(24 * Math.pow(1.19, i))   // 24 → 약 1,000
+      const tough = i >= TOTAL_SEGMENTS * 0.6
+      return { id: i + 1, hp, maxHp: hp, tough, chest: i > 0 && i % 4 === 3 }
+    })
   }, [])
 
   useEffect(() => {
-    orderRef.current = shuffle(pool).slice(0, totalWaves)
+    segsRef.current = buildSegments()
     return clearTimers
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const beginGame = useCallback(() => {
     setStarted(true)
-    if (totalWaves > 0) startWave(0)
-  }, [totalWaves, startWave])
+    lastFrameRef.current = performance.now()
+    lastShotRef.current = performance.now()
+  }, [])
 
-  // 적 스폰 — 웨이브당 정답 1마리 + 오답들, 정답은 초반에 배치
-  useEffect(() => {
-    if (!started || phase !== 'battle' || hp <= 0) return
-    const answer = orderRef.current[waveRef.current]
-    if (!answer) return
-    const answerSlot = 1 + Math.floor(Math.random() * 2)   // 2~3번째로 등장
-    const spawn = () => {
-      if (spawnedRef.current >= ENEMIES_PER_WAVE + 2) return
-      const isTarget = spawnedRef.current === answerSlot && !targetHitRef.current
-      const wrong = shuffle(pool.filter(w => w.keyword !== answer.keyword))[0] ?? answer
-      idRef.current += 1
-      enemiesRef.current = [...enemiesRef.current, {
-        id: idRef.current,
-        word: isTarget ? answer : wrong,
-        isTarget,
-        bornAt: performance.now(),
-        y: 43 + Math.random() * 11,
-        // 크기는 정답 여부와 무관한 순수 연출 (크기로 정답을 추측할 수 없게)
-        big: Math.random() < 0.3,
-        state: 'march',
-      }]
-      spawnedRef.current += 1
-      forceRender(v => v + 1)
+  /** 보물상자 격파 → 퀴즈 출제 (정답만 업그레이드 획득) */
+  const openChestQuiz = useCallback(() => {
+    if (pool.length < 2) return
+    const answer = pool[Math.floor(Math.random() * pool.length)]
+    const distractors = shuffle(pool.filter(w => w.keyword !== answer.keyword)).slice(0, 3)
+    pausedRef.current = true
+    setQuiz({ answer, options: shuffle([answer, ...distractors]) })
+    setQuizResult(null)
+    setPhase('quiz')
+  }, [pool])
+
+  const answerQuiz = useCallback((picked: GameWord) => {
+    if (!quiz || quizResult) return
+    const ok = picked.keyword === quiz.answer.keyword
+    setQuizResult(ok ? 'correct' : 'wrong')
+    if (ok) {
+      setScore(s => s + 150)
+      const timer = setTimeout(() => {
+        setRewardChoices(shuffle(UPGRADES))
+        setPhase('reward')
+      }, 900)
+      timersRef.current.push(timer)
+    } else {
+      // 오답 — 업그레이드 없이 전투 재개 (무기가 안 세지므로 뒤 마디에서 막힌다)
+      const timer = setTimeout(() => {
+        setQuiz(null)
+        setPhase('battle')
+        pausedRef.current = false
+        lastFrameRef.current = performance.now()
+      }, 1500)
+      timersRef.current.push(timer)
     }
-    spawn()
-    const iv = setInterval(spawn, SPAWN_GAP_MS)
-    return () => clearInterval(iv)
-  }, [started, phase, pool, hp])
+  }, [quiz, quizResult])
 
-  const nextWave = useCallback(() => {
-    const timer = setTimeout(() => {
-      const next = waveRef.current + 1
-      if (next >= totalWaves) setPhase('finished')
-      else startWave(next)
-    }, 1000)
-    timersRef.current.push(timer)
-  }, [totalWaves, startWave])
+  const pickUpgrade = useCallback((u: Upgrade) => {
+    setStats(prev => {
+      if (u.id === 'rapid') return { ...prev, fireRate: prev.fireRate + 0.9 }
+      if (u.id === 'power') return { ...prev, damage: Math.round(prev.damage * 1.8) }
+      return { ...prev, bulletSpeed: prev.bulletSpeed * 1.45 }
+    })
+    setQuiz(null)
+    setRewardChoices([])
+    setPhase('battle')
+    pausedRef.current = false
+    lastFrameRef.current = performance.now()
+  }, [])
 
-  // 행진 루프 — x 위치 DOM 갱신 + 성문 도달 판정
+  // ── 메인 루프: 자동 사격 + 마디 피격 + 군체 전진 ──
   useEffect(() => {
-    if (!started || phase !== 'battle') return
+    if (!started || phase === 'finished') return
     let raf = 0
     const loop = () => {
       const now = performance.now()
-      let changed = false
-      for (const e of enemiesRef.current) {
-        if (e.state !== 'march') continue
-        const p = (now - e.bornAt) / MARCH_MS
-        const x = 4 + p * 84
-        const el = enemyElsRef.current.get(e.id)
-        if (el) el.style.left = `${x}%`
-        if (p >= 1) {
-          e.state = 'leaked'
-          changed = true
-          if (e.isTarget && !targetHitRef.current) {
-            // 정답 세균을 놓쳤다 → 방어막만 깎고 웨이브는 넘기지 않는다.
-            // 정답 세균을 다시 보내 "정답 용어를 스스로 찾아낸다"는 학습 목표를 반드시 달성시킨다.
-            setHp(h => Math.max(0, h - 1))
-            const answer = orderRef.current[waveRef.current]
-            if (answer) {
-              idRef.current += 1
-              enemiesRef.current = [...enemiesRef.current, {
-                id: idRef.current,
-                word: answer,
-                isTarget: true,
-                bornAt: now,
-                y: 43 + Math.random() * 11,
-                big: false,
-                state: 'march',
-              }]
+      const dt = Math.min(0.05, (now - lastFrameRef.current) / 1000)
+      lastFrameRef.current = now
+
+      if (!pausedRef.current) {
+        // 1) 전진
+        advanceRef.current += ADVANCE_PER_SEC * dt
+        if (chainElRef.current) {
+          chainElRef.current.style.transform = `translateY(${advanceRef.current}%)`
+        }
+
+        // 2) 자동 사격 — 선두 마디에 데미지
+        const { damage, fireRate, bulletSpeed } = statsRef.current
+        if (now - lastShotRef.current >= 1000 / fireRate) {
+          lastShotRef.current = now
+          idRef.current += 1
+          const bid = idRef.current
+          const dur = 420 / bulletSpeed
+          setBullets(prev => [...prev.slice(-7), { id: bid, born: now, dur }])
+          const rm = setTimeout(() => setBullets(prev => prev.filter(b => b.id !== bid)), dur + 60)
+          timersRef.current.push(rm)
+
+          const hit = setTimeout(() => {
+            const head = segsRef.current[0]
+            if (!head || pausedRef.current) return
+            head.hp -= damage
+            if (head.hp <= 0) {
+              const wasChest = head.chest
+              segsRef.current = segsRef.current.slice(1)
+              segElsRef.current.delete(head.id)
+              advanceRef.current = Math.max(0, advanceRef.current - PUSHBACK)
+              setScore(s => s + 20)
+              setKilled(k => k + 1)
+              if (segsRef.current.length === 0) {
+                setCleared(true)
+                setPhase('finished')
+              } else if (wasChest) {
+                openChestQuiz()
+              }
             }
-          }
+            forceRender(v => v + 1)
+          }, dur)
+          timersRef.current.push(hit)
+        }
+
+        // 3) 선두가 위험선을 넘으면 피격
+        const headRow = 0
+        const headY = 6 + headRow * ROW_H + advanceRef.current
+        if (headY >= DANGER_Y) {
+          advanceRef.current = Math.max(0, advanceRef.current - 16)
+          setHp(h => Math.max(0, h - 1))
         }
       }
-      const alive = enemiesRef.current.filter(e => e.state === 'march' || now - e.bornAt < MARCH_MS + 800)
-      if (alive.length !== enemiesRef.current.length) {
-        enemiesRef.current = alive
-        changed = true
-      }
-      if (changed) forceRender(v => v + 1)
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [started, phase, nextWave])
+  }, [started, phase, openChestQuiz])
 
-  // HP 소진 → 즉시 종료. 예약된 nextWave 타이머가 finished 를 battle 로 덮으므로 함께 취소한다.
+  // HP 소진 → 종료
   useEffect(() => {
     if (started && hp <= 0) {
       clearTimers()
+      pausedRef.current = true
       setPhase('finished')
     }
   }, [hp, started])
 
-  /** 세균 클릭 = 요격 */
-  const shoot = useCallback((enemy: Enemy) => {
-    if (phase !== 'battle' || enemy.state !== 'march') return
-    const el = enemyElsRef.current.get(enemy.id)
-    const x = el ? parseFloat(el.style.left) || 50 : 50
-    idRef.current += 1
-    const shotId = idRef.current
-    setShots(prev => [...prev.slice(-5), { id: shotId, x, y: enemy.y }])
-    const rm = setTimeout(() => setShots(prev => prev.filter(s => s.id !== shotId)), 420)
-    timersRef.current.push(rm)
-
-    enemy.state = 'hit'
-    forceRender(v => v + 1)
-
-    if (enemy.isTarget) {
-      targetHitRef.current = true
-      setScore(s => s + 100)
-      setDefeated(d => d + 1)
-      setPhase('waveEnd')
-      nextWave()
-    } else {
-      // 오답 요격 → 방어막 손실
-      setScore(s => Math.max(0, s - 20))
-      setHp(h => Math.max(0, h - 1))
-    }
-  }, [phase, nextWave])
-
   const handleReplay = useCallback(() => {
     clearTimers()
-    orderRef.current = shuffle(pool).slice(0, totalWaves)
-    setHp(START_HP); setScore(0); setDefeated(0)
-    startWave(0)
-  }, [pool, totalWaves, startWave])
+    segsRef.current = buildSegments()
+    advanceRef.current = 0
+    if (chainElRef.current) chainElRef.current.style.transform = 'translateY(0%)'
+    setStats({ damage: 12, fireRate: 1.6, bulletSpeed: 1 })
+    setHp(START_HP); setScore(0); setKilled(0); setCleared(false)
+    setQuiz(null); setRewardChoices([]); setQuizResult(null)
+    setPhase('battle')
+    pausedRef.current = false
+    lastFrameRef.current = performance.now()
+    lastShotRef.current = performance.now()
+    forceRender(v => v + 1)
+  }, [buildSegments])
+
+  /** 마디 지그재그 좌표 — 선두(index 0)가 가장 아래 */
+  const segPos = (idx: number) => {
+    const row = Math.floor(idx / PER_ROW)
+    const colRaw = idx % PER_ROW
+    const col = row % 2 === 0 ? colRaw : PER_ROW - 1 - colRaw
+    return {
+      x: 10 + col * (80 / (PER_ROW - 1)),
+      y: 6 + row * ROW_H,
+    }
+  }
+
+  const upgradeLabel = (id: Upgrade['id']) => ({
+    rapid: { title: t('upgRapidTitle'), effect: t('upgRapidEffect') },
+    power: { title: t('upgPowerTitle'), effect: t('upgPowerEffect') },
+    speed: { title: t('upgSpeedTitle'), effect: t('upgSpeedEffect') },
+  }[id])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3">
@@ -246,10 +298,14 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
         {/* HUD */}
         <div className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-white/95 px-4 py-2.5 shadow-lg">
           <span className="shrink-0 rounded-lg bg-purple-100 px-2.5 py-1 text-xs font-bold text-purple-700">
-            {t('wave', { current: Math.min(wave + 1, totalWaves), total: totalWaves })}
+            {t('segmentsLeft', { n: segsRef.current.length })}
           </span>
-          <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-gray-800" title={target?.description}>
-            {started ? target?.description : t('defenseIntro')}
+          <span className="hidden shrink-0 items-center gap-2 text-[11px] font-semibold text-gray-500 sm:flex">
+            <span>{t('statDamage', { n: stats.damage })}</span>
+            <span>{t('statRate', { n: stats.fireRate.toFixed(1) })}</span>
+          </span>
+          <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-gray-800">
+            {started ? t('defenseIntro2') : t('defenseIntro')}
           </p>
           <span className="flex shrink-0 items-center gap-0.5">
             {Array.from({ length: START_HP }).map((_, i) => (
@@ -273,62 +329,81 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
           className="relative w-full select-none overflow-hidden rounded-2xl shadow-2xl"
           style={{ aspectRatio: '1344/768', backgroundImage: 'url(/game7/defense_bg.png)', backgroundSize: 'cover' }}
         >
-          {/* 방어탑 + 주인공 (성문 앞) */}
+          {/* 위험선 */}
+          <div className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed border-rose-400/60"
+               style={{ top: `${DANGER_Y}%` }} />
+
+          {/* 오개념 군체 (지그재그 체인) */}
+          <div ref={chainElRef} className="absolute inset-0" style={{ transform: 'translateY(0%)' }}>
+            {segsRef.current.map((seg, idx) => {
+              const { x, y } = segPos(idx)
+              const isHead = idx === 0
+              return (
+                <div
+                  key={seg.id}
+                  ref={(el) => { if (el) segElsRef.current.set(seg.id, el); else segElsRef.current.delete(seg.id) }}
+                  className={`absolute w-[11%] ${isHead ? 'drop-shadow-[0_0_10px_rgba(244,63,94,0.55)]' : ''}`}
+                  style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)', zIndex: 100 - idx }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={seg.tough ? '/game7/seg_node_tough.png' : '/game7/seg_node.png'}
+                    alt=""
+                    className="w-full"
+                    draggable={false}
+                  />
+                  {/* 남은 HP 숫자 */}
+                  {/* 남은 HP — 마디 색이 진해 보라색 텍스트는 안 읽힌다. 흰색 + 외곽 그림자로 대비 확보 */}
+                  <span
+                    className="absolute inset-0 flex items-center justify-center text-[12px] font-extrabold text-white sm:text-base"
+                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.6)' }}
+                  >
+                    {Math.max(0, seg.hp)}
+                  </span>
+                  {/* 보물상자 표식 */}
+                  {seg.chest && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src="/game7/chest_gold.png"
+                      alt=""
+                      className="absolute -right-[18%] -top-[26%] w-[62%] animate-pulse"
+                      draggable={false}
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* 자동 발사 탄 */}
+          {bullets.map(b => (
+            <div
+              key={b.id}
+              className="pointer-events-none absolute bottom-[16%] left-1/2 w-[4%] -translate-x-1/2"
+              style={{ animation: `boltup ${b.dur}ms linear forwards` }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/game7/bolt_shot.png" alt="" className="w-full -rotate-90" draggable={false} />
+            </div>
+          ))}
+
+          {/* 방어탑 + 주인공 (하단 중앙) */}
           {started && (
             <>
-              <div className="absolute bottom-[16%] right-[3%] w-[11%]">
+              <div className="absolute bottom-[13%] left-1/2 w-[10%] -translate-x-1/2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/game7/shield_tower.png" alt="" className="w-full drop-shadow" draggable={false} />
               </div>
-              <div className="absolute bottom-[6%] right-[13%] w-[9%]">
+              <div className="absolute bottom-[2%] left-[38%] w-[9%]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={`/game7/hero_${hero}.png`} alt="" className="w-full drop-shadow" draggable={false} />
               </div>
             </>
           )}
 
-          {/* 세균 (클릭 요격) */}
-          {started && enemiesRef.current.map(enemy => (
-            <div
-              key={enemy.id}
-              ref={(el) => {
-                if (el) enemyElsRef.current.set(enemy.id, el)
-                else enemyElsRef.current.delete(enemy.id)
-              }}
-              className={`absolute ${enemy.big ? 'w-[9.5%]' : 'w-[7.5%]'} ${
-                enemy.state === 'hit' ? 'animate-[germpop_0.4s_ease-out_forwards]' : ''
-              } ${enemy.state === 'leaked' ? 'opacity-0' : ''}`}
-              style={{ left: '4%', top: `${enemy.y}%`, transform: 'translate(-50%, -50%)' }}
-            >
-              <button
-                type="button"
-                onClick={() => shoot(enemy)}
-                className="block w-full cursor-crosshair transition-transform hover:scale-110 active:scale-95"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={enemy.big ? '/game7/germ_big.png' : '/game7/germ_small.png'} alt="" className="w-full" draggable={false} />
-                <span className="absolute inset-x-[-30%] -top-[14%] break-keep rounded-full bg-white/90 px-1.5 py-0.5 text-center text-[10px] font-extrabold leading-tight text-purple-800 shadow sm:text-xs">
-                  {enemy.word.keyword}
-                </span>
-              </button>
-            </div>
-          ))}
-
-          {/* 요격 탄 */}
-          {shots.map(s => (
-            <div
-              key={s.id}
-              className="pointer-events-none absolute w-[6%] animate-[boltfly_0.4s_ease-out_forwards]"
-              style={{ left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%, -50%)' }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/game7/bolt_shot.png" alt="" className="w-full" draggable={false} />
-            </div>
-          ))}
-
           {/* 시작 화면 */}
           {!started && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/45 backdrop-blur-[2px]">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/50 backdrop-blur-[2px]">
               <p className="text-lg font-bold text-white drop-shadow">{t('pickHero')}</p>
               <div className="flex items-end gap-6">
                 {(['girl', 'boy'] as const).map(h => (
@@ -347,25 +422,102 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
               <button onClick={beginGame} className="rounded-xl bg-purple-500 px-8 py-3 text-sm font-bold text-white shadow-lg hover:bg-purple-600">
                 {t('startGame')}
               </button>
-              <p className="text-xs text-white/85">{t('defenseHint')}</p>
+              <p className="max-w-md text-center text-xs text-white/85">{t('defenseHint2')}</p>
+            </div>
+          )}
+
+          {/* 퀴즈 (보물상자) */}
+          {phase === 'quiz' && quiz && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
+                <div className="mb-3 flex items-center justify-center gap-2 text-amber-600">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/game7/chest_gold.png" alt="" className="h-7 w-auto" draggable={false} />
+                  <span className="text-sm font-bold">{t('chestQuizTitle')}</span>
+                </div>
+                <p className="mb-4 text-center text-sm leading-relaxed text-gray-700">{quiz.answer.description}</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {quiz.options.map(opt => {
+                    const isAnswer = opt.keyword === quiz.answer.keyword
+                    const showResult = quizResult !== null
+                    return (
+                      <button
+                        key={opt.keyword}
+                        onClick={() => answerQuiz(opt)}
+                        disabled={showResult}
+                        className={`rounded-xl border-2 px-3 py-2.5 text-sm font-bold transition-all ${
+                          showResult
+                            ? isAnswer
+                              ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                              : 'border-gray-200 bg-gray-50 text-gray-400'
+                            : 'border-purple-200 bg-white text-gray-800 hover:border-purple-400 hover:bg-purple-50'
+                        }`}
+                      >
+                        {opt.keyword}
+                      </button>
+                    )
+                  })}
+                </div>
+                {quizResult && (
+                  <p className={`mt-3 text-center text-sm font-bold ${quizResult === 'correct' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {quizResult === 'correct' ? t('quizCorrect') : t('quizWrong')}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 업그레이드 3택 */}
+          {phase === 'reward' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 p-4 backdrop-blur-sm">
+              <div className="flex items-center gap-1.5 text-amber-300">
+                <Sparkles className="h-4 w-4" />
+                <span className="text-sm font-bold">{t('rewardTitle')}</span>
+              </div>
+              <div className="flex w-full max-w-2xl justify-center gap-3">
+                {rewardChoices.map((u, i) => {
+                  const label = upgradeLabel(u.id)
+                  const isFeatured = i === 1
+                  return (
+                    <button
+                      key={u.id}
+                      onClick={() => pickUpgrade(u)}
+                      className={`flex flex-1 flex-col items-center gap-2 rounded-2xl border-2 px-2 py-4 transition-all hover:-translate-y-1 ${
+                        isFeatured
+                          ? 'border-fuchsia-400 bg-gradient-to-b from-fuchsia-600/90 to-fuchsia-800/90 shadow-[0_0_24px_rgba(232,121,249,0.5)]'
+                          : 'border-teal-400 bg-gradient-to-b from-teal-600/90 to-teal-800/90'
+                      }`}
+                    >
+                      <div className={`flex h-16 w-16 items-center justify-center rounded-full border-2 ${
+                        isFeatured ? 'border-fuchsia-300 bg-fuchsia-900/60' : 'border-teal-300 bg-teal-900/60'
+                      }`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={u.icon} alt="" className="h-10 w-auto" draggable={false} />
+                      </div>
+                      <p className="text-sm font-extrabold text-yellow-200 drop-shadow">{label.title}</p>
+                      <p className="text-[11px] font-semibold text-emerald-200">{label.effect}</p>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
           {/* 종료 화면 */}
           {phase === 'finished' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-black/60 backdrop-blur-[2px]">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-black/70 backdrop-blur-[2px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={hp > 0 ? '/game7/shield_tower.png' : '/game7/germ_big.png'}
+                src={cleared ? '/game7/shield_tower.png' : '/game7/seg_node_tough.png'}
                 alt=""
                 className="w-20 animate-bounce"
                 draggable={false}
               />
               <p className="text-xl font-extrabold text-white drop-shadow">
-                {hp > 0 ? t('defenseWin') : t('defenseLose')}
+                {cleared ? t('defenseWin') : t('defenseLose')}
               </p>
               <p className="text-3xl font-extrabold text-white drop-shadow">{score}{t('scoreSuffix')}</p>
-              <p className="text-sm text-white/90">{t('accuracy', { correct: defeated, total: totalWaves })}</p>
+              <p className="text-sm text-white/90">{t('segmentsKilled', { n: killed, total: TOTAL_SEGMENTS })}</p>
               <div className="mt-1 flex gap-2">
                 <button onClick={handleReplay} className="rounded-xl bg-purple-500 px-5 py-2.5 text-sm font-bold text-white shadow hover:bg-purple-600">
                   {t('playAgain')}
@@ -380,13 +532,9 @@ export function MisconceptionDefenseGame({ words, onClose }: MisconceptionDefens
       </div>
 
       <style jsx global>{`
-        @keyframes germpop {
-          0% { opacity: 1; scale: 1; rotate: 0deg; }
-          100% { opacity: 0; scale: 1.35; rotate: 18deg; }
-        }
-        @keyframes boltfly {
-          0% { opacity: 1; transform: translate(-50%, -50%) scale(0.7); }
-          100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        @keyframes boltup {
+          from { transform: translate(-50%, 0) scale(1); opacity: 1; }
+          to { transform: translate(-50%, -420%) scale(0.9); opacity: 0.85; }
         }
       `}</style>
     </div>

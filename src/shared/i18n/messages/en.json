@@ -737,10 +737,10 @@
           "objPin": "Check the term on the orb before pulling"
         },
         "misconceptionDefense": {
-          "subtitle": "Shoot down misconception germs",
-          "goal": "Germs march toward your gate carrying terms. Shoot only the germ whose term matches the description. Wrong shots or leaks cost shield!",
-          "controlShoot": "Click/tap a germ to shoot",
-          "objGerm": "Check each germ's term label first"
+          "subtitle": "Break segments, quiz up your weapon",
+          "goal": "The misconception colony marches in, each segment with its own HP. Your character fires automatically at the lead segment; destroying it pushes the colony back. Break a treasure-chest segment to trigger a term quiz — answer correctly to upgrade your weapon. Without upgrades you cannot break the later segments!",
+          "controlShoot": "Auto-fire (no controls) · quiz by click/tap",
+          "objGerm": "Target chest segments to earn quiz chances"
         },
         "knowledgeTower": {
           "subtitle": "Stack only the correct term blocks",
@@ -805,7 +805,23 @@
         "linkProgress": "Linked {done}/{total}",
         "linkHint": "Pick a term, then link its definition",
         "linkPicked": "'{word}' selected — tap its definition",
-        "linkAllDone": "{total} pairs linked ({attempts} tries)"
+        "linkAllDone": "{total} pairs linked ({attempts} tries)",
+        "segmentsLeft": "{n} segments left",
+        "segmentsKilled": "{n} of {total} segments destroyed",
+        "statDamage": "DMG {n}",
+        "statRate": "{n}/s",
+        "defenseIntro2": "Auto-firing — break the chest segments",
+        "defenseHint2": "Your character fires automatically. Breaking a treasure-chest segment opens a quiz; answer it right to upgrade your weapon. Without upgrades the later segments are unbreakable!",
+        "chestQuizTitle": "Treasure chest — which term fits?",
+        "quizCorrect": "Correct! Pick an upgrade",
+        "quizWrong": "Wrong… chest lost",
+        "rewardTitle": "Choose an upgrade",
+        "upgRapidTitle": "Rapid Fire",
+        "upgRapidEffect": "Fire rate +0.9/s",
+        "upgPowerTitle": "Power Shot",
+        "upgPowerEffect": "Damage +80%",
+        "upgSpeedTitle": "Bolt Speed",
+        "upgSpeedEffect": "Projectile speed +45%"
       },
       "termCatch": "Term Catch",
       "knowledgeGate": "Knowledge Gates",
