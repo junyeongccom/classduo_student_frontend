@@ -11,7 +11,7 @@ import { authService } from '@/features/auth/services/authService'
 // [demo/hai-sync 전용] PROD Supabase 고정 (Preview env가 dev 프로젝트를 주입해 JWT 불일치)
 // anon key는 public 키. main 병합 금지 브랜치.
 const SUPABASE_URL = 'https://wbubzjhadezxtimutsop.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5emdid2NhbXltc25yZ3Rsbnh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMTkwNzUsImV4cCI6MjA4Mzg5NTA3NX0.mKsmz_cOUi9H0L7KkFrqhUFk5YFEzOt-C4OzmPO4f7I'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndidWJ6amhhZGV6eHRpbXV0c29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNDg0OTEsImV4cCI6MjA4NTYyNDQ5MX0.WWOJ2rNk5zMF03T8rizbRpyaKipVf82Kj2MgNxsoSww'
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.warn('⚠️ Supabase 환경 변수가 설정되지 않았습니다. NEXT_PUBLIC_SUPABASE_URL과 NEXT_PUBLIC_SUPABASE_ANON_KEY를 확인하세요.')
