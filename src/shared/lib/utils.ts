@@ -19,26 +19,9 @@ export function cn(...inputs: ClassValue[]) {
  * 2. NEXT_PUBLIC_API_URL 추가 (예: https://your-backend-api.com)
  * 3. Production, Preview, Development 환경 모두에 설정
  */
-export const API_BASE_URL = (() => {
-  const url = process.env.NEXT_PUBLIC_API_URL
-  
-  // 환경 변수가 있으면 사용
-  if (url && url.trim() !== '') {
-    return url.trim()
-  }
-  
-  // 빌드 시점에는 에러를 절대 던지지 않음 (Vercel 빌드 실패 방지)
-  // Next.js 빌드 시점에는 환경 변수가 아직 주입되지 않을 수 있음
-  // 런타임에만 경고를 표시하고, 기본값 사용
-  const defaultUrl = 'http://localhost:8000'
-  
-  // 런타임(브라우저)에서만 경고 표시
-  if (typeof window !== 'undefined') {
-    console.warn('⚠️ NEXT_PUBLIC_API_URL이 설정되지 않았습니다. Vercel 환경 변수를 확인하세요. 기본값을 사용합니다:', defaultUrl)
-  }
-  
-  return defaultUrl
-})()
+// [demo/hai-sync 전용] 한림 8/28 부스 데모: Vercel Preview 환경변수(dev-api)를 무시하고
+// 운영검증된 PROD API에 고정한다. main 병합 금지 브랜치.
+export const API_BASE_URL = 'https://api.classduo.io.kr'
 
 /**
  * 토큰 저장소 키

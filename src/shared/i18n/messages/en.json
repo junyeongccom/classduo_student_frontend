@@ -1111,8 +1111,8 @@
       "closeButton": "OK"
     },
     "guard": {
-      "loginNoticeLine1": "New here?",
-      "loginNoticeLine2": "A separate sign-up is required. Please use your @korea.ac.kr email — the same one linked to the Korea University portal!",
+      "loginNoticeLine1": "HAI-Sync Demo",
+      "loginNoticeLine2": "Please sign in with the demo account you were given (aied_st1@hallym.ac.kr).",
       "signupTab": "Sign up",
       "loginTab": "Log in",
       "noticeTitle": "Verification Email Notice",

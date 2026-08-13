@@ -1111,8 +1111,8 @@
       "closeButton": "확인"
     },
     "guard": {
-      "loginNoticeLine1": "처음 이용하시나요?",
-      "loginNoticeLine2": "별도의 회원가입이 필요하며, 고려대학교 포털과 동일한 @korea.ac.kr 이메일을 사용해 주세요!",
+      "loginNoticeLine1": "HAI-Sync 데모 안내",
+      "loginNoticeLine2": "안내받으신 데모 계정(aied_st1@hallym.ac.kr)으로 로그인해 주세요.",
       "signupTab": "회원가입",
       "loginTab": "로그인",
       "noticeTitle": "회원가입 인증 메일 관련 안내",
