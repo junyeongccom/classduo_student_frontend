@@ -146,9 +146,9 @@ function NewSidebar() {
           >
             <Link href="/studyspace/home" className={cn('flex min-w-0 items-center', isMobile ? 'gap-[calc(8px*var(--u))]' : 'gap-3')}>
               <img
-                src="/Aplus_logo.png"
-                alt="Aplus"
-                className={cn('w-auto shrink-0', isMobile ? 'h-[calc(26px*var(--u))]' : 'h-9')}
+                src="/HAI_Sync_favicon.png"
+                alt="HAI-Sync"
+                className={cn('w-auto shrink-0 rounded-lg', isMobile ? 'h-[calc(26px*var(--u))]' : 'h-9')}
               />
               <h2
                 className={cn(
@@ -156,7 +156,7 @@ function NewSidebar() {
                   isMobile ? 'text-[calc(15px*var(--u))]' : 'text-xl sm:text-2xl',
                 )}
               >
-                Aplus
+                HAI-Sync
               </h2>
             </Link>
             <button
@@ -474,7 +474,7 @@ function LegacySidebar() {
     <TooltipProvider delayDuration={200}>
       <div className="fixed left-0 top-4 z-[60] flex w-[88px] items-center justify-center bg-transparent">
         <div className="flex items-center justify-center">
-          <img src="/Aplus_logo.png" alt="CLASSDUO" className="h-8 w-auto" />
+          <img src="/HAI_Sync_favicon.png" alt="HAI-Sync" className="h-8 w-auto rounded-lg" />
         </div>
       </div>
       <div className="fixed left-0 top-[72px] z-[60] flex w-[88px] items-center justify-center bg-transparent">
