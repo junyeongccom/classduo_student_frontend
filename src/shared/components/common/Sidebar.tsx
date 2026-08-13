@@ -153,7 +153,7 @@ function NewSidebar() {
               <h2
                 className={cn(
                   'truncate font-bold tracking-tight text-gray-900 dark:text-gray-50',
-                  isMobile ? 'text-[calc(15px*var(--u))]' : 'text-xl sm:text-2xl',
+                  isMobile ? 'text-[calc(14px*var(--u))]' : 'text-lg sm:text-xl',
                 )}
               >
                 HAI-Sync
