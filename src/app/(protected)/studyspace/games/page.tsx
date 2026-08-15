@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ReviewContainer } from '@/features/review'
 import { useNewStudyspace } from '@/shared/lib/featureFlags'
+import { useIsAppWebView } from '@/shared/lib/appBridge'
 import { useLocale } from 'next-intl'
 import { Loader2, Puzzle } from 'lucide-react'
 
@@ -21,9 +22,13 @@ function ReviewPageContent() {
 
 export default function ReviewPage() {
   const isNewUI = useNewStudyspace()
+  const isAppMode = useIsAppWebView()
   const locale = useLocale()
 
-  if (isNewUI) {
+  // 신 UI에서 게임은 아직 '준비 중'이지만, 모바일 앱은 게임 탭이 핵심 동선이라
+  // 앱 모드에서는 기존 아케이드를 그대로 연다. 웹(브라우저)은 지금처럼 준비 중 유지 —
+  // 신 UI 게임 화면이 나오면 이 분기를 걷어내면 된다.
+  if (isNewUI && !isAppMode) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 text-gray-400">
         <Puzzle className="h-12 w-12 stroke-[1.5]" />
