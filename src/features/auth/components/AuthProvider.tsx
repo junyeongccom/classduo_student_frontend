@@ -5,6 +5,7 @@ import { authService } from '../services/authService'
 import { useAuthStore } from '../store/authStore'
 import { TOKEN_KEY } from '@/shared/lib/utils'
 import { startTokenRefreshTimer, stopTokenRefreshTimer } from '@/shared/lib/supabase'
+import { initAppBridge } from '@/shared/lib/appBridge'
 import { setAnalyticsUser, setUserProperties } from '@/shared/hooks/useAnalytics'
 import { initAnalytics } from '@/shared/lib/analytics'
 
@@ -13,6 +14,9 @@ import { initAnalytics } from '@/shared/lib/analytics'
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { setUser, setLoading, logout, isAuthenticated } = useAuthStore()
+
+  // 모바일 앱 WebView 브리지 리스너 등록 (앱 플래그 없으면 리스너만 등록되고 아무 동작 없음)
+  useEffect(() => initAppBridge(), [])
 
   useEffect(() => {
     const initAuth = async () => {

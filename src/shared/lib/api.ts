@@ -1,5 +1,6 @@
 import { API_BASE_URL, TOKEN_KEY } from './utils'
 import { refreshSupabaseToken, handleJWTExpiration } from './supabase'
+import { isAppWebView, requestTokenFromApp } from './appBridge'
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -67,23 +68,29 @@ export async function apiRequest<T>(
 
     // 401 에러 발생 시 싱글턴 토큰 갱신 시도
     if (response.status === 401 && auth) {
-      const refreshSuccess = await refreshSupabaseToken()
-
-      if (refreshSuccess) {
-        // 새 토큰으로 원래 요청 재시도
-        const newToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
-        if (newToken) {
-          requestHeaders['Authorization'] = `Bearer ${newToken}`
-        }
-
-        response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          method,
-          headers: requestHeaders,
-          body: body ? JSON.stringify(body) : undefined,
-        })
+      if (isAppWebView()) {
+        // 앱 WebView 모드 — 자체 refresh 금지(refresh token 미주입).
+        // 앱에 새 토큰을 요청(1회)하고 기존 실패 흐름(401 에러 반환)으로 진행 — 무한 대기 금지
+        requestTokenFromApp()
       } else {
-        // 갱신 실패 → 통합 logout (useAuthStore.logout() 포함)
-        await handleJWTExpiration()
+        const refreshSuccess = await refreshSupabaseToken()
+
+        if (refreshSuccess) {
+          // 새 토큰으로 원래 요청 재시도
+          const newToken = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
+          if (newToken) {
+            requestHeaders['Authorization'] = `Bearer ${newToken}`
+          }
+
+          response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method,
+            headers: requestHeaders,
+            body: body ? JSON.stringify(body) : undefined,
+          })
+        } else {
+          // 갱신 실패 → 통합 logout (useAuthStore.logout() 포함)
+          await handleJWTExpiration()
+        }
       }
     }
 

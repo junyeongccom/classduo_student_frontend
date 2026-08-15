@@ -7,6 +7,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { TOKEN_KEY, REFRESH_TOKEN_KEY } from './utils'
 import { authService } from '@/features/auth/services/authService'
+import { isAppWebView, requestTokenFromApp } from './appBridge'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -242,6 +243,13 @@ let refreshPromise: Promise<boolean> | null = null
  * 싱글턴 패턴: 동시 호출 시 기존 Promise를 공유
  */
 export async function refreshSupabaseToken(): Promise<boolean> {
+  // 앱 WebView 모드 — refresh token이 주입되지 않으므로 자체 refresh를 시도하지 않는다.
+  // 앱에 새 토큰을 요청(1회 발사)하고 실패로 반환 — 앱이 postMessage로 새 토큰을 푸시한다.
+  if (isAppWebView()) {
+    requestTokenFromApp()
+    return false
+  }
+
   if (refreshPromise) {
     return refreshPromise
   }
@@ -325,6 +333,11 @@ export function startTokenRefreshTimer(): void {
     return
   }
 
+  // 앱 WebView 모드 — 예방적 자체 갱신 비활성 (토큰 갱신은 앱→웹 단방향 푸시)
+  if (isAppWebView()) {
+    return
+  }
+
   // 기존 타이머 정리
   if (tokenRefreshTimer) {
     clearTimeout(tokenRefreshTimer)
@@ -383,8 +396,13 @@ export function stopTokenRefreshTimer(): void {
  */
 export async function handleJWTExpiration(): Promise<boolean> {
   const refreshSuccess = await refreshSupabaseToken()
-  
+
   if (!refreshSuccess) {
+    // 앱 WebView 모드 — 앱이 새 토큰을 재주입할 때까지 세션 유지 (웹 자체 로그아웃 금지)
+    if (isAppWebView()) {
+      return false
+    }
+
     // 토큰 갱신 실패 시 재로그인 유도
     // authStore를 동적 import하여 순환 참조 방지
     const { useAuthStore } = await import('@/features/auth/store/authStore')

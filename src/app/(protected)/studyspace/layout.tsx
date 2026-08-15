@@ -10,6 +10,7 @@ import {
 import { PanelRightOpen, X, Flame, Settings, MessageSquare, LogOut, Moon, KeyRound } from 'lucide-react'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 import { useNewStudyspace } from '@/shared/lib/featureFlags'
+import { useIsAppWebView } from '@/shared/lib/appBridge'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useI18n, type AppLocale } from '@/shared/i18n/I18nProvider'
@@ -95,6 +96,9 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
   // 풀이 모드 — 글로벌 사이드바 + 헤더 숨김 (자체 레이아웃 사용)
   const isSolveMode = /\/exam-prep\/test\//.test(pathname)
+
+  // 앱 WebView 모드 — 앱 네이티브 UI와 중복되는 사이드바/헤더 숨김 (콘텐츠만 표시)
+  const isAppMode = useIsAppWebView()
 
   useEffect(() => {
     if (!currentLectureId || isDialoguePage) {
@@ -193,9 +197,9 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('exam-prep-rewards-refresh', handler)
   }, [isExamPrepPage, refreshGamification])
 
-  // 풀이 모드 — 사이드바·헤더 없이 children만 풀스크린으로 표시
+  // 풀이 모드 / 앱 WebView 모드 — 사이드바·헤더 없이 children만 풀스크린으로 표시
   // (모든 hook 호출 뒤에 early return 두어 React Hook 규칙 준수)
-  if (isSolveMode) {
+  if (isSolveMode || isAppMode) {
     return (
       <div className="flex h-dvh bg-[#F9F9FB] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F9F9FB] dark:bg-gray-950">
@@ -391,6 +395,8 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const { rightbar, overlay } = useStudyspaceLayoutSlots()
   const pathname = usePathname()
+  // 앱 WebView 모드 — 앱 네이티브 UI와 중복되는 글로벌 사이드바 숨김
+  const isAppMode = useIsAppWebView()
   const [isMobileRightbarOpen, setIsMobileRightbarOpen] = useState(false)
   const [isResizingOverlay, setIsResizingOverlay] = useState(false)
   // 대화형 학습 이탈 시 만족도 평가 모달 트리거 (구 레이아웃에서도 적용)
@@ -505,13 +511,13 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-dvh bg-gray-50 text-gray-900">
-      <Sidebar />
+      {!isAppMode && <Sidebar />}
 
       <div className="flex min-h-0 flex-1 transition-all duration-300">
-        <div 
+        <div
           className="flex min-h-0 flex-1 flex-col"
         >
-          <div className="flex min-h-0 flex-1 overflow-hidden pl-[88px]">
+          <div className={`flex min-h-0 flex-1 overflow-hidden ${isAppMode ? '' : 'pl-[88px]'}`}>
             {!isExamPrep && showRightSidebar && (
               <button
                 onClick={() => setIsMobileRightbarOpen(true)}
