@@ -884,6 +884,12 @@
       "recentIssuesTitle": "Recent Issues",
       "examPointsTitle": "Key Points (Exam Prep)",
       "easyExplanationLabel": "Simple explanation",
+      "easyBlock": {
+        "summary": "In short",
+        "analogy": "Analogy",
+        "example": "For example",
+        "why": "Why it matters"
+      },
       "coreGroupTitle": "Covered in class",
       "supplementaryGroupTitle": "{count, plural, one {# topic} other {# topics}} only in the materials",
       "timeShareBadge": "{percent}% of class time"
