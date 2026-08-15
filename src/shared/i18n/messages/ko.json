@@ -339,6 +339,9 @@
     "socraticAhaBadge": "아하 모먼트 {count}회",
     "socraticAhaChip": "아하!",
     "socraticLoading": "생각을 정리하는 중이에요…",
+    "socraticCompactScore": "점수 {score}/100",
+    "socraticPanelExpandAria": "소크라 점수 패널 펼치기",
+    "socraticPanelCollapseAria": "소크라 점수 패널 접기",
     "socraticOnboarding": {
       "title": "🎓 소크라 문답은 이렇게 진행돼요",
       "subtitle": "답을 알려 드리지 않고, 질문을 하나씩 드리며 스스로 답에 닿도록 돕는 학습이에요.",

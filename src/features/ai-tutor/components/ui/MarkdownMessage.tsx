@@ -29,6 +29,14 @@ type MarkdownMessageProps = {
   onCitationClick?: (citation: CitationTag, messageIndex: number) => void
   /** onCitationClick 에 넘겨줄 메시지 인덱스 (React.memo 유지를 위해 클로저 대신 prop) */
   citationMessageIndex?: number
+  /**
+   * 인라인 아코디언으로 펼쳐진 출처 칩 (모바일 전용).
+   * 이 메시지 안에서 type/no 가 일치하는 칩 아래에 expandedCitationCard 를 렌더한다.
+   * 미펼침 메시지는 null/undefined 로 유지 — React.memo 리렌더를 유발하지 않는다.
+   */
+  expandedCitation?: CitationTag | null
+  /** expandedCitation 과 일치하는 칩 아래에 렌더할 카드 노드 (span 기반 — <p> 내부 렌더 가능해야 함) */
+  expandedCitationCard?: React.ReactNode
 }
 
 /**
@@ -104,7 +112,7 @@ function linkifyCitations(md: string): string {
 // 그대로면 이 컴포넌트는 리렌더하지 않는다. (리렌더 시 react-markdown 이 텍스트 노드를 재생성 →
 // 드래그 중이던 텍스트 선택이 풀리며 "다른 범위로 튀는" 버그가 났음)
 // onCitationClick/citationMessageIndex 를 넘길 때는 호출부에서 stable 참조(useCallback)를 유지할 것.
-export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, className, headingSize = 'default', onCitationClick, citationMessageIndex }: MarkdownMessageProps) {
+export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, className, headingSize = 'default', onCitationClick, citationMessageIndex, expandedCitation, expandedCitationCard }: MarkdownMessageProps) {
   const isCompact = headingSize === 'compact'
   const content = cjkFriendlyEmphasis(onCitationClick ? linkifyCitations(markdown ?? '') : (markdown ?? ''))
   return (
@@ -138,14 +146,25 @@ export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, c
             if (citeMatch && onCitationClick) {
               const type = citeMatch[1] as 'recording' | 'material'
               const no = Number(citeMatch[2])
+              // 모바일 인라인 아코디언: 펼쳐진 칩이면 강조 스타일 + 칩 바로 아래에 카드 렌더
+              const isExpanded =
+                !!expandedCitation && expandedCitation.type === type && expandedCitation.no === no
               return (
-                <button
-                  type="button"
-                  onClick={() => onCitationClick({ type, no }, citationMessageIndex ?? -1)}
-                  className="mx-0.5 inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-1.5 py-px align-baseline text-[11px] font-medium leading-tight text-gray-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:bg-indigo-950 dark:hover:text-indigo-300"
-                >
-                  {children}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded || undefined}
+                    onClick={() => onCitationClick({ type, no }, citationMessageIndex ?? -1)}
+                    className={`mx-0.5 inline-flex items-center rounded-full border px-1.5 py-px align-baseline text-[11px] font-medium leading-tight transition-colors ${
+                      isExpanded
+                        ? 'border-indigo-300 bg-indigo-50 text-indigo-600 dark:border-indigo-500 dark:bg-indigo-950 dark:text-indigo-300'
+                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-indigo-500 dark:hover:bg-indigo-950 dark:hover:text-indigo-300'
+                    }`}
+                  >
+                    {children}
+                  </button>
+                  {isExpanded && expandedCitationCard}
+                </>
               )
             }
             return <a href={href}>{children}</a>

@@ -339,6 +339,9 @@
     "socraticAhaBadge": "{count, plural, one {# aha moment} other {# aha moments}}",
     "socraticAhaChip": "Aha!",
     "socraticLoading": "Thinking it through…",
+    "socraticCompactScore": "Score {score}/100",
+    "socraticPanelExpandAria": "Expand Socratic score panel",
+    "socraticPanelCollapseAria": "Collapse Socratic score panel",
     "socraticOnboarding": {
       "title": "🎓 How Socratic dialogue works",
       "subtitle": "We won't hand you the answer — we ask one question at a time so you can reach it yourself.",

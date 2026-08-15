@@ -8,7 +8,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { History, ChevronRight, Menu, X as XIcon } from 'lucide-react'
+import { History, ChevronRight, ChevronUp, ChevronDown, Menu, X as XIcon } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
@@ -18,6 +18,7 @@ import ChatSidebar from '@/features/ai-tutor/components/ui/ChatSidebar'
 import { ReferencePanel } from '@/features/ai-tutor/components/ui/ReferencePanel'
 import SocraticScorePanel from '@/features/ai-tutor/components/ui/SocraticScorePanel'
 import { useSocraticStore } from '@/features/ai-tutor/store/useSocraticStore'
+import { buildStageBlocks } from '@/features/ai-tutor/domain/socraticStages'
 import { SocraticOnboardingModal } from '@/features/ai-tutor/components/ui/SocraticOnboardingModal'
 import { useSocraticOnboarding } from '@/features/ai-tutor/hooks/useSocraticOnboarding'
 import { useAuthStore } from '@/features/auth/store/authStore'
@@ -27,6 +28,10 @@ import { DialogueLectureSidebar } from '../ui/DialogueLectureSidebar'
 import { useLectures } from '../../hooks/useLectures'
 
 const SOCRATIC_PANEL_WIDTH = 380
+// 모바일 바텀시트 높이 — 시트가 열려도 채팅 입력창이 가려지지 않게 채팅 영역 하단 패딩과 짝으로 사용
+const MOBILE_SHEET_HEIGHT = '45dvh'
+// 소크라 컴팩트 바(접힘 상태) 높이만큼의 채팅 하단 패딩
+const SOCRATIC_COMPACT_BAR_PAD = '3rem'
 
 interface DialogueLearningContainerProps {
   courseId: string
@@ -236,6 +241,21 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     mql.addEventListener('change', update)
     return () => mql.removeEventListener('change', update)
   }, [])
+  // 모바일 소크라 점수 시트 — 기본은 접힌 컴팩트 바, 탭하면 45dvh 시트로 확장
+  const [isSocraticSheetExpanded, setIsSocraticSheetExpanded] = useState(false)
+  // 컴팩트 바에 표시할 진행 중 유형 ("용어암기 1/2") — SocraticScorePanel 의 블록 규칙과 동일
+  const socraticBlocks = useMemo(
+    () => buildStageBlocks(socraticStageOutline ?? [], socraticStageTotal),
+    [socraticStageOutline, socraticStageTotal],
+  )
+  const socraticActiveBlock =
+    socraticBlocks.find(
+      (b) => socraticCurrentStage >= b.start && socraticCurrentStage <= b.start + b.count - 1,
+    ) ?? null
+  const socraticActiveBlockPassed = socraticActiveBlock
+    ? Math.min(Math.max(socraticCurrentStage - socraticActiveBlock.start, 0), socraticActiveBlock.count)
+    : 0
+
   // 녹음본·강의자료 출처 패널 동시 표시는 넓은 데스크톱(>=1367)에서만 허용. 태블릿(가로 포함) 이하는 둘 중 하나만.
   const [allowBothPanels, setAllowBothPanels] = useState(false)
   useEffect(() => {
@@ -303,6 +323,18 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
 
   // 두 패널 모두 열리면 사이드바 숨김
   const hideSidebar = isNotesPanelOpen && isMaterialsPanelOpen
+
+  // 모바일 바텀시트가 열릴 때 채팅 카드(입력창 포함)를 시트 위로 밀어 올리는 하단 패딩.
+  // 출처 시트/소크라 확장 시트 = 시트 높이만큼, 소크라 컴팩트 바 = 바 높이만큼.
+  const mobilePadBottom = !isDesktopViewport
+    ? isNotesPanelOpen || isMaterialsPanelOpen
+      ? MOBILE_SHEET_HEIGHT
+      : isSocraticPanelOpen
+        ? isSocraticSheetExpanded
+          ? MOBILE_SHEET_HEIGHT
+          : SOCRATIC_COMPACT_BAR_PAD
+        : undefined
+    : undefined
 
   return (
     <>
@@ -372,7 +404,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
         <div ref={chatAreaRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <div
             className="flex flex-1 min-h-0 flex-col px-2 py-1.5 md:px-4"
-            style={{ paddingRight: isDesktopViewport && rightPanelsWidth > 0 ? rightPanelsWidth + 16 : undefined }}
+            style={{
+              paddingRight: isDesktopViewport && rightPanelsWidth > 0 ? rightPanelsWidth + 16 : undefined,
+              paddingBottom: mobilePadBottom,
+            }}
           >
             <div className="flex flex-1 min-h-0 flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
               {/* Chat Toolbar */}
@@ -388,8 +423,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                     >
                       <Menu className="h-4 w-4 md:h-5 md:w-5" />
                     </button>
-                    <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 animate-pulse whitespace-nowrap rounded-full bg-[#6366F1] px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">
-                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-b-[#6366F1]" />
+                    {/* 앵커를 버튼 좌측 기준으로 — 중앙 정렬(-translate-x-1/2)은 좁은 화면(앱 모드 pl 제거)에서
+                        툴팁이 화면 왼쪽 밖으로 잘린다. 화살표만 버튼 중앙 근처(left-2.5)에 둔다. */}
+                    <span className="pointer-events-none absolute left-0 top-full z-20 mt-2 animate-pulse whitespace-nowrap rounded-full bg-[#6366F1] px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">
+                      <span className="absolute bottom-full left-2.5 border-[5px] border-transparent border-b-[#6366F1]" />
                       {t('aiTutorSidebar.selectClassTooltip')}
                     </span>
                   </div>
@@ -504,20 +541,30 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
             </div>
           </div>
 
-          {/* 녹음본 출처 패널 — 데스크탑 inline 사이드 / 모바일 하단 55dvh sheet */}
+          {/* 녹음본 출처 패널 — 데스크탑 inline 사이드 / 모바일 하단 45dvh 바텀시트 (바깥 탭으로 닫힘) */}
+          {isNotesPanelOpen && !isDesktopViewport && (
+            <div
+              className="fixed inset-0 z-[60] bg-black/10"
+              onClick={handleCloseNotesPanel}
+              aria-hidden
+            />
+          )}
           {isNotesPanelOpen && (
             <div
               className={
                 isDesktopViewport
                   ? 'absolute inset-y-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
-                  : 'fixed inset-x-0 bottom-0 z-[70] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+                  : 'fixed inset-x-0 bottom-0 z-[70] flex flex-col overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
               }
               style={
                 isDesktopViewport
                   ? { width: notesPanelWidth, right: isMaterialsPanelOpen ? materialsPanelWidth : 0 }
-                  : undefined
+                  : { height: MOBILE_SHEET_HEIGHT }
               }
             >
+              {!isDesktopViewport && (
+                <div className="mx-auto mt-2 h-1.5 w-12 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600" aria-hidden />
+              )}
               <div
                 onMouseDown={(e) => {
                   e.preventDefault()
@@ -534,26 +581,37 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 messages={messages}
                 isRecordingSourceDisabled={isRecordingSourceDisabled}
                 focusTarget={sourceFocus}
+                className={isDesktopViewport ? undefined : 'min-h-0 flex-1'}
               />
             </div>
           )}
 
-          {/* 강의자료 출처 패널 — 데스크탑 inline 사이드 / 모바일 하단 55dvh sheet */}
+          {/* 강의자료 출처 패널 — 데스크탑 inline 사이드 / 모바일 하단 45dvh 바텀시트 (바깥 탭으로 닫힘) */}
+          {isMaterialsPanelOpen && !isDesktopViewport && (
+            <div
+              className="fixed inset-0 z-[60] bg-black/10"
+              onClick={handleCloseMaterialsPanel}
+              aria-hidden
+            />
+          )}
           {isMaterialsPanelOpen && (
             <div
               className={
                 isDesktopViewport
                   ? 'absolute inset-y-0 right-0 z-20 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl'
-                  : 'fixed inset-x-0 bottom-0 z-[70] flex h-[55dvh] flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
+                  : 'fixed inset-x-0 bottom-0 z-[70] flex flex-col overflow-hidden rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900'
               }
-              style={isDesktopViewport ? { width: materialsPanelWidth } : undefined}
+              style={isDesktopViewport ? { width: materialsPanelWidth } : { height: MOBILE_SHEET_HEIGHT }}
             >
+              {!isDesktopViewport && (
+                <div className="mx-auto mt-2 h-1.5 w-12 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600" aria-hidden />
+              )}
               <div
                 onMouseDown={(e) => {
                   e.preventDefault()
                   setIsResizingMaterials(true)
                 }}
-                className={`absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
+                className={`hidden md:block absolute left-0 top-0 z-50 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-gray-900/50 ${
                   isResizingMaterials ? 'bg-gray-900' : 'bg-transparent'
                 }`}
               />
@@ -564,35 +622,94 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                 messages={messages}
                 isRecordingSourceDisabled={isRecordingSourceDisabled}
                 focusTarget={sourceFocus}
+                className={isDesktopViewport ? undefined : 'min-h-0 flex-1'}
               />
             </div>
           )}
 
+          {/* 소크라 점수 패널 — 데스크탑: 우측 고정 패널(기존 동일) / 모바일: 기본 접힌 컴팩트 바 → 탭 시 45dvh 시트 */}
           {isSocraticPanelOpen && socraticActiveTopic && (
-            <div
-              className="fixed inset-x-0 bottom-0 z-30 h-[50dvh] w-full rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl md:absolute md:inset-y-0 md:right-0 md:left-auto md:bottom-auto md:h-full md:w-[var(--ai-w,380px)] md:rounded-none md:border-l md:border-t-0 md:shadow-xl md:z-20 dark:border-gray-700 dark:bg-gray-900"
-              style={{ '--ai-w': `${SOCRATIC_PANEL_WIDTH}px` } as React.CSSProperties}
-            >
-              <div className="md:hidden mx-auto mt-2 h-1.5 w-12 rounded-full bg-gray-300" aria-hidden />
-              <SocraticScorePanel
-                topic={socraticActiveTopic}
-                totalScore={socraticTotalScore}
-                praise={socraticLastPraise}
-                suggestion={socraticLastSuggestion}
-                abuseWarning={socraticAbuseWarning}
-                mastered={socraticMastered}
-                leaderboard={socraticLeaderboard}
-                myStudentId={userId}
-                currentStage={socraticCurrentStage}
-                stageTotal={socraticStageTotal}
-                stageOutline={socraticStageOutline}
-                phase={socraticPhase}
-                scaffoldDepth={socraticScaffoldDepth}
-                maxScaffoldDepth={socraticMaxScaffoldDepth}
-                ahaCount={socraticAhaCount}
-                checkpointResults={socraticCheckpointResults}
-              />
-            </div>
+            isDesktopViewport ? (
+              <div
+                className="absolute inset-y-0 right-0 z-20 h-full w-[var(--ai-w,380px)] border-l border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900"
+                style={{ '--ai-w': `${SOCRATIC_PANEL_WIDTH}px` } as React.CSSProperties}
+              >
+                <SocraticScorePanel
+                  topic={socraticActiveTopic}
+                  totalScore={socraticTotalScore}
+                  praise={socraticLastPraise}
+                  suggestion={socraticLastSuggestion}
+                  abuseWarning={socraticAbuseWarning}
+                  mastered={socraticMastered}
+                  leaderboard={socraticLeaderboard}
+                  myStudentId={userId}
+                  currentStage={socraticCurrentStage}
+                  stageTotal={socraticStageTotal}
+                  stageOutline={socraticStageOutline}
+                  phase={socraticPhase}
+                  scaffoldDepth={socraticScaffoldDepth}
+                  maxScaffoldDepth={socraticMaxScaffoldDepth}
+                  ahaCount={socraticAhaCount}
+                  checkpointResults={socraticCheckpointResults}
+                />
+              </div>
+            ) : (
+              <div
+                className="fixed inset-x-0 bottom-0 z-30 flex w-full flex-col rounded-t-2xl border-t border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+                style={isSocraticSheetExpanded ? { height: MOBILE_SHEET_HEIGHT } : undefined}
+              >
+                {/* 핸들 + 컴팩트 요약 한 줄 — 탭하면 확장/재접힘 (확장 시에도 채팅 입력창은 시트 위에 노출) */}
+                <button
+                  type="button"
+                  onClick={() => setIsSocraticSheetExpanded((v) => !v)}
+                  aria-expanded={isSocraticSheetExpanded}
+                  aria-label={t(
+                    isSocraticSheetExpanded
+                      ? 'aiTutorChat.socraticPanelCollapseAria'
+                      : 'aiTutorChat.socraticPanelExpandAria',
+                  )}
+                  className="flex w-full shrink-0 flex-col items-center gap-1 px-4 pb-2 pt-2"
+                >
+                  <span className="h-1.5 w-12 rounded-full bg-gray-300 dark:bg-gray-600" aria-hidden />
+                  <span className="flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200">
+                    <span>{t('aiTutorChat.socraticCompactScore', { score: socraticTotalScore })}</span>
+                    {socraticActiveBlock && (
+                      <span className="font-medium text-gray-400 dark:text-gray-500">
+                        · {t(`aiTutorChat.socraticStage.${socraticActiveBlock.key}`)}{' '}
+                        {socraticActiveBlockPassed}/{socraticActiveBlock.count}
+                      </span>
+                    )}
+                    {isSocraticSheetExpanded ? (
+                      <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                    ) : (
+                      <ChevronUp className="h-3.5 w-3.5 text-gray-400" />
+                    )}
+                  </span>
+                </button>
+                {isSocraticSheetExpanded && (
+                  <div className="min-h-0 flex-1">
+                    <SocraticScorePanel
+                      topic={socraticActiveTopic}
+                      totalScore={socraticTotalScore}
+                      praise={socraticLastPraise}
+                      suggestion={socraticLastSuggestion}
+                      abuseWarning={socraticAbuseWarning}
+                      mastered={socraticMastered}
+                      leaderboard={socraticLeaderboard}
+                      myStudentId={userId}
+                      currentStage={socraticCurrentStage}
+                      stageTotal={socraticStageTotal}
+                      stageOutline={socraticStageOutline}
+                      phase={socraticPhase}
+                      scaffoldDepth={socraticScaffoldDepth}
+                      maxScaffoldDepth={socraticMaxScaffoldDepth}
+                      ahaCount={socraticAhaCount}
+                      checkpointResults={socraticCheckpointResults}
+                    />
+                  </div>
+                )}
+              </div>
+            )
           )}
         </div>
       </div>

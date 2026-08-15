@@ -23,6 +23,8 @@ import SocraticTopicPicker from '../ui/SocraticTopicPicker'
 import SocraticFinishBar from '../ui/SocraticFinishBar'
 import SocraticLoading from '../ui/SocraticLoading'
 import { MarkdownMessage, type CitationTag } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { InlineCitationCard } from '@/features/ai-tutor/components/ui/InlineCitationCard'
+import { findCitationReference } from '@/features/ai-tutor/domain/findCitationReference'
 import { FeedbackButtons } from '../ui/FeedbackButtons'
 import TranscriptSaveButton from '../ui/TranscriptSaveButton'
 import ChatTranscriptPrintView, {
@@ -119,11 +121,36 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   useEffect(() => {
     onShowReferencePanelRef.current = onShowReferencePanel
   }, [onShowReferencePanel])
+  // 모바일(md 미만)에서 출처 칩을 탭하면 패널 대신 칩 아래 인라인 아코디언으로 펼친다.
+  // 대상 ref 를 찾지 못하면 기존 패널 열기로 폴백. (세션 전환 시 아래 effect 에서 초기화)
+  const [inlineCitation, setInlineCitation] = useState<{
+    messageIndex: number
+    type: 'recording' | 'material'
+    no: number
+  } | null>(null)
   const handleCitationClick = useCallback((citation: CitationTag, messageIndex: number) => {
     if (messageIndex < 0) return
+    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+    if (isMobile) {
+      const refs = useAITutorStore.getState().allReferences.get(messageIndex) ?? []
+      if (findCitationReference(refs, citation.type, citation.no)) {
+        setInlineCitation(prev =>
+          prev && prev.messageIndex === messageIndex && prev.type === citation.type && prev.no === citation.no
+            ? null
+            : { messageIndex, type: citation.type, no: citation.no }
+        )
+        return
+      }
+    }
     focusSource({ type: citation.type, messageIndex, sourceNo: citation.no })
     onShowReferencePanelRef.current?.(citation.type === 'recording' ? 'notes' : 'materials')
   }, [focusSource])
+  // 인라인 아코디언에 쓸 참조 데이터 — 스토어의 메시지 인덱스별 references
+  const allReferencesFromStore = useAITutorStore(state => state.allReferences)
+  // 세션 전환/새 채팅 시 펼침 상태 초기화 (다른 세션의 메시지 인덱스를 가리키지 않도록)
+  useEffect(() => {
+    setInlineCitation(null)
+  }, [currentSessionId])
 
   // 대화형 학습 만족도 평가 — user 메시지 ≥1 인 active session 을 sessionStorage 에 등록 +
   // currentSessionId 변경 (새 채팅 / 다른 세션) 감지 시 이전 세션 평가 모달 트리거.
@@ -1701,17 +1728,33 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 )
               }
               
+              // 모바일 인라인 아코디언: 이 메시지에서 펼쳐진 출처 칩과 카드 (미펼침이면 null → memo 유지)
+              const expandedCitation =
+                inlineCitation && inlineCitation.messageIndex === index
+                  ? { type: inlineCitation.type, no: inlineCitation.no }
+                  : null
+              const expandedCitationRef = expandedCitation
+                ? findCitationReference(allReferencesFromStore.get(index) ?? [], expandedCitation.type, expandedCitation.no)
+                : null
+              const expandedCitationCard = expandedCitation && expandedCitationRef ? (
+                <InlineCitationCard
+                  reference={expandedCitationRef}
+                  type={expandedCitation.type}
+                  no={expandedCitation.no}
+                />
+              ) : null
+
               return (
                 <div key={index} className="flex justify-start">
                   <div className="w-full max-w-none">
                     <div className="text-gray-900">
                       {typingLength < message.content.length ? (
                         <>
-                          <MarkdownMessage markdown={displayedText} className="markdown-content" onCitationClick={handleCitationClick} citationMessageIndex={index} />
+                          <MarkdownMessage markdown={displayedText} className="markdown-content" onCitationClick={handleCitationClick} citationMessageIndex={index} expandedCitation={expandedCitation} expandedCitationCard={expandedCitationCard} />
                           <span className="inline-block w-2 h-4 bg-gray-900 ml-1 animate-pulse" />
                         </>
                       ) : (
-                        <MarkdownMessage markdown={message.content} className="markdown-content" onCitationClick={handleCitationClick} citationMessageIndex={index} />
+                        <MarkdownMessage markdown={message.content} className="markdown-content" onCitationClick={handleCitationClick} citationMessageIndex={index} expandedCitation={expandedCitation} expandedCitationCard={expandedCitationCard} />
                       )}
                     </div>
                     {/* 후속 질문 버튼 — 가장 마지막 답변에만 표시 */}

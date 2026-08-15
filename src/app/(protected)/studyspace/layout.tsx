@@ -518,7 +518,8 @@ function StudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
           className="flex min-h-0 flex-1 flex-col"
         >
           <div className={`flex min-h-0 flex-1 overflow-hidden ${isAppMode ? '' : 'pl-[88px]'}`}>
-            {!isExamPrep && showRightSidebar && (
+            {/* 앱 WebView 모드: 드로어 내용(rightbar)이 앱 네이티브 UI 와 중복/비어 있으므로 트리거 자체를 렌더하지 않음 */}
+            {!isExamPrep && showRightSidebar && !isAppMode && (
               <button
                 onClick={() => setIsMobileRightbarOpen(true)}
                 className="fixed right-4 top-4 z-40 flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-sm hover:bg-gray-50 xl:hidden"
