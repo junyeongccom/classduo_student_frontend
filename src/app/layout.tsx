@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: 'HAI-Sync',
     images: [
       {
-        url: '/present_image.png',
+        url: '/present_image_hai.png',
         width: 1200,
         height: 630,
         alt: 'HAI-Sync 서비스 대표 이미지',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'HAI-Sync - AI 학습 파트너',
     description: 'AI 기반 학습 보조 플랫폼',
-    images: ['/present_image.png'],
+    images: ['/present_image_hai.png'],
   },
 }
 
