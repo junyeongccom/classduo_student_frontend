@@ -12,10 +12,15 @@ import { useAuthStore } from '@/features/auth/store/authStore'
 import { StudyspaceRightbarSlot } from '@/shared/components/layouts/studyspace'
 import { useStudyspaceSelectionSync } from '@/shared/hooks/useStudyspaceSelectionSync'
 
-export function ReviewContainer() {
+interface ReviewContainerProps {
+  /** 진입 시점의 초기 회차 (URL 쿼리 등 외부에서 지정). 마운트 1회만 반영된다. */
+  initialLectureId?: string | null
+}
+
+export function ReviewContainer({ initialLectureId = null }: ReviewContainerProps) {
   const { locale } = useI18n()
   const userId = useAuthStore(state => state.user?.user_id ?? null)
-  const [selectedLectureId, setSelectedLectureId] = useState<string | null>(null)
+  const [selectedLectureId, setSelectedLectureId] = useState<string | null>(initialLectureId ?? null)
   const [, setSelectedCourseId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<SmartReviewTab>('list')
   useStudyspaceSelectionSync(userId)
@@ -54,13 +59,19 @@ export function ReviewContainer() {
     setImportPreviewError(null)
   }, [selectedLectureId, locale])
 
+  // 초기 회차를 외부에서 지정받은 경우 회차 선택 사이드바를 띄우지 않는다.
+  // (사이드바는 마운트되면 공유 선택 상태 기준으로 회차를 자동 재선택해 지정값을 덮어씀)
   const rightbarContent = useMemo(() => (
-    <ReviewSidebar
-      selectedLectureId={selectedLectureId}
-      onSelectLectureId={setSelectedLectureId}
-      onCourseIdChange={setSelectedCourseId}
-    />
-  ), [selectedLectureId])
+    initialLectureId
+      ? null
+      : (
+        <ReviewSidebar
+          selectedLectureId={selectedLectureId}
+          onSelectLectureId={setSelectedLectureId}
+          onCourseIdChange={setSelectedCourseId}
+        />
+      )
+  ), [selectedLectureId, initialLectureId])
 
   return (
     <>
