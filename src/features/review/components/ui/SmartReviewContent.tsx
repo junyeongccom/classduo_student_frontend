@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useTranslations } from 'next-intl'
+import { Layers } from 'lucide-react'
 import type { LectureReviewItem } from '@/features/review/types'
 import { AddReviewWordModal } from './AddReviewWordModal'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -11,8 +12,12 @@ import { ReviewMatchingGame } from './ReviewMatchingGame'
 import type { DefinitionBuilderGameResponse } from '@/features/review/types'
 import { ReviewDeckView } from './ReviewDeckView'
 import type { ReviewDeckViewModel } from '@/features/review/hooks/useReviewDeck'
+import { WordSolitaireGame } from '@/features/review/games/word-solitaire'
 
 export type SmartReviewTab = 'list' | 'deck' | 'game'
+
+/** 아케이드에서 실제로 플레이 가능한 게임 id (썸네일 목록에는 있지만 준비 중인 항목과 구분) */
+const PLAYABLE_GAME_IDS = ['matching', 'definition-builder', 'word-solitaire']
 
 interface SmartReviewContentProps {
   lectureId: string | null
@@ -112,6 +117,12 @@ export function SmartReviewContent({
       title: t('games.quickfill.title'),
       description: t('games.quickfill.description'),
       thumbnail: '/DB_thumbnail.png',
+    },
+    {
+      id: 'word-solitaire',
+      title: t('games.wordSolitaire.title'),
+      description: t('games.wordSolitaire.description'),
+      thumbnail: null,
     },
   ]
   return (
@@ -394,11 +405,24 @@ export function SmartReviewContent({
                   lectureId={lectureId}
                 />
               </div>
+            ) : activeGameId === 'word-solitaire' ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-slate-900">{t('games.wordSolitaire.title')}</div>
+                  <button
+                    type="button"
+                    onClick={onExitGame}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    {t('definitionBuilder.back')}
+                  </button>
+                </div>
+                <WordSolitaireGame lectureId={lectureId} isActive={activeTab === 'game'} />
+              </div>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {gameItems.map(game => {
-                  const isPlayable =
-                    game.id === 'definition-builder' || game.id === 'matching'
+                  const isPlayable = PLAYABLE_GAME_IDS.includes(game.id)
                   return (
                     <button
                       key={game.id}
@@ -419,7 +443,12 @@ export function SmartReviewContent({
                             loading="lazy"
                             decoding="async"
                           />
-                        ) : null}
+                        ) : (
+                          // 썸네일 이미지가 아직 없는 게임 — 빈 회색 박스 대신 아이콘으로 채운다
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-violet-50 to-indigo-100">
+                            <Layers className="h-10 w-10 text-indigo-400 stroke-[1.5]" aria-hidden="true" />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <h3 className="text-sm font-semibold text-slate-900">{game.title}</h3>

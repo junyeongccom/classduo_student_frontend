@@ -53,6 +53,11 @@ export const API_ENDPOINTS = {
     GET_DEFINITION_BUILDER: (lectureId: string) => `/reviews/lectures/${lectureId}/definition-builder`,
   },
 
+  // Learning Content (모바일 앱과 공용 라우터)
+  LEARNING: {
+    GET_WORD_CATEGORIES: (lectureId: string) => `/learning/lectures/${lectureId}/word-categories`,
+  },
+
   // OX Quiz
   OX_QUIZ: {
     SUBMIT: (lectureId: string) => `/api/lectures/${lectureId}/ox/submit`,

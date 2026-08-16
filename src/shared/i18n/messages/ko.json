@@ -499,6 +499,10 @@
         "quickfill": {
           "title": "정의 조립 게임",
           "description": "어절을 골라 정의 문장을 완성하세요."
+        },
+        "wordSolitaire": {
+          "title": "단어 솔리테어",
+          "description": "카테고리별로 단어를 분류해 판을 완성하세요."
         }
       },
       "definitionBuilder": {
@@ -549,6 +553,44 @@
         "message": "목록에서 단어를 먼저 생성해야 해당 기능을 이용할 수 있습니다.",
         "confirm": "확인",
         "cancel": "닫기"
+      },
+      "wordSolitaire": {
+        "turnsLabel": "턴",
+        "minTurnsLabel": "최소 턴",
+        "foundationLabel": "기초 슬롯",
+        "emptySlot": "빈 칸",
+        "wasteEmpty": "열린 카드",
+        "difficultyLabel": "난이도",
+        "difficulty": {
+          "intro": "입문",
+          "normal": "보통",
+          "challenge": "도전"
+        },
+        "loading": "게임 데이터를 불러오는 중...",
+        "dealing": "판을 만드는 중...",
+        "retry": "다시 시도",
+        "undo": "되돌리기",
+        "restart": "다시 하기",
+        "selectLecture": "회차를 선택하면 게임이 시작됩니다.",
+        "notReady": "이 회차는 아직 게임을 준비 중이에요",
+        "stuckDrawStock": "가능한 이동이 없어요 — 스톡을 열어보세요",
+        "stuckRestart": "더 이상 둘 수 있는 수가 없어요 — 다시 하기를 눌러 처음부터 도전해 보세요",
+        "hint": "카드를 탭하면 갈 수 있는 자리가 표시돼요. 되돌리기도 1턴을 씁니다.",
+        "winTitle": "모든 카테고리를 완성했어요!",
+        "winPerfect": "최소 턴과 같거나 더 적게 끝냈어요. 완벽해요!",
+        "winGap": "최소 턴보다 {gap}턴 더 썼어요.",
+        "undoAria": "직전 수 되돌리기 (1턴 소모)",
+        "drawAria": "스톡 열기, 남은 카드 {count}장",
+        "emptyFoundationAria": "빈 기초 슬롯",
+        "emptyColumnAria": "{column}번 열 빈 자리",
+        "foundationAria": "기초 슬롯 {name}, {done}/{total} 완성",
+        "categoryCardAria": "카테고리 카드 {name}",
+        "wordCardAria": "단어 카드 {label}",
+        "wasteCardAria": "열린 카드 {label}",
+        "faceDownAria": "덮인 카드",
+        "starsAria": "별 {stars}개",
+        "loadFailed": "게임 데이터를 불러오지 못했습니다",
+        "dealFailed": "판을 만들지 못했습니다. 다시 시도해 주세요"
       }
     },
     "noContent": "복습 콘텐츠가 없습니다",

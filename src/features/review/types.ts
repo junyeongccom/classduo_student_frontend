@@ -145,3 +145,20 @@ export interface MatchingRankingResponse {
 }
 
 
+// ─────────────────── 단어 솔리테어 (word-solitaire) 콘텐츠 ───────────────────
+
+/** 카테고리 1개 = 카테고리 카드 1장 + 그에 속한 단어 카드들 */
+export interface LectureWordCategory {
+  name: string
+  words: string[]
+}
+
+/**
+ * `GET /learning/lectures/{id}/word-categories` 응답.
+ * 미생성·비활성 회차도 404 가 아니라 `is_active=false` + 빈 배열로 온다 — "게임 없음"은 정상 상태다.
+ */
+export interface LectureWordCategoriesResponse {
+  lecture_id: string
+  is_active: boolean
+  categories: LectureWordCategory[]
+}

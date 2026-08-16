@@ -499,6 +499,10 @@
         "quickfill": {
           "title": "Definition Builder",
           "description": "Pick tokens to complete the definition."
+        },
+        "wordSolitaire": {
+          "title": "Word Solitaire",
+          "description": "Sort words into their categories to clear the board."
         }
       },
       "definitionBuilder": {
@@ -549,6 +553,44 @@
         "message": "Create words in the list first to use this feature.",
         "confirm": "OK",
         "cancel": "Close"
+      },
+      "wordSolitaire": {
+        "turnsLabel": "Turns",
+        "minTurnsLabel": "Best possible",
+        "foundationLabel": "Foundations",
+        "emptySlot": "Empty",
+        "wasteEmpty": "Drawn",
+        "difficultyLabel": "Difficulty",
+        "difficulty": {
+          "intro": "Intro",
+          "normal": "Normal",
+          "challenge": "Challenge"
+        },
+        "loading": "Loading game data...",
+        "dealing": "Dealing the board...",
+        "retry": "Retry",
+        "undo": "Undo",
+        "restart": "Restart",
+        "selectLecture": "Select a lecture to start the game.",
+        "notReady": "This lecture's game is still being prepared",
+        "stuckDrawStock": "No moves available - try drawing from the stock",
+        "stuckRestart": "No moves left - hit Restart to try again from the top",
+        "hint": "Tap a card to see where it can go. Undo costs 1 turn too.",
+        "winTitle": "All categories completed!",
+        "winPerfect": "You matched or beat the best possible run. Perfect!",
+        "winGap": "{gap} turns over the best possible run.",
+        "undoAria": "Undo last move (costs 1 turn)",
+        "drawAria": "Draw from stock, {count} cards left",
+        "emptyFoundationAria": "Empty foundation slot",
+        "emptyColumnAria": "Empty spot in column {column}",
+        "foundationAria": "Foundation {name}, {done} of {total} complete",
+        "categoryCardAria": "Category card {name}",
+        "wordCardAria": "Word card {label}",
+        "wasteCardAria": "Drawn card {label}",
+        "faceDownAria": "Face-down card",
+        "starsAria": "{stars} stars",
+        "loadFailed": "Couldn't load the game data",
+        "dealFailed": "Couldn't deal a board. Please try again"
       }
     },
     "noContent": "No review content available",

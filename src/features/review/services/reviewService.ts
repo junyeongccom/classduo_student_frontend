@@ -13,6 +13,7 @@ import type {
   GameSubmissionResponse,
   ImportLectureKeywordsResponse,
   LectureReviewListResponse,
+  LectureWordCategoriesResponse,
   MatchingRankingResponse,
   RecordingLectureKeywordsResponse,
   ScoreRankingResponse,
@@ -181,6 +182,19 @@ export const reviewService = {
       return Promise.resolve({ data: null, error: { message: 'Invalid ID', code: 'INVALID_ID' } })
     }
     return apiRequest<DefinitionBuilderGameResponse>(API_ENDPOINTS.REVIEW.GET_DEFINITION_BUILDER(lectureId), {
+      method: 'GET',
+      auth: true,
+    })
+  },
+
+  /**
+   * 단어 솔리테어 회차 콘텐츠. 비활성 회차도 200(`is_active=false`)이라 에러로 다루지 않는다.
+   */
+  getLectureWordCategories: (lectureId: string) => {
+    if (!isUUID(lectureId)) {
+      return Promise.resolve({ data: null, error: { message: 'Invalid ID', code: 'INVALID_ID' } })
+    }
+    return apiRequest<LectureWordCategoriesResponse>(API_ENDPOINTS.LEARNING.GET_WORD_CATEGORIES(lectureId), {
       method: 'GET',
       auth: true,
     })
