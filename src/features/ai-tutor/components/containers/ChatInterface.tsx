@@ -11,6 +11,7 @@ import { chatService } from '@/features/ai-tutor/services/chatService'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { useTrackPendingDialogueFeedback } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'
 import { chatAnalytics } from '@/shared/lib/analytics'
+import { useIsAppWebView } from '@/shared/lib/appBridge'
 import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode, SocraticTopic } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
@@ -86,6 +87,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [chatMode, setChatMode] = useState<ChatMode>('simple')
   // 소크라 문답: 회차의 주제 목록 (모드 전환 시 조회)
   const [socraticTopics, setSocraticTopics] = useState<SocraticTopic[]>([])
+  // 앱 WebView 모드 — 빈 대화 초기 화면의 입력창 정렬 판단에만 쓴다(아래 참조).
+  const isAppMode = useIsAppWebView()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pendingReferences, setPendingReferences] = useState<{ messageIndex: number; refs: Reference[] } | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -1554,8 +1557,18 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
         <div className="flex shrink-0 items-center justify-end px-4 pt-2">
           <TranscriptSaveButton onClick={handleSaveTranscript} disabled label={t('transcriptSave')} />
         </div>
-        {/* 중앙 컨텐츠 */}
-        <div className="flex flex-1 flex-col items-center justify-center px-8 py-6 max-w-full">
+        {/*
+          컨텐츠 정렬 — 데스크톱 웹은 GPT 스타일 세로 중앙.
+          앱 WebView 는 화면이 좁고 길어 중앙 정렬 시 입력창 위아래로 300pt 씩 백지가 남고,
+          모바일 채팅의 관습(입력창 하단 고정)과도 어긋나 하단 정렬로 둔다.
+          col-reverse 를 쓰는 이유: 그냥 justify-end 로 내리면 DOM 순서상 뒤인 제안 질문 목록이
+          입력창 아래(=키보드에 가려지는 자리)에 깔린다. 역방향 축이면 입력창이 바닥, 제안이 그 위다.
+        */}
+        <div
+          className={`flex flex-1 items-center px-8 py-6 max-w-full ${
+            isAppMode ? 'flex-col-reverse justify-start' : 'flex-col justify-center'
+          }`}
+        >
 
           {/* 중앙 입력창 */}
           <div className="w-full max-w-[680px] 2xl:max-w-[820px] mx-auto">

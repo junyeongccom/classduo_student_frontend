@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui
 import { trackTabView } from '@/shared/hooks/useAnalytics'
 import { trackPageEnter, trackPageLeave, lectureStudyAnalytics, panelAnalytics, materialViewAnalytics, createFocusLossTracker } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { useIsAppWebView } from '@/shared/lib/appBridge'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
 import { useLectures } from '../../hooks/useLectures'
 import { useLectureLayoutMode } from '../../hooks/useMediaQuery'
@@ -45,6 +46,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   // 레이아웃 모드: isMobile(=stacked) → 상하 스택 바텀시트(폰·태블릿 세로), !isMobile → 좌우 분할(태블릿 가로·데스크톱)
   // twoColumnMax → 태블릿급에서 최대 2단(강의자료/챗봇 동시 열기 금지)
   const { stacked: isMobile, twoColumnMax } = useLectureLayoutMode()
+  // 앱 WebView 모드 — 앱이 자체 헤더/세그먼트로 이 화면을 감싸고, 요약·퀴즈는 네이티브 화면이 따로 있다.
+  // 웹의 회차 제목·탭바·플로팅 위젯은 그 위에 다시 쌓이는 중복 크롬이라 앱에서만 숨긴다.
+  // (탭 콘텐츠 자체는 ?tab= 으로 지정된 것이 그대로 보인다 — Tabs 의 value 는 store 가 들고 있다.)
+  const isAppMode = useIsAppWebView()
   const searchParams = useSearchParams()
   const { recordings, isLoading, error, refresh } = useLectureDetail(lectureId)
   const { lectures, courseTitle: fetchedCourseTitle } = useLectures(courseId ?? '')
@@ -342,19 +347,21 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       }}
       className="flex flex-1 min-h-0 flex-col"
     >
-      <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
-        <TabsList className="h-auto w-full gap-4 rounded-none bg-transparent p-0">
-          {(['summary', 'quiz', 'game'] as const).map(tab => (
-            <TabsTrigger
-              key={tab}
-              value={tab}
-              className="flex-1 min-w-0 truncate rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              {t(`lectureStudy.rightPanel.${tab}Tab`)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </div>
+      {!isAppMode && (
+        <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 px-3">
+          <TabsList className="h-auto w-full gap-4 rounded-none bg-transparent p-0">
+            {(['summary', 'quiz', 'game'] as const).map(tab => (
+              <TabsTrigger
+                key={tab}
+                value={tab}
+                className="flex-1 min-w-0 truncate rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                {t(`lectureStudy.rightPanel.${tab}Tab`)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+      )}
       <TabsContent value="summary" className="flex-1 min-h-0 mt-0">
         <SummaryTabContainer lectureId={lectureId} courseId={courseId ?? ''} />
       </TabsContent>
@@ -415,7 +422,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         className="relative flex flex-1 min-h-0"
       >
         {/* 강의자료 아이콘 + 말풍선 (패널 닫힌 상태) — 모바일+데스크톱 공통 */}
-        {!isLeftPanelOpen && (
+        {!isAppMode && !isLeftPanelOpen && (
           <div className="absolute bottom-4 left-4 z-10 flex items-end gap-2">
             <button
               onClick={() => {
@@ -435,7 +442,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         )}
 
         {/* 챗봇 아이콘 + 말풍선 (패널 닫힌 상태) — 모바일+데스크톱 공통 */}
-        {!isChatPanelOpen && (
+        {!isAppMode && !isChatPanelOpen && (
           <div className="absolute bottom-4 right-4 z-10 flex items-end gap-2">
             <div className="relative mb-1 rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white shadow-md whitespace-nowrap">
               {t('lectureStudy.askAiBubble')}
@@ -578,12 +585,14 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
 
         {/* 중앙 패널 (회차제목 + 버튼 + 요약/퀴즈/게임) — 항상 렌더링 (모바일 패널은 위에 오버레이) */}
         <section className={`flex h-full min-h-0 flex-1 flex-col ${isCenterOnly ? 'max-w-2xl mx-auto' : ''}`}>
-          {/* 회차 제목 (항상 표시) */}
-          <div className="shrink-0 px-4 pt-4 pb-1">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50 truncate">
-              {resolveLectureLabel()}
-            </h2>
-          </div>
+          {/* 회차 제목 — 앱 모드에서는 앱 헤더/세그먼트 아래 4중 적층이 되어 숨긴다 */}
+          {!isAppMode && (
+            <div className="shrink-0 px-4 pt-4 pb-1">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-gray-50 truncate">
+                {resolveLectureLabel()}
+              </h2>
+            </div>
+          )}
 
           {rightPanelContent}
         </section>

@@ -23,6 +23,7 @@ import { SocraticOnboardingModal } from '@/features/ai-tutor/components/ui/Socra
 import { useSocraticOnboarding } from '@/features/ai-tutor/hooks/useSocraticOnboarding'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
+import { useIsAppWebView } from '@/shared/lib/appBridge'
 import { useSidebarStore } from '@/shared/store/useSidebarStore'
 import { DialogueLectureSidebar } from '../ui/DialogueLectureSidebar'
 import { useLectures } from '../../hooks/useLectures'
@@ -42,6 +43,10 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
   const tTopbar = useTranslations('aiTutorTopbar')
   const t = useTranslations()
   const { courseTitle } = useLectures(courseId)
+  // 앱 WebView 모드 — 앱이 자체 헤더로 이 화면을 감싼다.
+  // 채팅 카드의 라운드/보더/여백은 앱 안에서 "화면 속 카드"로 보여 좌우 회색 띠를 만들고,
+  // 그만큼 툴바 폭을 깎아 세그먼트를 오른쪽 끝에 밀어붙인다 — 앱에서만 full-bleed 로 편다.
+  const isAppMode = useIsAppWebView()
 
   // AI Tutor Store — read
   const {
@@ -403,13 +408,19 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
         {/* 채팅 영역 — 콘텐츠 안에 맞게 100% 채움 */}
         <div ref={chatAreaRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
           <div
-            className="flex flex-1 min-h-0 flex-col px-2 py-1.5 md:px-4"
+            className={`flex flex-1 min-h-0 flex-col ${isAppMode ? 'p-0' : 'px-2 py-1.5 md:px-4'}`}
             style={{
               paddingRight: isDesktopViewport && rightPanelsWidth > 0 ? rightPanelsWidth + 16 : undefined,
               paddingBottom: mobilePadBottom,
             }}
           >
-            <div className="flex flex-1 min-h-0 flex-col rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+            <div
+              className={`flex flex-1 min-h-0 flex-col bg-white dark:bg-gray-900 overflow-hidden ${
+                isAppMode
+                  ? 'border-0'
+                  : 'rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm'
+              }`}
+            >
               {/* Chat Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 px-3 py-2 shrink-0 md:gap-4 md:px-5 md:py-2.5">
                 <div className="flex items-center gap-1.5 md:gap-2">
@@ -424,8 +435,9 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                       <Menu className="h-4 w-4 md:h-5 md:w-5" />
                     </button>
                     {/* 앵커를 버튼 좌측 기준으로 — 중앙 정렬(-translate-x-1/2)은 좁은 화면(앱 모드 pl 제거)에서
-                        툴팁이 화면 왼쪽 밖으로 잘린다. 화살표만 버튼 중앙 근처(left-2.5)에 둔다. */}
-                    <span className="pointer-events-none absolute left-0 top-full z-20 mt-2 animate-pulse whitespace-nowrap rounded-full bg-[#6366F1] px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">
+                        툴팁이 화면 왼쪽 밖으로 잘린다. 화살표만 버튼 중앙 근처(left-2.5)에 둔다.
+                        mt-2 는 툴바 py-2 와 같아 말풍선이 툴바 구분선 위에 정확히 걸쳤다 — 선 아래로 내린다. */}
+                    <span className="pointer-events-none absolute left-0 top-full z-20 mt-4 animate-pulse whitespace-nowrap rounded-full bg-[#6366F1] px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">
                       <span className="absolute bottom-full left-2.5 border-[5px] border-transparent border-b-[#6366F1]" />
                       {t('aiTutorSidebar.selectClassTooltip')}
                     </span>
@@ -445,7 +457,9 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                   </button>
                 </div>
 
-                <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
+                {/* 세그먼트는 줄이지 않는다(shrink-0) — 좁은 폭에서 눌리면 오른쪽 둥근 캡이 잘려
+                    "직선으로 끊긴 바"처럼 보였다. 자리가 모자라면 toolbar 의 flex-wrap 으로 다음 줄에 통째로 내려간다. */}
+                <div className="flex shrink-0 rounded-lg bg-gray-100 dark:bg-gray-800 p-1">
                   <button
                     onClick={() => {
                       setActiveTab('answer')
