@@ -1,15 +1,7 @@
 import {
-  Bot,
-  PenLine,
-  FileText,
-  User,
   Home,
-  Repeat,
   LayoutGrid,
-  HelpCircle,
-  Puzzle,
   MessageSquare,
-  BookMarked,
   Leaf,
   MessageCircle,
   Bookmark,
@@ -45,42 +37,6 @@ export interface CourseMenuItem {
 }
 
 /**
- * 사이드바 메뉴 아이템 정의
- */
-export const SIDEBAR_MENU = [
-  {
-    id: 'home',
-    labelKey: 'nav.home',
-    icon: Home,
-    href: '/studyspace/home',
-  },
-  {
-    id: 'ai-tutor',
-    labelKey: 'nav.aiTutor',
-    icon: Bot,
-    href: '/studyspace/feedback',
-  },
-  {
-    id: 'smart-review',
-    labelKey: 'nav.smartReview',
-    icon: PenLine,
-    href: '/studyspace/games',
-  },
-  {
-    id: 'exam',
-    labelKey: 'nav.exam',
-    icon: FileText,
-    href: '/studyspace/my-quizzes',
-  },
-  {
-    id: 'repeat',
-    labelKey: 'nav.repeat',
-    icon: Repeat,
-    href: '/studyspace/repeat',
-  },
-] as const
-
-/**
  * 새 UI 사이드바 메뉴
  */
 export const NEW_SIDEBAR_MENU = [
@@ -95,7 +51,8 @@ export const NEW_SIDEBAR_MENU = [
     id: 'feedback',
     labelKey: 'newNav.feedback',
     icon: MessageSquare,
-    href: '/studyspace/feedback',
+    // 클릭 시 preventDefault + 개선요청 모달. href 는 폴백(새 탭/미들클릭)용.
+    href: '/studyspace/home',
     color: '#7C3AED',    // violet
   },
 ] as const
@@ -173,24 +130,3 @@ export const COURSE_SIDEBAR_MENU: readonly CourseMenuItem[] = [
     action: 'feedback-modal',
   },
 ] as const
-
-/**
- * 프로필 메뉴 (사이드바 하단)
- */
-export const PROFILE_MENU = {
-  id: 'profile',
-  labelKey: 'nav.profile',
-  icon: User,
-  href: '/mypage',
-} as const
-
-/**
- * 상단 탭 메뉴 (AI 튜터 내부)
- */
-export const TOP_TABS = [
-  { id: 'answer', label: '답변', href: '/studyspace/feedback' },
-  { id: 'notes', label: '수업녹음본', href: '/studyspace/feedback/notes' },
-  { id: 'materials', label: '강의자료', href: '/studyspace/feedback/materials' },
-] as const
-
-

@@ -6,18 +6,18 @@ import {
   useStudyspaceLayoutSlots,
 } from '@/shared/components/layouts/studyspace'
 import { useSidebarStore, SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED } from '@/shared/store/useSidebarStore'
-import { useNewStudyspace } from '@/shared/lib/featureFlags'
 
 function MyPageLayoutShell({ children }: { children: React.ReactNode }) {
   const { topbar } = useStudyspaceLayoutSlots()
-  const isNewUI = useNewStudyspace()
   const sidebarCollapsed = useSidebarStore((s) => s.isCollapsed)
   const isTablet = useSidebarStore((s) => s.isTablet)
 
-  // NewUI: 동적 사이드바 너비, Legacy: 88px 고정
-  const sidebarPx = isNewUI
-    ? (isTablet ? SIDEBAR_WIDTH_COLLAPSED : (sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED))
-    : 88
+  // 사이드바 접힘 상태에 따른 동적 너비
+  const sidebarPx = isTablet
+    ? SIDEBAR_WIDTH_COLLAPSED
+    : sidebarCollapsed
+      ? SIDEBAR_WIDTH_COLLAPSED
+      : SIDEBAR_WIDTH_EXPANDED
 
   return (
     <div className="flex h-dvh bg-gray-50 text-gray-900">
