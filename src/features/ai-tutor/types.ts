@@ -1,3 +1,6 @@
+/** 대화형 학습 우측 패널 탭 — 답변 / 필기 / 강의자료 */
+export type TabType = 'answer' | 'notes' | 'materials'
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string

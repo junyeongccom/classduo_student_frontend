@@ -1,7 +1,6 @@
 import { create } from 'zustand'
-import { TabType } from '@/shared/components/common'
 import { areLectureIdsEqual } from '@/shared/lib/studyspaceSelection'
-import { Reference, HookingResponse, PQMQuestion, CardMatchSet, SourceFocusTarget } from '@/features/ai-tutor/types'
+import { Reference, HookingResponse, PQMQuestion, CardMatchSet, SourceFocusTarget, TabType } from '@/features/ai-tutor/types'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
 export interface AITutorCourse {
