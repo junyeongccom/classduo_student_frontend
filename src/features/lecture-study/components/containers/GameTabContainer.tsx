@@ -888,10 +888,10 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
         <div className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity" />
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
           <div
+            /* 솔리테어는 세로로 쌓는 카드 게임이라 다른 게임과 달리 가로 모드로 돌리지 않는다. */
             className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-w-[900px] dark:bg-gray-900"
-            style={landscape ? LANDSCAPE_PANEL_STYLE : undefined}
           >
-            <div className={`flex shrink-0 items-center justify-between border-b border-gray-200 px-6 dark:border-gray-700 ${landscape ? 'py-1.5' : 'py-3'}`}>
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-6 py-3 dark:border-gray-700">
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
                 {t('lectureStudy.game.wordSolitaire')}
               </h3>
