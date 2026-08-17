@@ -2,13 +2,14 @@
  * Chat composer (Pure UI)
  * - Input
  * - Bottom row: simple/detailed/socratic 3-세그먼트 토글 + Send button
+ *   (compactModeToggle=앱 WebView: 3개를 늘어놓는 대신 현재 모드 칩 1개 + 위로 뜨는 선택 시트)
  */
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
-import { Send, Loader2, Sparkles, Brain } from 'lucide-react'
+import { Send, Loader2, Sparkles, Brain, ChevronUp } from 'lucide-react'
 import type { ChatMode } from '@/features/ai-tutor/types'
 
 interface ChatComposerProps {
@@ -30,7 +31,18 @@ interface ChatComposerProps {
   sendLabel?: string
   simpleLabel?: string
   deepLabel?: string
+  /** 앱 WebView 처럼 폭이 좁을 때 — 3-세그먼트 대신 현재 모드 칩 1개 + 선택 시트로 접는다 */
+  compactModeToggle?: boolean
 }
+
+/** 모드 → 라벨 i18n 키. 칩(현재 모드)과 선택 시트가 같은 표기를 쓰게 하는 단일 출처 */
+const MODE_LABEL_KEY: Record<ChatMode, string> = {
+  simple: 'simpleLabel',
+  detailed: 'detailedLabel',
+  socratic: 'socraticLabel',
+}
+
+const CHAT_MODES: readonly ChatMode[] = ['simple', 'detailed', 'socratic']
 
 export function ChatComposer({
   value,
@@ -50,9 +62,12 @@ export function ChatComposer({
   deepLabel = 'DEEP',
   simpleHelpText,
   deepHelpText,
+  compactModeToggle = false,
 }: ChatComposerProps) {
   const t = useTranslations('aiTutorChat')
   const canSend = !disabled && !!value.trim()
+  // 컴팩트 모드 선택 시트 열림 여부 (UI 순간 상태)
+  const [isModeSheetOpen, setIsModeSheetOpen] = useState(false)
   const formRef = useRef<HTMLFormElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const simpleButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -98,10 +113,58 @@ export function ChatComposer({
     }
   }, [activeTooltip, updateHelpPosition])
 
+  /** 모드별 잠금 — 소크라 세션 중에는 simple/detailed 로 못 벗어나고, 소크라는 단일 회차에서만 */
+  const isModeDisabled = (mode: ChatMode): boolean =>
+    mode === 'socratic' ? socraticDisabled === true : simpleDetailedDisabled === true
+
+  const handleCompactModeSelect = (mode: ChatMode) => {
+    if (isModeDisabled(mode)) return
+    setIsModeSheetOpen(false)
+    if (mode !== chatMode) onChatModeChange(mode)
+  }
+
   return (
     <form ref={formRef} onSubmit={onSubmit}>
       <div className="relative">
         {topOverlay}
+
+        {/* 컴팩트 모드 선택 시트 — 입력창 위로 뜬다. 입력창 컨테이너는 overflow-hidden 이라
+            그 바깥(relative 래퍼)에 둬야 잘리지 않는다. */}
+        {compactModeToggle && isModeSheetOpen && (
+          <>
+            {/* 바깥 탭으로 닫기 — 시트보다 아래 레이어에 깐다 */}
+            <div
+              className="fixed inset-0 z-20"
+              onClick={() => setIsModeSheetOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              role="listbox"
+              aria-label={t('modeToggleLabel')}
+              className="absolute bottom-full left-0 z-30 mb-2 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
+            >
+              {CHAT_MODES.map((mode) => {
+                const modeDisabled = isModeDisabled(mode)
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    role="option"
+                    aria-selected={chatMode === mode}
+                    disabled={modeDisabled}
+                    onClick={() => handleCompactModeSelect(mode)}
+                    className={`flex w-full items-center justify-between px-3 py-2.5 text-left text-xs transition-colors ${
+                      chatMode === mode ? 'bg-gray-50 font-semibold text-gray-900' : 'text-gray-600'
+                    } ${modeDisabled ? 'cursor-not-allowed opacity-40' : 'hover:bg-gray-50'}`}
+                  >
+                    {t(MODE_LABEL_KEY[mode])}
+                    {chatMode === mode && <span aria-hidden="true">•</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
         <div className="w-full overflow-hidden rounded-xl border border-gray-300 bg-white">
           {/* Top half: input only (grows with content) */}
           <textarea
@@ -131,7 +194,25 @@ export function ChatComposer({
 
           {/* Bottom half: controls (v2.0: simple/detailed/socratic 3-세그먼트 토글) */}
           <div className="flex items-center justify-end gap-3 px-4 py-1" style={{ minHeight: '34px' }}>
-            {/* 모드 토글 — simple ↔ detailed ↔ socratic */}
+            {/* 모드 토글(컴팩트) — 현재 모드만 칩으로 보이고, 탭하면 위 시트에서 고른다.
+                순환 탭이 아니라 시트인 이유: 소크라 세션 중/다중 회차 선택처럼 특정 모드가
+                잠기는 규칙이 있어, 순환이면 탭해도 안 바뀌는 이유를 화면이 설명하지 못한다. */}
+            {compactModeToggle ? (
+              <button
+                type="button"
+                onClick={() => setIsModeSheetOpen((prev) => !prev)}
+                aria-haspopup="listbox"
+                aria-expanded={isModeSheetOpen}
+                aria-label={`${t('modeToggleLabel')}: ${t(MODE_LABEL_KEY[chatMode])}`}
+                className="mr-auto inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
+              >
+                {t(MODE_LABEL_KEY[chatMode])}
+                <ChevronUp
+                  className={`h-3 w-3 text-gray-400 transition-transform ${isModeSheetOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+            ) : (
+            /* 모드 토글 — simple ↔ detailed ↔ socratic */
             <div className="mr-auto flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs">
               <button
                 type="button"
@@ -167,6 +248,7 @@ export function ChatComposer({
                 {t('socraticLabel')}
               </button>
             </div>
+            )}
             <button
               type="submit"
               disabled={!canSend}

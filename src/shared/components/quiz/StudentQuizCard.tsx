@@ -16,6 +16,7 @@ import {
   Bookmark,
   Trash2,
   RotateCcw,
+  Eye,
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -171,6 +172,24 @@ export function StudentQuizCard({
   const badge = QUIZ_TYPE_BADGE[quiz.quiz_type]
 
   const hasAnswered = isCorrect !== null || isSubmitted
+
+  /**
+   * 오답으로 채점된 객관식인지. 방금 고른 선지(로컬)를 우선 보고, 재진입으로 복원된
+   * 문항처럼 선지 인덱스가 없을 때만 상위가 준 isCorrect 로 폴백한다.
+   */
+  const selectedChoice = selectedChoiceIdx !== null ? quiz.choices[selectedChoiceIdx] : undefined
+  const answeredWrong =
+    isMultipleChoice &&
+    hasAnswered &&
+    (selectedChoice !== undefined ? !selectedChoice.is_correct : isCorrect === false)
+
+  /**
+   * 오답 직후에는 정답을 감춘 채 '정답 보기' 하나만 내보낸다 — 정답 위치를 바로 알려주면
+   * 학생이 다시 생각해볼 여지가 없다. 정답을 확인한 뒤에야 '다시 풀기'로 바뀐다.
+   * (맞힌 문항·서술형은 기존 그대로 '다시 풀기' + 해설 토글)
+   */
+  const showRevealButton = answeredWrong && !showAnswer
+  const showRetryButton = (justSolved || hasAnswered) && onResetAnswer !== undefined && !showRevealButton
 
   const handleChoiceClick = useCallback(
     (idx: number) => {
@@ -451,23 +470,37 @@ export function StudentQuizCard({
         </div>
       )}
 
-      {/* 문항별 다시풀기 — 방금 푼 직후 + 이미 풀어둔(복원된) 문항 모두 노출. 미풀이 상태에서는 숨김. */}
-      {(justSolved || hasAnswered) && onResetAnswer && (
+      {/* 오답이면 '정답 보기', 그 외(정답·서술형·정답 확인 후)에는 '다시풀기'.
+          미풀이 상태에서는 둘 다 숨김. */}
+      {(showRevealButton || showRetryButton) && (
         <div className="mt-3 flex justify-end">
-          <button
-            type="button"
-            onClick={handleRetryOne}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            {t('retryOne')}
-          </button>
+          {showRevealButton ? (
+            <button
+              type="button"
+              onClick={handleToggleAnswer}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              {t('revealAnswer')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleRetryOne}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              {t('retryOne')}
+            </button>
+          )}
         </div>
       )}
 
-      {/* 정답/해설 토글 */}
+      {/* 정답/해설 토글 — 오답 직후에는 위의 '정답 보기'가 유일한 공개 경로이므로 감춘다
+          (같은 일을 하는 버튼이 둘이면 어느 쪽이 정답을 여는지 헷갈린다).
+          정답을 확인한 뒤에는 다시 나타나 접기/펴기로 쓴다. */}
       <div className="mt-4">
-        <div className="group relative inline-flex">
+        <div className={`group relative ${showRevealButton ? 'hidden' : 'inline-flex'}`}>
           <button
             onClick={handleToggleAnswer}
             disabled={!hasAnswered}

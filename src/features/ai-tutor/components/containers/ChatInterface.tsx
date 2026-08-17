@@ -1582,6 +1582,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               onChatModeChange={handleChatModeChange}
               socraticDisabled={socraticEntryDisabled}
               simpleDetailedDisabled={isSocraticSession}
+              compactModeToggle={isAppMode}
               topOverlay={socraticTopicPending ? (
                 <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
               ) : socraticCompleted ? (
@@ -1974,6 +1975,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             onChatModeChange={handleChatModeChange}
             socraticDisabled={socraticEntryDisabled}
             simpleDetailedDisabled={isSocraticSession}
+            compactModeToggle={isAppMode}
             topOverlay={socraticTopicPending ? (
               <SocraticTopicPicker topics={socraticTopics} onSelect={handleSocraticTopicSelect} />
             ) : socraticCompleted ? (
