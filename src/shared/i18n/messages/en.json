@@ -804,6 +804,12 @@
           "goal": "Pick a term node on the left, then tap its definition node on the right. Correct links draw a constellation line; wrong ones cost points.",
           "controlLinkTap": "Tap term first, then definition",
           "objLink": "Compare both sides to find the pair"
+        },
+        "wordSolitaire": {
+          "subtitle": "Sort words under their categories to clear the board",
+          "goal": "Move each topic card from the lecture onto a foundation slot, then file every word under the right topic. Clear the board in as few turns as possible for a higher rank.",
+          "controlTap": "Tap a card to see where it can go",
+          "objSolitaire": "Think about how each word relates to its topic"
         }
       },
       "moleQuiz": "Whack-a-Term",
@@ -899,7 +905,9 @@
       "misconceptionDefense": "Misconception Defense",
       "knowledgeTower": "Knowledge Tower",
       "conceptSort": "Concept Sort",
-      "conceptLink": "Concept Link"
+      "conceptLink": "Concept Link",
+      "wordSolitaire": "Word Solitaire",
+      "closeGame": "Close game"
     },
     "breadcrumb": {
       "courseLoading": "Loading…",

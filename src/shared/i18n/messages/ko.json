@@ -804,6 +804,12 @@
           "goal": "왼쪽 용어 노드를 고르고 오른쪽 정의 노드를 눌러 짝을 연결하세요. 맞으면 별자리 선이 이어지고, 틀리면 감점됩니다.",
           "controlLinkTap": "용어 → 정의 순서로 클릭/탭",
           "objLink": "양쪽을 대조하며 짝을 찾으세요"
+        },
+        "wordSolitaire": {
+          "subtitle": "카테고리별로 단어를 분류해 판을 완성해요",
+          "goal": "회차에서 뽑은 주제(카테고리) 카드를 기초 자리에 올리고, 각 단어를 알맞은 주제 아래로 옮겨 모든 단어를 분류하면 승리합니다. 적은 턴으로 끝낼수록 높은 순위예요.",
+          "controlTap": "카드를 탭하면 갈 수 있는 자리가 표시돼요",
+          "objSolitaire": "주제와 단어의 관계를 떠올리며 분류하세요"
         }
       },
       "moleQuiz": "두더지 팝 퀴즈",
@@ -899,7 +905,9 @@
       "misconceptionDefense": "오개념 방어전",
       "knowledgeTower": "지식 타워",
       "conceptSort": "개념 분류",
-      "conceptLink": "개념 연결"
+      "conceptLink": "개념 연결",
+      "wordSolitaire": "단어 솔리테어",
+      "closeGame": "게임 닫기"
     },
     "breadcrumb": {
       "courseLoading": "불러오는 중…",

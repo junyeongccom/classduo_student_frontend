@@ -107,6 +107,11 @@ const GAME_THEMES: Record<string, GameTheme> = {
     button: 'bg-blue-500 hover:bg-blue-600',
     previewBg: 'bg-slate-50',
   },
+  wordSolitaire: {
+    goalBg: 'bg-indigo-50 dark:bg-indigo-950/30',
+    button: 'bg-indigo-500 hover:bg-indigo-600',
+    previewBg: 'bg-slate-50',
+  },
 }
 
 type ControlItem = {
@@ -180,6 +185,10 @@ function getControls(gameId: string): ControlItem[] {
     case 'conceptLink':
       return [
         { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlLinkTap' },
+      ]
+    case 'wordSolitaire':
+      return [
+        { icon: <Mouse className="h-4 w-4 text-gray-500" />, labelKey: 'controlTap' },
       ]
     case 'pinPull':
       return [

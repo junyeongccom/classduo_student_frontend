@@ -6,10 +6,11 @@
  */
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Loader2, Puzzle, RotateCcw, Undo2 } from 'lucide-react'
 import { useWordCategories } from '@/features/review/hooks/useWordCategories'
+import { reviewService } from '@/features/review/services/reviewService'
 import {
   SOLITAIRE_DIFFICULTIES,
   type SolitaireContent,
@@ -49,12 +50,27 @@ export function WordSolitaireGame({ lectureId, isActive }: WordSolitaireGameProp
 
   const game = useWordSolitaire({ lectureId, content, difficulty })
 
-  // TODO(Task 7): 점수 제출 API(`POST /game/word-solitaire/lectures/{id}/submissions`) 연결 지점.
-  //   turns 오름차순 리더보드에 result.turns / result.seed / result.difficulty 를 보낸다.
+  // 승리 시 1회만 기록을 제출한다. 같은 판을 다시 렌더해도 중복 전송되지 않도록 시드+턴으로 가드한다.
+  const submittedKeyRef = useRef<string | null>(null)
   useEffect(() => {
-    if (!game.result) return
-    console.info('[word-solitaire] cleared', game.result)
-  }, [game.result])
+    const result = game.result
+    if (!result || !lectureId) return
+    const key = `${result.seed}:${result.difficulty}:${result.turns}`
+    if (submittedKeyRef.current === key) return
+    submittedKeyRef.current = key
+
+    // 제출 실패가 게임 화면을 막지는 않는다 — 승리 자체는 이미 사용자에게 보여준 상태다.
+    void reviewService
+      .submitWordSolitaireScore(lectureId, {
+        difficulty: result.difficulty,
+        turns: result.turns,
+        seed: result.seed,
+        minTurns: result.minTurns,
+      })
+      .catch(() => {
+        submittedKeyRef.current = null
+      })
+  }, [game.result, lectureId])
 
   if (!lectureId) {
     return <Message text={t('selectLecture')} />

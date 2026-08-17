@@ -71,6 +71,8 @@ export const API_ENDPOINTS = {
     RANKINGS_RUNNING: (lectureId: string) => `/game/running/lectures/${lectureId}/rankings`,
     RANKINGS_DEFINITION_BUILDER: (lectureId: string) => `/game/definition-builder/lectures/${lectureId}/rankings`,
     RANKINGS_MATCHING: (lectureId: string) => `/game/matching/lectures/${lectureId}/rankings`,
+    SUBMIT_WORD_SOLITAIRE: (lectureId: string) => `/game/word-solitaire/lectures/${lectureId}/submissions`,
+    RANKINGS_WORD_SOLITAIRE: (lectureId: string) => `/game/word-solitaire/lectures/${lectureId}/rankings`,
   },
 
   // Health

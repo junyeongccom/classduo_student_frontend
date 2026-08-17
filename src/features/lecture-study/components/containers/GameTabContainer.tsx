@@ -34,6 +34,7 @@ import {
   GameRankingBoard,
 } from '@/features/review'
 import type { ScoreRankingEntry, MatchingRankingEntry } from '@/features/review'
+import { WordSolitaireGame } from '@/features/review/games/word-solitaire'
 import { gameScoreService } from '@/features/ai-tutor'
 import {
   Dialog,
@@ -223,6 +224,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const [showMoleOverlay, setShowMoleOverlay] = useState(false)
   const [showBalloonOverlay, setShowBalloonOverlay] = useState(false)
   const [showTermCatchOverlay, setShowTermCatchOverlay] = useState(false)
+  const [showSolitaireOverlay, setShowSolitaireOverlay] = useState(false)
   const [showGateOverlay, setShowGateOverlay] = useState(false)
   const [showMergeOverlay, setShowMergeOverlay] = useState(false)
   const [showPinOverlay, setShowPinOverlay] = useState(false)
@@ -437,6 +439,17 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const handlePlayFromDescription = useCallback(async () => {
     setShowDescriptionPopup(false)
     setGameMode('normal')
+
+    // 단어 솔리테어는 복습 단어가 아니라 회차 카테고리 콘텐츠로 판을 만든다 →
+    // 단어 로딩·단어 모달 단계를 건너뛰고 바로 시작한다.
+    if (selectedGame === 'wordSolitaire') {
+      gameStartTime.current = Date.now()
+      gameCompleted.current = false
+      gameAnalytics.start(lectureId, { game_type: 'wordSolitaire', access_source: accessSource, game_mode: 'normal' })
+      setShowSolitaireOverlay(true)
+      return
+    }
+
     setIsLoadingReviewData(true)
     try {
       const { data } = await reviewService.getLectureReviewItems(lectureId)
@@ -453,7 +466,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       setIsLoadingReviewData(false)
     }
     setShowWordModal(true)
-  }, [lectureId, setWords])
+  }, [lectureId, setWords, selectedGame, accessSource])
 
   const handleAddWord = useCallback(async (keyword: string, description: string) => {
     const { data } = await reviewService.createLectureReviewItem(lectureId, { keyword, description })
@@ -852,6 +865,51 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
           setGameMode(null)
         }}
       />
+    )
+  }
+
+  // 단어 솔리테어 overlay — 회차 카테고리 콘텐츠로 도는 게임이라 words 를 넘기지 않는다.
+  if (showSolitaireOverlay) {
+    const handleCloseSolitaire = () => {
+      gameAnalytics.complete(lectureId, {
+        game_type: 'wordSolitaire',
+        score: 0,
+        duration_ms: Date.now() - gameStartTime.current,
+        access_source: accessSource,
+        game_mode: 'normal',
+      })
+      setShowSolitaireOverlay(false)
+      setSelectedGame(null)
+      setGameMode(null)
+    }
+    return (
+      <>
+        {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
+        <div className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity" />
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <div
+            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-w-[900px] dark:bg-gray-900"
+            style={landscape ? LANDSCAPE_PANEL_STYLE : undefined}
+          >
+            <div className={`flex shrink-0 items-center justify-between border-b border-gray-200 px-6 dark:border-gray-700 ${landscape ? 'py-1.5' : 'py-3'}`}>
+              <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
+                {t('lectureStudy.game.wordSolitaire')}
+              </h3>
+              <button
+                type="button"
+                onClick={handleCloseSolitaire}
+                aria-label={t('lectureStudy.game.closeGame')}
+                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <WordSolitaireGame lectureId={lectureId} isActive />
+            </div>
+          </div>
+        </div>
+      </>
     )
   }
 

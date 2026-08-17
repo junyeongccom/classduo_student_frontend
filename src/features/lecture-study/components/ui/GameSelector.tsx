@@ -26,6 +26,8 @@ const GAME_LIST: GameInfo[] = [
   { id: 'knowledgeTower', name: '', description: '', minWords: 3, icon: '🏗️' },
   { id: 'conceptSort', name: '', description: '', minWords: 3, icon: '🧪' },
   { id: 'conceptLink', name: '', description: '', minWords: 3, icon: '🔗' },
+  // 복습 단어가 아니라 회차 카테고리 콘텐츠를 쓰므로 minWords 는 0 이다.
+  { id: 'wordSolitaire', name: '', description: '', minWords: 0, icon: '🗂️' },
 ]
 
 /** 게임별 테마 (밝은 배경용) */
@@ -182,6 +184,7 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
     knowledgeTower: t('lectureStudy.game.knowledgeTower'),
     conceptSort: t('lectureStudy.game.conceptSort'),
     conceptLink: t('lectureStudy.game.conceptLink'),
+    wordSolitaire: t('lectureStudy.game.wordSolitaire'),
   }
 
   return (
@@ -212,7 +215,8 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
       {/* 게임 카드 그리드 */}
       <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
         {GAME_LIST.map((game, i) => {
-          const theme = CARD_THEMES[i]
+          // 게임이 테마 수보다 많아져도 색이 비지 않게 순환시킨다.
+          const theme = CARD_THEMES[i % CARD_THEMES.length]
           return (
             <button
               key={game.id}
