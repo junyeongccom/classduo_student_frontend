@@ -23,7 +23,7 @@ import {
 } from './selection.ts'
 import { canUndo, emptyHistory, pushHistory, undo } from './history.ts'
 import { dailySalt, dealSeedFor } from './seed.ts'
-import { CARD_HEIGHT, FACE_DOWN_OFFSET, FACE_UP_OFFSET, cardTopOffsets, columnHeight } from './uiConstants.ts'
+import { MAX_CARD_WIDTH, MIN_CARD_WIDTH, cardHeightFor, cardTopOffsets, cardWidthFor, columnHeight } from './uiConstants.ts'
 
 // 카테고리 3개: A(a1,a2) / B(b1,b2,b3) / C(c1,c2)
 const DECK = buildDeck({
@@ -320,21 +320,35 @@ test('같은 회차·난이도·날짜면 같은 시드, 다르면 다른 시드
 
 // ─────────────────────── 보드 겹침 계산 ───────────────────────
 
+const H = 100 // 계산이 눈으로 검산되도록 딱 떨어지는 카드 높이를 쓴다
+
 test('덮인 카드는 촘촘히, 오픈 카드는 넓게 겹친다', () => {
   // 5장 중 앞 3장이 덮이고 index 3부터 앞면
-  const offsets = cardTopOffsets(5, 3)
-  assert.deepEqual(offsets, [
-    0,
-    FACE_DOWN_OFFSET,
-    FACE_DOWN_OFFSET * 2,
-    FACE_DOWN_OFFSET * 3,
-    FACE_DOWN_OFFSET * 3 + FACE_UP_OFFSET,
-  ])
-  assert.equal(columnHeight(5, 3), offsets[4] + CARD_HEIGHT)
+  const offsets = cardTopOffsets(5, 3, H)
+  const faceDown = offsets[1]
+  const faceUp = offsets[4] - offsets[3]
+  assert.deepEqual(offsets, [0, faceDown, faceDown * 2, faceDown * 3, faceDown * 3 + faceUp])
+  // 오픈 카드가 더 넓게 벌어져야 라벨이 보인다
+  assert.ok(faceUp > faceDown)
+  assert.equal(columnHeight(5, 3, H), offsets[4] + H)
 })
 
 test('빈 열도 카드 1장 높이를 차지한다', () => {
-  assert.deepEqual(cardTopOffsets(0, 0), [])
-  assert.equal(columnHeight(0, 0), CARD_HEIGHT)
-  assert.equal(columnHeight(1, 0), CARD_HEIGHT)
+  assert.deepEqual(cardTopOffsets(0, 0, H), [])
+  assert.equal(columnHeight(0, 0, H), H)
+  assert.equal(columnHeight(1, 0, H), H)
+})
+
+test('카드 폭은 열 수로 화면을 나누되 최소 폭 아래로는 줄지 않는다', () => {
+  // 5열 · 컨테이너 500px · 간격 8px → (500 - 32) / 5 = 93
+  assert.equal(cardWidthFor(500, 5), 93)
+  // 넓은 화면에서는 상한에 걸린다 — 카드가 손바닥만 해지지 않게
+  assert.equal(cardWidthFor(2000, 3), MAX_CARD_WIDTH)
+  // 8열이 좁은 화면에 들어가면 최소 폭에 걸린다(이 경우 보드가 가로 스크롤된다)
+  assert.equal(cardWidthFor(320, 8), MIN_CARD_WIDTH)
+  assert.equal(cardWidthFor(0, 0), MIN_CARD_WIDTH)
+})
+
+test('카드 높이는 폭에 비례한다 (세로로 긴 카드)', () => {
+  assert.ok(cardHeightFor(100) > 100)
 })

@@ -6,12 +6,22 @@
  */
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Layers, RotateCcw } from 'lucide-react'
+import { Crown, Layers, RotateCcw } from 'lucide-react'
 import type { MoveSource, MoveTarget, SolitaireState } from '../engine/index.ts'
 import { sourceKey, targetKey, type SolitaireSelection } from '../selection.ts'
 import { isSameSource } from '../selection.ts'
-import { CARD_HEIGHT, MIN_CARD_WIDTH, TARGET_RING_CLASS, cardTopOffsets, columnHeight } from '../uiConstants.ts'
+import {
+  CARD_ASPECT,
+  COLUMN_GAP,
+  TARGET_RING_CLASS,
+  cardHeightFor,
+  cardHeightForViewport,
+  cardTopOffsets,
+  cardWidthFor,
+  columnHeight,
+} from '../uiConstants.ts'
 import { SolitaireCardView } from './SolitaireCardView'
 
 export interface SolitaireBoardProps {
@@ -49,6 +59,52 @@ export function SolitaireBoard({
   const t = useTranslations('review.ui.wordSolitaire')
   const { deck, foundations, tableau, stock, waste } = state
 
+  /**
+   * 참고 게임처럼 열이 화면 폭을 나눠 갖게 한다 — 카드 폭을 고정하면 5열만 돼도 가로 스크롤이 생긴다.
+   * 보드 폭을 실제로 재서 카드 치수를 계산하고, 폭이 바뀌면(회전·리사이즈) 다시 잰다.
+   */
+  const boardRef = useRef<HTMLDivElement>(null)
+  const [boardWidth, setBoardWidth] = useState(0)
+  const [availableHeight, setAvailableHeight] = useState(0)
+  useEffect(() => {
+    const el = boardRef.current
+    if (!el) return
+    const measure = () => {
+      setBoardWidth(el.clientWidth)
+      // 보드 위쪽(난이도 버튼·턴/스톡 바)이 쓰고 남은 세로를 좌표로 정확히 잰다.
+      // offsetTop 은 offsetParent 기준이라 여기서는 맞지 않는다.
+      const pane = el.closest('[data-solitaire-pane]')
+      if (!pane) return
+      const paneBottom = pane.getBoundingClientRect().bottom
+      const boardTop = el.getBoundingClientRect().top
+      setAvailableHeight(Math.max(0, paneBottom - boardTop - 12))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    const pane = el.closest('[data-solitaire-pane]')
+    if (pane) observer.observe(pane)
+    return () => observer.disconnect()
+  }, [])
+
+  const columnCount = Math.max(foundations.length, tableau.length)
+  const longestColumn = tableau.reduce((max, col) => Math.max(max, col.cardIds.length), 1)
+  const cardWidth = cardWidthFor(boardWidth, columnCount)
+  /** 가로·세로 제약 중 빡빡한 쪽을 따른다 — 어느 한쪽만 보면 판이 화면 밖으로 나간다 */
+  const heightFromWidth = cardHeightFor(cardWidth)
+  const heightFromViewport =
+    availableHeight > 0 ? cardHeightForViewport(availableHeight, longestColumn) : heightFromWidth
+  const cardHeight = Math.max(56, Math.min(heightFromWidth, heightFromViewport))
+  /** 세로 제약으로 높이가 줄면 폭도 같이 줄여 카드 비율을 지킨다 */
+  const finalCardWidth = Math.min(cardWidth, Math.round(cardHeight / CARD_ASPECT))
+  /**
+   * 상단바(웨이스트·스톡)는 판이 아니라 보조 정보라 살짝 납작하게 둔다 —
+   * 세로가 빠듯한 데스크톱에서 이 한 줄이 테이블로 카드 크기를 좌우한다.
+   */
+  const topBarCardHeight = Math.round(cardHeight * 0.8)
+  /** 폭을 재기 전(첫 렌더)에는 카드를 그리지 않는다 — 잘못된 크기로 한 번 그렸다 튀는 걸 막는다 */
+  const measured = boardWidth > 0
+
   const wasteTopId = waste.length > 0 ? waste[waste.length - 1] : null
   const wasteKey = sourceKey({ type: 'waste' })
   const isWasteSelected = isSameSource(selection, { type: 'waste' })
@@ -66,9 +122,13 @@ export function SolitaireBoard({
 
         <div className="flex items-end gap-2">
           {/* 웨이스트: 맨 위 1장만 옮길 수 있다 */}
-          <div className="relative w-[84px]" style={{ height: CARD_HEIGHT }} data-testid="ws-waste">
+          <div
+            className="relative"
+            style={{ width: finalCardWidth, height: topBarCardHeight }}
+            data-testid="ws-waste"
+          >
             {wasteTopId === null ? (
-              <div className={EMPTY_SLOT_CLASS} style={{ height: CARD_HEIGHT }}>
+              <div className={EMPTY_SLOT_CLASS} style={{ height: topBarCardHeight }}>
                 {t('wasteEmpty')}
               </div>
             ) : (
@@ -85,6 +145,7 @@ export function SolitaireBoard({
                 rejected={rejectedKey === wasteKey}
                 disabled={locked}
                 ariaLabel={t('wasteCardAria', { label: deck.cards[wasteTopId].label })}
+                height={topBarCardHeight}
                 onClick={() => onTapCard({ type: 'waste' }, wasteKey)}
               />
             )}
@@ -97,8 +158,8 @@ export function SolitaireBoard({
             disabled={locked || !canDraw}
             data-testid="ws-stock"
             aria-label={t('drawAria', { count: stock.length })}
-            style={{ height: CARD_HEIGHT }}
-            className={`flex w-[84px] flex-col items-center justify-center gap-0.5 rounded-lg border text-white transition ${
+            style={{ width: finalCardWidth, height: topBarCardHeight }}
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-lg border text-white transition ${
               canDraw && !locked
                 ? 'border-indigo-300 bg-gradient-to-br from-indigo-400 to-indigo-600 hover:brightness-110'
                 : 'cursor-not-allowed border-gray-200 bg-gray-300'
@@ -118,13 +179,22 @@ export function SolitaireBoard({
         기초 슬롯과 테이블로는 열 수가 같아 세로로 맞물려야 한다 —
         좁은 화면에서 어긋나지 않도록 **하나의 가로 스크롤 컨테이너** 안에 함께 넣는다.
       */}
-      <div className="flex flex-col gap-4 overflow-x-auto pb-1">
+      <div
+        ref={boardRef}
+        className="overflow-x-auto pb-1"
+        style={{ visibility: measured ? 'visible' : 'hidden' }}
+      >
+        {/* 두 격자를 같은 폭의 래퍼 안에 넣어야 열이 세로로 맞물린다 (각자 중앙정렬하면 어긋난다) */}
+        <div className="mx-auto flex w-fit flex-col gap-3">
         {/* 기초 슬롯 */}
         <div>
           <div className="mb-1.5 text-[11px] font-semibold text-gray-500">{t('foundationLabel')}</div>
           <div
-            className="grid gap-1.5"
-            style={{ gridTemplateColumns: `repeat(${foundations.length}, minmax(${MIN_CARD_WIDTH}px, 1fr))` }}
+            className="grid"
+            style={{
+              gap: COLUMN_GAP,
+              gridTemplateColumns: `repeat(${foundations.length}, ${finalCardWidth}px)`,
+            }}
           >
           {foundations.map((slot, index) => {
             const key = targetKey({ type: 'foundation', slot: index })
@@ -135,7 +205,7 @@ export function SolitaireBoard({
                 key={key}
                 data-testid={`ws-foundation-${index}`}
                 className={`relative rounded-lg ${isTarget ? TARGET_RING_CLASS : ''}`}
-                style={{ height: CARD_HEIGHT }}
+                style={{ height: cardHeight }}
               >
                 {slot.categoryId === null ? (
                   <button
@@ -144,9 +214,10 @@ export function SolitaireBoard({
                     disabled={locked || !isTarget}
                     aria-label={t('emptyFoundationAria')}
                     className={`${EMPTY_SLOT_CLASS} ${isTarget ? 'cursor-pointer' : 'cursor-default'}`}
-                    style={{ height: CARD_HEIGHT }}
+                    style={{ height: cardHeight }}
                   >
-                    {t('emptySlot')}
+                    {/* 참고 게임처럼 "무엇이 올라가는 자리인지"를 왕관 실루엣으로 알린다 */}
+                    <Crown className="h-5 w-5 text-gray-300" aria-hidden="true" />
                   </button>
                 ) : (
                   <SolitaireCardView
@@ -155,6 +226,7 @@ export function SolitaireBoard({
                     progress={{ done: slot.wordIds.length, total: deck.categoryWordCounts[slot.categoryId] }}
                     disabled={locked || !isTarget}
                     rejected={rejectedKey === key}
+                    height={cardHeight}
                     ariaLabel={t('foundationAria', {
                       name: deck.categoryNames[slot.categoryId],
                       done: slot.wordIds.length,
@@ -171,21 +243,24 @@ export function SolitaireBoard({
 
         {/* 테이블로 — 기초 바로 아래 (계획서 §2 확정) */}
         <div
-          className="grid items-start gap-1.5"
-          style={{ gridTemplateColumns: `repeat(${tableau.length}, minmax(${MIN_CARD_WIDTH}px, 1fr))` }}
+          className="grid items-start"
+          style={{
+            gap: COLUMN_GAP,
+            gridTemplateColumns: `repeat(${tableau.length}, ${finalCardWidth}px)`,
+          }}
         >
           {tableau.map((column, columnIndex) => {
             const key = targetKey({ type: 'tableau', column: columnIndex })
             const isTarget = highlightKeys.has(key)
             const target: MoveTarget = { type: 'tableau', column: columnIndex }
-            const offsets = cardTopOffsets(column.cardIds.length, column.faceUpFrom)
+            const offsets = cardTopOffsets(column.cardIds.length, column.faceUpFrom, cardHeight)
 
             return (
               <div
                 key={key}
                 data-testid={`ws-col-${columnIndex}`}
                 className={`relative rounded-lg ${isTarget ? TARGET_RING_CLASS : ''}`}
-                style={{ height: columnHeight(column.cardIds.length, column.faceUpFrom) }}
+                style={{ height: columnHeight(column.cardIds.length, column.faceUpFrom, cardHeight) }}
               >
                 {column.cardIds.length === 0 && (
                   <button
@@ -194,7 +269,7 @@ export function SolitaireBoard({
                     disabled={locked || !isTarget}
                     aria-label={t('emptyColumnAria', { column: columnIndex + 1 })}
                     className={`${EMPTY_SLOT_CLASS} absolute inset-x-0 top-0`}
-                    style={{ height: CARD_HEIGHT }}
+                    style={{ height: cardHeight }}
                   >
                     {t('emptySlot')}
                   </button>
@@ -223,7 +298,9 @@ export function SolitaireBoard({
                       rejected={rejectedKey === cardKey}
                       disabled={locked || (faceDown && !actsAsTarget)}
                       top={offsets[index]}
-                      alignTop
+                      // 맨 아래 카드는 가려지지 않으니 이름을 가운데 크게 보여준다 (참고 게임과 동일)
+                      alignTop={index < column.cardIds.length - 1}
+                      height={cardHeight}
                       ariaLabel={
                         faceDown
                           ? t('faceDownAria')
@@ -244,6 +321,7 @@ export function SolitaireBoard({
               </div>
             )
           })}
+        </div>
         </div>
       </div>
     </div>

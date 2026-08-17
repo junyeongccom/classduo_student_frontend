@@ -11,7 +11,6 @@ import {
   CARD_ALIGN_CENTER_CLASS,
   CARD_ALIGN_TOP_CLASS,
   CARD_BASE_CLASS,
-  CARD_HEIGHT,
   SELECTED_RING_CLASS,
 } from '../uiConstants.ts'
 
@@ -32,6 +31,8 @@ export interface SolitaireCardViewProps {
   top?: number
   /** 겹쳐 쌓이는 카드(테이블로)면 라벨을 위쪽에 붙인다 */
   alignTop?: boolean
+  /** 카드 높이(px) — 보드가 화면 폭에 맞춰 계산해 내려준다 */
+  height: number
   onClick?: () => void
   ariaLabel: string
 }
@@ -47,10 +48,14 @@ export function SolitaireCardView({
   disabled = false,
   top = 0,
   alignTop = false,
+  height,
   onClick,
   ariaLabel,
 }: SolitaireCardViewProps) {
   const isCategory = kind === 'category'
+  /** 라벨 길이에 따라 글자를 줄인다 — 좁은 카드에 긴 한국어 용어가 들어가도 읽히게 */
+  const labelSizeClass =
+    label.length <= 6 ? 'text-[15px]' : label.length <= 12 ? 'text-[13px]' : 'text-[11px]'
 
   const faceClass = faceDown
     ? 'border-indigo-300 bg-gradient-to-br from-indigo-400 to-indigo-600 text-transparent'
@@ -65,7 +70,7 @@ export function SolitaireCardView({
       disabled={disabled || !onClick}
       aria-label={ariaLabel}
       aria-pressed={selected}
-      style={{ top, height: CARD_HEIGHT }}
+      style={{ top, height }}
       className={[
         CARD_BASE_CLASS,
         alignTop ? CARD_ALIGN_TOP_CLASS : CARD_ALIGN_CENTER_CLASS,
@@ -81,20 +86,25 @@ export function SolitaireCardView({
       {faceDown ? (
         <span className="mx-auto h-6 w-6 rounded-full border-2 border-white/40" aria-hidden="true" />
       ) : (
-        // 왕관·진행뱃지를 윗줄로 빼고 이름에 두 줄을 온전히 준다 (한 줄 truncate 로는 한국어 용어가 거의 안 보였다).
-        <span className="flex w-full flex-col gap-0.5 overflow-hidden">
+        // 참고 게임처럼 이름을 카드 한가운데 크게 두고, 왕관·진행도는 위쪽 모서리로 뺀다.
+        <span className="flex h-full w-full flex-col overflow-hidden">
           {isCategory && (
             <span className="flex shrink-0 items-center justify-between gap-1">
               <Crown className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden="true" />
               {progress && (
-                <span className="shrink-0 rounded-full bg-violet-200 px-1.5 py-0.5 text-[10px] font-bold leading-none text-violet-800">
+                <span className="shrink-0 rounded-full bg-violet-200 px-1 py-px text-[10px] font-bold leading-none text-violet-800">
                   {progress.done}/{progress.total}
                 </span>
               )}
             </span>
           )}
-          <span className="line-clamp-2 min-w-0 break-all text-[12px] font-medium leading-[1.25] sm:text-[13px]">
-            {label}
+          {/* 겹쳐 쌓인 카드는 윗부분만 보이므로 라벨을 위로 붙이고, 맨 아래 카드만 가운데 크게 둔다 */}
+          <span
+            className={`flex min-w-0 flex-1 justify-center break-words px-0.5 font-semibold leading-[1.2] ${
+              alignTop ? 'items-start' : 'items-center'
+            } ${labelSizeClass}`}
+          >
+            <span className={alignTop ? 'line-clamp-1' : 'line-clamp-3'}>{label}</span>
           </span>
         </span>
       )}

@@ -905,7 +905,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-auto p-3 sm:p-4">
+            <div data-solitaire-pane className="flex-1 overflow-auto p-3 sm:p-4">
               <WordSolitaireGame lectureId={lectureId} isActive />
             </div>
           </div>
