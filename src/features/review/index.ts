@@ -3,7 +3,6 @@
  */
 
 // Components
-export { ReviewContainer } from './components/containers/ReviewContainer'
 export { ReviewLoading } from './components/ui/ReviewLoading'
 
 // Game Components (lecture-study 통합용)
