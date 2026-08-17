@@ -81,14 +81,21 @@ export function SolitaireCardView({
       {faceDown ? (
         <span className="mx-auto h-6 w-6 rounded-full border-2 border-white/40" aria-hidden="true" />
       ) : (
-        <span className="flex w-full items-center gap-1.5 overflow-hidden">
-          {isCategory && <Crown className="h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />}
-          <span className="min-w-0 flex-1 truncate text-[11px] leading-tight sm:text-xs">{label}</span>
-          {isCategory && progress && (
-            <span className="shrink-0 rounded-full bg-violet-200 px-1.5 py-0.5 text-[10px] font-bold text-violet-800">
-              {progress.done}/{progress.total}
+        // 왕관·진행뱃지를 윗줄로 빼고 이름에 두 줄을 온전히 준다 (한 줄 truncate 로는 한국어 용어가 거의 안 보였다).
+        <span className="flex w-full flex-col gap-0.5 overflow-hidden">
+          {isCategory && (
+            <span className="flex shrink-0 items-center justify-between gap-1">
+              <Crown className="h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+              {progress && (
+                <span className="shrink-0 rounded-full bg-violet-200 px-1.5 py-0.5 text-[10px] font-bold leading-none text-violet-800">
+                  {progress.done}/{progress.total}
+                </span>
+              )}
             </span>
           )}
+          <span className="line-clamp-2 min-w-0 break-all text-[12px] font-medium leading-[1.25] sm:text-[13px]">
+            {label}
+          </span>
         </span>
       )}
     </button>

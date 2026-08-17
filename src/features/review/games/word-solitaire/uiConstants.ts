@@ -5,17 +5,21 @@
  * @dependencies 없음
  */
 
-/** 카드 1장의 높이(px). 테이블로 겹침 계산이 이 값을 기준으로 한다 */
-export const CARD_HEIGHT = 56
+/**
+ * 카드 1장의 높이(px). 테이블로 겹침 계산이 이 값을 기준으로 한다.
+ * 한국어 용어("연골무형성증(Achondroplasia)")가 두 줄로 들어가야 해서 넉넉히 잡는다.
+ */
+export const CARD_HEIGHT = 76
 /** 덮인 카드끼리의 세로 겹침 간격(px) — 내용이 없으므로 촘촘히 겹친다 */
-export const FACE_DOWN_OFFSET = 12
-/** 오픈 카드끼리의 세로 겹침 간격(px) — 라벨 한 줄이 보여야 한다 */
-export const FACE_UP_OFFSET = 30
+export const FACE_DOWN_OFFSET = 14
+/** 오픈 카드끼리의 세로 겹침 간격(px) — 라벨 두 줄이 보여야 한다 */
+export const FACE_UP_OFFSET = 42
 /**
  * 카드 1장의 최소 너비(px). 슬롯이 8개까지 늘어나므로 좁은 화면에서는 카드를 찌그러뜨리는 대신
  * 보드를 가로로 스크롤시킨다 (기초·테이블로가 같은 스크롤 컨테이너 안이라 열이 어긋나지 않는다).
+ * 좁을수록 글자가 먼저 죽으므로 하한을 넉넉히 둔다 — 5열이면 375px 화면에서도 가로 스크롤로 소화된다.
  */
-export const MIN_CARD_WIDTH = 72
+export const MIN_CARD_WIDTH = 104
 
 /** 카드 공통 모양 */
 export const CARD_BASE_CLASS =

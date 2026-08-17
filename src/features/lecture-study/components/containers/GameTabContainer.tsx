@@ -886,12 +886,13 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       <>
         {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
         <div className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity" />
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+        {/* 카드가 많아 좁으면 못 읽는다 → 모바일은 화면 전체, 데스크톱도 넉넉한 판을 준다. */}
+        <div className="fixed inset-0 z-[80] flex items-center justify-center sm:p-4">
           <div
             /* 솔리테어는 세로로 쌓는 카드 게임이라 다른 게임과 달리 가로 모드로 돌리지 않는다. */
-            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:max-w-[900px] dark:bg-gray-900"
+            className="relative flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-[min(92dvh,900px)] sm:max-w-[1120px] sm:rounded-2xl dark:bg-gray-900"
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-6 py-3 dark:border-gray-700">
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 sm:px-6 dark:border-gray-700">
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
                 {t('lectureStudy.game.wordSolitaire')}
               </h3>
@@ -904,7 +905,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-auto p-4">
+            <div className="flex-1 overflow-auto p-3 sm:p-4">
               <WordSolitaireGame lectureId={lectureId} isActive />
             </div>
           </div>
