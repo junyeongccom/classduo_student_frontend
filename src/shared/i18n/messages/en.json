@@ -575,7 +575,6 @@
         "notReady": "This lecture's game is still being prepared",
         "stuckDrawStock": "No moves available - try drawing from the stock",
         "stuckRestart": "No moves left - hit Restart to try again from the top",
-        "hint": "Tap a card to see where it can go. Undo costs 1 turn too.",
         "winTitle": "All categories completed!",
         "winPerfect": "You matched or beat the best possible run. Perfect!",
         "winGap": "{gap} turns over the best possible run.",
@@ -823,7 +822,7 @@
         "wordSolitaire": {
           "subtitle": "Sort words under their categories to clear the board",
           "goal": "Move each topic card from the lecture onto a foundation slot, then file every word under the right topic. Clear the board in as few turns as possible for a higher rank.",
-          "controlTap": "Tap a card to see where it can go",
+          "controlTap": "Drag a card where you want it",
           "objSolitaire": "Think about how each word relates to its topic"
         }
       },
