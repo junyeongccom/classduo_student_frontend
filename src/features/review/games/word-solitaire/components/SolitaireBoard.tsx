@@ -66,7 +66,7 @@ export function SolitaireBoard({
 
         <div className="flex items-end gap-2">
           {/* 웨이스트: 맨 위 1장만 옮길 수 있다 */}
-          <div className="relative w-[84px]" style={{ height: CARD_HEIGHT }}>
+          <div className="relative w-[84px]" style={{ height: CARD_HEIGHT }} data-testid="ws-waste">
             {wasteTopId === null ? (
               <div className={EMPTY_SLOT_CLASS} style={{ height: CARD_HEIGHT }}>
                 {t('wasteEmpty')}
@@ -95,6 +95,7 @@ export function SolitaireBoard({
             type="button"
             onClick={onDraw}
             disabled={locked || !canDraw}
+            data-testid="ws-stock"
             aria-label={t('drawAria', { count: stock.length })}
             style={{ height: CARD_HEIGHT }}
             className={`flex w-[84px] flex-col items-center justify-center gap-0.5 rounded-lg border text-white transition ${
@@ -132,6 +133,7 @@ export function SolitaireBoard({
             return (
               <div
                 key={key}
+                data-testid={`ws-foundation-${index}`}
                 className={`relative rounded-lg ${isTarget ? TARGET_RING_CLASS : ''}`}
                 style={{ height: CARD_HEIGHT }}
               >
@@ -181,6 +183,7 @@ export function SolitaireBoard({
             return (
               <div
                 key={key}
+                data-testid={`ws-col-${columnIndex}`}
                 className={`relative rounded-lg ${isTarget ? TARGET_RING_CLASS : ''}`}
                 style={{ height: columnHeight(column.cardIds.length, column.faceUpFrom) }}
               >
