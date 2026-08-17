@@ -1047,7 +1047,27 @@
       "retryAllConfirm": "이 회차 모든 문제의 풀이 상태를 초기화하고 처음부터 다시 풀까요?",
       "retryAllConfirmNote": "지금까지의 정답·오답 기록은 그대로 보존됩니다.",
       "retryAllConfirmCta": "초기화",
-      "retryAllCancel": "취소"
+      "retryAllCancel": "취소",
+      "essayShowExplanation": "해설 보기",
+      "essayHideExplanation": "해설 접기",
+      "essayExplanationDisabledTooltip": "답안을 작성해야 해설을 볼 수 있습니다",
+      "essayGrading": {
+        "pending": "채점 중이에요",
+        "pendingHint": "답안은 저장됐어요. 요소별 결과를 곧 보여드릴게요.",
+        "failed": "지금은 채점을 못 했어요",
+        "failedHint": "답안은 안전하게 저장됐어요. 아래 모범답안과 비교해 보세요.",
+        "timeout": "채점이 오래 걸리고 있어요",
+        "timeoutHint": "답안은 저장됐어요. 잠시 뒤 다시 열면 결과를 볼 수 있어요.",
+        "enough": "충분해요",
+        "needsMore": "조금 더 보완해요",
+        "breakdown": "{total}개 요소 중 {met}개 충족",
+        "breakdownWithPartial": "{total}개 요소 중 {met}개 충족 · {partial}개 부분 충족",
+        "scorePoints": "{score}점",
+        "verdictMet": "충족",
+        "verdictPartial": "부분 충족",
+        "verdictMissed": "미충족",
+        "missedHint": "이런 내용을 함께 썼다면 좋았어요 — {hint}"
+      }
     },
     "contentsChat": {
       "errorGenerate": "답변을 생성하지 못했습니다. 다시 시도해주세요.",

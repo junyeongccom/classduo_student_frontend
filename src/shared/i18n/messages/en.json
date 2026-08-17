@@ -1047,7 +1047,27 @@
       "retryAllConfirm": "Reset all answers in this lecture and start over?",
       "retryAllConfirmNote": "Your correct/incorrect history will be preserved.",
       "retryAllConfirmCta": "Reset",
-      "retryAllCancel": "Cancel"
+      "retryAllCancel": "Cancel",
+      "essayShowExplanation": "Show Explanation",
+      "essayHideExplanation": "Hide Explanation",
+      "essayExplanationDisabledTooltip": "Write your answer first to see the explanation",
+      "essayGrading": {
+        "pending": "Reviewing your answer",
+        "pendingHint": "Your answer is saved. The point-by-point result will appear shortly.",
+        "failed": "We couldn't review it right now",
+        "failedHint": "Your answer is safely saved. Compare it with the model answer below.",
+        "timeout": "This is taking longer than usual",
+        "timeoutHint": "Your answer is saved. Reopen this question in a moment to see the result.",
+        "enough": "Well covered",
+        "needsMore": "Room to build on",
+        "breakdown": "{met} of {total} points covered",
+        "breakdownWithPartial": "{met} of {total} points covered · {partial} partially",
+        "scorePoints": "{score} pts",
+        "verdictMet": "Covered",
+        "verdictPartial": "Partial",
+        "verdictMissed": "Missing",
+        "missedHint": "Adding this would have helped — {hint}"
+      }
     },
     "contentsChat": {
       "errorGenerate": "Failed to generate a response. Please try again.",

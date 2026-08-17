@@ -39,6 +39,8 @@ import {
   type QuizStatus,
 } from '../../services/quizStatusService'
 import { StudentQuizCard, type StudentQuizItem } from '@/shared/components/quiz'
+import { useEssayGrading } from '../../hooks/useEssayGrading'
+import { hasEssayGradingRecord } from '../../domain/essayGradingView'
 import { FlameRewardModal } from '../ui/FlameRewardModal'
 import { QuizFilterBar } from '../ui/QuizFilterBar'
 import {
@@ -63,6 +65,18 @@ interface QuizTabContainerProps {
   courseTitle?: string
   weekNumber?: number | null
   sessionNumber?: number | null
+}
+
+/**
+ * 이 문항을 풀었다고 볼 수 있는지.
+ *
+ * 객관식은 정오답이 곧 풀이 기록이지만, 서술형은 채점이 끝나기 전(correct=null)에도
+ * 이미 제출된 상태다 — 답안 본문의 존재를 함께 본다. 이 판정이 어긋나면 서술형이
+ * 섞인 회차에서 완주 보상이 영영 지급되지 않는다.
+ */
+function isQuizAnswered(status: QuizStatus | undefined): boolean {
+  if (!status) return false
+  return status.correct != null || (status.answer_text ?? '').trim() !== ''
 }
 
 /** InstructorQuizItem → StudentQuizItem 변환 */
@@ -114,6 +128,15 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
   const setQuizChatContext = useLectureStudyStore(s => s.setQuizChatContext)
 
+  // 서술형 루브릭 채점 — 제출(202) 후 폴링으로 요소별 결과를 받아온다
+  const {
+    gradingByQuiz,
+    submitEssay,
+    seedGradings,
+    clearGrading,
+    resetAll: resetEssayGrading,
+  } = useEssayGrading()
+
   // 보상 판정이 중복 호출되지 않도록 ref로 관리
   const rewardCheckingRef = useRef(false)
 
@@ -141,6 +164,8 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       // 회차/언어가 바뀌면 필터·풀이 범위도 초기 상태로 되돌린다
       setFilter(EMPTY_QUIZ_FILTER)
       setScope('all')
+      // 진행 중이던 채점 폴링도 끊는다 — 이전 회차의 결과가 새 화면에 도착하면 안 된다
+      resetEssayGrading()
 
       // 퀴즈 + 상태 + 즐겨찾기를 병렬 조회
       const [quizResult, statusResult, bookmarkResult] = await Promise.all([
@@ -170,6 +195,17 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
           map.set(s.quiz_id, s)
         }
         setStatusMap(map)
+
+        // 서술형 채점 결과 복원. grading_status 가 없는 행은 채점 도입 이전 경로로 들어온
+        // 자가평가 제출(is_correct=true 센티널)이라 채점 UI 를 그리면 안 된다.
+        const essayIds = new Set(
+          loadedQuizzes.filter((q) => q.answer_format === 'essay').map((q) => q.quiz_id),
+        )
+        seedGradings(
+          statusResult.data
+            .filter((s) => essayIds.has(s.quiz_id) && hasEssayGradingRecord(s.grading_status))
+            .map((s) => ({ quizId: s.quiz_id, responseId: s.response_id, source: s })),
+        )
       }
 
       if (bookmarkResult.data) {
@@ -193,7 +229,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
     return () => {
       cancelled = true
     }
-  }, [lectureId, locale])
+  }, [lectureId, locale, seedGradings, resetEssayGrading])
 
   // 회차 강의자료 메타(파일명 · 페이지 수) — 슬라이드 페이지 필터의 자료별 그룹핑에만 쓴다.
   // 실패 시 빈 배열로 두면 필터가 기존 평면 목록으로 폴백되므로 별도 에러 처리 없음.
@@ -251,6 +287,33 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
     [bookmarkSet, lectureId, statusMap],
   )
 
+  /**
+   * 회차의 모든 문항을 풀었으면 완주 계측 + 보상을 요청한다 (정답/오답 무관).
+   * 객관식·서술형이 각자 상태를 반영한 map 을 넘겨 호출한다 — 최종 판정·멱등 처리는 서버 몫.
+   */
+  const maybeGrantReward = useCallback(
+    async (updatedMap: Map<string, QuizStatus>) => {
+      if (rewardCheckingRef.current) return
+      const allAnswered =
+        quizzes.length > 0 && quizzes.every((q) => isQuizAnswered(updatedMap.get(q.quiz_id)))
+      if (!allAnswered) return
+
+      const correctCount = Array.from(updatedMap.values()).filter((s) => s.correct === true).length
+      quizAnalytics.complete(lectureId, {
+        total_duration_ms: 0,
+        accuracy: correctCount / quizzes.length,
+        question_count: quizzes.length,
+      })
+      rewardCheckingRef.current = true
+      const rewardResult = await grantReward(lectureId, 'content')
+      rewardCheckingRef.current = false
+      if (rewardResult.data?.rewarded) {
+        setShowRewardModal(true)
+      }
+    },
+    [quizzes, lectureId],
+  )
+
   // 풀이 결과 업데이트 + 보상 판정
   const handleCorrectUpdate = useCallback(
     async (quizId: string, isCorrect: boolean, answer: number, answerText?: string) => {
@@ -301,32 +364,77 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       }
 
       // 보상 판정: 모든 content 퀴즈가 풀이되었으면 reward 요청 (정답/오답 무관)
-      if (!rewardCheckingRef.current) {
-        const updatedMap = new Map(statusMap)
-        updatedMap.set(quizId, {
-          quiz_id: quizId,
-          quiz_source: 'content',
-          correct: isCorrect,
-          answer,
-        })
-
-        const allAnswered =
-          quizzes.length > 0 &&
-          quizzes.every((q) => updatedMap.get(q.quiz_id)?.correct != null)
-
-        if (allAnswered) {
-          const correctCount = Array.from(updatedMap.values()).filter(s => s.correct === true).length
-          quizAnalytics.complete(lectureId, { total_duration_ms: 0, accuracy: correctCount / quizzes.length, question_count: quizzes.length })
-          rewardCheckingRef.current = true
-          const rewardResult = await grantReward(lectureId, 'content')
-          rewardCheckingRef.current = false
-          if (rewardResult.data?.rewarded) {
-            setShowRewardModal(true)
-          }
-        }
-      }
+      const updatedMap = new Map(statusMap)
+      updatedMap.set(quizId, {
+        quiz_id: quizId,
+        quiz_source: 'content',
+        correct: isCorrect,
+        answer,
+        answer_text: answerText ?? null,
+      })
+      await maybeGrantReward(updatedMap)
     },
-    [statusMap, lectureId, quizzes],
+    [statusMap, lectureId, quizzes, maybeGrantReward],
+  )
+
+  /**
+   * 서술형 답안 제출 — 답안은 즉시 저장되고 채점은 백그라운드로 돈다(202).
+   *
+   * 낙관적 상태의 correct 를 null 로 두는 것이 핵심이다. 서술형의 정오답은 이제
+   * 서버가 루브릭 점수에서 파생하므로, 화면이 미리 true 라고 적으면 그게 곧 옛 센티널이다.
+   */
+  const handleEssaySubmit = useCallback(
+    async (quizId: string, answerText: string) => {
+      const quiz = quizzes.find((q) => q.quiz_id === quizId)
+
+      const startTime = quizStartTimeRef.current.get(quizId)
+      const durationMs = startTime ? Math.round(Date.now() - startTime) : 0
+      quizStartTimeRef.current.set(quizId, Date.now())
+
+      const current = statusMap.get(quizId)
+      const optimistic: QuizStatus = {
+        quiz_id: quizId,
+        quiz_source: 'content',
+        correct: null,
+        answer: null,
+        answer_text: answerText,
+        grading_status: 'pending',
+      }
+      setStatusMap((prev) => new Map(prev).set(quizId, optimistic))
+
+      const result = await submitEssay(quizId, lectureId, answerText, durationMs)
+      if (!result.ok) {
+        // 저장 자체가 실패했으면 제출 전으로 되돌린다 — 채점 표시도 훅이 이미 걷어냈다.
+        setStatusMap((prev) => {
+          const next = new Map(prev)
+          if (current) next.set(quizId, current)
+          else next.delete(quizId)
+          return next
+        })
+        return
+      }
+
+      // 계측은 제출이 서버에 확정된 뒤에만.
+      // correct=true 는 기존 서술형 계측과 동일한 값이다 — 제출 시점엔 채점 결과를 모르고,
+      // 이 이벤트의 정의를 지금 바꾸면 GA 지표 계열이 여기서 끊긴다. 계측 정의 변경은
+      // 별도 결정 사항으로 남긴다(DB user_quiz_response.is_correct 는 이제 실제 판정값이다).
+      trackQuizAttempt({
+        quiz_id: quizId,
+        correct: true,
+        quiz_type: quiz?.quiz_type ?? '',
+        lecture_id: lectureId,
+        course_id: courseId,
+      })
+      quizAnalytics.answer(lectureId, {
+        question_index: quizzes.findIndex((q) => q.quiz_id === quizId),
+        correct: true,
+        duration_ms: durationMs,
+        quiz_type: quiz?.quiz_type ?? '',
+      })
+
+      await maybeGrantReward(new Map(statusMap).set(quizId, optimistic))
+    },
+    [statusMap, lectureId, courseId, quizzes, submitEssay, maybeGrantReward],
   )
 
   // 선택 해제(리셋)
@@ -334,6 +442,8 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
     async (quizId: string) => {
       // 리셋 시 풀이 시작 시간 갱신
       quizStartTimeRef.current.set(quizId, Date.now())
+      // 이 문항의 채점 표시도 지운다 — 진행 중이던 폴링도 함께 끊긴다
+      clearGrading(quizId)
       const current = statusMap.get(quizId)
 
       setStatusMap((prev) => {
@@ -360,7 +470,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
         })
       }
     },
-    [statusMap, lectureId],
+    [statusMap, lectureId, clearGrading],
   )
 
   // 전체 다시 풀기: 현재 회차의 모든 content 퀴즈 풀이 상태를 초기화한다.
@@ -387,6 +497,8 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
     })
     setResetKey((prev) => prev + 1)
     rewardCheckingRef.current = false
+    // 모든 문항의 채점 표시·폴링을 함께 걷어낸다
+    resetEssayGrading()
 
     const results = await Promise.allSettled(
       quizzes.map((quiz) => updateCorrect('content', quiz.quiz_id, lectureId, null, null)),
@@ -398,7 +510,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       // 일부 실패 시 직전 상태로 롤백
       setStatusMap(prevMap)
     }
-  }, [quizzes, lectureId, statusMap])
+  }, [quizzes, lectureId, statusMap, resetEssayGrading])
 
   // ── 필터 · 풀이 범위 ──
   // 필터 선택지는 실제 존재하는 값만 노출한다 (레거시 유형이 섞인 미재생성 회차 대응)
@@ -574,8 +686,10 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                   isCorrect={status?.correct ?? null}
                   selectedAnswer={status?.answer ?? null}
                   essayAnswer={status?.answer_text ?? null}
+                  essayGrading={gradingByQuiz[quiz.quiz_id] ?? null}
                   onBookmarkToggle={handleBookmarkToggle}
                   onCorrectUpdate={handleCorrectUpdate}
+                  onEssaySubmit={handleEssaySubmit}
                   onResetAnswer={handleResetAnswer}
                   onRevealToggle={(quizId, shown) => {
                     quizExtraAnalytics.revealToggle(lectureId, { quiz_id: quizId, shown, quiz_source: 'content' })

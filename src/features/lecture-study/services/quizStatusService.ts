@@ -12,6 +12,7 @@ import {
   handleJWTExpiration,
   getErrorMessage,
 } from '@/shared/lib/supabase'
+import type { EssayGradingPayload } from './essayGradingService'
 
 /* ───────────── Types ───────────── */
 
@@ -24,6 +25,17 @@ export interface QuizStatus {
   answer: number | null
   /** 서술형(essay) 학생 자유입력 답안 텍스트. 객관식 로우는 항상 null. */
   answer_text?: string | null
+  /** user_quiz_response.id — 채점 중인 서술형 제출의 폴링 재개에 쓴다 */
+  response_id?: string | null
+  /** 서술형 루브릭 점수 0~100. 객관식·미채점은 null */
+  score?: number | null
+  /** {criteria:[{key,label,description,verdict,quote}], feedback, model} */
+  grading?: EssayGradingPayload | null
+  /**
+   * pending | graded | failed. 객관식은 null.
+   * 서술형인데 null 이면 채점 도입 이전 경로로 들어온 자가평가 제출이다(센티널 is_correct=true).
+   */
+  grading_status?: string | null
 }
 
 interface BookmarkResponse {
@@ -67,7 +79,9 @@ export async function getQuizStatusByLecture(
 
     const { data, error } = await supabase
       .from('user_quiz_response')
-      .select('quiz_id, quiz_source, is_correct, selected_answer, answer_text, created_at')
+      .select(
+        'id, quiz_id, quiz_source, is_correct, selected_answer, answer_text, score, grading, grading_status, created_at',
+      )
       .eq('lecture_id', lectureId)
       .eq('quiz_source', quizSource)
       .order('created_at', { ascending: false })
@@ -85,11 +99,15 @@ export async function getQuizStatusByLecture(
     const seen = new Set<string>()
     const dedup: QuizStatus[] = []
     for (const row of (data ?? []) as Array<{
+      id: string
       quiz_id: string
       quiz_source: string
       is_correct: boolean | null
       selected_answer: number | null
       answer_text: string | null
+      score: number | null
+      grading: EssayGradingPayload | null
+      grading_status: string | null
     }>) {
       if (seen.has(row.quiz_id)) continue
       seen.add(row.quiz_id)
@@ -99,6 +117,10 @@ export async function getQuizStatusByLecture(
         correct: row.is_correct,
         answer: row.selected_answer,
         answer_text: row.answer_text,
+        response_id: row.id,
+        score: row.score,
+        grading: row.grading,
+        grading_status: row.grading_status,
       })
     }
     return { data: dedup, error: null }

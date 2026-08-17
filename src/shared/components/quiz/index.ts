@@ -11,3 +11,11 @@ export type {
   StudentQuizChoice,
   StudentQuizType,
 } from './StudentQuizCard'
+export { EssayGradingPanel } from './EssayGradingPanel'
+export type {
+  EssayGradingPanelProps,
+  EssayGradingView,
+  EssayGradingCriterion,
+  EssayGradingStatus,
+  EssayVerdict,
+} from './EssayGradingPanel'

@@ -21,6 +21,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { EssayGradingPanel, type EssayGradingView } from './EssayGradingPanel'
 
 /* ───────────── 타입 ───────────── */
 
@@ -76,6 +77,14 @@ export interface StudentQuizCardProps {
   onBookmarkToggle: (quizId: string) => void
   /** 풀이 결과 업데이트 콜백 (선지 클릭 시 호출, answer는 choice_order). answerText는 서술형 제출 시에만 전달 */
   onCorrectUpdate: (quizId: string, isCorrect: boolean, answer: number, answerText?: string) => void
+  /**
+   * 서술형 루브릭 채점 제출 콜백. 제공되면 서술형 제출이 이 경로를 타고(채점 API),
+   * 없으면 기존 onCorrectUpdate 센티널 경로로 폴백한다 — 채점을 붙이지 않은 화면(오답노트·즐겨찾기)의
+   * 동작을 그대로 유지하기 위한 분기다.
+   */
+  onEssaySubmit?: (quizId: string, answerText: string) => void
+  /** 서술형 채점 상태. 없으면(=구경로 제출·미채점) 채점 UI 를 그리지 않는다. */
+  essayGrading?: EssayGradingView | null
   /** 선택 해제(리셋) 콜백 — 제공 시 이미 선택한 선지 재클릭으로 풀이 초기화 가능 */
   onResetAnswer?: (quizId: string) => void
   /** 오답노트 삭제 모드 — true면 북마크 대신 삭제 버튼 표시 */
@@ -126,6 +135,8 @@ export function StudentQuizCard({
   essayAnswer,
   onBookmarkToggle,
   onCorrectUpdate,
+  onEssaySubmit,
+  essayGrading,
   onResetAnswer,
   wrongNoteMode,
   onDismissWrongNote,
@@ -152,13 +163,17 @@ export function StudentQuizCard({
     }
     return null
   })
-  const [isSubmitted, setIsSubmitted] = useState(() => isCorrect !== null)
+  /**
+   * 루브릭 채점 도입 후 서술형은 채점이 끝나기 전(is_correct=NULL)에도 이미 '제출됨'이다.
+   * 제출 여부의 근거를 정오답이 아니라 답안 본문의 존재로 잡아야 채점 중인 문항이
+   * 입력창으로 되돌아가지 않는다. 객관식은 종전대로 isCorrect 로 판정한다.
+   */
+  const hasEssaySubmission = isEssay && (essayAnswer ?? '').trim() !== ''
+  const [isSubmitted, setIsSubmitted] = useState(() => isCorrect !== null || hasEssaySubmission)
   const [showAnswer, setShowAnswer] = useState(false)
-  // 서술형 답안 입력 draft — 제출 이력(isCorrect !== null)이 있으면 서버에서 복원된
+  // 서술형 답안 입력 draft — 제출 이력이 있으면 서버에서 복원된
   // essayAnswer(answer_text)로 초깃값을 채운다. 재진입/새로고침 시에도 유지됨.
-  const [essayDraft, setEssayDraft] = useState(() =>
-    isCorrect !== null && essayAnswer ? essayAnswer : '',
-  )
+  const [essayDraft, setEssayDraft] = useState(() => (hasEssaySubmission ? (essayAnswer ?? '') : ''))
   // "해설 보기" 안에서 다시 펼치는 상세 설명 토글 (마크다운 렌더링)
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
   // 이번 렌더 세션에서 방금 풀었는지 여부. 복원된 풀이(isCorrect !== null)도 다시 풀 수 있어야 하므로
@@ -218,17 +233,25 @@ export function StudentQuizCard({
   )
 
   /**
-   * 서술형 답안 제출 — LLM 채점 없이 자가평가(모범답안 병렬 노출)만 수행한다.
-   * onCorrectUpdate(correct=true, answer=0, answerText)로 "풀이 완료" 상태 기록 +
-   * 답안 텍스트(essayDraft)를 user_quiz_response.answer_text 로 영속화(재진입 복원용).
-   * answer=0은 1~5 범위 밖이라 quizStatusService 에서 서버 전송 시 null 로 보정된다(선택 인덱스 없음 표현).
+   * 서술형 답안 제출.
+   *
+   * onEssaySubmit 이 있으면 루브릭 채점 경로로 보낸다 — 답안은 즉시 저장되고 채점은
+   * 뒤따르므로, 정오답은 여기서 정하지 않는다(서버가 점수에서 파생).
+   *
+   * 없으면 기존 자가평가 경로로 폴백한다: onCorrectUpdate(correct=true, answer=0, answerText).
+   * answer=0은 1~5 범위 밖이라 quizStatusService 에서 서버 전송 시 null 로 보정된다.
    */
   const handleEssaySubmit = useCallback(() => {
-    if (isSubmitted || !essayDraft.trim()) return
+    const answerText = essayDraft.trim()
+    if (isSubmitted || !answerText) return
     setIsSubmitted(true)
     setJustSolved(true)
-    onCorrectUpdate(quiz.quiz_id, true, 0, essayDraft.trim())
-  }, [isSubmitted, essayDraft, quiz.quiz_id, onCorrectUpdate])
+    if (onEssaySubmit) {
+      onEssaySubmit(quiz.quiz_id, answerText)
+      return
+    }
+    onCorrectUpdate(quiz.quiz_id, true, 0, answerText)
+  }, [isSubmitted, essayDraft, quiz.quiz_id, onCorrectUpdate, onEssaySubmit])
 
   /**
    * 문항별 "다시풀기" — 이 문항만 풀기 전 상태로 되돌린다.
@@ -420,7 +443,7 @@ export function StudentQuizCard({
         </div>
       )}
 
-      {/* 서술형 답안 입력 → 제출 → 학생답안+모범답안 병렬 표시 (LLM 채점 없음, 자가평가) */}
+      {/* 서술형 답안 입력 → 제출 → 내 답안 + 루브릭 채점 결과 + 모범답안 (세로 배치) */}
       {isEssay && (
         <div className="mt-4">
           {!isSubmitted ? (
@@ -455,6 +478,10 @@ export function StudentQuizCard({
                   {essayDraft || '—'}
                 </p>
               </div>
+              {/* 루브릭 채점 결과 — 요소 체크리스트가 주(主)다.
+                  채점 기록이 없는 제출(구경로 자가평가)에는 아예 그리지 않는다. */}
+              {essayGrading && <EssayGradingPanel grading={essayGrading} />}
+
               {quiz.answer && (
                 <div className="rounded-xl bg-indigo-50/60 dark:bg-indigo-900/20 p-4">
                   <p className="text-[11px] font-bold text-indigo-600 dark:text-indigo-300 mb-1">
@@ -515,12 +542,19 @@ export function StudentQuizCard({
             ) : (
               <ChevronDown className="h-3.5 w-3.5" />
             )}
-            {showAnswer ? t('hideAnswer') : t('showAnswer')}
+            {/* 서술형 화면에는 "정답/오답"이라는 낱말을 쓰지 않는다 — 해설로만 부른다 */}
+            {isEssay
+              ? showAnswer
+                ? t('essayHideExplanation')
+                : t('essayShowExplanation')
+              : showAnswer
+                ? t('hideAnswer')
+                : t('showAnswer')}
           </button>
           {!hasAnswered && (
             <div className="pointer-events-none absolute left-0 bottom-full mb-2 z-20 w-max max-w-[220px] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               <div className="rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-sm">
-                {t('answerDisabledTooltip')}
+                {isEssay ? t('essayExplanationDisabledTooltip') : t('answerDisabledTooltip')}
               </div>
               <div className="absolute left-4 top-full h-1.5 w-1.5 rotate-45 bg-gray-900" />
             </div>
