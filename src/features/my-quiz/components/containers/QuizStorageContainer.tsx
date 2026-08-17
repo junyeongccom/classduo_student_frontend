@@ -462,7 +462,11 @@ export default function QuizStorageContainer() {
             </div>
             <div className="text-right">
               <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">{t('storage.wrong')}</p>
-              <p className="text-lg font-bold text-[#F97316] md:text-2xl">{totalCounts.wrong}</p>
+              {/* 단위(개)는 즐겨찾기 쪽과 같은 자리·같은 크기로 — 한쪽만 빠지면 두 지표가 다른 것처럼 읽힌다 */}
+              <p className="text-lg font-bold text-[#F97316] md:text-2xl">
+                {totalCounts.wrong}
+                <span className="ml-1 text-sm text-gray-500 dark:text-gray-400 md:text-base">{t('storage.countUnit')}</span>
+              </p>
             </div>
           </div>
         </div>
@@ -524,8 +528,13 @@ export default function QuizStorageContainer() {
             </div>
           </div>
 
-          {/* 출처 칩 — 항상 보임 */}
-          <div className="qs-no-scrollbar mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+          {/*
+            출처 칩 — 항상 보임.
+            가로 스크롤(overflow-x-auto)을 쓰면 마지막 칩('내가 만든 퀴즈')이 카드 안쪽 경계에서
+            라운드 캡 없이 직선으로 잘려 깨진 것처럼 보였다. 칩은 4개뿐이라 좁은 폭에서는
+            줄바꿈으로 흘리는 편이 낫다 — 잘리지도, 스크롤 밖으로 숨지도 않는다.
+          */}
+          <div className="mt-3 flex flex-wrap items-center gap-2 pb-1">
             <span className="shrink-0 text-xs font-semibold text-gray-400">{t('storage.source')}</span>
             <Chip
               active={sourceFilter === 'all'}

@@ -713,6 +713,7 @@
       "nicknamePlaceholder": "닉네임 (최대 20자)",
       "nicknameConfirm": "시작",
       "nicknameChange": "닉네임 변경",
+      "nicknameLabel": "닉네임",
       "currentNickname": "닉네임: {nickname}",
       "nicknameChangePrompt": "새 닉네임을 입력하세요.",
       "nicknameChangeSave": "저장",

@@ -713,6 +713,7 @@
       "nicknamePlaceholder": "Nickname (max 20 chars)",
       "nicknameConfirm": "Start",
       "nicknameChange": "Change Nickname",
+      "nicknameLabel": "Nickname",
       "currentNickname": "Nickname: {nickname}",
       "nicknameChangePrompt": "Enter a new nickname.",
       "nicknameChangeSave": "Save",

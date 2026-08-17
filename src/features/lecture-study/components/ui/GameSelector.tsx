@@ -201,9 +201,13 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
           <button
             type="button"
             onClick={onChangeNickname}
+            title={t('lectureStudy.game.nicknameChange')}
+            aria-label={t('lectureStudy.game.nicknameChange')}
             className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-all hover:border-orange-300 hover:text-orange-600"
           >
             <UserCircle className="h-3.5 w-3.5" />
+            {/* 값만 있으면('테스트') 정체 모를 칩으로 읽힌다 — 무엇인지(닉네임) 함께 밝힌다 */}
+            <span className="shrink-0 text-gray-400">{t('lectureStudy.game.nicknameLabel')}</span>
             <span className="max-w-[100px] truncate">{nickname}</span>
           </button>
         )}
