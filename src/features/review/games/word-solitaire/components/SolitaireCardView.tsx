@@ -34,6 +34,10 @@ export interface SolitaireCardViewProps {
   /** 카드 높이(px) — 보드가 화면 폭에 맞춰 계산해 내려준다 */
   height: number
   onClick?: () => void
+  /** 드래그 시작 (마우스·터치 공용). 있으면 클릭 대신 이걸로 조작한다 */
+  onPointerDown?: (event: React.PointerEvent<HTMLElement>) => void
+  /** 드래그 중인 원본 카드 — 반투명하게 남겨 어디서 집었는지 보이게 한다 */
+  dragging?: boolean
   ariaLabel: string
 }
 
@@ -50,6 +54,8 @@ export function SolitaireCardView({
   alignTop = false,
   height,
   onClick,
+  onPointerDown,
+  dragging = false,
   ariaLabel,
 }: SolitaireCardViewProps) {
   const isCategory = kind === 'category'
@@ -67,10 +73,11 @@ export function SolitaireCardView({
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled || !onClick}
+      onPointerDown={onPointerDown}
+      disabled={disabled || (!onClick && !onPointerDown)}
       aria-label={ariaLabel}
       aria-pressed={selected}
-      style={{ top, height }}
+      style={{ top, height, touchAction: onPointerDown ? 'none' : undefined }}
       className={[
         CARD_BASE_CLASS,
         alignTop ? CARD_ALIGN_TOP_CLASS : CARD_ALIGN_CENTER_CLASS,
@@ -78,6 +85,7 @@ export function SolitaireCardView({
         selected ? `${SELECTED_RING_CLASS} -translate-y-1 shadow-md` : 'shadow-sm',
         !selected && movable && !faceDown ? 'border-primary-300' : '',
         rejected ? 'animate-shake-x' : '',
+        dragging ? 'opacity-40' : '',
         onClick && !disabled ? 'cursor-pointer hover:-translate-y-0.5' : 'cursor-default',
       ]
         .filter(Boolean)

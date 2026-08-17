@@ -590,7 +590,22 @@
         "faceDownAria": "덮인 카드",
         "starsAria": "별 {stars}개",
         "loadFailed": "게임 데이터를 불러오지 못했습니다",
-        "dealFailed": "판을 만들지 못했습니다. 다시 시도해 주세요"
+        "dealFailed": "판을 만들지 못했습니다. 다시 시도해 주세요",
+        "timeLabel": "시간",
+        "changeDifficulty": "난이도 변경",
+        "startGame": "게임 시작",
+        "difficultyGateHelp": "시작하면 게임 도중에는 바꿀 수 없어요",
+        "difficultyDesc": {
+          "intro": "슬롯이 넉넉해요",
+          "normal": "적당한 압박",
+          "challenge": "슬롯이 아주 적어요"
+        },
+        "dragHintTitle": "카드를 끌어다 놓으세요",
+        "dragHintBody": "옮길 카드를 누른 채 원하는 자리로 끌어다 놓으면 됩니다. 카테고리 카드는 기초 슬롯뿐 아니라 다른 열에도 잠시 둘 수 있어요.",
+        "dragHintFrom": "여기서",
+        "dragHintTo": "여기로",
+        "dragHintDismiss": "아무 곳이나 눌러 시작",
+        "hintDrag": "카드를 끌어다 원하는 자리에 놓으세요. 되돌리기도 1턴을 씁니다."
       }
     },
     "noContent": "복습 콘텐츠가 없습니다",

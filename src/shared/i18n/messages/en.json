@@ -590,7 +590,22 @@
         "faceDownAria": "Face-down card",
         "starsAria": "{stars} stars",
         "loadFailed": "Couldn't load the game data",
-        "dealFailed": "Couldn't deal a board. Please try again"
+        "dealFailed": "Couldn't deal a board. Please try again",
+        "timeLabel": "Time",
+        "changeDifficulty": "Change level",
+        "startGame": "Start game",
+        "difficultyGateHelp": "You cannot change this once the game starts",
+        "difficultyDesc": {
+          "intro": "Plenty of slots",
+          "normal": "A fair squeeze",
+          "challenge": "Very few slots"
+        },
+        "dragHintTitle": "Drag a card to move it",
+        "dragHintBody": "Press a card and drag it where you want it. Category cards can rest on a column too, not just a foundation slot.",
+        "dragHintFrom": "from",
+        "dragHintTo": "to",
+        "dragHintDismiss": "Tap anywhere to start",
+        "hintDrag": "Drag a card where you want it. Undo also costs a turn."
       }
     },
     "noContent": "No review content available",

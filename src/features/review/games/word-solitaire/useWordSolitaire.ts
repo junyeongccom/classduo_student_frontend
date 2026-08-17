@@ -42,6 +42,8 @@ export interface WordSolitaireResult {
   stars: 0 | 1 | 2 | 3
   difficulty: SolitaireDifficulty
   seed: number
+  /** 첫 수부터 클리어까지 걸린 시간(ms) */
+  elapsedMs: number
 }
 
 export interface UseWordSolitaireArgs {
@@ -63,6 +65,14 @@ export function useWordSolitaire({ lectureId, content, difficulty }: UseWordSoli
   const rejectTimerRef = useRef<number | null>(null)
   /** 생성 요청마다 증가 — 늦게 끝난 이전 요청이 새 판을 덮어쓰지 못하게 막는다 */
   const dealTokenRef = useRef(0)
+
+  /**
+   * 경과 시간. 판을 받자마자가 아니라 **첫 수를 둔 순간** 시작한다 —
+   * 판을 열어두고 딴짓한 시간까지 기록에 넣으면 억울하다.
+   */
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [elapsedMs, setElapsedMs] = useState(0)
+  const [frozenElapsedMs, setFrozenElapsedMs] = useState<number | null>(null)
 
   const clearRejectTimer = useCallback(() => {
     if (rejectTimerRef.current !== null) {
@@ -86,6 +96,9 @@ export function useWordSolitaire({ lectureId, content, difficulty }: UseWordSoli
       setSelection(null)
       setIsDealing(false)
       setHasDealError(false)
+      setStartedAt(null)
+      setElapsedMs(0)
+      setFrozenElapsedMs(null)
       return
     }
 
@@ -101,6 +114,9 @@ export function useWordSolitaire({ lectureId, content, difficulty }: UseWordSoli
         setDeal(generated)
         setState(generated.state)
         setHistory(emptyHistory())
+        setStartedAt(null)
+        setElapsedMs(0)
+        setFrozenElapsedMs(null)
       } catch {
         if (dealTokenRef.current !== token) return
         setDeal(null)
@@ -117,6 +133,21 @@ export function useWordSolitaire({ lectureId, content, difficulty }: UseWordSoli
   // ── 파생값 ────────────────────────────────────────────────
   const legalMoves = useMemo(() => (state ? listLegalMoves(state) : []), [state])
   const won = useMemo(() => Boolean(state && isWon(state)), [state])
+
+  // 1초마다 표시를 갱신한다. 승리하면 그 시점 값으로 얼린다.
+  useEffect(() => {
+    if (startedAt === null || won) return
+    const tick = () => setElapsedMs(Date.now() - startedAt)
+    tick()
+    const timer = window.setInterval(tick, 1000)
+    return () => window.clearInterval(timer)
+  }, [startedAt, won])
+
+  useEffect(() => {
+    if (won && startedAt !== null) setFrozenElapsedMs(Date.now() - startedAt)
+  }, [won, startedAt])
+
+  const displayElapsedMs = frozenElapsedMs ?? elapsedMs
 
   const candidates = useMemo(
     () => (state && selection ? movesFromSource(legalMoves, selection) : []),
@@ -140,14 +171,17 @@ export function useWordSolitaire({ lectureId, content, difficulty }: UseWordSoli
       stars: rateTurns(state.turns, deal.solution.minTurns),
       difficulty: deal.difficulty,
       seed: deal.seed,
+      elapsedMs: frozenElapsedMs ?? 0,
     }
-  }, [won, state, deal])
+  }, [won, state, deal, frozenElapsedMs])
 
   // ── 조작 ────────────────────────────────────────────────
   const commit = useCallback((next: SolitaireState, previous: SolitaireState) => {
     setHistory(prev => pushHistory(prev, previous))
     setState(next)
     setSelection(null)
+    // 첫 수에 시계를 켠다
+    setStartedAt(prev => prev ?? Date.now())
   }, [])
 
   const flagRejected = useCallback(
@@ -214,11 +248,34 @@ export function useWordSolitaire({ lectureId, content, difficulty }: UseWordSoli
     setSelection(null)
     clearRejectTimer()
     setRejectedKey(null)
+    setStartedAt(null)
+    setElapsedMs(0)
+    setFrozenElapsedMs(null)
   }, [deal, clearRejectTimer])
+
+  /**
+   * 드래그로 놓기 — 집은 카드를 지정한 자리에 직접 내려놓는다.
+   * 탭 조작과 달리 선택 상태를 거치지 않고 출발지·목적지를 한 번에 받는다.
+   */
+  const dropOn = useCallback(
+    (source: MoveSource, target: MoveTarget, targetKeyForShake: string) => {
+      if (!state || won) return false
+      const move = resolveTarget(state, source, target, legalMoves)
+      if (!move) {
+        flagRejected(targetKeyForShake)
+        return false
+      }
+      commit(applyMove(state, move), state)
+      return true
+    },
+    [state, won, legalMoves, commit, flagRejected],
+  )
 
   return {
     deal,
     state,
+    elapsedMs: displayElapsedMs,
+    dropOn,
     isDealing,
     hasDealError,
     selection,

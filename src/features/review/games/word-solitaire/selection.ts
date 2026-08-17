@@ -43,6 +43,19 @@ export const targetKey = (target: MoveTarget): string =>
 export const sourceKey = (source: MoveSource): string =>
   source.type === 'waste' ? 'waste' : `tableau:${source.column}:${source.index}`
 
+/**
+ * `targetKey` 로 만든 문자열을 다시 목적지로 되돌린다.
+ * 드래그는 DOM 의 `data-drop-key` 문자열로 목적지를 알아내므로 역변환이 필요하다.
+ */
+export const parseDropKey = (key: string): MoveTarget | null => {
+  const [type, index] = key.split(':')
+  const parsed = Number(index)
+  if (!Number.isInteger(parsed) || parsed < 0) return null
+  if (type === 'foundation') return { type: 'foundation', slot: parsed }
+  if (type === 'tableau') return { type: 'tableau', column: parsed }
+  return null
+}
+
 /** 이 출발지에서 가능한 이동들 (스톡 열기는 출발지가 없으므로 제외된다) */
 export const movesFromSource = (moves: readonly SolitaireMove[], source: MoveSource): SolitaireCardMove[] =>
   moves.filter((move): move is SolitaireCardMove => move.kind === 'move' && isSameSource(move.from, source))
@@ -97,11 +110,13 @@ export const highlightedTargetKeys = (
 }
 
 /**
- * 카드 탭 처리.
- * - 이미 선택된 카드를 다시 탭 → 선택 해제
- * - 갈 수 있는 곳이 **하나뿐이면 첫 탭에 곧바로 이동** (목적지를 한 번 더 탭하게 하는 건 군더더기다)
- * - 여러 곳이면 선택 상태로 두고 목적지 탭을 기다린다
+ * 카드 집기.
+ * - 이미 선택된 카드를 다시 집으면 → 선택 해제
+ * - 갈 수 있는 곳이 있으면 선택 상태로 두고 **목적지 지정을 기다린다**
  * - 갈 수 있는 곳이 없으면 선택되지 않고 `rejected` 로 알린다
+ *
+ * 목적지가 하나뿐이어도 자동으로 옮기지 않는다 — 어디에 놓을지 고르는 게 이 게임이다.
+ * (카테고리 카드를 기초 슬롯 대신 다른 열에 잠시 쌓아두는 것도 정당한 수다.)
  */
 export const selectSource = (
   current: SolitaireSelection | null,
@@ -115,9 +130,6 @@ export const selectSource = (
   const candidates = movesFromSource(legalMoves, source)
   if (candidates.length === 0) {
     return { selection: current, move: null, rejected: true }
-  }
-  if (candidates.length === 1) {
-    return { selection: null, move: candidates[0], rejected: false }
   }
   return { selection: source, move: null, rejected: false }
 }
@@ -135,7 +147,11 @@ export const resolveTarget = (
   if (!selection) return null
   const canonical = canonicalTarget(state, target)
   const match = movesFromSource(legalMoves, selection).find(move => isSameTarget(move.to, canonical))
-  return match ?? null
+  if (!match) return null
+  // 엔진은 빈 슬롯·빈 열을 "첫 번째 것"으로 모아 제안한다(solver 분기 축소).
+  // 하지만 놓는 사람 입장에서는 3번 빈 슬롯에 놓으면 3번에 들어가야 한다 —
+  // applyMove 가 슬롯 인덱스를 그대로 검증하므로 사용자가 고른 자리로 바꿔 돌려준다.
+  return { ...match, to: target }
 }
 
 /** 스톡을 열 수 있는가 (엔진이 draw 를 제안했는지로만 판단) */

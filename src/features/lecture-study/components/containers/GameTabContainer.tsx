@@ -890,7 +890,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
         <div className="fixed inset-0 z-[80] flex items-center justify-center sm:p-4">
           <div
             /* 솔리테어는 세로로 쌓는 카드 게임이라 다른 게임과 달리 가로 모드로 돌리지 않는다. */
-            className="relative flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-[min(92dvh,900px)] sm:max-w-[1120px] sm:rounded-2xl dark:bg-gray-900"
+            className="relative flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-[min(94dvh,940px)] sm:max-w-[860px] sm:rounded-2xl dark:bg-gray-900"
           >
             <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 sm:px-6 dark:border-gray-700">
               <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">

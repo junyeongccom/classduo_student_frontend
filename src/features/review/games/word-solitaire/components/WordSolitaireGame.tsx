@@ -29,6 +29,10 @@ export interface WordSolitaireGameProps {
 export function WordSolitaireGame({ lectureId, isActive }: WordSolitaireGameProps) {
   const t = useTranslations('review.ui.wordSolitaire')
   const [difficulty, setDifficulty] = useState<SolitaireDifficulty>('normal')
+  /** 시작 화면(난이도 선택)을 지났는가 */
+  const [started, setStarted] = useState(false)
+  /** 드래그 방법 안내를 아직 보여줄 것인가 — 첫 수를 두면 사라진다 */
+  const [showDragHint, setShowDragHint] = useState(true)
 
   const {
     data,
@@ -93,25 +97,25 @@ export function WordSolitaireGame({ lectureId, isActive }: WordSolitaireGameProp
     return <Message text={t('notReady')} icon />
   }
 
+  // 난이도는 시작 전에만 고른다 — 게임 중에 바꾸면 판이 초기화돼 그동안의 수가 날아간다.
+  if (!started) {
+    return (
+      <DifficultyGate
+        selected={difficulty}
+        onSelect={setDifficulty}
+        onStart={() => setStarted(true)}
+        t={t}
+      />
+    )
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* 난이도 */}
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label={t('difficultyLabel')}>
-        {SOLITAIRE_DIFFICULTIES.map(level => (
-          <button
-            key={level}
-            type="button"
-            onClick={() => setDifficulty(level)}
-            aria-pressed={difficulty === level}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-              difficulty === level
-                ? 'bg-gray-900 text-white'
-                : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {t(`difficulty.${level}`)}
-          </button>
-        ))}
+    <div className="relative flex flex-col gap-3">
+      {/* 조작 줄 — 난이도는 여기 없다(시작 화면에서 이미 골랐다) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-600">
+          {t(`difficulty.${difficulty}`)}
+        </span>
 
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -132,6 +136,13 @@ export function WordSolitaireGame({ lectureId, isActive }: WordSolitaireGameProp
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
             {t('restart')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setStarted(false)}
+            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            {t('changeDifficulty')}
           </button>
         </div>
       </div>
@@ -166,15 +177,115 @@ export function WordSolitaireGame({ lectureId, isActive }: WordSolitaireGameProp
             movableKeys={game.movableKeys}
             rejectedKey={game.rejectedKey}
             canDraw={game.canDraw}
+            elapsedMs={game.elapsedMs}
             locked={game.won}
             onTapCard={game.tapCard}
             onTapTarget={game.tapTarget}
+            onDropCard={game.dropOn}
             onDraw={game.draw}
           />
 
-          <p className="text-center text-[11px] text-gray-400">{t('hint')}</p>
+          <p className="text-center text-[11px] text-gray-400">{t('hintDrag')}</p>
+
+          {showDragHint && game.state.turns === 0 && !game.won && (
+            <DragHintOverlay onDismiss={() => setShowDragHint(false)} t={t} />
+          )}
         </>
       )}
+    </div>
+  )
+}
+
+/** 시작 화면 — 난이도를 여기서 정하고 들어간다 (게임 중에는 못 바꾼다) */
+function DifficultyGate({
+  selected,
+  onSelect,
+  onStart,
+  t,
+}: {
+  selected: SolitaireDifficulty
+  onSelect: (level: SolitaireDifficulty) => void
+  onStart: () => void
+  t: ReturnType<typeof useTranslations>
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-6 py-10">
+      <div className="text-center">
+        <h3 className="text-lg font-bold text-gray-900">{t('difficultyLabel')}</h3>
+        <p className="mt-1 text-xs text-gray-500">{t('difficultyGateHelp')}</p>
+      </div>
+
+      <div className="flex w-full max-w-md flex-col gap-2" role="group" aria-label={t('difficultyLabel')}>
+        {SOLITAIRE_DIFFICULTIES.map(level => (
+          <button
+            key={level}
+            type="button"
+            onClick={() => onSelect(level)}
+            aria-pressed={selected === level}
+            className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left transition ${
+              selected === level
+                ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200'
+                : 'border-gray-200 bg-white hover:bg-gray-50'
+            }`}
+          >
+            <span className="text-sm font-bold text-gray-900">{t(`difficulty.${level}`)}</span>
+            <span className="text-[11px] text-gray-500">{t(`difficultyDesc.${level}`)}</span>
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={onStart}
+        className="rounded-xl bg-indigo-600 px-8 py-3 text-sm font-bold text-white transition hover:bg-indigo-700"
+      >
+        {t('startGame')}
+      </button>
+    </div>
+  )
+}
+
+/**
+ * 첫 진입 안내 — 카드를 끌어다 놓는 동작을 손 모양으로 한 번 보여준다.
+ * 판을 가리지 않도록 반투명 카드에 얹고, 아무 데나 누르면 사라진다.
+ */
+function DragHintOverlay({
+  onDismiss,
+  t,
+}: {
+  onDismiss: () => void
+  t: ReturnType<typeof useTranslations>
+}) {
+  return (
+    <div
+      className="absolute inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-[1px]"
+      onPointerDown={onDismiss}
+      role="button"
+      tabIndex={0}
+      aria-label={t('dragHintDismiss')}
+      onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') onDismiss()
+      }}
+    >
+      <div className="mx-6 flex max-w-xs flex-col items-center gap-4 rounded-2xl bg-white px-6 py-6 text-center shadow-2xl">
+        <p className="text-sm font-bold text-gray-900">{t('dragHintTitle')}</p>
+
+        {/* 카드 → 목적지로 끌리는 손가락 애니메이션 */}
+        <div className="relative h-24 w-44">
+          <div className="absolute left-0 top-3 flex h-16 w-14 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-[10px] text-gray-400">
+            {t('dragHintFrom')}
+          </div>
+          <div className="absolute right-0 top-3 flex h-16 w-14 items-center justify-center rounded-lg border-2 border-dashed border-indigo-300 bg-indigo-50 text-[10px] font-semibold text-indigo-500">
+            {t('dragHintTo')}
+          </div>
+          <div className="ws-drag-demo absolute left-0 top-3 flex h-16 w-14 items-center justify-center rounded-lg border border-indigo-300 bg-white text-[11px] font-bold text-gray-800 shadow-lg">
+            <span aria-hidden="true">🖐️</span>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500">{t('dragHintBody')}</p>
+        <span className="text-[11px] font-semibold text-indigo-600">{t('dragHintDismiss')}</span>
+      </div>
     </div>
   )
 }

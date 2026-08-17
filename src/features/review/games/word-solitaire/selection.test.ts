@@ -70,7 +70,7 @@ const col = (cardIds: number[], faceUpFrom = Math.max(cardIds.length - 1, 0)): T
 
 // ─────────────────────── 선택 전이 ───────────────────────
 
-test('목적지가 하나뿐이면 첫 탭에 곧바로 이동이 확정된다', () => {
+test('목적지가 하나뿐이어도 자동으로 옮기지 않는다 — 놓을 자리는 사람이 정한다', () => {
   // 웨이스트의 A(카테고리)는 빈 기초 슬롯(대표 1곳)으로만 갈 수 있다 — 빈 열은 웨이스트에서도 갈 수 있으므로
   // 테이블로를 채워 목적지를 1개로 좁힌다.
   const state = makeState({
@@ -82,13 +82,10 @@ test('목적지가 하나뿐이면 첫 탭에 곧바로 이동이 확정된다',
   assert.equal(movesFromSource(moves, source).length, 1)
 
   const result = selectSource(null, source, moves)
-  assert.equal(result.selection, null)
+  // 집히기만 하고, 이동은 목적지를 지정해야 일어난다
+  assert.deepEqual(result.selection, source)
+  assert.equal(result.move, null)
   assert.equal(result.rejected, false)
-  assert.deepEqual(result.move, {
-    kind: 'move',
-    from: { type: 'waste' },
-    to: { type: 'foundation', slot: 0 },
-  })
 })
 
 test('목적지가 둘 이상이면 선택 상태로 남고 목적지 탭을 기다린다', () => {
@@ -182,7 +179,7 @@ test('테이블로 카테고리 묶음도 그 위치(index)로 선택된다', ()
 
 // ─────────────────────── 목적지 동치(빈 칸) ───────────────────────
 
-test('엔진이 대표 빈 칸만 제안해도, 어느 빈 칸을 탭하든 그 이동으로 접힌다', () => {
+test('엔진이 대표 빈 칸만 제안해도, 사용자가 고른 빈 칸에 놓인다', () => {
   const state = makeState({
     waste: ids('A'),
     tableau: [col(ids('b1')), col(ids('c1'))],
@@ -194,10 +191,11 @@ test('엔진이 대표 빈 칸만 제안해도, 어느 빈 칸을 탭하든 그 
     0,
   )
   assert.deepEqual(canonicalTarget(state, { type: 'foundation', slot: 1 }), { type: 'foundation', slot: 0 })
+  // 합법성은 대표 이동으로 판정하되, 실제로는 **사용자가 고른 그 자리**(slot 1)에 놓인다
   assert.deepEqual(resolveTarget(state, { type: 'waste' }, { type: 'foundation', slot: 1 }, moves), {
     kind: 'move',
     from: { type: 'waste' },
-    to: { type: 'foundation', slot: 0 },
+    to: { type: 'foundation', slot: 1 },
   })
 })
 

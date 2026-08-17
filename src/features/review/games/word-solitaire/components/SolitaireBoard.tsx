@@ -23,6 +23,8 @@ import {
   columnHeight,
 } from '../uiConstants.ts'
 import { SolitaireCardView } from './SolitaireCardView'
+import { useCardDrag } from '../useCardDrag.ts'
+import { parseDropKey } from '../selection.ts'
 
 export interface SolitaireBoardProps {
   state: SolitaireState
@@ -34,11 +36,23 @@ export interface SolitaireBoardProps {
   /** 방금 거절된 탭의 키 — 잠깐 흔든다 */
   rejectedKey: string | null
   canDraw: boolean
+  /** 경과 시간(ms) — 상단에 mm:ss 로 보여준다 */
+  elapsedMs: number
   /** 승리 후에는 판을 잠근다 */
   locked: boolean
   onTapCard: (source: MoveSource, key: string) => void
   onTapTarget: (target: MoveTarget, key: string) => void
+  /** 드래그로 놓기 — 출발지·목적지를 한 번에 받는다 */
+  onDropCard: (source: MoveSource, target: MoveTarget, targetKey: string) => void
   onDraw: () => void
+}
+
+/** ms → `m:ss`. 한 시간을 넘길 게임이 아니라 분·초만 보여준다 */
+const formatElapsed = (ms: number): string => {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const minutes = Math.floor(total / 60)
+  const seconds = total % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
 }
 
 const EMPTY_SLOT_CLASS =
@@ -51,9 +65,11 @@ export function SolitaireBoard({
   movableKeys,
   rejectedKey,
   canDraw,
+  elapsedMs,
   locked,
   onTapCard,
   onTapTarget,
+  onDropCard,
   onDraw,
 }: SolitaireBoardProps) {
   const t = useTranslations('review.ui.wordSolitaire')
@@ -109,14 +125,36 @@ export function SolitaireBoard({
   const wasteKey = sourceKey({ type: 'waste' })
   const isWasteSelected = isSameSource(selection, { type: 'waste' })
 
+  // ── 드래그 앤 드롭 ────────────────────────────────────────
+  type DragPayload = { source: MoveSource; key: string; label: string; kind: 'category' | 'word' }
+  const { drag, start } = useCardDrag<DragPayload>({
+    onDrop: (payload, dropKey) => {
+      // 판 밖이나 빈 공간에 놓으면 아무 일도 없다 (제자리)
+      if (!dropKey) return
+      const target = parseDropKey(dropKey)
+      if (!target) return
+      onDropCard(payload.source, target, dropKey)
+    },
+    // 임계값을 넘지 않았으면 기존 탭 조작으로 처리한다 (탭·드래그 둘 다 쓸 수 있다)
+    onTap: payload => onTapCard(payload.source, payload.key),
+  })
+  const draggingKey = drag?.active ? drag.payload.key : null
+
   return (
     <div className="flex flex-col gap-4">
       {/* 턴 카운터(좌상단) + 스톡·웨이스트(우상단) */}
       <div className="flex items-start justify-between gap-3">
-        <div className="rounded-xl bg-gray-900 px-3 py-2 text-white">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-300">{t('turnsLabel')}</div>
-          <div className="text-xl font-bold leading-none" aria-live="polite">
-            {state.turns}
+        {/* 턴·시간은 가로로 나란히 — 라벨과 값을 세로로 쌓으면 자리만 먹고 읽기 불편하다 */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-baseline gap-1.5 rounded-xl bg-gray-900 px-3 py-2 text-white">
+            <span className="text-[11px] font-semibold text-gray-300">{t('turnsLabel')}</span>
+            <span className="text-lg font-bold leading-none" aria-live="polite">
+              {state.turns}
+            </span>
+          </div>
+          <div className="flex items-baseline gap-1.5 rounded-xl bg-gray-100 px-3 py-2 text-gray-700">
+            <span className="text-[11px] font-semibold text-gray-500">{t('timeLabel')}</span>
+            <span className="text-lg font-bold leading-none tabular-nums">{formatElapsed(elapsedMs)}</span>
           </div>
         </div>
 
@@ -146,7 +184,17 @@ export function SolitaireBoard({
                 disabled={locked}
                 ariaLabel={t('wasteCardAria', { label: deck.cards[wasteTopId].label })}
                 height={topBarCardHeight}
-                onClick={() => onTapCard({ type: 'waste' }, wasteKey)}
+                dragging={draggingKey === wasteKey}
+                onPointerDown={
+                  locked
+                    ? undefined
+                    : start({
+                        source: { type: 'waste' },
+                        key: wasteKey,
+                        label: deck.cards[wasteTopId].label,
+                        kind: deck.cards[wasteTopId].kind,
+                      })
+                }
               />
             )}
           </div>
@@ -204,6 +252,7 @@ export function SolitaireBoard({
               <div
                 key={key}
                 data-testid={`ws-foundation-${index}`}
+                data-drop-key={key}
                 className={`relative rounded-lg ${isTarget ? TARGET_RING_CLASS : ''}`}
                 style={{ height: cardHeight }}
               >
@@ -259,6 +308,7 @@ export function SolitaireBoard({
               <div
                 key={key}
                 data-testid={`ws-col-${columnIndex}`}
+                data-drop-key={key}
                 className={`relative rounded-lg ${isTarget ? TARGET_RING_CLASS : ''}`}
                 style={{ height: columnHeight(column.cardIds.length, column.faceUpFrom, cardHeight) }}
               >
@@ -308,12 +358,12 @@ export function SolitaireBoard({
                             ? t('categoryCardAria', { name: card.label })
                             : t('wordCardAria', { label: card.label })
                       }
-                      onClick={
-                        actsAsTarget
-                          ? () => onTapTarget(target, key)
-                          : faceDown
-                            ? undefined
-                            : () => onTapCard(source, cardKey)
+                      onClick={actsAsTarget ? () => onTapTarget(target, key) : undefined}
+                      dragging={draggingKey === cardKey}
+                      onPointerDown={
+                        locked || faceDown || actsAsTarget
+                          ? undefined
+                          : start({ source, key: cardKey, label: card.label, kind: card.kind })
                       }
                     />
                   )
@@ -324,6 +374,29 @@ export function SolitaireBoard({
         </div>
         </div>
       </div>
+
+      {/* 드래그 중 커서를 따라다니는 카드 — 포인터 이벤트를 받지 않아야 그 아래 목적지를 찾을 수 있다 */}
+      {drag?.active && (
+        <div
+          className="pointer-events-none fixed z-[100] rotate-2 opacity-90 drop-shadow-2xl"
+          style={{
+            left: drag.x - drag.offsetX,
+            top: drag.y - drag.offsetY,
+            width: finalCardWidth,
+            height: cardHeight,
+          }}
+          aria-hidden="true"
+        >
+          <div className="relative h-full w-full">
+            <SolitaireCardView
+              kind={drag.payload.kind}
+              label={drag.payload.label}
+              height={cardHeight}
+              ariaLabel=""
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
