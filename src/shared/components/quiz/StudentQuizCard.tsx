@@ -21,6 +21,7 @@ import {
 import { useTranslations } from 'next-intl'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { MathText } from '@/shared/components/math/MathText'
 import { EssayGradingPanel, type EssayGradingView } from './EssayGradingPanel'
 
 /* ───────────── 타입 ───────────── */
@@ -408,7 +409,7 @@ export function StudentQuizCard({
 
       {/* 문제 */}
       <p className="text-sm font-semibold text-gray-900 dark:text-gray-50 whitespace-pre-line leading-relaxed">
-        {quiz.question}
+        <MathText text={quiz.question} />
       </p>
 
       {/* 객관식 선지 */}
@@ -427,7 +428,7 @@ export function StudentQuizCard({
                 {choiceLabel(idx)}
               </span>
               <span className="flex-1 text-gray-700 dark:text-gray-300">
-                {choice.choice_text}
+                <MathText text={choice.choice_text} />
               </span>
               {isSubmitted && selectedChoiceIdx === idx && choice.is_correct && (
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
@@ -596,7 +597,7 @@ export function StudentQuizCard({
                           {choiceLabel(idx)}:
                         </span>
                         <span className="text-gray-600 dark:text-gray-300">
-                          {choice.choice_explanation || '—'}
+                          <MathText text={choice.choice_explanation || '—'} />
                         </span>
                       </div>
                     ))}
