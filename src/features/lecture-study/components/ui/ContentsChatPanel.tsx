@@ -225,7 +225,9 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
           >
             <History className="h-3.5 w-3.5 shrink-0 text-gray-400" />
             <span className="truncate">
-              {activeSessionId ? (activeTitle || t('sessionUntitled')) : t('newChat')}
+              {/* 활성 대화의 제목. 아직 세션이 없으면 우측 '새 채팅' 버튼과 문구가 겹치므로
+                  드롭다운의 정체(대화 목록)를 그대로 라벨로 쓴다. */}
+              {activeSessionId ? (activeTitle || t('sessionUntitled')) : t('sessionList')}
             </span>
           </button>
 
