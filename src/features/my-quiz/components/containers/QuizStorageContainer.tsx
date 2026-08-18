@@ -30,6 +30,7 @@ import { useQuizStorage, type QuizStorageItem } from '../../hooks/useQuizStorage
 import { updateCorrect } from '@/features/lecture-study/services/quizStatusService'
 import type { StudentQuizType } from '@/shared/components/quiz'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { MathText } from '@/shared/components/math/MathText'
 import { formatNumberedExplanation, numberLabel } from '../../domain/formatExplanation'
 import { CORE_TEST_TO_LECTURE_NO } from '@/features/exam-prep-final/domain/coreTestLectureMap'
 import {
@@ -1134,7 +1135,7 @@ function QuizCard({
 
       {/* Question */}
       <h3 className="mb-3 text-sm font-bold leading-relaxed text-gray-900 dark:text-gray-100">
-        {question}
+        <MathText text={question} />
       </h3>
 
       {/* Choices — 오답 탭 정답표시 OFF 상태에서 클릭하면 채점 + 색상 표시 + INSERT */}
@@ -1164,7 +1165,9 @@ function QuizCard({
               onClick={canSolve ? () => handleChoiceClick(idx, isCorrect) : undefined}
             >
               <span className="qs-choice-num">{order}</span>
-              <span className="qs-choice-text">{text}</span>
+              <span className="qs-choice-text">
+                <MathText text={text} />
+              </span>
               <span className="qs-answer-badge">{t('storage.answerBadge')}</span>
               <span className="qs-mine-badge">{t('storage.myChoice')}</span>
               <span className="qs-mine-indicator">
@@ -1231,7 +1234,7 @@ function QuizCard({
                       {t('storage.coreTestNo', { n: idx + 1 })}
                       {c.is_correct ? t('storage.correctSuffix') : ''}:
                     </span>{' '}
-                    {exp}
+                    <MathText text={exp} />
                   </li>
                 )
               })}

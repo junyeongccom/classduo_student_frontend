@@ -571,7 +571,7 @@ export function StudentQuizCard({
                   {t('answer')}
                 </p>
                 <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-line">
-                  {quiz.answer}
+                  <MathText text={quiz.answer} />
                 </p>
               </div>
             )}

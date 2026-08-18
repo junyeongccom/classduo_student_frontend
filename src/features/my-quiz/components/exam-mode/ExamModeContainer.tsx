@@ -2,7 +2,7 @@
  * @file ExamModeContainer.tsx
  * @description 오답노트 시험 모드 — 회차/범위 선택 → 무작위 순차 풀이(정답 숨김) → 결과(점수·시간·회차별 정오)
  * @module features/my-quiz/components/exam-mode
- * @dependencies useQuizStorage(QuizStorageItem), buildExamSet, quizStatusService.updateCorrect, MarkdownMessage
+ * @dependencies useQuizStorage(QuizStorageItem), buildExamSet, quizStatusService.updateCorrect, MarkdownMessage, MathText
  */
 'use client'
 
@@ -21,6 +21,7 @@ import {
 import type { QuizStorageItem } from '../../hooks/useQuizStorage'
 import { updateCorrect } from '@/features/lecture-study/services/quizStatusService'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { MathText } from '@/shared/components/math/MathText'
 import {
   deriveLectureOptions,
   estimateMinutes,
@@ -788,7 +789,7 @@ function RunPhase({
         ) : (
           <>
             <h3 className="mb-5 text-base font-bold leading-relaxed text-gray-900 dark:text-gray-100">
-              {qText(item, locale)}
+              <MathText text={qText(item, locale)} />
             </h3>
 
             <ol className="space-y-2">
@@ -813,7 +814,9 @@ function RunPhase({
                       >
                         {c.choice_order}
                       </span>
-                      <span className="flex-1">{cText(c, locale)}</span>
+                      <span className="flex-1">
+                        <MathText text={cText(c, locale)} />
+                      </span>
                     </button>
                   </li>
                 )
@@ -1034,7 +1037,7 @@ function ReviewCard({
       ) : (
         <>
           <h4 className="mb-3 text-sm font-bold leading-relaxed text-gray-900 dark:text-gray-100">
-            {qText(item, locale)}
+            <MathText text={qText(item, locale)} />
           </h4>
 
           <ul className="space-y-1.5">
@@ -1048,7 +1051,9 @@ function ReviewCard({
               return (
                 <li key={c.choice_id} className={cls}>
                   <span className="mt-0.5 text-[11px] font-bold">{c.choice_order}</span>
-                  <span className="flex-1">{cText(c, locale)}</span>
+                  <span className="flex-1">
+                    <MathText text={cText(c, locale)} />
+                  </span>
                   {correct && <span className="text-[10px] font-bold">{t('examMode.correct')}</span>}
                   {mine && !correct && <span className="text-[10px] font-bold">{t('examMode.mySelection')}</span>}
                 </li>
@@ -1086,7 +1091,9 @@ function ReviewCard({
                         >
                           {c.order}:
                         </span>
-                        <span className="text-gray-600 dark:text-gray-300">{c.text}</span>
+                        <span className="text-gray-600 dark:text-gray-300">
+                          <MathText text={c.text ?? ''} />
+                        </span>
                       </div>
                     ))}
                   </div>
