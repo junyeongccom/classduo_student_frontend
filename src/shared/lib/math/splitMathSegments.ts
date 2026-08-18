@@ -27,6 +27,12 @@ function hasLatexIndicator(content: string): boolean {
   return false
 }
 
+/** 길이 3자 이상의 영문 단어가 몇 개인지 세기 */
+function countLongEnglishWords(text: string): number {
+  const words = text.split(/\s+/)
+  return words.filter(w => /^[a-zA-Z]{3,}$/.test(w)).length
+}
+
 /** 내용이 수식으로 타당한지 판정 */
 function isPlausibleMath(content: string): boolean {
   const trimmed = content.trim()
@@ -35,7 +41,7 @@ function isPlausibleMath(content: string): boolean {
   // LaTeX 지표가 있으면 true
   if (hasLatexIndicator(trimmed)) return true
 
-  // LaTeX 지표 없으면, 아래 3개 모두 만족할 때만 true
+  // LaTeX 지표 없으면, 아래 4개 모두 만족할 때만 true
   // 1. 한글 없음
   if (/[ㄱ-힝가-힣]/.test(trimmed)) return false
 
@@ -45,29 +51,84 @@ function isPlausibleMath(content: string): boolean {
   // 3. 문장 종결부호+공백 없음
   if (/[.!?]\s/.test(trimmed)) return false
 
+  // 4. 길이 3자 이상 영문 단어가 2개 이상 공백으로 구분되면 거부 (영어 문장 배제)
+  if (countLongEnglishWords(trimmed) >= 2) return false
+
   return true
 }
 
-/** 1패스: 정규식으로 블록 수식 모두 찾기 */
+/** 지정 위치 이후의 이스케이프되지 않은 `$$` 를 찾는다 */
+function findUnescapedDoubleDollar(text: string, startPos: number): number {
+  for (let i = startPos; i < text.length - 1; i++) {
+    if (
+      text[i] === '$' &&
+      text[i + 1] === '$' &&
+      (i === 0 || text[i - 1] !== '\\')
+    ) {
+      return i
+    }
+  }
+  return -1
+}
+
+/** 1패스: 블록 수식 스캔 + isPlausibleMath 검사 */
 function extractBlocks(text: string): Array<{ type: 'text' | 'block'; value: string; blockValue?: string }> {
   const result: Array<{ type: 'text' | 'block'; value: string; blockValue?: string }> = []
   let cursor = 0
+  let pos = 0
 
-  for (const match of text.matchAll(BLOCK_PATTERN)) {
-    const start = match.index ?? 0
-    if (start > cursor) {
-      result.push({ type: 'text', value: text.slice(cursor, start) })
+  while (pos < text.length) {
+    const openPos = findUnescapedDoubleDollar(text, pos)
+    if (openPos === -1) {
+      // 블록 시작 못 찾음 → 나머지 전부 text
+      if (cursor < text.length) {
+        result.push({ type: 'text', value: text.slice(cursor) })
+      }
+      break
     }
-    result.push({
-      type: 'block',
-      value: text.slice(start, start + match[0].length),
-      blockValue: match[1].trim(),
-    })
-    cursor = start + match[0].length
-  }
 
-  if (cursor < text.length) {
-    result.push({ type: 'text', value: text.slice(cursor) })
+    // 블록 시작 찾음 → 닫는 $$ 를 찾음
+    const contentStart = openPos + 2
+    let closePos = findUnescapedDoubleDollar(text, contentStart)
+
+    if (closePos === -1) {
+      // 닫는 $$ 못 찾음 → 여는 $$ 2글자만 건너뛰고 계속
+      if (openPos > cursor) {
+        result.push({ type: 'text', value: text.slice(cursor, openPos + 2) })
+      } else {
+        result.push({ type: 'text', value: text.slice(cursor, openPos) })
+        result.push({ type: 'text', value: '$$' })
+      }
+      cursor = openPos + 2
+      pos = openPos + 2
+      continue
+    }
+
+    // 블록 후보 찾음: $$ ~ $$
+    const blockContent = text.slice(contentStart, closePos).trim()
+    if (isPlausibleMath(blockContent)) {
+      // 수식으로 판정 → 블록 확정
+      if (openPos > cursor) {
+        result.push({ type: 'text', value: text.slice(cursor, openPos) })
+      }
+      result.push({
+        type: 'block',
+        value: text.slice(openPos, closePos + 2),
+        blockValue: blockContent,
+      })
+      cursor = closePos + 2
+      pos = closePos + 2
+    } else {
+      // 수식 아님 → 여는 $$ 2글자만 건너뛰고 다시 스캔
+      if (openPos > cursor) {
+        result.push({ type: 'text', value: text.slice(cursor, openPos + 2) })
+      } else {
+        result.push({ type: 'text', value: text.slice(cursor, openPos) })
+        result.push({ type: 'text', value: '$$' })
+      }
+      cursor = openPos + 2
+      pos = openPos + 2
+    }
   }
 
   return result
@@ -80,13 +141,21 @@ function scanInlineInChunk(chunk: string): MathSegment[] {
 
   while (i < chunk.length) {
     const openPos = findUnescapedDollar(chunk, i)
-    if (openPos === -1 || (openPos + 1 < chunk.length && chunk[openPos + 1] === '$')) {
-      // 인라인 시작 없음 또는 블록 시작 → 나머지 text
+    if (openPos === -1) {
+      // 달러 없음 → 나머지 text
       result.push({ type: 'text', value: chunk.slice(i) })
       break
     }
 
-    // 닫는 $ 찾기 (개행 없음)
+    // 다음 달러가 또 다른 달러인지 확인 (짝 없는 $$)
+    if (openPos + 1 < chunk.length && chunk[openPos + 1] === '$') {
+      // 짝 없는 $$ 발견 → $$ 2글자만 건너뛰고 계속
+      result.push({ type: 'text', value: chunk.slice(i, openPos + 2) })
+      i = openPos + 2
+      continue
+    }
+
+    // 홑 $ 의 닫는 $ 찾기 (개행 없음)
     const contentStart = openPos + 1
     let closePos = contentStart
     let foundClose = false

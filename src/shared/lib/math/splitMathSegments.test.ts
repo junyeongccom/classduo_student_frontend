@@ -86,3 +86,33 @@ test('여러 줄 블록 수식의 줄바꿈과 백슬래시가 보존된다', ()
   assert.equal(out[0].type, 'block')
   assert.ok(out[0].value.includes('\\\\'))
 })
+
+// 수정 라운드 2: 규율 통합 검증
+test('영어 문장 속 통화가 뒤의 수식을 삼키지 않는다', () => {
+  const out = splitMathSegments('The cost is $5 and the formula is $x^2$')
+  const inlines = out.filter(s => s.type === 'inline')
+  assert.equal(inlines.length, 1)
+  assert.equal(inlines[0].value, 'x^2')
+})
+
+test('짝 없는 $$ 가 뒤의 인라인 수식을 삼키지 않는다', () => {
+  const out = splitMathSegments('정답은 $$ 대충 쓰고 공식은 $x^2$ 이다')
+  const inlines = out.filter(s => s.type === 'inline')
+  assert.equal(inlines.length, 1)
+  assert.equal(inlines[0].value, 'x^2')
+})
+
+test('짝 없는 $$ 뒤의 진짜 블록과 인라인이 모두 살아남는다', () => {
+  const out = splitMathSegments('정답 $$ 오타 그리고 진짜 블록 $$y^2$$ 뒤에 인라인 $z$')
+  const blocks = out.filter(s => s.type === 'block')
+  const inlines = out.filter(s => s.type === 'inline')
+  assert.equal(blocks.length, 1)
+  assert.equal(blocks[0].value, 'y^2')
+  assert.equal(inlines.length, 1)
+  assert.equal(inlines[0].value, 'z')
+})
+
+test('한글 문장은 블록으로도 오인하지 않는다', () => {
+  const out = splitMathSegments('$$ 오타 그리고 진짜 블록 $$')
+  assert.equal(out.filter(s => s.type !== 'text').length, 0)
+})
