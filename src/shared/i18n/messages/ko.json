@@ -863,6 +863,7 @@
       "quizChatPlaceholder": "이 문제에 대해 더 물어보세요",
       "newChat": "새 채팅",
       "sessionList": "대화 목록",
+      "sessionEmpty": "저장된 대화가 없어요",
       "sessionUntitled": "새 대화",
       "sessionDeleteConfirm": "이 대화를 삭제할까요?",
       "sessionDelete": "대화 삭제"

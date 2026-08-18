@@ -234,7 +234,7 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
           {isSessionListOpen && (
             <div className="absolute left-0 top-full z-20 mt-1 max-h-64 w-72 max-w-[80vw] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg">
               {sessions.length === 0 ? (
-                <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{t('sessionUntitled')}</p>
+                <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{t('sessionEmpty')}</p>
               ) : (
                 sessions.map((s) => (
                   <div

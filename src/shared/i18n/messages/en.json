@@ -863,6 +863,7 @@
       "quizChatPlaceholder": "Ask more about this question",
       "newChat": "New chat",
       "sessionList": "Conversations",
+      "sessionEmpty": "No saved conversations",
       "sessionUntitled": "New conversation",
       "sessionDeleteConfirm": "Delete this conversation?",
       "sessionDelete": "Delete conversation"
