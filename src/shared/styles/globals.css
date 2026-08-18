@@ -6,6 +6,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 /* Pretendard (게임 모달 등 특수 UI용) */
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+/* KaTeX (수식 렌더링) — Chrome MathML Core가 mtable(행렬 등)을 제대로 못 그려 HTML 폴백을 함께 씀 */
+@import 'katex/dist/katex.min.css';
 
 /* ───────────── 모바일 비례 스케일 (Figma 390 기준) ─────────────
    --app-w: 화면 폭(100vw)을 430px 로 캡 → 큰 폰/폴더블 과대 확대 방지

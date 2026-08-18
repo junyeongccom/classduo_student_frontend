@@ -16,6 +16,7 @@ import { trackSummaryViewed } from '@/shared/hooks/useAnalytics'
 import { summaryTabAnalytics } from '@/shared/lib/analytics'
 import { useSourceNavigation } from '../../hooks/useSourceNavigation'
 import { SummarySection } from '../ui/SummarySection'
+import { MathText } from '@/shared/components/math/MathText'
 import type {
   ContentSummary,
   ContentSummaryCoreSection,
@@ -346,7 +347,9 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
           </h4>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700 dark:text-gray-300">
             {summary.recent_issues.map((issue, idx) => (
-              <li key={`issue-${idx}`}>{issue}</li>
+              <li key={`issue-${idx}`}>
+                <MathText text={issue} />
+              </li>
             ))}
           </ul>
         </section>
@@ -360,7 +363,9 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
           </h4>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-700 dark:text-gray-300">
             {summary.exam_points.map((point, idx) => (
-              <li key={`point-${idx}`}>{point}</li>
+              <li key={`point-${idx}`}>
+                <MathText text={point} />
+              </li>
             ))}
           </ul>
         </section>

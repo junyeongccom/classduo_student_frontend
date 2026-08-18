@@ -1,6 +1,6 @@
 /**
  * @file MathText.tsx
- * @description 평문 속 LaTeX 수식($...$, $$...$$)을 KaTeX(MathML)로 렌더링
+ * @description 평문 속 LaTeX 수식($...$, $$...$$)을 KaTeX(HTML+MathML)로 렌더링
  * @module shared/components/math
  * @dependencies katex, shared/lib/math/splitMathSegments
  */
@@ -31,7 +31,7 @@ export function MathText({ text, className }: MathTextProps) {
           throwOnError: false,
           strict: 'ignore',
           displayMode: segment.type === 'block',
-          output: 'mathml',
+          output: 'htmlAndMathml',
         })
         return segment.type === 'block' ? (
           <span key={index} className="my-1 block overflow-x-auto" dangerouslySetInnerHTML={{ __html: html }} />

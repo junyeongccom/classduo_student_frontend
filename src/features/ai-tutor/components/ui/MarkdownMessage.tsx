@@ -181,7 +181,7 @@ export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, c
                 throwOnError: false,
                 strict: 'ignore',
                 displayMode: false,
-                output: 'mathml',
+                output: 'htmlAndMathml',
               })
 
               return <span dangerouslySetInnerHTML={{ __html: mathml }} />
@@ -200,7 +200,7 @@ export const MarkdownMessage = React.memo(function MarkdownMessage({ markdown, c
                 throwOnError: false,
                 strict: 'ignore',
                 displayMode: true,
-                output: 'mathml',
+                output: 'htmlAndMathml',
               })
 
               return <div dangerouslySetInnerHTML={{ __html: mathml }} />
