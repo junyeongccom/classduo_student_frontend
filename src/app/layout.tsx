@@ -9,7 +9,8 @@ import { MaintenanceNoticeModal } from '@/shared/components/common/MaintenanceNo
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://korea.aplus.io.kr'),
+  // [demo/hai-sync 전용] OG 절대경로 기준을 데모 배포 도메인으로 (korea.aplus.io.kr 은 고대 빌드라 데모 자산이 없음)
+  metadataBase: new URL('https://classduo-student-frontend-git-dem-1fd9d4-junyeongccoms-projects.vercel.app'),
   title: 'HAI-Sync - AI 학습 파트너',
   description: 'AI 기반 학습 보조 플랫폼',
   icons: {
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'HAI-Sync - AI 학습 파트너',
     description: 'AI 기반 학습 보조 플랫폼',
-    url: 'https://korea.aplus.io.kr',
+    url: 'https://classduo-student-frontend-git-dem-1fd9d4-junyeongccoms-projects.vercel.app',
     siteName: 'HAI-Sync',
     images: [
       {
