@@ -62,6 +62,12 @@ interface AnswerRecord {
    *  - match                    → [number, number][]
    */
   payloadResponse?: unknown
+  /**
+   * 서술형(ANALYSIS_APPLY/JUDGE_DESIGN) 답안 텍스트. 그 외 유형이면 undefined.
+   * 실채점(LLM 루브릭)은 붙이지 않는다 — 즐겨찾기/오답노트 화면(StudentQuizCard)의 기존
+   * 서술형 self-graded 폴백과 동일하게 "제출 여부"만 기록한다(오답노트 오염 방지용 sentinel).
+   */
+  essayAnswer?: string
   isCorrect: boolean
   durationMs: number
 }
@@ -69,6 +75,14 @@ interface AnswerRecord {
 /** 시험모드에서 핵심주제학습 폼으로 풀 특수 유형인지 (exam_prep + 지원 question_format). */
 function isPayloadItem(it: QuizStorageItem): boolean {
   return it.quiz_source === 'exam_prep' && isSupportedPayloadFormat(it.question_format)
+}
+
+/**
+ * 회차별 학습 4유형 개편(2026-07) 중 서술형(분석과적용·판단과설계)인지.
+ * 선지(choices)가 없어 레거시 단일 4지선다 분기로 두면 "다음"이 영원히 비활성화된다 — 별도 분기 필요.
+ */
+function isEssayItem(it: QuizStorageItem): boolean {
+  return it.quiz_type === 'ANALYSIS_APPLY' || it.quiz_type === 'JUDGE_DESIGN'
 }
 
 /** 유형별 응답이 제출 가능한 상태인지 (다음/제출 버튼 활성 판정). */
@@ -134,6 +148,10 @@ function qText(it: QuizStorageItem, locale: string): string {
 }
 function eText(it: QuizStorageItem, locale: string): string | null {
   return locale === 'en' && it.explanation_eng ? it.explanation_eng : it.explanation
+}
+/** 서술형 모범답안(model answer) — locale 우선. */
+function aText(it: QuizStorageItem, locale: string): string | null {
+  return locale === 'en' && it.answer_eng ? it.answer_eng : it.answer
 }
 function cText(
   c: QuizStorageItem['choices'][number],
@@ -313,6 +331,8 @@ export default function ExamModeContainer({
   const selectedOrder = answers[index]?.selectedOrder ?? null
   // 특수 유형 응답값 (polymorphic) — 폼 value 로 전달. 미응답이면 null.
   const payloadResponse = answers[index]?.payloadResponse ?? null
+  // 서술형 답안 텍스트 — 미응답이면 빈 문자열(controlled textarea).
+  const essayAnswer = answers[index]?.essayAnswer ?? ''
   const questionStartRef = useRef<number>(0)
   const startedAtRef = useRef<number>(0)
   const finishedAtRef = useRef<number>(0)
@@ -361,6 +381,7 @@ export default function ExamModeContainer({
         a.isCorrect,
         a.selectedOrder ?? null,
         a.durationMs,
+        a.essayAnswer ?? null,
       ).catch(() => {})
     }
     setPhase('result')
@@ -404,6 +425,25 @@ export default function ExamModeContainer({
     })
   }
 
+  // 서술형(분석과적용/판단과설계) 답안 입력 — 매 변경마다 기록(재선택 시 덮어씀).
+  // 실채점 없이 "제출 여부"만 기록한다: 즐겨찾기/오답노트 화면의 기존 self-graded 폴백과
+  // 동일하게 텍스트가 있으면 isCorrect=true 로 두되(오답노트 오염 방지용 sentinel일 뿐 실제 정답 판정이
+  // 아님), 결과 화면 정답률 집계에서는 서술형을 별도로 제외한다 (ResultPhase 참고).
+  const handleEssayChange = (text: string) => {
+    const cur = examSet[index]
+    setAnswers((prev) => {
+      const next = [...prev]
+      next[index] = {
+        item: cur,
+        selectedOrder: null,
+        essayAnswer: text,
+        isCorrect: text.trim() !== '',
+        durationMs: Date.now() - questionStartRef.current,
+      }
+      return next
+    })
+  }
+
   const handlePrev = () => {
     if (index > 0) setIndex(index - 1)
   }
@@ -411,6 +451,7 @@ export default function ExamModeContainer({
   // 현재 문항 응답이 다음으로 넘어갈 준비가 됐는지.
   //  - 레거시: 선택만 있으면 됨.
   //  - 특수 유형: 유형별 완성 조건(매칭 전부 연결 / 복수 2개 / 빈칸 다 채움)을 만족해야 함.
+  //  - 서술형: 기존 서술형 UX(StudentQuizCard essaySubmit)와 동일하게 답안 텍스트가 비어있지 않아야 함.
   const currentAnswerReady = (() => {
     const cur = examSet[index]
     const rec = answers[index]
@@ -421,6 +462,9 @@ export default function ExamModeContainer({
         (cur.payload ?? {}) as Record<string, unknown>,
         rec.payloadResponse,
       )
+    }
+    if (isEssayItem(cur)) {
+      return (rec.essayAnswer ?? '').trim() !== ''
     }
     return rec.selectedOrder != null
   })()
@@ -478,9 +522,11 @@ export default function ExamModeContainer({
             locale={locale}
             selectedOrder={selectedOrder}
             payloadResponse={payloadResponse}
+            essayAnswer={essayAnswer}
             canAdvance={currentAnswerReady}
             onSelect={handleSelect}
             onPayloadChange={handlePayloadChange}
+            onEssayChange={handleEssayChange}
             onPrev={handlePrev}
             onNext={handleNext}
           />
@@ -732,9 +778,11 @@ function RunPhase({
   locale,
   selectedOrder,
   payloadResponse,
+  essayAnswer,
   canAdvance,
   onSelect,
   onPayloadChange,
+  onEssayChange,
   onPrev,
   onNext,
 }: {
@@ -745,9 +793,11 @@ function RunPhase({
   locale: string
   selectedOrder: number | null
   payloadResponse: unknown
+  essayAnswer: string
   canAdvance: boolean
   onSelect: (order: number) => void
   onPayloadChange: (value: unknown) => void
+  onEssayChange: (text: string) => void
   onPrev: () => void
   onNext: () => void
 }) {
@@ -756,6 +806,8 @@ function RunPhase({
   const progress = Math.round(((index + 1) / total) * 100)
   // exam_prep 특수 유형 — 핵심주제학습 폼으로 풀이 (정답은 결과 화면에서만 공개).
   const isPayload = isPayloadItem(item)
+  // 회차별 학습 서술형(분석과적용/판단과설계) — 선지가 없어 텍스트 입력으로 풀이.
+  const isEssay = isEssayItem(item)
 
   return (
     <div className="space-y-5">
@@ -786,6 +838,20 @@ function RunPhase({
             onChange={onPayloadChange}
             result={null}
           />
+        ) : isEssay ? (
+          // 서술형 — 실채점 없이 답안 입력만 (StudentQuizCard essay textarea와 동일 placeholder/스타일).
+          <>
+            <h3 className="mb-5 text-base font-bold leading-relaxed text-gray-900 dark:text-gray-100">
+              <MathText text={qText(item, locale)} />
+            </h3>
+            <textarea
+              value={essayAnswer}
+              onChange={(e) => onEssayChange(e.target.value)}
+              placeholder={t('examMode.essayPlaceholder')}
+              rows={6}
+              className="w-full resize-none rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-indigo-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-indigo-600"
+            />
+          </>
         ) : (
           <>
             <h3 className="mb-5 text-base font-bold leading-relaxed text-gray-900 dark:text-gray-100">
@@ -868,15 +934,18 @@ function ResultPhase({
   onReconfigure: () => void
   onClose: () => void
 }) {
-  const total = answers.length
-  const correctCount = answers.filter((a) => a.isCorrect).length
+  // 서술형은 실채점이 없어(제출 여부만 기록) 정답률 집계에서 제외한다 — 채점 대상만 total/correctCount에 포함.
+  const gradedAnswers = useMemo(() => answers.filter((a) => !isEssayItem(a.item)), [answers])
+  const essayCount = answers.length - gradedAnswers.length
+  const total = gradedAnswers.length
+  const correctCount = gradedAnswers.filter((a) => a.isCorrect).length
   // 정답률 — 소수점 1자리 (둘째 자리에서 반올림). 정수면 소수점 없이 표기 (예: 50, 12.5).
   const pct = total > 0 ? Math.round((correctCount / total) * 1000) / 10 : 0
 
-  // 회차별 정오
+  // 회차별 정오 (서술형 제외 — 채점 대상만)
   const byLecture = useMemo(() => {
     const map = new Map<number, { lectureNo: number; correct: number; total: number }>()
-    for (const a of answers) {
+    for (const a of gradedAnswers) {
       const no = a.item.lecture_no
       if (no == null) continue
       const cur = map.get(no) ?? { lectureNo: no, correct: 0, total: 0 }
@@ -885,7 +954,7 @@ function ResultPhase({
       map.set(no, cur)
     }
     return [...map.entries()].sort((x, y) => x[0] - y[0]).map(([, v]) => v)
-  }, [answers])
+  }, [gradedAnswers])
 
   return (
     <div className="space-y-6">
@@ -905,6 +974,11 @@ function ResultPhase({
           <Clock className="h-3.5 w-3.5" />
           {t('examMode.elapsed', { time: formatDuration(elapsedMs, t) })}
         </p>
+        {essayCount > 0 && (
+          <p className="mt-2 text-xs text-gray-400">
+            {t('examMode.essayExcludedNote', { n: essayCount })}
+          </p>
+        )}
       </div>
 
       {/* 회차별 정오 */}
@@ -986,18 +1060,21 @@ function ReviewCard({
   locale: string
 }) {
   const [open, setOpen] = useState(false)
-  const { item, selectedOrder, payloadResponse, isCorrect } = answer
+  const { item, selectedOrder, payloadResponse, essayAnswer, isCorrect } = answer
   const choices = sortedChoices(item)
   const explanation = eText(item, locale)
   // exam_prep 특수 유형 — 핵심주제학습 폼으로 정/오답 하이라이트 렌더(legacy 선지 목록 대신).
   const isPayload = isPayloadItem(item)
+  // 서술형 — 실채점이 없어 정/오답 낱말 대신 "제출완료"로 표기 (StudentQuizCard essay 컨벤션과 동일).
+  const isEssay = isEssayItem(item)
+  const modelAnswer = isEssay ? aText(item, locale) : null
   const payloadResult: QuizFormResult | null = isPayload
     ? { is_correct: isCorrect, correct_answer: payloadCorrectAnswer(item) }
     : null
   // 해설 라벨 정합: exam_prep 폼 선지는 A,B,C → 해설 번호도 문자로. legacy 리스트는 숫자 그대로.
   const explLabel = isPayload ? letterLabel : numberLabel
   // content/customize(legacy 객관식)는 선지별 해설(choice_explanation)을 시험모드에서도 노출.
-  const choiceAnalysis = !isPayload
+  const choiceAnalysis = !isPayload && !isEssay
     ? choices
         .map((c) => ({ order: c.choice_order, correct: c.is_correct, text: cExpl(c, locale) }))
         .filter((c) => c.text)
@@ -1007,20 +1084,24 @@ function ReviewCard({
   return (
     <div
       className={`rounded-2xl border p-4 ${
-        isCorrect
-          ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20'
-          : 'border-rose-200 bg-rose-50/40 dark:border-rose-900 dark:bg-rose-950/20'
+        isEssay
+          ? 'border-gray-200 bg-gray-50/60 dark:border-gray-800 dark:bg-gray-800/20'
+          : isCorrect
+            ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-900 dark:bg-emerald-950/20'
+            : 'border-rose-200 bg-rose-50/40 dark:border-rose-900 dark:bg-rose-950/20'
       }`}
     >
       <div className="mb-2 flex items-center gap-2">
         <span
           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-            isCorrect
-              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
-              : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300'
+            isEssay
+              ? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+              : isCorrect
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300'
+                : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300'
           }`}
         >
-          {isCorrect ? t('examMode.correct') : t('examMode.wrong')}
+          {isEssay ? t('examMode.essaySubmitted') : isCorrect ? t('examMode.correct') : t('examMode.wrong')}
         </span>
         <span className="text-[11px] text-gray-400">{sourceLabel(t, item)}</span>
       </div>
@@ -1034,6 +1115,33 @@ function ReviewCard({
           onChange={() => {}}
           result={payloadResult}
         />
+      ) : isEssay ? (
+        // 서술형 — 내 답안 + 모범답안 (StudentQuizCard essay 제출 완료 뷰와 동일 레이아웃, 실채점 없음).
+        <>
+          <h4 className="mb-3 text-sm font-bold leading-relaxed text-gray-900 dark:text-gray-100">
+            <MathText text={qText(item, locale)} />
+          </h4>
+          <div className="space-y-3">
+            <div className="rounded-xl bg-gray-100/70 p-3 dark:bg-gray-700/40">
+              <p className="mb-1 text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                {t('examMode.essayMyAnswer')}
+              </p>
+              <p className="whitespace-pre-line text-sm text-gray-900 dark:text-gray-100">
+                {essayAnswer || '—'}
+              </p>
+            </div>
+            {modelAnswer && (
+              <div className="rounded-xl bg-indigo-50/60 p-3 dark:bg-indigo-900/20">
+                <p className="mb-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-300">
+                  {t('examMode.essayModelAnswer')}
+                </p>
+                <p className="whitespace-pre-line text-sm text-gray-900 dark:text-gray-100">
+                  <MathText text={modelAnswer} />
+                </p>
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         <>
           <h4 className="mb-3 text-sm font-bold leading-relaxed text-gray-900 dark:text-gray-100">

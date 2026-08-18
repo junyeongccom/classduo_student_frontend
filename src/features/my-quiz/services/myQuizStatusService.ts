@@ -242,13 +242,26 @@ export async function fetchQuizContent(
     } else if (quizSource === 'content') {
       const { data, error: err } = await supabase
         .from('content_quiz_items')
-        .select('quiz_id, quiz_type, question, explanation, difficulty, question_eng, explanation_eng')
+        .select(
+          'quiz_id, quiz_type, question, explanation, difficulty, question_eng, explanation_eng, model_answer, model_answer_eng',
+        )
         .in('quiz_id', quizIds)
       if (err) {
         if (isJWTExpiredError(err)) { await handleJWTExpiration(); return { data: null, error: new Error('세션이 만료되었습니다.') } }
         return { data: null, error: new Error(getErrorMessage(err)) }
       }
-      rawItems = ((data ?? []) as Array<Omit<RawItem, 'answer'> & { answer?: null }>).map(d => ({ ...d, answer: null })) as RawItem[]
+      // content_quiz_items 는 'answer' 컬럼이 없다 — 서술형(분석과적용/판단과설계) 모범답안은
+      // model_answer(_eng) 컬럼에 있으므로 QuizItem 의 통합 answer(_eng) 필드로 매핑한다
+      // (객관식 로우는 model_answer 가 null 이라 기존과 동일하게 null 유지).
+      type ContentRow = Omit<RawItem, 'answer' | 'answer_eng'> & {
+        model_answer: string | null
+        model_answer_eng?: string | null
+      }
+      rawItems = ((data ?? []) as ContentRow[]).map((d) => ({
+        ...d,
+        answer: d.model_answer ?? null,
+        answer_eng: d.model_answer_eng ?? null,
+      })) as RawItem[]
 
       if (rawItems.length > 0) {
         const ids = rawItems.map(i => i.quiz_id)
