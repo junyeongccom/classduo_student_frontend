@@ -24,6 +24,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { MathText } from '@/shared/components/math/MathText'
 import type {
   CoreTestQuestionItemDto,
   GradeSingleResponseDto,
@@ -505,7 +506,7 @@ export function PayloadQuestionPanel({
               )}
               {explanationText && (
                 <p className="whitespace-pre-line break-keep text-sm leading-relaxed text-gray-600 dark:text-gray-300">
-                  {explanationText}
+                  <MathText text={explanationText} />
                 </p>
               )}
             </div>
@@ -662,7 +663,7 @@ export function PayloadQuestionPanel({
               )}
               {explanationText && (
                 <p className="break-keep text-center whitespace-pre-line" style={{ fontSize: '1.1cqw', lineHeight: 1.7, color: 'rgb(75 85 99)' }}>
-                  {explanationText}
+                  <MathText text={explanationText} />
                 </p>
               )}
             </div>

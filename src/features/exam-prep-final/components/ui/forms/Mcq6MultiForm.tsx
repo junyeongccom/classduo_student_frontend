@@ -10,6 +10,7 @@
 
 import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
+import { MathText } from "@/shared/components/math/MathText";
 import type { QuizFormResult } from "./types";
 
 export type Mcq6MultiFormProps = {
@@ -126,7 +127,7 @@ export function Mcq6MultiForm({
     <div className="flex w-full flex-col items-stretch" style={{ gap: SZ.rootGap /* figma 문제~정오답~선지 8px */ }}>
       {/* 문제 텍스트 + (2개 선택) */}
       <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: SZ.stem, color: C_CANVAS_FG }}>
-        {questionText}
+        <MathText text={questionText} />
         <span
           className="font-normal"
           style={{ marginLeft: SZ.pickMl, fontSize: SZ.pickFs, color: "rgb(var(--color-neutral-gray-500))" }}
@@ -223,7 +224,7 @@ export function Mcq6MultiForm({
                   fontWeight: isSelected || isCorrect ? 600 : 400,
                 }}
               >
-                {choice}
+                <MathText text={choice} />
               </span>
             </button>
           );

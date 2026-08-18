@@ -10,6 +10,8 @@
 import { Check, Loader2, Minus, X, AlertTriangle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
+import { MathText } from '@/shared/components/math/MathText'
+
 /* ───────────── 타입 ───────────── */
 
 /** 요소별 판정. 서버가 확장할 수 있어 임의 문자열을 허용하고 표시는 미지 값 폴백을 둔다. */
@@ -181,7 +183,7 @@ export function EssayGradingPanel({ grading }: EssayGradingPanelProps) {
                         : 'text-gray-900 dark:text-gray-50'
                     }`}
                   >
-                    {label}
+                    <MathText text={label} />
                   </span>
                   <span
                     className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${style.badgeClass}`}
@@ -193,14 +195,14 @@ export function EssayGradingPanel({ grading }: EssayGradingPanelProps) {
                 {/* 충족·부분 충족이면 학생 답안에서 발췌한 근거를 붙인다 */}
                 {!isMissed && criterion.quote && (
                   <p className="mt-1 border-l-2 border-gray-200 pl-2 text-xs italic leading-relaxed text-gray-600 dark:border-gray-600 dark:text-gray-300">
-                    “{criterion.quote}”
+                    “<MathText text={criterion.quote} />”
                   </p>
                 )}
 
                 {/* 빠뜨린 요소는 무엇을 썼어야 하는지 알려준다 */}
                 {isMissed && criterion.description && (
                   <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    {t('missedHint', { hint: criterion.description })}
+                    <MathText text={t('missedHint', { hint: criterion.description })} />
                   </p>
                 )}
               </div>
@@ -212,7 +214,7 @@ export function EssayGradingPanel({ grading }: EssayGradingPanelProps) {
       {/* 한 줄 총평 */}
       {grading.feedback && (
         <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-xs leading-relaxed text-gray-700 dark:bg-gray-700/50 dark:text-gray-200">
-          {grading.feedback}
+          <MathText text={grading.feedback} />
         </p>
       )}
     </div>

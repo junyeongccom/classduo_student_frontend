@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { cn } from "@/shared/lib/utils";
+import { MathText } from "@/shared/components/math/MathText";
 import type { QuizFormResult } from "./types";
 
 export type MatchFormProps = {
@@ -207,7 +208,7 @@ export function MatchForm({
     <div className="flex w-full flex-col items-stretch" style={{ gap: SZ.rootGap }}>
       {showHeader && (
         <h1 className="font-semibold leading-snug break-keep" style={{ fontSize: SZ.stem, color: C_CANVAS_FG }}>
-          {questionText || t("solve.matchInstruction")}
+          <MathText text={questionText || t("solve.matchInstruction")} />
         </h1>
       )}
 
@@ -242,7 +243,7 @@ export function MatchForm({
                     padding: SZ.leftPad,
                   }}
                 >
-                  <span style={{ fontSize: SZ.leftFs, fontWeight: 700, color: emph ?? C_BLACK }}>{item}</span>
+                  <span style={{ fontSize: SZ.leftFs, fontWeight: 700, color: emph ?? C_BLACK }}><MathText text={item} /></span>
                 </button>
               );
             })}
@@ -272,7 +273,7 @@ export function MatchForm({
                   }}
                 >
                   <span className="leading-snug" style={{ fontSize: getRightFontSize(item, mobile), color: emph ?? C_BLACK }}>
-                    {item}
+                    <MathText text={item} />
                   </span>
                 </button>
               );

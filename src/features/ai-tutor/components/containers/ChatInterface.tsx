@@ -24,6 +24,7 @@ import SocraticTopicPicker from '../ui/SocraticTopicPicker'
 import SocraticFinishBar from '../ui/SocraticFinishBar'
 import SocraticLoading from '../ui/SocraticLoading'
 import { MarkdownMessage, type CitationTag } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { MathText } from '@/shared/components/math/MathText'
 import { InlineCitationCard } from '@/features/ai-tutor/components/ui/InlineCitationCard'
 import { findCitationReference } from '@/features/ai-tutor/domain/findCitationReference'
 import { FeedbackButtons } from '../ui/FeedbackButtons'
@@ -1623,7 +1624,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                       className="flex w-full items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 transition-all hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md"
                     >
                       <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <span>{hooking.question}</span>
+                      <MathText text={hooking.question} />
                     </button>
                   ))}
                 </>
@@ -1639,7 +1640,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                       className="flex w-full items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 transition-all hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md"
                     >
                       <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <span>{pqmQuestion.question}</span>
+                      <MathText text={pqmQuestion.question} />
                     </button>
                   ))}
                 </>
@@ -1794,7 +1795,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-left text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-400 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <span>💡</span>
-                              <span>{followUpQuestion}</span>
+                              <MathText text={followUpQuestion} />
                             </button>
                           )}
                         </div>

@@ -11,6 +11,7 @@
 
 import { useTranslations } from "next-intl";
 import { cn } from "@/shared/lib/utils";
+import { MathText } from "@/shared/components/math/MathText";
 import type { QuizFormResult } from "./types";
 
 export type Mcq4SingleFormProps = {
@@ -113,7 +114,7 @@ export function Mcq4SingleForm({
         className="font-semibold leading-snug break-keep"
         style={{ fontSize: SZ.stem, color: C_CANVAS_FG }}
       >
-        {questionText}
+        <MathText text={questionText} />
       </h1>
 
       {/* 정/오답 표시 슬롯 — 채점 전에도 자리 잡음 (레이아웃 shift 방지) */}
@@ -210,7 +211,7 @@ export function Mcq4SingleForm({
                   fontWeight: isSelected || isCorrect ? 600 : 400,
                 }}
               >
-                {choice}
+                <MathText text={choice} />
               </span>
             </button>
           );

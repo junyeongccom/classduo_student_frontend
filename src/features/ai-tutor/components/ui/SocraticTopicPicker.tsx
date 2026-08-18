@@ -7,6 +7,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { MathText } from '@/shared/components/math/MathText'
 import type { SocraticTopic } from '../../types'
 
 interface Props { topics: SocraticTopic[]; onSelect: (t: SocraticTopic) => void }
@@ -27,8 +28,8 @@ export default function SocraticTopicPicker({ topics, onSelect }: Props) {
               {t('socraticMasteredBadge')}
             </span>
           )}
-          <div className={`text-sm font-semibold ${topic.mastered ? 'pr-16' : ''}`}>{topic.title}</div>
-          <div className="mt-1 line-clamp-2 text-xs text-gray-500">{topic.description}</div>
+          <div className={`text-sm font-semibold ${topic.mastered ? 'pr-16' : ''}`}><MathText text={topic.title} /></div>
+          <div className="mt-1 line-clamp-2 text-xs text-gray-500"><MathText text={topic.description} /></div>
         </button>
       ))}
     </div>

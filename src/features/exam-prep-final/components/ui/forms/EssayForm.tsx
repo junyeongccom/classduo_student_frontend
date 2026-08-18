@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { MathText } from "@/shared/components/math/MathText";
 import type { PrincipleQuiz, PrincipleQuizPayload, QuizFormResult } from "./types";
 
 const C_BLACK = "var(--color-neutral-black-hex)";
@@ -117,7 +118,7 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result, mobile 
     <div className="flex w-full flex-col" style={{ gap: SZ.rootGap }}>
       {/* 질문 텍스트 */}
       <h1 className="font-bold leading-snug break-keep" style={{ fontSize: SZ.stem, color: C_CANVAS_FG }}>
-        {quiz.question_text}
+        <MathText text={quiz.question_text} />
       </h1>
 
       {/* <보기> — 회색 bg + 보라 좌측 바 */}
@@ -133,7 +134,7 @@ export function EssayForm({ quiz, value, onChange, hasSubmitted, result, mobile 
           color: C_BLACK,
         }}
       >
-        {bodyText}
+        <MathText text={bodyText} />
       </div>
 
       {/* 하단 — 제출 전/후 분기 */}
@@ -210,7 +211,7 @@ function AnsweredView({
             color: C_BLACK,
           }}
         >
-          {modelAnswer}
+          <MathText text={modelAnswer} />
         </div>
       </div>
     </div>

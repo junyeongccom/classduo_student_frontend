@@ -30,6 +30,7 @@ import {
 
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/shared/lib/utils";
+import { MathText } from "@/shared/components/math/MathText";
 
 const C_BLACK = "var(--color-neutral-black-hex)";
 const C_CANVAS_FG = "var(--color-exam-canvas-fg)"; // 캔버스 직속 텍스트(지시문·문장) — 다크 반전
@@ -331,7 +332,7 @@ export function FillBlankDnd({
               const hasBlank = !isLastPart && blankIdx < blanksCount;
               return (
                 <Fragment key={i}>
-                  {text}
+                  <MathText text={text} />
                   {hasBlank ? (
                     <DroppableBlank
                       blankIdx={blankIdx}
@@ -393,7 +394,7 @@ export function FillBlankDnd({
               color: C_BLACK,
             }}
           >
-            {draggingLabel}
+            <MathText text={draggingLabel} />
           </span>
         ) : null}
       </DragOverlay>
@@ -463,7 +464,7 @@ function DraggableChip({
       )}
     >
       {highlight && orderNo !== undefined ? <OrderBadge n={orderNo} sz={sz} /> : null}
-      {label}
+      <MathText text={label} />
     </button>
   );
 }
@@ -529,7 +530,7 @@ function DroppableBlank({
       )}
     >
       {isCorrect === true && orderNo !== undefined ? <OrderBadge n={orderNo} sz={sz} /> : null}
-      {chipLabel ?? " "}
+      {chipLabel !== null ? <MathText text={chipLabel} /> : " "}
     </span>
   );
 }

@@ -23,6 +23,7 @@ import { useTranslations } from 'next-intl'
 import { cn } from '@/shared/lib/utils'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { MarkdownMessage } from '@/features/ai-tutor/components/ui/MarkdownMessage'
+import { MathText } from '@/shared/components/math/MathText'
 import { HintBulbButton } from './HintBulbButton'
 import type {
   CoreTestQuestionItemDto,
@@ -272,7 +273,7 @@ export function SolveQuestionPanel({
 
         {/* 문제 stem — 상단 메타(단일선택/숙련도 카운트)는 사이드바로 통합. 한영 토글에 따라 다국어 표시. */}
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-snug text-gray-900 dark:text-gray-50">
-          {displayStem}
+          <MathText text={displayStem} />
         </h1>
 
         {/* 채점 결과 배지 영역 — 항상 고정 높이 (h-9 mt-5) 로 비워둬서 채점 후 높낮이 변동 방지 */}
@@ -360,7 +361,7 @@ export function SolveQuestionPanel({
                     isHintDisabled && 'line-through text-gray-400',
                   )}
                 >
-                  {opt}
+                  <MathText text={opt} />
                 </span>
               </button>
             )
@@ -387,13 +388,13 @@ export function SolveQuestionPanel({
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                   {isEn ? 'Explanation' : '해설'}
                 </p>
-                {/* 1단계: 선지별 짧은 해설 (한 줄, 일반 텍스트) */}
+                {/* 1단계: 선지별 짧은 해설 (한 줄, 일반 텍스트 + 수식) */}
                 {optEntries.map(([key, val]) => (
                   <p key={key} className="mb-1 last:mb-0">
                     <span className="font-semibold">
                       {OPTION_LABELS[parseInt(key.slice(3), 10)]}:
                     </span>{' '}
-                    {typeof val === 'string' ? val : String(val ?? '')}
+                    <MathText text={typeof val === 'string' ? val : String(val ?? '')} />
                   </p>
                 ))}
                 {/* 2단계: 상세 설명 토글 — explanation.detailed 가 있을 때만 노출 (마크다운 3섹션 렌더). */}

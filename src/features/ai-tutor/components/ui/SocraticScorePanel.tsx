@@ -7,6 +7,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { MathText } from '@/shared/components/math/MathText'
 import type {
   SocraticTopic, SocraticCheckpointResult, SocraticStageOutlineItem, SocraticLeaderboardEntry,
 } from '../../types'
@@ -85,7 +86,7 @@ export default function SocraticScorePanel({
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
       {/* 주제 + 총점 */}
       <div>
-        <div className="text-xs text-gray-500">{t('socraticPanelTitle')} {topic.title}</div>
+        <div className="text-xs text-gray-500">{t('socraticPanelTitle')} <MathText text={topic.title} /></div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-3xl font-bold text-indigo-600">{totalScore}</span>
           <span className="text-sm text-gray-400">{t('socraticScoreOutOf')}</span>
@@ -208,13 +209,13 @@ export default function SocraticScorePanel({
       {praise && (
         <div className="flex items-start gap-2">
           <img src="/topic_test/hero-female.png" alt="" width={36} height={36} className="shrink-0 rounded-full bg-green-50 object-contain" />
-          <div className="rounded-2xl rounded-tl-sm bg-green-50 p-2.5 text-xs leading-relaxed">{praise}</div>
+          <div className="rounded-2xl rounded-tl-sm bg-green-50 p-2.5 text-xs leading-relaxed"><MathText text={praise} /></div>
         </div>
       )}
       {suggestion && (
         <div className="flex items-start gap-2">
           <img src="/topic_test/hero-male.png" alt="" width={36} height={36} className="shrink-0 rounded-full bg-yellow-50 object-contain" />
-          <div className="rounded-2xl rounded-tl-sm bg-yellow-50 p-2.5 text-xs leading-relaxed">{suggestion}</div>
+          <div className="rounded-2xl rounded-tl-sm bg-yellow-50 p-2.5 text-xs leading-relaxed"><MathText text={suggestion} /></div>
         </div>
       )}
       {/* 과목 랭킹 */}
