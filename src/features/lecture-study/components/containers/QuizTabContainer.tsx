@@ -602,7 +602,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                         <SourceButton
                           label={tSummary('sourceButtonRecordings')}
                           tooltipId={`quiz-recording-source-${quiz.quiz_id}`}
-                          tooltipContent={tSummary('sourceTooltipChunks', { chunks: quiz.source.source_chunks!.join(', ') })}
+                          tooltipContent={tSummary('sourceTooltipChunks', { chunks: quiz.source.source_chunks!.map((c) => c + 1).join(', ') })}
                           disabled={false}
                           disabledClick={false}
                           onClick={() =>

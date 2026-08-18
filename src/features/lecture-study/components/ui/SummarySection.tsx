@@ -71,7 +71,8 @@ export function SummarySection({
           tooltipId={`recording-source-${idPrefix}`}
           tooltipContent={
             hasSourceChunks
-              ? t('summary.sourceTooltipChunks', { chunks: section.source_chunks.join(', ') })
+              // 녹음본 청크는 0-based 내부값 — 표시만 1-based (클릭 점프는 원본 인덱스 유지)
+              ? t('summary.sourceTooltipChunks', { chunks: section.source_chunks.map((c) => c + 1).join(', ') })
               : t('summary.sourceEmptyTooltip')
           }
           disabled={!hasSourceChunks}
