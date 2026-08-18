@@ -11,6 +11,7 @@ import { useId, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { ChevronDown, Lightbulb, Link2, PenLine, Star, type LucideIcon } from 'lucide-react'
 import { summaryTabAnalytics } from '@/shared/lib/analytics'
+import { MathText } from '@/shared/components/math/MathText'
 import { parseEasyExplanation, type EasyBlockKind } from '../../domain/parseEasyExplanation'
 
 /** 덩어리 종류별 아이콘·색. plain(4덩어리 초과분)은 라벨 없이 평문 카드로 뿌린다. */
@@ -105,7 +106,7 @@ export function EasyExplanation({ text, lectureId, sectionKey }: EasyExplanation
                     </div>
                   )}
                   <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                    {block.text}
+                    <MathText text={block.text} />
                   </p>
                 </div>
               )

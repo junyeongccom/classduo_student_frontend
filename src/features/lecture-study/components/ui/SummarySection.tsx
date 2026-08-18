@@ -10,6 +10,7 @@
 import { useTranslations } from 'next-intl'
 import { SourceButton } from './SourceButton'
 import { EasyExplanation } from './EasyExplanation'
+import { MathText } from '@/shared/components/math/MathText'
 import type { ContentSummarySection } from '../../types'
 
 interface SummarySectionProps {
@@ -45,7 +46,9 @@ export function SummarySection({
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <h4 className="text-base font-semibold text-gray-900 dark:text-gray-50">{section.title}</h4>
+        <h4 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+          <MathText text={section.title} />
+        </h4>
 
         {percent !== null && (
           <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
@@ -82,7 +85,9 @@ export function SummarySection({
 
       <ul className="list-disc space-y-1 pl-5 text-gray-700 dark:text-gray-300">
         {section.bullets.map((bullet, bIdx) => (
-          <li key={`${sectionKey}-bullet-${bIdx}`}>{bullet}</li>
+          <li key={`${sectionKey}-bullet-${bIdx}`}>
+            <MathText text={bullet} />
+          </li>
         ))}
       </ul>
 
@@ -111,7 +116,7 @@ export function SummarySection({
                 <tr key={`row-${index}-${tIdx}-${rIdx}`} className="border-t border-gray-100 dark:border-gray-700">
                   {row.map((cell, cIdx) => (
                     <td key={`cell-${index}-${tIdx}-${rIdx}-${cIdx}`} className="px-3 py-2">
-                      {cell}
+                      <MathText text={cell} />
                     </td>
                   ))}
                 </tr>
