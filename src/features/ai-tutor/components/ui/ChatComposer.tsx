@@ -1,7 +1,7 @@
 /**
  * Chat composer (Pure UI)
  * - Input
- * - Bottom row: simple/detailed/socratic 3-세그먼트 토글 + Send button
+ * - Bottom row: simple/detailed 2-세그먼트 토글 + Send button (socratic 은 시연 정책상 비노출)
  */
 'use client'
 
@@ -40,7 +40,6 @@ export function ChatComposer({
   placeholder,
   chatMode,
   onChatModeChange,
-  socraticDisabled,
   simpleDetailedDisabled,
   onFocus,
   onBlur,
@@ -129,9 +128,9 @@ export function ChatComposer({
             }}
           />
 
-          {/* Bottom half: controls (v2.0: simple/detailed/socratic 3-세그먼트 토글) */}
+          {/* Bottom half: controls (simple/detailed 2-세그먼트 토글 — socratic 버튼은 비노출) */}
           <div className="flex items-center justify-end gap-3 px-4 py-1" style={{ minHeight: '34px' }}>
-            {/* 모드 토글 — simple ↔ detailed ↔ socratic */}
+            {/* 모드 토글 — simple ↔ detailed. 소크라 문답 버튼은 시연 정책상 렌더하지 않는다(props 계약은 유지). */}
             <div className="mr-auto flex items-center gap-1 rounded-full bg-gray-100 p-1 text-xs">
               <button
                 type="button"
@@ -154,17 +153,6 @@ export function ChatComposer({
                 className={`rounded-full px-3 py-1 ${chatMode === 'detailed' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${simpleDetailedDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {t('detailedLabel')}
-              </button>
-              <button
-                type="button"
-                disabled={socraticDisabled}
-                onClick={() => {
-                  if (socraticDisabled) return
-                  onChatModeChange('socratic')
-                }}
-                className={`rounded-full px-3 py-1 ${chatMode === 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${socraticDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {t('socraticLabel')}
               </button>
             </div>
             <button
