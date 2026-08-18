@@ -94,7 +94,7 @@ export function SummarySection({
       {(section.tables ?? []).map((table, tIdx) => (
         <div
           key={`${sectionKey}-table-${tIdx}`}
-          className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+          className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
         >
           {table.title && (
             <div className="border-b border-gray-100 dark:border-gray-700 px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
@@ -106,7 +106,7 @@ export function SummarySection({
               <tr>
                 {table.headers.map((header) => (
                   <th key={header} className="px-3 py-2 font-semibold">
-                    {header}
+                    <MathText text={header} />
                   </th>
                 ))}
               </tr>
