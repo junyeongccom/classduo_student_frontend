@@ -42,3 +42,47 @@ test('이스케이프된 달러는 수식이 아니다', () => {
 test('빈 문자열은 빈 배열', () => {
   assert.deepEqual(splitMathSegments(''), [])
 })
+
+// 회귀 테스트: 2패스 설계 검증
+test('앞쪽 잡음 $ 가 뒤의 진짜 수식을 삼키지 않는다', () => {
+  const out = splitMathSegments('이 문제는 $와 관련된 개념을 다룬다. 정답은 $x^2$ 이다.')
+  const inlines = out.filter(s => s.type === 'inline')
+  assert.equal(inlines.length, 1)
+  assert.equal(inlines[0].value, 'x^2')
+})
+
+test('통화 $ 앞에 있어도 블록 수식이 보존된다', () => {
+  const out = splitMathSegments('가격 $5, 공식 $$x^2$$')
+  const blocks = out.filter(s => s.type === 'block')
+  assert.equal(blocks.length, 1)
+  assert.equal(blocks[0].value, 'x^2')
+})
+
+test('통화 표기 두 개는 수식이 아니다', () => {
+  const out = splitMathSegments('$5 와 $7')
+  assert.equal(out.filter(s => s.type !== 'text').length, 0)
+})
+
+test('한글 문장은 수식으로 오인하지 않는다', () => {
+  const out = splitMathSegments('이것은 $아니고 그냥$ 텍스트')
+  assert.equal(out.filter(s => s.type !== 'text').length, 0)
+})
+
+test('LaTeX 지표가 있으면 한글이 섞여도 수식이다', () => {
+  const out = splitMathSegments('$속도 = \\frac{거리}{시간}$')
+  assert.equal(out[0].type, 'inline')
+  assert.ok(out[0].value.includes('\\frac'))
+})
+
+test('이스케이프된 달러는 평문에서 언이스케이프된다', () => {
+  const out = splitMathSegments('\\$5 와 \\$7')
+  assert.equal(out.length, 1)
+  assert.equal(out[0].type, 'text')
+  assert.equal(out[0].value, '$5 와 $7')
+})
+
+test('여러 줄 블록 수식의 줄바꿈과 백슬래시가 보존된다', () => {
+  const out = splitMathSegments('$$A = \\begin{pmatrix} 1 & 2 \\\\ 3 & 4 \\end{pmatrix}$$')
+  assert.equal(out[0].type, 'block')
+  assert.ok(out[0].value.includes('\\\\'))
+})
