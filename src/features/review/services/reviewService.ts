@@ -127,25 +127,5 @@ export const reviewService = {
       method: 'GET',
       auth: true,
     }),
-
-  /**
-   * 단어 솔리테어 클리어 기록 제출.
-   * turns 는 적을수록 상위 — 다른 게임의 score 와 정렬 방향이 반대다.
-   * seed 는 엔진이 number 로 만들지만 서버 컬럼은 text 라 문자열로 보낸다.
-   */
-  submitWordSolitaireScore: (
-    lectureId: string,
-    params: { difficulty: string; turns: number; seed: number | string; minTurns?: number | null },
-  ) =>
-    apiRequest<GameSubmissionResponse>(API_ENDPOINTS.GAME.SUBMIT_WORD_SOLITAIRE(lectureId), {
-      method: 'POST',
-      auth: true,
-      body: {
-        difficulty: params.difficulty,
-        turns: params.turns,
-        seed: String(params.seed),
-        ...(params.minTurns != null ? { min_turns: params.minTurns } : {}),
-      },
-    }),
 }
 

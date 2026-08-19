@@ -16,18 +16,6 @@ const GAME_LIST: GameInfo[] = [
   { id: 'deck', name: '', description: '', minWords: 1, icon: '🃏' },
   { id: 'cardMatch', name: '', description: '', minWords: 6, icon: '🎴' },
   { id: 'definitionBuilder', name: '', description: '', minWords: 1, icon: '🧩' },
-  { id: 'moleQuiz', name: '', description: '', minWords: 4, icon: '🐹' },
-  { id: 'balloonPop', name: '', description: '', minWords: 5, icon: '🎈' },
-  { id: 'termCatch', name: '', description: '', minWords: 4, icon: '🎓' },
-  { id: 'knowledgeGate', name: '', description: '', minWords: 4, icon: '🚪' },
-  { id: 'conceptMerge', name: '', description: '', minWords: 2, icon: '💎' },
-  { id: 'pinPull', name: '', description: '', minWords: 4, icon: '📌' },
-  { id: 'misconceptionDefense', name: '', description: '', minWords: 4, icon: '🛡️' },
-  { id: 'knowledgeTower', name: '', description: '', minWords: 3, icon: '🏗️' },
-  { id: 'conceptSort', name: '', description: '', minWords: 3, icon: '🧪' },
-  { id: 'conceptLink', name: '', description: '', minWords: 3, icon: '🔗' },
-  // 복습 단어가 아니라 회차 카테고리 콘텐츠를 쓰므로 minWords 는 0 이다.
-  { id: 'wordSolitaire', name: '', description: '', minWords: 0, icon: '🗂️' },
 ]
 
 /** 게임별 테마 (밝은 배경용) */
@@ -174,17 +162,6 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
     deck: t('lectureStudy.game.deck'),
     cardMatch: t('lectureStudy.game.cardMatch'),
     definitionBuilder: t('lectureStudy.game.definitionBuilder'),
-    moleQuiz: t('lectureStudy.game.moleQuiz'),
-    balloonPop: t('lectureStudy.game.balloonPop'),
-    termCatch: t('lectureStudy.game.termCatch'),
-    knowledgeGate: t('lectureStudy.game.knowledgeGate'),
-    conceptMerge: t('lectureStudy.game.conceptMerge'),
-    pinPull: t('lectureStudy.game.pinPull'),
-    misconceptionDefense: t('lectureStudy.game.misconceptionDefense'),
-    knowledgeTower: t('lectureStudy.game.knowledgeTower'),
-    conceptSort: t('lectureStudy.game.conceptSort'),
-    conceptLink: t('lectureStudy.game.conceptLink'),
-    wordSolitaire: t('lectureStudy.game.wordSolitaire'),
   }
 
   return (

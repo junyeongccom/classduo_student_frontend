@@ -1,6 +1,6 @@
 /**
  * @file GameTabContainer.tsx
- * @description 게임 탭 컨테이너 — 게임 선택 + 단어 목록 모달 + 5종 게임 실행 통합
+ * @description 게임 탭 컨테이너 — 게임 선택 + 단어 목록 모달 + 4종(달리기/덱/카드매칭/정의조립) 게임 실행 통합
  * @module features/lecture-study/components/containers
  * @dependencies GameSelector, WordListModal, review 게임 컴포넌트, ai-tutor GameOverlay
  */
@@ -13,16 +13,6 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
 import { GameSelector, GAME_LIST } from '../ui/GameSelector'
 import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
-import { MoleQuizGame } from '../ui/MoleQuizGame'
-import { BalloonPopGame } from '../ui/BalloonPopGame'
-import { TermCatchGame } from '../ui/TermCatchGame'
-import { KnowledgeGateGame } from '../ui/KnowledgeGateGame'
-import { ConceptMergeGame } from '../ui/ConceptMergeGame'
-import { PinPullGame } from '../ui/PinPullGame'
-import { MisconceptionDefenseGame } from '../ui/MisconceptionDefenseGame'
-import { KnowledgeTowerGame } from '../ui/KnowledgeTowerGame'
-import { ConceptSortGame } from '../ui/ConceptSortGame'
-import { ConceptLinkGame } from '../ui/ConceptLinkGame'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
 import {
@@ -34,7 +24,6 @@ import {
   GameRankingBoard,
 } from '@/features/review'
 import type { ScoreRankingEntry, MatchingRankingEntry } from '@/features/review'
-import { WordSolitaireGame } from '@/features/review/games/word-solitaire'
 import { gameScoreService } from '@/features/ai-tutor'
 import {
   Dialog,
@@ -221,17 +210,6 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
   const [showMatchingOverlay, setShowMatchingOverlay] = useState(false)
   const [showDefBuilderOverlay, setShowDefBuilderOverlay] = useState(false)
   const [showDeckOverlay, setShowDeckOverlay] = useState(false)
-  const [showMoleOverlay, setShowMoleOverlay] = useState(false)
-  const [showBalloonOverlay, setShowBalloonOverlay] = useState(false)
-  const [showTermCatchOverlay, setShowTermCatchOverlay] = useState(false)
-  const [showSolitaireOverlay, setShowSolitaireOverlay] = useState(false)
-  const [showGateOverlay, setShowGateOverlay] = useState(false)
-  const [showMergeOverlay, setShowMergeOverlay] = useState(false)
-  const [showPinOverlay, setShowPinOverlay] = useState(false)
-  const [showDefenseOverlay, setShowDefenseOverlay] = useState(false)
-  const [showTowerOverlay, setShowTowerOverlay] = useState(false)
-  const [showSortOverlay, setShowSortOverlay] = useState(false)
-  const [showLinkOverlay, setShowLinkOverlay] = useState(false)
 
   const currentGameInfo = GAME_LIST.find(g => g.id === selectedGame)
 
@@ -440,16 +418,6 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     setShowDescriptionPopup(false)
     setGameMode('normal')
 
-    // 단어 솔리테어는 복습 단어가 아니라 회차 카테고리 콘텐츠로 판을 만든다 →
-    // 단어 로딩·단어 모달 단계를 건너뛰고 바로 시작한다.
-    if (selectedGame === 'wordSolitaire') {
-      gameStartTime.current = Date.now()
-      gameCompleted.current = false
-      gameAnalytics.start(lectureId, { game_type: 'wordSolitaire', access_source: accessSource, game_mode: 'normal' })
-      setShowSolitaireOverlay(true)
-      return
-    }
-
     setIsLoadingReviewData(true)
     try {
       const { data } = await reviewService.getLectureReviewItems(lectureId)
@@ -530,59 +498,6 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
       setShowDeckOverlay(true)
       return
     }
-
-    // Mole quiz / Balloon pop (normal mode): open overlay — words는 이미 word modal 단계에서 로드됨
-    if (selectedGame === 'moleQuiz') {
-      setGameMode('normal')
-      setShowMoleOverlay(true)
-      return
-    }
-    if (selectedGame === 'balloonPop') {
-      setGameMode('normal')
-      setShowBalloonOverlay(true)
-      return
-    }
-    if (selectedGame === 'termCatch') {
-      setGameMode('normal')
-      setShowTermCatchOverlay(true)
-      return
-    }
-    if (selectedGame === 'knowledgeGate') {
-      setGameMode('normal')
-      setShowGateOverlay(true)
-      return
-    }
-    if (selectedGame === 'conceptMerge') {
-      setGameMode('normal')
-      setShowMergeOverlay(true)
-      return
-    }
-    if (selectedGame === 'pinPull') {
-      setGameMode('normal')
-      setShowPinOverlay(true)
-      return
-    }
-    if (selectedGame === 'misconceptionDefense') {
-      setGameMode('normal')
-      setShowDefenseOverlay(true)
-      return
-    }
-    if (selectedGame === 'knowledgeTower') {
-      setGameMode('normal')
-      setShowTowerOverlay(true)
-      return
-    }
-    if (selectedGame === 'conceptSort') {
-      setGameMode('normal')
-      setShowSortOverlay(true)
-      return
-    }
-    if (selectedGame === 'conceptLink') {
-      setGameMode('normal')
-      setShowLinkOverlay(true)
-      return
-    }
-
   }, [selectedGame, lectureId, loadDefBuilderData, deck])
 
   // Running game overlay (renders on top, no "isPlaying" needed)
@@ -685,252 +600,6 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
           </div>
         </div>
       </>
-    )
-  }
-
-  // Mole quiz overlay (normal mode only)
-  if (showMoleOverlay) {
-    return (
-      <MoleQuizGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'moleQuiz', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'moleQuiz', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowMoleOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // Balloon pop overlay (normal mode only)
-  if (showBalloonOverlay) {
-    return (
-      <BalloonPopGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'balloonPop', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'balloonPop', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowBalloonOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // Knowledge tower overlay (normal mode only)
-  if (showTowerOverlay) {
-    return (
-      <KnowledgeTowerGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'knowledgeTower', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'knowledgeTower', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowTowerOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // Concept sort overlay (normal mode only)
-  if (showSortOverlay) {
-    return (
-      <ConceptSortGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'conceptSort', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'conceptSort', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowSortOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // Concept link overlay (normal mode only)
-  if (showLinkOverlay) {
-    return (
-      <ConceptLinkGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'conceptLink', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'conceptLink', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowLinkOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // Pin pull overlay (normal mode only)
-  if (showPinOverlay) {
-    return (
-      <PinPullGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'pinPull', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'pinPull', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowPinOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // Misconception defense overlay (normal mode only)
-  if (showDefenseOverlay) {
-    return (
-      <MisconceptionDefenseGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'misconceptionDefense', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'misconceptionDefense', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowDefenseOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // Concept merge overlay (normal mode only)
-  if (showMergeOverlay) {
-    return (
-      <ConceptMergeGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'conceptMerge', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'conceptMerge', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowMergeOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // Knowledge gate overlay (normal mode only)
-  if (showGateOverlay) {
-    return (
-      <KnowledgeGateGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'knowledgeGate', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'knowledgeGate', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowGateOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
-    )
-  }
-
-  // 단어 솔리테어 overlay — 회차 카테고리 콘텐츠로 도는 게임이라 words 를 넘기지 않는다.
-  if (showSolitaireOverlay) {
-    const handleCloseSolitaire = () => {
-      gameAnalytics.complete(lectureId, {
-        game_type: 'wordSolitaire',
-        score: 0,
-        duration_ms: Date.now() - gameStartTime.current,
-        access_source: accessSource,
-        game_mode: 'normal',
-      })
-      setShowSolitaireOverlay(false)
-      setSelectedGame(null)
-      setGameMode(null)
-    }
-    return (
-      <>
-        {/* Backdrop — 클릭으로 닫히지 않음 (X 버튼만) */}
-        <div className="fixed inset-0 z-[80] bg-black/50 backdrop-blur-sm transition-opacity" />
-        {/* 카드가 많아 좁으면 못 읽는다 → 모바일은 화면 전체, 데스크톱도 넉넉한 판을 준다. */}
-        <div className="fixed inset-0 z-[80] flex items-center justify-center sm:p-4">
-          <div
-            /* 솔리테어는 세로로 쌓는 카드 게임이라 다른 게임과 달리 가로 모드로 돌리지 않는다. */
-            className="relative flex h-full w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-[min(94dvh,940px)] sm:max-w-[860px] sm:rounded-2xl dark:bg-gray-900"
-          >
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 sm:px-6 dark:border-gray-700">
-              <h3 className="text-base font-bold text-gray-900 dark:text-gray-50">
-                {t('lectureStudy.game.wordSolitaire')}
-              </h3>
-              <button
-                type="button"
-                onClick={handleCloseSolitaire}
-                aria-label={t('lectureStudy.game.closeGame')}
-                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div data-solitaire-pane className="flex-1 overflow-auto p-3 sm:p-4">
-              <WordSolitaireGame lectureId={lectureId} isActive />
-            </div>
-          </div>
-        </div>
-      </>
-    )
-  }
-
-  // Term catch overlay (normal mode only)
-  if (showTermCatchOverlay) {
-    return (
-      <TermCatchGame
-        words={words.map(w => ({ keyword: w.keyword, description: w.description }))}
-        onClose={(score) => {
-          const elapsed = Date.now() - gameStartTime.current
-          if (score === null) {
-            gameAbandonAnalytics.abandon(lectureId, { game_type: 'termCatch', elapsed_ms: elapsed })
-          } else {
-            gameAnalytics.complete(lectureId, { game_type: 'termCatch', score, duration_ms: elapsed, access_source: accessSource, game_mode: 'normal' })
-          }
-          setShowTermCatchOverlay(false)
-          setSelectedGame(null)
-          setGameMode(null)
-        }}
-      />
     )
   }
 
