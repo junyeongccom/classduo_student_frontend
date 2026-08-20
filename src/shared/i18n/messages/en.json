@@ -360,12 +360,6 @@
       "dontShowAgain": "Don't show again",
       "start": "Start"
     },
-    "defaultHookingQuestions": {
-      "importantConcept": "What is the most important concept in this class?",
-      "realLifeApplication": "How can I apply this content to real life?",
-      "latestResearch": "What is the latest research related to this topic?",
-      "easierUnderstanding": "How can I understand this concept more easily?"
-    },
     "sourceLabels": {
       "recording": "Recording source",
       "material": "Material source"
@@ -417,9 +411,6 @@
     "courseNotFound": "Course not found",
     "lectureSelectTitle": "Select session",
     "selectClassTooltip": "Select a class"
-  },
-  "aiTutorHints": {
-    "multiSelectNoHookingQuestions": "Hooking questions are not available when multiple sessions are selected"
   },
   "aiTutorChatHistory": {
     "title": "Chat history",

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { areLectureIdsEqual } from '@/shared/lib/studyspaceSelection'
-import { Reference, HookingResponse, PQMQuestion, CardMatchSet, SourceFocusTarget, TabType } from '@/features/ai-tutor/types'
+import { Reference, PQMQuestion, CardMatchSet, SourceFocusTarget, TabType } from '@/features/ai-tutor/types'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 
 export interface AITutorCourse {
@@ -76,7 +76,6 @@ interface AITutorState {
 
   // Locale caches
   coursesByLocale: Partial<Record<AppLocale, AITutorCourse[]>>
-  hookingByLocale: Partial<Record<AppLocale, Record<string, HookingResponse | null>>>
   pqmByLocale: Partial<Record<AppLocale, Record<string, PQMQuestion[]>>>
   reviewKeyAnswersByLocale: Partial<Record<AppLocale, Record<string, string[]>>>
   cardMatchByLocale: Partial<Record<AppLocale, Record<string, CardMatchSet | null>>>
@@ -114,7 +113,6 @@ interface AITutorActions {
 
   // Locale cache actions
   setCoursesCache: (locale: AppLocale, courses: AITutorCourse[]) => void
-  setHookingCache: (locale: AppLocale, lectureId: string, data: HookingResponse | null) => void
   setPqmCache: (locale: AppLocale, lectureId: string, data: PQMQuestion[]) => void
   setReviewKeyAnswersCache: (locale: AppLocale, lectureKey: string, answers: string[]) => void
   setCardMatchCache: (locale: AppLocale, lectureId: string, data: CardMatchSet | null) => void
@@ -151,7 +149,6 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
   sourceFocus: null,
   sourceFocusSeq: 0,
   coursesByLocale: {},
-  hookingByLocale: {},
   pqmByLocale: {},
   reviewKeyAnswersByLocale: {},
   cardMatchByLocale: {},
@@ -257,16 +254,6 @@ export const useAITutorStore = create<AITutorState & AITutorActions>((set) => ({
     coursesByLocale: {
       ...state.coursesByLocale,
       [locale]: courses,
-    },
-  })),
-
-  setHookingCache: (locale, lectureId, data) => set((state) => ({
-    hookingByLocale: {
-      ...state.hookingByLocale,
-      [locale]: {
-        ...(state.hookingByLocale[locale] || {}),
-        [lectureId]: data,
-      },
     },
   })),
 

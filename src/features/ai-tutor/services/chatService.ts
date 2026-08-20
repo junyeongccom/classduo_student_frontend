@@ -7,7 +7,6 @@ import {
   ChatMessage,
   ChatRequest,
   ChatResponse,
-  HookingResponse,
   PQMQuestion,
   ChatSession,
   SessionWithMessages,
@@ -24,7 +23,6 @@ export type {
   Reference,
   ChatRequest,
   ChatResponse,
-  HookingResponse,
   PQMQuestion,
   ChatSession,
   StoredMessage,
@@ -41,15 +39,6 @@ export const chatService = {
     return apiRequest<ChatResponse>('/ai-tutor/chat', {
       method: 'POST',
       body: request,
-    })
-  },
-
-  /**
-   * 후킹 질문/답변 조회 (lecture_id 기반)
-   */
-  async getHookingByLecture(lectureId: string, locale?: string): Promise<{ data: HookingResponse | null; error: any }> {
-    return apiRequest<HookingResponse>(`/ai-tutor/hooking/lecture/${lectureId}`, {
-      headers: locale ? { 'Accept-Language': locale } : undefined,
     })
   },
 
@@ -71,13 +60,6 @@ export const chatService = {
       auth: true,
       headers: locale ? { 'Accept-Language': locale } : undefined,
     })
-  },
-
-  /**
-   * 후킹 질문/답변 조회 (job_id 기반 - 레거시)
-   */
-  async getHooking(jobId: string): Promise<{ data: HookingResponse | null; error: any }> {
-    return apiRequest<HookingResponse>(`/ai-tutor/hooking/${jobId}`)
   },
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -144,7 +126,7 @@ export const chatService = {
     onComplete: (result: ChatResponse) => void,
     onError: (error: Error) => void,
     options?: {
-      question_type?: 'hooking' | 'pqm' | 'direct' | 'followup'
+      question_type?: 'pqm' | 'direct' | 'followup'
       source_question_id?: string
       chat_mode?: ChatMode
       socratic_topic_id?: string
@@ -216,30 +198,6 @@ export const chatService = {
     } catch (error) {
       onError(error instanceof Error ? error : new Error('Unknown error'))
     }
-  },
-
-  /**
-   * 후킹 질문/답변을 세션에 저장 (미리 준비된 답변 사용)
-   */
-  async saveHookingMessage(
-    sessionId: string,
-    hooking: {
-      question: string
-      answer: string
-      follow_up_question?: string | null
-      reference_data?: Reference[] | null
-      summary_keywords?: string | null
-      hooking_question_id?: string  // 원본 후킹질문 ID (source_question_id로 저장됨)
-    }
-  ): Promise<{ data: { success: boolean; message: string; follow_up_question?: string | null; assistant_message_id?: string | null } | null; error: any }> {
-    return apiRequest<{ success: boolean; message: string; follow_up_question?: string | null; assistant_message_id?: string | null }>(
-      `/ai-tutor/sessions/${sessionId}/hooking`,
-      {
-        method: 'POST',
-        body: hooking,
-        auth: true,
-      }
-    )
   },
 
   /**

@@ -94,18 +94,6 @@ export interface ChatResponse {
   removed_orphan_tags?: string[]
 }
 
-export interface HookingResponse {
-  id: string  // 후킹질문 고유 ID (source_question_id로 사용)
-  job_id: string
-  topic: string
-  question: string
-  answer: string
-  follow_up_question?: string | null
-  reference_data?: Reference[] | null  // 참고자료 (선택적)
-  summary_keywords?: string | null  // 핵심 키워드 (한국어, 선택적)
-  summary_keywords_eng?: string | null  // 핵심 키워드 (영어, 선택적)
-}
-
 export interface PQMQuestion {
   id: string
   question: string

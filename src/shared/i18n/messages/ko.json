@@ -360,12 +360,6 @@
       "dontShowAgain": "다시 보지 않기",
       "start": "시작하기"
     },
-    "defaultHookingQuestions": {
-      "importantConcept": "이 수업에서 가장 중요한 개념은 무엇인가요?",
-      "realLifeApplication": "이 내용을 실생활에 어떻게 적용할 수 있나요?",
-      "latestResearch": "이 주제와 관련된 최신 연구는 무엇인가요?",
-      "easierUnderstanding": "이 개념을 더 쉽게 이해하려면 어떻게 해야 하나요?"
-    },
     "sourceLabels": {
       "recording": "수업 녹음본 출처",
       "material": "강의자료 출처"
@@ -417,9 +411,6 @@
     "courseNotFound": "과목을 찾을 수 없습니다",
     "lectureSelectTitle": "회차 선택",
     "selectClassTooltip": "수업 선택하기"
-  },
-  "aiTutorHints": {
-    "multiSelectNoHookingQuestions": "복수 선택 시 후킹 질문은 제공되지 않습니다"
   },
   "aiTutorChatHistory": {
     "title": "채팅 기록",

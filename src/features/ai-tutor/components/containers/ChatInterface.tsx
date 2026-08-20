@@ -65,11 +65,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const t = useTranslations('aiTutorChat')
   const tSidebar = useTranslations('aiTutorSidebar')
   const { locale } = useI18n()
-  const { hookingByLocale, pqmByLocale, reviewKeyAnswersByLocale, setHookingCache, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled, selectedCourseId, focusSource } = useAITutorStore(state => ({
-    hookingByLocale: state.hookingByLocale,
+  const { pqmByLocale, reviewKeyAnswersByLocale, setPqmCache, setReviewKeyAnswersCache, setIsRecordingSourceDisabled, selectedCourseId, focusSource } = useAITutorStore(state => ({
     pqmByLocale: state.pqmByLocale,
     reviewKeyAnswersByLocale: state.reviewKeyAnswersByLocale,
-    setHookingCache: state.setHookingCache,
     setPqmCache: state.setPqmCache,
     setReviewKeyAnswersCache: state.setReviewKeyAnswersCache,
     setIsRecordingSourceDisabled: state.setIsRecordingSourceDisabled,
@@ -110,7 +108,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   }>>([])
   const [error, setError] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | undefined>(sessionId)
-  const [hookingQuestions, setHookingQuestions] = useState<Array<{ id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }>>([])
   const [pqmQuestions, setPQMQuestions] = useState<PQMQuestion[]>([])
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false) // 질문 리스트 표시 상태
   const [hasTypedInSession, setHasTypedInSession] = useState(false) // 세션 내 타이핑 여부
@@ -229,38 +226,22 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // 제안 질문 패널은 회차/locale 이 실제로 바뀔 때만 닫는다.
   // (아래 로딩 effect 는 Zustand 캐시 객체 identity 변화 — 반대 locale 백그라운드 프리페치의
-  //  setHookingCache/setPqmCache — 로 재실행되는데, 거기서 패널을 닫으면 사용자가 막 연 패널이
+  //  setPqmCache — 로 재실행되는데, 거기서 패널을 닫으면 사용자가 막 연 패널이
   //  깜빡이며 사라지는 버그가 생긴다. 그래서 닫기 책임을 식별자 의존 effect 로 분리.)
   const lectureKey = selectedLectureIds.join(',')
   useEffect(() => {
     setShowSuggestionsPanel(false)
   }, [lectureKey, locale])
 
-  // lecture_ids/locale 변경 시 후킹 질문과 PQM 질문 로드 (단일 선택 시에만)
+  // lecture_ids/locale 변경 시 PQM 질문 로드 (단일 선택 시에만)
   useEffect(() => {
     if (selectedLectureIds.length !== 1) {
-      setHookingQuestions([])
       setPQMQuestions([])
       return
     }
 
     const lectureId = selectedLectureIds[0]
-    const cachedHooking = hookingByLocale[locale]?.[lectureId]
     const cachedPqm = pqmByLocale[locale]?.[lectureId]
-
-    if (cachedHooking) {
-      setHookingQuestions([{
-        id: cachedHooking.id,
-        question: cachedHooking.question,
-        answer: cachedHooking.answer,
-        follow_up_question: cachedHooking.follow_up_question || null,
-        reference_data: cachedHooking.reference_data || null,
-        summary_keywords: cachedHooking.summary_keywords || null,
-        summary_keywords_eng: cachedHooking.summary_keywords_eng || null
-      }])
-    } else if (cachedHooking === null) {
-      setHookingQuestions([])
-    }
 
     if (cachedPqm) {
       setPQMQuestions(cachedPqm)
@@ -269,37 +250,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
 
     const loadQuestions = async (targetLocale: AppLocale, updateState: boolean) => {
-      const [hookingResult, pqmResult] = await Promise.allSettled([
-        chatService.getHookingByLecture(lectureId, targetLocale),
+      const [pqmResult] = await Promise.allSettled([
         chatService.getPQMQuestionsByLecture(lectureId, targetLocale)
       ])
-
-      if (hookingResult.status === 'fulfilled') {
-        const { data, error } = hookingResult.value
-        if (data && !error) {
-          setHookingCache(targetLocale, lectureId, data)
-          if (updateState) {
-            setHookingQuestions([{
-              id: data.id,
-              question: data.question,
-              answer: data.answer,
-              follow_up_question: data.follow_up_question || null,
-              reference_data: data.reference_data || null,
-              summary_keywords: data.summary_keywords || null,
-              summary_keywords_eng: data.summary_keywords_eng || null
-            }])
-          }
-        } else {
-          setHookingCache(targetLocale, lectureId, null)
-          if (updateState) {
-            setHookingQuestions([])
-          }
-        }
-      } else {
-        if (updateState) {
-          setHookingQuestions([])
-        }
-      }
 
       if (pqmResult.status === 'fulfilled') {
         const { data, error } = pqmResult.value
@@ -319,17 +272,16 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       }
     }
 
-    if (cachedHooking === undefined || cachedPqm === undefined) {
+    if (cachedPqm === undefined) {
       loadQuestions(locale, true)
     }
 
     const oppositeLocale: AppLocale = locale === 'ko' ? 'en' : 'ko'
-    const oppositeHooking = hookingByLocale[oppositeLocale]?.[lectureId]
     const oppositePqm = pqmByLocale[oppositeLocale]?.[lectureId]
-    if (oppositeHooking === undefined || oppositePqm === undefined) {
+    if (oppositePqm === undefined) {
       loadQuestions(oppositeLocale, false)
     }
-  }, [selectedLectureIds, locale, hookingByLocale, pqmByLocale, setHookingCache, setPqmCache])
+  }, [selectedLectureIds, locale, pqmByLocale, setPqmCache])
 
   // 컴포넌트 마운트 시 세션 확인 (페이지 복귀 시 작업 완료 확인)
   useEffect(() => {
@@ -946,7 +898,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const sendMessage = useCallback(async (
     question: string,
     options?: {
-      question_type?: 'hooking' | 'pqm' | 'direct' | 'followup'
+      question_type?: 'pqm' | 'direct' | 'followup'
       source_question_id?: string
     }
   ) => {
@@ -1196,141 +1148,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     sendMessage(retryQuestion)
   }, [sendMessage])
 
-  const handleSuggestionClick = async (hooking: { id?: string; question: string; answer?: string; follow_up_question?: string | null; reference_data?: Reference[] | null; summary_keywords?: string | null; summary_keywords_eng?: string | null }) => {
-    // 미리 저장된 답변이 있으면 바로 표시
-    if (hooking.answer) {
-      // 후킹 클릭 트래킹
-      chatAnalytics.questionClick(selectedLectureIds[0] ?? '', { question_type: 'hooking', question_id: hooking.id })
-
-      // 현재 locale에 따라 summary_keywords 선택
-      const summaryKeywords = locale === 'en' 
-        ? (hooking.summary_keywords_eng || hooking.summary_keywords || null)
-        : (hooking.summary_keywords || null)
-      
-      // 사용자 메시지 추가
-      const userMessage: ChatMessage = {
-        role: 'user',
-        content: hooking.question,
-      }
-      setMessages(prev => [...prev, userMessage])
-      
-      // AI 답변 추가
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: hooking.answer,
-        summary_keywords: summaryKeywords,
-        follow_up_question: hooking.follow_up_question || null,
-      }
-      setMessages(prev => {
-        const updated = [...prev, assistantMessage]
-        const messageIndex = updated.length - 1
-        
-        // 참고자료가 있으면 부모에게 전달 (후킹 질문은 타이핑 애니메이션이 없으므로 즉시 전달)
-        if (hooking.reference_data && hooking.reference_data.length > 0 && onReferencesUpdate) {
-          // 후킹 질문은 타이핑 애니메이션이 없으므로 즉시 전달
-          setTimeout(() => {
-            onReferencesUpdate(messageIndex, hooking.reference_data!)
-          }, 0)
-        }
-        
-        return updated
-      })
-      
-      // 세션이 없으면 생성하고 메시지 저장
-      if (!currentSessionId) {
-        try {
-          // summary_keywords를 title로 사용
-          const titleSource = summaryKeywords || hooking.question
-          const sessionTitle = titleSource.length > 50
-            ? titleSource.substring(0, 50) + '...'
-            : titleSource
-          const sessionResult = await chatService.createSession(selectedLectureIds, sessionTitle)
-          if (sessionResult.error) {
-            console.error('[후킹 질문] 세션 생성 실패:', sessionResult.error)
-            setError(t('sessionCreateError'))
-            return
-          }
-          if (sessionResult.data && sessionResult.data.id) {
-            const newSessionId = sessionResult.data.id
-            selfCreatedSessionId.current = newSessionId
-            setCurrentSessionId(newSessionId)
-            onSessionCreated?.(newSessionId)
-            chatAnalytics.sessionCreate(selectedLectureIds[0], { trigger: 'hooking', session_id: newSessionId })
-
-            // 세션 생성 완료 후 메시지 저장 (await 사용)
-            try {
-              const saveResult = await chatService.saveHookingMessage(newSessionId, {
-                question: hooking.question,
-                answer: hooking.answer,
-                follow_up_question: hooking.follow_up_question || null,
-                reference_data: hooking.reference_data,
-                summary_keywords: summaryKeywords,
-                hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
-              })
-              // assistant_message_id를 마지막 assistant 메시지에 부여
-              if (saveResult.data?.assistant_message_id) {
-                const asstMsgId = saveResult.data.assistant_message_id
-                setMessages(prev => {
-                  const updated = [...prev]
-                  for (let i = updated.length - 1; i >= 0; i--) {
-                    if (updated[i].role === 'assistant') {
-                      updated[i] = { ...updated[i], id: asstMsgId }
-                      break
-                    }
-                  }
-                  return updated
-                })
-              }
-            } catch (err) {
-              console.error('[후킹 질문] 메시지 저장 실패:', err)
-            }
-          } else {
-            console.error('[후킹 질문] 세션 생성 실패: 세션 ID 없음', sessionResult)
-            setError(t('sessionCreateError'))
-          }
-        } catch (err) {
-          console.error('[후킹 질문] 세션 생성 예외:', err)
-          setError(t('sessionCreateError'))
-        }
-      } else {
-        // 기존 세션에 후킹 질문/답변 저장 (미리 준비된 답변 사용)
-        // 현재 locale에 따라 summary_keywords 선택
-        const summaryKeywords = locale === 'en' 
-          ? (hooking.summary_keywords_eng || hooking.summary_keywords || null)
-          : (hooking.summary_keywords || null)
-        
-        try {
-          const saveResult = await chatService.saveHookingMessage(currentSessionId, {
-            question: hooking.question,
-            answer: hooking.answer,
-            follow_up_question: hooking.follow_up_question || null,
-            reference_data: hooking.reference_data,
-            summary_keywords: summaryKeywords,
-            hooking_question_id: hooking.id,  // 후킹질문 ID (source_question_id로 저장)
-          })
-          if (saveResult.data?.assistant_message_id) {
-            const asstMsgId = saveResult.data.assistant_message_id
-            setMessages(prev => {
-              const updated = [...prev]
-              for (let i = updated.length - 1; i >= 0; i--) {
-                if (updated[i].role === 'assistant') {
-                  updated[i] = { ...updated[i], id: asstMsgId }
-                  break
-                }
-              }
-              return updated
-            })
-          }
-        } catch (err) {
-          console.error('Failed to save hooking message:', err)
-        }
-      }
-    } else {
-      // 미리 저장된 답변이 없으면 기존처럼 sendMessage 호출
-      setInput(hooking.question)
-    }
-  }
-
   // PQM 질문 클릭 핸들러
   const handlePQMQuestionClick = async (pqmQuestion: PQMQuestion) => {
     // PQM 클릭 트래킹
@@ -1524,12 +1341,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     )
   }
 
-  // 후킹 질문(맨 위 제안)을 전 회차에서 노출 중단. 재노출하려면 true 로.
-  const SHOW_HOOKING_QUESTIONS = false
   const hasSuggestions =
     selectedLectureIds.length === 1 &&
     chatMode !== 'socratic' &&
-    ((SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) || pqmQuestions.length > 0)
+    pqmQuestions.length > 0
 
   // v2.0 모드 잠금 규칙:
   // - 잠금은 **세션이 생성된 이후**에만 건다. 새 채팅 상태(세션 없음 + 발화 없음)에서는 주제를 골라둔
@@ -1602,7 +1417,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                   setShowSuggestionsPanel(true)
                   if (hasSuggestions) {
                     const lectureId = selectedLectureIds[0]
-                    if (SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'hooking', count: hookingQuestions.length })
                     if (pqmQuestions.length > 0) chatAnalytics.exposure(lectureId, { question_type: 'pqm', count: pqmQuestions.length })
                   }
                 }
@@ -1614,22 +1428,6 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           {/* 제안 질문 목록 — 안내 문구 클릭 또는 입력바 포커스 시 표시 */}
           {showSuggestionsPanel && hasSuggestions && (
           <div className="mt-6 w-full max-w-[680px] 2xl:max-w-[820px] space-y-2 animate-fade-in-up">
-              {/* 후킹 질문 (1개) — 전 회차 노출 중단 (SHOW_HOOKING_QUESTIONS) */}
-              {SHOW_HOOKING_QUESTIONS && hookingQuestions.length > 0 && (
-                <>
-                  {hookingQuestions.slice(0, 1).map((hooking, index) => (
-                    <button
-                      key={`hooking-${index}`}
-                      onClick={() => handleSuggestionClick(hooking)}
-                      className="flex w-full items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 transition-all hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md"
-                    >
-                      <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <MathText text={hooking.question} />
-                    </button>
-                  ))}
-                </>
-              )}
-
               {/* PQM 질문 */}
               {pqmQuestions.length > 0 && (
                 <>

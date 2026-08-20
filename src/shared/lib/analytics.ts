@@ -353,12 +353,12 @@ export const chatAnalytics = {
   message(lectureId: string, data: { message_length: number; question_type?: string }) {
     trackEvent('chat_message', 'dialogue', { lectureId, data })
   },
-  /** PQM/Hooking 클릭 */
-  questionClick(lectureId: string, data: { question_type: 'hooking' | 'pqm'; question_id?: string }) {
+  /** PQM 클릭 */
+  questionClick(lectureId: string, data: { question_type: 'pqm'; question_id?: string }) {
     trackEvent('ai_question_click', 'dialogue', { lectureId, data })
   },
-  /** 채팅 세션 생성 (PQM/Hooking 클릭 또는 직접 질문으로 새 세션이 생성될 때) */
-  sessionCreate(lectureId: string, data: { trigger: 'hooking' | 'pqm' | 'direct_question'; session_id?: string }) {
+  /** 채팅 세션 생성 (PQM 클릭 또는 직접 질문으로 새 세션이 생성될 때) */
+  sessionCreate(lectureId: string, data: { trigger: 'pqm' | 'direct_question'; session_id?: string }) {
     trackEvent('chat_session_create', 'dialogue', { lectureId, data })
   },
   /** 후속질문 클릭 */
@@ -381,8 +381,8 @@ export const chatAnalytics = {
   lectureSelect(lectureId: string, courseId?: string) {
     trackEvent('lecture_select', 'dialogue', { lectureId, courseId })
   },
-  /** PQM/Hooking API fetch 완료 시 자동 발화 — 노출 카운트 */
-  exposure(lectureId: string, data: { question_type: 'hooking' | 'pqm'; count: number }) {
+  /** PQM API fetch 완료 시 자동 발화 — 노출 카운트 */
+  exposure(lectureId: string, data: { question_type: 'pqm'; count: number }) {
     trackEvent('ai_tutor_exposure', 'dialogue', { lectureId, data })
   },
 }
