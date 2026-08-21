@@ -921,7 +921,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     const userBubbleContent = options?.image_base64
       ? (question.trim() ? `${question}\n${t('attachedPhotoMarker')}` : t('attachedPhotoMarker'))
       : question
-    const userMessage: ChatMessage = { role: 'user', content: userBubbleContent, id: userMessageId }
+    const userMessage: ChatMessage = {
+      role: 'user', content: userBubbleContent, id: userMessageId,
+      attachedImageUrl: options?.image_base64,
+    }
     setMessages(prev => [...prev, userMessage])
 
     try {
@@ -1519,6 +1522,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                           : 'bg-gray-200'
                       }`}
                     >
+                      {message.attachedImageUrl && (
+                        /* eslint-disable-next-line @next/next/no-img-element -- data URL 로컬 미리보기 */
+                        <img
+                          src={message.attachedImageUrl}
+                          alt={t('attachedImageAlt')}
+                          className="mb-2 max-h-48 w-auto max-w-full rounded-lg border border-gray-300 object-contain"
+                        />
+                      )}
                       <p className="whitespace-pre-wrap text-sm text-gray-900">{message.content}</p>
                     </div>
                   </div>

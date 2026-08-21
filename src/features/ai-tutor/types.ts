@@ -9,6 +9,9 @@ export interface ChatMessage {
   isError?: boolean  // 에러 메시지 여부
   retryQuestion?: string  // 재시도할 원본 질문
   id?: string  // DB 메시지 ID (피드백용)
+  // 사진 첨부 질문(2026-08-22): 이 세션에서 보낸 사진의 data URL. **로컬 표시 전용** —
+  // DB에는 저장하지 않으므로 세션 재로드 시엔 content 의 "[사진을 첨부했습니다]" 마커만 남는다.
+  attachedImageUrl?: string
   feedback?: 'like' | 'dislike' | null  // 피드백 상태
   // v1.0: Case A/B/C 판정 (assistant 메시지만)
   case_type?: 'A' | 'B' | 'C' | null
