@@ -4,13 +4,20 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Button, Input } from '@/shared/components/ui'
 import { useSignup } from '@/features/auth/hooks/useSignup'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { VerificationCodeInput } from '@/features/auth/components/ui/VerificationCodeInput'
 import { Mail, Lock, User, AlertCircle, CheckCircle, X, Check } from 'lucide-react'
 import { EmailNoticeCard } from '@/features/auth/components/ui/EmailNoticeCard'
+import {
+  ConsentCheckboxGroup,
+  buildConsentPayload,
+  findMissingRequired,
+  useConsent,
+} from '@/features/consent'
+import type { ConsentChecked } from '@/features/consent'
 
 interface SignupModalProps {
   isOpen: boolean
@@ -41,6 +48,18 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
   } = useSignup()
   const { error, clearError } = useAuthStore()
   const [showApprovalPopup, setShowApprovalPopup] = useState(false)
+
+  const tConsent = useTranslations('consent')
+  const locale = useLocale() as 'ko' | 'en'
+  const { documents, loadDocuments } = useConsent()
+  const [consentChecked, setConsentChecked] = useState<ConsentChecked>({})
+  const [consentError, setConsentError] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (isOpen && documents.length === 0) {
+      void loadDocuments()
+    }
+  }, [isOpen, documents.length, loadDocuments])
 
   const signupSchema = z.object({
     email: z
@@ -89,13 +108,24 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
       reset()
       clearError()
       resetSignupFlow()
+      setConsentChecked({})
+      setConsentError(undefined)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
   const onSubmit = async (data: SignupFormData) => {
     clearError()
-    await handleSendSignupCode(data)
+    const missing = findMissingRequired(consentChecked)
+    if (missing.length > 0) {
+      setConsentError(tConsent('requiredError'))
+      return
+    }
+    setConsentError(undefined)
+    await handleSendSignupCode({
+      ...data,
+      consents: buildConsentPayload(documents, consentChecked),
+    })
   }
 
   const formatExpiresIn = (seconds: number) => {
@@ -375,6 +405,18 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
                   error={errors.password_confirm?.message}
                 />
               </div>
+
+              <ConsentCheckboxGroup
+                documents={documents}
+                checked={consentChecked}
+                onChange={(next) => {
+                  setConsentChecked(next)
+                  if (consentError) setConsentError(undefined)
+                }}
+                error={consentError}
+                disabled={isLoading}
+                locale={locale}
+              />
 
               <Button
                 type="submit"

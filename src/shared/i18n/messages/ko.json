@@ -1266,7 +1266,8 @@
     "UNKNOWN_ERROR": "알 수 없는 오류가 발생했습니다",
     "CORS_ERROR": "CORS 오류: 백엔드 서버에 접근할 수 없습니다. 서버가 실행 중인지 확인해주세요.",
     "NETWORK_ERROR": "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.",
-    "adminApprovalButton": "관리자에게 회원가입 승인 요청하기"
+    "adminApprovalButton": "관리자에게 회원가입 승인 요청하기",
+    "CONSENT_REQUIRED": "필수 동의 항목에 모두 동의해야 합니다"
   },
   "myQuiz": {
     "title": "내 퀴즈",
@@ -1615,5 +1616,22 @@
       "exitContinue": "계속 풀기",
       "exitLeave": "나가기"
     }
+  },
+  "consent": {
+    "allAgree": "전체 동의",
+    "allAgreeHint": "선택 항목을 포함한 모든 항목에 동의합니다",
+    "required": "필수",
+    "optional": "선택",
+    "view": "보기",
+    "requiredError": "필수 항목에 모두 동의해야 가입할 수 있습니다",
+    "gateTitle": "약관 동의가 필요합니다",
+    "gateMessage": "2026학년도 2학기부터 개인정보 처리방침이 신설되었습니다. 서비스를 계속 이용하시려면 아래 항목에 동의해 주세요.",
+    "gateSubmit": "동의하고 계속하기",
+    "gateSubmitError": "동의 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+    "researchTitle": "교육성과 분석 및 연구 목적 이용",
+    "researchDescription": "학습 활동 기록을 가명처리하여 교육성과 분석 연구에 활용하는 것에 동의합니다. 동의하지 않아도 서비스 이용에는 제한이 없으며, 언제든지 철회할 수 있습니다.",
+    "researchAgreed": "동의함",
+    "researchNotAgreed": "동의하지 않음",
+    "researchUpdated": "변경되었습니다"
   }
 }
