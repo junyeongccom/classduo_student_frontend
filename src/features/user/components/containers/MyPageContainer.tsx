@@ -7,6 +7,7 @@ import { UserProfileActions } from '../../components/ui/UserProfileActions'
 import { UserProfileCard } from '../../components/ui/UserProfileCard'
 import { PasswordChangeModalContainer } from './PasswordChangeModalContainer'
 import { ErrorReportModalContainer } from '@/features/error-report'
+import { ResearchConsentToggle } from '@/features/consent'
 
 export function MyPageContainer() {
   const t = useTranslations('profile')
@@ -34,6 +35,7 @@ export function MyPageContainer() {
             onChangePassword={() => setIsPasswordModalOpen(true)}
             onErrorReport={() => setIsErrorReportModalOpen(true)}
           />
+          <ResearchConsentToggle />
         </div>
       </div>
 
