@@ -9,9 +9,12 @@ export interface ChatMessage {
   isError?: boolean  // 에러 메시지 여부
   retryQuestion?: string  // 재시도할 원본 질문
   id?: string  // DB 메시지 ID (피드백용)
-  // 사진 첨부 질문(2026-08-22): 이 세션에서 보낸 사진의 data URL. **로컬 표시 전용** —
-  // DB에는 저장하지 않으므로 세션 재로드 시엔 content 의 "[사진을 첨부했습니다]" 마커만 남는다.
+  // 사진 첨부 질문(2026-08-22): user=첨부한 사진 URL(로컬 data URL 또는 storage 공개 URL).
   attachedImageUrl?: string
+  // assistant=사진에서 추출된 문제 원문 ("내 퀴즈로 저장" 버튼 노출 조건)
+  extracted_problem?: string | null
+  // assistant=사진 문제와 비슷한 회차 퀴즈 추천 (칩으로 렌더)
+  similar_quizzes?: SimilarQuiz[]
   feedback?: 'like' | 'dislike' | null  // 피드백 상태
   // v1.0: Case A/B/C 판정 (assistant 메시지만)
   case_type?: 'A' | 'B' | 'C' | null
@@ -95,6 +98,19 @@ export interface ChatResponse {
   // v1.0
   case_type?: 'A' | 'B' | 'C' | null
   removed_orphan_tags?: string[]
+  // 사진 첨부(2026-08-22): 사진에서 추출된 문제 원문 — "내 퀴즈로 저장" 이 사용
+  extracted_problem?: string | null
+  // 사진 문제와 같은 개념의 회차 퀴즈 추천
+  similar_quizzes?: SimilarQuiz[]
+}
+
+export interface SimilarQuiz {
+  quiz_id: string
+  question: string
+  quiz_type?: string | null
+  answer_format?: string | null
+  difficulty?: string | null
+  similarity?: number
 }
 
 export interface PQMQuestion {

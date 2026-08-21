@@ -391,7 +391,11 @@
     "attachedImageAlt": "Attached problem photo",
     "removeAttachedImage": "Remove attached photo",
     "attachedPhotoMarker": "[Photo attached]",
-    "attachImageTooLarge": "The photo is too large. Please try another one."
+    "attachImageTooLarge": "The photo is too large. Please try another one.",
+    "photoQuizSave": "Save to My Quizzes",
+    "photoQuizSaved": "Saved",
+    "closeLightbox": "Close",
+    "similarQuizzesLabel": "Similar practice problems"
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "Select class",

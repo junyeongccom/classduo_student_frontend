@@ -106,6 +106,24 @@ export const chatService = {
   },
 
   /**
+   * 사진 질문 문제를 내 퀴즈 저장소에 저장 (2026-08-22)
+   */
+  async savePhotoQuiz(payload: {
+    lecture_id: string
+    course_id: string
+    question: string
+    answer: string
+    explanation?: string | null
+    session_id?: string | null
+  }): Promise<{ data: { quiz_id: string } | null; error: any }> {
+    return apiRequest<{ quiz_id: string }>(`/ai-tutor/photo-quiz`, {
+      method: 'POST',
+      body: payload,
+      auth: true,
+    })
+  },
+
+  /**
    * 세션 내 채팅 (DB 저장)
    */
   async sessionChat(sessionId: string, question: string): Promise<{ data: ChatResponse | null; error: any }> {

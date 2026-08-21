@@ -391,7 +391,11 @@
     "attachedImageAlt": "첨부한 문제 사진",
     "removeAttachedImage": "첨부 사진 제거",
     "attachedPhotoMarker": "[사진을 첨부했습니다]",
-    "attachImageTooLarge": "사진이 너무 커요. 다른 사진으로 시도해 주세요."
+    "attachImageTooLarge": "사진이 너무 커요. 다른 사진으로 시도해 주세요.",
+    "photoQuizSave": "내 퀴즈로 저장",
+    "photoQuizSaved": "저장됨",
+    "closeLightbox": "닫기",
+    "similarQuizzesLabel": "비슷한 연습문제"
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "수업 선택",

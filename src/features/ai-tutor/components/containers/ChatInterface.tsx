@@ -318,11 +318,21 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 }
               }
 
+              // 사진 첨부(2026-08-22): user 메시지 reference_data 의 저장된 사진 URL 복원
+              let attachedImageUrl: string | undefined = undefined
+              if (m.role === 'user' && Array.isArray(m.reference_data)) {
+                const att = (m.reference_data as any[]).find(
+                  (r) => r && typeof r === 'object' && r.type === 'attached_image' && typeof r.url === 'string',
+                )
+                if (att) attachedImageUrl = att.url
+              }
+
               return {
                 role: m.role,
                 content: m.content,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
+                attachedImageUrl,
                 id: m.id,
                 // v1.0: elaboration 렌더링에 필요한 필드
                 case_type: m.case_type ?? null,
@@ -403,11 +413,21 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 }
               }
 
+              // 사진 첨부(2026-08-22): user 메시지 reference_data 의 저장된 사진 URL 복원
+              let attachedImageUrl: string | undefined = undefined
+              if (m.role === 'user' && Array.isArray(m.reference_data)) {
+                const att = (m.reference_data as any[]).find(
+                  (r) => r && typeof r === 'object' && r.type === 'attached_image' && typeof r.url === 'string',
+                )
+                if (att) attachedImageUrl = att.url
+              }
+
               return {
                 role: m.role,
                 content: m.content,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
+                attachedImageUrl,
                 id: m.id,
                 // v1.0
                 case_type: m.case_type ?? null,
@@ -515,11 +535,21 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 }
               }
 
+              // 사진 첨부(2026-08-22): user 메시지 reference_data 의 저장된 사진 URL 복원
+              let attachedImageUrl: string | undefined = undefined
+              if (m.role === 'user' && Array.isArray(m.reference_data)) {
+                const att = (m.reference_data as any[]).find(
+                  (r) => r && typeof r === 'object' && r.type === 'attached_image' && typeof r.url === 'string',
+                )
+                if (att) attachedImageUrl = att.url
+              }
+
               return {
                 role: m.role,
                 content: m.content,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
+                attachedImageUrl,
                 id: m.id,
                 feedback: m.feedback || null,
                 // v1.0: Case A/B/C 및 elaboration 메시지 렌더에 필요
@@ -1059,6 +1089,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             message_kind: 'simple',
             references: (result.references as Reference[]) || [],
             original_question: question,
+            // 사진 첨부: 추출된 문제 원문 — "내 퀴즈로 저장" 버튼 노출 조건
+            extracted_problem: (result as any).extracted_problem ?? null,
+            similar_quizzes: (result as any).similar_quizzes ?? undefined,
           }
           setMessages(prev => {
             const updated = [...prev, assistantMessage]
@@ -1140,6 +1173,38 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // 사진 첨부 질문 (2026-08-22): 수학 문제를 찍어 질문하는 경로. data URL 상태로 보관.
   const [attachedImage, setAttachedImage] = useState<string | null>(null)
+
+  // 사진 질문 문제 저장 상태 — 중복 저장 방지 (메시지 id 기준)
+  const [savedPhotoQuizIds, setSavedPhotoQuizIds] = useState<Set<string>>(new Set())
+  // 첨부 사진 확대 보기 (라이트박스) — 클릭한 사진 URL
+  const [lightboxImageUrl, setLightboxImageUrl] = useState<string | null>(null)
+
+  // 라이트박스 ESC 닫기
+  useEffect(() => {
+    if (!lightboxImageUrl) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxImageUrl(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [lightboxImageUrl])
+
+  const handleSavePhotoQuiz = useCallback(async (message: ChatMessage, index: number) => {
+    if (!message.extracted_problem || selectedLectureIds.length === 0 || !selectedCourseId) return
+    const key = message.id ?? String(index)
+    const { error } = await chatService.savePhotoQuiz({
+      lecture_id: selectedLectureIds[0],
+      course_id: selectedCourseId,
+      question: message.extracted_problem,
+      answer: message.content,
+      session_id: currentSessionId,
+    })
+    if (!error) {
+      setSavedPhotoQuizIds(prev => new Set(prev).add(key))
+    } else {
+      setError(error?.message || t('chatError'))
+    }
+  }, [selectedLectureIds, selectedCourseId, currentSessionId, t])
 
   const handleAttachFile = useCallback(async (file: File) => {
     const dataUrl = await resizeImageForChat(file)
@@ -1499,6 +1564,35 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
       {printData && typeof document !== 'undefined' &&
         createPortal(<ChatTranscriptPrintView data={printData} />, document.body)}
 
+      {/* 첨부 사진 확대 (라이트박스) — 바깥 클릭/X/ESC 로 닫기 */}
+      {lightboxImageUrl && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-6"
+            onClick={() => setLightboxImageUrl(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('attachedImageAlt')}
+          >
+            <button
+              type="button"
+              onClick={() => setLightboxImageUrl(null)}
+              aria-label={t('closeLightbox')}
+              className="absolute right-5 top-5 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-2xl leading-none text-white hover:bg-white/25"
+            >
+              ×
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element -- 확대 보기 */}
+            <img
+              src={lightboxImageUrl}
+              alt={t('attachedImageAlt')}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[88vh] max-w-[92vw] rounded-xl object-contain shadow-2xl"
+            />
+          </div>,
+          document.body,
+        )}
+
       {/* 메시지 영역 */}
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
         <div className="mx-auto max-w-3xl space-y-8">
@@ -1523,12 +1617,19 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                       }`}
                     >
                       {message.attachedImageUrl && (
-                        /* eslint-disable-next-line @next/next/no-img-element -- data URL 로컬 미리보기 */
-                        <img
-                          src={message.attachedImageUrl}
-                          alt={t('attachedImageAlt')}
-                          className="mb-2 max-h-48 w-auto max-w-full rounded-lg border border-gray-300 object-contain"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setLightboxImageUrl(message.attachedImageUrl!)}
+                          aria-label={t('attachedImageAlt')}
+                          className="mb-2 block cursor-zoom-in"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- data URL/storage 미리보기 */}
+                          <img
+                            src={message.attachedImageUrl}
+                            alt={t('attachedImageAlt')}
+                            className="max-h-48 w-auto max-w-full rounded-lg border border-gray-300 object-contain transition-opacity hover:opacity-90"
+                          />
+                        </button>
                       )}
                       <p className="whitespace-pre-wrap text-sm text-gray-900">{message.content}</p>
                     </div>
@@ -1640,6 +1741,41 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                         </div>
                       )
                     })()}
+                    {/* 사진 질문 문제 → 내 퀴즈 저장 (2026-08-22) */}
+                    {isTypingComplete && typingLength >= message.content.length && message.extracted_problem && (
+                      <button
+                        type="button"
+                        disabled={savedPhotoQuizIds.has(message.id ?? String(index))}
+                        onClick={() => handleSavePhotoQuiz(message, index)}
+                        className={`mt-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          savedPhotoQuizIds.has(message.id ?? String(index))
+                            ? 'border-green-200 bg-green-50 text-green-700 cursor-default'
+                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {savedPhotoQuizIds.has(message.id ?? String(index))
+                          ? `✓ ${t('photoQuizSaved')}`
+                          : `📌 ${t('photoQuizSave')}`}
+                      </button>
+                    )}
+                    {/* 사진 문제와 비슷한 회차 퀴즈 추천 — 칩 클릭 시 그 문제로 이어서 질문 */}
+                    {isTypingComplete && typingLength >= message.content.length &&
+                      Array.isArray(message.similar_quizzes) && message.similar_quizzes.length > 0 && (
+                      <div className="mt-3 flex flex-col gap-1.5">
+                        <span className="text-[11px] font-semibold text-gray-400">{t('similarQuizzesLabel')}</span>
+                        {message.similar_quizzes.map((sq) => (
+                          <button
+                            key={sq.quiz_id}
+                            type="button"
+                            onClick={() => sendMessage(sq.question)}
+                            className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-gray-50"
+                          >
+                            <span aria-hidden="true">✏️</span>
+                            <MathText text={sq.question} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {/* 피드백 버튼 - 타이핑 완료된 AI 메시지에만 표시 */}
                     {isTypingComplete && typingLength >= message.content.length && (
                       <FeedbackButtons

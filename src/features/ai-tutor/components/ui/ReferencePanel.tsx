@@ -611,7 +611,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                                 {t('materialText')}
                               </h4>
                               <p
-                                className="rounded-lg bg-white/80 p-3 text-sm leading-relaxed text-gray-800"
+                                className="whitespace-pre-wrap rounded-lg bg-white/80 p-3 text-sm leading-relaxed text-gray-800"
                                 dangerouslySetInnerHTML={{ __html: highlightedText }}
                               />
                             </div>
@@ -622,8 +622,8 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 {t('visualDescription')}
                               </h4>
-                              <p 
-                                className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700"
+                              <p
+                                className="whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm text-gray-700"
                                 dangerouslySetInnerHTML={{ __html: highlightedVisualDescription }}
                               />
                             </div>
