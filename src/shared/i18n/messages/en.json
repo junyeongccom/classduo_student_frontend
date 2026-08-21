@@ -386,7 +386,12 @@
       "roleStudent": "Student",
       "roleTutor": "Tutor",
       "emptyConversation": "No conversation yet."
-    }
+    },
+    "attachImageLabel": "Attach a photo of the problem",
+    "attachedImageAlt": "Attached problem photo",
+    "removeAttachedImage": "Remove attached photo",
+    "attachedPhotoMarker": "[Photo attached]",
+    "attachImageTooLarge": "The photo is too large. Please try another one."
   },
   "aiTutorSidebar": {
     "courseSelectTitle": "Select class",

@@ -20,6 +20,7 @@ import { useAITutorStore } from '@/features/ai-tutor/store/useAITutorStore'
 import { useSocraticStore } from '@/features/ai-tutor/store/useSocraticStore'
 import { socraticService } from '@/features/ai-tutor/services/socraticService'
 import { ChatComposer } from '../ui/ChatComposer'
+import { resizeImageForChat } from '@/features/ai-tutor/domain/resizeImageForChat'
 import SocraticTopicPicker from '../ui/SocraticTopicPicker'
 import SocraticFinishBar from '../ui/SocraticFinishBar'
 import SocraticLoading from '../ui/SocraticLoading'
@@ -900,9 +901,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     options?: {
       question_type?: 'pqm' | 'direct' | 'followup'
       source_question_id?: string
+      /** 첨부한 문제 사진 (JPEG data URL) */
+      image_base64?: string
     }
   ) => {
-    if (!question.trim() || isLoading || selectedLectureIds.length === 0) return
+    // 사진이 있으면 텍스트 없이도 전송 가능
+    if ((!question.trim() && !options?.image_base64) || isLoading || selectedLectureIds.length === 0) return
     // 소크라 문답 모드에서 주제 미선택 시 전송 차단 (채점/패널 대상 없이 전송되는 것 방지)
     if (chatMode === 'socratic' && !socraticActiveTopic) return
 
@@ -914,7 +918,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     // 클라이언트 임시 id 부여: 소크라 문답 모드에서 이 턴의 "아하" 발화를 markAhaMessage로 식별하는 데 사용
     // (서버는 user 메시지에 별도 id를 내려주지 않으므로, 세션 재로드 전까지는 이 값이 유일한 식별자)
     const userMessageId = crypto.randomUUID()
-    const userMessage: ChatMessage = { role: 'user', content: question, id: userMessageId }
+    const userBubbleContent = options?.image_base64
+      ? (question.trim() ? `${question}\n${t('attachedPhotoMarker')}` : t('attachedPhotoMarker'))
+      : question
+    const userMessage: ChatMessage = { role: 'user', content: userBubbleContent, id: userMessageId }
     setMessages(prev => [...prev, userMessage])
 
     try {
@@ -1103,6 +1110,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
           source_question_id: options?.source_question_id,
           chat_mode: chatMode,
           socratic_topic_id: chatMode === 'socratic' ? socraticActiveTopic?.id : undefined,
+          image_base64: options?.image_base64,
         }
       )
     } catch (err) {
@@ -1127,13 +1135,29 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }, [currentSessionId, selectedLectureIds, isLoading, onSessionCreated, onReferencesUpdate, chatMode, appendErrorMessage, selectedCourseId, socraticActiveTopic])
 
+  // 사진 첨부 질문 (2026-08-22): 수학 문제를 찍어 질문하는 경로. data URL 상태로 보관.
+  const [attachedImage, setAttachedImage] = useState<string | null>(null)
+
+  const handleAttachFile = useCallback(async (file: File) => {
+    const dataUrl = await resizeImageForChat(file)
+    if (!dataUrl) {
+      setError(t('attachImageTooLarge'))
+      return
+    }
+    setError(null)
+    setAttachedImage(dataUrl)
+  }, [t])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
-    
+    // 사진만 첨부하고 텍스트가 없어도 전송 가능
+    if (!input.trim() && !attachedImage) return
+
     const question = input
+    const image = attachedImage
     setInput('')
-    await sendMessage(question)
+    setAttachedImage(null)
+    await sendMessage(question, image ? { image_base64: image } : undefined)
   }
 
   // 에러 발생 시 재시도 핸들러
@@ -1409,6 +1433,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
               deepLabel={t('deepLabel')}
               simpleHelpText={t('simpleHelpText')}
               deepHelpText={t('deepHelpText')}
+              onAttachFile={handleAttachFile}
+              attachedImagePreview={attachedImage}
+              onRemoveAttachedImage={() => setAttachedImage(null)}
+              attachImageLabel={t('attachImageLabel')}
+              attachedImageAlt={t('attachedImageAlt')}
+              removeAttachedImageLabel={t('removeAttachedImage')}
               onFocus={() => {
                 // 포커스(=사용자 의도)면 패널을 연다. 아직 PQM 로딩 전이어도 열어두면, 로드 완료 시
                 // hasSuggestions 가 true 가 되며 패널이 자동으로 나타난다. (포커스가 로딩보다 빨라도
@@ -1785,6 +1815,12 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             deepLabel={t('deepLabel')}
             simpleHelpText={t('simpleHelpText')}
             deepHelpText={t('deepHelpText')}
+            onAttachFile={handleAttachFile}
+            attachedImagePreview={attachedImage}
+            onRemoveAttachedImage={() => setAttachedImage(null)}
+            attachImageLabel={t('attachImageLabel')}
+            attachedImageAlt={t('attachedImageAlt')}
+            removeAttachedImageLabel={t('removeAttachedImage')}
           />
         </div>
       </div>

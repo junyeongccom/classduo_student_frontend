@@ -130,6 +130,8 @@ export const chatService = {
       source_question_id?: string
       chat_mode?: ChatMode
       socratic_topic_id?: string
+      /** 첨부한 문제 사진 (JPEG data URL). 서버가 문제를 추출해 질문에 증강한다 */
+      image_base64?: string
     }
   ): Promise<void> {
     const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null
@@ -147,6 +149,7 @@ export const chatService = {
           source_question_id: options?.source_question_id,
           chat_mode: options?.chat_mode,
           socratic_topic_id: options?.socratic_topic_id,
+          image_base64: options?.image_base64,
         }),
       })
 

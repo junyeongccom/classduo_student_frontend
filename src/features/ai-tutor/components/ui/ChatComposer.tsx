@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
-import { Send, Loader2, Sparkles, Brain, ChevronUp } from 'lucide-react'
+import { Send, Loader2, Sparkles, Brain, ChevronUp, Camera, X } from 'lucide-react'
 import type { ChatMode } from '@/features/ai-tutor/types'
 
 interface ChatComposerProps {
@@ -33,6 +33,14 @@ interface ChatComposerProps {
   deepLabel?: string
   /** 앱 WebView 처럼 폭이 좁을 때 — 3-세그먼트 대신 현재 모드 칩 1개 + 선택 시트로 접는다 */
   compactModeToggle?: boolean
+  /** 사진 첨부 (수학 문제 촬영 질문). 미전달이면 첨부 버튼을 렌더하지 않는다 */
+  onAttachFile?: (file: File) => void
+  /** 첨부된 사진 미리보기 (data URL). 있으면 입력창 위에 썸네일 칩을 띄운다 */
+  attachedImagePreview?: string | null
+  onRemoveAttachedImage?: () => void
+  attachImageLabel?: string
+  attachedImageAlt?: string
+  removeAttachedImageLabel?: string
 }
 
 /** 모드 → 라벨 i18n 키. 칩(현재 모드)과 선택 시트가 같은 표기를 쓰게 하는 단일 출처 */
@@ -63,13 +71,21 @@ export function ChatComposer({
   simpleHelpText,
   deepHelpText,
   compactModeToggle = false,
+  onAttachFile,
+  attachedImagePreview,
+  onRemoveAttachedImage,
+  attachImageLabel = 'Attach photo',
+  attachedImageAlt = 'Attached photo',
+  removeAttachedImageLabel = 'Remove photo',
 }: ChatComposerProps) {
   const t = useTranslations('aiTutorChat')
-  const canSend = !disabled && !!value.trim()
+  // 사진이 첨부돼 있으면 텍스트 없이도 전송 가능 (문제 사진만 찍어 질문하는 경로)
+  const canSend = !disabled && (!!value.trim() || !!attachedImagePreview)
   // 컴팩트 모드 선택 시트 열림 여부 (UI 순간 상태)
   const [isModeSheetOpen, setIsModeSheetOpen] = useState(false)
   const formRef = useRef<HTMLFormElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const simpleButtonRef = useRef<HTMLButtonElement | null>(null)
   const deepButtonRef = useRef<HTMLButtonElement | null>(null)
   const [activeTooltip, setActiveTooltip] = useState<'simple' | 'deep' | null>(null)
@@ -166,6 +182,26 @@ export function ChatComposer({
           </>
         )}
         <div className="w-full overflow-hidden rounded-xl border border-gray-300 bg-white">
+          {/* 첨부한 문제 사진 미리보기 — 전송 전 확인/제거 */}
+          {attachedImagePreview && (
+            <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-2">
+              {/* eslint-disable-next-line @next/next/no-img-element -- data URL 미리보기라 next/image 불필요 */}
+              <img
+                src={attachedImagePreview}
+                alt={attachedImageAlt}
+                className="h-12 w-12 rounded-lg border border-gray-200 object-cover"
+              />
+              <span className="min-w-0 flex-1 truncate text-xs text-gray-500">{attachedImageAlt}</span>
+              <button
+                type="button"
+                onClick={onRemoveAttachedImage}
+                aria-label={removeAttachedImageLabel}
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           {/* Top half: input only (grows with content) */}
           <textarea
             ref={textareaRef}
@@ -248,6 +284,32 @@ export function ChatComposer({
                 {t('socraticLabel')}
               </button>
             </div>
+            )}
+            {onAttachFile && chatMode !== 'socratic' && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) onAttachFile(file)
+                    // 같은 파일 재선택도 change 로 잡히게 초기화
+                    e.target.value = ''
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label={attachImageLabel}
+                  title={attachImageLabel}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
+                >
+                  <Camera className="h-4 w-4" />
+                </button>
+              </>
             )}
             <button
               type="submit"
