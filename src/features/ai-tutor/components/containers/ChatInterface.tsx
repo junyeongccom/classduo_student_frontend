@@ -688,9 +688,22 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }, [sessionId, onLectureIdsLoaded])
 
-  // 메시지 추가 시 스크롤
+  // 메시지 추가 시 스크롤.
+  // scrollIntoView 는 overflow:hidden 조상까지 스크롤시켜(프로그램 스크롤은 hidden 에도 허용)
+  // 바깥 채팅 컬럼에 scrollTop 이 박히고 화면이 위로 잘려 보이는 사고가 있었다(2026-08-22 실측
+  // scrollTop=397). 가장 가까운 스크롤 컨테이너만 직접 내린다.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const end = messagesEndRef.current
+    if (!end) return
+    let el: HTMLElement | null = end.parentElement
+    while (el) {
+      const oy = getComputedStyle(el).overflowY
+      if (oy === 'auto' || oy === 'scroll') {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+        return
+      }
+      el = el.parentElement
+    }
   }, [messages])
 
   // 메시지 배열 업데이트 시 부모에게 전달

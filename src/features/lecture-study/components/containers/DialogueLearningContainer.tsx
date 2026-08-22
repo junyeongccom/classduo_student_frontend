@@ -406,7 +406,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
         )}
 
         {/* 채팅 영역 — 콘텐츠 안에 맞게 100% 채움 */}
-        <div ref={chatAreaRef} className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div ref={chatAreaRef} className="relative flex min-w-0 flex-1 flex-col overflow-clip">
           <div
             className={`flex flex-1 min-h-0 flex-col ${isAppMode ? 'p-0' : 'px-2 py-1.5 md:px-4'}`}
             style={{
