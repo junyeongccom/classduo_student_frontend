@@ -151,6 +151,26 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
   const deepLinkQuizId = searchParams.get('quiz')
   const [highlightQuizId, setHighlightQuizId] = useState<string | null>(null)
   const deepLinkDoneRef = useRef(false)
+
+  // 딥링크 대상 카드로 스크롤 — 반드시 early return 위(항상 호출)에서 선언해야 한다
+  // (조건부 훅은 React #310). scrollIntoView 는 hidden 조상 스크롤 사고 전례로 금지 —
+  // 컨테이너 scrollTop 을 직접 계산한다. 렌더 완료 뒤 DOM 이 생기므로 rAF 로 한 틱 늦춘다.
+  useEffect(() => {
+    if (!deepLinkQuizId || deepLinkDoneRef.current || quizzes.length === 0) return
+    const raf = requestAnimationFrame(() => {
+      const container = scrollContainerRef.current
+      if (!container) return
+      const target = container.querySelector<HTMLElement>(`[data-quiz-id="${CSS.escape(deepLinkQuizId)}"]`)
+      if (!target) return
+      deepLinkDoneRef.current = true
+      const cRect = container.getBoundingClientRect()
+      const tRect = target.getBoundingClientRect()
+      container.scrollTo({ top: container.scrollTop + (tRect.top - cRect.top) - 16, behavior: 'smooth' })
+      setHighlightQuizId(deepLinkQuizId)
+      setTimeout(() => setHighlightQuizId(null), 2500)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [deepLinkQuizId, quizzes])
   const filterBarRef = useRef<HTMLDivElement>(null)
 
   const weekSessionLabel = weekNumber != null && sessionNumber != null
@@ -607,23 +627,6 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       </div>
     )
   }
-
-  // 딥링크 대상 카드로 스크롤 — scrollIntoView 는 hidden 조상까지 스크롤시키는 사고가 있어
-  // (2026-08-22 대화 화면 실측) 컨테이너 scrollTop 을 직접 계산한다.
-  useEffect(() => {
-    if (!deepLinkQuizId || deepLinkDoneRef.current || quizzes.length === 0) return
-    const container = scrollContainerRef.current
-    if (!container) return
-    const target = container.querySelector<HTMLElement>(`[data-quiz-id="${CSS.escape(deepLinkQuizId)}"]`)
-    if (!target) return
-    deepLinkDoneRef.current = true
-    const cRect = container.getBoundingClientRect()
-    const tRect = target.getBoundingClientRect()
-    container.scrollTo({ top: container.scrollTop + (tRect.top - cRect.top) - 16, behavior: 'smooth' })
-    setHighlightQuizId(deepLinkQuizId)
-    const timer = setTimeout(() => setHighlightQuizId(null), 2500)
-    return () => clearTimeout(timer)
-  }, [deepLinkQuizId, quizzes])
 
   // 전체 문항 번호를 위한 카운터
   let globalIndex = 0
