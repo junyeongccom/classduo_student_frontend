@@ -1460,7 +1460,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   // 대화가 시작되지 않은 초기 상태 (GPT 스타일)
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="flex h-full flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         {/* 대화 기록 저장 — 대화가 비어 있으므로 비활성 */}
         <div className="flex shrink-0 items-center justify-end px-4 pt-2">
           <TranscriptSaveButton onClick={handleSaveTranscript} disabled label={t('transcriptSave')} />
@@ -1550,7 +1550,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // 대화 진행 중 상태
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* 대화 기록 저장 */}
       <div className="flex shrink-0 items-center justify-end px-4 pt-2">
         <TranscriptSaveButton

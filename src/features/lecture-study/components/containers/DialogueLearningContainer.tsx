@@ -528,7 +528,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
               </div>
 
               {/* Chat Interface — flex-1로 남은 공간 채움 */}
-              <div className="flex-1 min-h-0 overflow-hidden pb-2">
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden pb-2">
                 <ChatInterface
                   key={chatKey}
                   selectedLectureIds={selectedLectureIds}
