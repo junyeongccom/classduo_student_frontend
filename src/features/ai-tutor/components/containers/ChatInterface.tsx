@@ -349,7 +349,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 case_type: m.case_type ?? null,
                 message_kind: (m.message_kind as any) ?? undefined,
                 source_message_id: m.source_message_id ?? null,
-                references: (m.reference_data as Reference[]) ?? undefined,
+                // _meta 전용 스텁(type 없음)은 출처 패널에 유령 소스로 뜨지 않게 제외
+                references: Array.isArray(m.reference_data)
+                  ? ((m.reference_data as any[]).filter((r) => r && typeof r === 'object' && 'type' in r) as Reference[])
+                  : undefined,
                 original_question: originalQuestion,
               }
             })
@@ -455,7 +458,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 case_type: m.case_type ?? null,
                 message_kind: (m.message_kind as any) ?? undefined,
                 source_message_id: m.source_message_id ?? null,
-                references: (m.reference_data as Reference[]) ?? undefined,
+                // _meta 전용 스텁(type 없음)은 출처 패널에 유령 소스로 뜨지 않게 제외
+                references: Array.isArray(m.reference_data)
+                  ? ((m.reference_data as any[]).filter((r) => r && typeof r === 'object' && 'type' in r) as Reference[])
+                  : undefined,
                 original_question: originalQuestion,
               }
             })
@@ -589,7 +595,10 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 case_type: m.case_type ?? null,
                 message_kind: (m.message_kind as any) ?? undefined,
                 source_message_id: m.source_message_id ?? null,
-                references: (m.reference_data as Reference[]) ?? undefined,
+                // _meta 전용 스텁(type 없음)은 출처 패널에 유령 소스로 뜨지 않게 제외
+                references: Array.isArray(m.reference_data)
+                  ? ((m.reference_data as any[]).filter((r) => r && typeof r === 'object' && 'type' in r) as Reference[])
+                  : undefined,
                 original_question: originalQuestion,
               }
             })
