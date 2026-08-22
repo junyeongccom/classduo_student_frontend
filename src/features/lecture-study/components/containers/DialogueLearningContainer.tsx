@@ -363,7 +363,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
         </nav>
       </StudyspaceTopbarSlot>
 
-      <div className="flex h-full min-h-0 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* 회차 선택 사이드바 — 데스크탑 inline */}
         <aside className={`hidden h-full w-[320px] shrink-0 flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 ${hideSidebar ? '' : 'xl:flex'}`}>
           <DialogueLectureSidebar
