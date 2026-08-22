@@ -9,6 +9,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Loader2, HelpCircle, Sparkles, Bot } from 'lucide-react'
 import {
   Dialog,
@@ -145,6 +146,11 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
   // 필터/풀이 범위 변경 시 스크롤 보정용
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  // AI튜터 유사문제 추천 딥링크(?quiz=<quiz_id>) — 해당 카드로 스크롤 + 잠깐 하이라이트
+  const searchParams = useSearchParams()
+  const deepLinkQuizId = searchParams.get('quiz')
+  const [highlightQuizId, setHighlightQuizId] = useState<string | null>(null)
+  const deepLinkDoneRef = useRef(false)
   const filterBarRef = useRef<HTMLDivElement>(null)
 
   const weekSessionLabel = weekNumber != null && sessionNumber != null
@@ -602,6 +608,23 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
     )
   }
 
+  // 딥링크 대상 카드로 스크롤 — scrollIntoView 는 hidden 조상까지 스크롤시키는 사고가 있어
+  // (2026-08-22 대화 화면 실측) 컨테이너 scrollTop 을 직접 계산한다.
+  useEffect(() => {
+    if (!deepLinkQuizId || deepLinkDoneRef.current || quizzes.length === 0) return
+    const container = scrollContainerRef.current
+    if (!container) return
+    const target = container.querySelector<HTMLElement>(`[data-quiz-id="${CSS.escape(deepLinkQuizId)}"]`)
+    if (!target) return
+    deepLinkDoneRef.current = true
+    const cRect = container.getBoundingClientRect()
+    const tRect = target.getBoundingClientRect()
+    container.scrollTo({ top: container.scrollTop + (tRect.top - cRect.top) - 16, behavior: 'smooth' })
+    setHighlightQuizId(deepLinkQuizId)
+    const timer = setTimeout(() => setHighlightQuizId(null), 2500)
+    return () => clearTimeout(timer)
+  }, [deepLinkQuizId, quizzes])
+
   // 전체 문항 번호를 위한 카운터
   let globalIndex = 0
 
@@ -678,8 +701,14 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
               const idx = globalIndex++
               const status = statusMap.get(quiz.quiz_id)
               return (
-                <StudentQuizCard
+                <div
                   key={`${quiz.quiz_id}-${resetKey}`}
+                  data-quiz-id={quiz.quiz_id}
+                  className={highlightQuizId === quiz.quiz_id
+                    ? 'rounded-2xl ring-2 ring-indigo-400 ring-offset-2 transition-shadow'
+                    : undefined}
+                >
+                <StudentQuizCard
                   quiz={toStudentQuiz(quiz)}
                   index={idx}
                   isBookmarked={bookmarkSet.has(quiz.quiz_id)}
@@ -767,6 +796,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                     </div>
                   }
                 />
+                </div>
               )
             })}
           </div>

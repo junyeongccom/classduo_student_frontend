@@ -4,6 +4,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { Loader2, Search, ArrowUp } from 'lucide-react'
@@ -114,6 +115,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   const [hasTypedInSession, setHasTypedInSession] = useState(false) // 세션 내 타이핑 여부
   // v1.0: DEEP 모드 안내 배너 제거 — 관련 state 삭제
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
   const isInitialMount = useRef(true)  // 초기 마운트 여부
   const selfCreatedSessionId = useRef<string | undefined>(undefined)  // 자신이 생성한 세션 ID
 
@@ -1822,7 +1824,14 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                           <button
                             key={sq.quiz_id}
                             type="button"
-                            onClick={() => sendMessage(sq.question)}
+                            // 질문으로 잇지 않고 회차별 학습 퀴즈탭의 해당 문항으로 이동 —
+                            // 튜터가 정답을 설명해버리면 연습 기회가 사라진다 (2026-08-22 UX 결정)
+                            onClick={() => {
+                              if (!selectedCourseId || selectedLectureIds.length === 0) return
+                              router.push(
+                                `/studyspace/course/${selectedCourseId}/lecture/${selectedLectureIds[0]}?tab=quiz&quiz=${sq.quiz_id}`,
+                              )
+                            }}
                             className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-xs text-gray-700 transition-colors hover:bg-gray-50"
                           >
                             <span aria-hidden="true">✏️</span>
