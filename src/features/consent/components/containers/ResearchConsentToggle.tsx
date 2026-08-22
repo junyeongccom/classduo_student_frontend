@@ -3,6 +3,10 @@
  * @description 마이페이지 — 연구 목적 이용(선택) 동의 철회·재동의 토글
  * @module features/consent
  * @dependencies useConsent, next-intl
+ *
+ * 주의: 이 컴포넌트는 studyspace 보호 셸(`bg-white`/`bg-gray-50`, dark: 변형 없음) 위에
+ * 얹힌다. dark: 텍스트 변형을 쓰면 시스템 다크 선호 시 흰 배경에 밝은 글자가 되어 사라진다.
+ * 주변 요소(UserProfileCard 등)와 동일하게 라이트 전용 클래스만 사용한다.
  */
 'use client'
 
@@ -35,16 +39,16 @@ export function ResearchConsentToggle() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+    <div className="rounded-xl border border-gray-200 p-4">
+      <h3 className="text-sm font-semibold text-gray-900">
         {t('researchTitle')}
       </h3>
-      <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+      <p className="mt-1 text-xs leading-relaxed text-gray-500">
         {t('researchDescription')}
       </p>
 
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-sm text-gray-700 dark:text-gray-300">
+        <span className="text-sm text-gray-700">
           {agreed ? t('researchAgreed') : t('researchNotAgreed')}
         </span>
         <button
@@ -55,11 +59,11 @@ export function ResearchConsentToggle() {
           disabled={isLoading}
           onClick={handleToggle}
           className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-            agreed ? 'bg-gray-900 dark:bg-gray-100' : 'bg-gray-300 dark:bg-gray-600'
+            agreed ? 'bg-gray-900' : 'bg-gray-300'
           }`}
         >
           <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform dark:bg-gray-900 ${
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
               agreed ? 'translate-x-5' : 'translate-x-0.5'
             }`}
           />
