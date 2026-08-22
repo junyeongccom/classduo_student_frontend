@@ -12,7 +12,7 @@ import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAn
 import { useTrackPendingDialogueFeedback } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'
 import { chatAnalytics } from '@/shared/lib/analytics'
 import { useIsAppWebView } from '@/shared/lib/appBridge'
-import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode, SocraticTopic } from '@/features/ai-tutor/types'
+import { ChatMessage, StoredMessage, Reference, PQMQuestion, ChatMode, SocraticTopic, SimilarQuiz } from '@/features/ai-tutor/types'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { AppLocale } from '@/shared/i18n/I18nProvider'
 import { AnswerLoadingReviewBanner } from '../ui/AnswerLoadingReviewBanner'
@@ -296,12 +296,21 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             const storedMessages = dropUnansweredUserTurns(data.messages)
             const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = storedMessages.map((m: StoredMessage, idx, arr) => {
               let followUpQuestion: string | null = null
+              // 사진 첨부 파생 데이터 복원 — 없으면 재방문 시 저장 버튼·추천 칩이 사라진다
+              let restoredExtractedProblem: string | null = null
+              let restoredSimilarQuizzes: SimilarQuiz[] | undefined = undefined
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
                 if (firstRef && typeof firstRef === 'object' && '_meta' in firstRef) {
                   const meta = (firstRef as any)._meta
                   if (meta && meta.follow_up_question) {
                     followUpQuestion = meta.follow_up_question
+                  }
+                  if (meta && typeof meta.extracted_problem === 'string') {
+                    restoredExtractedProblem = meta.extracted_problem
+                  }
+                  if (meta && Array.isArray(meta.similar_quizzes)) {
+                    restoredSimilarQuizzes = meta.similar_quizzes
                   }
                 }
               }
@@ -333,6 +342,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
                 attachedImageUrl,
+                extracted_problem: restoredExtractedProblem,
+                similar_quizzes: restoredSimilarQuizzes,
                 id: m.id,
                 // v1.0: elaboration 렌더링에 필요한 필드
                 case_type: m.case_type ?? null,
@@ -392,12 +403,21 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             const storedMessages = dropUnansweredUserTurns(data.messages)
             const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = storedMessages.map((m: StoredMessage, idx, arr) => {
               let followUpQuestion: string | null = null
+              // 사진 첨부 파생 데이터 복원 — 없으면 재방문 시 저장 버튼·추천 칩이 사라진다
+              let restoredExtractedProblem: string | null = null
+              let restoredSimilarQuizzes: SimilarQuiz[] | undefined = undefined
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
                 if (firstRef && typeof firstRef === 'object' && '_meta' in firstRef) {
                   const meta = (firstRef as any)._meta
                   if (meta && meta.follow_up_question) {
                     followUpQuestion = meta.follow_up_question
+                  }
+                  if (meta && typeof meta.extracted_problem === 'string') {
+                    restoredExtractedProblem = meta.extracted_problem
+                  }
+                  if (meta && Array.isArray(meta.similar_quizzes)) {
+                    restoredSimilarQuizzes = meta.similar_quizzes
                   }
                 }
               }
@@ -428,6 +448,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
                 attachedImageUrl,
+                extracted_problem: restoredExtractedProblem,
+                similar_quizzes: restoredSimilarQuizzes,
                 id: m.id,
                 // v1.0
                 case_type: m.case_type ?? null,
@@ -513,12 +535,21 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             const loadedMessages: Array<ChatMessage & { summary_keywords?: string | null; follow_up_question?: string | null }> = storedMessages.map((m: StoredMessage, idx, arr) => {
               // reference_data에서 follow_up_question 추출 (첫 번째 reference의 _meta에서)
               let followUpQuestion: string | null = null
+              // 사진 첨부 파생 데이터 복원 — 없으면 재방문 시 저장 버튼·추천 칩이 사라진다
+              let restoredExtractedProblem: string | null = null
+              let restoredSimilarQuizzes: SimilarQuiz[] | undefined = undefined
               if (m.reference_data && Array.isArray(m.reference_data) && m.reference_data.length > 0) {
                 const firstRef = m.reference_data[0]
                 if (firstRef && typeof firstRef === 'object' && '_meta' in firstRef) {
                   const meta = (firstRef as any)._meta
                   if (meta && meta.follow_up_question) {
                     followUpQuestion = meta.follow_up_question
+                  }
+                  if (meta && typeof meta.extracted_problem === 'string') {
+                    restoredExtractedProblem = meta.extracted_problem
+                  }
+                  if (meta && Array.isArray(meta.similar_quizzes)) {
+                    restoredSimilarQuizzes = meta.similar_quizzes
                   }
                 }
               }
@@ -550,6 +581,8 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                 summary_keywords: m.summary_keywords || null,
                 follow_up_question: followUpQuestion,
                 attachedImageUrl,
+                extracted_problem: restoredExtractedProblem,
+                similar_quizzes: restoredSimilarQuizzes,
                 id: m.id,
                 feedback: m.feedback || null,
                 // v1.0: Case A/B/C 및 elaboration 메시지 렌더에 필요
