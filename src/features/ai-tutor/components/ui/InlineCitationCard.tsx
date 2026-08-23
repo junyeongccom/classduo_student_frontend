@@ -11,6 +11,15 @@
 
 import { useTranslations } from 'next-intl'
 import type { Reference } from '../../types'
+import { MathText } from '@/shared/components/math/MathText'
+
+/** 추출 마커([강의자료 텍스트]/[시각자료 설명])와 **볼드** 마킹을 벗겨 미리보기용 평문으로.
+ *  수학 과목에서 원문을 그대로 뿌리면 카드가 LaTeX 마킹 소스로 보인다 (2026-08-23 실측). */
+const cleanSourceText = (raw: string): string =>
+  raw
+    .replace(/\[강의자료 텍스트\]|\[시각자료 설명\]|---텍스트---|---시각자료 설명---/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .trim()
 
 interface InlineCitationCardProps {
   reference: Reference
@@ -63,7 +72,7 @@ export function InlineCitationCard({ reference, type, no }: InlineCitationCardPr
         />
       )}
       <span className="mt-1.5 block max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-gray-700 dark:text-gray-300">
-        {bodyText}
+        <MathText text={cleanSourceText(bodyText)} />
       </span>
     </span>
   )

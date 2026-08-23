@@ -6,7 +6,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { X, FileText, Mic, ChevronDown, ChevronUp, Highlighter } from 'lucide-react'
+import katex from 'katex'
 import { Reference, SourceFocusTarget } from '@/features/ai-tutor/types'
+import { splitMathSegments } from '@/shared/lib/math/splitMathSegments'
 
 interface ReferencePanelProps {
   allReferences: Map<number, Reference[]>
@@ -299,6 +301,36 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
   }
 
   // 인용 부분 하이라이트 처리
+  // 수식이 섞인 자료 원문 렌더 — 텍스트 구간은 **볼드** 변환 + 인용 하이라이트,
+  // 수식 구간($…$/$$…$$)은 KaTeX 로 렌더하고 인용에 걸린 수식이면 배경 하이라이트.
+  // 원문을 그대로 뿌리면 수학 과목 출처 탭이 LaTeX 마킹 소스로 보인다 (2026-08-23 실측).
+  const renderSourceRich = (raw: string, citations: Array<{ text: string }>, originalContent?: string) => {
+    const segments = splitMathSegments(raw)
+    const norm = (s: string) => s.replace(/\s+/g, ' ').trim()
+    const normCitations = (citations || []).map((c) => norm(c.text || '')).filter(Boolean)
+    return segments.map((seg, i) => {
+      if (seg.type === 'text') {
+        const bolded = seg.value.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        return (
+          <span
+            key={i}
+            dangerouslySetInnerHTML={{ __html: highlightCitations(bolded, citations || [], originalContent) }}
+          />
+        )
+      }
+      const html = katex.renderToString(seg.value, {
+        throwOnError: false,
+        strict: 'ignore',
+        displayMode: seg.type === 'block',
+        output: 'htmlAndMathml',
+      })
+      const normSeg = norm(seg.value)
+      const cited = normCitations.some((c) => normSeg.includes(c) || c.includes(normSeg))
+      const cls = `${seg.type === 'block' ? 'my-1 block overflow-x-auto' : ''} ${cited ? 'rounded bg-yellow-200 px-0.5' : ''}`.trim()
+      return <span key={i} className={cls || undefined} dangerouslySetInnerHTML={{ __html: html }} />
+    })
+  }
+
   const highlightCitations = (content: string, citations: Array<{ text: string }>, originalContent?: string) => {
     if (!citations || citations.length === 0) return content
 
@@ -535,8 +567,6 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                 const itemId = `material-${messageIndex}-${index}`
                 const isExpanded = expandedItems.has(itemId)
                 const { text, visualDescription } = parseMaterialContent(ref.content)
-                const highlightedText = highlightCitations(text, ref.citations || [], ref.content)
-                const highlightedVisualDescription = highlightCitations(visualDescription, ref.citations || [], ref.content)
                 const hasImage = Boolean(ref.metadata.image_url)
 
                 return (
@@ -605,15 +635,14 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                             </div>
                           )}
 
-                          {highlightedText && (
+                          {text && (
                             <div className="space-y-2">
                               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 {t('materialText')}
                               </h4>
-                              <p
-                                className="whitespace-pre-wrap rounded-lg bg-white/80 p-3 text-sm leading-relaxed text-gray-800"
-                                dangerouslySetInnerHTML={{ __html: highlightedText }}
-                              />
+                              <p className="whitespace-pre-wrap rounded-lg bg-white/80 p-3 text-sm leading-relaxed text-gray-800">
+                                {renderSourceRich(text, ref.citations || [], ref.content)}
+                              </p>
                             </div>
                           )}
 
@@ -622,10 +651,9 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 {t('visualDescription')}
                               </h4>
-                              <p
-                                className="whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm text-gray-700"
-                                dangerouslySetInnerHTML={{ __html: highlightedVisualDescription }}
-                              />
+                              <p className="whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                                {renderSourceRich(visualDescription, ref.citations || [], ref.content)}
+                              </p>
                             </div>
                           )}
                         </div>
