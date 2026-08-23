@@ -310,7 +310,8 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
     const normCitations = (citations || []).map((c) => norm(c.text || '')).filter(Boolean)
     return segments.map((seg, i) => {
       if (seg.type === 'text') {
-        const bolded = seg.value.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        // 짝 있는 **볼드**는 변환, 남는 홀수 ** (녹음 요약의 "-**" 구조 마킹)는 제거
+        const bolded = seg.value.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*\*/g, '')
         return (
           <span
             key={i}
@@ -507,26 +508,16 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                               {(ref as any).summary ? (
                                 <div className="space-y-3">
                                   <h3 className="text-base font-bold text-gray-900">
-                                    {(ref as any).summary.title}
+                                    {String((ref as any).summary.title || '').replace(/\*\*/g, '')}
                                   </h3>
-                                  <p
-                                    className="text-sm leading-relaxed text-gray-700"
-                                    dangerouslySetInnerHTML={{
-                                      __html: highlightCitations(
-                                        (ref as any).summary.content,
-                                        ref.citations || [],
-                                        (ref as any).summary.content
-                                      ),
-                                    }}
-                                  />
+                                  <p className="text-sm leading-relaxed text-gray-700">
+                                    {renderSourceRich((ref as any).summary.content, ref.citations || [], (ref as any).summary.content)}
+                                  </p>
                                 </div>
                               ) : (
-                                <p
-                                  className="text-sm leading-relaxed text-gray-700"
-                                  dangerouslySetInnerHTML={{
-                                    __html: highlightCitations(ref.content, ref.citations || [], ref.content),
-                                  }}
-                                />
+                                <p className="text-sm leading-relaxed text-gray-700">
+                                  {renderSourceRich(ref.content, ref.citations || [], ref.content)}
+                                </p>
                               )}
                             </div>
                           </div>
