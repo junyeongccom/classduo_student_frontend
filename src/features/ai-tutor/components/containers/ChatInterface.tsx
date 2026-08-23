@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { Loader2, Search, ArrowUp } from 'lucide-react'
 import { chatService } from '@/features/ai-tutor/services/chatService'
+import { SOCRATIC_ENABLED } from '@/shared/constants/featureFlags'
 import { trackAiTutorQuestion, trackAiTutorFeedback } from '@/shared/hooks/useAnalytics'
 import { useTrackPendingDialogueFeedback } from '@/features/ai-tutor/hooks/useDialogueFeedbackPopup'
 import { chatAnalytics } from '@/shared/lib/analytics'
@@ -614,7 +615,9 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
             const firstMessage = storedMessages[0]
             const firstAssistantMessage = storedMessages.find((m: StoredMessage) => m.role === 'assistant')
             const sessionChatMode = firstMessage?.chat_mode ?? firstAssistantMessage?.chat_mode
-            if (sessionChatMode === 'socratic') {
+            // 소크라 비노출 상태에서는 과거 소크라 세션도 일반 대화로만 연다
+            // (소크라 패널·fetchState/leaderboard 요청이 나가지 않게)
+            if (sessionChatMode === 'socratic' && SOCRATIC_ENABLED) {
               setChatMode('socratic')
               socraticService.fetchState(sessionId).then(({ data: stateData, error: stateError }) => {
                 if (stateError || !stateData || !stateData.topic) return
@@ -853,6 +856,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
 
   // 모드 토글 핸들러 — simple ↔ detailed ↔ socratic 전환 (analytics 기록 + socratic 이탈 시 소크라 상태 초기화)
   const handleChatModeChange = useCallback((mode: ChatMode) => {
+    if (mode === 'socratic' && !SOCRATIC_ENABLED) return
     if (mode === 'socratic' && selectedLectureIds.length !== 1) {
       setError(t('socraticSingleLectureOnly'))
       return

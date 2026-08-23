@@ -11,6 +11,7 @@ import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { Send, Loader2, Sparkles, Brain, ChevronUp, Camera, X } from 'lucide-react'
 import type { ChatMode } from '@/features/ai-tutor/types'
+import { SOCRATIC_ENABLED } from '@/shared/constants/featureFlags'
 
 interface ChatComposerProps {
   value: string
@@ -50,7 +51,10 @@ const MODE_LABEL_KEY: Record<ChatMode, string> = {
   socratic: 'socraticLabel',
 }
 
-const CHAT_MODES: readonly ChatMode[] = ['simple', 'detailed', 'socratic']
+// 소크라는 SOCRATIC_ENABLED 가 켜졌을 때만 학생에게 노출한다 (백엔드 로직은 유지)
+const CHAT_MODES: readonly ChatMode[] = SOCRATIC_ENABLED
+  ? ['simple', 'detailed', 'socratic']
+  : ['simple', 'detailed']
 
 export function ChatComposer({
   value,
@@ -272,17 +276,19 @@ export function ChatComposer({
               >
                 {t('detailedLabel')}
               </button>
-              <button
-                type="button"
-                disabled={socraticDisabled}
-                onClick={() => {
-                  if (socraticDisabled) return
-                  onChatModeChange('socratic')
-                }}
-                className={`rounded-full px-3 py-1 ${chatMode === 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${socraticDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {t('socraticLabel')}
-              </button>
+              {SOCRATIC_ENABLED && (
+                <button
+                  type="button"
+                  disabled={socraticDisabled}
+                  onClick={() => {
+                    if (socraticDisabled) return
+                    onChatModeChange('socratic')
+                  }}
+                  className={`rounded-full px-3 py-1 ${chatMode === 'socratic' ? 'bg-white font-semibold shadow-sm' : 'text-gray-500'} ${socraticDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {t('socraticLabel')}
+                </button>
+              )}
             </div>
             )}
             {onAttachFile && chatMode !== 'socratic' && (
