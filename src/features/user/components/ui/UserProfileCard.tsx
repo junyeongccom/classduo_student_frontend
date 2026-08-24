@@ -8,8 +8,13 @@ interface UserProfileCardProps {
   user: UserProfileResponse
 }
 
+/** i18n 라벨이 준비된 역할 값. 이 목록 밖의 값은 DB 원본을 그대로 보여준다. */
+const LABELED_ROLES = ['STUDENT', 'PROFESSOR', 'ADMIN', 'MANAGER']
+
 export function UserProfileCard({ user }: UserProfileCardProps) {
   const t = useTranslations('profile')
+  // DB 의 role 값을 그대로 그리면 한국어 화면에 'STUDENT' 가 노출된다.
+  const roleLabel = LABELED_ROLES.includes(user.role) ? t(`roles.${user.role}`) : user.role
   return (
     <div className="rounded-lg border border-gray-200 p-6">
       <div className="mb-6 flex items-center gap-4">
@@ -18,7 +23,7 @@ export function UserProfileCard({ user }: UserProfileCardProps) {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-gray-900">{user.full_name}</h2>
-          <p className="text-sm text-gray-500">{user.role}</p>
+          <p className="text-sm text-gray-500">{roleLabel}</p>
         </div>
       </div>
 

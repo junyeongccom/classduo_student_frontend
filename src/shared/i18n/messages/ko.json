@@ -1014,6 +1014,12 @@
     "title": "프로필",
     "loadingUser": "사용자 정보를 불러오는 중...",
     "verified": "인증됨",
+    "roles": {
+      "STUDENT": "학생",
+      "PROFESSOR": "교수",
+      "ADMIN": "관리자",
+      "MANAGER": "운영자"
+    },
     "actions": {
       "editProfile": "프로필 수정",
       "changePassword": "비밀번호 변경",

@@ -1014,6 +1014,12 @@
     "title": "Profile",
     "loadingUser": "Loading user information...",
     "verified": "Verified",
+    "roles": {
+      "STUDENT": "Student",
+      "PROFESSOR": "Professor",
+      "ADMIN": "Admin",
+      "MANAGER": "Manager"
+    },
     "actions": {
       "editProfile": "Edit profile",
       "changePassword": "Change password",
