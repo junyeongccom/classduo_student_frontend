@@ -74,9 +74,12 @@ export function AuthGuard({
         )}
 
         {/* 기존 회원가입/로그인 모달 (정중앙) */}
-        <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 shadow-xl">
+        {/* 세로 중앙 정렬이라 모달이 뷰포트보다 길면 위아래가 동시에 잘린다.
+            동의 항목이 늘어나며 높이가 800px 에 근접해 낮은 뷰포트에서 탭 자체가 화면 밖으로 나가
+            로그인 탭으로 전환할 수 없었다 → 최대 높이 + 자체 스크롤. 탭은 sticky 로 항상 잡히게. */}
+        <div className="relative z-10 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white dark:bg-gray-900 shadow-xl">
           {/* 탭 네비게이션 */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700">
+          <div className="sticky top-0 z-10 flex border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
             <button
               onClick={() => handleTabChange('signup')}
               className={`flex-1 px-6 py-3 text-center font-medium transition-colors ${
