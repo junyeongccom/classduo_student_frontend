@@ -17,7 +17,7 @@ export function MyPageContainer() {
 
   if (!user) {
     return (
-      <div className="flex h-dvh items-center justify-center text-gray-400">
+      <div className="flex h-dvh items-center justify-center text-gray-400 dark:text-gray-500">
         {t('loadingUser')}
       </div>
     )
@@ -26,7 +26,7 @@ export function MyPageContainer() {
   return (
     <div className="flex h-dvh flex-col">
       <div className="flex-1 p-6">
-        <h1 className="mb-6 text-xl font-bold text-gray-900">{t('title')}</h1>
+        <h1 className="mb-6 text-xl font-bold text-gray-900 dark:text-gray-50">{t('title')}</h1>
 
         <div className="max-w-md space-y-6">
           <UserProfileCard user={user} />

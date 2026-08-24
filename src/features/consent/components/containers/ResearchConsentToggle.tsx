@@ -39,16 +39,16 @@ export function ResearchConsentToggle() {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 p-4">
-      <h3 className="text-sm font-semibold text-gray-900">
+    <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">
         {t('researchTitle')}
       </h3>
-      <p className="mt-1 text-xs leading-relaxed text-gray-500">
+      <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
         {t('researchDescription')}
       </p>
 
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-sm text-gray-700">
+        <span className="text-sm text-gray-700 dark:text-gray-200">
           {agreed ? t('researchAgreed') : t('researchNotAgreed')}
         </span>
         <button
@@ -70,7 +70,7 @@ export function ResearchConsentToggle() {
         </button>
       </div>
 
-      {notice && <p className="mt-2 text-xs text-gray-400">{notice}</p>}
+      {notice && <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">{notice}</p>}
     </div>
   )
 }
