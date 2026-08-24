@@ -7,6 +7,20 @@ import { ChatSession, SearchResult } from '@/features/ai-tutor/types'
 import { AITutorLoading } from '@/features/ai-tutor'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
+/** 세션 제목의 LaTeX·마크다운 마킹을 벗겨 한 줄 라벨로 만든다.
+ *  제목은 truncate 되는 짧은 라벨이라 KaTeX 렌더 대신 마킹만 제거한다
+ *  (2026-08-25 실측: 채팅 기록에 "과적합 $R^2$ 값 판정" 처럼 마킹이 그대로 노출됐다). */
+function stripTitleMarkup(raw: string): string {
+  return raw
+    .replace(/\$\$([^$]*)\$\$/g, '$1')
+    .replace(/\$([^$]*)\$/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\\([_*$#[\](){}!.+\-`>~\\])/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 interface ChatSidebarProps {
   isOpen: boolean
   onClose: () => void
@@ -288,7 +302,7 @@ export default function ChatSidebar({
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-semibold text-slate-900 truncate">
-                          {session.title || t('sessionTitleFallback')}
+                          {session.title ? stripTitleMarkup(session.title) : t('sessionTitleFallback')}
                         </h3>
                         <p className="mt-1 text-xs text-slate-500">
                           {formatDate(session.updated_at)}
@@ -327,7 +341,7 @@ export default function ChatSidebar({
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-semibold text-slate-900 truncate">
-                          {result.title || t('sessionTitleFallback')}
+                          {result.title ? stripTitleMarkup(result.title) : t('sessionTitleFallback')}
                         </h3>
                         {result.match_type === 'message_content' && (
                           <p className="mt-1 text-xs text-slate-600 line-clamp-2">
