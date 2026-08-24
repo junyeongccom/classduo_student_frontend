@@ -62,7 +62,11 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
   if (error) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-sm text-gray-500">{error}</p>
+        {/* error 를 그대로 그리면 내부 코드(LOAD_LECTURES_FAILED 등)가 학생에게 노출된다.
+            회차별 학습 화면(LectureSelectContainer)과 동일하게 알려진 코드는 번역해서 보여준다. */}
+        <p className="text-sm text-gray-500">
+          {error === 'LOAD_LECTURES_FAILED' ? t('lectureStudy.error.loadLectures') : error}
+        </p>
         <button
           onClick={refresh}
           className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-gray-800"
