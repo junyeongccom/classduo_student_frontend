@@ -195,12 +195,25 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('exam-prep-rewards-refresh', handler)
   }, [isExamPrepPage, refreshGamification])
 
+  // main 은 overflow-hidden 고정 레이아웃이라 어떤 경로(패널 토글 시 브라우저
+  // 스크롤 복원, focus 스크롤 등)로든 scrollTop 이 밀리면 화면 하단이 잘려 보인다
+  // (2026-08-25 한림 회차학습 AI Chat 실측). scroll 이벤트에서 즉시 0 으로 고정한다.
+  const mainScrollGuard = useCallback((el: HTMLElement | null) => {
+    if (!el) return
+    el.addEventListener('scroll', () => {
+      if (el.scrollTop !== 0 || el.scrollLeft !== 0) {
+        el.scrollTop = 0
+        el.scrollLeft = 0
+      }
+    })
+  }, [])
+
   // 풀이 모드 / 앱 WebView 모드 — 사이드바·헤더 없이 children만 풀스크린으로 표시
   // (모든 hook 호출 뒤에 early return 두어 React Hook 규칙 준수)
   if (isSolveMode || isAppMode) {
     return (
       <div className="flex h-dvh bg-[#F9F9FB] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F9F9FB] dark:bg-gray-950">
+        <main ref={mainScrollGuard} className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F9F9FB] dark:bg-gray-950">
           {children}
         </main>
         {/* Feedback / Password 모달은 풀이 모드에서도 가능 */}
@@ -365,7 +378,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F9F9FB] dark:bg-gray-950">
+        <main ref={mainScrollGuard} className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#F9F9FB] dark:bg-gray-950">
           {children}
         </main>
       </div>
