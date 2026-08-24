@@ -30,6 +30,13 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD_SEND_CODE: '/auth/reset-password/send-code',
     RESET_PASSWORD_VERIFY_CODE: '/auth/reset-password/verify-code',
   },
+
+  // Consent (개인정보 동의)
+  CONSENT: {
+    DOCUMENTS: '/consent/documents',
+    STATUS: '/consent/status',
+    RECORD: '/consent',
+  },
   
   // Recording (추후 사용)
   RECORDING: {

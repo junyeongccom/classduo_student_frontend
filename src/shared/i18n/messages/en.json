@@ -1266,7 +1266,8 @@
     "UNKNOWN_ERROR": "An unknown error occurred",
     "CORS_ERROR": "CORS error: Cannot access backend server. Please check if the server is running.",
     "NETWORK_ERROR": "Network error occurred. Please check your internet connection.",
-    "adminApprovalButton": "Request admin approval for registration"
+    "adminApprovalButton": "Request admin approval for registration",
+    "CONSENT_REQUIRED": "You must agree to all required items"
   },
   "myQuiz": {
     "title": "My Quiz",
@@ -1615,5 +1616,22 @@
       "exitContinue": "Keep going",
       "exitLeave": "Leave"
     }
+  },
+  "consent": {
+    "allAgree": "Agree to all",
+    "allAgreeHint": "I agree to all items, including optional ones",
+    "required": "Required",
+    "optional": "Optional",
+    "view": "View",
+    "requiredError": "You must agree to all required items to sign up",
+    "gateTitle": "Your agreement is required",
+    "gateMessage": "A privacy policy has been introduced starting in the second semester of 2026. Please agree to the items below to continue using the service.",
+    "gateSubmit": "Agree and continue",
+    "gateSubmitError": "Something went wrong while saving your agreement. Please try again.",
+    "researchTitle": "Use for Educational Research",
+    "researchDescription": "I agree to the use of my pseudonymized learning activity records for educational research. This is optional and can be withdrawn at any time.",
+    "researchAgreed": "Agreed",
+    "researchNotAgreed": "Not agreed",
+    "researchUpdated": "Updated"
   }
 }

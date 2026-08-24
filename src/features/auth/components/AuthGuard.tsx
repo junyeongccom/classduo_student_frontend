@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth'
 import { Sidebar, LoginModal, SignupModal } from '@/shared/components/common'
 import { LanguageToggle } from '@/shared/components/common/LanguageToggle'
 import { MaintenanceNoticeBody } from '@/shared/components/common/MaintenanceNoticeBody'
+import { ConsentGateModal } from '@/features/consent'
 import { X } from 'lucide-react'
 
 export function AuthGuard({
@@ -135,5 +136,11 @@ export function AuthGuard({
     )
   }
 
-  return <>{children}</>
+  return (
+    <>
+      {children}
+      {/* 미동의 필수 항목이 있는 기존 회원 회수 — 모달 스스로 필요할 때만 렌더한다 */}
+      <ConsentGateModal />
+    </>
+  )
 }
