@@ -316,6 +316,11 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
         const bolded = seg.value
           .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
           .replace(/\*\*/g, '')
+          // 줄머리 마크다운 마커(#·##·###, * / -)는 원문 그대로 두면 출처 패널에
+          // "# 주요 한계 심화" · "* 독립변수 간에…" 로 노출된다 (2026-08-25 실측).
+          // 이스케이프 복원 **전에** 처리해야 원문의 리터럴 별표(\*)를 리스트로 오인하지 않는다.
+          .replace(/^[ \t]*#{1,6}[ \t]+/gm, '')
+          .replace(/^([ \t]*)[*-][ \t]+/gm, '$1• ')
           .replace(/\\([_*$#[\](){}!.+\-`>~\\])/g, '$1')
         return (
           <span
