@@ -584,7 +584,10 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
         )}
 
         {/* 중앙 패널 (회차제목 + 버튼 + 요약/퀴즈/게임) — 항상 렌더링 (모바일 패널은 위에 오버레이) */}
-        <section className={`flex h-full min-h-0 flex-1 flex-col ${isCenterOnly ? 'max-w-2xl mx-auto' : ''}`}>
+        {/* min-w-0 가 없으면 flex 아이템의 기본 min-width:auto 때문에 이 영역이 부모보다 넓어진다.
+            제목 줄은 shrink-0 라 truncate 가 무력화돼, 긴 제목(EN)에서 폭이 422px 로 벌어지고
+            좁은 화면에서 탭("Game")이 오른쪽으로 잘렸다. */}
+        <section className={`flex h-full min-h-0 min-w-0 flex-1 flex-col ${isCenterOnly ? 'max-w-2xl mx-auto' : ''}`}>
           {/* 회차 제목 — 앱 모드에서는 앱 헤더/세그먼트 아래 4중 적층이 되어 숨긴다 */}
           {!isAppMode && (
             <div className="shrink-0 px-4 pt-4 pb-1">
