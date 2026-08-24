@@ -258,7 +258,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
         </h3>
         {summary.overview && (
           <p className="mt-2 leading-relaxed text-gray-700 dark:text-gray-300">
-            {summary.overview}
+            <MathText text={summary.overview} />
           </p>
         )}
       </section>
