@@ -483,7 +483,9 @@ export default function WrongAnswersTab({
       {showResetConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-md rounded-xl bg-white dark:bg-gray-800 p-6 shadow-2xl">
-            <p className="text-sm text-gray-700 dark:text-gray-200 text-center whitespace-nowrap">{t('wrong.resetConfirmMessage')}</p>
+            {/* whitespace-nowrap 은 좁은 화면에서 확인 문구를 컨테이너 밖으로 밀어낸다
+                (모바일 가용 310px vs KO 356px·EN 381px). 데스크탑은 가용 400px 라 어차피 한 줄로 들어온다. */}
+            <p className="text-sm text-gray-700 dark:text-gray-200 text-center">{t('wrong.resetConfirmMessage')}</p>
             <div className="mt-5 flex gap-3">
               <button
                 type="button"
