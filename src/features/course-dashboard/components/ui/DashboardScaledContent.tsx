@@ -165,7 +165,7 @@ function QuickAction({
       <span className="flex shrink-0 items-center justify-center rounded-[24px] bg-[#DEDEF8]" style={{ width: 104, height: 104 }}>
         <Icon className="text-[#6361E0]" style={{ width: 48, height: 48 }} strokeWidth={2.2} />
       </span>
-      <span className="text-[30px] font-bold text-black">{label}</span>
+      <span className="text-[30px] font-bold text-black dark:text-gray-100">{label}</span>
     </button>
   )
 }

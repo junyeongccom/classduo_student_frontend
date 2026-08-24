@@ -137,7 +137,7 @@ function MobileQuickAction({
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#DEDEF8]">
         <Icon className="h-6 w-6 text-[#6361E0]" strokeWidth={2.2} />
       </span>
-      <span className="min-w-0 truncate text-sm font-bold text-black">{label}</span>
+      <span className="min-w-0 truncate text-sm font-bold text-black dark:text-gray-100">{label}</span>
     </button>
   )
 }
