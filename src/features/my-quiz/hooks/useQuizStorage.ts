@@ -7,7 +7,9 @@
 
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 import * as statusService from '../services/myQuizStatusService'
 import type { QuizItem, QuizSource } from '../types'
 import type { QuizWithMeta } from '../domain/groupQuizzes'
@@ -54,6 +56,8 @@ export function useQuizStorage({
   lectureIds,
   lectureInfoMap,
 }: UseQuizStorageOpts): UseQuizStorageReturn {
+  const t = useTranslations('myQuiz')
+  const { locale } = useI18n()
   const [items, setItems] = useState<QuizStorageItem[]>([])
   const [totalBookmarks, setTotalBookmarks] = useState(0)
   const [totalWrongs, setTotalWrongs] = useState(0)
@@ -279,14 +283,17 @@ export function useQuizStorage({
         if (acc.quiz_source === 'exam_prep') {
           const tt = acc.exam_prep_test_type
           if (tt === 'core' && info?.lecture_no != null) {
-            displayLectureName = `핵심주제학습 ${info.lecture_no}회차`
+            displayLectureName = t('storage.sourceLabels.coreTopicNo', { no: info.lecture_no })
           } else if (tt === 'mid') {
             const seg = acc.exam_prep_segment_index ?? null
-            displayLectureName = seg != null ? `중간테스트 ${seg}회차` : '중간테스트'
+            displayLectureName =
+              seg != null
+                ? t('storage.sourceLabels.midTestNo', { no: seg })
+                : t('storage.sourceLabels.midTest')
           } else if (tt === 'final') {
-            displayLectureName = '최종테스트'
+            displayLectureName = t('storage.sourceLabels.finalTest')
           } else {
-            displayLectureName = '핵심 주제 학습'
+            displayLectureName = t('storage.sourceLabels.examPrep')
           }
         }
 
@@ -324,12 +331,22 @@ export function useQuizStorage({
       setError(e instanceof Error ? e.message : 'unknown error')
       setIsLoading(false)
     }
-  }, [lectureIds, lectureInfoMap])
+  }, [lectureIds, lectureInfoMap, t])
 
   const lectureIdsKey = JSON.stringify(lectureIds)
+  // 언어 전환 시 라벨이 갱신되지 않던 원인은 **경쟁 조건**이었다 (2026-08-25 규명).
+  //   locale 변경 → 이 effect 가 즉시 재조회 → 그 시점 lectureInfoMap 은 아직 이전 언어
+  //   → 잠시 뒤 /courses/all 응답이 도착해 map 이 갱신되지만 effect 는 다시 돌지 않음
+  //   → items.lecture_name 만 이전 언어로 남는다 (새로고침하면 정상이던 이유).
+  // 그래서 locale 뿐 아니라 **라벨 내용 자체**를 의존성으로 삼는다. 라벨이 실제로 바뀐
+  // 시점에만 재조회되므로 불필요한 호출도 생기지 않는다.
+  const lectureLabelKey = useMemo(
+    () => Array.from(lectureInfoMap.values()).map((v) => v.lecture_name).join('|'),
+    [lectureInfoMap],
+  )
   useEffect(() => {
     fetchAll()
-  }, [lectureIdsKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lectureIdsKey, locale, lectureLabelKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     items,

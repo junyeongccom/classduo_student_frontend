@@ -1520,7 +1520,11 @@
       "sourceLabels": {
         "lectureContent": "Lecture Study",
         "examPrep": "Core Topics",
-        "customize": "My Quizzes"
+        "customize": "My Quizzes",
+        "coreTopicNo": "Core Topics Lecture {no}",
+        "midTestNo": "Mid Test {no}",
+        "midTest": "Mid Test",
+        "finalTest": "Final Test"
       },
       "typeLabels": {
         "DEF_TO_TERM": "Definition→Term",

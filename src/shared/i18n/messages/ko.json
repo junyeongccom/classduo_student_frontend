@@ -1520,7 +1520,11 @@
       "sourceLabels": {
         "lectureContent": "회차별 학습",
         "examPrep": "핵심 주제 학습",
-        "customize": "내가 만든 퀴즈"
+        "customize": "내가 만든 퀴즈",
+        "coreTopicNo": "핵심주제학습 {no}회차",
+        "midTestNo": "중간테스트 {no}회차",
+        "midTest": "중간테스트",
+        "finalTest": "최종테스트"
       },
       "typeLabels": {
         "DEF_TO_TERM": "정의→용어",

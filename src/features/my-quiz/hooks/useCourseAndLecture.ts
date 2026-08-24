@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 import { apiRequest } from '@/shared/lib/api'
 
 export interface LectureItem {
@@ -49,6 +50,10 @@ export interface LectureOption {
  */
 export function useCourseAndLecture(initialCourseId?: string | null) {
   const t = useTranslations('myQuiz')
+  // next-intl 의 t 는 참조가 안정적이라 언어를 바꿔도 아래 useMemo 가 재계산되지 않는다.
+  // locale 을 의존성에 함께 넣어야 회차 라벨(“N회차 - 제목” / “Lecture N - Title”)이 갱신된다
+  // (2026-08-25 실측: EN 전환 후 저장소 카드 라벨만 이전 언어로 잔존).
+  const { locale } = useI18n()
   const [courses, setCourses] = useState<CourseItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -89,7 +94,11 @@ export function useCourseAndLecture(initialCourseId?: string | null) {
       setSelectedCourseId((prev) => prev ?? (list.length > 0 ? list[0].course_id : null))
     }
     setIsLoading(false)
-  }, [t, initialCourseId]) // eslint-disable-line react-hooks/exhaustive-deps
+    // locale 을 의존성에 넣어야 언어 전환 시 강좌/회차를 다시 불러온다.
+    // apiRequest 가 localStorage 의 locale 을 Accept-Language 로 보내고 서버가 그 언어의
+    // title 을 주므로, 재조회하지 않으면 회차 제목이 이전 언어로 남는다
+    // (2026-08-25 실측: EN 전환 후 저장소 카드가 "10회차 - 회귀 모델 기초" 유지).
+  }, [t, initialCourseId, locale]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchCourses()
@@ -156,7 +165,7 @@ export function useCourseAndLecture(initialCourseId?: string | null) {
       }
     }
     return map
-  }, [courses, t])
+  }, [courses, t, locale])
 
   return {
     isLoading,
