@@ -310,8 +310,13 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
     const normCitations = (citations || []).map((c) => norm(c.text || '')).filter(Boolean)
     return segments.map((seg, i) => {
       if (seg.type === 'text') {
-        // 짝 있는 **볼드**는 변환, 남는 홀수 ** (녹음 요약의 "-**" 구조 마킹)는 제거
-        const bolded = seg.value.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*\*/g, '')
+        // 짝 있는 **볼드**는 변환, 남는 홀수 ** (녹음 요약의 "-**" 구조 마킹)는 제거,
+        // 추출기의 마크다운 이스케이프(\_ \* \# 등)는 원문 문자로 복원 — 빈칸 문제의
+        // "\_\_\_\_" 가 백슬래시째 노출되던 실측(2026-08-24) 대응
+        const bolded = seg.value
+          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*\*/g, '')
+          .replace(/\\([_*$#[\](){}!.+\-`>~\\])/g, '$1')
         return (
           <span
             key={i}

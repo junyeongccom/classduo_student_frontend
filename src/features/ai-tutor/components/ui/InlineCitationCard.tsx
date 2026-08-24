@@ -20,6 +20,7 @@ const cleanSourceText = (raw: string): string =>
     .replace(/\[강의자료 텍스트\]|\[시각자료 설명\]|---텍스트---|---시각자료 설명---/g, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*\*/g, '')
+    .replace(/\\([_*#[\](){}!.+\-`>~])/g, '$1')
     .trim()
 
 interface InlineCitationCardProps {
