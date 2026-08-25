@@ -172,7 +172,7 @@ export interface SnapshotSelectionsResponse {
 export const lectureService = {
   getLectures: (courseId: string) => {
     if (!isUUID(courseId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid courseId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     return apiRequest<LectureListApiResponse>(`/courses/${courseId}/lectures`, {
       method: 'GET',
@@ -182,7 +182,7 @@ export const lectureService = {
 
   getRecordings: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     return apiRequest<RecordingListApiResponse>(`/recordings/audio/lectures/${lectureId}`, {
       method: 'GET',
@@ -192,7 +192,7 @@ export const lectureService = {
 
   getLectureMaterials: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     return apiRequest<LectureMaterialMappingsResponse>(`/materials/mappings/${lectureId}`, {
       method: 'GET',
@@ -202,7 +202,7 @@ export const lectureService = {
 
   getMaterialPages: (materialId: string) => {
     if (!isUUID(materialId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid materialId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     return apiRequest<MaterialPagesResponse>(`/materials/${materialId}/pages`, {
       method: 'GET',
@@ -226,7 +226,7 @@ export const lectureService = {
 
   contentsStudyChatHistory: (lectureId: string, sessionId?: string | null) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     const query = sessionId ? `?session_id=${sessionId}` : ''
     return apiRequest<ContentsStudyChatHistoryResponse>(`/contents-study/chat/history/${lectureId}${query}`, {
@@ -237,7 +237,7 @@ export const lectureService = {
 
   contentsStudyChatSessions: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     return apiRequest<ContentsStudyChatSessionsResponse>(`/contents-study/chat/sessions/${lectureId}`, {
       method: 'GET',
@@ -259,7 +259,7 @@ export const lectureService = {
    */
   getSnapshotSelections: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     return apiRequest<SnapshotSelectionsResponse>(`/content/lectures/${lectureId}/snapshot-selections`, {
       method: 'GET',
@@ -270,7 +270,7 @@ export const lectureService = {
   /** 회차 통합 요약 (lecture_content_summaries) 조회 */
   getContentSummary: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid lectureId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     return apiRequest<ContentSummaryApiResponse>(`/content/lectures/${lectureId}/content-summary`, {
       method: 'GET',
@@ -280,7 +280,7 @@ export const lectureService = {
 
   getMaterialDownloadUrl: (materialId: string) => {
     if (!isUUID(materialId)) {
-      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: 'Invalid materialId format' } })
+      return Promise.resolve({ data: null, error: { error_code: 'INVALID_UUID', message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.' } })
     }
     return apiRequest<{ download_url: string; filename: string }>(`/materials/${materialId}/download-url`, {
       method: 'GET',

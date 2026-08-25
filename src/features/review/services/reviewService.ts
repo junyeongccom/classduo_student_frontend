@@ -33,7 +33,7 @@ export const reviewService = {
 
   getDefinitionBuilderGame: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { message: 'Invalid ID', code: 'INVALID_ID' } })
+      return Promise.resolve({ data: null, error: { message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.', code: 'INVALID_ID' } })
     }
     return apiRequest<DefinitionBuilderGameResponse>(API_ENDPOINTS.REVIEW.GET_DEFINITION_BUILDER(lectureId), {
       method: 'GET',
@@ -46,7 +46,7 @@ export const reviewService = {
    */
   getLectureWordCategories: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { message: 'Invalid ID', code: 'INVALID_ID' } })
+      return Promise.resolve({ data: null, error: { message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.', code: 'INVALID_ID' } })
     }
     return apiRequest<LectureWordCategoriesResponse>(API_ENDPOINTS.LEARNING.GET_WORD_CATEGORIES(lectureId), {
       method: 'GET',
@@ -92,7 +92,7 @@ export const reviewService = {
    */
   getLectureKeywordsPreview: (lectureId: string) => {
     if (!isUUID(lectureId)) {
-      return Promise.resolve({ data: null, error: { message: 'Invalid ID', code: 'INVALID_ID' } })
+      return Promise.resolve({ data: null, error: { message: '잘못된 주소입니다. 목록에서 다시 선택해 주세요.', code: 'INVALID_ID' } })
     }
     return apiRequest<RecordingLectureKeywordsResponse>(API_ENDPOINTS.RECORDING.GET_LECTURE_KEYWORDS(lectureId), {
       method: 'GET',

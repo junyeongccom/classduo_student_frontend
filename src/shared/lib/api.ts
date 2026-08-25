@@ -26,8 +26,41 @@ type ApiResponse<T> = {
 }
 
 /**
+ * UI 가 error.message 를 그대로 그리는 화면이 있어, message 에는 절대 에러 코드를 넣지 않는다.
+ * 코드는 error_code 로만 전달하고(i18n 매핑용), message 는 사람이 읽을 문장으로 채운다.
+ */
+const FALLBACK_MESSAGE: Record<string, string> = {
+  NO_TOKEN: '로그인이 필요합니다. 다시 로그인해 주세요.',
+  CORS_ERROR: '서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  NETWORK_ERROR: '네트워크 연결을 확인해 주세요.',
+}
+const DEFAULT_MESSAGE = '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+
+/** 코드처럼 보이는 문자열(LOAD_LECTURES_FAILED 등)은 학생에게 그대로 보여주지 않는다. */
+function looksLikeErrorCode(value: unknown): boolean {
+  return typeof value === 'string' && /^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$/.test(value.trim())
+}
+
+/** 백엔드 detail 을 화면에 안전한 { error_code, message } 로 정규화한다. */
+function normalizeError(detail: unknown, fallbackCode: string) {
+  if (detail && typeof detail === 'object') {
+    const d = detail as { error_code?: string; message?: string }
+    const message = !d.message || looksLikeErrorCode(d.message)
+      ? (FALLBACK_MESSAGE[d.error_code ?? ''] ?? DEFAULT_MESSAGE)
+      : d.message
+    return { ...d, error_code: d.error_code ?? fallbackCode, message }
+  }
+  // detail 이 문자열인 경우(FastAPI 기본 {"detail": "Not Found"}) — 원문은 코드 자리로 보낸다.
+  const raw = typeof detail === 'string' ? detail : ''
+  return {
+    error_code: raw && looksLikeErrorCode(raw) ? raw : fallbackCode,
+    message: !raw || looksLikeErrorCode(raw) ? (FALLBACK_MESSAGE[fallbackCode] ?? DEFAULT_MESSAGE) : raw,
+  }
+}
+/**
  * API 요청 유틸리티
  */
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestOptions = {}
@@ -52,7 +85,7 @@ export async function apiRequest<T>(
       // 토큰 없으면 불필요한 401 요청을 보내지 않고 즉시 반환
       return {
         data: null,
-        error: { error_code: 'NO_TOKEN', message: 'NO_TOKEN' },
+        error: { error_code: 'NO_TOKEN', message: FALLBACK_MESSAGE.NO_TOKEN },
         status: 401,
       }
     }
@@ -108,7 +141,7 @@ export async function apiRequest<T>(
     if (!response.ok) {
       return {
         data: null,
-        error: data.detail || { error_code: 'UNKNOWN_ERROR', message: 'UNKNOWN_ERROR' },
+        error: normalizeError(data.detail, 'UNKNOWN_ERROR'),
         status: response.status,
       }
     }
@@ -128,7 +161,7 @@ export async function apiRequest<T>(
       data: null,
       error: {
         error_code: errorCode,
-        message: errorCode,
+        message: FALLBACK_MESSAGE[errorCode] ?? DEFAULT_MESSAGE,
       },
       status: 0,
     }
