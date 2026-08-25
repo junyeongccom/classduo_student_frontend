@@ -35,6 +35,7 @@ import {
 import type { LectureReviewItem, DefinitionBuilderGameResponse, DefinitionBuilderQuestion, DefinitionBuilderBlank } from '@/features/review'
 import { gameAnalytics, gameAbandonAnalytics, gameExtraAnalytics } from '@/shared/lib/analytics'
 import { useMobilePortrait } from '@/shared/hooks/useMediaQuery'
+import { isImeComposing } from '@/shared/lib/ime'
 
 /** 모바일 세로에서 게임 모달을 가로 모드로 강제(90° 회전 + 전체화면)하는 패널 스타일 */
 const LANDSCAPE_PANEL_STYLE: React.CSSProperties = {
@@ -814,6 +815,7 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
               value={nicknameInput}
               onChange={(e) => setNicknameInput(e.target.value)}
               onKeyDown={(e) => {
+                if (isImeComposing(e)) return
                 if (e.key === 'Enter') handleNicknameConfirm()
               }}
               placeholder={t('lectureStudy.game.nicknamePlaceholder')}

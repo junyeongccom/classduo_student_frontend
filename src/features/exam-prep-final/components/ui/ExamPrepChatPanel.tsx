@@ -21,6 +21,7 @@ import {
   type ExamPrepQuizContextPayload,
 } from '../../services/examPrepChatService'
 import type { ExamPrepQuizChatContext } from '../../store/useExamPrepSolveStore'
+import { isImeComposing } from '@/shared/lib/ime'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -153,6 +154,7 @@ export function ExamPrepChatPanel({
       // 이 가드가 없으면 마지막 글자 조합이 끝나기 전에 submit→setInput('') 이 돌고,
       // 직후 compositionend 가 마지막 글자를 입력바에 되살려 "마지막 글자 잔류" 버그가 난다.
       if (e.nativeEvent.isComposing || e.keyCode === 229) return
+      if (isImeComposing(e)) return
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         handleSubmit()
