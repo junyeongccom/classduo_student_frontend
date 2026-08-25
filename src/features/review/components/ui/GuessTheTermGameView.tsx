@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Eye, X as XIcon } from 'lucide-react'
 import type { GuessTheTermSecretTerm, LectureReviewItem } from '@/features/review/types'
 import { ConfirmDialog } from './ConfirmDialog'
+import { isImeComposing } from '@/shared/lib/ime'
 
 interface GuessTheTermGameViewProps {
   isEnabled: boolean
@@ -351,6 +352,7 @@ export function GuessTheTermGameView({
               placeholder={usedQuestions >= maxQuestions ? t('guessTheTerm.allQuestionsUsed') : t('guessTheTerm.inputPlaceholder')}
               disabled={isGameOver || usedQuestions >= maxQuestions || isSending}
               onKeyDown={(e) => {
+                if (isImeComposing(e)) return
                 if (e.key === 'Enter') void handleSend()
               }}
               className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:opacity-60"

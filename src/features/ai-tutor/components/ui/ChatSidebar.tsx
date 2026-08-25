@@ -6,6 +6,7 @@ import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatSession, SearchResult } from '@/features/ai-tutor/types'
 import { AITutorLoading } from '@/features/ai-tutor'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { isImeComposing } from '@/shared/lib/ime'
 
 interface ChatSidebarProps {
   isOpen: boolean
@@ -202,6 +203,7 @@ export default function ChatSidebar({
                 }
               }}
               onKeyDown={(e) => {
+                if (isImeComposing(e)) return
                 if (e.key === 'Enter') {
                   searchAbortRef.current?.abort()
                   const controller = new AbortController()
