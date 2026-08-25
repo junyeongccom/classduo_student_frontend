@@ -248,7 +248,7 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
                     <button
                       type="button"
                       onClick={(e) => handleDeleteSession(s.session_id, e)}
-                      className="shrink-0 rounded p-1 text-gray-400 opacity-0 transition-opacity hover:bg-gray-200 hover:text-red-500 dark:hover:bg-gray-600 group-hover:opacity-100"
+                      className="shrink-0 rounded p-1 text-gray-500 dark:text-gray-400 opacity-0 transition-opacity hover:bg-gray-200 hover:text-red-500 dark:hover:bg-gray-600 group-hover:opacity-100"
                       aria-label={t('sessionDelete')}
                       title={t('sessionDelete')}
                     >
@@ -276,7 +276,7 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3">
         {messages.length === 0 && (
-          <div className="flex h-full items-center justify-center text-gray-400">
+          <div className="flex h-full items-center justify-center text-gray-500 dark:text-gray-400">
             <p className="text-sm text-center whitespace-pre-line">{t('emptyHint')}</p>
           </div>
         )}

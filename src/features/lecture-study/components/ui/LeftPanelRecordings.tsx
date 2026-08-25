@@ -117,7 +117,7 @@ function ChunkAccordionItem({
           <div className="flex flex-col gap-0.5">
             <span className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-1">{title}</span>
             {hasTime && (
-              <span className="flex items-center gap-1 text-[10px] text-gray-400">
+              <span className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400">
                 <Clock className="h-3 w-3" />
                 {formatTime(chunk.start_time)} – {formatTime(chunk.end_time)}
               </span>
@@ -193,7 +193,7 @@ export function LeftPanelRecordings({
 
   if (recordings.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
         <Mic className="h-10 w-10" />
         <p className="text-sm">{t('lectureStudy.leftPanel.recordingsEmpty')}</p>
       </div>
@@ -218,7 +218,7 @@ export function LeftPanelRecordings({
             )}
           </div>
         )}
-        <div className="flex flex-col items-center justify-center gap-2 py-8 text-gray-400">
+        <div className="flex flex-col items-center justify-center gap-2 py-8 text-gray-500 dark:text-gray-400">
           <Mic className="h-8 w-8" />
           <p className="text-xs">
             {hasProcessing

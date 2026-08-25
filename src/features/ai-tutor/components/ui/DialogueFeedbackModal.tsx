@@ -93,7 +93,7 @@ export function DialogueFeedbackModal({ sessionId, onClose, onRated }: DialogueF
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+          className="absolute right-3 top-3 p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
           aria-label={labels.close}
           disabled={submitting}
         >

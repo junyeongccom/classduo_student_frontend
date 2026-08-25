@@ -33,7 +33,7 @@ function NewLanguageToggle() {
         className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
           locale === 'en'
             ? 'bg-[#6366F1] text-white'
-            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
         }`}
       >
         EN
@@ -43,7 +43,7 @@ function NewLanguageToggle() {
         className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
           locale === 'ko'
             ? 'bg-[#6366F1] text-white'
-            : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
         }`}
       >
         KO
@@ -297,7 +297,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               <button
                 onClick={() => setIsProfileOpen((v) => !v)}
                 className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
-                  isProfileOpen ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300'
+                  isProfileOpen ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300'
                 }`}
               >
                 <Settings className="h-4 w-4" />

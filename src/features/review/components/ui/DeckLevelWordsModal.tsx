@@ -36,7 +36,7 @@ export function DeckLevelWordsModal({ isOpen, onClose, level, items }: DeckLevel
           </h3>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            className="rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
             type="button"
           >
             <X className="h-5 w-5" />

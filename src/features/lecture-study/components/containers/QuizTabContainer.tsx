@@ -621,7 +621,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
   if (quizzes.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-500">
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-500 dark:text-gray-500">
         <HelpCircle className="h-10 w-10" />
         <p className="text-sm">{t('empty')}</p>
       </div>
@@ -673,7 +673,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
       {/* 필터 결과 0건 */}
       {sections.length === 0 && (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-6 py-10 text-gray-400 dark:text-gray-500">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 px-6 py-10 text-gray-500 dark:text-gray-500">
           <HelpCircle className="h-8 w-8" />
           <p className="text-sm">{t('filter.noResult')}</p>
           <button

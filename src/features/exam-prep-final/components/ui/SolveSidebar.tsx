@@ -86,7 +86,7 @@ export function SolveSidebar({
       >
         {/* 회차 정보 */}
         <div>
-          <p className="text-gray-400" style={{ fontSize: 'max(11.2px, 0.781cqw)', lineHeight: 1.3 }}>
+          <p className="text-gray-500 dark:text-gray-400" style={{ fontSize: 'max(11.2px, 0.781cqw)', lineHeight: 1.3 }}>
             {sessionLabel}
           </p>
           <h2

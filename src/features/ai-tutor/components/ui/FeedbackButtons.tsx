@@ -94,7 +94,7 @@ export function FeedbackButtons({
         className={`inline-flex items-center justify-center rounded-md p-1.5 transition-all duration-200 ${
           feedback === 'like'
             ? 'bg-blue-100 text-blue-600'
-            : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600'
         } disabled:opacity-50`}
         aria-label="좋아요"
       >
@@ -107,7 +107,7 @@ export function FeedbackButtons({
         className={`inline-flex items-center justify-center rounded-md p-1.5 transition-all duration-200 ${
           feedback === 'dislike'
             ? 'bg-red-100 text-red-600'
-            : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600'
         } disabled:opacity-50`}
         aria-label="싫어요"
       >

@@ -202,7 +202,7 @@ export function DialogueLectureSidebar({
         </div>
         {availableLectures.length > 0 && !isLocked && (
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-gray-400 dark:text-gray-500">
+            <span className="text-[11px] text-gray-500 dark:text-gray-500">
               {selectedLectureIds.length}/{MAX_SELECTED_LECTURES}
             </span>
             <button
@@ -215,7 +215,7 @@ export function DialogueLectureSidebar({
         )}
       </div>
       {!isLocked && availableLectures.length > MAX_SELECTED_LECTURES && (
-        <p className="mb-2 text-[11px] text-gray-400 dark:text-gray-500">
+        <p className="mb-2 text-[11px] text-gray-500 dark:text-gray-500">
           {locale === 'en'
             ? `You can select up to ${MAX_SELECTED_LECTURES} lectures at a time.`
             : `회차는 한 번에 최대 ${MAX_SELECTED_LECTURES}개까지 선택할 수 있어요.`}
@@ -247,7 +247,7 @@ export function DialogueLectureSidebar({
                     : isSelected && isLocked
                       ? 'bg-blue-50/60 dark:bg-blue-900/20 border-blue-200/60 dark:border-blue-700/60 text-blue-900/70 dark:text-blue-100/70 cursor-not-allowed'
                       : isDisabled
-                        ? 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                        ? 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-50'
                         : 'bg-gray-50 dark:bg-gray-800/50 border-transparent hover:border-gray-200 dark:hover:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
                 }`}
               >
@@ -257,7 +257,7 @@ export function DialogueLectureSidebar({
                       isSelected
                         ? 'text-blue-900 dark:text-blue-100'
                         : isDisabled
-                          ? 'text-gray-400'
+                          ? 'text-gray-500 dark:text-gray-400'
                           : 'text-gray-800 dark:text-gray-200'
                     }`}
                   >
@@ -266,7 +266,7 @@ export function DialogueLectureSidebar({
                       getWeekSession(lecture) ||
                       t('lectureLabel', { no: String(lecture.lecture_no) })}
                   </p>
-                  <p className={`text-xs ${isSelected ? 'text-blue-600 dark:text-blue-300' : 'text-gray-400'}`}>
+                  <p className={`text-xs ${isSelected ? 'text-blue-600 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`}>
                     {getWeekSession(lecture) || t('lectureLabel', { no: String(lecture.lecture_no) })} ·{' '}
                     {lecture.lecture_date}
                   </p>

@@ -162,7 +162,7 @@ export function QuizFilterBar({
         <div id={panelId} className="flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800 px-3 py-3">
           {availableTypes.length > 0 && (
             <div>
-              <p className="mb-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+              <p className="mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-500">
                 {t('filter.groupType')}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -180,7 +180,7 @@ export function QuizFilterBar({
 
           {availableFormats.length > 0 && (
             <div>
-              <p className="mb-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+              <p className="mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-500">
                 {t('filter.groupFormat')}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -197,7 +197,7 @@ export function QuizFilterBar({
           )}
 
           <div>
-            <p className="mb-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+            <p className="mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-500">
               {t('filter.groupBookmark')}
             </p>
             <Chip
@@ -209,7 +209,7 @@ export function QuizFilterBar({
           </div>
 
           <div>
-            <p className="mb-1.5 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+            <p className="mb-1.5 text-[11px] font-semibold text-gray-500 dark:text-gray-500">
               {t('filter.groupPage')}
             </p>
             {availablePages.length === 0 ? (
@@ -261,7 +261,7 @@ export function QuizFilterBar({
 
       {/* 풀이 범위 선택 */}
       <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 dark:border-gray-800 px-3 py-2.5">
-        <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+        <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-500">
           {t('scope.label')}
         </span>
         <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-600">

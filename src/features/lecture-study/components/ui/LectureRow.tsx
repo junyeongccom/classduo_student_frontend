@@ -110,7 +110,7 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onMicC
             {locale === 'ko' ? cfg.labelKo : cfg.label}
           </span>
           {weekSessionLabel && (
-            <span className="text-[calc(10px*var(--u))] font-medium text-gray-400 md:text-xs">{weekSessionLabel}</span>
+            <span className="text-[calc(10px*var(--u))] font-medium text-gray-500 dark:text-gray-400 md:text-xs">{weekSessionLabel}</span>
           )}
         </div>
         <h4 className="truncate text-[calc(12px*var(--u))] font-bold text-gray-900 dark:text-gray-50 md:whitespace-normal md:text-lg">{displayTitle}</h4>

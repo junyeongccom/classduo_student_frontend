@@ -23,7 +23,7 @@ export default function TranscriptSaveButton({ onClick, disabled, label }: Props
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="inline-flex items-center justify-center rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+      className="inline-flex items-center justify-center rounded-lg p-1.5 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300"
     >
       <FileDown className="h-4 w-4" aria-hidden="true" />
     </button>

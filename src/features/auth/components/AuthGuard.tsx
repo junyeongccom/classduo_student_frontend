@@ -48,7 +48,7 @@ export function AuthGuard({
               <button
                 onClick={() => setShowNotice(false)}
                 aria-label="닫기"
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                className="rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -64,7 +64,7 @@ export function AuthGuard({
               <button
                 onClick={() => setShowNotice(false)}
                 aria-label="닫기"
-                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                className="rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -85,7 +85,7 @@ export function AuthGuard({
               className={`flex-1 px-6 py-3 text-center font-medium transition-colors ${
                 activeTab === 'signup'
                   ? 'text-gray-900 border-b-2 border-gray-900 dark:text-gray-100 dark:border-gray-100'
-                  : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                  : 'text-gray-500 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
               }`}
             >
               {t('signupTab')}
@@ -95,7 +95,7 @@ export function AuthGuard({
               className={`flex-1 px-6 py-3 text-center font-medium transition-colors ${
                 activeTab === 'login'
                   ? 'text-gray-900 border-b-2 border-gray-900 dark:text-gray-100 dark:border-gray-100'
-                  : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
+                  : 'text-gray-500 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
               }`}
             >
               {t('loginTab')}

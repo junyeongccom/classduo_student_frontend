@@ -138,11 +138,11 @@ export default function SocraticScorePanel({
               const showCounter = block.count > 1
               return (
                 <li key={`${block.key}-${block.start}`}>
-                  <div className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs ${active ? 'bg-indigo-50 font-semibold text-indigo-700' : style ? style.label : impliedPass ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <div className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs ${active ? 'bg-indigo-50 font-semibold text-indigo-700' : style ? style.label : impliedPass ? 'text-gray-500' : 'text-gray-500 dark:text-gray-400'}`}>
                     <span
                       aria-hidden="true"
                       className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
-                        style ? style.node : impliedPass ? 'bg-gray-300 text-white' : active ? 'animate-pulse border border-indigo-500 text-indigo-600' : 'border border-gray-300 text-gray-400'
+                        style ? style.node : impliedPass ? 'bg-gray-300 text-white' : active ? 'animate-pulse border border-indigo-500 text-indigo-600' : 'border border-gray-300 text-gray-500 dark:text-gray-400'
                       }`}
                     >
                       {topResult && allPassed
@@ -156,11 +156,11 @@ export default function SocraticScorePanel({
                       )}
                     </span>
                     {results.some((r) => r.aha) && <span aria-hidden="true">✨</span>}
-                    {results.length > 0 && <span className="shrink-0 tabular-nums text-[10px] text-gray-400">+{scoreSum}</span>}
+                    {results.length > 0 && <span className="shrink-0 tabular-nums text-[10px] text-gray-500 dark:text-gray-400">+{scoreSum}</span>}
                   </div>
                   {/* 통과 방식 라벨 — 유형에 문항이 하나뿐일 때(구 주제 포함) */}
                   {block.count === 1 && results.length === 1 && (
-                    <div className="pl-8 text-[10px] text-gray-400">{t(`socraticMethod.${results[0].method}`)}</div>
+                    <div className="pl-8 text-[10px] text-gray-500 dark:text-gray-400">{t(`socraticMethod.${results[0].method}`)}</div>
                   )}
                   {/* 문항이 여럿인 유형은 문항별 통과 방식을 점으로 압축해 보여준다 (세로 길이 유지) */}
                   {block.count > 1 && (active || allPassed) && (

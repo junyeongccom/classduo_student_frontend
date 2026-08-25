@@ -252,7 +252,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
                   { met: /[0-9]/.test(newPassword), label: tv('strengthNumbers') },
                   { met: /[^A-Za-z0-9]/.test(newPassword), label: tv('strengthSymbols') },
                 ].map(({ met, label }) => (
-                  <span key={label} className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span key={label} className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>
                     <Check className={`h-3 w-3 ${met ? '' : 'opacity-40'}`} />
                     {label}
                   </span>
@@ -429,7 +429,7 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
       <div className="absolute inset-0 bg-black/30" onClick={canClose ? onClose : undefined} />
       <div className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-xl">
         {canClose && (
-          <button onClick={onClose} className="absolute right-4 top-4 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+          <button onClick={onClose} className="absolute right-4 top-4 rounded-lg p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600">
             <X className="h-5 w-5" />
           </button>
         )}

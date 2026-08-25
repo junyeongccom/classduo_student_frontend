@@ -66,7 +66,7 @@ const VERDICT_STYLE: Record<string, { icon: typeof Check; iconClass: string; bad
   },
   missed: {
     icon: X,
-    iconClass: 'text-gray-400 dark:text-gray-500',
+    iconClass: 'text-gray-500 dark:text-gray-500',
     badgeClass: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400',
   },
 }

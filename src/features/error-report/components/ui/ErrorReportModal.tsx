@@ -231,7 +231,7 @@ export function ErrorReportModal({
             <button
               onClick={handleClose}
               disabled={isSubmitting}
-              className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -368,7 +368,7 @@ export function ErrorReportModal({
                   type="button"
                   onClick={handleRemoveFile}
                   disabled={isSubmitting}
-                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
@@ -399,7 +399,7 @@ export function ErrorReportModal({
             disabled={!content.trim() || isSubmitting}
             className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-colors ${
               !content.trim() || isSubmitting
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                ? 'bg-gray-200 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                 : 'bg-gray-900 text-white hover:bg-gray-800'
             }`}
           >

@@ -327,7 +327,7 @@ export default function WrongAnswersTab({
   const renderContent = () => {
     if (selectedLectureIds.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-500 dark:text-gray-400">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
             <CheckCircle2 className="h-7 w-7 stroke-[1.5] text-green-400" />
           </div>
@@ -362,7 +362,7 @@ export default function WrongAnswersTab({
 
     if (courseGroups.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-500 dark:text-gray-400">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
             <CheckCircle2 className="h-7 w-7 stroke-[1.5] text-green-400" />
           </div>

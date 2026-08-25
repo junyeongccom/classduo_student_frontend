@@ -74,7 +74,7 @@ export function BottomDropdown({
           disabled && 'opacity-50 cursor-not-allowed',
         )}
       >
-        <span className={cn('truncate', selectedLabel ? 'text-gray-900 dark:text-gray-50' : 'text-gray-400')}>
+        <span className={cn('truncate', selectedLabel ? 'text-gray-900 dark:text-gray-50' : 'text-gray-500 dark:text-gray-400')}>
           {selectedLabel || placeholder}
         </span>
         <ChevronDown className={cn('ml-1 h-4 w-4 shrink-0 text-gray-400 transition-transform', isOpen ? 'rotate-180' : '')} />
@@ -187,7 +187,7 @@ export function MultiSelectDropdown({
           disabled && 'opacity-50 cursor-not-allowed',
         )}
       >
-        <span className={cn('truncate', selectedIds.length > 0 ? 'text-gray-900 dark:text-gray-50' : 'text-gray-400')}>
+        <span className={cn('truncate', selectedIds.length > 0 ? 'text-gray-900 dark:text-gray-50' : 'text-gray-500 dark:text-gray-400')}>
           {displayText}
         </span>
         <ChevronDown className={cn('ml-1 h-4 w-4 shrink-0 text-gray-400 transition-transform', isOpen ? 'rotate-180' : '')} />

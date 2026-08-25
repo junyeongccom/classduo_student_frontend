@@ -157,7 +157,7 @@ export function DateTimePicker({
         onClick={() => setOpen((v) => !v)}
         className={cn(
           'h-12 w-full cursor-pointer rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-4 text-left text-sm text-gray-900 dark:text-gray-100 outline-none transition-all focus:border-[#6366F1] focus:ring-2 focus:ring-[#6366F1]/20 disabled:cursor-not-allowed disabled:bg-gray-100',
-          !selectedDate && 'text-gray-400',
+          !selectedDate && 'text-gray-500 dark:text-gray-400',
         )}
       >
         {displayText}
@@ -209,7 +209,7 @@ export function DateTimePicker({
           </div>
 
           {/* 요일 헤더 */}
-          <div className="grid grid-cols-7 gap-1 pb-1 text-center text-[11px] font-semibold text-gray-400">
+          <div className="grid grid-cols-7 gap-1 pb-1 text-center text-[11px] font-semibold text-gray-500 dark:text-gray-400">
             {(isKo ? DOW_KO : DOW_EN).map((d, i) => (
               <div key={d} className={cn(i === 0 && 'text-rose-500', i === 6 && 'text-sky-500')}>{d}</div>
             ))}

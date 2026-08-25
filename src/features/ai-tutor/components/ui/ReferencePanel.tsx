@@ -693,7 +693,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
         </div>
         <button
           onClick={onClose}
-          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         >
           <X className="h-5 w-5" />
         </button>

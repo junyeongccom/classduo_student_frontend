@@ -354,7 +354,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               <TabsTrigger
                 key={tab}
                 value={tab}
-                className="flex-1 min-w-0 truncate rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
+                className="flex-1 min-w-0 truncate rounded-none bg-transparent px-1 py-2.5 text-xs font-medium text-gray-500 dark:text-gray-400 shadow-none transition-colors data-[state=active]:bg-transparent data-[state=active]:text-[#6366F1] data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#6366F1] hover:text-gray-600 dark:hover:text-gray-300"
               >
                 {t(`lectureStudy.rightPanel.${tab}Tab`)}
               </TabsTrigger>
@@ -386,7 +386,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
     <div className="flex h-full flex-col">
       {/* Breadcrumb + Action buttons → Header topbar slot */}
       <StudyspaceTopbarSlot>
-        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 md:gap-2">
           {/* 모바일에선 부모 레벨 3개 숨기고 회차명만 truncate로 노출 — 글자단위 break + 헤더 부풀어오름 방지 */}
           <Link href="/studyspace/home" className="hidden shrink-0 transition-colors hover:text-[#6366F1] md:inline">
             {t('lectureStudy.breadcrumbHome')}
@@ -480,7 +480,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                 </TabsList>
                 <button
                   onClick={toggleLeftPanel}
-                  className="ml-2 mb-2 rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  className="ml-2 mb-2 rounded-md p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -512,7 +512,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               </div>
               <button
                 onClick={toggleChatPanel}
-                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="rounded-md p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -548,7 +548,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
                 </TabsList>
                 <button
                   onClick={toggleLeftPanel}
-                  className="ml-2 mb-2 rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  className="ml-2 mb-2 rounded-md p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -626,7 +626,7 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
               </div>
               <button
                 onClick={toggleChatPanel}
-                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="rounded-md p-1 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>

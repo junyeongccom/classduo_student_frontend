@@ -76,7 +76,7 @@ export function StudyModeCard({
 
       {/* Body */}
       <div className="flex-1">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-500">
           {eyebrow}
         </p>
         <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-50">

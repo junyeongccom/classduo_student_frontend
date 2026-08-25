@@ -28,7 +28,7 @@ export function SourceButton({ label, tooltipId, tooltipContent, disabled, disab
         className={[
           'rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors',
           disabled
-            ? 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-400 cursor-default'
+            ? 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-default'
             : disabledClick
               ? 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 cursor-default'
               : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer',

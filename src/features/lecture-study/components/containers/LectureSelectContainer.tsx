@@ -148,7 +148,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
     <>
       {/* Breadcrumb → Header topbar slot: 홈 > 과목명(대시보드) > 회차별 학습 */}
       <StudyspaceTopbarSlot>
-        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 md:gap-2">
           <Link
             href="/studyspace/home"
             className="shrink-0 transition-colors hover:text-[#6366F1]"
@@ -189,7 +189,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                 <span className="font-bold text-gray-900 dark:text-gray-50">
                   {currentWeek > 0 ? currentWeek : '-'}
                 </span>
-                <span className="mx-1 text-gray-400">/</span>
+                <span className="mx-1 text-gray-500 dark:text-gray-400">/</span>
                 <span className="text-gray-500 dark:text-gray-400">
                   {totalWeeks > 0 ? totalWeeks : lectures.length || '-'}
                 </span>

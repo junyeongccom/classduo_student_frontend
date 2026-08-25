@@ -1485,7 +1485,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
   // 수업 미선택 상태
   if (selectedLectureIds.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-gray-400">
+      <div className="flex h-full items-center justify-center text-gray-500 dark:text-gray-400">
         <div className="text-center">
           <p className="text-lg font-medium">{t('selectLectureTitle')}</p>
           <p className="mt-2 text-sm">{t('selectLectureDescription')}</p>
@@ -1823,7 +1823,7 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
                     {isTypingComplete && typingLength >= message.content.length &&
                       Array.isArray(message.similar_quizzes) && message.similar_quizzes.length > 0 && (
                       <div className="mt-3 flex flex-col gap-1.5">
-                        <span className="text-[11px] font-semibold text-gray-400">{t('similarQuizzesLabel')}</span>
+                        <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{t('similarQuizzesLabel')}</span>
                         {message.similar_quizzes.map((sq) => (
                           <button
                             key={sq.quiz_id}

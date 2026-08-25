@@ -184,7 +184,7 @@ export function GameSelector({ onSelectGame, nickname, onChangeNickname }: GameS
           >
             <UserCircle className="h-3.5 w-3.5" />
             {/* 값만 있으면('테스트') 정체 모를 칩으로 읽힌다 — 무엇인지(닉네임) 함께 밝힌다 */}
-            <span className="shrink-0 text-gray-400">{t('lectureStudy.game.nicknameLabel')}</span>
+            <span className="shrink-0 text-gray-500 dark:text-gray-400">{t('lectureStudy.game.nicknameLabel')}</span>
             <span className="max-w-[100px] truncate">{nickname}</span>
           </button>
         )}

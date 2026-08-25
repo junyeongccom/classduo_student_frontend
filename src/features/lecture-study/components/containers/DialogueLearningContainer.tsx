@@ -345,7 +345,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
     <>
       {/* Breadcrumb → Header topbar slot */}
       <StudyspaceTopbarSlot>
-        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 md:gap-2">
           <Link href="/studyspace/home" className="shrink-0 transition-colors hover:text-[#6366F1]">
             {t('lectureStudy.breadcrumbHome')}
           </Link>
@@ -688,7 +688,7 @@ export function DialogueLearningContainer({ courseId, lectureId }: DialogueLearn
                   <span className="flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200">
                     <span>{t('aiTutorChat.socraticCompactScore', { score: socraticTotalScore })}</span>
                     {socraticActiveBlock && (
-                      <span className="font-medium text-gray-400 dark:text-gray-500">
+                      <span className="font-medium text-gray-500 dark:text-gray-500">
                         · {t(`aiTutorChat.socraticStage.${socraticActiveBlock.key}`)}{' '}
                         {socraticActiveBlockPassed}/{socraticActiveBlock.count}
                       </span>

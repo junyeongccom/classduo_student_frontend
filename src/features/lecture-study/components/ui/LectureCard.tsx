@@ -89,7 +89,7 @@ export function LectureCard({ lecture, isLatest, courseId, onClick }: LectureCar
       <div className="flex flex-1 flex-col justify-between p-3">
         <div>
           {weekSessionLabel && (
-            <p className="text-[11px] font-medium text-gray-400 mb-0.5">
+            <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400 mb-0.5">
               {weekSessionLabel}
             </p>
           )}

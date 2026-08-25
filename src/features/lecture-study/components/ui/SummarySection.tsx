@@ -102,7 +102,7 @@ export function SummarySection({
             </div>
           )}
           <table className="w-full text-left text-xs text-gray-600 dark:text-gray-300">
-            <thead className="bg-gray-50 dark:bg-gray-700 text-[11px] uppercase text-gray-400 dark:text-gray-500">
+            <thead className="bg-gray-50 dark:bg-gray-700 text-[11px] uppercase text-gray-500 dark:text-gray-500">
               <tr>
                 {table.headers.map((header) => (
                   <th key={header} className="px-3 py-2 font-semibold">

@@ -95,7 +95,7 @@ export function ConsentCheckboxGroup({
                     className={`mr-1.5 text-xs font-medium ${
                       doc.is_required
                         ? 'text-gray-900 dark:text-gray-100'
-                        : 'text-gray-400 dark:text-gray-500'
+                        : 'text-gray-500 dark:text-gray-500'
                     }`}
                   >
                     [{doc.is_required ? t('required') : t('optional')}]

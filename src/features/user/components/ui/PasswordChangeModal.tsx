@@ -137,7 +137,7 @@ export function PasswordChangeModal({
           {step === 'idle' && (
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -191,7 +191,7 @@ export function PasswordChangeModal({
                   <button
                     type="button"
                     onClick={onToggleCurrentPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-600"
                   >
                     {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -295,7 +295,7 @@ export function PasswordChangeModal({
                   <button
                     type="button"
                     onClick={onToggleNewPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-600"
                   >
                     {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -309,7 +309,7 @@ export function PasswordChangeModal({
                       { met: /[0-9]/.test(newPassword), label: tv('strengthNumbers') },
                       { met: /[^A-Za-z0-9]/.test(newPassword), label: tv('strengthSymbols') },
                     ].map(({ met, label }) => (
-                      <span key={label} className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-gray-400'}`}>
+                      <span key={label} className={`flex items-center gap-1 ${met ? 'text-green-600' : 'text-gray-500 dark:text-gray-400'}`}>
                         <Check className={`h-3 w-3 ${met ? '' : 'opacity-40'}`} />
                         {label}
                       </span>
@@ -334,7 +334,7 @@ export function PasswordChangeModal({
                   <button
                     type="button"
                     onClick={onToggleNewPasswordConfirm}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-600"
                   >
                     {showNewPasswordConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>

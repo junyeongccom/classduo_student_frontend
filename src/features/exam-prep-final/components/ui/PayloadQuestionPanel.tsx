@@ -449,7 +449,7 @@ export function PayloadQuestionPanel({
 
   // 하단 좌측 아이콘 버튼 공통 스타일 (cqw)
   const iconBtn =
-    'flex items-center justify-center rounded-[0.498cqw] text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/10'
+    'flex items-center justify-center rounded-[0.498cqw] text-gray-500 dark:text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed dark:hover:bg-white/10'
   const iconBtnStyle = { width: '2.714cqw', height: '2.714cqw' } as const /* figma 44px */
   const iconSize = { width: '1.481cqw', height: '1.481cqw' } as const /* figma 24px */
 
@@ -806,7 +806,7 @@ export function PayloadQuestionPanel({
           <p className="font-bold" style={{ fontSize: '1.363cqw' /* figma 1/10 ~22px */ }}>
             <span className="text-gray-900 dark:text-gray-50">{currentSeq}</span>
             <span className="mx-[0.474cqw] text-gray-300">/</span>
-            <span className="text-gray-400">{total}</span>
+            <span className="text-gray-500 dark:text-gray-400">{total}</span>
           </p>
           <div className="flex items-center" style={{ gap: '0.593cqw' }}>
             <button

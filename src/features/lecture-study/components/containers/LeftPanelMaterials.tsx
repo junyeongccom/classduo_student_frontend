@@ -375,7 +375,7 @@ export function LeftPanelMaterials() {
 
   if (error) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
         <p className="text-sm">{t('lectureStudy.error.materialsLoadError')}</p>
       </div>
     )
@@ -383,7 +383,7 @@ export function LeftPanelMaterials() {
 
   if (allPages.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-400">
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
         <FileText className="h-10 w-10" />
         <p className="text-sm">{t('lectureStudy.leftPanel.materialsEmpty')}</p>
       </div>
@@ -414,7 +414,7 @@ export function LeftPanelMaterials() {
             >
               {entry.type === 'error' ? (
                 /* 에러 placeholder (Task 768) */
-                <div className="flex h-[400px] flex-col items-center justify-center gap-2 bg-gray-50 text-gray-400">
+                <div className="flex h-[400px] flex-col items-center justify-center gap-2 bg-gray-50 text-gray-500 dark:text-gray-400">
                   <AlertTriangle className="h-8 w-8" />
                   <p className="text-sm">{t('lectureStudy.error.materialsLoadError')}</p>
                 </div>

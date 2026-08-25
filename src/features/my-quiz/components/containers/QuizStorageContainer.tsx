@@ -455,14 +455,14 @@ export default function QuizStorageContainer() {
           </div>
           <div className="flex shrink-0 items-end gap-4 pb-1 md:gap-8 md:pb-2">
             <div className="text-right">
-              <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">{t('storage.favorites')}</p>
+              <p className="mb-0.5 text-[11px] text-gray-500 dark:text-gray-500 md:mb-1 md:text-xs">{t('storage.favorites')}</p>
               <p className="text-lg font-bold text-gray-900 dark:text-gray-50 md:text-2xl">
                 <span className="text-[#6366F1]">{totalCounts.fav}</span>
                 <span className="ml-1 text-sm text-gray-500 dark:text-gray-400 md:text-base">{t('storage.countUnit')}</span>
               </p>
             </div>
             <div className="text-right">
-              <p className="mb-0.5 text-[11px] text-gray-400 dark:text-gray-500 md:mb-1 md:text-xs">{t('storage.wrong')}</p>
+              <p className="mb-0.5 text-[11px] text-gray-500 dark:text-gray-500 md:mb-1 md:text-xs">{t('storage.wrong')}</p>
               {/* 단위(개)는 즐겨찾기 쪽과 같은 자리·같은 크기로 — 한쪽만 빠지면 두 지표가 다른 것처럼 읽힌다 */}
               <p className="text-lg font-bold text-[#F97316] md:text-2xl">
                 {totalCounts.wrong}
@@ -480,7 +480,7 @@ export default function QuizStorageContainer() {
                 active={segment === 'all'}
                 onClick={() => setSegment('all')}
               >
-                {t('storage.all')} <span className="ml-1 text-[11px] text-gray-400 md:text-xs">{totalCounts.total}</span>
+                {t('storage.all')} <span className="ml-1 text-[11px] text-gray-500 dark:text-gray-400 md:text-xs">{totalCounts.total}</span>
               </SegBtn>
               <SegBtn
                 active={segment === 'fav'}
@@ -488,7 +488,7 @@ export default function QuizStorageContainer() {
               >
                 <Bookmark className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">{t('storage.favorites')}</span>
-                <span className="text-[11px] text-gray-400 md:text-xs">{totalCounts.fav}</span>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400 md:text-xs">{totalCounts.fav}</span>
               </SegBtn>
               <SegBtn
                 active={segment === 'wrong'}
@@ -496,7 +496,7 @@ export default function QuizStorageContainer() {
               >
                 <XCircle className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">{t('storage.wrong')}</span>
-                <span className="text-[11px] text-gray-400 md:text-xs">{totalCounts.wrong}</span>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400 md:text-xs">{totalCounts.wrong}</span>
               </SegBtn>
             </div>
 
@@ -1078,7 +1078,7 @@ function QuizCard({
           {(lectureLabel || typeLabel) && (
             <>
               <span className="text-gray-300">·</span>
-              <span className="text-gray-400">
+              <span className="text-gray-500 dark:text-gray-400">
                 {[lectureLabel, typeLabel].filter(Boolean).join(' · ')}
               </span>
             </>
@@ -1180,7 +1180,7 @@ function QuizCard({
 
       {/* Footer — 다시 풀기 → 해설 보기 (expand) */}
       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs dark:border-gray-800">
-        <span className="text-gray-400">
+        <span className="text-gray-500 dark:text-gray-400">
           {formatRelative(isWrongTab ? (item.last_wrong_at ?? item.last_activity_at) : item.last_activity_at, t)}
           {item.is_bookmark && item.is_wrong
             ? t('storage.favAndWrong')
@@ -1215,7 +1215,7 @@ function QuizCard({
               />
             </div>
           ) : (
-            <p className="text-gray-400">{t('storage.noExplanation')}</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('storage.noExplanation')}</p>
           )}
           {/* exam_prep 출처는 explanation 필드에 이미 "1번:, 2번:..." 형식 전체 분석이 들어있어
               choice_explanation 까지 출력하면 동일 내용이 두 번 나옴 → 선지별 분석 섹션 생략 */}

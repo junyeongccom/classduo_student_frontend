@@ -38,7 +38,7 @@ export function SolveTopBar({
       </Link>
 
       {/* Desktop: full breadcrumb */}
-      <nav className="hidden sm:flex min-w-0 items-center gap-2 text-sm font-medium text-gray-400">
+      <nav className="hidden sm:flex min-w-0 items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
         <Link
           href="/studyspace/home"
           className="transition-colors hover:text-[#6366F1]"

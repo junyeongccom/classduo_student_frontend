@@ -158,7 +158,7 @@ export function WordListModal({
                       <button onClick={handleSaveEdit} disabled={isSaving} className="p-0.5 text-emerald-600 hover:text-emerald-800 disabled:opacity-40">
                         {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                       </button>
-                      <button onClick={handleCancelEdit} className="p-0.5 text-gray-400 hover:text-gray-600">
+                      <button onClick={handleCancelEdit} className="p-0.5 text-gray-500 dark:text-gray-400 hover:text-gray-600">
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -175,7 +175,7 @@ export function WordListModal({
                       <button
                         onClick={() => handleStartEdit(word)}
                         disabled={isSaving}
-                        className="shrink-0 p-1 text-gray-400 hover:text-blue-500 disabled:opacity-40"
+                        className="shrink-0 p-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 disabled:opacity-40"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
@@ -184,7 +184,7 @@ export function WordListModal({
                       <button
                         onClick={() => handleRemove(word.id)}
                         disabled={isSaving}
-                        className="shrink-0 p-1 text-gray-400 hover:text-red-500 disabled:opacity-40"
+                        className="shrink-0 p-1 text-gray-500 dark:text-gray-400 hover:text-red-500 disabled:opacity-40"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

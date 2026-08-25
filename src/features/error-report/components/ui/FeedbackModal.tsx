@@ -160,7 +160,7 @@ export function FeedbackModal({
           <button
             onClick={handleClose}
             disabled={isSubmitting}
-            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+            className="rounded-full p-2 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
           >
             <X className="h-5 w-5" />
           </button>
@@ -264,7 +264,7 @@ export function FeedbackModal({
                 } ${isSubmitting ? 'pointer-events-none opacity-50' : ''}`}
               >
                 <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm transition-colors ${
-                  isDragOver ? 'text-[#6366F1]' : 'text-gray-400 group-hover:text-[#6366F1]'
+                  isDragOver ? 'text-[#6366F1]' : 'text-gray-500 dark:text-gray-400 group-hover:text-[#6366F1]'
                 }`}>
                   <Upload className="h-6 w-6" />
                 </div>
@@ -298,7 +298,7 @@ export function FeedbackModal({
                   type="button"
                   onClick={handleRemoveFile}
                   disabled={isSubmitting}
-                  className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+                  className="rounded-lg p-2 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

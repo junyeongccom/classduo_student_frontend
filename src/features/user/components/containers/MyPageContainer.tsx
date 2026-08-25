@@ -17,7 +17,7 @@ export function MyPageContainer() {
 
   if (!user) {
     return (
-      <div className="flex h-dvh items-center justify-center text-gray-400 dark:text-gray-500">
+      <div className="flex h-dvh items-center justify-center text-gray-500 dark:text-gray-500">
         {t('loadingUser')}
       </div>
     )

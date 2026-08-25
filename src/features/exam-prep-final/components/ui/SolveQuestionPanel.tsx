@@ -358,7 +358,7 @@ export function SolveQuestionPanel({
                 <span
                   className={cn(
                     'flex-1 text-base text-gray-800 dark:text-gray-100',
-                    isHintDisabled && 'line-through text-gray-400',
+                    isHintDisabled && 'line-through text-gray-500 dark:text-gray-400',
                   )}
                 >
                   <MathText text={opt} />
@@ -426,7 +426,7 @@ export function SolveQuestionPanel({
 
         {/* 하단 액션 영역 */}
         <div className="mt-8 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-gray-400">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
             <button
               type="button"
               onClick={onBookmarkToggle}
@@ -624,7 +624,7 @@ export function SolveQuestionPanel({
             <p className="text-base font-semibold text-gray-700 dark:text-gray-300">
               <span className="text-gray-900 dark:text-gray-50">{currentSeq}</span>
               <span className="mx-1.5 text-gray-300">/</span>
-              <span className="text-gray-400">{total}</span>
+              <span className="text-gray-500 dark:text-gray-400">{total}</span>
             </p>
             <div className="flex items-center gap-2">
               <button

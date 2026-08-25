@@ -173,7 +173,7 @@ export function SocraticOnboardingModal({ isOpen, onClose }: SocraticOnboardingM
               >
                 <div
                   className={`text-[10px] leading-tight ${
-                    i === 0 ? 'text-indigo-500' : 'text-gray-400'
+                    i === 0 ? 'text-indigo-500' : 'text-gray-500 dark:text-gray-400'
                   }`}
                 >
                   {t(`socraticOnboarding.${cell.key}`)}

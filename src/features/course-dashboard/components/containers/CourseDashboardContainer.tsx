@@ -81,7 +81,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     <>
       {/* Breadcrumb topbar — 기존 유지 */}
       <StudyspaceTopbarSlot>
-        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-400 md:gap-2">
+        <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 md:gap-2">
           <Link
             href="/studyspace/home"
             className="shrink-0 transition-colors hover:text-[#6366F1]"

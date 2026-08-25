@@ -145,7 +145,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
               </div>
               <button
                 onClick={onClose}
-                className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                className="rounded-xl p-2 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -188,7 +188,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
               {/* Left — 수업 목록 (SELECT SUBJECT) */}
               <div className="flex w-[260px] shrink-0 flex-col border-r border-gray-200">
                 <div className="px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400" style={{ fontFamily: 'monospace' }}>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400" style={{ fontFamily: 'monospace' }}>
                     {locale === 'ko' ? 'SELECT SUBJECT' : 'SELECT SUBJECT'}
                   </p>
                 </div>
@@ -229,7 +229,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
               {/* Right — 회차 목록 (SELECT LEVEL) */}
               <div className="flex flex-1 flex-col min-w-0">
                 <div className="flex items-center justify-between px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400" style={{ fontFamily: 'monospace' }}>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400" style={{ fontFamily: 'monospace' }}>
                     {locale === 'ko' ? 'SELECT LEVEL' : 'SELECT LEVEL'}
                   </p>
                   {selectedCourse && availableLectures.length > 0 && (
@@ -308,7 +308,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400" style={{ fontFamily: 'monospace' }}>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400" style={{ fontFamily: 'monospace' }}>
                   SYSTEM ONLINE
                 </span>
               </span>

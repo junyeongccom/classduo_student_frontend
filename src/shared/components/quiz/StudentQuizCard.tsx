@@ -311,13 +311,13 @@ export function StudentQuizCard({
     const isSelected = selectedChoiceIdx === idx
 
     if (!isSubmitted) {
-      return 'text-gray-400'
+      return 'text-gray-500 dark:text-gray-400'
     }
 
     if (isSelected && choice.is_correct) return 'text-green-600 dark:text-green-400 font-bold'
     if (isSelected && !choice.is_correct) return 'text-red-500 dark:text-red-400 font-bold'
     if (showAnswer && choice.is_correct) return 'text-green-600 dark:text-green-400 font-bold'
-    return 'text-gray-400'
+    return 'text-gray-500 dark:text-gray-400'
   }
 
   return (
@@ -463,7 +463,7 @@ export function StudentQuizCard({
                 className={`w-full rounded-xl py-2 text-sm font-semibold transition-colors ${
                   essayDraft.trim()
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-500 cursor-not-allowed'
                 }`}
               >
                 {t('essaySubmit')}

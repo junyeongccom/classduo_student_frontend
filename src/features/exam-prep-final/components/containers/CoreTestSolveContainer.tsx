@@ -1450,7 +1450,7 @@ export function CoreTestSolveContainer({
           }}
         >
           <span
-            className="min-w-0 flex-1 truncate text-gray-400"
+            className="min-w-0 flex-1 truncate text-gray-500 dark:text-gray-400"
             style={{ fontSize: 'max(12.0px, 0.833cqw)' }}
           >
             {headerLabel ? `${headerLabel} · ${lectureTitle}` : lectureTitle}

@@ -490,7 +490,7 @@ export default function ExamModeContainer({
         </div>
         <button
           onClick={handleCloseClick}
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+          className="rounded-lg p-1.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
           aria-label={t('examMode.close')}
         >
           <X className="h-5 w-5" />
@@ -666,7 +666,7 @@ function SetupPhase({
                 }
               >
                 {lectureLabel(t, opt.lectureNo)}
-                <span className="ml-1 text-[10px] font-medium text-gray-400">
+                <span className="ml-1 text-[10px] font-medium text-gray-500 dark:text-gray-400">
                   {t('examMode.wrongCount', { n: opt.wrongCount })}
                   {opt.favCount > 0
                     ? ` · ${t('examMode.favCount', { n: opt.favCount })}`
@@ -686,7 +686,7 @@ function SetupPhase({
             <span className="text-lg font-black text-[#6366F1]">{previewCount}</span>
             {t('examMode.totalSuffix')}
             {previewCount > 0 && (
-              <span className="ml-1 text-gray-400">
+              <span className="ml-1 text-gray-500 dark:text-gray-400">
                 {t('examMode.estimate', { m: estimateMinutes(previewCount) })}
               </span>
             )}
@@ -875,7 +875,7 @@ function RunPhase({
                         className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold ${
                           selected
                             ? 'border-[#6366F1] bg-[#6366F1] text-white'
-                            : 'border-gray-300 text-gray-400 dark:border-gray-600'
+                            : 'border-gray-300 text-gray-500 dark:text-gray-400 dark:border-gray-600'
                         }`}
                       >
                         {c.choice_order}
@@ -1103,7 +1103,7 @@ function ReviewCard({
         >
           {isEssay ? t('examMode.essaySubmitted') : isCorrect ? t('examMode.correct') : t('examMode.wrong')}
         </span>
-        <span className="text-[11px] text-gray-400">{sourceLabel(t, item)}</span>
+        <span className="text-[11px] text-gray-500 dark:text-gray-400">{sourceLabel(t, item)}</span>
       </div>
 
       {isPayload ? (

@@ -373,7 +373,7 @@ function CourseContextNav({
     return (
       <div
         className={cn(
-          'font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500',
+          'font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-500',
           scaled
             ? 'mb-[calc(4px*var(--u))] mt-[calc(12px*var(--u))] px-[calc(18px*var(--u))] text-[calc(11px*var(--u))]'
             : 'mt-3 mb-1 px-4 text-[11px]',
