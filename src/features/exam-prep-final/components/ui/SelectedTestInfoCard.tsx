@@ -46,6 +46,8 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
   const [mastery, setMastery] = useState<MasteryCounts | null>(null)
   // 1순위 주제 — 선택 시 detail fetch (summary엔 주제 없음). 굵은 제목 자리에 표시.
   const [topic, setTopic] = useState<string>('')
+  // topic 은 비동기다. 도착 전에는 부제의 중복 판정을 할 수 없으므로 해결 여부를 따로 둔다.
+  const [topicResolved, setTopicResolved] = useState(false)
 
   // 선택된 test 가 변경될 때마다 mastery summary 재조회
   useEffect(() => {
@@ -75,9 +77,11 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
   useEffect(() => {
     if (!_isBackendTestId(test.id)) {
       setTopic('')
+      setTopicResolved(true)
       return
     }
     let alive = true
+    setTopicResolved(false)
     fetchCoreTestDetail(test.id).then(({ data }) => {
       if (!alive) return
       // 1순위 주제: exam_prep_topic(detail.topic_title) 우선. 구 테스트는 첫 문항 source_ref.topic_title 폴백.
@@ -88,6 +92,7 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
         data?.questions?.find((q) => q.source_ref?.topic_title?.trim())?.source_ref?.topic_title ?? ''
       ).trim()
       setTopic(fromTable || fromQuestion)
+      setTopicResolved(true)
     })
     return () => {
       alive = false
@@ -107,8 +112,11 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
 
   // 회색 부제 — 회차명. lectureTitle 은 주제명이 있으면 주제명이 들어오므로(buildCoreTestSlots)
   // 아래 굵은 제목(topic)과 같은 문자열이면 주차/차시 라벨로 폴백해 중복 노출을 막는다.
+  // topic 도착 전에 lectureName 을 그대로 쓰면, lectureTitle 에 주제명이 들어온 경우
+  // 굵은 제목과 똑같은 문자열이 부제 자리에 잠깐 떴다가 주차/차시로 바뀌는 잔상이 생긴다.
+  // 해결 전에는 최종값과 같아질 가능성이 높은 주차/차시를 먼저 보여준다.
   const subtitle =
-    !lectureName || lectureName === topic ? sessionLabel : lectureName
+    !topicResolved || !lectureName || lectureName === topic ? sessionLabel : lectureName
 
   return (
     <div className="relative flex items-stretch justify-between gap-3 rounded-3xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-900 md:min-h-[200px] md:gap-6 md:px-7 md:py-7">
