@@ -15,6 +15,7 @@ import { trackEvent } from '@/shared/lib/analytics'
 import { lectureService } from '../../services/lectureService'
 import type { ChatSessionItem, QuizContextPayload } from '../../services/lectureService'
 import type { QuizChatContext } from '../../store/useLectureStudyStore'
+import { isImeComposing } from '@/shared/lib/ime'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -204,6 +205,7 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
   }, [input, isLoading, lectureId, quizChatContext, onClearQuizContext, scrollToBottom, t, activeSessionId, refreshSessions])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (isImeComposing(e)) return   // 한글 조합 중 Enter 는 글자 확정 — 전송하지 않는다
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()

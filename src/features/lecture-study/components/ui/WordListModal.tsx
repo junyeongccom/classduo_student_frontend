@@ -18,6 +18,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/shared/components/ui'
+import { isImeComposing } from '@/shared/lib/ime'
 
 const MAX_KEYWORD_LENGTH = 100
 const MAX_DESCRIPTION_LENGTH = 500
@@ -205,7 +206,7 @@ export function WordListModal({
               placeholder={t('lectureStudy.game.wordKeywordPlaceholder')}
               maxLength={MAX_KEYWORD_LENGTH}
               className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
-              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+              onKeyDown={e => { if (!isImeComposing(e) && e.key === 'Enter') handleAdd() }}
             />
             <input
               value={newDescription}
@@ -213,7 +214,7 @@ export function WordListModal({
               placeholder={t('lectureStudy.game.wordDescriptionPlaceholder')}
               maxLength={MAX_DESCRIPTION_LENGTH}
               className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
-              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+              onKeyDown={e => { if (!isImeComposing(e) && e.key === 'Enter') handleAdd() }}
             />
             <button
               onClick={handleAdd}

@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl'
 import { Send, Loader2, Sparkles, Brain, ChevronUp, Camera, X } from 'lucide-react'
 import type { ChatMode } from '@/features/ai-tutor/types'
 import { SOCRATIC_ENABLED } from '@/shared/constants/featureFlags'
+import { isImeComposing } from '@/shared/lib/ime'
 
 interface ChatComposerProps {
   value: string
@@ -217,7 +218,8 @@ export function ChatComposer({
             disabled={disabled}
             rows={1}
             onKeyDown={(e) => {
-              // Enter: send, Shift+Enter: newline
+              // Enter: send, Shift+Enter: newline (IME 조합 중 Enter 는 글자 확정이므로 제외)
+              if (isImeComposing(e)) return
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
                 if (!canSend) return

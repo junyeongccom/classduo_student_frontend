@@ -6,6 +6,7 @@ import { chatService } from '@/features/ai-tutor/services/chatService'
 import { ChatSession, SearchResult } from '@/features/ai-tutor/types'
 import { AITutorLoading } from '@/features/ai-tutor'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { isImeComposing } from '@/shared/lib/ime'
 
 /** 세션 제목의 LaTeX·마크다운 마킹을 벗겨 한 줄 라벨로 만든다.
  *  제목은 truncate 되는 짧은 라벨이라 KaTeX 렌더 대신 마킹만 제거한다
@@ -216,6 +217,7 @@ export default function ChatSidebar({
                 }
               }}
               onKeyDown={(e) => {
+                if (isImeComposing(e)) return
                 if (e.key === 'Enter') {
                   searchAbortRef.current?.abort()
                   const controller = new AbortController()
