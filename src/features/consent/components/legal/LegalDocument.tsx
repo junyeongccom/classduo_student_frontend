@@ -20,7 +20,8 @@ export interface LegalArticle {
 export interface LegalDocumentProps {
   title: string
   effectiveLabel: string
-  draftWarning: string
+  /** 법률검토 배너 문구 — 현재 화면에 노출하지 않음(문구는 보존) */
+  draftWarning?: string
   intro?: string
   articles: LegalArticle[]
   footer?: string
@@ -29,17 +30,12 @@ export interface LegalDocumentProps {
 export function LegalDocument({
   title,
   effectiveLabel,
-  draftWarning,
   intro,
   articles,
   footer,
 }: LegalDocumentProps) {
   return (
     <article className="text-gray-800 dark:text-gray-200">
-      <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
-        {draftWarning}
-      </div>
-
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{title}</h1>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{effectiveLabel}</p>
 

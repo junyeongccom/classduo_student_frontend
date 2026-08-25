@@ -984,7 +984,7 @@
     "resetPasswordSubtitle": "가입한 이메일을 입력하세요",
     "resetPasswordGuide": "비밀번호를 잊으셨나요?\n아래 이메일로 문의해 주시면 비밀번호 재설정을 도와드리겠습니다.\n\n문의 시 가입한 이메일과 성명을 꼭 포함해 주세요.",
     "backToLogin": "로그인으로 돌아가기",
-    "emailPlaceholder": "학교 이메일 (ex. @korea.ac.kr)",
+    "emailPlaceholder": "이메일 주소",
     "passwordPlaceholder": "비밀번호",
     "sendResetCode": "인증 코드 전송",
     "sendingCode": "전송 중...",
@@ -1107,7 +1107,7 @@
   "auth": {
     "login": {
       "tagline": "학습의 새로운 파트너",
-      "emailPlaceholder": "학교 이메일",
+      "emailPlaceholder": "이메일 주소",
       "passwordPlaceholder": "비밀번호",
       "button": "로그인",
       "noAccount": "계정이 없으신가요? ",
@@ -1116,8 +1116,8 @@
     "signup": {
       "title": "새로운 계정 만들기",
       "namePlaceholder": "이름",
-      "emailPlaceholder": "학교 이메일 (@korea.ac.kr)",
-      "emailPlaceholderModal": "학교 이메일 (ex. aplus@korea.ac.kr)",
+      "emailPlaceholder": "이메일 주소",
+      "emailPlaceholderModal": "이메일 주소",
       "passwordPlaceholder": "비밀번호 (8자 이상, 영문+숫자)",
       "passwordPlaceholderModal": "비밀번호 (8자 이상, 문자/숫자/기호 조합)",
       "passwordConfirmPlaceholder": "비밀번호 확인",
@@ -1155,7 +1155,7 @@
     },
     "guard": {
       "loginNoticeLine1": "처음 이용하시나요?",
-      "loginNoticeLine2": "별도의 회원가입이 필요하며, 고려대학교 포털과 동일한 @korea.ac.kr 이메일을 사용해 주세요!",
+      "loginNoticeLine2": "별도의 회원가입이 필요합니다. 자주 사용하는 이메일로 가입해 주세요!",
       "signupTab": "회원가입",
       "loginTab": "로그인",
       "noticeTitle": "회원가입 인증 메일 관련 안내",
@@ -1170,7 +1170,7 @@
     "validation": {
       "emailRequired": "이메일을 입력해주세요",
       "emailInvalid": "올바른 이메일 형식이 아닙니다",
-      "emailSchoolOnly": "학교 이메일(@korea.ac.kr)만 사용 가능합니다",
+      "emailSchoolOnly": "사용할 수 없는 이메일입니다",
       "nameMin": "이름은 2자 이상이어야 합니다",
       "nameMax": "이름은 50자 이하여야 합니다",
       "passwordRequired": "비밀번호를 입력해주세요",

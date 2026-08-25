@@ -269,11 +269,6 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                           ? '퀴즈 20개를 모두 풀고 불꽃을 얻으세요!'
                           : 'Complete all 20 quizzes to earn flames!'}
                       </p>
-                      <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
-                        {locale === 'ko'
-                          ? '추첨 이벤트 예정!'
-                          : 'Raffle event coming soon!'}
-                      </p>
                     </div>
                     <div className="flex items-center justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
                       <button

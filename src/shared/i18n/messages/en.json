@@ -984,7 +984,7 @@
     "resetPasswordSubtitle": "Enter your registered email",
     "resetPasswordGuide": "Forgot your password?\nPlease contact us at the email below and we will help you reset your password.\n\nPlease include your registered email and full name in your inquiry.",
     "backToLogin": "Back to login",
-    "emailPlaceholder": "School email (e.g. @korea.ac.kr)",
+    "emailPlaceholder": "Email address",
     "passwordPlaceholder": "Password",
     "sendResetCode": "Send verification code",
     "sendingCode": "Sending...",
@@ -1107,7 +1107,7 @@
   "auth": {
     "login": {
       "tagline": "Your New Learning Partner",
-      "emailPlaceholder": "School email",
+      "emailPlaceholder": "Email address",
       "passwordPlaceholder": "Password",
       "button": "Log in",
       "noAccount": "Don't have an account? ",
@@ -1116,8 +1116,8 @@
     "signup": {
       "title": "Create New Account",
       "namePlaceholder": "Name",
-      "emailPlaceholder": "School email (@korea.ac.kr)",
-      "emailPlaceholderModal": "School email (e.g. aplus@korea.ac.kr)",
+      "emailPlaceholder": "Email address",
+      "emailPlaceholderModal": "Email address",
       "passwordPlaceholder": "Password (8+ chars, letters + numbers)",
       "passwordPlaceholderModal": "Password (8+ chars, letters/numbers/symbols)",
       "passwordConfirmPlaceholder": "Confirm password",
@@ -1143,19 +1143,19 @@
       "goToLoginButton": "Go to Login",
       "adminApprovalTitle": "Approval Request Sent",
       "adminApprovalMessage": "Your registration approval request has been sent to the administrator. Once approved, you can log in with your email and password. This may take up to 12 hours.",
-      "adminApprovalEmailGuide": "For faster identity verification, please send a registration approval request email to the admin address below from your school email ({email})."
+      "adminApprovalEmailGuide": "For faster identity verification, please send a registration approval request email to the admin address below from your registered email ({email})."
     },
     "signupModal": {
       "title": "Sign up",
       "subtitle": "Enter your information",
       "adminApprovalTitle": "Approval Request Sent",
       "adminApprovalMessage": "Your registration approval request has been sent to the administrator. Once approved, you can log in with your email and password. This may take up to 12 hours.",
-      "adminApprovalEmailGuide": "For faster identity verification, please send a registration approval request email to the admin address below from your school email ({email}).",
+      "adminApprovalEmailGuide": "For faster identity verification, please send a registration approval request email to the admin address below from your registered email ({email}).",
       "closeButton": "OK"
     },
     "guard": {
       "loginNoticeLine1": "New here?",
-      "loginNoticeLine2": "A separate sign-up is required. Please use your @korea.ac.kr email — the same one linked to the Korea University portal!",
+      "loginNoticeLine2": "A separate sign-up is required. Use an email address you check often!",
       "signupTab": "Sign up",
       "loginTab": "Log in",
       "noticeTitle": "Verification Email Notice",
@@ -1170,7 +1170,7 @@
     "validation": {
       "emailRequired": "Please enter your email",
       "emailInvalid": "Invalid email format",
-      "emailSchoolOnly": "Only school email (@korea.ac.kr) is allowed",
+      "emailSchoolOnly": "This email address cannot be used",
       "nameMin": "Name must be at least 2 characters",
       "nameMax": "Name must be 50 characters or less",
       "passwordRequired": "Please enter your password",

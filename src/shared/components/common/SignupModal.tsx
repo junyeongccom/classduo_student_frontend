@@ -65,11 +65,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin, embedded = false
     email: z
       .string()
       .min(1, tv('emailRequired'))
-      .email(tv('emailInvalid'))
-      .refine(
-        (email) => email.endsWith('@korea.ac.kr'),
-        tv('emailSchoolOnly')
-      ),
+      .email(tv('emailInvalid')),
     full_name: z
       .string()
       .min(2, tv('nameMin'))

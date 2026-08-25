@@ -151,8 +151,8 @@ export function ExamPrepHeaderBar({ state, loading = false, courseId }: ExamPrep
 
   const isKo = locale !== 'en'
   const expTooltipBody = isKo
-    ? '경험치를 모으고 A+ 뱃지를 달성하세요!\n추첨 이벤트 예정!'
-    : 'Earn XP and unlock the A+ badge!\nRaffle event coming soon!'
+    ? '경험치를 모으고 A+ 뱃지를 달성하세요!'
+    : 'Earn XP and unlock the A+ badge!'
   const expTooltipConfirm = isKo ? '확인' : 'OK'
   const badgePopupTitle = isKo ? 'A+ 랭크에 도전하세요!' : 'Aim for the A+ rank!'
   const badgePopupSubtitle = isKo
