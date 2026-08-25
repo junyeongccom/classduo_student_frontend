@@ -120,7 +120,7 @@ export function MaterialsModal({
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
             </div>
           ) : materials.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-sm text-gray-400">
+            <div className="flex items-center justify-center py-16 text-sm text-gray-500 dark:text-gray-400">
               {locale === 'ko' ? '강의자료가 없습니다' : 'No materials available'}
             </div>
           ) : (

@@ -89,7 +89,7 @@ export default function SocraticScorePanel({
         <div className="text-xs text-gray-500">{t('socraticPanelTitle')} <MathText text={topic.title} /></div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-3xl font-bold text-indigo-600">{totalScore}</span>
-          <span className="text-sm text-gray-400">{t('socraticScoreOutOf')}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('socraticScoreOutOf')}</span>
           {mastered && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">{t('socraticMastered')}</span>}
         </div>
       </div>
@@ -222,7 +222,7 @@ export default function SocraticScorePanel({
       <div>
         <div className="mb-1 text-xs font-semibold text-gray-500">{t('socraticRanking')}</div>
         {leaderboard.length === 0 ? (
-          <div className="rounded-lg px-2 py-1 text-xs text-gray-400">{t('socraticRankingEmpty')}</div>
+          <div className="rounded-lg px-2 py-1 text-xs text-gray-500 dark:text-gray-400">{t('socraticRankingEmpty')}</div>
         ) : (
           <ol className="space-y-1">
             {leaderboard.map((e, i) => (

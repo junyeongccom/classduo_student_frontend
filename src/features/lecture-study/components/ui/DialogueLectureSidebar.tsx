@@ -225,7 +225,7 @@ export function DialogueLectureSidebar({
       {/* 회차 목록 */}
       <div className="flex-1 overflow-y-auto space-y-1.5">
         {course.lectures.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-4">{t('noLectures')}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center py-4">{t('noLectures')}</p>
         ) : (
           course.lectures.map((lecture) => {
             const isSelected = selectedLectureIds.includes(lecture.lecture_id)

@@ -616,7 +616,7 @@ function SetupPhase({
 
       {/* 범위 */}
       <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           {t('examMode.scope')}
         </p>
         <div className="flex flex-wrap gap-2">
@@ -640,11 +640,11 @@ function SetupPhase({
 
       {/* 회차 */}
       <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           {t('examMode.lecture')}
         </p>
         {lectureOptions.length === 0 ? (
-          <p className="text-sm text-gray-400">{t('examMode.noReplayable')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('examMode.noReplayable')}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             <LectureChip
@@ -960,22 +960,22 @@ function ResultPhase({
     <div className="space-y-6">
       {/* 점수 */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 text-center dark:border-gray-800 dark:bg-gray-900">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           {t('examMode.resultTitle')}
         </p>
         <p className="mt-2 text-4xl font-black text-[#6366F1]">
           {correctCount}
-          <span className="text-2xl text-gray-400"> / {total}</span>
+          <span className="text-2xl text-gray-500 dark:text-gray-400"> / {total}</span>
         </p>
         <p className="mt-1 text-sm font-semibold text-gray-600 dark:text-gray-300">
           {t('examMode.accuracy', { pct })}
         </p>
-        <p className="mt-2 inline-flex items-center gap-1 text-xs text-gray-400">
+        <p className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
           <Clock className="h-3.5 w-3.5" />
           {t('examMode.elapsed', { time: formatDuration(elapsedMs, t) })}
         </p>
         {essayCount > 0 && (
-          <p className="mt-2 text-xs text-gray-400">
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
             {t('examMode.essayExcludedNote', { n: essayCount })}
           </p>
         )}
@@ -984,7 +984,7 @@ function ResultPhase({
       {/* 회차별 정오 */}
       {byLecture.length > 0 && (
         <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
             {t('examMode.byLecture')}
           </p>
           <ul className="space-y-2">
@@ -1013,7 +1013,7 @@ function ResultPhase({
 
       {/* 문항별 리뷰 */}
       <section className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           {t('examMode.itemReview')}
         </p>
         {answers.map((a, i) => (

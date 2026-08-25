@@ -390,7 +390,7 @@ export default function WrongAnswersTab({
                     <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
                       {tQuiz(`sectionLabel.${typeGroup.type}`)}
-                      <span className="text-xs font-normal text-gray-400">
+                      <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
                         {tQuiz('itemCount', { count: typeGroup.items.length })}
                       </span>
                     </h5>
@@ -447,7 +447,7 @@ export default function WrongAnswersTab({
         {/* 카운터 텍스트 + 더 보기 버튼 */}
         {totalQuizCount > 0 && (
           <div className="flex flex-col items-center gap-2 py-4">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               {t('wrong.showingCount', { total: totalQuizCount, showing: shownQuizCount })}
             </p>
             {shownQuizCount < totalQuizCount && (

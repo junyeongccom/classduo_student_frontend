@@ -132,7 +132,7 @@ export function SelectedTestInfoCard({ test, onStart }: SelectedTestInfoCardProp
               {numberLabel}
             </span>
             {/* 회색 부제 — 회차명(강의 제목). 회차명이 비어있는 구 데이터는 주차/차시로 폴백. */}
-            <span className="text-sm font-medium text-gray-400 break-keep md:text-base">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 break-keep md:text-base">
               {subtitle}
             </span>
           </div>

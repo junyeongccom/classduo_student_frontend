@@ -131,7 +131,7 @@ function ChunkAccordionItem({
             {quotes && quotes.length > 0 ? renderHighlighted(chunk.content, quotes) : chunk.content}
           </p>
         ) : (
-          <p className="text-xs text-gray-400 dark:text-gray-500 italic">{t('lectureStudy.leftPanel.recordingSummaryNull')}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 italic">{t('lectureStudy.leftPanel.recordingSummaryNull')}</p>
         )}
       </AccordionContent>
     </AccordionItem>
@@ -310,7 +310,7 @@ export function LeftPanelRecordings({
                   })}
                 </Accordion>
               ) : (
-                <p className="py-2 text-xs text-gray-400 italic">
+                <p className="py-2 text-xs text-gray-500 dark:text-gray-400 italic">
                   {t('lectureStudy.leftPanel.recordingSummaryNull')}
                 </p>
               )}

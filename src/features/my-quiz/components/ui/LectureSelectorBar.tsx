@@ -290,7 +290,7 @@ export default function LectureSelectorBar({
   if (!hasCourses && !isLoading) {
     return (
       <div className="shrink-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 px-4 py-3">
-        <p className="text-center text-sm text-gray-400">{t('selector.noCourses')}</p>
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400">{t('selector.noCourses')}</p>
       </div>
     )
   }

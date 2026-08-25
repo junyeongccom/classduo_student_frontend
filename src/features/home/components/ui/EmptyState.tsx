@@ -21,7 +21,7 @@ export function EmptyState({ message, subtext }: EmptyStateProps) {
       <div className="flex flex-col gap-1.5">
         <p className="text-base font-medium text-gray-700">{message}</p>
         {subtext && (
-          <p className="text-sm text-gray-400">{subtext}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{subtext}</p>
         )}
       </div>
     </div>

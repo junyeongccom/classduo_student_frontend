@@ -212,7 +212,7 @@ export function SolveSidebar({
       <aside className="hidden md:flex h-full w-[200px] md:w-[260px] shrink-0 flex-col gap-3 md:gap-6 border-r border-gray-200 bg-white p-3 md:p-6 dark:border-gray-700 dark:bg-gray-900">
         {/* 회차 정보 */}
         <div>
-          <p className="text-xs text-gray-400">{sessionLabel}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{sessionLabel}</p>
           <h2 className="mt-1 text-lg font-bold text-gray-900 dark:text-gray-50">
             {lectureTitle}
           </h2>

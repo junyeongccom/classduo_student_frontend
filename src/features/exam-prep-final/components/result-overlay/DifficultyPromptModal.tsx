@@ -97,7 +97,7 @@ export function DifficultyPromptModal({ onSelect, onDismiss }: DifficultyPromptM
           <button
             type="button"
             onClick={onDismiss}
-            className="text-sm font-medium text-gray-400 underline-offset-2 transition-colors hover:text-gray-600 hover:underline dark:text-gray-500"
+            className="text-sm font-medium text-gray-500 underline-offset-2 transition-colors hover:text-gray-600 hover:underline dark:text-gray-500"
           >
             {t('difficulty.dismiss')}
           </button>

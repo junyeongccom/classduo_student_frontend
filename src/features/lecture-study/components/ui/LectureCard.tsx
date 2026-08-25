@@ -98,7 +98,7 @@ export function LectureCard({ lecture, isLatest, courseId, onClick }: LectureCar
           </h3>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-gray-400">
+        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
           {formattedDate && (
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />

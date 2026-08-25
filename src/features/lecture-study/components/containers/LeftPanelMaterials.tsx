@@ -440,7 +440,7 @@ export function LeftPanelMaterials() {
                   />
                 </>
               ) : (
-                <div className="flex h-[200px] items-center justify-center text-sm text-gray-400">
+                <div className="flex h-[200px] items-center justify-center text-sm text-gray-500 dark:text-gray-400">
                   {t('lectureStudy.leftPanel.materialsPreparing')}
                 </div>
               )}

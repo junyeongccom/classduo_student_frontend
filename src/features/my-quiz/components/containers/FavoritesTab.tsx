@@ -405,7 +405,7 @@ export default function FavoritesTab({
                   <h5 className="mb-2 flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
                     <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
                     {tQuiz(`sectionLabel.${typeGroup.type}`)}
-                    <span className="text-xs font-normal text-gray-400">
+                    <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
                       {tQuiz('itemCount', { count: typeGroup.items.length })}
                     </span>
                   </h5>

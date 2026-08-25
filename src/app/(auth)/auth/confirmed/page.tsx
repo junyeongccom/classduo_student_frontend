@@ -224,7 +224,7 @@ function EmailConfirmedContent() {
           </div>
 
           {error.description && (
-            <p className="mt-6 text-xs text-gray-400">
+            <p className="mt-6 text-xs text-gray-500 dark:text-gray-400">
               오류 코드: {error.code || 'UNKNOWN'}
             </p>
           )}
@@ -259,7 +259,7 @@ function EmailConfirmedContent() {
           로그인하러 가기
         </Button>
 
-        <p className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-400">
+        <p className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           <Loader2 className="h-4 w-4 animate-spin" />
           {countdown}초 후 자동으로 이동합니다
         </p>

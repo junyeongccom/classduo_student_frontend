@@ -232,7 +232,7 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
           {isSessionListOpen && (
             <div className="absolute left-0 top-full z-20 mt-1 max-h-64 w-72 max-w-[80vw] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg">
               {sessions.length === 0 ? (
-                <p className="px-3 py-2 text-xs text-gray-400">{t('sessionUntitled')}</p>
+                <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{t('sessionUntitled')}</p>
               ) : (
                 sessions.map((s) => (
                   <div
@@ -301,7 +301,7 @@ export function ContentsChatPanel({ lectureId, quizChatContext, onClearQuizConte
           <div className="flex justify-start">
             <div className="flex items-center gap-2 rounded-2xl rounded-bl-md bg-gray-100 dark:bg-gray-800 px-4 py-3">
               <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              <span className="text-sm text-gray-400">{t('generating')}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('generating')}</span>
             </div>
           </div>
         )}

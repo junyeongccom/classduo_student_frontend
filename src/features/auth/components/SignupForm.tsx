@@ -201,7 +201,7 @@ export function SignupForm() {
             </Button>
           </div>
 
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-gray-500 dark:text-gray-400">
             {t('checkSpam')}
           </p>
         </div>

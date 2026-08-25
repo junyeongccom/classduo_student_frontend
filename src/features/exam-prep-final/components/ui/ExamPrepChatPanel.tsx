@@ -199,7 +199,7 @@ export function ExamPrepChatPanel({
           <div className="flex justify-start">
             <div className="flex items-center gap-2 rounded-2xl rounded-bl-md bg-gray-100 dark:bg-gray-800 px-4 py-3">
               <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              <span className="text-sm text-gray-400">{t('chat.generating')}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('chat.generating')}</span>
             </div>
           </div>
         )}

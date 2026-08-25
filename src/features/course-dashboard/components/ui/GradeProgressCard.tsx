@@ -80,7 +80,7 @@ export function GradeProgressCard({
               {xp.toLocaleString()}
             </span>
             <span
-              className="text-base font-bold text-gray-400 md:text-xl"
+              className="text-base font-bold text-gray-500 dark:text-gray-400 md:text-xl"
               style={{ fontFamily: 'Pretendard, sans-serif' }}
             >
               / {isMax ? '∞' : nextTotal.toLocaleString()}

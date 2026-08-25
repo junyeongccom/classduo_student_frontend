@@ -1347,7 +1347,7 @@ export function CoreTestSolveContainer({
               {currentLectureId ? (
                 <LeftPanelMaterials />
               ) : (
-                <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
+                <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-500 dark:text-gray-400">
                   {t('examPrepFinal.rightPanel.noMaterials')}
                 </div>
               )}
@@ -1363,7 +1363,7 @@ export function CoreTestSolveContainer({
                   lectureId={currentLectureId ?? undefined}
                 />
               ) : (
-                <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-400">
+                <div className="flex h-full items-center justify-center px-4 text-center text-xs text-gray-500 dark:text-gray-400">
                   {t('examPrepFinal.rightPanel.noRecordings')}
                 </div>
               )}

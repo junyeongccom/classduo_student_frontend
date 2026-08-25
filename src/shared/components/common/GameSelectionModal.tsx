@@ -138,7 +138,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                   >
                     {locale === 'ko' ? 'SELECT YOUR MISSION!' : 'SELECT YOUR MISSION!'}
                   </h2>
-                  <p className="text-xs text-gray-400" style={{ fontFamily: 'Pretendard, sans-serif' }}>
+                  <p className="text-xs text-gray-500 dark:text-gray-400" style={{ fontFamily: 'Pretendard, sans-serif' }}>
                     {locale === 'ko' ? '수업과 회차를 선택하고 게임을 시작하세요' : 'Choose a course and a level to begin'}
                   </p>
                 </div>
@@ -180,7 +180,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
               <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
             </div>
           ) : courses.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center text-sm text-gray-400 tracking-wider uppercase" style={{ fontFamily: 'monospace' }}>
+            <div className="flex flex-1 items-center justify-center text-sm text-gray-500 dark:text-gray-400 tracking-wider uppercase" style={{ fontFamily: 'monospace' }}>
               {locale === 'ko' ? 'NO COURSES FOUND' : 'NO COURSES FOUND'}
             </div>
           ) : (
@@ -212,7 +212,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                             {course.title}
                           </p>
                           {course.professor_name && (
-                            <p className="mt-0.5 truncate text-xs text-gray-400">
+                            <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
                               {course.professor_name}
                             </p>
                           )}
@@ -243,13 +243,13 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                 </div>
                 <div className="flex-1 overflow-y-auto px-2 pb-2">
                   {!selectedCourse ? (
-                    <div className="flex h-full items-center justify-center text-sm text-gray-400 tracking-wider" style={{ fontFamily: 'monospace' }}>
+                    <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-gray-400 tracking-wider" style={{ fontFamily: 'monospace' }}>
                       {locale === 'ko' ? '← 수업을 선택하세요' : '← SELECT A SUBJECT'}
                     </div>
                   ) : availableLectures.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center gap-2">
                       <Lock className="h-8 w-8 text-gray-300" />
-                      <p className="text-sm text-gray-400 tracking-wider" style={{ fontFamily: 'monospace' }}>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 tracking-wider" style={{ fontFamily: 'monospace' }}>
                         {locale === 'ko' ? 'NO LEVELS AVAILABLE' : 'NO LEVELS AVAILABLE'}
                       </p>
                     </div>
@@ -289,7 +289,7 @@ export function GameSelectionModal({ open, onClose }: GameSelectionModalProps) {
                                 {lecture.title ?? (locale === 'ko' ? `Level ${lecture.lecture_no}` : `Level ${lecture.lecture_no}`)}
                               </p>
                               {weekLabel && (
-                                <p className="mt-0.5 text-xs text-gray-400">{weekLabel}</p>
+                                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{weekLabel}</p>
                               )}
                             </div>
                             <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 opacity-0 transition-all group-hover:opacity-100 group-hover:text-cyan-500" />

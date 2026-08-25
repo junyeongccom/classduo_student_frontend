@@ -217,7 +217,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
 
   if (isLoading) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-gray-400">
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-gray-500 dark:text-gray-400">
         <Loader2 className="h-6 w-6 animate-spin" />
         <p>{t('summary.loading')}</p>
       </div>
@@ -226,7 +226,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center px-6 py-10 text-sm text-gray-400">
+      <div className="flex h-full items-center justify-center px-6 py-10 text-sm text-gray-500 dark:text-gray-400">
         {t('summary.preparing')}
       </div>
     )
@@ -234,7 +234,7 @@ export function SummaryTabContainer({ lectureId, courseId }: SummaryTabContainer
 
   if (!summary) {
     return (
-      <div className="flex h-full items-center justify-center px-6 py-10 text-sm text-gray-400">
+      <div className="flex h-full items-center justify-center px-6 py-10 text-sm text-gray-500 dark:text-gray-400">
         {t('summary.preparing')}
       </div>
     )

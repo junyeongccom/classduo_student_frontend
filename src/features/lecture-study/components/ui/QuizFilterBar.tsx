@@ -213,7 +213,7 @@ export function QuizFilterBar({
               {t('filter.groupPage')}
             </p>
             {availablePages.length === 0 ? (
-              <p className="text-xs text-gray-400 dark:text-gray-500">{t('filter.pageEmpty')}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">{t('filter.pageEmpty')}</p>
             ) : pageGroups.length > 0 ? (
               // 자료가 여러 개면 페이지 번호만으론 어느 자료인지 알 수 없어 자료명으로 묶는다.
               // 칩 숫자는 뷰어 표기(전역 번호)와 맞추고, 자료 내 쪽번호를 괄호로 곁들인다.

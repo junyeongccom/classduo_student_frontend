@@ -121,7 +121,7 @@ export function CoreTestListModal({
         </div>
 
         {/* 컬럼 헤더 — 번호 · 강의자료명 · 주제명 */}
-        <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-2.5 text-xs font-semibold text-gray-400 dark:border-gray-800 md:px-7">
+        <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400 dark:border-gray-800 md:px-7">
           <span className="w-8 shrink-0 text-center">{t('coreTestList.colNumber')}</span>
           <div className="grid flex-1 gap-1 md:grid-cols-2 md:gap-4">
             <span>{t('coreTestList.colLecture')}</span>
@@ -132,7 +132,7 @@ export function CoreTestListModal({
         {/* 목록 — 26개 스크롤 영역 */}
         <ul className="min-h-0 flex-1 overflow-y-auto px-5 md:px-7">
           {sorted.length === 0 ? (
-            <li className="py-10 text-center text-sm text-gray-400">
+            <li className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
               {t('coreTestList.empty')}
             </li>
           ) : (

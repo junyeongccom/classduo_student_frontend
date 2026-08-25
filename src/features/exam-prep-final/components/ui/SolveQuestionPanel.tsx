@@ -385,7 +385,7 @@ export function SolveQuestionPanel({
               : null
             return (
               <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {isEn ? 'Explanation' : '해설'}
                 </p>
                 {/* 1단계: 선지별 짧은 해설 (한 줄, 일반 텍스트 + 수식) */}

@@ -230,7 +230,7 @@ export function FeedbackModal({
               <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {t('content')} <span className="text-red-500">*</span>
               </label>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 {content.length} / {MAX_CONTENT_LENGTH}
               </span>
             </div>
@@ -272,7 +272,7 @@ export function FeedbackModal({
                   <p className="text-sm font-medium text-gray-700">
                     {t('dragOrClick')}
                   </p>
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {t('fileLimit')}
                   </p>
                 </div>

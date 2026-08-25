@@ -59,7 +59,7 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
               style={{ width: `${masteryPercent}%` }}
             />
           </div>
-          <p className="mt-2 text-sm text-gray-400">
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             {masteryPercent}
             {t('examPrepFinal.completedSuffix')}
           </p>

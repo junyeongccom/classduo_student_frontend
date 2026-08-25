@@ -37,14 +37,14 @@ export function ContinueLearningCard({
       <div className="flex items-center gap-5">
         <div className="h-14 w-1 shrink-0 rounded-full bg-[#6366F1]" />
         <div>
-          <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">
+          <p className="mb-1 text-xs text-gray-500 dark:text-gray-500">
             {t('courseDashboard.continueTitle')} · {modeLabel}
           </p>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50">
             {lectureTitle}
           </h2>
           {formattedDate && (
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+            <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-500">
               <Calendar className="h-3.5 w-3.5" />
               <span>{formattedDate}</span>
             </div>

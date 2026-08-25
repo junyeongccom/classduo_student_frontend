@@ -53,7 +53,7 @@ export function SolveResultPanel({
           </p>
           <p className="mt-3 text-3xl font-black text-gray-900 dark:text-gray-50 sm:text-4xl md:text-5xl">
             {correctCount}{' '}
-            <span className="text-xl text-gray-400 sm:text-2xl md:text-3xl">/ {total}</span>
+            <span className="text-xl text-gray-500 dark:text-gray-400 sm:text-2xl md:text-3xl">/ {total}</span>
           </p>
           <p className="mt-2 text-base font-semibold text-[#6366F1]">
             정답률 {accuracy}%

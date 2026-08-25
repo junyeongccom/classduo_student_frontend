@@ -292,7 +292,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
               <img src="/KU_logo.png" alt="" className="hidden md:block h-9 shrink-0 object-contain" />
               <div className="hidden md:block">
                 <p className="text-sm font-bold leading-tight text-gray-900 dark:text-gray-50">{user?.full_name ?? ''}</p>
-                <p className="truncate text-xs text-gray-400 dark:text-gray-500" style={{ maxWidth: 160 }}>{user?.email ?? ''}</p>
+                <p className="truncate text-xs text-gray-500 dark:text-gray-500" style={{ maxWidth: 160 }}>{user?.email ?? ''}</p>
               </div>
               <button
                 onClick={() => setIsProfileOpen((v) => !v)}

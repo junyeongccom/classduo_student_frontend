@@ -473,7 +473,7 @@ export function ReferencePanel({ allReferences, variant, onClose, messages, isRe
                                 <span className="text-xs font-medium text-gray-600">
                                   {formatTime(ref.metadata.start_time)}
                                 </span>
-                                <span className="text-xs text-gray-400">-</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">-</span>
                                 <span className="text-xs font-medium text-gray-600">
                                   {formatTime(ref.metadata.end_time)}
                                 </span>

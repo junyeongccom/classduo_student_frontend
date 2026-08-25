@@ -109,7 +109,7 @@ export function ConsentCheckboxGroup({
                   href={doc.document_path}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 text-xs text-gray-400 underline hover:text-gray-600 dark:hover:text-gray-300"
+                  className="flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 underline hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {t('view')}
                 </Link>

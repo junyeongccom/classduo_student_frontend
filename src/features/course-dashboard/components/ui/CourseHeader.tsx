@@ -56,7 +56,7 @@ export function CourseHeader({
       <div className="flex shrink-0 items-end gap-8 pb-2">
         {currentWeek != null && (
           <div className="text-right">
-            <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">
+            <p className="mb-1 text-xs text-gray-500 dark:text-gray-500">
               {t('courseDashboard.currentWeek')}
             </p>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">
@@ -69,7 +69,7 @@ export function CourseHeader({
         )}
         {examDday != null && (
           <div className="text-right">
-            <p className="mb-1 text-xs text-gray-400 dark:text-gray-500">
+            <p className="mb-1 text-xs text-gray-500 dark:text-gray-500">
               {t('courseDashboard.examDday')}
             </p>
             <p className="text-2xl font-bold text-[#6366F1]">D-{examDday}</p>

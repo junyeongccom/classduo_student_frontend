@@ -27,11 +27,6 @@ import { trackPageEnter, trackPageLeave } from '@/shared/lib/analytics'
  */
 const DEFAULT_COURSE_THUMBNAIL = '/course_Thumbnail.png'
 
-/** '생명과학의 세계' 과목은 데모상 진도율을 항상 100%로 노출 (콘텐츠 미오픈 회차 무관). */
-function isFullProgressCourse(title?: string | null): boolean {
-  return !!title && (title.includes('생명과학의 세계') || title.includes('World of Life Science'))
-}
-
 export function HomeContainer() {
   const t = useTranslations()
   const router = useRouter()
@@ -121,9 +116,7 @@ export function HomeContainer() {
                     }
                     progress={course.totalLectures > 0
                       ? {
-                          completed: isFullProgressCourse(course.name)
-                            ? course.totalLectures
-                            : course.activeLectures,
+                          completed: course.activeLectures,
                           total: course.totalLectures,
                         }
                       : null

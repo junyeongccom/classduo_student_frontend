@@ -604,7 +604,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
   if (isLoading) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-gray-400">
+      <div className="flex h-full flex-col items-center justify-center gap-3 text-sm text-gray-500 dark:text-gray-400">
         <Loader2 className="h-6 w-6 animate-spin" />
         <p>{t('loading')}</p>
       </div>
@@ -613,7 +613,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center px-6 py-10 text-sm text-gray-400">
+      <div className="flex h-full items-center justify-center px-6 py-10 text-sm text-gray-500 dark:text-gray-400">
         {error}
       </div>
     )
@@ -693,7 +693,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
             <h3 className="text-sm font-bold text-gray-900 dark:text-gray-50">
               {t(`sectionLabel.${group.type}`)}
             </h3>
-            <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-500">
               {t('itemCount', { count: group.items.length })}
             </span>
           </div>
@@ -813,7 +813,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
             <DialogTitle>{t('retryAllConfirmTitle')}</DialogTitle>
             <DialogDescription>
               {t('retryAllConfirm')}
-              <span className="mt-2 block text-xs text-gray-400 dark:text-gray-500">
+              <span className="mt-2 block text-xs text-gray-500 dark:text-gray-500">
                 {t('retryAllConfirmNote')}
               </span>
             </DialogDescription>

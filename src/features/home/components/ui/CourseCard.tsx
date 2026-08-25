@@ -79,13 +79,13 @@ export function CourseCard({
             {name}
           </h3>
           {section && (
-            <span className="shrink-0 text-xs text-gray-400">
+            <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
               {locale === 'ko-KR' ? `${section}분반` : `Sec. ${section}`}
             </span>
           )}
         </div>
 
-        <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
+        <div className="mt-2 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
           {professorName && (
             <span className="flex items-center gap-1.5">
               <User className="h-3.5 w-3.5" />

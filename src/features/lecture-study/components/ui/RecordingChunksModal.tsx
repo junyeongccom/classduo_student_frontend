@@ -161,7 +161,7 @@ export function RecordingChunksModal({
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
             </div>
           ) : allChunks.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-sm text-gray-400">
+            <div className="flex items-center justify-center py-16 text-sm text-gray-500 dark:text-gray-400">
               {locale === 'ko' ? '녹음본이 없습니다' : 'No recordings available'}
             </div>
           ) : (

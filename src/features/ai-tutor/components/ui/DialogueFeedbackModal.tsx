@@ -142,7 +142,7 @@ export function DialogueFeedbackModal({ sessionId, onClose, onRated }: DialogueF
             type="button"
             onClick={handleDismissToday}
             disabled={submitting}
-            className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            className="text-xs text-gray-500 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             {labels.dismissToday}
           </button>

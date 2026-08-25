@@ -536,7 +536,7 @@ export default function QuizStorageContainer() {
             줄바꿈으로 흘리는 편이 낫다 — 잘리지도, 스크롤 밖으로 숨지도 않는다.
           */}
           <div className="mt-3 flex flex-wrap items-center gap-2 pb-1">
-            <span className="shrink-0 text-xs font-semibold text-gray-400">{t('storage.source')}</span>
+            <span className="shrink-0 text-xs font-semibold text-gray-500 dark:text-gray-400">{t('storage.source')}</span>
             <Chip
               active={sourceFilter === 'all'}
               onClick={() => setSourceFilter('all')}
@@ -649,7 +649,7 @@ export default function QuizStorageContainer() {
               <div className="flex items-center justify-end gap-2 pt-1">
                 <button
                   onClick={handleResetFilters}
-                  className="text-xs font-semibold text-gray-400 hover:text-gray-600"
+                  className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-600"
                 >
                   {t('storage.resetFilters')}
                 </button>
@@ -979,7 +979,7 @@ function LectureGroupHeader({
         className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-90' : ''}`}
       />
       <h2 className="text-base font-black text-gray-900 dark:text-gray-100">{label}</h2>
-      <span className="text-xs text-gray-400">· {t('storage.groupCount', { count })}</span>
+      <span className="text-xs text-gray-500 dark:text-gray-400">· {t('storage.groupCount', { count })}</span>
       {wrongItemCount > 0 && (
         <span className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-[#C2410C] dark:bg-orange-950/30">

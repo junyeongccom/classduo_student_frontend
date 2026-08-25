@@ -70,7 +70,7 @@ export function ResearchConsentToggle() {
         </button>
       </div>
 
-      {notice && <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">{notice}</p>}
+      {notice && <p className="mt-2 text-xs text-gray-500 dark:text-gray-500">{notice}</p>}
     </div>
   )
 }

@@ -243,7 +243,7 @@ export function GameOverlay({ isOpen, onClose, triggerPosition, lectureId, cours
         {!isGameReady && animationState === 'entered' && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-gray-950">
             <Loader2 className="h-10 w-10 animate-spin text-white" />
-            <p className="mt-3 text-sm text-gray-400">Loading game...</p>
+            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Loading game...</p>
           </div>
         )}
 

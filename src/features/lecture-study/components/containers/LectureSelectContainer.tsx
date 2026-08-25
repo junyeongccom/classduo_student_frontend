@@ -37,11 +37,6 @@ function getLectureLabel(lecture: Lecture, locale: string): string {
   return lecture.title ?? `${lecture.lecture_number ?? '?'}`
 }
 
-/** '생명과학의 세계' 과목은 데모상 진도율을 항상 100%로 노출 (콘텐츠 미오픈 회차 무관). */
-function isFullProgressCourse(title?: string | null): boolean {
-  return !!title && (title.includes('생명과학의 세계') || title.includes('World of Life Science'))
-}
-
 export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const t = useTranslations()
   const locale = useLocale()
@@ -103,8 +98,8 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
   const progressPercent = lectures.length > 0
     ? Math.round((activeLectureCount / lectures.length) * 100)
     : 0
-  // '생명과학의 세계' 과목은 데모상 진도율을 항상 100%로 표시.
-  const displayProgressPercent = isFullProgressCourse(courseTitle) ? 100 : progressPercent
+  // 표시값 = 콘텐츠가 열린 회차 비율. 홈 카드(useCourses 의 is_available)와 같은 기준이다.
+  const displayProgressPercent = progressPercent
 
   // 학기 라벨 — useCourses 에서 매칭
   const { courses } = useCourses()
@@ -198,13 +193,13 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                 <span className="text-gray-500 dark:text-gray-400">
                   {totalWeeks > 0 ? totalWeeks : lectures.length || '-'}
                 </span>
-                <span className="ml-2 align-middle text-xs font-medium text-gray-400">
+                <span className="ml-2 align-middle text-xs font-medium text-gray-500 dark:text-gray-400">
                   {locale === 'ko' ? '주차' : 'weeks'}
                 </span>
               </div>
             </div>
 
-            {/* 진도 막대 + 진도율 */}
+            {/* 콘텐츠 오픈 막대 — 학습 진도가 아니라 회차 콘텐츠 준비 비율 */}
             <div className="mt-5 flex items-center gap-4">
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                 <div
@@ -213,7 +208,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                 />
               </div>
               <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-                {locale === 'ko' ? `진도율 ` : `Progress `}
+                {locale === 'ko' ? `콘텐츠 오픈 ` : `Content ready `}
                 <span className="font-bold text-gray-900 dark:text-gray-50">
                   {displayProgressPercent}%
                 </span>
@@ -233,7 +228,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
             {/* Lecture List */}
             <div className="space-y-3">
               {lectures.length === 0 ? (
-                <div className="flex items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 text-sm text-gray-400">
+                <div className="flex items-center justify-center rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 py-20 text-sm text-gray-500 dark:text-gray-400">
                   {t('lectureStudy.lectureSelect.empty')}
                 </div>
               ) : (
