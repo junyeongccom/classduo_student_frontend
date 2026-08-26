@@ -339,8 +339,9 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('chooseAccount')}</p>
           </div>
 
-          {/* 이메일 수신 안내 카드 */}
-          <EmailNoticeCard />
+          {/* [demo/hai-sync] 이메일 수신 안내 카드는 고려대 @korea.ac.kr · Google Workspace 기준
+              설명이라 한림 데모에서는 노출하지 않는다. */}
+          {/* <EmailNoticeCard /> */}
 
           {!showForm && savedAccounts.length > 0 && (
             <div className="mb-6 space-y-3">
@@ -442,8 +443,8 @@ export function LoginModal({ isOpen, onClose, canClose = true, onSwitchToSignup,
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('chooseAccount')}</p>
             </div>
 
-            {/* 이메일 수신 안내 카드 */}
-            <EmailNoticeCard />
+            {/* [demo/hai-sync] 고려대 기준 안내라 한림 데모에서는 비노출 */}
+            {/* <EmailNoticeCard /> */}
 
             {!showForm && savedAccounts.length > 0 && (
               <div className="mb-6 space-y-3">

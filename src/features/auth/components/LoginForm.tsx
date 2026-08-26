@@ -78,8 +78,8 @@ export function LoginForm() {
         </div>
       )}
 
-      {/* 이메일 수신 안내 카드 */}
-      <EmailNoticeCard />
+      {/* [demo/hai-sync] 고려대 기준 안내라 한림 데모에서는 비노출 */}
+      {/* <EmailNoticeCard /> */}
 
       {/* 로그인 폼 */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
