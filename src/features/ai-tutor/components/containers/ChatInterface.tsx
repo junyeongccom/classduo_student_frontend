@@ -760,73 +760,66 @@ export function ChatInterface({ selectedLectureIds, sessionId, onSessionCreated,
     }
   }, [messages, onMessagesUpdate])
 
-  // 참고자료 업데이트를 타이핑 완료 시점에 처리
+  // 참고자료 업데이트 — 답변(result)이 도착하면 바로 반영한다.
+  // 예전엔 타이핑 완료를 기다렸는데, 타이핑이 실측 초당 1.2자까지 느려지면서
+  // 871자 답변이 약 12분 걸렸고 그동안 출처 탭이 "0개"로 비어 하이라이팅도 보이지
+  // 않았다(2026-08-26 실측). 출처는 본문 타이핑과 독립된 정보라 기다릴 이유가 없다.
   useEffect(() => {
     if (pendingReferences && onReferencesUpdate) {
-      // 메시지 배열이 업데이트되고, 타이핑이 완료된 후에 참고자료 업데이트
       const currentMessageCount = messages.length
-      const isTypingDone = typingComplete.get(pendingReferences.messageIndex)
-      
-      if (pendingReferences.messageIndex < currentMessageCount && isTypingDone) {
+      if (pendingReferences.messageIndex < currentMessageCount) {
         onReferencesUpdate(pendingReferences.messageIndex, pendingReferences.refs)
         setPendingReferences(null)
       }
     }
-  }, [pendingReferences, onReferencesUpdate, messages.length, typingComplete])
+  }, [pendingReferences, onReferencesUpdate, messages.length])
 
-  // 타이핑 애니메이션 처리
+  // 타이핑 애니메이션 — 한 틱에 여러 글자씩 진행한다.
+  // 이전 구현은 setInterval 로 1글자씩 진행하면서 effect 의존성에 typingProgress 를
+  // 두어, 매 글자마다 effect 가 재실행되고 interval 을 새로 만들었다. 그 사이 답변 전체가
+  // 마크다운·KaTeX 와 함께 다시 렌더돼 실측 초당 1.2자(설계는 84자/초)까지 떨어졌다.
+  // 이제 의존성은 messages 뿐이라 interval 이 메시지 추가 시에만 다시 만들어지고,
+  // 진행량을 길이에 비례시켜 답변 길이와 무관하게 약 4초에 끝난다.
   useEffect(() => {
-    const intervals: NodeJS.Timeout[] = []
-    
-    typingProgress.forEach((currentLength, messageIndex) => {
+    const TICK_MS = 33          // ~30fps
+    const TICKS_TO_FINISH = 120 // 약 4초
+    const interval = setInterval(() => {
+      setTypingProgress(prev => {
+        if (prev.size === 0) return prev
+        let changed = false
+        const next = new Map(prev)
+        prev.forEach((cur, messageIndex) => {
+          const message = messages[messageIndex]
+          if (!message || message.role !== 'assistant') return
+          const targetLength = message.content.length
+          if (cur >= targetLength) return
+          const stepChars = Math.max(1, Math.ceil(targetLength / TICKS_TO_FINISH))
+          next.set(messageIndex, Math.min(cur + stepChars, targetLength))
+          changed = true
+        })
+        return changed ? next : prev
+      })
+    }, TICK_MS)
+
+    return () => clearInterval(interval)
+  }, [messages])
+
+  // 타이핑 완료 판정 — 진행량 갱신과 분리해 setState 중첩을 피한다.
+  useEffect(() => {
+    const finished: number[] = []
+    typingProgress.forEach((cur, messageIndex) => {
       const message = messages[messageIndex]
       if (!message || message.role !== 'assistant') return
-      
-      const isComplete = typingComplete.get(messageIndex)
-      if (isComplete) return
-      
-      const fullText = message.content
-      const targetLength = fullText.length
-      
-      if (currentLength < targetLength) {
-        // 타이핑 속도 조절 (문자당 약 7.5ms, 텍스트 길이에 따라 조정)
-        // 짧은 텍스트는 빠르게, 긴 텍스트는 조금 느리게
-        const baseSpeed = 7.5
-        const lengthFactor = Math.min(targetLength / 1000, 1) // 최대 1배
-        const speed = baseSpeed + (lengthFactor * 5) // 7.5ms ~ 12.5ms
-        const interval = setInterval(() => {
-          setTypingProgress(prev => {
-            const newMap = new Map(prev)
-            const current = newMap.get(messageIndex) || 0
-            const next = Math.min(current + 1, targetLength)
-            newMap.set(messageIndex, next)
-            
-            // 타이핑 완료
-            if (next >= targetLength) {
-              setTypingComplete(prev => {
-                const newMap = new Map(prev)
-                newMap.set(messageIndex, true)
-                return newMap
-              })
-            }
-            
-            return newMap
-          })
-        }, speed)
-        
-        intervals.push(interval)
-      } else {
-        // 이미 완료된 경우
-        setTypingComplete(prev => {
-          const newMap = new Map(prev)
-          newMap.set(messageIndex, true)
-          return newMap
-        })
+      if (cur >= message.content.length && !typingComplete.get(messageIndex)) {
+        finished.push(messageIndex)
       }
     })
-    
-    return () => {
-      intervals.forEach(interval => clearInterval(interval))
+    if (finished.length > 0) {
+      setTypingComplete(prev => {
+        const nextMap = new Map(prev)
+        finished.forEach(i => nextMap.set(i, true))
+        return nextMap
+      })
     }
   }, [typingProgress, messages, typingComplete])
 
