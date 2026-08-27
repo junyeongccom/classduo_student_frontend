@@ -56,7 +56,7 @@ export function useRedirectIfAuthenticated() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push('/dashboard/ai-tutor')
+      router.push('/studyspace/home')   // '/dashboard/ai-tutor' 는 next.config 리다이렉트 체인을 타고 /studyspace/feedback 으로 떨어진다
     }
   }, [isAuthenticated, isLoading, router])
 
