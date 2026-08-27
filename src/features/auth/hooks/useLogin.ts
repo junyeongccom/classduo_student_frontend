@@ -55,7 +55,7 @@ export function useLogin() {
 
       // 4. 대시보드로 이동
       console.log('[로그인] 대시보드로 이동')
-      router.push('/dashboard/ai-tutor')
+      router.push('/studyspace/home')   // '/dashboard/ai-tutor' 는 next.config 리다이렉트 체인을 타고 /studyspace/feedback 으로 떨어진다
 
       return { success: true, data: loginResult.data }
     } catch (error) {
