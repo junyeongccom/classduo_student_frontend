@@ -103,9 +103,12 @@ export function CourseCard({
           )}
         </div>
 
-        {/* 프로그레스바 */}
+        {/* 콘텐츠 준비율 막대 — 학습 진도가 아니라 회차 콘텐츠 준비 비율 */}
         {progress && progress.total > 0 && (
           <div className="mt-4 flex items-center gap-3 border-t border-gray-50 dark:border-gray-800 pt-4">
+            <span className="shrink-0 text-xs font-medium text-gray-400 dark:text-gray-500">
+              {locale === 'ko-KR' ? '콘텐츠 준비율' : 'Content ready'}
+            </span>
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div
                 className="h-full rounded-full transition-all duration-500"
