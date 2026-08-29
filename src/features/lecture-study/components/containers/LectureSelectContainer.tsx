@@ -213,7 +213,7 @@ export function LectureSelectContainer({ courseId }: { courseId: string }) {
                 />
               </div>
               <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
-                {locale === 'ko' ? `진도율 ` : `Progress `}
+                {locale === 'ko' ? `콘텐츠 준비율 ` : `Content ready `}
                 <span className="font-bold text-gray-900 dark:text-gray-50">
                   {displayProgressPercent}%
                 </span>
