@@ -26,6 +26,8 @@ export type InstructorQuizType =
   | 'CONCEPT'
   | 'ANALYSIS_APPLY'
   | 'JUDGE_DESIGN'
+  // 계산 트랙 (2026-08) — 계산이 핵심인 회차에만 생성되는 5지선다
+  | 'CALCULATION'
 
 export interface InstructorQuizChoice {
   choice_id: string

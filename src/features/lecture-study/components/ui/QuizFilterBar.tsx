@@ -17,7 +17,7 @@ import type {
   QuizScopeMode,
   QuizSourcePageGroup,
 } from '../../domain/filterQuizzes'
-import { SELECTED_SCOPE_LIMIT } from '../../domain/filterQuizzes'
+import { getSelectedScopeCount } from '../../domain/filterQuizzes'
 
 const FORMAT_LABEL_KEY: Record<QuizAnswerFormat, string> = {
   multiple_choice: 'format.multipleChoice',
@@ -275,7 +275,7 @@ export function QuizFilterBar({
                 : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
-            {t('scope.selected', { count: SELECTED_SCOPE_LIMIT })}
+            {t('scope.selected', { count: getSelectedScopeCount(availableTypes.length) })}
           </button>
           <button
             type="button"

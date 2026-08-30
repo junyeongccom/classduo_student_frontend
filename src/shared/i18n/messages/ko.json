@@ -756,7 +756,8 @@
         "TERM_MEMORY": "용어암기",
         "CONCEPT": "개념이해",
         "ANALYSIS_APPLY": "분석과적용",
-        "JUDGE_DESIGN": "판단과설계"
+        "JUDGE_DESIGN": "판단과설계",
+        "CALCULATION": "계산"
       },
       "format": {
         "multipleChoice": "객관식",
@@ -774,7 +775,8 @@
         "TERM_MEMORY": "용어암기 퀴즈",
         "CONCEPT": "개념이해 퀴즈",
         "ANALYSIS_APPLY": "분석과 적용 (서술형)",
-        "JUDGE_DESIGN": "판단과 설계 (서술형)"
+        "JUDGE_DESIGN": "판단과 설계 (서술형)",
+        "CALCULATION": "계산 퀴즈"
       },
       "aiGeneratedNotice": "AI가 해당 회차 강의내용에 기반해 생성한 퀴즈입니다.",
       "loading": "퀴즈를 불러오는 중입니다...",

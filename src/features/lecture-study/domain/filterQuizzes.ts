@@ -15,9 +15,11 @@ import type {
  * 레거시 유형은 기존 미재생성 회차 호환을 위해 계속 유지한다.
  */
 export const TYPE_ORDER: InstructorQuizType[] = [
-  // 신규 4유형: 용어암기 → 개념이해 → 분석과적용 → 판단과설계
+  // 신규 유형: 용어암기 → 개념이해 → 계산 → 분석과적용 → 판단과설계
+  // (CALCULATION 은 계산 트랙 회차에만 존재 — 2026-08)
   'TERM_MEMORY',
   'CONCEPT',
+  'CALCULATION',
   'ANALYSIS_APPLY',
   'JUDGE_DESIGN',
   // 레거시 — 기존 미재생성 회차 호환 (재생성 전까지 계속 노출)
@@ -36,8 +38,13 @@ export type QuizScopeMode = 'selected' | 'all'
 /** '선별 풀기' 모드에서 노출하는 최대 문항 수 */
 export const SELECTED_SCOPE_LIMIT = 20
 
-/** '선별 풀기' 모드에서 인지유형 1종당 뽑는 문항 수 (4유형 × 5 = SELECTED_SCOPE_LIMIT) */
+/** '선별 풀기' 모드에서 인지유형 1종당 뽑는 문항 수 (기본 4유형 × 5 = SELECTED_SCOPE_LIMIT, 계산 트랙 회차는 5유형 × 5) */
 export const SELECTED_SCOPE_PER_TYPE = 5
+
+/** '선별 풀기' 칩에 표시할 문항 수 — 실제 존재하는 유형 수 × 유형당 표본 수 */
+export function getSelectedScopeCount(availableTypeCount: number): number {
+  return Math.max(availableTypeCount, 1) * SELECTED_SCOPE_PER_TYPE
+}
 
 /** 선택 가능한 문제 유형 (칩 노출 순서) */
 export const ANSWER_FORMAT_ORDER: QuizAnswerFormat[] = ['multiple_choice', 'essay']

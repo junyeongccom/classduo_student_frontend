@@ -40,6 +40,8 @@ export type StudentQuizType =
   | 'CONCEPT'
   | 'ANALYSIS_APPLY'
   | 'JUDGE_DESIGN'
+  // 계산 트랙 (2026-08) — 5지선다
+  | 'CALCULATION'
 
 export interface StudentQuizChoice {
   choice_id: string
@@ -116,6 +118,7 @@ const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
   CONCEPT: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
   ANALYSIS_APPLY: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   JUDGE_DESIGN: 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+  CALCULATION: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
 }
 
 /** 풀이 상태에 따른 카드 테두리 스타일 */
@@ -150,7 +153,8 @@ export function StudentQuizCard({
     quiz.quiz_type === 'TERM_TO_DEF' ||
     quiz.quiz_type === 'STRUCTURE_OBJ' ||
     quiz.quiz_type === 'TERM_MEMORY' ||
-    quiz.quiz_type === 'CONCEPT'
+    quiz.quiz_type === 'CONCEPT' ||
+    quiz.quiz_type === 'CALCULATION'
 
   // 서술형(분석과적용/판단과설계) — answer_format 우선, 레거시 로우는 quiz_type 폴백
   const isEssay =
