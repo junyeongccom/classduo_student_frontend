@@ -74,9 +74,9 @@ export function MissionsDashboardCard({ courseId }: { courseId: string }) {
                 ? 'border-emerald-500 bg-emerald-500 text-white'
                 : 'border-gray-300 text-transparent'
             }`}
-            style={{ width: 36, height: 36 }}
+            style={{ width: 32, height: 32 }}
           >
-            {v.state !== 'pending' && <Check className="animate-mission-check" style={{ width: 22, height: 22 }} strokeWidth={3.5} />}
+            {v.state !== 'pending' && <Check className="animate-mission-check" style={{ width: 20, height: 20 }} strokeWidth={3.5} />}
           </span>
           <span className={`truncate text-[26px] font-semibold ${v.state === 'claimed' ? 'text-[#ababab] line-through' : 'text-black'}`}>
             {label(m)}
@@ -88,7 +88,7 @@ export function MissionsDashboardCard({ courseId }: { courseId: string }) {
           </span>
         ) : v.state === 'pending' ? (
           <span className="flex shrink-0 items-center gap-[12px]">
-            <span className="text-[26px] font-semibold tabular-nums text-[#9ca3af]">
+            <span className="text-[24px] font-semibold tabular-nums text-[#9ca3af]">
               {m.progress}/{m.target}
             </span>
             {hasShortcut && (
@@ -105,15 +105,15 @@ export function MissionsDashboardCard({ courseId }: { courseId: string }) {
 
   return (
     <div
-      className="flex h-full w-full flex-col rounded-[24px] bg-white px-[44px] py-[30px] shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
+      className="flex h-full w-full flex-col rounded-[24px] bg-white px-[40px] py-[24px] shadow-[0_4px_20px_rgba(15,23,42,0.06)]"
       style={{ fontFamily: 'Pretendard, sans-serif' }}
     >
       <div className="flex items-baseline justify-between">
         <span className="flex items-center gap-[14px]">
-          <span className="flex items-center justify-center rounded-[16px] bg-[#6366F1]/10" style={{ width: 56, height: 56 }}>
-            <Flame className="fill-[#6366F1] text-[#6366F1]" style={{ width: 32, height: 32 }} strokeWidth={2.2} />
+          <span className="flex items-center justify-center rounded-[14px] bg-[#6366F1]/10" style={{ width: 46, height: 46 }}>
+            <Flame className="fill-[#6366F1] text-[#6366F1]" style={{ width: 27, height: 27 }} strokeWidth={2.2} />
           </span>
-          <span className="text-[34px] font-bold text-black">{t('title')}</span>
+          <span className="text-[30px] font-bold text-black">{t('title')}</span>
         </span>
         <span className="text-[22px] font-medium text-[#ababab]">{t('resetInfo')}</span>
       </div>

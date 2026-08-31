@@ -103,10 +103,10 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
       </Slot>
 
       {/* 캘린더 밑 — 주간 미션 카드 + 히든 미션 박스 (2026-09-01) */}
-      <Slot left={1040.875} top={864} width={899.25} height={316}>
+      <Slot left={1040.875} top={864} width={899.25} height={320}>
         <MissionsDashboardCard courseId={courseId} />
       </Slot>
-      <Slot left={1040.875} top={1196} width={899.25} height={64}>
+      <Slot left={1040.875} top={1200} width={899.25} height={64}>
         <HiddenMissionCard courseId={courseId} />
       </Slot>
     </div>
