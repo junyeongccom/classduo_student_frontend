@@ -165,6 +165,8 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   // 2026-2 성장 시스템: XP·랭크 헤더를 과목 컨텍스트가 있는 모든 페이지로 확대 노출
   const courseCtxMatch = pathname.match(/^\/studyspace\/course\/([^/]+)/)
   const headerCourseId = courseCtxMatch?.[1] ?? null
+  // 과목 대시보드에는 인라인 미션 카드가 있어 헤더 미션 버튼은 숨김 (2026-09-01)
+  const isCourseDashboardPage = /^\/studyspace\/course\/[^/]+\/?$/.test(pathname)
 
   // 회차별 학습 페이지 감지 (/lectures 목록 + /lecture/[id] 상세).
   // 불꽃(연속 학습 보상)은 회차별 학습에서만 노출 — 과목 대시보드·대화형 등에서는 숨김.
@@ -258,7 +260,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                   loading={gamificationLoading}
                   courseId={headerCourseId}
                 />
-                <MissionsPanel courseId={headerCourseId} />
+                {!isCourseDashboardPage && <MissionsPanel courseId={headerCourseId} />}
               </div>
             )}
             {isLectureStudyPage && !isDialoguePage ? (

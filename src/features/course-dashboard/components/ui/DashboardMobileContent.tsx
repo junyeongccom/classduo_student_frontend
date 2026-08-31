@@ -9,11 +9,12 @@
 
 'use client'
 
-import { Bookmark, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import type { LucideIcon } from 'lucide-react'
 
 import { ExamPrepHeroCard } from './ExamPrepHeroCard'
+import { MissionsDashboardCardMobile } from './MissionsDashboardCard'
 import { resolveDayTone, type MonthGrid } from '../../domain/calendar'
 import { resolveDdayTone } from '../../domain/dday'
 
@@ -24,7 +25,7 @@ interface DashboardMobileContentProps {
   onHero: () => void
   onWeekly: () => void
   onDialogue: () => void
-  onMyQuiz: () => void
+  courseId: string
 }
 
 export function DashboardMobileContent({
@@ -34,7 +35,7 @@ export function DashboardMobileContent({
   onHero,
   onWeekly,
   onDialogue,
-  onMyQuiz,
+  courseId,
 }: DashboardMobileContentProps) {
   const t = useTranslations()
 
@@ -64,21 +65,15 @@ export function DashboardMobileContent({
           onClick={onDialogue}
         />
 
-        {/* 4) 내 퀴즈 저장소 ('문제 만들기' 제거 후 1개, 흰 박스 없음) */}
-        <div className="grid grid-cols-1 gap-3 px-1 py-1">
-          <MobileQuickAction
-            icon={Bookmark}
-            label={t('courseDashboard.myQuizSaved')}
-            onClick={onMyQuiz}
-          />
-        </div>
-
-        {/* 5) 캘린더 */}
+        {/* 4) 캘린더 */}
         <MobileCalendarCard
           monthGrid={monthGrid}
           examDday={examDday}
           currentStreak={currentStreak}
         />
+
+        {/* 5) 주간 미션 (2026-09-01: 내 퀴즈 저장소 버튼 대체 — 사이드바 메뉴로 충분) */}
+        <MissionsDashboardCardMobile courseId={courseId} />
       </div>
     </div>
   )
@@ -111,33 +106,6 @@ function MobileStudyCard({
         <span className="truncate text-sm font-medium text-black">{desc}</span>
       </span>
       <ChevronRight className="ml-3 h-7 w-7 shrink-0 text-[#383698]" strokeWidth={2.5} />
-    </button>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────
-   내 퀴즈 저장소 — 모바일 컴팩트 (QuickAction 모바일판)
-   ───────────────────────────────────────────────────────────── */
-function MobileQuickAction({
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  icon: LucideIcon
-  label: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-3 text-left"
-      style={{ fontFamily: 'Pretendard, sans-serif' }}
-    >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#DEDEF8]">
-        <Icon className="h-6 w-6 text-[#6361E0]" strokeWidth={2.2} />
-      </span>
-      <span className="min-w-0 truncate text-sm font-bold text-black dark:text-gray-100">{label}</span>
     </button>
   )
 }

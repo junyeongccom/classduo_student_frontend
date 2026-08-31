@@ -6,47 +6,20 @@
  */
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Target, Check } from 'lucide-react'
-import { fetchMyMissions, type MissionItemDto } from '@/shared/services/gamificationService'
+import { useMissions } from '@/shared/hooks/useMissions'
 
 interface MissionsPanelProps {
   courseId: string
 }
 
-const WEEKLY_TYPES = ['quiz', 'days', 'games'] as const
-
 export function MissionsPanel({ courseId }: MissionsPanelProps) {
   const t = useTranslations('missions')
   const [isOpen, setIsOpen] = useState(false)
-  const [missions, setMissions] = useState<MissionItemDto[]>([])
-  const [loading, setLoading] = useState(false)
+  const { weekly, allClear, incorrect, remaining, loading } = useMissions(courseId)
   const panelRef = useRef<HTMLDivElement>(null)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const { data } = await fetchMyMissions(courseId)
-      if (!data) return
-      setMissions(data.missions)
-      // 이번 조회에서 새로 지급된 보너스 → XP 연출
-      const granted = data.missions.reduce((sum, m) => sum + (m.just_granted_xp ?? 0), 0)
-      if (granted > 0) {
-        window.dispatchEvent(new CustomEvent('xp-gained', { detail: { xp: granted } }))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [courseId])
-
-  // 진입 시 1회 조회(달성 보너스 자동 지급) + XP 획득 시 갱신
-  useEffect(() => {
-    void load()
-    const handler = () => { void load() }
-    window.addEventListener('exam-prep-rewards-refresh', handler)
-    return () => window.removeEventListener('exam-prep-rewards-refresh', handler)
-  }, [load])
 
   // 외부 클릭 닫기
   useEffect(() => {
@@ -59,11 +32,6 @@ export function MissionsPanel({ courseId }: MissionsPanelProps) {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isOpen])
-
-  const weekly = missions.filter(m => (WEEKLY_TYPES as readonly string[]).includes(m.type))
-  const allClear = missions.find(m => m.type === 'all_clear')
-  const incorrect = missions.find(m => m.type === 'incorrect_review')
-  const remaining = weekly.filter(m => !m.completed).length
 
   return (
     <div ref={panelRef} className="relative hidden md:block">

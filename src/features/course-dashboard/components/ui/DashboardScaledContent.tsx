@@ -2,25 +2,24 @@
  * @file DashboardScaledContent.tsx
  * @description 과목 대시보드 본문 — Figma(991:3348) content 프레임(2103×1271) 좌표 그대로 절대배치.
  *   ScaledCanvas 안에서 contain-스케일되어 항상 한 화면 fit + 시안 비율 유지.
- *   좌: 핵심주제학습 히어로 / 회차별·대화형 카드. 우: 캘린더 / 내 퀴즈 저장소.
+ *   좌: 핵심주제학습 히어로 / 회차별·대화형 카드. 우: 캘린더 / 주간 미션.
  * @module features/course-dashboard/components/ui
  * @dependencies ExamPrepHeroCard, domain/calendar(resolveDayTone), domain/grade, lucide-react
  */
 
 'use client'
 
-import { Bookmark, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
-import type { LucideIcon } from 'lucide-react'
 
 import { ExamPrepHeroCard } from './ExamPrepHeroCard'
+import { MissionsDashboardCard } from './MissionsDashboardCard'
 import { resolveDayTone, type MonthGrid } from '../../domain/calendar'
 import { resolveDdayTone } from '../../domain/dday'
 
 export const DASH_DESIGN_W = 2103
-// 좌하단 QuickActions가 캘린더 밑으로 이동해 하단이 비면서 1477→1271로 단축.
-// 최하단 콘텐츠=대화형 카드 bottom(921+248=1169) + 상단여백 대칭(102) = 1271. contain fit 으로 스크롤 0.
-export const DASH_DESIGN_H = 1271
+// 2026-09-01: 캘린더 밑에 주간 미션 카드(top 864, h 370) 배치 — 최하단 1234 + 상단여백 대칭(102) = 1336.
+export const DASH_DESIGN_H = 1336
 
 interface DashboardScaledContentProps {
   monthGrid: MonthGrid
@@ -33,7 +32,7 @@ interface DashboardScaledContentProps {
   onHero: () => void
   onWeekly: () => void
   onDialogue: () => void
-  onMyQuiz: () => void
+  courseId: string
 }
 
 /** content 프레임 기준 절대좌표 박스. */
@@ -65,7 +64,7 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
     onHero,
     onWeekly,
     onDialogue,
-    onMyQuiz,
+    courseId,
   } = props
   const t = useTranslations()
 
@@ -103,10 +102,10 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
         <CalendarCard monthGrid={monthGrid} examDday={examDday} currentStreak={currentStreak} />
       </Slot>
 
-      {/* 캘린더 밑 — 내 퀴즈 저장소 (흰 박스 없이, Figma 350×146).
-          '문제 만들기' 제거 후 남은 1개를 캘린더(1040.875 + 899.25) 기준 가운데 정렬. */}
-      <Slot left={1315.5} top={864} width={350} height={146}>
-        <QuickAction icon={Bookmark} label={t('courseDashboard.myQuizSaved')} onClick={onMyQuiz} />
+      {/* 캘린더 밑 — 주간 미션 카드 (2026-09-01: 내 퀴즈 저장소 버튼 제거 — 사이드바 메뉴로 충분).
+          캘린더와 동일 폭으로 시선 집중. */}
+      <Slot left={1040.875} top={864} width={899.25} height={370}>
+        <MissionsDashboardCard courseId={courseId} />
       </Slot>
     </div>
   )
@@ -139,33 +138,6 @@ function StudyCard({
         <span className="truncate text-[30px] font-medium text-black">{desc}</span>
       </span>
       <ChevronRight className="shrink-0 text-[#383698]" style={{ width: 86, height: 86 }} strokeWidth={2.5} />
-    </button>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────
-   내 퀴즈 저장소 (350×146)
-   ───────────────────────────────────────────────────────────── */
-function QuickAction({
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  icon: LucideIcon
-  label: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-full w-full items-center gap-[28px] text-left"
-      style={{ fontFamily: 'Pretendard, sans-serif' }}
-    >
-      <span className="flex shrink-0 items-center justify-center rounded-[24px] bg-[#DEDEF8]" style={{ width: 104, height: 104 }}>
-        <Icon className="text-[#6361E0]" style={{ width: 48, height: 48 }} strokeWidth={2.2} />
-      </span>
-      <span className="text-[30px] font-bold text-black dark:text-gray-100">{label}</span>
     </button>
   )
 }
