@@ -154,7 +154,8 @@
       "attemptCompletedNew": "이전 응시가 완료되어 새 응시를 시작합니다.",
       "gradeError": "채점 중 오류가 발생했습니다",
       "activeRecallPrompt": "정답을 먼저 떠올려 보세요",
-      "activeRecallShowOptions": "선지 보기"
+      "activeRecallShowOptions": "선지 보기",
+      "essayMathHint": "수식은 편하게 쓰세요 — x^2, 1/2, sqrt(x) 같은 표기나 말로 풀어 쓴 설명 모두 채점에 인식됩니다."
     },
     "elapsedTime": "경과 시간",
     "solveLoadError": "문항을 불러오지 못했습니다.",
@@ -853,7 +854,8 @@
         "verdictPartial": "부분 충족",
         "verdictMissed": "미충족",
         "missedHint": "이런 내용을 함께 썼다면 좋았어요 — {hint}"
-      }
+      },
+      "essayMathHint": "수식은 편하게 쓰세요 — x^2, 1/2, sqrt(x) 같은 표기나 말로 풀어 쓴 설명 모두 채점에 인식됩니다."
     },
     "contentsChat": {
       "errorGenerate": "답변을 생성하지 못했습니다. 다시 시도해주세요.",
@@ -1627,7 +1629,8 @@
       "exitTitle": "시험을 나갈까요?",
       "exitDesc": "지금까지 푼 기록은 저장되지 않습니다.",
       "exitContinue": "계속 풀기",
-      "exitLeave": "나가기"
+      "exitLeave": "나가기",
+      "essayMathHint": "수식은 편하게 쓰세요 — x^2, 1/2, sqrt(x) 같은 표기나 말로 풀어 쓴 설명 모두 채점에 인식됩니다."
     }
   },
   "consent": {

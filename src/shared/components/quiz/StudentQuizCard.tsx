@@ -460,6 +460,9 @@ export function StudentQuizCard({
                 rows={4}
                 className="w-full resize-none rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none transition-colors focus:border-indigo-300 dark:focus:border-indigo-600"
               />
+              <p className="px-1 text-[11px] leading-relaxed text-gray-400 dark:text-gray-500">
+                {t('essayMathHint')}
+              </p>
               <button
                 type="button"
                 onClick={handleEssaySubmit}
