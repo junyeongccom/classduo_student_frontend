@@ -102,6 +102,8 @@ function toStudentQuiz(quiz: InstructorQuizItem): StudentQuizItem {
 
 export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber, sessionNumber }: QuizTabContainerProps) {
   const [quizzes, setQuizzes] = useState<InstructorQuizItem[]>([])
+  // 계산(CALCULATION) 유형이 있는 회차 = 수식 답안 가능성이 높은 회차 — 그 서술형에만 기호 퀵바 노출
+  const hasCalculationQuiz = quizzes.some((q) => q.quiz_type === 'CALCULATION')
   const [statusMap, setStatusMap] = useState<Map<string, QuizStatus>>(new Map())
   const [bookmarkSet, setBookmarkSet] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
@@ -712,6 +714,7 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
                     : undefined}
                 >
                 <StudentQuizCard
+                  showMathQuickBar={hasCalculationQuiz}
                   quiz={toStudentQuiz(quiz)}
                   index={idx}
                   isBookmarked={bookmarkSet.has(quiz.quiz_id)}

@@ -98,6 +98,8 @@ export interface StudentQuizCardProps {
   renderAnswerExtra?: React.ReactNode
   /** 해설 토글 클릭 콜백 — 트래킹용 */
   onRevealToggle?: (quizId: string, shown: boolean) => void
+  /** 수식 기호 퀵바 노출 — 계산(CALCULATION) 유형이 있는 회차의 서술형에서만 켠다 */
+  showMathQuickBar?: boolean
 }
 
 /* ───────────── 상수 ───────────── */
@@ -107,7 +109,7 @@ const choiceLabel = (idx: number): string => String.fromCharCode(65 + idx)
 
 // 서술형 수식 퀵바 — 일반 키보드로 치기 어려운 기호만 (풀 수식 에디터 대신 저비용 대안).
 // 삽입은 커서 위치 기준이며 채점은 표기 관용 규칙으로 어떤 표기든 인식한다.
-const MATH_QUICK_SYMBOLS = ['√', '²', '³', 'π', 'θ', '∫', '≠', '≤', '≥', '∞'] as const
+const MATH_QUICK_SYMBOLS = ['√', '²', '³', 'π', 'θ', '∫', '∘', '≠', '≤', '≥', '∞'] as const
 
 const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
   RECALL: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
@@ -150,6 +152,7 @@ export function StudentQuizCard({
   onDismissWrongNote,
   renderAnswerExtra,
   onRevealToggle,
+  showMathQuickBar = false,
 }: StudentQuizCardProps) {
   const isMultipleChoice =
     quiz.quiz_type === 'MISCONCEPTION' ||
@@ -475,6 +478,7 @@ export function StudentQuizCard({
         <div className="mt-4">
           {!isSubmitted ? (
             <div className="space-y-2">
+              {showMathQuickBar && (
               <div className="flex flex-wrap gap-1">
                 {MATH_QUICK_SYMBOLS.map((s) => (
                   <button
@@ -489,6 +493,7 @@ export function StudentQuizCard({
                   </button>
                 ))}
               </div>
+              )}
               <textarea
                 ref={essayTextareaRef}
                 value={essayDraft}

@@ -155,7 +155,7 @@
       "gradeError": "An error occurred while grading.",
       "activeRecallPrompt": "Think of the answer first to do active recall",
       "activeRecallShowOptions": "Show options",
-      "essayMathHint": "Write math your way — x^2, 1/2, sqrt(x), or plain words are all recognized in grading."
+      "essayMathHint": "Write math your way — x^2, 1/2, sqrt(x), or spoken-style descriptions like \"one over the square root of x squared, plus 1\" are all recognized in grading."
     },
     "elapsedTime": "Elapsed",
     "solveLoadError": "Failed to load questions.",
@@ -855,7 +855,7 @@
         "verdictMissed": "Missing",
         "missedHint": "Adding this would have helped — {hint}"
       },
-      "essayMathHint": "Write math your way — x^2, 1/2, sqrt(x), or plain words are all recognized in grading."
+      "essayMathHint": "Write math your way — x^2, 1/2, sqrt(x), or spoken-style descriptions like \"one over the square root of x squared, plus 1\" are all recognized in grading."
     },
     "contentsChat": {
       "errorGenerate": "Failed to generate a response. Please try again.",
@@ -1630,7 +1630,7 @@
       "exitDesc": "Your progress so far will not be saved.",
       "exitContinue": "Keep going",
       "exitLeave": "Leave",
-      "essayMathHint": "Write math your way — x^2, 1/2, sqrt(x), or plain words are all recognized in grading."
+      "essayMathHint": "Write math your way — x^2, 1/2, sqrt(x), or spoken-style descriptions like \"one over the square root of x squared, plus 1\" are all recognized in grading."
     }
   },
   "consent": {
