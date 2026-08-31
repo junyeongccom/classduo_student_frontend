@@ -1663,7 +1663,9 @@
       "days": "이번 주 3일 학습하기",
       "games": "게임 3판 플레이",
       "all_clear": "올클리어 보너스",
-      "incorrect_review": "오답 10문제 이상 시험모드 완료"
-    }
+      "incorrect_review": "오답 10문제 이상 시험모드 완료",
+      "quizTarget": "{week}주차 {session}차시 회차퀴즈 완료"
+    },
+    "claim": "받기!"
   }
 }

@@ -1074,3 +1074,30 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-xp-toast, .animate-mission-check, .animate-mission-allclear { animation: none !important; }
 }
+
+/* 미션 수령 대기 — 클릭 유도 흔들림 (2026-09-01 클레임 개편) */
+@keyframes mission-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  4%  { transform: rotate(-1.6deg) scale(1.01); }
+  8%  { transform: rotate(1.6deg) scale(1.01); }
+  12% { transform: rotate(-1.2deg); }
+  16% { transform: rotate(1.2deg); }
+  20% { transform: rotate(0deg) scale(1); }
+}
+.animate-mission-wiggle {
+  animation: mission-wiggle 2.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* 미션 수령 순간 — 행 펄스 + 글로우 버스트 */
+@keyframes mission-claim-burst {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+  35%  { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(16,185,129,0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.animate-mission-claim {
+  animation: mission-claim-burst 600ms cubic-bezier(.22,1,.36,1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-mission-wiggle, .animate-mission-claim { animation: none !important; }
+}

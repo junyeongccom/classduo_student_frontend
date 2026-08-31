@@ -10,4 +10,5 @@ export { LectureSelectContainer } from './components/containers/LectureSelectCon
 export { DialogueLearningContainer } from './components/containers/DialogueLearningContainer'
 export { Breadcrumb } from './components/ui/Breadcrumb'
 export { useLectureStudyStore } from './store/useLectureStudyStore'
+export { useLectures } from './hooks/useLectures'
 export type * from './types'

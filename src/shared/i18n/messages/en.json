@@ -1663,7 +1663,9 @@
       "days": "Study on 3 days this week",
       "games": "Play 3 games",
       "all_clear": "All-clear bonus",
-      "incorrect_review": "Finish exam mode with 10+ wrong answers"
-    }
+      "incorrect_review": "Finish exam mode with 10+ wrong answers",
+      "quizTarget": "Complete the Week {week}, Session {session} quiz"
+    },
+    "claim": "Claim!"
   }
 }
