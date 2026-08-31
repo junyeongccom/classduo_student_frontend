@@ -2,7 +2,7 @@
  * @file GameTabContainer.tsx
  * @description 게임 탭 컨테이너 — 게임 선택 + 단어 목록 모달 + 4종(달리기/덱/카드매칭/정의조립) 게임 실행 통합
  * @module features/lecture-study/components/containers
- * @dependencies GameSelector, WordListModal, review 게임 컴포넌트, ai-tutor GameOverlay
+ * @dependencies GameArcadeRows, WordListModal, review 게임 컴포넌트, ai-tutor GameOverlay
  */
 
 'use client'
@@ -11,7 +11,8 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useTranslations, useLocale } from 'next-intl'
 import { Loader2, X } from 'lucide-react'
-import { GameSelector, GAME_LIST } from '../ui/GameSelector'
+import { GAME_LIST } from '../ui/GameSelector'
+import { GameArcadeRows } from '../ui/GameArcadeRows'
 import { GameDescriptionPopup } from '../ui/GameDescriptionPopup'
 import { WordListModal } from '../ui/WordListModal'
 import { useLectureStudyStore } from '../../store/useLectureStudyStore'
@@ -758,7 +759,8 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
 
   return (
     <>
-      <GameSelector
+      <GameArcadeRows
+        lectureId={lectureId}
         onSelectGame={handleSelectGame}
         nickname={rankNickname}
         onChangeNickname={handleOpenNicknameChange}

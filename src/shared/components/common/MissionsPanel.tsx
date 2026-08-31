@@ -7,10 +7,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Flame, Check } from 'lucide-react'
+import { Flame, Check, ChevronRight, Sparkles } from 'lucide-react'
 import { useMissions, missionRowState } from '@/shared/hooks/useMissions'
-import { useQuizMissionLabel } from '@/shared/hooks/useQuizMissionLabel'
+import { useMissionLabels } from '@/shared/hooks/useQuizMissionLabel'
 import type { MissionItemDto } from '@/shared/services/gamificationService'
 
 interface MissionsPanelProps {
@@ -21,7 +22,8 @@ export function MissionsPanel({ courseId }: MissionsPanelProps) {
   const t = useTranslations('missions')
   const [isOpen, setIsOpen] = useState(false)
   const { weekly, allClear, incorrect, remaining, loading, claim, claimingType, quizTargetLecture, reload } = useMissions(courseId)
-  const quizLabel = useQuizMissionLabel(courseId, quizTargetLecture)
+  const router = useRouter()
+  const { quizLabel, gamesLabel } = useMissionLabels(courseId, quizTargetLecture)
   const [justClaimed, setJustClaimed] = useState<string | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -43,15 +45,23 @@ export function MissionsPanel({ courseId }: MissionsPanelProps) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isOpen])
 
-  const handleClaim = async (m: MissionItemDto) => {
-    if (missionRowState(m) !== 'claimable' || claimingType) return
-    setJustClaimed(m.type)
-    await claim(m.type)
-    window.setTimeout(() => setJustClaimed(null), 700)
+  const handleRowClick = async (m: MissionItemDto) => {
+    const state = missionRowState(m)
+    if (state === 'claimable') {
+      if (claimingType) return
+      setJustClaimed(m.type)
+      await claim(m.type)
+      window.setTimeout(() => setJustClaimed(null), 700)
+      return
+    }
+    if (state === 'pending' && quizTargetLecture && (m.type === 'quiz' || m.type === 'games')) {
+      setIsOpen(false)
+      router.push(`/studyspace/course/${courseId}/lecture/${quizTargetLecture.lecture_id}?tab=${m.type === 'quiz' ? 'quiz' : 'game'}`)
+    }
   }
 
   const label = (m: MissionItemDto) =>
-    m.type === 'quiz' ? quizLabel : t(`types.${m.type}`)
+    m.type === 'quiz' ? quizLabel : m.type === 'games' ? gamesLabel : t(`types.${m.type}`)
 
   const hasClaimable = [...weekly, allClear, incorrect].some(
     m => m && missionRowState(m) === 'claimable',
@@ -59,13 +69,15 @@ export function MissionsPanel({ courseId }: MissionsPanelProps) {
 
   const renderRow = (m: MissionItemDto) => {
     const state = missionRowState(m)
+    const hasShortcut = state === 'pending' && (m.type === 'quiz' || m.type === 'games') && !!quizTargetLecture
     const cls = [
       'flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 -mx-2 transition-colors',
       state === 'claimable' ? 'animate-mission-wiggle cursor-pointer bg-[#6366F1]/10' : '',
+      hasShortcut ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800' : '',
       justClaimed === m.type ? 'animate-mission-claim' : '',
     ].join(' ')
     return (
-      <li key={m.type} onClick={() => handleClaim(m)} className={cls}>
+      <li key={m.type} onClick={() => handleRowClick(m)} className={cls}>
         <div className="flex min-w-0 items-center gap-2">
           <span
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
@@ -83,8 +95,11 @@ export function MissionsPanel({ courseId }: MissionsPanelProps) {
         {state === 'claimable' ? (
           <span className="shrink-0 rounded-full bg-[#6366F1] px-2.5 py-0.5 text-[11px] font-bold text-white shadow">{t('claim')}</span>
         ) : state === 'pending' ? (
-          <span className="shrink-0 text-xs font-semibold tabular-nums text-gray-400">
-            {m.progress}/{m.target}
+          <span className="flex shrink-0 items-center gap-1">
+            <span className="text-xs font-semibold tabular-nums text-gray-400">
+              {m.progress}/{m.target}
+            </span>
+            {hasShortcut && <ChevronRight className="h-3.5 w-3.5 text-[#6366F1]" strokeWidth={2.5} />}
           </span>
         ) : null}
       </li>
@@ -121,8 +136,17 @@ export function MissionsPanel({ courseId }: MissionsPanelProps) {
           <ul className="space-y-1">
             {weekly.map(renderRow)}
             {allClear && renderRow(allClear)}
-            {incorrect && renderRow(incorrect)}
           </ul>
+
+          {incorrect && (
+            <div className="mt-3 border-t border-dashed border-amber-200 pt-2 dark:border-amber-800">
+              <p className="mb-1 flex items-center gap-1 text-[11px] font-bold text-amber-600">
+                <Sparkles className="h-3 w-3" />
+                {t('hiddenTitle')}
+              </p>
+              <ul>{renderRow(incorrect)}</ul>
+            </div>
+          )}
 
           {loading && <p className="mt-2 text-center text-[11px] text-gray-400">…</p>}
           <div className="absolute -top-2 right-6 h-0 w-0 border-b-[8px] border-l-[8px] border-r-[8px] border-b-white border-l-transparent border-r-transparent dark:border-b-gray-900" />

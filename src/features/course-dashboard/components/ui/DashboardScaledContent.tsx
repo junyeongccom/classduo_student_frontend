@@ -13,7 +13,7 @@ import { ChevronRight } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 
 import { ExamPrepHeroCard } from './ExamPrepHeroCard'
-import { MissionsDashboardCard } from './MissionsDashboardCard'
+import { MissionsDashboardCard, HiddenMissionCard } from './MissionsDashboardCard'
 import { resolveDayTone, type MonthGrid } from '../../domain/calendar'
 import { resolveDdayTone } from '../../domain/dday'
 
@@ -102,10 +102,12 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
         <CalendarCard monthGrid={monthGrid} examDday={examDday} currentStreak={currentStreak} />
       </Slot>
 
-      {/* 캘린더 밑 — 주간 미션 카드 (2026-09-01: 내 퀴즈 저장소 버튼 제거 — 사이드바 메뉴로 충분).
-          캘린더와 동일 폭으로 시선 집중. */}
-      <Slot left={1040.875} top={864} width={899.25} height={370}>
+      {/* 캘린더 밑 — 주간 미션 카드 + 히든 미션 박스 (2026-09-01) */}
+      <Slot left={1040.875} top={864} width={899.25} height={290}>
         <MissionsDashboardCard courseId={courseId} />
+      </Slot>
+      <Slot left={1040.875} top={1170} width={899.25} height={64}>
+        <HiddenMissionCard courseId={courseId} />
       </Slot>
     </div>
   )

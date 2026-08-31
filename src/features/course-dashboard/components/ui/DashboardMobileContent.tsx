@@ -14,7 +14,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import type { LucideIcon } from 'lucide-react'
 
 import { ExamPrepHeroCard } from './ExamPrepHeroCard'
-import { MissionsDashboardCardMobile } from './MissionsDashboardCard'
+import { MissionsDashboardCardMobile, HiddenMissionCardMobile } from './MissionsDashboardCard'
 import { resolveDayTone, type MonthGrid } from '../../domain/calendar'
 import { resolveDdayTone } from '../../domain/dday'
 
@@ -72,8 +72,9 @@ export function DashboardMobileContent({
           currentStreak={currentStreak}
         />
 
-        {/* 5) 주간 미션 (2026-09-01: 내 퀴즈 저장소 버튼 대체 — 사이드바 메뉴로 충분) */}
+        {/* 5) 주간 미션 + 히든 미션 (2026-09-01: 내 퀴즈 저장소 버튼 대체 — 사이드바 메뉴로 충분) */}
         <MissionsDashboardCardMobile courseId={courseId} />
+        <HiddenMissionCardMobile courseId={courseId} />
       </div>
     </div>
   )

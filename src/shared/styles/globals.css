@@ -1101,3 +1101,21 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-mission-wiggle, .animate-mission-claim { animation: none !important; }
 }
+
+/* 게임 PLAY 버튼 — shine sweep + 은은한 펄스 (게이미피케이션, 2026-09-01 아케이드 개편) */
+.btn-game-play::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -80%;
+  width: 60%; height: 100%;
+  background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.45) 50%, transparent 80%);
+  transform: skewX(-20deg);
+  animation: game-play-shine 2.8s ease-in-out infinite;
+}
+@keyframes game-play-shine {
+  0%, 55% { left: -80%; }
+  75%, 100% { left: 130%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-game-play::before { animation: none !important; }
+}

@@ -7,11 +7,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Flame, Check } from 'lucide-react'
+import { Flame, Check, ChevronRight, Sparkles } from 'lucide-react'
 import { useMissions, missionRowState } from '@/shared/hooks/useMissions'
-import { useQuizMissionLabel } from '@/shared/hooks/useQuizMissionLabel'
-import type { MissionItemDto } from '@/shared/services/gamificationService' 
+import { useMissionLabels } from '@/shared/hooks/useQuizMissionLabel'
+import type { MissionItemDto } from '@/shared/services/gamificationService'
 
 interface RowVisual {
   state: 'claimable' | 'claimed' | 'pending'
@@ -30,27 +31,41 @@ function rowClass(v: RowVisual, base: string): string {
    ───────────────────────────────────────────────────────────── */
 export function MissionsDashboardCard({ courseId }: { courseId: string }) {
   const t = useTranslations('missions')
-  const { weekly, allClear, incorrect, claim, claimingType, quizTargetLecture } = useMissions(courseId)
-  const quizLabel = useQuizMissionLabel(courseId, quizTargetLecture)
+  const router = useRouter()
+  const { weekly, allClear, claim, claimingType, quizTargetLecture } = useMissions(courseId)
+  const { ws, quizLabel, gamesLabel } = useMissionLabels(courseId, quizTargetLecture)
   const [justClaimed, setJustClaimed] = useState<string | null>(null)
 
-  const handleClaim = async (m: MissionItemDto) => {
-    if (missionRowState(m) !== 'claimable' || claimingType) return
-    setJustClaimed(m.type)
-    await claim(m.type)
-    window.setTimeout(() => setJustClaimed(null), 700)
+  const goToTarget = (tab: 'quiz' | 'game') => {
+    if (!quizTargetLecture) return
+    router.push(`/studyspace/course/${courseId}/lecture/${quizTargetLecture.lecture_id}?tab=${tab}`)
+  }
+
+  const handleRowClick = async (m: MissionItemDto) => {
+    const state = missionRowState(m)
+    if (state === 'claimable') {
+      if (claimingType) return
+      setJustClaimed(m.type)
+      await claim(m.type)
+      window.setTimeout(() => setJustClaimed(null), 700)
+      return
+    }
+    // 진행 중인 목표형 미션은 바로가기
+    if (state === 'pending' && m.type === 'quiz') goToTarget('quiz')
+    if (state === 'pending' && m.type === 'games') goToTarget('game')
   }
 
   const label = (m: MissionItemDto) =>
-    m.type === 'quiz' ? quizLabel : t(`types.${m.type}`)
+    m.type === 'quiz' ? quizLabel : m.type === 'games' ? gamesLabel : t(`types.${m.type}`)
 
   const renderRow = (m: MissionItemDto) => {
     const v: RowVisual = { state: missionRowState(m), justClaimed: justClaimed === m.type }
+    const hasShortcut = v.state === 'pending' && (m.type === 'quiz' || m.type === 'games') && !!quizTargetLecture
     return (
       <li
         key={m.type}
-        onClick={() => handleClaim(m)}
-        className={rowClass(v, 'flex items-center justify-between gap-[16px] rounded-[14px] px-[16px] py-[10px] -mx-[16px] transition-colors')}
+        onClick={() => handleRowClick(m)}
+        className={rowClass(v, `flex items-center justify-between gap-[16px] rounded-[14px] px-[16px] py-[10px] -mx-[16px] transition-colors ${hasShortcut ? 'cursor-pointer hover:bg-gray-50' : ''}`)}
       >
         <span className="flex min-w-0 items-center gap-[16px]">
           <span
@@ -72,8 +87,16 @@ export function MissionsDashboardCard({ courseId }: { courseId: string }) {
             {t('claim')}
           </span>
         ) : v.state === 'pending' ? (
-          <span className="shrink-0 text-[26px] font-semibold tabular-nums text-[#9ca3af]">
-            {m.progress}/{m.target}
+          <span className="flex shrink-0 items-center gap-[12px]">
+            <span className="text-[26px] font-semibold tabular-nums text-[#9ca3af]">
+              {m.progress}/{m.target}
+            </span>
+            {hasShortcut && (
+              <span className="flex items-center gap-[2px] rounded-full border border-[#6366F1]/40 px-[14px] py-[4px] text-[20px] font-bold text-[#6366F1]">
+                {t('go')}
+                <ChevronRight style={{ width: 20, height: 20 }} strokeWidth={2.5} />
+              </span>
+            )}
           </span>
         ) : null}
       </li>
@@ -102,7 +125,7 @@ export function MissionsDashboardCard({ courseId }: { courseId: string }) {
       <div className="mt-auto flex items-stretch gap-[16px] pt-[14px]">
         {allClear && (
           <div
-            onClick={() => handleClaim(allClear)}
+            onClick={() => handleRowClick(allClear)}
             className={rowClass(
               { state: missionRowState(allClear), justClaimed: justClaimed === allClear.type },
               'flex flex-1 items-center justify-between rounded-[14px] px-[20px] py-[12px] text-[22px] font-bold ' +
@@ -115,22 +138,7 @@ export function MissionsDashboardCard({ courseId }: { courseId: string }) {
               : missionRowState(allClear) === 'claimed' ? <Check style={{ width: 24, height: 24 }} strokeWidth={3} /> : null}
           </div>
         )}
-        {incorrect && (
-          <div
-            onClick={() => handleClaim(incorrect)}
-            className={rowClass(
-              { state: missionRowState(incorrect), justClaimed: justClaimed === incorrect.type },
-              'flex flex-1 items-center justify-between rounded-[14px] bg-amber-50 px-[20px] py-[12px] text-[22px] font-bold',
-            )}
-          >
-            <span className={missionRowState(incorrect) === 'claimed' ? 'text-gray-400 line-through' : 'text-amber-700'}>
-              {t('types.incorrect_review')}
-            </span>
-            {missionRowState(incorrect) === 'claimable'
-              ? <span className="rounded-full bg-amber-500 px-[16px] py-[4px] text-[20px] font-bold text-white">{t('claim')}</span>
-              : missionRowState(incorrect) === 'claimed' ? <Check className="text-emerald-600" style={{ width: 24, height: 24 }} strokeWidth={3} /> : null}
-          </div>
-        )}
+
       </div>
     </div>
   )
@@ -141,26 +149,34 @@ export function MissionsDashboardCard({ courseId }: { courseId: string }) {
    ───────────────────────────────────────────────────────────── */
 export function MissionsDashboardCardMobile({ courseId }: { courseId: string }) {
   const t = useTranslations('missions')
-  const { weekly, allClear, incorrect, claim, claimingType, quizTargetLecture } = useMissions(courseId)
-  const quizLabel = useQuizMissionLabel(courseId, quizTargetLecture)
+  const router = useRouter()
+  const { weekly, allClear, claim, claimingType, quizTargetLecture } = useMissions(courseId)
+  const { quizLabel, gamesLabel } = useMissionLabels(courseId, quizTargetLecture)
   const [justClaimed, setJustClaimed] = useState<string | null>(null)
 
-  const handleClaim = async (m: MissionItemDto) => {
-    if (missionRowState(m) !== 'claimable' || claimingType) return
-    setJustClaimed(m.type)
-    await claim(m.type)
-    window.setTimeout(() => setJustClaimed(null), 700)
+  const handleRowClick = async (m: MissionItemDto) => {
+    const state = missionRowState(m)
+    if (state === 'claimable') {
+      if (claimingType) return
+      setJustClaimed(m.type)
+      await claim(m.type)
+      window.setTimeout(() => setJustClaimed(null), 700)
+      return
+    }
+    if (state === 'pending' && quizTargetLecture && (m.type === 'quiz' || m.type === 'games')) {
+      router.push(`/studyspace/course/${courseId}/lecture/${quizTargetLecture.lecture_id}?tab=${m.type === 'quiz' ? 'quiz' : 'game'}`)
+    }
   }
 
   const label = (m: MissionItemDto) =>
-    m.type === 'quiz' ? quizLabel : t(`types.${m.type}`)
+    m.type === 'quiz' ? quizLabel : m.type === 'games' ? gamesLabel : t(`types.${m.type}`)
 
   const renderRow = (m: MissionItemDto) => {
     const v: RowVisual = { state: missionRowState(m), justClaimed: justClaimed === m.type }
     return (
       <li
         key={m.type}
-        onClick={() => handleClaim(m)}
+        onClick={() => handleRowClick(m)}
         className={rowClass(v, 'flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 -mx-2 transition-colors')}
       >
         <span className="flex min-w-0 items-center gap-2">
@@ -176,7 +192,12 @@ export function MissionsDashboardCardMobile({ courseId }: { courseId: string }) 
         {v.state === 'claimable' ? (
           <span className="shrink-0 rounded-full bg-[#6366F1] px-2.5 py-0.5 text-xs font-bold text-white shadow">{t('claim')}</span>
         ) : v.state === 'pending' ? (
-          <span className="shrink-0 text-sm font-semibold tabular-nums text-gray-400">{m.progress}/{m.target}</span>
+          <span className="flex shrink-0 items-center gap-1.5">
+            <span className="text-sm font-semibold tabular-nums text-gray-400">{m.progress}/{m.target}</span>
+            {(m.type === 'quiz' || m.type === 'games') && quizTargetLecture && (
+              <ChevronRight className="h-4 w-4 text-[#6366F1]" strokeWidth={2.5} />
+            )}
+          </span>
         ) : null}
       </li>
     )
@@ -197,8 +218,87 @@ export function MissionsDashboardCardMobile({ courseId }: { courseId: string }) 
       <ul className="mt-2.5 space-y-1">
         {weekly.map(renderRow)}
         {allClear && renderRow(allClear)}
-        {incorrect && renderRow(incorrect)}
       </ul>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────
+   히든 미션 박스 — 오답 정리 (주간 미션과 분리, 앰버 톤)
+   ───────────────────────────────────────────────────────────── */
+export function HiddenMissionCard({ courseId }: { courseId: string }) {
+  const t = useTranslations('missions')
+  const { incorrect, claim, claimingType } = useMissions(courseId)
+  const [justClaimed, setJustClaimed] = useState(false)
+  if (!incorrect) return null
+  const state = missionRowState(incorrect)
+
+  const handleClick = async () => {
+    if (state !== 'claimable' || claimingType) return
+    setJustClaimed(true)
+    await claim(incorrect.type)
+    window.setTimeout(() => setJustClaimed(false), 700)
+  }
+
+  return (
+    <div
+      onClick={handleClick}
+      className={`flex h-full w-full items-center justify-between rounded-[20px] bg-gradient-to-r from-amber-50 to-orange-50 px-[36px] shadow-[0_4px_20px_rgba(15,23,42,0.06)] ${
+        state === 'claimable' ? 'animate-mission-wiggle cursor-pointer ring-2 ring-amber-400' : ''
+      } ${justClaimed ? 'animate-mission-claim' : ''}`}
+      style={{ fontFamily: 'Pretendard, sans-serif' }}
+    >
+      <span className="flex min-w-0 items-center gap-[16px]">
+        <Sparkles className="shrink-0 text-amber-500" style={{ width: 30, height: 30 }} />
+        <span className="text-[22px] font-bold text-amber-600">{t('hiddenTitle')}</span>
+        <span className={`truncate text-[24px] font-semibold ${state === 'claimed' ? 'text-gray-400 line-through' : 'text-amber-800'}`}>
+          {t('types.incorrect_review')}
+        </span>
+      </span>
+      {state === 'claimable' ? (
+        <span className="shrink-0 rounded-full bg-amber-500 px-[20px] py-[6px] text-[22px] font-bold text-white shadow-md">{t('claim')}</span>
+      ) : state === 'claimed' ? (
+        <Check className="shrink-0 text-emerald-600" style={{ width: 28, height: 28 }} strokeWidth={3} />
+      ) : (
+        <span className="shrink-0 text-[22px] font-semibold text-amber-400">{t('hiddenSubtitle')}</span>
+      )}
+    </div>
+  )
+}
+
+export function HiddenMissionCardMobile({ courseId }: { courseId: string }) {
+  const t = useTranslations('missions')
+  const { incorrect, claim, claimingType } = useMissions(courseId)
+  const [justClaimed, setJustClaimed] = useState(false)
+  if (!incorrect) return null
+  const state = missionRowState(incorrect)
+
+  const handleClick = async () => {
+    if (state !== 'claimable' || claimingType) return
+    setJustClaimed(true)
+    await claim(incorrect.type)
+    window.setTimeout(() => setJustClaimed(false), 700)
+  }
+
+  return (
+    <div
+      onClick={handleClick}
+      className={`flex items-center justify-between gap-2 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-4 shadow-[0_4px_20px_rgba(15,23,42,0.06)] dark:from-amber-900/20 dark:to-orange-900/20 ${
+        state === 'claimable' ? 'animate-mission-wiggle cursor-pointer ring-2 ring-amber-400' : ''
+      } ${justClaimed ? 'animate-mission-claim' : ''}`}
+    >
+      <span className="flex min-w-0 items-center gap-2">
+        <Sparkles className="h-4 w-4 shrink-0 text-amber-500" />
+        <span className="text-xs font-bold text-amber-600">{t('hiddenTitle')}</span>
+        <span className={`truncate text-sm font-semibold ${state === 'claimed' ? 'text-gray-400 line-through' : 'text-amber-800 dark:text-amber-200'}`}>
+          {t('types.incorrect_review')}
+        </span>
+      </span>
+      {state === 'claimable' ? (
+        <span className="shrink-0 rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-bold text-white shadow">{t('claim')}</span>
+      ) : state === 'claimed' ? (
+        <Check className="h-5 w-5 shrink-0 text-emerald-600" strokeWidth={3} />
+      ) : null}
     </div>
   )
 }

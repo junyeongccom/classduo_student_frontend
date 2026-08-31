@@ -1664,8 +1664,19 @@
       "games": "게임 3판 플레이",
       "all_clear": "올클리어 보너스",
       "incorrect_review": "오답 10문제 이상 시험모드 완료",
-      "quizTarget": "{week}주차 {session}차시 회차퀴즈 완료"
+      "quizTarget": "{week}주차 {session}차시 회차퀴즈 완료",
+      "gamesTarget": "{week}주차 {session}차시 게임 3판 플레이"
     },
-    "claim": "받기!"
+    "claim": "받기!",
+    "hiddenTitle": "히든 미션",
+    "hiddenSubtitle": "조건을 달성하면 보너스 XP",
+    "go": "바로가기"
+  },
+  "arcade": {
+    "ranking": "랭킹",
+    "myRank": "내 순위",
+    "noRecord": "아직 기록이 없어요 — 1등에 도전!",
+    "soloGame": "혼자 차분히 복습하는 암기 카드",
+    "rankUnit": "위"
   }
 }
