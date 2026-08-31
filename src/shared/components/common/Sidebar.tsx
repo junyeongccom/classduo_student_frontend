@@ -194,11 +194,10 @@ export function Sidebar() {
                   className={cn(
                     'flex items-center rounded-xl font-medium transition-all duration-300',
                     visualCollapsed ? 'justify-center px-0 py-3' : 'gap-4 px-4 py-3',
-                    isActive
-                      ? 'font-semibold'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800',
+                    // 배경 박스는 hover 에서만 — 활성 표시는 굵기·글자색으로 (2026-08-31 흑백 방향)
+                    'hover:bg-gray-100 dark:hover:bg-gray-800',
+                    isActive && 'font-semibold',
                   )}
-                  style={isActive ? { backgroundColor: `${color}10` } : undefined}
                 >
                   <Icon
                     className="h-5 w-5 shrink-0"
