@@ -1121,6 +1121,7 @@
     "signup": {
       "title": "새로운 계정 만들기",
       "namePlaceholder": "이름",
+      "studentNumberPlaceholder": "학번 (숫자 10자리)",
       "emailPlaceholder": "이메일 주소",
       "emailPlaceholderModal": "이메일 주소",
       "passwordPlaceholder": "비밀번호 (8자 이상, 영문+숫자)",
@@ -1188,7 +1189,9 @@
       "strengthMinLength": "8자 이상",
       "strengthLetters": "영문 포함",
       "strengthNumbers": "숫자 포함",
-      "strengthSymbols": "기호 포함"
+      "strengthSymbols": "기호 포함",
+      "studentNumberRequired": "학번을 입력해주세요",
+      "studentNumberInvalid": "학번 형식이 올바르지 않습니다 (숫자 10자리)"
     },
     "emailNotice": {
       "title": "회원가입 인증 메일 수신이 안되시나요?",

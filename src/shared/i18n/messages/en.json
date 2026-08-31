@@ -1121,6 +1121,7 @@
     "signup": {
       "title": "Create New Account",
       "namePlaceholder": "Name",
+      "studentNumberPlaceholder": "Student ID (10 digits)",
       "emailPlaceholder": "Email address",
       "emailPlaceholderModal": "Email address",
       "passwordPlaceholder": "Password (8+ chars, letters + numbers)",
@@ -1188,7 +1189,9 @@
       "strengthMinLength": "8+ chars",
       "strengthLetters": "Letters",
       "strengthNumbers": "Numbers",
-      "strengthSymbols": "Symbols"
+      "strengthSymbols": "Symbols",
+      "studentNumberRequired": "Please enter your student ID",
+      "studentNumberInvalid": "Invalid student ID format (10 digits)"
     },
     "emailNotice": {
       "title": "Not receiving the verification email?",

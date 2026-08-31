@@ -274,6 +274,27 @@ function finalizeTracker(tracker: IdleTracker): { duration_ms: number; idle_ms: 
   }
 }
 
+// ─── 섹션(탭/패널) 단위 체류 tracker ───
+// 페이지 tracker(pageIdleTrackers)와 분리 — beforeunload의 일괄 page_leave 발화에 오염되지 않는다.
+// LPA 시간기반 구성비 산출용: 탭 체류를 idle 제외 활성 시간으로 측정 (2026-2 수집 보강).
+
+const sectionIdleTrackers = new Map<string, IdleTracker>()
+
+/** 섹션(탭 등) 체류 측정 시작 — 같은 키의 기존 tracker는 정리 후 교체 */
+export function startSectionTracker(key: string) {
+  const existing = sectionIdleTrackers.get(key)
+  if (existing) existing.cleanupListeners()
+  sectionIdleTrackers.set(key, createIdleTracker())
+}
+
+/** 섹션 체류 측정 종료 — 활성/유휴 시간 반환 (tracker 없으면 null) */
+export function finalizeSectionTracker(key: string): { duration_ms: number; idle_ms: number; total_elapsed_ms: number } | null {
+  const tracker = sectionIdleTrackers.get(key)
+  if (!tracker) return null
+  sectionIdleTrackers.delete(key)
+  return finalizeTracker(tracker)
+}
+
 // ─── 편의 함수 ───
 
 /**
@@ -389,7 +410,7 @@ export const chatAnalytics = {
 
 /** lecture_study 탭 전환 트래킹 — 탭별 체류시간 포함 */
 export const lectureStudyAnalytics = {
-  tabSwitch(lectureId: string, data: { from_tab: string; to_tab: string; duration_ms: number }) {
+  tabSwitch(lectureId: string, data: { from_tab: string; to_tab: string; duration_ms: number; active_ms?: number; idle_ms?: number }) {
     trackEvent('tab_switch', 'lecture_study', { lectureId, data })
   },
 }

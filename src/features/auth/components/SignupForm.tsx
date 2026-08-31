@@ -10,7 +10,7 @@ import { Button, Input } from '@/shared/components/ui'
 import { useSignup } from '../hooks/useSignup'
 import { useAuthStore } from '../store/authStore'
 import { VerificationCodeInput } from './ui/VerificationCodeInput'
-import { Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react'
+import { Mail, Lock, User, Hash, AlertCircle, CheckCircle } from 'lucide-react'
 import { EmailNoticeCard } from './ui/EmailNoticeCard'
 
 export function SignupForm() {
@@ -47,6 +47,10 @@ export function SignupForm() {
       .string()
       .min(2, tv('nameMin'))
       .max(50, tv('nameMax')),
+    student_number: z
+      .string()
+      .min(1, tv('studentNumberRequired'))
+      .regex(/^\d{10}$/, tv('studentNumberInvalid')),
     password: z
       .string()
       .min(8, tv('passwordMin'))
@@ -275,6 +279,18 @@ export function SignupForm() {
             placeholder={t('namePlaceholder')}
             className="pl-12"
             error={errors.full_name?.message}
+          />
+        </div>
+
+        <div className="relative">
+          <Hash className="absolute left-4 top-[21px] h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <Input
+            {...register('student_number')}
+            type="text"
+            inputMode="numeric"
+            placeholder={t('studentNumberPlaceholder')}
+            className="pl-12"
+            error={errors.student_number?.message}
           />
         </div>
 

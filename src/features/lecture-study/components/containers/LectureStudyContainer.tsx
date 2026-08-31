@@ -14,7 +14,7 @@ import { Loader2, X, ChevronRight, FileText, Bot } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui'
 import { trackTabView } from '@/shared/hooks/useAnalytics'
-import { trackPageEnter, trackPageLeave, lectureStudyAnalytics, panelAnalytics, materialViewAnalytics, createFocusLossTracker } from '@/shared/lib/analytics'
+import { trackPageEnter, trackPageLeave, lectureStudyAnalytics, panelAnalytics, materialViewAnalytics, createFocusLossTracker, startSectionTracker, finalizeSectionTracker } from '@/shared/lib/analytics'
 import { StudyspaceTopbarSlot } from '@/shared/components/layouts/studyspace'
 import { useIsAppWebView } from '@/shared/lib/appBridge'
 import { useLectureDetail } from '../../hooks/useLectureDetail'
@@ -304,6 +304,21 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
   const rightTabEnterTime = useRef(Date.now())
   const prevRightTab = useRef(rightTab)
 
+  // 탭 단위 idle 분리 측정 + 마지막 탭 언마운트 발화 (2026-2 수집 보강 — LPA 시간기반 구성비)
+  useEffect(() => {
+    startSectionTracker(`lecture_study:${prevRightTab.current}`)
+    return () => {
+      const timing = finalizeSectionTracker(`lecture_study:${prevRightTab.current}`)
+      lectureStudyAnalytics.tabSwitch(lectureId, {
+        from_tab: prevRightTab.current,
+        to_tab: '__exit__',
+        duration_ms: Date.now() - rightTabEnterTime.current,
+        ...(timing ? { active_ms: timing.duration_ms, idle_ms: timing.idle_ms } : {}),
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lectureId])
+
   // 양쪽 패널 모두 닫혀있을 때만 중앙 배치
   const isCenterOnly = !isLeftPanelOpen && !isChatPanelOpen
 
@@ -335,11 +350,14 @@ export function LectureStudyContainer({ lectureId, courseId, courseTitle, lectur
       onValueChange={v => {
         const now = Date.now()
         const durationMs = now - rightTabEnterTime.current
+        const timing = finalizeSectionTracker(`lecture_study:${prevRightTab.current}`)
         lectureStudyAnalytics.tabSwitch(lectureId, {
           from_tab: prevRightTab.current,
           to_tab: v,
           duration_ms: durationMs,
+          ...(timing ? { active_ms: timing.duration_ms, idle_ms: timing.idle_ms } : {}),
         })
+        startSectionTracker(`lecture_study:${v}`)
         prevRightTab.current = v as LectureStudyTab
         rightTabEnterTime.current = now
         setRightTab(v as LectureStudyTab)

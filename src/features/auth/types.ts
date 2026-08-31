@@ -129,6 +129,8 @@ export interface SendSignupCodeRequest {
   password: string
   password_confirm: string
   full_name: string
+  /** 학번 (2026-2 신설 — 성적 매칭·이중계정 차단, 백엔드 중복 시 409 STUDENT_NUMBER_TAKEN) */
+  student_number: string
   /** 회원가입 시 수집하는 개인정보 동의 (필수 4종 미충족이면 백엔드가 400 CONSENT_REQUIRED) */
   consents?: ConsentAnswer[]
 }

@@ -247,13 +247,17 @@ export function GameTabContainer({ lectureId, accessSource = 'content' }: GameTa
     if (gameId === 'running') {
       setShowRunningOverlay(true)
     } else if (gameId === 'cardMatch') {
+      // running 랭크는 handleStartGame 경유로 game_start가 발화되지만,
+      // cardMatch/definitionBuilder 랭크는 오버레이 직행이라 여기서 발화 (2026-1 수집 누락 보강)
+      gameAnalytics.start(lectureId, { game_type: gameId, access_source: accessSource, game_mode: 'rank' })
       setShowMatchingOverlay(true)
     } else if (gameId === 'definitionBuilder') {
+      gameAnalytics.start(lectureId, { game_type: gameId, access_source: accessSource, game_mode: 'rank' })
       if (items) loadDefBuilderDataFrom(items)
       setDefBuilderScore(0)
       setShowDefBuilderOverlay(true)
     }
-  }, [loadDefBuilderDataFrom])
+  }, [loadDefBuilderDataFrom, lectureId, accessSource])
 
   /** 닉네임 확인 후 실제 랭크 게임 시작 (running / cardMatch / definitionBuilder) */
   const launchRankGame = useCallback(async (gameId: string) => {
