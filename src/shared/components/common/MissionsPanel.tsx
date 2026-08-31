@@ -20,10 +20,16 @@ interface MissionsPanelProps {
 export function MissionsPanel({ courseId }: MissionsPanelProps) {
   const t = useTranslations('missions')
   const [isOpen, setIsOpen] = useState(false)
-  const { weekly, allClear, incorrect, remaining, loading, claim, claimingType, quizTargetLecture } = useMissions(courseId)
+  const { weekly, allClear, incorrect, remaining, loading, claim, claimingType, quizTargetLecture, reload } = useMissions(courseId)
   const quizLabel = useQuizMissionLabel(courseId, quizTargetLecture)
   const [justClaimed, setJustClaimed] = useState<string | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
+
+  // 패널 열 때 최신화 — XP 미지급 활동(반복 게임 등)도 진행도에 반영
+  useEffect(() => {
+    if (isOpen) void reload()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   // 외부 클릭 닫기
   useEffect(() => {

@@ -65,7 +65,7 @@ export function useMissions(courseId: string) {
   // 헤더 뱃지: 아직 처리할 것(미완료 또는 수령 대기) 개수
   const remaining = weekly.filter(m => !m.claimed).length
 
-  return { missions, weekly, allClear, incorrect, remaining, loading, claim, claimingType, quizTargetLecture }
+  return { missions, weekly, allClear, incorrect, remaining, loading, claim, claimingType, quizTargetLecture, reload: load }
 }
 
 /** 미션 행 상태: 수령 가능(흔들림) / 수령 완료 / 진행 중 */
