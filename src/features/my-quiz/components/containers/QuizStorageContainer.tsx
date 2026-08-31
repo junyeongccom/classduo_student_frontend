@@ -845,6 +845,7 @@ export default function QuizStorageContainer() {
         <ExamModeContainer
           items={items}
           locale={locale}
+          courseId={courseIdParam}
           onClose={closeExam}
         />
       )}

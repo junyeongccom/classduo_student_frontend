@@ -298,10 +298,12 @@ function PayloadFormView({
 export default function ExamModeContainer({
   items,
   locale,
+  courseId,
   onClose,
 }: {
   items: QuizStorageItem[]
   locale: string
+  courseId?: string | null
   onClose: () => void
 }) {
   const t = useTranslations('myQuiz')
@@ -371,6 +373,12 @@ export default function ExamModeContainer({
 
   const finish = (finalAnswers: AnswerRecord[]) => {
     finishedAtRef.current = Date.now()
+    // 세션 완료 신고 (2026-2 성장 시스템 — 오답 정리 미션 근거, 실패 silent)
+    if (courseId && finalAnswers.length > 0) {
+      void import('../../services/myQuizStatusService').then(({ completeExamMode }) =>
+        completeExamMode(courseId, crypto.randomUUID(), finalAnswers.length),
+      ).catch(() => {})
+    }
     // 모든 재풀이 결과를 incorrect 로그로 기록 (fire-and-forget, 실패 silent).
     for (const a of finalAnswers) {
       if (!a.item.lecture_id) continue

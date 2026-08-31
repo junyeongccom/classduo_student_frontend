@@ -1037,3 +1037,40 @@
   .dar-falling-book.is-falling-vertical { animation: none !important; opacity: 0; }
 }
 
+
+/* ─────────────────────────────────────────────────────────
+   XP 획득 토스트 (2026-2 성장 시스템) — 팝인 → 유지 → 떠오르며 페이드
+   ───────────────────────────────────────────────────────── */
+@keyframes xp-toast-pop {
+  0%   { transform: translateY(8px) scale(0.85); opacity: 0; }
+  12%  { transform: translateY(0) scale(1.06); opacity: 1; }
+  20%  { transform: translateY(0) scale(1); }
+  80%  { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-16px) scale(0.96); opacity: 0; }
+}
+.animate-xp-toast {
+  animation: xp-toast-pop 2200ms cubic-bezier(.22,1,.36,1) forwards;
+}
+
+/* 미션 조건 달성 체크 — 스프링 팝 */
+@keyframes mission-check-pop {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.animate-mission-check {
+  animation: mission-check-pop 400ms cubic-bezier(.34,1.56,.64,1) both;
+}
+
+/* 미션 올클리어 — 카드 글로우 1회 */
+@keyframes mission-allclear-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+  30%  { box-shadow: 0 0 0 4px rgba(99,102,241,0.35), 0 0 24px 4px rgba(99,102,241,0.25); }
+  100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+}
+.animate-mission-allclear {
+  animation: mission-allclear-glow 1200ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-xp-toast, .animate-mission-check, .animate-mission-allclear { animation: none !important; }
+}

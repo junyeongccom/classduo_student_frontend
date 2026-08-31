@@ -1075,3 +1075,12 @@ export async function resetBookmarkAnswer(quizSource: QuizSource, quizId: string
     { method: 'PATCH', auth: true },
   )
 }
+
+/** 오답노트 시험모드 세션 완료 신고 (2026-2 성장 시스템) — 오답 정리 미션 판정 근거 */
+export async function completeExamMode(courseId: string, sessionId: string, questionCount: number) {
+  return apiRequest<{ recorded: boolean; session_id: string }>('/quiz-status/exam-mode/complete', {
+    method: 'POST',
+    auth: true,
+    body: { course_id: courseId, session_id: sessionId, question_count: questionCount },
+  })
+}

@@ -15,6 +15,8 @@ interface ScoreSubmitPayload {
 }
 
 interface ScoreSubmitResponse {
+  /** 2026-2 성장 시스템 — 회차당 최초 1판만 지급 */
+  xp_granted?: number
   id: string
   rank: number
 }

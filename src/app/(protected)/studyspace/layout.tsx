@@ -15,6 +15,8 @@ import { useI18n, type AppLocale } from '@/shared/i18n/I18nProvider'
 import { getCourseRewardCounts } from '@/shared/services/progressService'
 import { fetchMyCourseState, type StudentCourseStateDto } from '@/shared/services/gamificationService'
 import { ExamPrepHeaderBar } from '@/features/exam-prep-final/components/ui/ExamPrepHeaderBar'
+import { XpToastHost } from '@/shared/components/common/XpToastHost'
+import { MissionsPanel } from '@/shared/components/common/MissionsPanel'
 import { useSidebarStore, SIDEBAR_WIDTH_EXPANDED, SIDEBAR_WIDTH_COLLAPSED } from '@/shared/store/useSidebarStore'
 import { useThemeStore } from '@/shared/store/useThemeStore'
 import { FeedbackModalContainer, useFeedbackStore } from '@/features/error-report'
@@ -160,6 +162,10 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const examPrepCourseId = examPrepMatch?.[1] ?? null
   const isExamPrepPage = !!examPrepCourseId
 
+  // 2026-2 성장 시스템: XP·랭크 헤더를 과목 컨텍스트가 있는 모든 페이지로 확대 노출
+  const courseCtxMatch = pathname.match(/^\/studyspace\/course\/([^/]+)/)
+  const headerCourseId = courseCtxMatch?.[1] ?? null
+
   // 회차별 학습 페이지 감지 (/lectures 목록 + /lecture/[id] 상세).
   // 불꽃(연속 학습 보상)은 회차별 학습에서만 노출 — 과목 대시보드·대화형 등에서는 숨김.
   const isLectureStudyPage = /^\/studyspace\/course\/[^/]+\/lectures?(?:\/|$)/.test(pathname)
@@ -168,32 +174,32 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const [gamificationLoading, setGamificationLoading] = useState(false)
 
   const refreshGamification = useCallback(async () => {
-    if (!examPrepCourseId || !user) return
+    if (!headerCourseId || !user) return
     setGamificationLoading(true)
     try {
-      const { data } = await fetchMyCourseState(examPrepCourseId)
+      const { data } = await fetchMyCourseState(headerCourseId)
       setGamificationState(data)
     } finally {
       setGamificationLoading(false)
     }
-  }, [examPrepCourseId, user])
+  }, [headerCourseId, user])
 
-  // 기말 대비 페이지 진입 / courseId 변경 시 fetch
+  // 과목 페이지 진입 / courseId 변경 시 fetch
   useEffect(() => {
-    if (!isExamPrepPage) {
+    if (!headerCourseId) {
       setGamificationState(null)
       return
     }
     refreshGamification()
-  }, [isExamPrepPage, examPrepCourseId, refreshGamification])
+  }, [headerCourseId, refreshGamification])
 
-  // 풀이 제출 등 외부 트리거 시 재조회
+  // 풀이 제출·XP 획득 등 외부 트리거 시 재조회
   useEffect(() => {
-    if (!isExamPrepPage) return
+    if (!headerCourseId) return
     const handler = () => { refreshGamification() }
     window.addEventListener('exam-prep-rewards-refresh', handler)
     return () => window.removeEventListener('exam-prep-rewards-refresh', handler)
-  }, [isExamPrepPage, refreshGamification])
+  }, [headerCourseId, refreshGamification])
 
   // main 은 overflow-hidden 고정 레이아웃이라 어떤 경로(패널 토글 시 브라우저
   // 스크롤 복원, focus 스크롤 등)로든 scrollTop 이 밀리면 화면 하단이 잘려 보인다
@@ -217,6 +223,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         {/* Feedback / Password 모달은 풀이 모드에서도 가능 */}
+        <XpToastHost />
         <FeedbackModalContainer isOpen={isFeedbackOpen} onClose={closeFeedback} />
         <PasswordChangeModalContainer
           isOpen={isPasswordModalOpen}
@@ -229,6 +236,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-dvh bg-[#f5f7f8] dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <XpToastHost />
       <Sidebar />
       <div
         className="flex min-h-0 flex-1 flex-col overflow-hidden transition-[padding] duration-300 ease-in-out"
@@ -243,15 +251,17 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
           <div className="flex shrink-0 items-center gap-3 pl-2 md:pl-6">
-            {isExamPrepPage ? (
-              <div className="hidden md:flex md:items-center">
+            {headerCourseId && (
+              <div className="hidden md:flex md:items-center md:gap-3">
                 <ExamPrepHeaderBar
                   state={gamificationState}
                   loading={gamificationLoading}
-                  courseId={examPrepCourseId}
+                  courseId={headerCourseId}
                 />
+                <MissionsPanel courseId={headerCourseId} />
               </div>
-            ) : isLectureStudyPage && !isDialoguePage ? (
+            )}
+            {isLectureStudyPage && !isDialoguePage ? (
               <div ref={flameRef} className="relative hidden md:block">
                 <button
                   id="flame-badge"

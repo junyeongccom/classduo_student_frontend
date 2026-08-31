@@ -68,3 +68,33 @@ export async function fetchCourseLeaderboard(
   }
   return { data: result.data ?? null, error: null }
 }
+
+/* ── 주간 미션 (2026-2 성장 시스템) ── */
+
+export interface MissionItemDto {
+  type: 'quiz' | 'days' | 'games' | 'all_clear' | 'incorrect_review'
+  progress: number
+  target: number
+  completed: boolean
+  bonus_xp: number
+  just_granted_xp: number
+}
+
+export interface MissionsResponseDto {
+  week: string
+  missions: MissionItemDto[]
+}
+
+/** 주간 미션 진행도 조회 — 달성분 보너스는 이 조회에서 서버가 1회 지급(멱등) */
+export async function fetchMyMissions(
+  courseId: string,
+): Promise<{ data: MissionsResponseDto | null; error: string | null }> {
+  const result = await apiRequest<MissionsResponseDto>(
+    `/gamification/me/courses/${courseId}/missions`,
+    { auth: true },
+  )
+  if (result.error) {
+    return { data: null, error: result.error.message }
+  }
+  return { data: result.data ?? null, error: null }
+}

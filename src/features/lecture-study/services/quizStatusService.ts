@@ -55,6 +55,8 @@ interface RewardGrantResponse {
   rewarded: boolean
   already_exists: boolean
   message: string
+  /** 2026-2 성장 시스템 — 이번 호출로 지급된 활동 XP */
+  xp_granted?: number
 }
 
 /* ───────────── Supabase 직접 조회 ───────────── */

@@ -168,6 +168,9 @@ export function DefinitionBuilderGame({
         if (!cancelled && submitData) {
           setSubmissionRank(submitData.rank)
           onRankSubmitSuccess?.(currentScore, elapsedMs)
+          if ((submitData.xp_granted ?? 0) > 0) {
+            window.dispatchEvent(new CustomEvent('xp-gained', { detail: { xp: submitData.xp_granted } }))
+          }
         }
       } catch {
         // 제출 실패는 무시

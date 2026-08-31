@@ -201,6 +201,14 @@ export function useReviewDeck(lectureId: string | null, reviewItems: LectureRevi
 
         // 1사이클 종료 조건: 모든 단어가 good/bad 결론을 얻음(=unresolved empty)
         if (unresolved.size === 0) {
+          // 덱 완료 XP 신고 (2026-2 성장 시스템, 회차당 최초 1회 — 실패 무시)
+          void import('@/features/review/services/reviewService').then(({ reviewService }) =>
+            reviewService.completeDeck(lectureId).then(({ data }) => {
+              if ((data?.xp_granted ?? 0) > 0) {
+                window.dispatchEvent(new CustomEvent('xp-gained', { detail: { xp: data!.xp_granted } }))
+              }
+            }),
+          ).catch(() => {})
           const wrongIdsInOrder = baseOrder.filter((id) => wrong.has(id))
           if (wrongIdsInOrder.length === 0) {
             // 취약 대상이 없으면 곧바로 다음 전체 사이클 시작

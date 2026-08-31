@@ -109,6 +109,13 @@ export const reviewService = {
       body: { score, total_questions: totalQuestions, ...(elapsedMs != null && elapsedMs > 0 ? { elapsed_ms: elapsedMs } : {}) },
     }),
 
+  /** 플래시카드 덱 1사이클 완료 신고 (2026-2 성장 시스템) — 회차당 최초 1회 10XP */
+  completeDeck: (lectureId: string) =>
+    apiRequest<{ lecture_id: string; xp_granted: number }>(API_ENDPOINTS.REVIEW.COMPLETE_DECK(lectureId), {
+      method: 'POST',
+      auth: true,
+    }),
+
   submitMatchingGameScore: (lectureId: string, elapsedMs: number, pairCount: number) =>
     apiRequest<GameSubmissionResponse>(API_ENDPOINTS.GAME.SUBMIT_MATCHING(lectureId), {
       method: 'POST',

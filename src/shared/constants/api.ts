@@ -50,6 +50,7 @@ export const API_ENDPOINTS = {
   REVIEW: {
     GET_LECTURE_LIST: (courseId: string) => `/courses/${courseId}/lectures`,
     GET_CAROUSEL: (lectureId: string) => `/reviews/lectures/${lectureId}/carousel`,
+    COMPLETE_DECK: (lectureId: string) => `/reviews/lectures/${lectureId}/deck/complete`,
     GET_REVIEW_ITEMS: (lectureId: string) => `/reviews/lectures/${lectureId}/review-items`,
     CREATE_REVIEW_ITEM: (lectureId: string) => `/reviews/lectures/${lectureId}/review-items`,
     DELETE_REVIEW_ITEMS: (lectureId: string) => `/reviews/lectures/${lectureId}/review-items`,
@@ -78,6 +79,11 @@ export const API_ENDPOINTS = {
     RANKINGS_RUNNING: (lectureId: string) => `/game/running/lectures/${lectureId}/rankings`,
     RANKINGS_DEFINITION_BUILDER: (lectureId: string) => `/game/definition-builder/lectures/${lectureId}/rankings`,
     RANKINGS_MATCHING: (lectureId: string) => `/game/matching/lectures/${lectureId}/rankings`,
+  },
+
+  // Quiz Status (성장 시스템 2026-2)
+  QUIZ_STATUS: {
+    EXAM_MODE_COMPLETE: '/quiz-status/exam-mode/complete',
   },
 
   // Health

@@ -264,6 +264,9 @@ export class GameOverScene extends Phaser.Scene {
         statusText.setColor("#f1c40f");
         // 부모(GameOverlay)가 rank 제출 성공 여부를 판별할 수 있도록 registry에 플래그 설정
         this.game.registry.set('rankSubmitted', true);
+        if ((data.xp_granted ?? 0) > 0) {
+          window.dispatchEvent(new CustomEvent('xp-gained', { detail: { xp: data.xp_granted } }))
+        }
       } else {
         statusText.setText(this.t.submitFailed);
         statusText.setColor("#e74c3c");

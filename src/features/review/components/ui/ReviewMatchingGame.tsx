@@ -220,6 +220,9 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
         if (!cancelled && submitData) {
           setSubmissionRank(submitData.rank)
           onRankSubmitSuccess?.(0, elapsedMs)
+          if ((submitData.xp_granted ?? 0) > 0) {
+            window.dispatchEvent(new CustomEvent('xp-gained', { detail: { xp: submitData.xp_granted } }))
+          }
         }
       } catch {
         // 제출 실패는 무시

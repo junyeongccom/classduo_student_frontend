@@ -336,6 +336,10 @@ export function QuizTabContainer({ lectureId, courseId, courseTitle, weekNumber,
       const rewardResult = await grantReward(lectureId, 'content')
       rewardCheckingRef.current = false
       if (rewardResult.data?.rewarded) {
+        const xp = rewardResult.data.xp_granted ?? 0
+        if (xp > 0) {
+          window.dispatchEvent(new CustomEvent('xp-gained', { detail: { xp } }))
+        }
         setShowRewardModal(true)
       }
     },
