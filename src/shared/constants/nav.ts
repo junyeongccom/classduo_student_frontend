@@ -45,7 +45,7 @@ export const NEW_SIDEBAR_MENU = [
     labelKey: 'newNav.classes',
     icon: LayoutGrid,
     href: '/studyspace/home',
-    color: '#3B82F6',    // blue
+    color: '#4B5563',    // gray-600 — 흑백 톤 통일 (2026-08-31 디자인 방향: 보라 계열 제거)
   },
   {
     id: 'feedback',
@@ -53,7 +53,7 @@ export const NEW_SIDEBAR_MENU = [
     icon: MessageSquare,
     // 클릭 시 preventDefault + 개선요청 모달. href 는 폴백(새 탭/미들클릭)용.
     href: '/studyspace/home',
-    color: '#7C3AED',    // violet
+    color: '#4B5563',    // gray-600 — 흑백 톤 통일
   },
 ] as const
 

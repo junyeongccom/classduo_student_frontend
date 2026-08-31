@@ -32,7 +32,7 @@ function NewLanguageToggle() {
         onClick={() => handle('en')}
         className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
           locale === 'en'
-            ? 'bg-[#6366F1] text-white'
+            ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
         }`}
       >
@@ -42,7 +42,7 @@ function NewLanguageToggle() {
         onClick={() => handle('ko')}
         className={`rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
           locale === 'ko'
-            ? 'bg-[#6366F1] text-white'
+            ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
         }`}
       >
