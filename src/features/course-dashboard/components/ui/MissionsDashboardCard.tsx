@@ -7,7 +7,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { Target, Check } from 'lucide-react'
+import { Flame, Check } from 'lucide-react'
 import { useMissions } from '@/shared/hooks/useMissions'
 
 /* ─────────────────────────────────────────────────────────────
@@ -26,8 +26,8 @@ export function MissionsDashboardCard({ courseId }: { courseId: string }) {
     >
       <div className="flex items-baseline justify-between">
         <span className="flex items-center gap-[14px]">
-          <span className="flex items-center justify-center rounded-[16px] bg-emerald-500/10" style={{ width: 56, height: 56 }}>
-            <Target className="text-emerald-600" style={{ width: 32, height: 32 }} strokeWidth={2.2} />
+          <span className="flex items-center justify-center rounded-[16px] bg-[#6366F1]/10" style={{ width: 56, height: 56 }}>
+            <Flame className="fill-[#6366F1] text-[#6366F1]" style={{ width: 32, height: 32 }} strokeWidth={2.2} />
           </span>
           <span className="text-[34px] font-bold text-black">{t('title')}</span>
         </span>
@@ -95,8 +95,8 @@ export function MissionsDashboardCardMobile({ courseId }: { courseId: string }) 
     }`}>
       <div className="flex items-baseline justify-between">
         <span className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
-            <Target className="h-[18px] w-[18px] text-emerald-600" strokeWidth={2.2} />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6366F1]/10">
+            <Flame className="h-[18px] w-[18px] fill-[#6366F1] text-[#6366F1]" strokeWidth={2.2} />
           </span>
           <span className="text-base font-bold text-gray-900 dark:text-gray-50">{t('title')}</span>
         </span>

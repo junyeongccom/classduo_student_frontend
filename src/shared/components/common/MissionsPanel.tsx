@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Target, Check } from 'lucide-react'
+import { Flame, Check } from 'lucide-react'
 import { useMissions } from '@/shared/hooks/useMissions'
 
 interface MissionsPanelProps {
@@ -37,13 +37,14 @@ export function MissionsPanel({ courseId }: MissionsPanelProps) {
     <div ref={panelRef} className="relative hidden md:block">
       <button
         type="button"
+        id="flame-badge"
         onClick={() => setIsOpen(v => !v)}
-        className="relative flex items-center gap-1.5 rounded-xl bg-emerald-500/10 px-3.5 py-2.5 text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+        className="relative flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3.5 py-2.5 text-[#6366F1] transition-colors hover:bg-[#6366F1]/20"
         aria-label={t('buttonLabel')}
       >
-        <Target className="h-5 w-5" />
+        <Flame className="h-5 w-5 fill-current" />
         {remaining > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#6366F1] text-[10px] font-bold text-white">
             {remaining}
           </span>
         )}

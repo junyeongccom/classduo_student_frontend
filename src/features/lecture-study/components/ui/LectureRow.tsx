@@ -6,7 +6,7 @@
  */
 
 import { cn } from '@/shared/lib/utils'
-import { Mic, FileText, Lock, Calendar, Flame } from 'lucide-react'
+import { Mic, FileText, Lock, Calendar } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import type { Lecture } from '../../types'
@@ -87,17 +87,6 @@ export function LectureRow({ lecture, status, hasReward = false, onClick, onMicC
         cardClickable && 'cursor-pointer active:scale-[0.99]',
       )}
     >
-      {/* Reward Icon (활성 시 녹색 톤 — Figma 카테고리 컬러) */}
-      <div className={cn(
-        'flex h-[calc(40px*var(--u))] w-[calc(40px*var(--u))] shrink-0 items-center justify-center rounded-[calc(12px*var(--u))] shadow-sm md:h-14 md:w-14 md:rounded-2xl',
-        hasReward ? 'bg-[#D1FAE5]' : 'bg-gray-100 dark:bg-gray-800',
-      )}>
-        <Flame className={cn(
-          'h-[calc(20px*var(--u))] w-[calc(20px*var(--u))] md:h-6 md:w-6',
-          hasReward ? 'fill-[#047857] text-[#047857]' : 'fill-gray-300 text-gray-300',
-        )} />
-      </div>
-
       {/* Info */}
       <div className="min-w-0 flex-1 md:min-w-[280px]">
         <div className="mb-0.5 flex items-center gap-[calc(6px*var(--u))] md:mb-1 md:gap-2">

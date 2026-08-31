@@ -7,12 +7,11 @@ import {
   StudyspaceLayoutProvider,
   useStudyspaceLayoutSlots,
 } from '@/shared/components/layouts/studyspace'
-import { Flame, Settings, MessageSquare, LogOut, Moon, KeyRound } from 'lucide-react'
+import { Settings, MessageSquare, LogOut, Moon, KeyRound } from 'lucide-react'
 import { useIsAppWebView } from '@/shared/lib/appBridge'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/features/auth/store/authStore'
 import { useI18n, type AppLocale } from '@/shared/i18n/I18nProvider'
-import { getCourseRewardCounts } from '@/shared/services/progressService'
 import { fetchMyCourseState, type StudentCourseStateDto } from '@/shared/services/gamificationService'
 import { ExamPrepHeaderBar } from '@/features/exam-prep-final/components/ui/ExamPrepHeaderBar'
 import { XpToastHost } from '@/shared/components/common/XpToastHost'
@@ -81,15 +80,7 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const toggleTheme = useThemeStore((s) => s.toggle)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
-  const [isFlamePopupOpen, setIsFlamePopupOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
-  const flameRef = useRef<HTMLDivElement>(null)
-
-  // 현재 URL에서 lectureId 추출
-  const currentLectureId = (() => {
-    const match = pathname.match(/\/lecture\/([^/]+)/)
-    return match?.[1] ?? null
-  })()
 
   // 콘텐츠형 학습 페이지 진입 시에만 불꽃 팝업 자동 표시 (대화형 학습 제외)
   const isDialoguePage = pathname.includes('/dialogue')
@@ -99,19 +90,6 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
 
   // 앱 WebView 모드 — 앱 네이티브 UI와 중복되는 사이드바/헤더 숨김 (콘텐츠만 표시)
   const isAppMode = useIsAppWebView()
-
-  useEffect(() => {
-    if (!currentLectureId || isDialoguePage) {
-      setIsFlamePopupOpen(false)
-      return
-    }
-    const dismissed = localStorage.getItem(`flamePopup_dismissed_${currentLectureId}`)
-    if (!dismissed) {
-      setIsFlamePopupOpen(true)
-    } else {
-      setIsFlamePopupOpen(false)
-    }
-  }, [currentLectureId, isDialoguePage])
 
   // 프로필 드롭다운 외부 클릭 닫기
   useEffect(() => {
@@ -125,37 +103,6 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isProfileOpen])
 
-  // 불꽃 팝업 외부 클릭 닫기
-  useEffect(() => {
-    if (!isFlamePopupOpen) return
-    const handleClick = (e: MouseEvent) => {
-      if (flameRef.current && !flameRef.current.contains(e.target as Node)) {
-        setIsFlamePopupOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [isFlamePopupOpen])
-
-  // 불꽃 카운트 조회 (전체 과목 합산, 페이지 무관 불변)
-  const [flameCount, setFlameCount] = useState(0)
-
-  useEffect(() => {
-    if (!user) return
-    getCourseRewardCounts().then(({ data }) => {
-      if (!data) { setFlameCount(0); return }
-      const total = data.reduce((sum, r) => sum + r.total_amount, 0)
-      setFlameCount(total)
-    })
-  }, [user])
-
-  // 보상 모달에서 발행하는 flame-increment 이벤트 수신
-  useEffect(() => {
-    const handler = () => setFlameCount(prev => prev + 1)
-    window.addEventListener('flame-increment', handler)
-    return () => window.removeEventListener('flame-increment', handler)
-  }, [])
-
   // 기말 대비 학습 페이지 감지: /studyspace/course/[courseId]/exam-prep[/...]
   // 이 페이지에서는 보라색 불꽃 대신 도장/XP/계급 위젯을 표시한다.
   const examPrepMatch = pathname.match(/^\/studyspace\/course\/([^/]+)\/exam-prep(?:\/|$)/)
@@ -167,10 +114,6 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
   const headerCourseId = courseCtxMatch?.[1] ?? null
   // 과목 대시보드에는 인라인 미션 카드가 있어 헤더 미션 버튼은 숨김 (2026-09-01)
   const isCourseDashboardPage = /^\/studyspace\/course\/[^/]+\/?$/.test(pathname)
-
-  // 회차별 학습 페이지 감지 (/lectures 목록 + /lecture/[id] 상세).
-  // 불꽃(연속 학습 보상)은 회차별 학습에서만 노출 — 과목 대시보드·대화형 등에서는 숨김.
-  const isLectureStudyPage = /^\/studyspace\/course\/[^/]+\/lectures?(?:\/|$)/.test(pathname)
 
   const [gamificationState, setGamificationState] = useState<StudentCourseStateDto | null>(null)
   const [gamificationLoading, setGamificationLoading] = useState(false)
@@ -263,43 +206,6 @@ function NewStudyspaceLayoutShell({ children }: { children: React.ReactNode }) {
                 {!isCourseDashboardPage && <MissionsPanel courseId={headerCourseId} />}
               </div>
             )}
-            {isLectureStudyPage && !isDialoguePage ? (
-              <div ref={flameRef} className="relative hidden md:block">
-                <button
-                  id="flame-badge"
-                  onClick={() => setIsFlamePopupOpen(v => !v)}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#6366F1]/10 px-3.5 py-2.5 text-[#6366F1] transition-colors hover:bg-[#6366F1]/20"
-                >
-                  <Flame className="h-5 w-5 fill-current" />
-                  <span className="text-sm font-bold">{flameCount}</span>
-                </button>
-                {isFlamePopupOpen && (
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-2xl">
-                    <div className="mb-3">
-                      <p className="text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300">
-                        {locale === 'ko'
-                          ? '퀴즈 20개를 모두 풀고 불꽃을 얻으세요!'
-                          : 'Complete all 20 quizzes to earn flames!'}
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
-                      <button
-                        onClick={() => {
-                          if (currentLectureId) {
-                            localStorage.setItem(`flamePopup_dismissed_${currentLectureId}`, '1')
-                          }
-                          setIsFlamePopupOpen(false)
-                        }}
-                        className="rounded-lg bg-[#6366F1] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#5558E6]"
-                      >
-                        {locale === 'ko' ? '확인' : 'OK'}
-                      </button>
-                    </div>
-                    <div className="absolute -top-2 right-6 h-0 w-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[8px] border-b-white dark:border-b-gray-900" />
-                  </div>
-                )}
-              </div>
-            ) : null}
             <div ref={profileRef} className="relative flex items-center gap-3 md:border-l md:border-gray-200 dark:border-gray-700 md:pl-3">
               <img src="/KU_logo.png" alt="" className="hidden md:block h-9 shrink-0 object-contain" />
               <div className="hidden md:block">
