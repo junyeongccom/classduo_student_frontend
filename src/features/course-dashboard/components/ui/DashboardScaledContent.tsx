@@ -18,8 +18,8 @@ import { resolveDayTone, type MonthGrid } from '../../domain/calendar'
 import { resolveDdayTone } from '../../domain/dday'
 
 export const DASH_DESIGN_W = 2103
-// 2026-09-01: 캘린더 밑에 주간 미션 카드(top 864, h 370) 배치 — 최하단 1234 + 상단여백 대칭(102) = 1336.
-export const DASH_DESIGN_H = 1336
+// 2026-09-01: 캘린더 밑 주간 미션 카드(h 380) + 히든 미션 배너(top 1260, h 64) — 최하단 1324 + 여백 76 = 1400.
+export const DASH_DESIGN_H = 1400
 
 interface DashboardScaledContentProps {
   monthGrid: MonthGrid
@@ -103,10 +103,10 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
       </Slot>
 
       {/* 캘린더 밑 — 주간 미션 카드 + 히든 미션 박스 (2026-09-01) */}
-      <Slot left={1040.875} top={864} width={899.25} height={320}>
+      <Slot left={1040.875} top={864} width={899.25} height={380}>
         <MissionsDashboardCard courseId={courseId} />
       </Slot>
-      <Slot left={1040.875} top={1200} width={899.25} height={64}>
+      <Slot left={1040.875} top={1260} width={899.25} height={64}>
         <HiddenMissionCard courseId={courseId} />
       </Slot>
     </div>
