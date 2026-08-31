@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import {
   ChevronDown,
   ChevronUp,
@@ -105,6 +105,10 @@ export interface StudentQuizCardProps {
 // 4지/5지선다 모두 호환 — 인덱스 기반 라벨 동적 생성 (A~Z 자동 확장).
 const choiceLabel = (idx: number): string => String.fromCharCode(65 + idx)
 
+// 서술형 수식 퀵바 — 일반 키보드로 치기 어려운 기호만 (풀 수식 에디터 대신 저비용 대안).
+// 삽입은 커서 위치 기준이며 채점은 표기 관용 규칙으로 어떤 표기든 인식한다.
+const MATH_QUICK_SYMBOLS = ['√', '²', '³', 'π', 'θ', '∫', '≠', '≤', '≥', '∞'] as const
+
 const QUIZ_TYPE_BADGE: Record<StudentQuizType, string> = {
   RECALL: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   STRUCTURE: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
@@ -179,6 +183,24 @@ export function StudentQuizCard({
   // 서술형 답안 입력 draft — 제출 이력이 있으면 서버에서 복원된
   // essayAnswer(answer_text)로 초깃값을 채운다. 재진입/새로고침 시에도 유지됨.
   const [essayDraft, setEssayDraft] = useState(() => (hasEssaySubmission ? (essayAnswer ?? '') : ''))
+  const essayTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  // 퀵바 기호를 커서 위치에 삽입 — 컨트롤드 textarea 라 상태 갱신 후 커서를 복원한다
+  const insertMathSymbol = useCallback((symbol: string) => {
+    const el = essayTextareaRef.current
+    if (!el) {
+      setEssayDraft((prev) => prev + symbol)
+      return
+    }
+    const start = el.selectionStart ?? el.value.length
+    const end = el.selectionEnd ?? el.value.length
+    setEssayDraft((prev) => prev.slice(0, start) + symbol + prev.slice(end))
+    requestAnimationFrame(() => {
+      el.focus()
+      const pos = start + symbol.length
+      el.setSelectionRange(pos, pos)
+    })
+  }, [])
   // "해설 보기" 안에서 다시 펼치는 상세 설명 토글 (마크다운 렌더링)
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false)
   // 이번 렌더 세션에서 방금 풀었는지 여부. 복원된 풀이(isCorrect !== null)도 다시 풀 수 있어야 하므로
@@ -453,7 +475,22 @@ export function StudentQuizCard({
         <div className="mt-4">
           {!isSubmitted ? (
             <div className="space-y-2">
+              <div className="flex flex-wrap gap-1">
+                {MATH_QUICK_SYMBOLS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    aria-label={`기호 ${s} 입력`}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => insertMathSymbol(s)}
+                    className="min-w-[36px] rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-2 py-1.5 text-sm text-gray-700 dark:text-gray-300 transition-colors hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 cursor-pointer"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
               <textarea
+                ref={essayTextareaRef}
                 value={essayDraft}
                 onChange={(e) => setEssayDraft(e.target.value)}
                 placeholder={t('essayPlaceholder')}
