@@ -22,6 +22,7 @@ interface DashboardMobileContentProps {
   monthGrid: MonthGrid
   examDday: number | null
   currentStreak: number
+  masterProgress: { done: number; total: number } | null
   onHero: () => void
   onWeekly: () => void
   onDialogue: () => void
@@ -32,6 +33,7 @@ export function DashboardMobileContent({
   monthGrid,
   examDday,
   currentStreak,
+  masterProgress,
   onHero,
   onWeekly,
   onDialogue,
@@ -70,6 +72,7 @@ export function DashboardMobileContent({
           monthGrid={monthGrid}
           examDday={examDday}
           currentStreak={currentStreak}
+          masterProgress={masterProgress}
         />
 
         {/* 5) 주간 미션 + 히든 미션 (2026-09-01: 내 퀴즈 저장소 버튼 대체 — 사이드바 메뉴로 충분) */}
@@ -119,10 +122,12 @@ function MobileCalendarCard({
   monthGrid,
   examDday,
   currentStreak,
+  masterProgress,
 }: {
   monthGrid: MonthGrid
   examDday: number | null
   currentStreak: number
+  masterProgress: { done: number; total: number } | null
 }) {
   const t = useTranslations()
   const locale = useLocale()
@@ -170,6 +175,19 @@ function MobileCalendarCard({
               </span>
             </div>
           </div>
+          {masterProgress && masterProgress.total > 0 && (
+            <div className="mt-2.5 flex items-center gap-2 rounded-lg bg-[#ECEBFF] px-3 py-1.5">
+              <span className="whitespace-nowrap text-[11px] font-semibold text-[#5553d6]">
+                {t('courseDashboard.coreMasterProgress', { done: masterProgress.done, total: masterProgress.total })}
+              </span>
+              <span className="block h-1.5 flex-1 overflow-hidden rounded-full bg-white/70">
+                <span
+                  className="block h-full rounded-full bg-[#5553d6]"
+                  style={{ width: `${Math.round((masterProgress.done / masterProgress.total) * 100)}%` }}
+                />
+              </span>
+            </div>
+          )}
           {/* 날짜 그리드 — 7열 정사각 셀 */}
           <div className="mt-4 grid grid-cols-7 gap-1.5">
             {monthGrid.cells.map((cell, i) => (

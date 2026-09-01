@@ -81,7 +81,8 @@
     "streakInProgress": "{days}-day streak",
     "todayLabel": "Today",
     "defaultStudentName": "Student",
-    "rankBadgeAlt": "{rank} grade badge"
+    "rankBadgeAlt": "{rank} grade badge",
+    "coreMasterProgress": "Core mastered {done}/{total}"
   },
   "examPrepFinal": {
     "ddayCardTitle": "Final Exam",
@@ -264,6 +265,21 @@
       "generating": "Generating answer…",
       "placeholderWithQuestion": "Ask about this question",
       "placeholderGeneral": "Feel free to ask anything about the core tests"
+    },
+    "weekly": {
+      "weekLabel": "Week {week}",
+      "sessionLabel": "Session {session}",
+      "weekSummary": "Mastered {done}/{total}",
+      "start": "Start",
+      "resume": "Resume",
+      "redo": "Retry",
+      "locked": "Coming soon",
+      "questions": "{count} questions",
+      "masteredOf": "{done} of {count} mastered",
+      "notStarted": "Not started yet",
+      "allMastered": "Mastered",
+      "midSection": "Checkpoint Tests",
+      "midSectionDesc": "Essay checkpoints that unlock as you master each block"
     }
   },
   "aiTutorTopbar": {

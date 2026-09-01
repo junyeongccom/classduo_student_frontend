@@ -38,6 +38,8 @@ function buildCoreTests(): CoreTest[] {
     tests.push({
       id: `core-${n}`,
       number: n,
+      questionCount: 19,
+      masteredQuestionCount: status === 'mastered' ? 19 : 0,
       setNumber,
       weekNo,
       sessionNo,

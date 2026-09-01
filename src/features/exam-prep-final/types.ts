@@ -18,6 +18,10 @@ export interface CoreTest {
   lectureTitle: string
   /** 0~1 — 마스터 도달율 */
   masteryLevel: number
+  /** 서빙 문항 수 (주차 리스트 진행 표기용) */
+  questionCount: number
+  /** 학생의 Master 문항 수 */
+  masteredQuestionCount: number
   status: CoreTestStatus
   /** 우측 미터링 도트 카운트 (gray=틀림 / cyan=시도 / green=정답 같은 의미) */
   metaCounts: { gray: number; cyan: number; green: number }

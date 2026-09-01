@@ -8,7 +8,7 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -25,6 +25,7 @@ import {
   DASH_DESIGN_H,
 } from '../ui/DashboardScaledContent'
 import { DashboardMobileContent } from '../ui/DashboardMobileContent'
+import { fetchCoreTestsByCourse } from '@/features/exam-prep-final/services/examPrepService'
 
 export function CourseDashboardContainer({ courseId }: { courseId: string }) {
   const t = useTranslations()
@@ -38,6 +39,21 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
     examDday,
   } = useCourseDashboard(courseId)
   const { user, streak, monthGrid, rankCode } = useDashboardMock(courseId)
+
+  // 핵심주제 마스터 진행 (캘린더 헤더 — exam-prep 화면 '숙련도 진행'과 동일 정의: 테스트 단위 master)
+  const [masterProgress, setMasterProgress] = useState<{ done: number; total: number } | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    fetchCoreTestsByCourse(courseId).then(({ data }) => {
+      if (cancelled || !data?.tests) return
+      const served = data.tests.filter((t) => t.question_count > 0)
+      setMasterProgress({
+        done: served.filter((t) => t.is_mastered).length,
+        total: served.length,
+      })
+    }).catch(() => {})
+    return () => { cancelled = true }
+  }, [courseId])
 
   const goHero = () => router.push(`/studyspace/course/${courseId}/exam-prep`)
   const goWeekly = () => router.push(`/studyspace/course/${courseId}/lectures`)
@@ -101,6 +117,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
           monthGrid={monthGrid}
           examDday={examDday}
           currentStreak={streak.currentStreak}
+          masterProgress={masterProgress}
           onHero={goHero}
           onWeekly={goWeekly}
           onDialogue={goDialogue}
@@ -113,6 +130,7 @@ export function CourseDashboardContainer({ courseId }: { courseId: string }) {
               monthGrid={monthGrid}
               examDday={examDday}
               currentStreak={streak.currentStreak}
+              masterProgress={masterProgress}
               displayName={user.displayName}
               xp={user.xp}
               rankCode={rankCode}

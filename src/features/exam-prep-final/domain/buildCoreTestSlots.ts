@@ -24,6 +24,7 @@ export interface CoreTestSlotSource {
   title: string | null
   question_count: number
   is_mastered: boolean
+  mastered_question_count?: number
   topic_title?: string | null
   topic_title_eng?: string | null
 }
@@ -104,7 +105,12 @@ export function buildCoreTestSlots({
       weekNo,
       sessionNo,
       lectureTitle,
-      masteryLevel: 0, // v1: mastery 데이터 없음
+      masteryLevel:
+        api.question_count > 0
+          ? Math.min(1, (api.mastered_question_count ?? 0) / api.question_count)
+          : 0,
+      questionCount: api.question_count,
+      masteredQuestionCount: api.mastered_question_count ?? 0,
       status,
       metaCounts: {
         gray: status === 'locked' ? 0 : api.question_count,

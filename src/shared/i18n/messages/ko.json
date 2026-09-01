@@ -81,7 +81,8 @@
     "streakInProgress": "{days}일 연속 학습 중",
     "todayLabel": "오늘",
     "defaultStudentName": "학생",
-    "rankBadgeAlt": "{rank} 등급 뱃지"
+    "rankBadgeAlt": "{rank} 등급 뱃지",
+    "coreMasterProgress": "핵심주제 마스터 {done}/{total}"
   },
   "examPrepFinal": {
     "ddayCardTitle": "기말고사",
@@ -264,6 +265,21 @@
       "generating": "답변 생성 중…",
       "placeholderWithQuestion": "이 문제에 대해 물어보세요",
       "placeholderGeneral": "핵심테스트 관련 질문을 자유롭게 입력하세요"
+    },
+    "weekly": {
+      "weekLabel": "{week}주차",
+      "sessionLabel": "{session}차시",
+      "weekSummary": "마스터 {done}/{total}",
+      "start": "시작",
+      "resume": "이어하기",
+      "redo": "다시 풀기",
+      "locked": "준비 중",
+      "questions": "{count}문항",
+      "masteredOf": "{count}문항 중 {done}개 마스터",
+      "notStarted": "아직 시작 전",
+      "allMastered": "마스터 완료",
+      "midSection": "중간점검 테스트",
+      "midSectionDesc": "구간별 핵심테스트를 마스터하면 열리는 서술형 점검"
     }
   },
   "aiTutorTopbar": {

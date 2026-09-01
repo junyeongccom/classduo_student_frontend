@@ -23,6 +23,7 @@ export interface CoreTestSummaryDto {
   question_count: number
   /** 학생-test 단위 master 도달 여부 (test_user_state.mastered_at) */
   is_mastered: boolean
+  mastered_question_count?: number
   /** exam_prep_topic.topic_title — 목록 주제명 프리페치용 (백필 전/미배포 백엔드는 없음) */
   topic_title?: string | null
   /** 영문 주제명 (한영 토글) */

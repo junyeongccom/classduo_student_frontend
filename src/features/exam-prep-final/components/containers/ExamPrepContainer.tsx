@@ -19,7 +19,7 @@ import { useLectures } from '@/features/lecture-study/hooks/useLectures'
 import { TopHeaderCards } from '../ui/TopHeaderCards'
 import { SelectedTestInfoCard } from '../ui/SelectedTestInfoCard'
 import { SelectedMidTestInfoCard } from '../ui/SelectedMidTestInfoCard'
-import { TestSetTabs } from '../ui/TestSetTabs'
+import { WeeklyCoreTestList } from '../ui/WeeklyCoreTestList'
 import { CoreTestButton } from '../ui/CoreTestButton'
 import { MidTestBox } from '../ui/MidTestBox'
 import { CoreTestListModal } from '../ui/CoreTestListModal'
@@ -228,28 +228,16 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
               </button>
             </div>
 
-            <TestSetTabs active={activeTab} onChange={handleTabChange} />
-
-            {/* 컨텐츠 박스 (탭과 이어짐 — 상단 좌측 모서리만 라운드 제거) */}
-            <div
-              className={cn(
-                'relative rounded-3xl rounded-tl-none px-3 py-6 md:px-12 md:py-16',
-                isCoreSetTab(activeTab)
-                  ? SET_PANEL_BG[activeTab]
-                  : 'bg-[#383698]',
-              )}
-            >
-              {isCoreSetTab(activeTab) ? (
-                <CoreSetContent
-                  setNumber={activeTab}
-                  data={data}
-                  selection={selection}
-                  courseId={courseId}
-                  onSelectCore={handleSelectCore}
-                  onSelectMid={handleSelectMid}
-                />
-              ) : null}
-            </div>
+            {/* 주차 그룹 리스트 (2026-09 B안 개편) — 세트 탭 제거, 회차 제목·진행률을 행에 직접 표기 */}
+            <WeeklyCoreTestList
+              coreTests={data.coreTests}
+              midTests={data.midTests}
+              courseId={courseId}
+              selectedCoreId={selection?.kind === 'core' ? selection.id : null}
+              selectedMidSet={selection?.kind === 'mid' ? selection.setNumber : null}
+              onSelectCore={handleSelectCore}
+              onSelectMid={handleSelectMid}
+            />
           </div>
         </div>
       </div>
