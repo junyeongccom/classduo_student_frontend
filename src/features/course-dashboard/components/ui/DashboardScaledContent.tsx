@@ -25,7 +25,6 @@ interface DashboardScaledContentProps {
   monthGrid: MonthGrid
   examDday: number | null
   currentStreak: number
-  masterProgress: { done: number; total: number } | null
   displayName: string
   xp: number
   rankCode: string
@@ -62,7 +61,6 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
     monthGrid,
     examDday,
     currentStreak,
-    masterProgress,
     onHero,
     onWeekly,
     onDialogue,
@@ -101,7 +99,7 @@ export function DashboardScaledContent(props: DashboardScaledContentProps) {
 
       {/* ── 우측 ── */}
       <Slot left={1040.875} top={124} width={899.25} height={688.875}>
-        <CalendarCard monthGrid={monthGrid} examDday={examDday} currentStreak={currentStreak} masterProgress={masterProgress} />
+        <CalendarCard monthGrid={monthGrid} examDday={examDday} currentStreak={currentStreak} />
       </Slot>
 
       {/* 캘린더 밑 — 주간 미션 카드 + 히든 미션 박스 (2026-09-01) */}
@@ -153,12 +151,10 @@ function CalendarCard({
   monthGrid,
   examDday,
   currentStreak,
-  masterProgress,
 }: {
   monthGrid: MonthGrid
   examDday: number | null
   currentStreak: number
-  masterProgress: { done: number; total: number } | null
 }) {
   const t = useTranslations()
   const locale = useLocale()
@@ -192,20 +188,6 @@ function CalendarCard({
               {monthDisplay}
             </span>
             <div className="flex items-center gap-[16px]">
-              {masterProgress && masterProgress.total > 0 && (
-                <span
-                  className="flex items-center gap-[10px] rounded-full bg-[#ECEBFF] font-semibold text-[#5553d6]"
-                  style={{ fontSize: 22, padding: '8px 18px' }}
-                >
-                  {t('courseDashboard.coreMasterProgress', { done: masterProgress.done, total: masterProgress.total })}
-                  <span className="block overflow-hidden rounded-full bg-white/70" style={{ width: 80, height: 8 }}>
-                    <span
-                      className="block h-full rounded-full bg-[#5553d6]"
-                      style={{ width: `${Math.round((masterProgress.done / masterProgress.total) * 100)}%` }}
-                    />
-                  </span>
-                </span>
-              )}
               {currentStreak > 0 && (
                 <span
                   className="rounded-full font-semibold"

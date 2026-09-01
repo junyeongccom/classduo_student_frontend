@@ -81,8 +81,7 @@
     "streakInProgress": "{days}일 연속 학습 중",
     "todayLabel": "오늘",
     "defaultStudentName": "학생",
-    "rankBadgeAlt": "{rank} 등급 뱃지",
-    "coreMasterProgress": "핵심주제 마스터 {done}/{total}"
+    "rankBadgeAlt": "{rank} 등급 뱃지"
   },
   "examPrepFinal": {
     "ddayCardTitle": "기말고사",

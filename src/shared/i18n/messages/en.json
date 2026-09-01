@@ -81,8 +81,7 @@
     "streakInProgress": "{days}-day streak",
     "todayLabel": "Today",
     "defaultStudentName": "Student",
-    "rankBadgeAlt": "{rank} grade badge",
-    "coreMasterProgress": "Core mastered {done}/{total}"
+    "rankBadgeAlt": "{rank} grade badge"
   },
   "examPrepFinal": {
     "ddayCardTitle": "Final Exam",
