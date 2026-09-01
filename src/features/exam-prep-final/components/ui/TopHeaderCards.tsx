@@ -86,13 +86,19 @@ export function TopHeaderCards({ data, onRecommendedClick }: TopHeaderCardsProps
             /^\d+주차\s+\d+차시$/.test(title) ||
             /^W\d+\s+S\d+$/.test(title)
           return (
-            <p className="mt-3 flex items-center gap-2 text-base font-semibold text-gray-900 dark:text-gray-50">
-              <Zap className="h-5 w-5 shrink-0 fill-[#6366F1] text-[#6366F1]" />
-              <span className="truncate">
-                {sessionLabel}
-                {!looksLikeSessionLabel && ` · ${title}`}
+            <div className="mt-3 flex items-start gap-2">
+              <Zap className="mt-0.5 h-5 w-5 shrink-0 fill-[#6366F1] text-[#6366F1]" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-[#6366F1]">
+                  {sessionLabel}
+                </span>
+                {!looksLikeSessionLabel && (
+                  <span className="mt-0.5 block break-keep text-base font-semibold leading-snug text-gray-900 dark:text-gray-50">
+                    {title}
+                  </span>
+                )}
               </span>
-            </p>
+            </div>
           )
         })()}
         <button
