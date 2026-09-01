@@ -185,6 +185,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
               coreTests={data.coreTests}
               selectedCoreId={selection?.kind === 'core' ? selection.id : null}
               onSelectCore={handleSelectCore}
+              onStartTest={handleStartTest}
             />
           </div>
         </div>

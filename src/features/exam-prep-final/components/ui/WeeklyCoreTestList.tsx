@@ -16,6 +16,8 @@ interface WeeklyCoreTestListProps {
   coreTests: CoreTest[]
   selectedCoreId: string | null
   onSelectCore: (id: string) => void
+  /** 행 우측 시작/이어하기/다시풀기 칩 클릭 — 선택 토글 없이 바로 풀이 시작 */
+  onStartTest: (test: CoreTest) => void
 }
 
 /** weekNo 기준 그룹핑 (0 = 주차 미상 → 맨 뒤 '기타') */
@@ -38,6 +40,7 @@ export function WeeklyCoreTestList({
   coreTests,
   selectedCoreId,
   onSelectCore,
+  onStartTest,
 }: WeeklyCoreTestListProps) {
   const t = useTranslations()
   const tw = useTranslations('examPrepFinal.weekly')
@@ -129,13 +132,26 @@ export function WeeklyCoreTestList({
                         </span>
                       </span>
 
-                      {/* 상태 버튼(시각) */}
+                      {/* 상태 버튼 — 클릭 시 행 선택 없이 바로 풀이 시작 (행 자체는 button 이라 중첩 불가 → span+onClick) */}
                       <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onStartTest(test)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            onStartTest(test)
+                          }
+                        }}
                         className={cn(
-                          'shrink-0 rounded-xl px-4 py-2 text-xs font-bold',
+                          'shrink-0 rounded-xl px-4 py-2 text-xs font-bold transition-transform hover:scale-105 active:scale-95',
                           test.isTestMastered
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                            : 'bg-[#6366F1] text-white',
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300'
+                            : 'bg-[#6366F1] text-white hover:bg-[#5558E6]',
                         )}
                       >
                         {test.isTestMastered ? tw('redo') : pct > 0 ? tw('resume') : tw('start')}
