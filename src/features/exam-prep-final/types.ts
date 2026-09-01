@@ -31,42 +31,8 @@ export interface CoreTest {
   topicTitle?: string
   /** 영문 주제명 (한영 토글) */
   topicTitleEng?: string
-}
-
-/** 백엔드 list-mid-tests / final-test 응답의 status — 디버그 트리거 분기에도 사용 */
-export type MidFinalStatus =
-  | 'locked'
-  | 'generating'
-  | 'available'
-  | 'mastered'
-  | 'failed'
-  | 'empty'  // is_ready=true 이지만 question 행 0개 — 강제 재생성 필요
-
-export interface MidTest {
-  setNumber: 1 | 2 | 3
-  minutes: number
-  questions: number
-  /** 해당 세트의 핵심 테스트 개수 (불꽃 슬롯 수) */
-  totalCoreInSet: number
-  /** 마스터된 핵심 테스트 수 (앞에서부터 보라 불꽃) */
-  masteredCount: number
-  unlocked: boolean
-  /** 백엔드 published mid test_id — null 이면 미생성. 클릭 시 풀이 페이지 라우팅 키. */
-  testId: string | null
-  /** 백엔드 raw status — 디버그 트리거 점/스피너/숨김 분기용. 미상이면 'locked' 로 간주. */
-  status: MidFinalStatus
-}
-
-export interface FinalTest {
-  minutes: number
-  questions: number
-  unlocked: boolean
-  /** 1, 2, 3세트별 중간 테스트 마스터 여부 */
-  setMasterStates: [boolean, boolean, boolean]
-  /** 백엔드 published final test_id — null 이면 미생성 */
-  testId: string | null
-  /** 백엔드 raw status */
-  status: MidFinalStatus
+  /** 학생의 이 테스트 최근 응시 시각 (ISO) — 추천 학습 판정용. 미응시면 null */
+  lastAttemptedAt: string | null
 }
 
 export interface ExamPrepData {
@@ -76,11 +42,9 @@ export interface ExamPrepData {
   ddays: number
   totalCoreTests: number
   masteredCount: number
-  /** 추천 학습 (가장 최근에 시도한 활성 테스트) — null이면 첫 테스트로 fallback */
+  /** 추천 학습 — 최근 응시 미마스터 테스트, 없으면 가장 오래된 회차의 미마스터 테스트 */
   recommendedTest: CoreTest | null
   coreTests: CoreTest[]
-  midTests: MidTest[]
-  finalTest: FinalTest
 }
 
 export type TestSetTab = 1 | 2 | 3 | 'final'

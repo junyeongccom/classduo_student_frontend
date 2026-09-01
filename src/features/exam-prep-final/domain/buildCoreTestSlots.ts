@@ -25,6 +25,7 @@ export interface CoreTestSlotSource {
   question_count: number
   is_mastered: boolean
   mastered_question_count?: number
+  last_attempted_at?: string | null
   topic_title?: string | null
   topic_title_eng?: string | null
 }
@@ -111,6 +112,7 @@ export function buildCoreTestSlots({
           : 0,
       questionCount: api.question_count,
       masteredQuestionCount: api.mastered_question_count ?? 0,
+      lastAttemptedAt: api.last_attempted_at ?? null,
       status,
       metaCounts: {
         gray: status === 'locked' ? 0 : api.question_count,

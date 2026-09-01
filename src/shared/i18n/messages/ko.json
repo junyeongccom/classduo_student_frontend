@@ -90,7 +90,7 @@
     "completedSuffix": "% 완료",
     "recommendedTitle": "추천 학습",
     "recommendedStart": "바로 시작",
-    "testSets": "테스트 세트",
+    "testSets": "핵심 테스트",
     "setEmpty": "아직 열린 테스트가 없어요. 회차별 학습을 진행하면 순차적으로 열립니다.",
     "coreTestList": {
       "trigger": "목록",
@@ -276,9 +276,7 @@
       "questions": "{count}문항",
       "masteredOf": "{count}문항 중 {done}개 마스터",
       "notStarted": "아직 시작 전",
-      "allMastered": "마스터 완료",
-      "midSection": "중간점검 테스트",
-      "midSectionDesc": "구간별 핵심테스트를 마스터하면 열리는 서술형 점검"
+      "allMastered": "마스터 완료"
     }
   },
   "aiTutorTopbar": {

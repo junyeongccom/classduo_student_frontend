@@ -1,6 +1,6 @@
 /**
  * @file ExamPrepContainer.tsx
- * @description 기말 대비 학습 메인 컨테이너 — 탭 + 핵심테스트 그리드 + 중간/최종
+ * @description 기말 대비 학습 메인 컨테이너 — 주차 그룹 핵심테스트 리스트 + 추천/선택 카드
  * @module features/exam-prep-final/components/containers
  * @dependencies useTranslations, mock data
  */
@@ -18,27 +18,13 @@ import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { useLectures } from '@/features/lecture-study/hooks/useLectures'
 import { TopHeaderCards } from '../ui/TopHeaderCards'
 import { SelectedTestInfoCard } from '../ui/SelectedTestInfoCard'
-import { SelectedMidTestInfoCard } from '../ui/SelectedMidTestInfoCard'
 import { WeeklyCoreTestList } from '../ui/WeeklyCoreTestList'
-import { CoreTestButton } from '../ui/CoreTestButton'
-import { MidTestBox } from '../ui/MidTestBox'
 import { CoreTestListModal } from '../ui/CoreTestListModal'
 import { useExamPrepData } from '../../hooks/useExamPrepData'
-import { getCoreTestsBySet, isCoreSetTab } from '../../domain/testSetGroups'
-import type { CoreTest, ExamPrepData, MidTest, TestSetTab } from '../../types'
+import type { CoreTest } from '../../types'
 
-/** 선택 상태 — 핵심테스트(core) 또는 중간테스트(mid) 중 하나만 동시에 활성. */
-type Selection =
-  | { kind: 'core'; id: string }
-  | { kind: 'mid'; setNumber: 1 | 2 | 3 }
-  | null
-
-/** 세트별 컨텐츠 박스 배경색 (Figma) — 탭 배경과 동일하게 통일 */
-const SET_PANEL_BG: Record<1 | 2 | 3, string> = {
-  1: 'bg-white border border-gray-200',
-  2: 'bg-[#DEDEF8]',
-  3: 'bg-[#8F8DF0]',
-}
+/** 선택 상태 — 핵심테스트 선택 여부 (2026-09 개편: 중간테스트 폐지). */
+type Selection = { kind: 'core'; id: string } | null
 
 interface ExamPrepContainerProps {
   courseId: string
@@ -67,7 +53,6 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     })
   }, [])
 
-  const [activeTab, setActiveTab] = useState<TestSetTab>(1)
   const [selection, setSelection] = useState<Selection>(null)
   const [startError, setStartError] = useState<string | null>(null)
   // '테스트 세트' 옆 "목록" 트리거 — 핵심테스트 26개 주제 목록 모달 오픈 상태.
@@ -78,31 +63,10 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     return data.coreTests.find((t) => t.id === selection.id) ?? null
   }, [data, selection])
 
-  const selectedMidTest: MidTest | null = useMemo(() => {
-    if (!data || selection?.kind !== 'mid') return null
-    return data.midTests.find((m) => m.setNumber === selection.setNumber) ?? null
-  }, [data, selection])
-
-  // 탭 변경 시 선택 해제
-  const handleTabChange = (tab: TestSetTab) => {
-    setActiveTab(tab)
-    setSelection(null)
-    setStartError(null)
-  }
-
-  /** 핵심테스트 토글 — 같은 ID 재클릭 시 deselect, 그 외엔 core 로 교체 (mid 도 자동 해제). */
+  /** 핵심테스트 토글 — 같은 ID 재클릭 시 deselect, 그 외엔 core 로 교체. */
   const handleSelectCore = (id: string) => {
     setSelection((prev) =>
       prev?.kind === 'core' && prev.id === id ? null : { kind: 'core', id },
-    )
-  }
-
-  /** 중간테스트 토글 — 같은 setNumber 재클릭 시 deselect, 그 외엔 mid 로 교체. */
-  const handleSelectMid = (setNumber: 1 | 2 | 3) => {
-    setSelection((prev) =>
-      prev?.kind === 'mid' && prev.setNumber === setNumber
-        ? null
-        : { kind: 'mid', setNumber },
     )
   }
 
@@ -131,13 +95,6 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
     )
   }
 
-  /** 중간 테스트 시작 — 카드 내 시작 버튼에서 호출. testId 있을 때만 라우팅. */
-  const handleStartMid = (mid: MidTest) => {
-    const tid = mid.testId
-    if (!tid) return
-    setStartError(null)
-    router.push(`/studyspace/course/${courseId}/exam-prep/test/${tid}`)
-  }
 
   // 데이터 로딩 / 에러 처리
   if (isLoading || !data) {
@@ -177,7 +134,7 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
           className={cn(
             'mx-auto max-w-5xl px-3 py-5 md:px-10 md:py-10',
             // 모바일에서 floating 카드가 뜰 때, 마지막 테스트 버튼이 카드에 가리지 않도록 하단 여백 확보
-            isMobile && (selectedCoreTest || selectedMidTest) && 'pb-44',
+            isMobile && selectedCoreTest && 'pb-44',
           )}
         >
           {startError && (
@@ -193,11 +150,6 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
               <SelectedTestInfoCard
                 test={selectedCoreTest}
                 onStart={() => handleStartTest(selectedCoreTest)}
-              />
-            ) : !isMobile && selectedMidTest ? (
-              <SelectedMidTestInfoCard
-                midTest={selectedMidTest}
-                onStart={() => handleStartMid(selectedMidTest)}
               />
             ) : (
               <TopHeaderCards
@@ -231,12 +183,8 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
             {/* 주차 그룹 리스트 (2026-09 B안 개편) — 세트 탭 제거, 회차 제목·진행률을 행에 직접 표기 */}
             <WeeklyCoreTestList
               coreTests={data.coreTests}
-              midTests={data.midTests}
-              courseId={courseId}
               selectedCoreId={selection?.kind === 'core' ? selection.id : null}
-              selectedMidSet={selection?.kind === 'mid' ? selection.setNumber : null}
               onSelectCore={handleSelectCore}
-              onSelectMid={handleSelectMid}
             />
           </div>
         </div>
@@ -245,18 +193,13 @@ export function ExamPrepContainer({ courseId }: ExamPrepContainerProps) {
       {/* 모바일 floating 정보 카드 — 테스트 선택 시 하단 사이드바 버튼(좌하단 z-[48]) 위에 띄움.
           --u 는 --app-w(min(100vw,430px))/390 이라 1.10 으로 캡 → 햄버거 버튼 상단이 뷰포트 하단에서
           최대 ~62px → bottom 80px + safe-area 면 전 모바일 폭에서 버튼과 겹치지 않는다. (시안 1041:3796) */}
-      {isMobile && (selectedCoreTest || selectedMidTest) && (
+      {isMobile && selectedCoreTest && (
         <div className="fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom))] z-[45] flex justify-center px-4">
           <div className="w-full max-w-[480px] rounded-3xl shadow-[0_8px_30px_rgba(15,23,42,0.18)]">
             {selectedCoreTest ? (
               <SelectedTestInfoCard
                 test={selectedCoreTest}
                 onStart={() => handleStartTest(selectedCoreTest)}
-              />
-            ) : selectedMidTest ? (
-              <SelectedMidTestInfoCard
-                midTest={selectedMidTest}
-                onStart={() => handleStartMid(selectedMidTest)}
               />
             ) : null}
           </div>
@@ -309,129 +252,5 @@ function ExamPrepBreadcrumb({
         {t('courseNav.examPrep')}
       </span>
     </nav>
-  )
-}
-
-/** 5개씩 row 단위로 분할 — 마지막 row가 자동으로 가운데 정렬됨 */
-function chunkInto<T>(arr: T[], size: number): T[][] {
-  const rows: T[][] = []
-  for (let i = 0; i < arr.length; i += size) {
-    rows.push(arr.slice(i, i + size))
-  }
-  return rows
-}
-
-/** 1/2/3 세트 컨텐츠 — 핵심테스트 + 중간 테스트 책 (그리드 마지막 셀)
- *
- * MidTestBox(책 일러스트)는 핵심테스트 그리드의 마지막 셀로 자연스럽게 들어감.
- * 클릭 시 책 펼침 모션 없이 부모 selection 만 토글 — 핵심테스트와 동일한 토글 UX.
- * 시작은 상단 SelectedMidTestInfoCard 의 Play 버튼에서.
- */
-function CoreSetContent({
-  setNumber,
-  data,
-  selection,
-  courseId,
-  onSelectCore,
-  onSelectMid,
-}: {
-  setNumber: 1 | 2 | 3
-  data: ExamPrepData
-  selection: Selection
-  courseId: string
-  onSelectCore: (id: string) => void
-  onSelectMid: (setNumber: 1 | 2 | 3) => void
-}) {
-  // 모바일(<768px)에서는 한 줄에 핵심테스트 3개만 배치 → 5개 논리행이 3+2 로 갈라지며
-  // 4/1/4/1 대신 시안(1041:3708)의 3/2/3/2 배열이 된다. 데스크톱은 5개 한 줄 그대로.
-  const isMobile = useMediaQuery('(max-width: 767px)')
-  const t = useTranslations()
-  // 잠금 비노출 정책: 자물쇠로 표시되던 항목(핵심 status==='locked' / 중간 unlocked===false)은
-  // 배지만 떼는 게 아니라 아예 렌더하지 않는다. 접근 권한 판정(useExamPrepData)은 그대로 유지.
-  const tests = getCoreTestsBySet(data.coreTests, setNumber).filter(
-    (test) => test.status !== 'locked',
-  )
-  const midTest = data.midTests.find(
-    (m) => m.setNumber === setNumber && m.unlocked,
-  )
-
-  // 핵심테스트 + 중간테스트(있으면)를 그리드에 흘림
-  type GridItem =
-    | { kind: 'core'; test: (typeof tests)[number] }
-    | { kind: 'mid'; mid: NonNullable<typeof midTest> }
-  const coreItems: GridItem[] = tests.map((test) => ({ kind: 'core' as const, test }))
-  const midItem: GridItem | null = midTest
-    ? { kind: 'mid' as const, mid: midTest }
-    : null
-
-  // 행 분할 정책:
-  //   한 줄에 다 들어가면(≤5) 나누지 않고 한 행에 나열 — 시연용처럼 항목이 적은 과목에서
-  //   2/1/1 로 쪼개져 보이던 문제 해소.
-  //   세트 1 (핵심 10개): 핵심만 2행(5/5)으로 분배하고 중간테스트는 단독 3행으로 내림.
-  //   세트 2·3 (핵심 8개): 핵심+중간(9개)을 2행(5/4)으로 균등 분배.
-  const ROW_MAX = 5
-  const allItems: GridItem[] = midItem ? [...coreItems, midItem] : coreItems
-  let rows: GridItem[][]
-  if (allItems.length <= ROW_MAX) {
-    rows = allItems.length > 0 ? [allItems] : []
-  } else if (setNumber === 1) {
-    const coreRows = chunkInto(
-      coreItems,
-      Math.max(1, Math.ceil(coreItems.length / 2)),
-    )
-    rows = midItem ? [...coreRows, [midItem]] : coreRows
-  } else {
-    const items = midItem ? [...coreItems, midItem] : coreItems
-    rows = chunkInto(items, Math.max(1, Math.ceil(items.length / 2)))
-  }
-
-  // 모바일: 각 논리행(최대 5개)을 3개씩 다시 쪼개 3/2 로 분배. 데스크톱은 원본 유지.
-  const displayRows = isMobile ? rows.flatMap((row) => chunkInto(row, 3)) : rows
-
-  const isCoreSelected = (id: string) =>
-    selection?.kind === 'core' && selection.id === id
-  const isMidSelected = (setNum: 1 | 2 | 3) =>
-    selection?.kind === 'mid' && selection.setNumber === setNum
-
-  // 잠긴 항목을 모두 숨겨 세트가 비면 빈 상태 안내. 세트 3 은 진보라 배경이라 대비색 분기.
-  if (displayRows.length === 0) {
-    return (
-      <p
-        className={cn(
-          'py-10 text-center text-sm font-medium md:py-16 md:text-base',
-          setNumber === 3 ? 'text-white/80' : 'text-gray-500',
-        )}
-      >
-        {t('examPrepFinal.setEmpty')}
-      </p>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-4 md:gap-6">
-      {displayRows.map((row, ri) => (
-        <div key={ri} className="flex flex-wrap md:flex-nowrap items-center justify-center gap-3 md:gap-6">
-          {row.map((item) =>
-            item.kind === 'core' ? (
-              <CoreTestButton
-                key={item.test.id}
-                test={item.test}
-                setTone={setNumber}
-                isSelected={isCoreSelected(item.test.id)}
-                onClick={() => onSelectCore(item.test.id)}
-              />
-            ) : (
-              <MidTestBox
-                key={`mid-${item.mid.setNumber}`}
-                midTest={item.mid}
-                courseId={courseId}
-                isSelected={isMidSelected(item.mid.setNumber)}
-                onClick={() => onSelectMid(item.mid.setNumber)}
-              />
-            ),
-          )}
-        </div>
-      ))}
-    </div>
   )
 }

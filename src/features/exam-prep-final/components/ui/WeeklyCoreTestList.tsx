@@ -2,25 +2,20 @@
  * @file WeeklyCoreTestList.tsx
  * @description 핵심주제 학습 주차 그룹 리스트 (2026-09 UI 개편 B안) — 주차 헤더 + 회차 행(제목·진행률·상태)
  * @module features/exam-prep-final/components/ui
- * @dependencies types(CoreTest, MidTest), MidTestBox, next-intl
+ * @dependencies types(CoreTest), next-intl
  */
 'use client'
 
 import { useMemo } from 'react'
 import { useTranslations } from 'next-intl'
-import { Check, Lock } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
-import type { CoreTest, MidTest } from '../../types'
-import { MidTestBox } from './MidTestBox'
+import type { CoreTest } from '../../types'
 
 interface WeeklyCoreTestListProps {
   coreTests: CoreTest[]
-  midTests: MidTest[]
-  courseId: string
   selectedCoreId: string | null
-  selectedMidSet: 1 | 2 | 3 | null
   onSelectCore: (id: string) => void
-  onSelectMid: (setNumber: 1 | 2 | 3) => void
 }
 
 /** weekNo 기준 그룹핑 (0 = 주차 미상 → 맨 뒤 '기타') */
@@ -41,12 +36,8 @@ function groupByWeek(tests: CoreTest[]): Array<{ weekNo: number; tests: CoreTest
 
 export function WeeklyCoreTestList({
   coreTests,
-  midTests,
-  courseId,
   selectedCoreId,
-  selectedMidSet,
   onSelectCore,
-  onSelectMid,
 }: WeeklyCoreTestListProps) {
   const t = useTranslations()
   const tw = useTranslations('examPrepFinal.weekly')
@@ -158,34 +149,6 @@ export function WeeklyCoreTestList({
         )
       })}
 
-      {/* 중간점검 테스트 — 구간 마스터 시 해금되는 서술형 (기존 세트 게이트 로직 유지) */}
-      {midTests.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-lg bg-[#383698]/10 px-3 py-1 text-sm font-bold text-[#383698] dark:bg-[#383698]/30 dark:text-[#a5a3f0]">
-              <Lock className="h-3.5 w-3.5" />
-              {tw('midSection')}
-            </span>
-            <span className="text-sm text-gray-400">{tw('midSectionDesc')}</span>
-            <span className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {[1, 2, 3].map((setNo) => {
-              const mid = midTests.find((m) => m.setNumber === setNo)
-              if (!mid) return null
-              return (
-                <MidTestBox
-                  key={setNo}
-                  midTest={mid}
-                  courseId={courseId}
-                  isSelected={selectedMidSet === setNo}
-                  onClick={() => onSelectMid(setNo as 1 | 2 | 3)}
-                />
-              )
-            })}
-          </div>
-        </section>
-      )}
     </div>
   )
 }

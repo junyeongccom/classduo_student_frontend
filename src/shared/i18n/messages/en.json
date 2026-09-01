@@ -90,7 +90,7 @@
     "completedSuffix": "% complete",
     "recommendedTitle": "Recommended",
     "recommendedStart": "Start now",
-    "testSets": "Test Sets",
+    "testSets": "Core Tests",
     "setEmpty": "No tests are open yet. They unlock as you work through the lectures.",
     "coreTestList": {
       "trigger": "List",
@@ -276,9 +276,7 @@
       "questions": "{count} questions",
       "masteredOf": "{done} of {count} mastered",
       "notStarted": "Not started yet",
-      "allMastered": "Mastered",
-      "midSection": "Checkpoint Tests",
-      "midSectionDesc": "Essay checkpoints that unlock as you master each block"
+      "allMastered": "Mastered"
     }
   },
   "aiTutorTopbar": {
