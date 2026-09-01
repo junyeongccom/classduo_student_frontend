@@ -548,6 +548,20 @@ export const runningGameAnalytics = {
   quizAnswer(lectureId: string, data: { correct: boolean; keyword?: string; course_id?: string }) {
     trackEvent('game_quiz_answer', 'game', { lectureId, data: { ...data, game_type: 'running' } })
   },
+  /** 퀴즈 후 능력치(보상 카드) 선택 기록 — 학생별 선호 능력 분석용 */
+  perkPick(lectureId: string, data: { perk: string; correct: boolean; course_id?: string }) {
+    trackEvent('game_perk_pick', 'game', { lectureId, data: { ...data, game_type: 'running' } })
+  },
+}
+
+/** 게임 내 오답 시도 낱개 기록 — 매칭/정의조립의 잘못된 시도 빈도 분석용 */
+export const gameWrongAttemptAnalytics = {
+  wrongAttempt(
+    lectureId: string,
+    data: { game_type: 'cardMatch' | 'definitionBuilder'; detail?: string; course_id?: string },
+  ) {
+    trackEvent('game_wrong_attempt', 'game', { lectureId, data })
+  },
 }
 
 /** 게임 포기 트래킹 */

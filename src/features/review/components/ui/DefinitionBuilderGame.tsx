@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { trackGameStart, trackGameComplete } from '@/shared/hooks/useAnalytics'
+import { gameWrongAttemptAnalytics } from '@/shared/lib/analytics'
 import type { DefinitionBuilderGameResponse, DefinitionBuilderQuestion, ScoreRankingEntry } from '@/features/review/types'
 import { reviewService } from '@/features/review/services/reviewService'
 import { GameRankingBoard } from './GameRankingBoard'
@@ -96,6 +97,8 @@ export function DefinitionBuilderGame({
   }, [currentQuestion])
 
   const gameCompleteTrackedRef = useRef(false)
+  // 잘못 끼워 넣은 시도 누적 — 완료 이벤트의 wrong 필드로 보고 (분석용)
+  const wrongPlacementsRef = useRef(0)
 
   useEffect(() => {
     if (questions.length > 0) {
@@ -104,6 +107,7 @@ export function DefinitionBuilderGame({
       setElapsedMs(0)
       setIsTimerRunning(true)
       gameCompleteTrackedRef.current = false
+      wrongPlacementsRef.current = 0
       trackGameStart({
         game_type: 'definition_builder',
         lecture_id: lectureId ?? '',
@@ -140,7 +144,7 @@ export function DefinitionBuilderGame({
           game_type: 'definition_builder',
           game_score: currentScore,
           correct: totalCount,
-          wrong: 0,
+          wrong: wrongPlacementsRef.current,
           elapsed_ms: elapsedMs,
           lecture_id: lectureId ?? '',
           course_id: courseId ?? '',
@@ -219,6 +223,12 @@ export function DefinitionBuilderGame({
       return
     }
     onScoreDelta?.(-10)
+    wrongPlacementsRef.current += 1
+    gameWrongAttemptAnalytics.wrongAttempt(lectureId ?? '', {
+      game_type: 'definitionBuilder',
+      detail: choice,
+      course_id: courseId ?? undefined,
+    })
     setLastWrongChoice(choice)
     window.setTimeout(() => {
       setLastWrongChoice(prev => (prev === choice ? null : prev))

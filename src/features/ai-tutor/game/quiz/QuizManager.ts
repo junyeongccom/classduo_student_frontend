@@ -261,6 +261,14 @@ export class QuizManager {
       this.wrongCount++;
     }
 
+    const perkLectureId = (this.scene.game.registry.get('lectureId') as string) || ''
+    const perkCourseId = (this.scene.game.registry.get('courseId') as string) || ''
+    runningGameAnalytics.perkPick(perkLectureId, {
+      perk: type,
+      correct: isCorrect,
+      course_id: perkCourseId || undefined,
+    });
+
     this.callbacks.onRewardSelect?.(isCorrect);
     this.scene.physics.resume();
     this.callbacks.onPhysicsResume?.();

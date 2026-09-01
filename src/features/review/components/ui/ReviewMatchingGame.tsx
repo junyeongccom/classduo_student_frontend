@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { trackGameStart, trackGameComplete } from '@/shared/hooks/useAnalytics'
+import { gameWrongAttemptAnalytics } from '@/shared/lib/analytics'
 import type { LectureReviewItem, MatchingRankingEntry } from '@/features/review/types'
 import { reviewService } from '@/features/review/services/reviewService'
 import { GameRankingBoard } from './GameRankingBoard'
@@ -125,6 +126,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
     setWrongIds(new Set())
     setElapsedMs(0)
     setGameCompleted(false)
+    wrongAttemptsRef.current = 0
     setSubmissionRank(null)
     setRankings([])
     setRankingsError(null)
@@ -166,6 +168,12 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
       return () => window.clearTimeout(timer)
     }
 
+    wrongAttemptsRef.current += 1
+    gameWrongAttemptAnalytics.wrongAttempt(lectureId ?? '', {
+      game_type: 'cardMatch',
+      detail: `${first.pairId}|${second.pairId}`,
+      course_id: courseId ?? undefined,
+    })
     const timer = window.setTimeout(() => {
       setShakeIds(new Set([firstId, secondId]))
       setWrongIds(new Set([firstId, secondId]))
@@ -179,6 +187,8 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
   }, [cards, flippedIds])
 
   const gameCompleteTrackedRef = useRef(false)
+  // 잘못된 매칭 시도 누적 — 완료 이벤트의 wrong 필드로 보고 (분석용)
+  const wrongAttemptsRef = useRef(0)
 
   useEffect(() => {
     if (cards.length > 0 && matchedIds.size === cards.length) {
@@ -190,7 +200,7 @@ export function ReviewMatchingGame({ reviewItems, isEnabled, onExit, lectureId, 
           game_type: 'card_match',
           game_score: 0,
           correct: matchedIds.size / 2,
-          wrong: 0,
+          wrong: wrongAttemptsRef.current,
           elapsed_ms: elapsedMs,
           lecture_id: lectureId ?? '',
           course_id: courseId ?? '',
