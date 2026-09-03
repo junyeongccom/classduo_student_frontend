@@ -30,7 +30,9 @@ export const metadata: Metadata = {
     siteName: 'ClassDuo',
     images: [
       {
-        url: '/present_image.png',
+        // ?v= 는 카카오 이미지 캐시 우회용 — HAI-Sync 데모(2026-08) 잔상이 캐시에 남아
+        // 고대 캐릭터 대신 HS 캐릭터가 뜨던 문제. 파일 교체 없이 URL만 새로 만든다.
+        url: '/present_image.png?v=korea-2026-2',
         width: 1200,
         height: 630,
         alt: 'ClassDuo 서비스 대표 이미지',
@@ -43,7 +45,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Aplus - 매일매일 A+학점을 향해!',
     description: 'AI 기반 학습 보조 플랫폼',
-    images: ['/present_image.png'],
+    images: ['/present_image.png?v=korea-2026-2'],
   },
 }
 
